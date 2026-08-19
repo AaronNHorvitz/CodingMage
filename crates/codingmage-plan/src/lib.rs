@@ -666,10 +666,13 @@ fn validate_dependencies(
 
 fn validate_states(items: &[PlanItem]) -> Result<(), PlanError> {
     for parent in items {
-        if parent.state == CheckState::Checked
-            && items
-                .iter()
-                .any(|child| child.parent_id == parent.id && child.state == CheckState::Open)
+        if parent.kind == PlanItemKind::Task
+            && parent.state == CheckState::Checked
+            && items.iter().any(|child| {
+                child.kind == PlanItemKind::SubTask
+                    && child.parent_id == parent.id
+                    && child.state == CheckState::Open
+            })
         {
             return Err(PlanError::ConflictingState);
         }
@@ -822,6 +825,16 @@ mod tests {
         assert_eq!(
             TaskPlan::parse(conflict.as_bytes()),
             Err(PlanError::ConflictingState)
+        );
+    }
+
+    #[test]
+    fn checked_acceptance_criterion_does_not_own_story_tasks() {
+        let source = "# Plan\n\n## Sprint 0 - Foundation\n\n**Sprint goal:** Build safely.\n\n### Story 0.1 - Parser\n\n- [ ] **Task 0.1.1 - Parse work**\n  - [ ] **Sub-task 0.1.1.1:** Select work.\n\n- [x] **AC 0.1:** Parsing is exact.\n\n### Sprint 0 Gate\n\n- [ ] **Gate 0.1:** Parser passes.\n";
+        let plan = TaskPlan::parse(source.as_bytes()).unwrap();
+        assert_eq!(
+            plan.select_next(&BTreeSet::new()).unwrap().item.id,
+            "0.1.1.1"
         );
     }
 
