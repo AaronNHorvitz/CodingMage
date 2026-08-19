@@ -723,42 +723,42 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 16.1 - Prompt and Output Hostility
 
-- [ ] **Task 16.1.1 - Build hostile-content corpus**
-  - [ ] **Sub-task 16.1.1.1:** Seed instructions in source, comments, filenames, task text, issues, logs, test output, and model responses requesting broader authority.
-  - [ ] **Sub-task 16.1.1.2:** Seed fabricated pass claims, commits, tests, reviews, blockers, and quota notices.
-  - [ ] **Sub-task 16.1.1.3:** Seed oversized, malformed, reordered, duplicated, and future-version JSON events.
-- [ ] **Task 16.1.2 - Verify containment**
-  - [ ] **Sub-task 16.1.2.1:** Assert no hostile content changes policy, routing, command templates, repository scope, or task state.
-  - [ ] **Sub-task 16.1.2.2:** Assert sensitive canaries do not enter prompts, logs, evidence, GitHub content, or diagnostics without explicit policy.
+- [x] **Task 16.1.1 - Build hostile-content corpus**
+  - [x] **Sub-task 16.1.1.1:** Seed instructions in source, comments, filenames, task text, issues, logs, test output, and model responses requesting broader authority.
+  - [x] **Sub-task 16.1.1.2:** Seed fabricated pass claims, commits, tests, reviews, blockers, and quota notices.
+  - [x] **Sub-task 16.1.1.3:** Seed oversized, malformed, reordered, duplicated, and future-version JSON events.
+- [x] **Task 16.1.2 - Verify containment**
+  - [x] **Sub-task 16.1.2.1:** Assert no hostile content changes policy, routing, command templates, repository scope, or task state.
+  - [x] **Sub-task 16.1.2.2:** Assert sensitive canaries do not enter prompts, logs, evidence, GitHub content, or diagnostics without explicit policy.
 
 ### Story 16.2 - Git, Filesystem, and Process Attacks
 
-- [ ] **Task 16.2.1 - Exercise repository attacks**
-  - [ ] **Sub-task 16.2.1.1:** Test hooks, aliases, filters, drivers, helpers, pagers, editors, signers, URL rewrites, alternates, replacement refs, malicious objects, submodules, LFS, unsafe ownership, case collisions, and Unicode collisions.
-  - [ ] **Sub-task 16.2.1.2:** Test active-checkout changes during create, commit, review, cleanup, push, and recovery.
-  - [ ] **Sub-task 16.2.1.3:** Test renamed, deleted, replaced, and overlapping repository/worktree paths.
-- [ ] **Task 16.2.2 - Exercise process attacks**
-  - [ ] **Sub-task 16.2.2.1:** Test parent, child, and grandchild crashes, hangs, output floods, descriptor inheritance, and process-name collisions.
-  - [ ] **Sub-task 16.2.2.2:** Test unrelated matching processes and units appearing during cleanup.
-  - [ ] **Sub-task 16.2.2.3:** Assert cleanup acts only on proven owned identities.
+- [ ] **Task 16.2.1 - Exercise repository attacks.** All local cases except the end-to-end concurrent commit, review, authenticated push, and network-recovery campaign pass; see `docs/evidence/sprint-16-local.md`.
+  - [x] **Sub-task 16.2.1.1:** Test hooks, aliases, filters, drivers, helpers, pagers, editors, signers, URL rewrites, alternates, replacement refs, malicious objects, submodules, LFS, unsafe ownership, case collisions, and Unicode collisions.
+  - [ ] **Sub-task 16.2.1.2:** Test active-checkout changes during create, commit, review, cleanup, push, and recovery. Create, cleanup, path replacement, and local recovery pass; commit, review, authenticated push, and network recovery await end-to-end composition and external credentials.
+  - [x] **Sub-task 16.2.1.3:** Test renamed, deleted, replaced, and overlapping repository/worktree paths.
+- [x] **Task 16.2.2 - Exercise process attacks**
+  - [x] **Sub-task 16.2.2.1:** Test parent, child, and grandchild crashes, hangs, output floods, descriptor inheritance, and process-name collisions.
+  - [x] **Sub-task 16.2.2.2:** Test unrelated matching processes and units appearing during cleanup.
+  - [x] **Sub-task 16.2.2.3:** Assert cleanup acts only on proven owned identities.
 
 ### Story 16.3 - State and Evidence Attacks
 
-- [ ] **Task 16.3.1 - Mutate durable records**
-  - [ ] **Sub-task 16.3.1.1:** Mutate identity, sequence, hash chain, repository, task, branch, commit, model, outcome, and evidence fields independently.
-  - [ ] **Sub-task 16.3.1.2:** Test rollback, replay, truncation, concurrent writer, and stale snapshot attacks.
-  - [ ] **Sub-task 16.3.1.3:** Assert no corrupted record authorizes a new effect.
+- [x] **Task 16.3.1 - Mutate durable records**
+  - [x] **Sub-task 16.3.1.1:** Mutate identity, sequence, hash chain, repository, task, branch, commit, model, outcome, and evidence fields independently.
+  - [x] **Sub-task 16.3.1.2:** Test rollback, replay, truncation, concurrent writer, and stale snapshot attacks.
+  - [x] **Sub-task 16.3.1.3:** Assert no corrupted record authorizes a new effect.
 
 **Story acceptance criteria**
 
-- [ ] **AC 16.1:** Given the complete hostile-content corpus, when every boundary processes it, then authority remains unchanged and no synthetic secret leaks.
+- [x] **AC 16.1:** Given the complete hostile-content corpus, when every boundary processes it, then authority remains unchanged and no synthetic secret leaks.
 - [ ] **AC 16.2:** Given concurrent repository and process attacks, when CodingMage operates or recovers, then user state survives and cleanup touches only proven owned artifacts.
-- [ ] **AC 16.3:** Given every single-field evidence mutation, when verification runs, then the exact corruption blocks advancement.
+- [x] **AC 16.3:** Given every single-field evidence mutation, when verification runs, then the exact corruption blocks advancement.
 
 ### Sprint 16 Gate
 
 - [ ] **Gate 16.1:** Hostile-content, Git, filesystem, process, state, and evidence campaigns pass locally.
-- [ ] **Gate 16.2:** Manual fuzzing remains a separate explicit gate and is not claimed by deterministic mutation tests.
+- [x] **Gate 16.2:** Manual fuzzing remains a separate explicit gate and is not claimed by deterministic mutation tests. Execution remains open as `External 5`.
 
 ---
 
