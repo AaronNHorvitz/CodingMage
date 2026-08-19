@@ -1,0 +1,11 @@
+[package]
+name = "codingmage-platform"
+description = "Explicit operating-system capability boundary for CodingMage"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lints]
+workspace = true

@@ -152,6 +152,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "codingmage-platform"
+version = "0.1.0"
+
+[[package]]
 name = "codingmage-process"
 version = "0.1.0"
 dependencies = [

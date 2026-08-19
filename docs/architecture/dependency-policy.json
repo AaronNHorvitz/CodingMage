@@ -12,6 +12,7 @@
     "codingmage-gate": ["codingmage-contracts", "codingmage-process"],
     "codingmage-plan": ["codingmage-contracts"],
     "codingmage-orchestrator": ["codingmage-contracts", "codingmage-plan", "codingmage-state"],
+    "codingmage-platform": [],
     "codingmage-process": ["codingmage-contracts"],
     "codingmage-review": ["codingmage-contracts"],
     "codingmage-routing": [],
