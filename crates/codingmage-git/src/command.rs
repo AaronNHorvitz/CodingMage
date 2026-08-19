@@ -23,7 +23,10 @@ pub(crate) enum GitCommand<'a> {
     Worktrees,
     Head,
     TrackedPaths,
+    ChangedTrackedPaths,
+    UntrackedPaths,
     VerifyCommit(&'a str),
+    Parent(&'a str),
     IsAncestor {
         ancestor: &'a str,
         child: &'a str,
@@ -32,6 +35,12 @@ pub(crate) enum GitCommand<'a> {
     Blob {
         commit: &'a str,
         path: &'a str,
+    },
+    StagePaths {
+        paths: &'a [PathBuf],
+    },
+    Commit {
+        message: &'a str,
     },
     AddWorktree {
         destination: &'a Path,
@@ -180,6 +189,14 @@ fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
             .map(OsString::from)
             .collect(),
         GitCommand::TrackedPaths => ["ls-files", "-z"].into_iter().map(OsString::from).collect(),
+        GitCommand::ChangedTrackedPaths => ["diff", "--name-only", "-z", "HEAD", "--"]
+            .into_iter()
+            .map(OsString::from)
+            .collect(),
+        GitCommand::UntrackedPaths => ["ls-files", "--others", "--exclude-standard", "-z"]
+            .into_iter()
+            .map(OsString::from)
+            .collect(),
         GitCommand::VerifyCommit(object) => {
             vec![
                 "cat-file".into(),
@@ -187,6 +204,7 @@ fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
                 format!("{object}^{{commit}}").into(),
             ]
         }
+        GitCommand::Parent(commit) => vec!["rev-parse".into(), format!("{commit}^").into()],
         GitCommand::IsAncestor { ancestor, child } => vec![
             "merge-base".into(),
             "--is-ancestor".into(),
@@ -203,6 +221,24 @@ fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
         GitCommand::Blob { commit, path } => {
             vec!["show".into(), format!("{commit}:{path}").into()]
         }
+        GitCommand::StagePaths { paths } => {
+            let mut arguments = vec!["add".into(), "--all".into(), "--".into()];
+            arguments.extend(paths.iter().map(|path| path.as_os_str().to_owned()));
+            arguments
+        }
+        GitCommand::Commit { message } => vec![
+            "-c".into(),
+            "user.name=CodingMage Coordinator".into(),
+            "-c".into(),
+            "user.email=codingmage@localhost.invalid".into(),
+            "-c".into(),
+            "commit.gpgsign=false".into(),
+            "commit".into(),
+            "--no-verify".into(),
+            "--no-gpg-sign".into(),
+            "--message".into(),
+            message.into(),
+        ],
         GitCommand::AddWorktree {
             destination,
             branch,

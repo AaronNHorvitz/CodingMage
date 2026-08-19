@@ -677,14 +677,27 @@ fn completion_schema() -> String {
 
 fn authority_settings(session: &ClaudeSession) -> Result<String, ClaudeError> {
     let root = permission_root(&session.worktree)?;
+    let git_metadata = format!("{}/.git", permission_path(&session.worktree)?);
     let allow = ["Read", "Edit", "Write"]
         .map(|tool| format!("{tool}({root})"))
         .to_vec();
+    let deny = [
+        "Bash".to_owned(),
+        "WebFetch".to_owned(),
+        "WebSearch".to_owned(),
+        "NotebookEdit".to_owned(),
+        "Agent".to_owned(),
+        "Task".to_owned(),
+        "Skill".to_owned(),
+        format!("Read({git_metadata})"),
+        format!("Edit({git_metadata})"),
+        format!("Write({git_metadata})"),
+    ];
     serde_json::to_string(&serde_json::json!({
         "permissions": {
             "defaultMode": "dontAsk",
             "allow": allow,
-            "deny": ["Bash", "WebFetch", "WebSearch", "NotebookEdit", "Agent", "Task", "Skill"]
+            "deny": deny
         },
         "sandbox": {
             "enabled": true,
@@ -700,7 +713,9 @@ fn authority_settings(session: &ClaudeSession) -> Result<String, ClaudeError> {
             },
             "filesystem": {
                 "allowWrite": [session.worktree],
-                "allowRead": [session.worktree]
+                "allowRead": [session.worktree],
+                "denyWrite": [session.worktree.join(".git")],
+                "denyRead": [session.worktree.join(".git")]
             }
         }
     }))
@@ -708,6 +723,10 @@ fn authority_settings(session: &ClaudeSession) -> Result<String, ClaudeError> {
 }
 
 fn permission_root(path: &std::path::Path) -> Result<String, ClaudeError> {
+    Ok(format!("{}/**", permission_path(path)?))
+}
+
+fn permission_path(path: &std::path::Path) -> Result<String, ClaudeError> {
     let path = path.to_str().ok_or(ClaudeError::InvalidBinding)?;
     if !path.starts_with('/')
         || path
@@ -716,7 +735,7 @@ fn permission_root(path: &std::path::Path) -> Result<String, ClaudeError> {
     {
         return Err(ClaudeError::InvalidBinding);
     }
-    Ok(format!("/{}/**", path.trim_end_matches('/')))
+    Ok(format!("/{}", path.trim_end_matches('/')))
 }
 
 fn append_list(rendered: &mut String, heading: &str, values: &[String]) {
@@ -897,6 +916,10 @@ mod tests {
         assert_eq!(
             settings["sandbox"]["filesystem"]["allowWrite"][0],
             fixture.root.to_str().unwrap()
+        );
+        assert_eq!(
+            settings["sandbox"]["filesystem"]["denyWrite"][0],
+            fixture.root.join(".git").to_str().unwrap()
         );
     }
 

@@ -1,6 +1,7 @@
 //! Hostile-safe Git inventory and exact owned-worktree lifecycle operations.
 
 mod command;
+mod commit;
 mod inventory;
 mod policy;
 mod review;
@@ -9,6 +10,7 @@ mod worktree;
 #[cfg(test)]
 mod test_support;
 
+pub use commit::{CommitError, CommitReceipt, commit_owned_changes};
 pub use inventory::{
     Inventory, InventoryError, OperationState, RepositoryCondition, inventory_repository,
 };

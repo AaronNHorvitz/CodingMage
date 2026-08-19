@@ -106,6 +106,57 @@ impl OwnedWorktree {
     }
 }
 
+pub(crate) fn revalidate_active_worktree(
+    authorization: &RepositoryAuthorization,
+    owned: &OwnedWorktree,
+    expected_head: &str,
+) -> Result<(), WorktreeError> {
+    authorization
+        .revalidate()
+        .map_err(|_| WorktreeError::StaleAuthorization)?;
+    if owned.manifest.status != WorktreeStatus::Active
+        || owned.manifest.repository_id != authorization.identity().repository_id
+        || !valid_object_id(expected_head)
+    {
+        return Err(WorktreeError::Manifest);
+    }
+    let metadata =
+        fs::symlink_metadata(&owned.manifest.path).map_err(|_| WorktreeError::Identity)?;
+    if metadata.file_type().is_symlink()
+        || !metadata.is_dir()
+        || filesystem_identity(&metadata) != owned.manifest.filesystem
+        || !registered_worktree(
+            &authorization.identity().canonical_path,
+            &owned.manifest.path,
+        )?
+    {
+        return Err(WorktreeError::Identity);
+    }
+    let head_output =
+        run_git(&owned.manifest.path, GitCommand::Head).map_err(|_| WorktreeError::Identity)?;
+    if text(&head_output)
+        .map_err(|_| WorktreeError::Identity)?
+        .trim()
+        != expected_head
+    {
+        return Err(WorktreeError::Identity);
+    }
+    let ancestry = run_git_with_codes(
+        &owned.manifest.path,
+        GitCommand::IsAncestor {
+            ancestor: &owned.manifest.source_commit,
+            child: expected_head,
+        },
+        &[0, 1],
+    )
+    .map_err(|_| WorktreeError::Identity)?;
+    let (branch, _) = condition_at(&owned.manifest.path).map_err(map_inventory)?;
+    if ancestry.exit_code != 0 || branch.as_deref() != Some(owned.manifest.branch.as_str()) {
+        return Err(WorktreeError::Identity);
+    }
+    Ok(())
+}
+
 /// Content-free worktree lifecycle failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WorktreeError {
