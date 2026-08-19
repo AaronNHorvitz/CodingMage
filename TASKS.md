@@ -510,12 +510,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 **Story acceptance criteria**
 
-- [ ] **AC 10.1:** Given every interruption point in a scripted fake-agent workflow, when recovery runs, then the state machine resumes or stops from the last durable legal transition without duplicate effects.
+- [x] **AC 10.1:** Given every interruption point in a scripted fake-agent workflow, when recovery runs, then the state machine resumes or stops from the last durable legal transition without duplicate effects.
 - [x] **AC 10.2:** Given reordered, replayed, or fabricated events, when applied, then state and repository remain unchanged.
 
 ### Sprint 10 Gate
 
-- [ ] **Gate 10.1:** Exhaustive state-transition and interruption tests pass.
+- [x] **Gate 10.1:** Exhaustive state-transition and interruption tests pass. See `docs/evidence/sprint-12.md`.
 - [x] **Gate 10.2:** One complete fake-model vertical slice advances exactly one fixture task. See `docs/evidence/sprint-10-local.md`.
 
 ---
@@ -564,37 +564,37 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 12.1 - Append-Only Event Journal
 
-- [ ] **Task 12.1.1 - Define journal records**
-  - [ ] **Sub-task 12.1.1.1:** Include sequence, schema version, prior-event hash, timestamp, run/task/repository identities, event kind, outcome, and evidence references.
-  - [ ] **Sub-task 12.1.1.2:** Canonically serialize and hash each record.
-  - [ ] **Sub-task 12.1.1.3:** Bound record size and reject unknown critical fields.
-  - [ ] **Sub-task 12.1.1.4:** Redact sensitive values before persistence without storing removed content.
-- [ ] **Task 12.1.2 - Implement durable append**
-  - [ ] **Sub-task 12.1.2.1:** Use atomic create/append and explicit flush policy.
-  - [ ] **Sub-task 12.1.2.2:** Detect truncation, corruption, reordering, duplication, and chain breaks.
-  - [ ] **Sub-task 12.1.2.3:** Prevent concurrent writers through exact lock ownership.
+- [x] **Task 12.1.1 - Define journal records**
+  - [x] **Sub-task 12.1.1.1:** Include sequence, schema version, prior-event hash, timestamp, run/task/repository identities, event kind, outcome, and evidence references.
+  - [x] **Sub-task 12.1.1.2:** Canonically serialize and hash each record.
+  - [x] **Sub-task 12.1.1.3:** Bound record size and reject unknown critical fields.
+  - [x] **Sub-task 12.1.1.4:** Redact sensitive values before persistence without storing removed content.
+- [x] **Task 12.1.2 - Implement durable append**
+  - [x] **Sub-task 12.1.2.1:** Use atomic create/append and explicit flush policy.
+  - [x] **Sub-task 12.1.2.2:** Detect truncation, corruption, reordering, duplication, and chain breaks.
+  - [x] **Sub-task 12.1.2.3:** Prevent concurrent writers through exact lock ownership.
 
 ### Story 12.2 - Snapshots and Resume
 
-- [ ] **Task 12.2.1 - Maintain current-state snapshot**
-  - [ ] **Sub-task 12.2.1.1:** Derive snapshots from accepted journal events.
-  - [ ] **Sub-task 12.2.1.2:** Write through temporary file, flush, and atomic replacement.
-  - [ ] **Sub-task 12.2.1.3:** Verify snapshot hash and journal position on load.
-- [ ] **Task 12.2.2 - Reconcile live state after restart**
-  - [ ] **Sub-task 12.2.2.1:** Reconcile repository, worktree, branch, commit, process, agent session, gate, and evidence identities.
-  - [ ] **Sub-task 12.2.2.2:** Resume only idempotent or explicitly recoverable phases.
-  - [ ] **Sub-task 12.2.2.3:** Mark uncertain effects visibly and require re-observation before action.
-  - [ ] **Sub-task 12.2.2.4:** Never replay a state-changing provider or Git action merely to discover whether it happened.
+- [x] **Task 12.2.1 - Maintain current-state snapshot**
+  - [x] **Sub-task 12.2.1.1:** Derive snapshots from accepted journal events.
+  - [x] **Sub-task 12.2.1.2:** Write through temporary file, flush, and atomic replacement.
+  - [x] **Sub-task 12.2.1.3:** Verify snapshot hash and journal position on load.
+- [x] **Task 12.2.2 - Reconcile live state after restart**
+  - [x] **Sub-task 12.2.2.1:** Reconcile repository, worktree, branch, commit, process, agent session, gate, and evidence identities.
+  - [x] **Sub-task 12.2.2.2:** Resume only idempotent or explicitly recoverable phases.
+  - [x] **Sub-task 12.2.2.3:** Mark uncertain effects visibly and require re-observation before action.
+  - [x] **Sub-task 12.2.2.4:** Never replay a state-changing provider or Git action merely to discover whether it happened.
 
 **Story acceptance criteria**
 
-- [ ] **AC 12.1:** Given torn writes and every single-field journal mutation, when recovery loads state, then corruption is identified at the exact record and no action resumes.
-- [ ] **AC 12.2:** Given crashes at every orchestration transition, when CodingMage restarts, then it resumes safely or stops with an exact blocker and no duplicated Git or provider effect.
+- [x] **AC 12.1:** Given torn writes and every single-field journal mutation, when recovery loads state, then corruption is identified at the exact record and no action resumes.
+- [x] **AC 12.2:** Given crashes at every orchestration transition, when CodingMage restarts, then it resumes safely or stops with an exact blocker and no duplicated Git or provider effect.
 
 ### Sprint 12 Gate
 
-- [ ] **Gate 12.1:** Journal mutation, concurrent writer, snapshot, and crash-recovery campaigns pass.
-- [ ] **Gate 12.2:** Recovery requires no target-source copy or raw provider transcript in durable state.
+- [x] **Gate 12.1:** Journal mutation, concurrent writer, snapshot, and crash-recovery campaigns pass. See `docs/evidence/sprint-12.md`.
+- [x] **Gate 12.2:** Recovery requires no target-source copy or raw provider transcript in durable state.
 
 ---
 
