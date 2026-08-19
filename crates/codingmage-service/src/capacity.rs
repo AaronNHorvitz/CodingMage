@@ -112,6 +112,16 @@ pub struct RetryState {
     pub next_at_ms: Option<u64>,
     /// Most recent class.
     pub last_class: Option<CapacityClass>,
+    /// Terminal policy prevents further attempts.
+    pub terminal: bool,
+}
+
+impl RetryState {
+    /// Returns true only when policy permits an attempt at this instant.
+    #[must_use]
+    pub fn ready(self, now_ms: u64) -> bool {
+        !self.terminal && self.next_at_ms.is_none_or(|deadline| now_ms >= deadline)
+    }
 }
 
 /// Retry or terminal decision.
@@ -273,6 +283,7 @@ impl RetryPolicy {
             attempt,
             next_at_ms,
             last_class: Some(class),
+            terminal: next_at_ms.is_none(),
         };
         Ok(())
     }
@@ -314,6 +325,7 @@ impl RetryPolicy {
                     attempt: *attempt,
                     next_at_ms: *next_at_ms,
                     last_class: Some(class),
+                    terminal: next_at_ms.is_none(),
                 })
             })
             .next_back()

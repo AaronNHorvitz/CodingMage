@@ -290,4 +290,41 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn sustained_fake_provider_never_retries_before_deadline_or_after_stop() {
+        let policy = RetryPolicy::new(100, 800, 5, 0).unwrap();
+        let mut state = RetryState::default();
+        let mut invocations = 0_u32;
+        for now_ms in 0..2_000 {
+            if !state.ready(now_ms) {
+                continue;
+            }
+            invocations += 1;
+            let class = if invocations == 4 {
+                CapacityClass::Authentication
+            } else {
+                CapacityClass::Network
+            };
+            let decision = policy.decide(state, class, now_ms, None, 0);
+            match decision {
+                RetryDecision::PauseUntil {
+                    attempt,
+                    next_at_ms,
+                } => {
+                    assert!(next_at_ms > now_ms);
+                    state = RetryState {
+                        attempt,
+                        next_at_ms: Some(next_at_ms),
+                        last_class: Some(class),
+                        terminal: false,
+                    };
+                }
+                RetryDecision::Stop { .. } => state.terminal = true,
+            }
+        }
+        assert_eq!(invocations, 4);
+        assert!(state.terminal);
+        assert!(!state.ready(u64::MAX));
+    }
 }
