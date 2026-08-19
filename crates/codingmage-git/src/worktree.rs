@@ -470,6 +470,11 @@ impl From<CommandError> for WorktreeError {
 #[cfg(test)]
 mod tests {
     use std::os::unix::fs::PermissionsExt;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, AtomicU64, Ordering},
+    };
+    use std::thread;
 
     use codingmage_contracts::{RunId, TaskId};
 
@@ -509,7 +514,7 @@ mod tests {
         fs::create_dir(&similar).unwrap();
         fs::write(similar.join("keep.txt"), "keep\n").unwrap();
 
-        let (authorization, config, mut owned) = create(&fixture);
+        let (authorization, config, owned) = create(&fixture);
         assert_eq!(owned.manifest.status, WorktreeStatus::Active);
         assert!(owned.manifest.path.starts_with(&fixture.scratch));
         assert_eq!(
@@ -520,8 +525,11 @@ mod tests {
                 & 0o777,
             0o700
         );
-        let loaded = OwnedWorktree::load(&config, &owned.manifest.worktree_id).unwrap();
-        assert_eq!(loaded.manifest, owned.manifest);
+        let expected_manifest = owned.manifest.clone();
+        let worktree_id = owned.manifest.worktree_id.clone();
+        drop(owned);
+        let mut owned = OwnedWorktree::load(&config, &worktree_id).unwrap();
+        assert_eq!(owned.manifest, expected_manifest);
 
         remove_owned_worktree(&authorization, &mut owned).unwrap();
         assert_eq!(owned.manifest.status, WorktreeStatus::Removed);
@@ -615,5 +623,35 @@ mod tests {
             "HEAD;touch-side-effect",
         );
         assert_eq!(result.unwrap_err(), WorktreeError::InvalidSource);
+    }
+
+    #[test]
+    fn concurrent_user_file_activity_survives_lifecycle() {
+        let fixture = GitFixture::new();
+        let active_file = fixture.target.join("concurrent-user-edit.txt");
+        let running = Arc::new(AtomicBool::new(true));
+        let iterations = Arc::new(AtomicU64::new(0));
+        let writer_running = Arc::clone(&running);
+        let writer_iterations = Arc::clone(&iterations);
+        let writer = thread::spawn(move || {
+            while writer_running.load(Ordering::Acquire) {
+                let value = writer_iterations.fetch_add(1, Ordering::AcqRel);
+                fs::write(&active_file, format!("user-edit-{value}\n")).unwrap();
+                thread::yield_now();
+            }
+            active_file
+        });
+        while iterations.load(Ordering::Acquire) == 0 {
+            thread::yield_now();
+        }
+
+        let (authorization, _config, mut owned) = create(&fixture);
+        remove_owned_worktree(&authorization, &mut owned).unwrap();
+        running.store(false, Ordering::Release);
+        let active_file = writer.join().unwrap();
+
+        assert!(iterations.load(Ordering::Acquire) > 1);
+        let content = fs::read_to_string(active_file).unwrap();
+        assert!(content.starts_with("user-edit-"));
     }
 }
