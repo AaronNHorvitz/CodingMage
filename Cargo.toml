@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/codingmage-cli",
+    "crates/codingmage-claude",
     "crates/codingmage-agent",
     "crates/codingmage-contracts",
     "crates/codingmage-core",
@@ -18,6 +19,7 @@ version = "0.1.0"
 
 [workspace.dependencies]
 codingmage-agent = { path = "crates/codingmage-agent", version = "=0.1.0" }
+codingmage-claude = { path = "crates/codingmage-claude", version = "=0.1.0" }
 codingmage-contracts = { path = "crates/codingmage-contracts", version = "=0.1.0" }
 codingmage-core = { path = "crates/codingmage-core", version = "=0.1.0" }
 codingmage-git = { path = "crates/codingmage-git", version = "=0.1.0" }

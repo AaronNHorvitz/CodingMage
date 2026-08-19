@@ -40,6 +40,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "codingmage-claude"
+version = "0.1.0"
+dependencies = [
+ "codingmage-agent",
+ "codingmage-contracts",
+ "codingmage-process",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "codingmage-cli"
 version = "0.1.0"
 dependencies = [

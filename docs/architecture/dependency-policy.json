@@ -1,6 +1,7 @@
 {
   "allowed_internal_dependencies": {
     "codingmage-agent": ["codingmage-contracts", "codingmage-process"],
+    "codingmage-claude": ["codingmage-agent", "codingmage-contracts", "codingmage-process"],
     "codingmage-cli": ["codingmage-contracts", "codingmage-core"],
     "codingmage-contracts": [],
     "codingmage-core": ["codingmage-contracts"],
