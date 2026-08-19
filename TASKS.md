@@ -526,35 +526,35 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 11.1 - Finding Lifecycle
 
-- [ ] **Task 11.1.1 - Validate and track findings**
-  - [ ] **Sub-task 11.1.1.1:** Deduplicate findings by stable identity and reviewed commit.
-  - [ ] **Sub-task 11.1.1.2:** Track open, accepted, corrected, verified, disputed, withdrawn, and blocked states.
-  - [ ] **Sub-task 11.1.1.3:** Require correction commits to reference addressed finding IDs.
-  - [ ] **Sub-task 11.1.1.4:** Reject a finding as verified when the relevant code or test did not change and no valid explanation exists.
-- [ ] **Task 11.1.2 - Build correction packets**
-  - [ ] **Sub-task 11.1.2.1:** Include only validated findings, exact reviewed/correction commits, requested tests, and unchanged task scope.
-  - [ ] **Sub-task 11.1.2.2:** Prevent optional suggestions from becoming mandatory scope silently.
+- [x] **Task 11.1.1 - Validate and track findings**
+  - [x] **Sub-task 11.1.1.1:** Deduplicate findings by stable identity and reviewed commit.
+  - [x] **Sub-task 11.1.1.2:** Track open, accepted, corrected, verified, disputed, withdrawn, and blocked states.
+  - [x] **Sub-task 11.1.1.3:** Require correction commits to reference addressed finding IDs.
+  - [x] **Sub-task 11.1.1.4:** Reject a finding as verified when the relevant code or test did not change and no valid explanation exists.
+- [x] **Task 11.1.2 - Build correction packets**
+  - [x] **Sub-task 11.1.2.1:** Include only validated findings, exact reviewed/correction commits, requested tests, and unchanged task scope.
+  - [x] **Sub-task 11.1.2.2:** Prevent optional suggestions from becoming mandatory scope silently.
 
 ### Story 11.2 - Bounded Review Loop
 
-- [ ] **Task 11.2.1 - Enforce correction budget**
-  - [ ] **Sub-task 11.2.1.1:** Set a configurable default maximum of three review/correction rounds.
-  - [ ] **Sub-task 11.2.1.2:** Escalate implementation model or review model according to policy before the final round.
-  - [ ] **Sub-task 11.2.1.3:** Record a dispute or blocker when the bound is reached.
-  - [ ] **Sub-task 11.2.1.4:** Require human resolution for material architecture disagreement.
-- [ ] **Task 11.2.2 - Preserve independent review**
-  - [ ] **Sub-task 11.2.2.1:** Prevent the agent that authored a correction from being its sole final reviewer.
-  - [ ] **Sub-task 11.2.2.2:** If Codex performs an emergency correction, require Claude or a human to review it before closure.
+- [x] **Task 11.2.1 - Enforce correction budget**
+  - [x] **Sub-task 11.2.1.1:** Set a configurable default maximum of three review/correction rounds.
+  - [x] **Sub-task 11.2.1.2:** Escalate implementation model or review model according to policy before the final round.
+  - [x] **Sub-task 11.2.1.3:** Record a dispute or blocker when the bound is reached.
+  - [x] **Sub-task 11.2.1.4:** Require human resolution for material architecture disagreement.
+- [x] **Task 11.2.2 - Preserve independent review**
+  - [x] **Sub-task 11.2.2.1:** Prevent the agent that authored a correction from being its sole final reviewer.
+  - [x] **Sub-task 11.2.2.2:** If Codex performs an emergency correction, require Claude or a human to review it before closure.
 
 **Story acceptance criteria**
 
-- [ ] **AC 11.1:** Given pass, repeated finding, contradictory finding, optional suggestion, and unresolved disagreement fixtures, when the loop runs, then every outcome is bounded and truthful.
-- [ ] **AC 11.2:** Given three failed correction rounds, when the limit is reached, then no fourth autonomous round starts.
+- [x] **AC 11.1:** Given pass, repeated finding, contradictory finding, optional suggestion, and unresolved disagreement fixtures, when the loop runs, then every outcome is bounded and truthful.
+- [x] **AC 11.2:** Given three failed correction rounds, when the limit is reached, then no fourth autonomous round starts.
 
 ### Sprint 11 Gate
 
-- [ ] **Gate 11.1:** Finding lifecycle, correction binding, escalation, and disagreement tests pass.
-- [ ] **Gate 11.2:** No agent is permitted to author and solely approve the same material correction.
+- [x] **Gate 11.1:** Finding lifecycle, correction binding, escalation, and disagreement tests pass. See `docs/evidence/sprint-11.md`.
+- [x] **Gate 11.2:** No agent is permitted to author and solely approve the same material correction.
 
 ---
 
