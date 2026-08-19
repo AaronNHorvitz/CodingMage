@@ -339,25 +339,25 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 6.2 - Structured Senior Findings
 
-- [ ] **Task 6.2.1 - Define review output**
+- [x] **Task 6.2.1 - Define review output**
   - [x] **Sub-task 6.2.1.1:** Require `pass`, `changes_required`, `disputed`, or `blocked` verdicts.
   - [x] **Sub-task 6.2.1.2:** Require stable finding ID, severity, file, line, claim, evidence, requested correction, and acceptance test. File and line are mandatory for implementation defects and nullable for separately typed external blockers or suggestions.
-  - [ ] **Sub-task 6.2.1.3:** Reject findings against files or commits outside the bound review scope.
+  - [x] **Sub-task 6.2.1.3:** Reject findings against files or commits outside the bound review scope.
   - [x] **Sub-task 6.2.1.4:** Separate implementation defects from external blockers and optional suggestions.
-- [ ] **Task 6.2.2 - Verify review integrity**
-  - [ ] **Sub-task 6.2.2.1:** Revalidate target and base commits before and after review.
-  - [ ] **Sub-task 6.2.2.2:** Verify referenced files and lines exist in the reviewed commit.
+- [x] **Task 6.2.2 - Verify review integrity**
+  - [x] **Sub-task 6.2.2.1:** Revalidate target and base commits before and after review.
+  - [x] **Sub-task 6.2.2.2:** Verify referenced files and lines exist in the reviewed commit.
   - [x] **Sub-task 6.2.2.3:** Prevent Codex prose from marking tests, tasks, or gates complete.
 
 **Story acceptance criteria**
 
-- [ ] **AC 6.1:** Given a known-defective commit corpus, when Codex reviews each exact commit, then normalized findings point only to that commit and malformed findings fail closed.
-- [ ] **AC 6.2:** Given repository changes during review, when commit identity is revalidated, then the review is rejected as stale rather than applied to newer work.
+- [x] **AC 6.1:** Given a known-defective commit corpus, when Codex reviews each exact commit, then normalized findings point only to that commit and malformed findings fail closed.
+- [x] **AC 6.2:** Given repository changes during review, when commit identity is revalidated, then the review is rejected as stale rather than applied to newer work.
 
 ### Sprint 6 Gate
 
-- [ ] **Gate 6.1:** Codex review and resume fixtures pass under read-only authority.
-- [ ] **Gate 6.2:** Codex has no write, publication, merge, release, or task-state authority.
+- [x] **Gate 6.1:** Codex review and resume fixtures pass under read-only authority. See `docs/evidence/sprint-6-review-scope.md`.
+- [x] **Gate 6.2:** Codex has no write, publication, merge, release, or task-state authority.
 
 ---
 
