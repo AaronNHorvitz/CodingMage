@@ -4,6 +4,7 @@ __pycache__/
 
 # Rust build output
 /target/
+/dist/
 
 # CodingMage runtime data must never enter the source repository.
 /.codingmage/
