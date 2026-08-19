@@ -301,12 +301,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [x] **Task 5.2.1 - Render implementation instructions**
   - [x] **Sub-task 5.2.1.1:** Include exact task text, dependencies, owned paths, source commit, branch, acceptance criteria, test commands, and prohibited actions.
   - [x] **Sub-task 5.2.1.2:** Mark repository text, issues, comments, fixtures, and tool output as untrusted content rather than instructions.
-  - [x] **Sub-task 5.2.1.3:** Require a structured completion report with changes, tests, commit, limitations, and blockers.
-- [ ] **Task 5.2.2 - Enforce implementation authority**
-  - [ ] **Sub-task 5.2.2.1:** Allow writes only in the assigned worktree.
-  - [ ] **Sub-task 5.2.2.2:** Allow only configured local tools and Git operations.
-  - [ ] **Sub-task 5.2.2.3:** Deny merge, release, default-branch push, destructive Git, credential access, and external infrastructure.
-  - [x] **Sub-task 5.2.2.4:** Refuse a completion report that lacks a coherent commit or truthful blocker.
+  - [x] **Sub-task 5.2.1.3:** Require a structured completion report with changes, test claims, candidate readiness or commit disposition, limitations, and blockers.
+- [x] **Task 5.2.2 - Enforce implementation authority.** Local authority construction and coordinator-owned commit fixtures pass; authenticated live-provider evidence remains under the acceptance gates. See `docs/evidence/sprint-5-local.md`.
+  - [x] **Sub-task 5.2.2.1:** Allow file reads and writes only in the assigned worktree, excluding its Git metadata, through a bare deny-first provider profile.
+  - [x] **Sub-task 5.2.2.2:** Expose only scoped file tools to Claude; deterministic local commands and literal Git operations remain coordinator-owned.
+  - [x] **Sub-task 5.2.2.3:** Deny Bash, web, subagent, skill, notebook, merge, release, default-branch push, destructive Git, credential, and external-infrastructure authority.
+  - [x] **Sub-task 5.2.2.4:** Refuse a completion report that lacks exactly one coherent commit, ready-for-coordinator-commit disposition, or truthful blocker.
 
 **Story acceptance criteria**
 
@@ -905,4 +905,4 @@ These items must remain open until their prerequisites actually exist:
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 5 worktree-only and configured-tool enforcement, then execute one explicitly authorized disposable live task.
+- [ ] **Next 1:** Execute one explicitly authorized disposable live Claude task to verify the implemented file-only authority profile, redaction boundary, coordinator-owned commit, and malicious-instruction refusal without broadening credentials or publication authority.

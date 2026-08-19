@@ -30,7 +30,7 @@ CodingMage is not intended to replace human product ownership. Scope changes, de
 | --- | --- | --- |
 | Product owner | Human | Owns scope, architecture exceptions, releases, costs, and external consequences. |
 | Coordinator | CodingMage | Selects work, enforces state transitions, controls authority, records evidence, and stops safely. |
-| Implementation agent | Claude Code | Implements one bounded work packet, runs focused checks, commits changes, and corrects accepted findings. |
+| Implementation agent | Claude Code | Edits only packet-owned files and returns a structured candidate or truthful blocker. |
 | Senior review agent | Codex | Reviews exact commits, validates claims and architecture, identifies defects, and verifies corrections. |
 | Deterministic verifier | Local tools | Runs formatting, linting, tests, schemas, traceability, and repository checks without model judgment. |
 
@@ -45,8 +45,8 @@ flowchart TD
     C -- No --> Z[Record blocker or completion and stop]
     C -- Yes --> D[Create bounded work packet]
     D --> E[Create isolated implementation worktree]
-    E --> F[Claude Code implements and commits]
-    F --> G[Run deterministic local gates]
+    E --> F[Claude Code edits packet-owned files]
+    F --> G[Run deterministic local gates and create controlled commit]
     G -- Fail --> H[Return bounded failures to Claude Code]
     H --> F
     G -- Pass --> I[Codex reviews exact commit]
@@ -141,8 +141,8 @@ The initial Git workflow is intentionally conservative:
 1. Inspect the target repository and refuse unknown or dirty state unless the configured workflow explicitly preserves it.
 2. Resolve and record the exact source commit.
 3. Create a CodingMage-owned worktree and branch with collision-resistant identities.
-4. Give only the implementation agent write authority over that worktree.
-5. Require a coherent local commit before review.
+4. Give the implementation agent only scoped file-read and file-edit tools inside that worktree.
+5. Let the coordinator run configured gates, reject out-of-scope paths, and create the coherent local commit.
 6. Give Codex read-only access to the exact commit and relevant comparison base.
 7. Apply corrections only through the implementation worktree.
 8. Run final deterministic gates and senior verification.

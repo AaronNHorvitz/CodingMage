@@ -882,7 +882,7 @@ mod tests {
         let source = include_bytes!("../../../TASKS.md");
         let plan = TaskPlan::parse(source).unwrap();
         let selected = plan.select_next(&BTreeSet::new()).unwrap();
-        assert_eq!(selected.item.id, "5.2.2.1");
+        assert_eq!(selected.item.id, "16.2.1.2");
         assert_eq!(selected.revalidate(source), Ok(()));
     }
 }
