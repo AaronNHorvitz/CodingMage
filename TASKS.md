@@ -867,7 +867,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 19.2.1.2:** Add executable disposable example repositories and sanitized walkthroughs.
   - [x] **Sub-task 19.2.1.3:** Document every unsupported action and platform.
 - [ ] **Task 19.2.2 - Complete release review**
-  - [ ] **Sub-task 19.2.2.1:** Run all local unit, integration, security, recovery, performance, packaging, and documentation gates.
+  - [ ] **Sub-task 19.2.2.1:** Run all local unit, integration, security, recovery, performance, packaging, and documentation gates. Every currently implemented local gate passes at `bb17671`; this remains open because production `run` composition and the packaged user-service lifecycle are not implemented. See `docs/evidence/sprint-19-local.md`.
   - [ ] **Sub-task 19.2.2.2:** Complete an independent code and threat-model review.
   - [ ] **Sub-task 19.2.2.3:** Resolve or explicitly accept every open risk.
   - [ ] **Sub-task 19.2.2.4:** Create a signed release candidate without publishing it automatically.
@@ -905,4 +905,4 @@ These items must remain open until their prerequisites actually exist:
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Execute one explicitly authorized disposable live Claude task to verify the implemented file-only authority profile, redaction boundary, coordinator-owned commit, and malicious-instruction refusal without broadening credentials or publication authority.
+- [ ] **Next 1:** Implement the concrete production `WorkflowPort` composition behind `codingmage run`, including durable intent, owned worktree, file-only Claude candidate, coordinator gates and commit, immutable Codex review, checkpoint, cleanup, and fail-closed recovery. Then execute one explicitly authorized disposable live task without broadening credentials or publication authority.

@@ -61,3 +61,12 @@ cargo test -p codingmage-cli --all-targets
 Sub-task `18.1.2.2` and `Gate 18.1` remain open because the packaged binary does not yet install and exercise the user service through start, stop, upgrade, rollback, and removal. Signing is also still a human release operation.
 
 Sub-task `18.2.2.1`, `18.2.2.2`, and native macOS evidence remain open. The contract and literal launch/keychain plans do not substitute for native process, filesystem, launch-agent, credential, provider, monitoring, and recovery execution. Windows executable support remains intentionally unimplemented.
+
+## Current Revalidation
+
+The complete binary package workflow was repeated from CodingMage commit `bb17671`. Two independent
+release invocations produced byte-identical archives with SHA-256
+`8f2db488b2fc28a1d80706adb9a3ad02c8003999b1129b4c763d601e79b565f5`. An isolated prefix passed
+install, checksum verification, binary version execution, upgrade, rollback, post-rollback
+verification, and removal. A recursive package scan found no user-home path, repository-local path,
+named local user identifier, common API-key marker, or private-key header.
