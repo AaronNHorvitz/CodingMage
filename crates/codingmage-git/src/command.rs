@@ -28,6 +28,11 @@ pub(crate) enum GitCommand<'a> {
         ancestor: &'a str,
         child: &'a str,
     },
+    TreePaths(&'a str),
+    Blob {
+        commit: &'a str,
+        path: &'a str,
+    },
     AddWorktree {
         destination: &'a Path,
         branch: &'a str,
@@ -188,6 +193,16 @@ fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
             ancestor.into(),
             child.into(),
         ],
+        GitCommand::TreePaths(commit) => vec![
+            "ls-tree".into(),
+            "-r".into(),
+            "-z".into(),
+            "--name-only".into(),
+            commit.into(),
+        ],
+        GitCommand::Blob { commit, path } => {
+            vec!["show".into(), format!("{commit}:{path}").into()]
+        }
         GitCommand::AddWorktree {
             destination,
             branch,

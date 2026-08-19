@@ -9,6 +9,7 @@ use std::{
 
 use codingmage_agent::AdapterError;
 use codingmage_contracts::{AgentId, AttemptId, EvidenceId, RunId, TaskId};
+use codingmage_git::{ReviewLocation, ReviewScope};
 use codingmage_process::{
     CancellationToken, ProcessExecutor, ProcessOutcome, ProcessProfile, ProcessRequest,
     ProcessResult,
@@ -487,6 +488,12 @@ impl CodexAdapter {
         if fs::read(&self.output_schema).ok().as_deref() != Some(codex_review_schema().as_bytes()) {
             return Err(CodexError::InvalidProfile);
         }
+        let scope = ReviewScope::capture(
+            &binding.worktree,
+            &binding.base_commit,
+            &binding.target_commit,
+        )
+        .map_err(|_| CodexError::StaleScope)?;
         let profile = ProcessProfile::new(&self.executable, [plan.arguments.clone()], [])
             .map_err(|_| CodexError::Process)?;
         let request = ProcessRequest {
@@ -505,6 +512,32 @@ impl CodexAdapter {
             .map_err(|_| CodexError::Process)?;
         map_process_outcome(&result)?;
         let parsed = parse_jsonl(&result.stdout.retained, binding)?;
+        scope
+            .revalidate(&binding.worktree)
+            .map_err(|_| CodexError::StaleScope)?;
+        let locations = parsed
+            .report
+            .findings
+            .iter()
+            .filter_map(|finding| {
+                Some(ReviewLocation {
+                    path: finding.file.as_ref()?.to_str()?.to_owned(),
+                    line: finding.line?,
+                })
+            })
+            .collect::<Vec<_>>();
+        let expected = parsed
+            .report
+            .findings
+            .iter()
+            .filter(|finding| finding.file.is_some() || finding.line.is_some())
+            .count();
+        if locations.len() != expected {
+            return Err(CodexError::InvalidReport);
+        }
+        scope
+            .verify_locations(&binding.worktree, &locations)
+            .map_err(|_| CodexError::InvalidReport)?;
         Ok((parsed, result))
     }
 }
@@ -532,6 +565,8 @@ pub enum CodexError {
     InvalidReport,
     /// Provider output is malformed or excessive.
     InvalidOutput,
+    /// Exact commits, checkout, tree, or finding locations were stale or invalid.
+    StaleScope,
     /// Shared process runtime denied or failed.
     Process,
     /// Provider execution failed.
@@ -556,6 +591,7 @@ impl fmt::Display for CodexError {
             Self::InvalidPacket => "codingmage.provider.codex.invalid_packet",
             Self::InvalidReport => "codingmage.provider.codex.invalid_report",
             Self::InvalidOutput => "codingmage.provider.codex.invalid_output",
+            Self::StaleScope => "codingmage.provider.codex.stale_scope",
             Self::Process => "codingmage.provider.codex.process",
             Self::Provider => "codingmage.provider.codex.failed",
             Self::Quota => "codingmage.provider.codex.quota",
@@ -574,7 +610,9 @@ impl From<CodexError> for AdapterError {
             CodexError::Quota => Self::Quota,
             CodexError::Timeout => Self::Timeout,
             CodexError::Cancelled => Self::Cancelled,
-            CodexError::InvalidOutput | CodexError::InvalidReport => Self::InvalidOutput,
+            CodexError::InvalidOutput | CodexError::InvalidReport | CodexError::StaleScope => {
+                Self::InvalidOutput
+            }
             CodexError::UnsupportedVersion
             | CodexError::CapabilityMissing
             | CodexError::InvalidProfile

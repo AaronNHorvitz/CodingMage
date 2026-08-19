@@ -69,6 +69,7 @@ version = "0.1.0"
 dependencies = [
  "codingmage-agent",
  "codingmage-contracts",
+ "codingmage-git",
  "codingmage-process",
  "serde",
  "serde_json",

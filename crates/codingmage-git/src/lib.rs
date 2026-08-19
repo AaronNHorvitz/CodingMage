@@ -3,6 +3,7 @@
 mod command;
 mod inventory;
 mod policy;
+mod review;
 mod worktree;
 
 #[cfg(test)]
@@ -12,6 +13,7 @@ pub use inventory::{
     Inventory, InventoryError, OperationState, RepositoryCondition, inventory_repository,
 };
 pub use policy::{GitPolicyError, validate_requested_command};
+pub use review::{ReviewLocation, ReviewScope, ReviewScopeError};
 pub use worktree::{
     OwnedWorktree, WorktreeError, WorktreeManifest, WorktreeStatus, create_owned_worktree,
     remove_owned_worktree,
