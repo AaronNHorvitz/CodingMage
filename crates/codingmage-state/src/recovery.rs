@@ -16,10 +16,39 @@ pub struct IdentitySet {
     pub process: Option<String>,
     /// Exact provider session identity.
     pub agent_session: Option<String>,
+    /// Exact resolved model identity.
+    pub model: Option<String>,
     /// Exact deterministic gate identity.
     pub gate: Option<String>,
     /// Exact immutable evidence identity.
     pub evidence: Option<String>,
+}
+
+impl IdentitySet {
+    /// Derives exact recovery expectations from one accepted durable record.
+    #[must_use]
+    pub fn from_record(record: &JournalRecord) -> Self {
+        Self {
+            worktree: record
+                .event
+                .identities
+                .worktree
+                .as_ref()
+                .map(ToString::to_string),
+            branch: record.event.identities.branch.clone(),
+            commit: record.event.identities.commit.clone(),
+            process: record.event.identities.process.clone(),
+            agent_session: record
+                .event
+                .identities
+                .agent_session
+                .as_ref()
+                .map(ToString::to_string),
+            model: record.event.identities.model.clone(),
+            gate: record.event.identities.gate.clone(),
+            evidence: record.event.evidence.last().map(ToString::to_string),
+        }
+    }
 }
 
 /// Live identities observed without performing a state-changing action.
@@ -118,6 +147,7 @@ fn identities_match(expected: &IdentitySet, observed: &IdentitySet) -> bool {
         (&expected.commit, &observed.commit),
         (&expected.process, &observed.process),
         (&expected.agent_session, &observed.agent_session),
+        (&expected.model, &observed.model),
         (&expected.gate, &observed.gate),
         (&expected.evidence, &observed.evidence),
     ]
@@ -137,6 +167,15 @@ mod tests {
             run_id: RunId::new("run-1").unwrap(),
             task_id: TaskId::new("task-1").unwrap(),
             repository_id: RepositoryId::new("repo-1").unwrap(),
+            identities: crate::DurableIdentities {
+                worktree: Some(codingmage_contracts::WorktreeId::new("worktree-1").unwrap()),
+                branch: Some("codingmage/task-1".to_owned()),
+                commit: Some("a".repeat(40)),
+                process: Some("pid-10-start-20".to_owned()),
+                agent_session: Some(codingmage_contracts::AttemptId::new("session-1").unwrap()),
+                model: Some("model-1".to_owned()),
+                gate: Some("gate-1".to_owned()),
+            },
             kind: EventKind::Transition {
                 phase: "implementation".to_owned(),
                 effect,
@@ -161,6 +200,7 @@ mod tests {
             commit: Some("0123456789abcdef".to_owned()),
             process: Some("pid-10-start-20".to_owned()),
             agent_session: Some("session-1".to_owned()),
+            model: Some("model-1".to_owned()),
             gate: Some("gate-1".to_owned()),
             evidence: Some("evidence-1".to_owned()),
         }
@@ -205,7 +245,7 @@ mod tests {
             RecoveryDecision::Block
         );
         observed.repository_matches = true;
-        for field in 0..7 {
+        for field in 0..8 {
             let mut changed = expected.clone();
             match field {
                 0 => changed.worktree = Some("other".to_owned()),
@@ -214,6 +254,7 @@ mod tests {
                 3 => changed.process = Some("other".to_owned()),
                 4 => changed.agent_session = Some("other".to_owned()),
                 5 => changed.gate = Some("other".to_owned()),
+                6 => changed.model = Some("other".to_owned()),
                 _ => changed.evidence = Some("other".to_owned()),
             }
             observed.identities = changed;
@@ -222,5 +263,19 @@ mod tests {
                 RecoveryDecision::Block
             );
         }
+    }
+
+    #[test]
+    fn recovery_expectations_are_derived_from_durable_identity_fields() {
+        let record = record(EffectClass::StateChanging, EventOutcome::Uncertain);
+        let derived = IdentitySet::from_record(&record);
+        assert_eq!(derived.worktree.as_deref(), Some("worktree-1"));
+        assert_eq!(derived.branch.as_deref(), Some("codingmage/task-1"));
+        assert_eq!(derived.commit.as_deref(), Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        assert_eq!(derived.process.as_deref(), Some("pid-10-start-20"));
+        assert_eq!(derived.agent_session.as_deref(), Some("session-1"));
+        assert_eq!(derived.model.as_deref(), Some("model-1"));
+        assert_eq!(derived.gate.as_deref(), Some("gate-1"));
+        assert_eq!(derived.evidence.as_deref(), Some("evidence-1"));
     }
 }

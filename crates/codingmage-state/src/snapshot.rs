@@ -216,6 +216,7 @@ mod tests {
             run_id: RunId::new("run-1").unwrap(),
             task_id: TaskId::new(task).unwrap(),
             repository_id: RepositoryId::new("repo-1").unwrap(),
+            identities: crate::DurableIdentities::default(),
             kind: EventKind::Transition {
                 phase: phase.to_owned(),
                 effect: EffectClass::ReadOnly,

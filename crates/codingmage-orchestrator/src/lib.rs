@@ -9,7 +9,7 @@ use std::{
 use codingmage_contracts::{EvidenceId, RepositoryId, RunId, TaskId};
 use codingmage_plan::{CheckState, PlanError, SelectedWork, TaskPlan};
 use codingmage_state::{
-    EffectClass, EventKind, EventOutcome, Journal, JournalEvent, RedactedField,
+    DurableIdentities, EffectClass, EventKind, EventOutcome, Journal, JournalEvent, RedactedField,
 };
 use serde::{Deserialize, Serialize};
 
@@ -272,12 +272,13 @@ pub struct DurableWorkflowPort<'a, P> {
     repository_id: RepositoryId,
     run_id: RunId,
     task_id: TaskId,
+    identities: DurableIdentities,
 }
 
 impl<'a, P> DurableWorkflowPort<'a, P> {
     /// Wraps an existing port with durable, content-minimized intent and observation records.
     #[must_use]
-    pub const fn new(
+    pub fn new(
         inner: &'a mut P,
         journal: &'a mut Journal,
         repository_id: RepositoryId,
@@ -290,7 +291,15 @@ impl<'a, P> DurableWorkflowPort<'a, P> {
             repository_id,
             run_id,
             task_id,
+            identities: DurableIdentities::default(),
         }
+    }
+
+    /// Adds exact external identities that will be copied into every subsequent durable event.
+    #[must_use]
+    pub fn with_identities(mut self, identities: DurableIdentities) -> Self {
+        self.identities = identities;
+        self
     }
 
     fn record_intent(&mut self, operation: WorkflowOperation) -> Result<(), OrchestrationError> {
@@ -331,6 +340,7 @@ impl<'a, P> DurableWorkflowPort<'a, P> {
                 run_id: self.run_id.clone(),
                 task_id: self.task_id.clone(),
                 repository_id: self.repository_id.clone(),
+                identities: self.identities.clone(),
                 kind,
                 outcome,
                 evidence,

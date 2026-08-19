@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use codingmage_contracts::{EvidenceId, RepositoryId, RunId, TaskId};
+use codingmage_contracts::{AttemptId, EvidenceId, RepositoryId, RunId, TaskId, WorktreeId};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -101,6 +101,26 @@ pub struct RedactedField {
     pub category: String,
 }
 
+/// Optional exact external identities persisted for recovery reconciliation.
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct DurableIdentities {
+    /// Coordinator-owned worktree identity.
+    pub worktree: Option<WorktreeId>,
+    /// Exact branch name.
+    pub branch: Option<String>,
+    /// Full commit object identity.
+    pub commit: Option<String>,
+    /// Exact process start identity, not a PID alone.
+    pub process: Option<String>,
+    /// Exact provider session identity.
+    pub agent_session: Option<AttemptId>,
+    /// Resolved model identifier.
+    pub model: Option<String>,
+    /// Exact deterministic gate identifier.
+    pub gate: Option<String>,
+}
+
 impl RedactedField {
     /// Creates a marker after validating its content-free category.
     ///
@@ -126,6 +146,9 @@ pub struct JournalEvent {
     pub task_id: TaskId,
     /// Exact repository identity.
     pub repository_id: RepositoryId,
+    /// Exact external identities known at this transition.
+    #[serde(default)]
+    pub identities: DurableIdentities,
     /// Typed event kind.
     pub kind: EventKind,
     /// Typed result.
@@ -355,6 +378,32 @@ fn load_records(path: &Path) -> Result<Vec<JournalRecord>, JournalError> {
 }
 
 fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
+    if event
+        .identities
+        .branch
+        .as_deref()
+        .is_some_and(|value| !valid_reference(value))
+        || event.identities.commit.as_deref().is_some_and(|value| {
+            !matches!(value.len(), 40 | 64) || !value.bytes().all(|byte| byte.is_ascii_hexdigit())
+        })
+        || event
+            .identities
+            .process
+            .as_deref()
+            .is_some_and(|value| validate_label(value).is_err())
+        || event
+            .identities
+            .model
+            .as_deref()
+            .is_some_and(|value| validate_label(value).is_err())
+        || event
+            .identities
+            .gate
+            .as_deref()
+            .is_some_and(|value| validate_label(value).is_err())
+    {
+        return Err(JournalError::InvalidField);
+    }
     match &event.kind {
         EventKind::Transition { phase, .. } | EventKind::EffectObserved { phase } => {
             validate_label(phase)?;
@@ -376,6 +425,16 @@ fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
         validate_label(&redaction.category)?;
     }
     Ok(())
+}
+
+fn valid_reference(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 256
+        && !value.starts_with('-')
+        && !value.contains("..")
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'/'))
 }
 
 fn validate_label(value: &str) -> Result<(), JournalError> {
@@ -507,6 +566,15 @@ mod tests {
             run_id: RunId::new("run-1").unwrap(),
             task_id: TaskId::new("task-1").unwrap(),
             repository_id: RepositoryId::new("repo-1").unwrap(),
+            identities: DurableIdentities {
+                worktree: Some(WorktreeId::new("worktree-1").unwrap()),
+                branch: Some("codingmage/task-1".to_owned()),
+                commit: Some("a".repeat(40)),
+                process: Some("pid-10-start-20".to_owned()),
+                agent_session: Some(AttemptId::new("session-1").unwrap()),
+                model: Some("model-1".to_owned()),
+                gate: Some("gate-1".to_owned()),
+            },
             kind: EventKind::Transition {
                 phase: "implementing".to_owned(),
                 effect: EffectClass::StateChanging,
@@ -599,6 +667,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn detects_each_field_mutation_and_unknown_field() {
         let root = root("mutations");
         let mut journal = Journal::open(&root, "owner").unwrap();
@@ -623,6 +692,34 @@ mod tests {
             (
                 "/event/repository_id",
                 serde_json::Value::String("repo-2".to_owned()),
+            ),
+            (
+                "/event/identities/worktree",
+                serde_json::Value::String("worktree-2".to_owned()),
+            ),
+            (
+                "/event/identities/branch",
+                serde_json::Value::String("codingmage/task-2".to_owned()),
+            ),
+            (
+                "/event/identities/commit",
+                serde_json::Value::String("b".repeat(40)),
+            ),
+            (
+                "/event/identities/process",
+                serde_json::Value::String("pid-11-start-21".to_owned()),
+            ),
+            (
+                "/event/identities/agent_session",
+                serde_json::Value::String("session-2".to_owned()),
+            ),
+            (
+                "/event/identities/model",
+                serde_json::Value::String("model-2".to_owned()),
+            ),
+            (
+                "/event/identities/gate",
+                serde_json::Value::String("gate-2".to_owned()),
             ),
             (
                 "/event/kind/transition/phase",
