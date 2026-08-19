@@ -1,9 +1,16 @@
 //! Fail-closed task lifecycle and port-driven one-unit orchestration.
 
-use std::{collections::BTreeSet, fmt};
+use std::{
+    collections::BTreeSet,
+    fmt,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
-use codingmage_contracts::{EvidenceId, RunId, TaskId};
+use codingmage_contracts::{EvidenceId, RepositoryId, RunId, TaskId};
 use codingmage_plan::{CheckState, PlanError, SelectedWork, TaskPlan};
+use codingmage_state::{
+    EffectClass, EventKind, EventOutcome, Journal, JournalEvent, RedactedField,
+};
 use serde::{Deserialize, Serialize};
 
 /// Durable lifecycle state for one bounded task.
@@ -202,6 +209,216 @@ pub trait WorkflowPort {
     fn reconcile_completion(&mut self) -> Result<EvidenceId, OrchestrationError>;
     /// Releases all exact owned resources. This is called on every return path after claim.
     fn release(&mut self) -> Result<EvidenceId, OrchestrationError>;
+}
+
+/// Stable workflow operations persisted before and after delegated effects.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WorkflowOperation {
+    /// Acquire task ownership.
+    Claim,
+    /// Create implementation resources.
+    StartImplementation,
+    /// Await an implementation result.
+    FinishImplementation,
+    /// Execute deterministic local verification.
+    VerifyLocal,
+    /// Execute read-only senior review.
+    Review,
+    /// Apply an accepted correction packet.
+    Correct,
+    /// Execute final verification.
+    VerifyFinal,
+    /// Persist successful checkpoint state.
+    Checkpoint,
+    /// Reconcile canonical completion.
+    ReconcileCompletion,
+    /// Release exact owned resources.
+    Release,
+}
+
+impl WorkflowOperation {
+    const fn phase(self) -> &'static str {
+        match self {
+            Self::Claim => "claim",
+            Self::StartImplementation => "start_implementation",
+            Self::FinishImplementation => "finish_implementation",
+            Self::VerifyLocal => "verify_local",
+            Self::Review => "review",
+            Self::Correct => "correct",
+            Self::VerifyFinal => "verify_final",
+            Self::Checkpoint => "checkpoint",
+            Self::ReconcileCompletion => "reconcile_completion",
+            Self::Release => "release",
+        }
+    }
+
+    const fn effect(self) -> EffectClass {
+        match self {
+            Self::FinishImplementation | Self::VerifyLocal | Self::Review | Self::VerifyFinal => {
+                EffectClass::ReadOnly
+            }
+            Self::Checkpoint | Self::Release => EffectClass::Idempotent,
+            Self::Claim | Self::StartImplementation | Self::Correct | Self::ReconcileCompletion => {
+                EffectClass::StateChanging
+            }
+        }
+    }
+}
+
+/// Journaling adapter that records intent before delegating every workflow operation.
+pub struct DurableWorkflowPort<'a, P> {
+    inner: &'a mut P,
+    journal: &'a mut Journal,
+    repository_id: RepositoryId,
+    run_id: RunId,
+    task_id: TaskId,
+}
+
+impl<'a, P> DurableWorkflowPort<'a, P> {
+    /// Wraps an existing port with durable, content-minimized intent and observation records.
+    #[must_use]
+    pub const fn new(
+        inner: &'a mut P,
+        journal: &'a mut Journal,
+        repository_id: RepositoryId,
+        run_id: RunId,
+        task_id: TaskId,
+    ) -> Self {
+        Self {
+            inner,
+            journal,
+            repository_id,
+            run_id,
+            task_id,
+        }
+    }
+
+    fn record_intent(&mut self, operation: WorkflowOperation) -> Result<(), OrchestrationError> {
+        self.append_event(
+            EventKind::Transition {
+                phase: operation.phase().to_owned(),
+                effect: operation.effect(),
+            },
+            EventOutcome::Uncertain,
+            Vec::new(),
+        )
+    }
+
+    fn record_observation(
+        &mut self,
+        operation: WorkflowOperation,
+        evidence: EvidenceId,
+    ) -> Result<EvidenceId, OrchestrationError> {
+        self.append_event(
+            EventKind::EffectObserved {
+                phase: operation.phase().to_owned(),
+            },
+            EventOutcome::Succeeded,
+            vec![evidence.clone()],
+        )?;
+        Ok(evidence)
+    }
+
+    fn append_event(
+        &mut self,
+        kind: EventKind,
+        outcome: EventOutcome,
+        evidence: Vec<EvidenceId>,
+    ) -> Result<(), OrchestrationError> {
+        self.journal
+            .append(JournalEvent {
+                timestamp_ms: timestamp_ms()?,
+                run_id: self.run_id.clone(),
+                task_id: self.task_id.clone(),
+                repository_id: self.repository_id.clone(),
+                kind,
+                outcome,
+                evidence,
+                redactions: vec![
+                    RedactedField::new("provider_output")
+                        .map_err(|_| OrchestrationError::DurableState)?,
+                    RedactedField::new("source_content")
+                        .map_err(|_| OrchestrationError::DurableState)?,
+                ],
+            })
+            .map_err(|_| OrchestrationError::DurableState)?;
+        self.journal
+            .write_snapshot()
+            .map(|_| ())
+            .map_err(|_| OrchestrationError::DurableState)
+    }
+}
+
+impl<P: WorkflowPort> WorkflowPort for DurableWorkflowPort<'_, P> {
+    fn claim(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.record_intent(WorkflowOperation::Claim)?;
+        let value = self.inner.claim()?;
+        self.record_observation(WorkflowOperation::Claim, value)
+    }
+
+    fn start_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.record_intent(WorkflowOperation::StartImplementation)?;
+        let value = self.inner.start_implementation()?;
+        self.record_observation(WorkflowOperation::StartImplementation, value)
+    }
+
+    fn finish_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.record_intent(WorkflowOperation::FinishImplementation)?;
+        let value = self.inner.finish_implementation()?;
+        self.record_observation(WorkflowOperation::FinishImplementation, value)
+    }
+
+    fn verify_local(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError> {
+        self.record_intent(WorkflowOperation::VerifyLocal)?;
+        let (outcome, evidence) = self.inner.verify_local()?;
+        let evidence = self.record_observation(WorkflowOperation::VerifyLocal, evidence)?;
+        Ok((outcome, evidence))
+    }
+
+    fn review(&mut self) -> Result<(ReviewOutcome, EvidenceId), OrchestrationError> {
+        self.record_intent(WorkflowOperation::Review)?;
+        let (outcome, evidence) = self.inner.review()?;
+        let evidence = self.record_observation(WorkflowOperation::Review, evidence)?;
+        Ok((outcome, evidence))
+    }
+
+    fn correct(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.record_intent(WorkflowOperation::Correct)?;
+        let value = self.inner.correct()?;
+        self.record_observation(WorkflowOperation::Correct, value)
+    }
+
+    fn verify_final(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError> {
+        self.record_intent(WorkflowOperation::VerifyFinal)?;
+        let (outcome, evidence) = self.inner.verify_final()?;
+        let evidence = self.record_observation(WorkflowOperation::VerifyFinal, evidence)?;
+        Ok((outcome, evidence))
+    }
+
+    fn checkpoint(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.record_intent(WorkflowOperation::Checkpoint)?;
+        let value = self.inner.checkpoint()?;
+        self.record_observation(WorkflowOperation::Checkpoint, value)
+    }
+
+    fn reconcile_completion(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.record_intent(WorkflowOperation::ReconcileCompletion)?;
+        let value = self.inner.reconcile_completion()?;
+        self.record_observation(WorkflowOperation::ReconcileCompletion, value)
+    }
+
+    fn release(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.record_intent(WorkflowOperation::Release)?;
+        let value = self.inner.release()?;
+        self.record_observation(WorkflowOperation::Release, value)
+    }
+}
+
+fn timestamp_ms() -> Result<u64, OrchestrationError> {
+    let elapsed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| OrchestrationError::DurableState)?;
+    u64::try_from(elapsed.as_millis()).map_err(|_| OrchestrationError::DurableState)
 }
 
 /// One-unit coordinator that alone may advance task state.
@@ -435,6 +652,8 @@ pub enum OrchestrationError {
     Port,
     /// Canonical plan changed outside the exact evidenced completion.
     PlanDrift,
+    /// Durable intent or observation could not be recorded.
+    DurableState,
 }
 
 impl fmt::Display for OrchestrationError {
@@ -446,6 +665,7 @@ impl fmt::Display for OrchestrationError {
             Self::Evidence => "codingmage.orchestration.evidence",
             Self::Port => "codingmage.orchestration.port",
             Self::PlanDrift => "codingmage.orchestration.plan_drift",
+            Self::DurableState => "codingmage.orchestration.durable_state",
         })
     }
 }
@@ -524,6 +744,10 @@ const fn map_plan_error(_error: PlanError) -> OrchestrationError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use codingmage_state::{
+        IdentitySet, LiveObservation, RecoveryDecision, SnapshotEnvelope, reconcile_after_restart,
+    };
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     #[derive(Default)]
     struct FakePort {
@@ -592,6 +816,17 @@ mod tests {
         OneUnitCoordinator::new(RunId::new("run-1").unwrap(), TaskId::new("task-1").unwrap())
     }
 
+    fn state_root(label: &str) -> std::path::PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "codingmage-orchestrator-{label}-{}-{unique}",
+            std::process::id()
+        ))
+    }
+
     #[test]
     fn fake_vertical_slice_completes_exactly_one_unit() {
         let mut coordinator = new_coordinator();
@@ -611,6 +846,85 @@ mod tests {
                 "release"
             ]
         );
+    }
+
+    #[test]
+    fn durable_vertical_slice_records_each_intent_and_observation() {
+        let root = state_root("complete");
+        let mut journal = Journal::open(&root, "owner").unwrap();
+        let run = RunId::new("run-1").unwrap();
+        let task = TaskId::new("task-1").unwrap();
+        let mut inner = FakePort::default();
+        let mut coordinator = OneUnitCoordinator::new(run.clone(), task.clone());
+        {
+            let mut durable = DurableWorkflowPort::new(
+                &mut inner,
+                &mut journal,
+                RepositoryId::new("repo-1").unwrap(),
+                run,
+                task,
+            );
+            assert_eq!(coordinator.run(&mut durable), Ok(TaskState::Complete));
+        }
+        assert_eq!(journal.records().len(), 18);
+        for pair in journal.records().chunks_exact(2) {
+            assert!(matches!(pair[0].event.kind, EventKind::Transition { .. }));
+            assert_eq!(pair[0].event.outcome, EventOutcome::Uncertain);
+            assert!(matches!(
+                pair[1].event.kind,
+                EventKind::EffectObserved { .. }
+            ));
+            assert_eq!(pair[1].event.outcome, EventOutcome::Succeeded);
+        }
+        SnapshotEnvelope::load(&root, journal.records()).unwrap();
+        drop(journal);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn crash_after_every_durable_intent_never_replays_state_change() {
+        let operations = [
+            WorkflowOperation::Claim,
+            WorkflowOperation::StartImplementation,
+            WorkflowOperation::FinishImplementation,
+            WorkflowOperation::VerifyLocal,
+            WorkflowOperation::Review,
+            WorkflowOperation::Correct,
+            WorkflowOperation::VerifyFinal,
+            WorkflowOperation::Checkpoint,
+            WorkflowOperation::ReconcileCompletion,
+            WorkflowOperation::Release,
+        ];
+        for operation in operations {
+            let root = state_root(operation.phase());
+            let mut journal = Journal::open(&root, "owner").unwrap();
+            let mut inner = FakePort::default();
+            {
+                let mut durable = DurableWorkflowPort::new(
+                    &mut inner,
+                    &mut journal,
+                    RepositoryId::new("repo-1").unwrap(),
+                    RunId::new("run-1").unwrap(),
+                    TaskId::new("task-1").unwrap(),
+                );
+                durable.record_intent(operation).unwrap();
+            }
+            let expected = IdentitySet::default();
+            let observed = LiveObservation {
+                repository_matches: true,
+                identities: IdentitySet::default(),
+            };
+            let decision = reconcile_after_restart(journal.records(), &expected, &observed).0;
+            let expected_decision = if operation.effect() == EffectClass::StateChanging {
+                RecoveryDecision::Reobserve
+            } else {
+                RecoveryDecision::Resume
+            };
+            assert_eq!(decision, expected_decision, "operation={operation:?}");
+            SnapshotEnvelope::load(&root, journal.records()).unwrap();
+            drop(journal);
+            std::fs::remove_dir_all(root).unwrap();
+        }
     }
 
     #[test]

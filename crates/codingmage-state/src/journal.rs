@@ -1,13 +1,15 @@
 use std::{
     fmt,
     fs::{self, File, OpenOptions},
-    io::{BufRead, BufReader, Read, Write},
+    io::{BufRead, BufReader, Write},
     path::{Path, PathBuf},
 };
 
 use codingmage_contracts::{EvidenceId, RepositoryId, RunId, TaskId};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+
+use crate::snapshot::{Snapshot, SnapshotEnvelope, SnapshotError};
 
 /// Maximum encoded size of one journal record, including its line terminator.
 pub const MAX_RECORD_BYTES: usize = 64 * 1024;
@@ -189,12 +191,11 @@ impl JournalRecord {
 /// Exclusive exact-owner lock for one journal writer.
 #[derive(Debug)]
 pub struct JournalLock {
-    path: PathBuf,
-    token: String,
+    _file: File,
 }
 
 impl JournalLock {
-    /// Acquires a create-only lock containing a caller-generated opaque owner token.
+    /// Acquires a nonblocking OS lock containing a caller-generated opaque owner token.
     ///
     /// # Errors
     ///
@@ -205,37 +206,22 @@ impl JournalLock {
         private_directory(root)?;
         let path = root.join("journal.lock");
         let mut file = OpenOptions::new()
+            .read(true)
             .write(true)
-            .create_new(true)
+            .create(true)
+            .truncate(false)
             .open(&path)
-            .map_err(|error| {
-                if error.kind() == std::io::ErrorKind::AlreadyExists {
-                    JournalError::Locked
-                } else {
-                    JournalError::Io
-                }
-            })?;
+            .map_err(|_| JournalError::Io)?;
+        file.try_lock().map_err(|error| match error {
+            std::fs::TryLockError::WouldBlock => JournalError::Locked,
+            std::fs::TryLockError::Error(_) => JournalError::Io,
+        })?;
+        file.set_len(0).map_err(|_| JournalError::Io)?;
         file.write_all(token.as_bytes())
             .map_err(|_| JournalError::Io)?;
         file.sync_all().map_err(|_| JournalError::Io)?;
         sync_directory(root)?;
-        Ok(Self { path, token })
-    }
-}
-
-impl Drop for JournalLock {
-    fn drop(&mut self) {
-        let mut contents = String::new();
-        let owned = File::open(&self.path)
-            .and_then(|mut file| file.read_to_string(&mut contents))
-            .is_ok()
-            && contents == self.token;
-        if owned {
-            let _ = fs::remove_file(&self.path);
-            if let Some(parent) = self.path.parent() {
-                let _ = sync_directory(parent);
-            }
-        }
+        Ok(Self { _file: file })
     }
 }
 
@@ -300,6 +286,15 @@ impl Journal {
         sync_directory(&self.root)?;
         self.records.push(record);
         Ok(&self.records[self.records.len() - 1])
+    }
+
+    /// Derives and atomically persists a snapshot at the current accepted journal tip.
+    ///
+    /// # Errors
+    ///
+    /// Returns a snapshot encoding, integrity, or durable I/O error.
+    pub fn write_snapshot(&self) -> Result<SnapshotEnvelope, SnapshotError> {
+        Snapshot::derive(&self.records).write_atomic(&self.root)
     }
 }
 
@@ -450,7 +445,11 @@ impl std::error::Error for JournalError {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::{
+        process::Command,
+        thread,
+        time::{Duration, SystemTime, UNIX_EPOCH},
+    };
 
     fn root(name: &str) -> PathBuf {
         let unique = SystemTime::now()
@@ -480,6 +479,17 @@ mod tests {
     }
 
     #[test]
+    fn lock_holder_subprocess() {
+        let Ok(root) = std::env::var("CODINGMAGE_TEST_LOCK_ROOT") else {
+            return;
+        };
+        let root = PathBuf::from(root);
+        let _journal = Journal::open(&root, "child-owner").unwrap();
+        fs::write(root.join("child-ready"), b"ready").unwrap();
+        thread::sleep(Duration::from_secs(30));
+    }
+
+    #[test]
     fn appends_reopens_and_enforces_exact_writer() {
         let root = root("round-trip");
         let mut journal = Journal::open(&root, "owner-one").unwrap();
@@ -501,15 +511,51 @@ mod tests {
     }
 
     #[test]
-    fn lock_drop_never_removes_another_owner_token() {
+    fn lock_releases_automatically_and_never_removes_owner_record() {
         let root = root("lock-replacement");
         let lock = JournalLock::acquire(&root, "owner-one").unwrap();
-        fs::write(root.join("journal.lock"), "owner-two").unwrap();
+        assert_eq!(
+            JournalLock::acquire(&root, "owner-two").unwrap_err(),
+            JournalError::Locked
+        );
         drop(lock);
+        let second = JournalLock::acquire(&root, "owner-two").unwrap();
         assert_eq!(
             fs::read_to_string(root.join("journal.lock")).unwrap(),
             "owner-two"
         );
+        drop(second);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn hard_process_exit_releases_writer_ownership() {
+        let root = root("crash-lock");
+        fs::create_dir_all(&root).unwrap();
+        let mut child = Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "journal::tests::lock_holder_subprocess",
+                "--nocapture",
+            ])
+            .env("CODINGMAGE_TEST_LOCK_ROOT", &root)
+            .spawn()
+            .unwrap();
+        for _ in 0..100 {
+            if root.join("child-ready").exists() {
+                break;
+            }
+            thread::sleep(Duration::from_millis(20));
+        }
+        assert!(root.join("child-ready").exists());
+        assert_eq!(
+            Journal::open(&root, "parent-owner").unwrap_err(),
+            JournalError::Locked
+        );
+        child.kill().unwrap();
+        child.wait().unwrap();
+        let recovered = Journal::open(&root, "parent-owner").unwrap();
+        drop(recovered);
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -544,7 +590,6 @@ mod tests {
             assert!(
                 Journal::open(&root, format!("mutator-{}", pointer.replace('/', "-"))).is_err()
             );
-            fs::remove_file(root.join("journal.lock")).ok();
         }
         let mut unknown = value;
         unknown
@@ -560,7 +605,6 @@ mod tests {
             Journal::open(&root, "unknown"),
             Err(JournalError::Corrupt { sequence: 0 })
         ));
-        fs::remove_file(root.join("journal.lock")).ok();
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -581,7 +625,6 @@ mod tests {
         ] {
             fs::write(&path, content).unwrap();
             assert!(Journal::open(&root, "reader").is_err());
-            fs::remove_file(root.join("journal.lock")).ok();
         }
         let mut second: serde_json::Value = serde_json::from_str(lines[1]).unwrap();
         second["prior_hash"] = serde_json::Value::String(GENESIS_HASH.to_owned());
@@ -598,7 +641,6 @@ mod tests {
             Journal::open(&root, "reader").unwrap_err(),
             JournalError::Chain { sequence: 1 }
         );
-        fs::remove_file(root.join("journal.lock")).ok();
         fs::remove_dir_all(root).unwrap();
     }
 
