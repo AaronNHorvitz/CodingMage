@@ -18,6 +18,12 @@ SPEC = importlib.util.spec_from_file_location(
 assert SPEC is not None and SPEC.loader is not None
 INSTALLER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(INSTALLER)
+PACKAGE_SPEC = importlib.util.spec_from_file_location(
+    "package_release", ROOT / "scripts" / "package_release.py"
+)
+assert PACKAGE_SPEC is not None and PACKAGE_SPEC.loader is not None
+PACKAGER = importlib.util.module_from_spec(PACKAGE_SPEC)
+PACKAGE_SPEC.loader.exec_module(PACKAGER)
 
 
 def archive(root: Path, name: str, content: bytes) -> Path:
@@ -36,6 +42,13 @@ def archive(root: Path, name: str, content: bytes) -> Path:
 
 
 class ReleaseToolsTest(unittest.TestCase):
+    def test_local_build_paths_are_rejected_without_printing_content(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="codingmage-packager-test-") as temporary:
+            binary = Path(temporary) / "binary"
+            binary.write_bytes(f"prefix {PACKAGER.ROOT} suffix".encode())
+            with self.assertRaisesRegex(RuntimeError, "local build path"):
+                PACKAGER.reject_local_paths(binary)
+
     def test_install_upgrade_verify_rollback_remove_preserves_unrelated_data(self) -> None:
         with tempfile.TemporaryDirectory(prefix="codingmage-installer-test-") as temporary:
             root = Path(temporary)

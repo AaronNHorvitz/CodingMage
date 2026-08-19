@@ -21,11 +21,21 @@ VERSION = "0.1.0"
 
 
 def run(*arguments: str, cwd: Path = ROOT) -> bytes:
+    home = Path.home()
+    remaps = {
+        ROOT.resolve(): Path("/usr/src/codingmage"),
+        home: Path("/build/home"),
+        home.resolve(): Path("/build/home"),
+    }
     environment = {
         "HOME": os.environ.get("HOME", "/nonexistent"),
         "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
         "SOURCE_DATE_EPOCH": source_epoch(),
         "CARGO_INCREMENTAL": "0",
+        "RUSTFLAGS": " ".join(
+            f"--remap-path-prefix={source}={destination}"
+            for source, destination in sorted(remaps.items(), key=lambda item: str(item[0]))
+        ),
     }
     if "CARGO_TARGET_DIR" in os.environ:
         environment["CARGO_TARGET_DIR"] = os.environ["CARGO_TARGET_DIR"]
@@ -75,7 +85,21 @@ def build_binary(target_dir: Path) -> Path:
     binary = target_dir / "release" / "codingmage"
     if not binary.is_file():
         raise RuntimeError("release binary is missing")
+    reject_local_paths(binary)
     return binary
+
+
+def reject_local_paths(binary: Path) -> None:
+    content = binary.read_bytes()
+    candidates = {
+        str(ROOT),
+        str(ROOT.resolve()),
+        str(Path.home()),
+        str(Path.home().resolve()),
+    }
+    for candidate in candidates:
+        if candidate and candidate.encode() in content:
+            raise RuntimeError("release binary contains a local build path")
 
 
 def write_sbom(destination: Path, cargo_metadata: dict[str, object]) -> None:
