@@ -1,0 +1,15 @@
+[package]
+name = "codingmage-review"
+description = "Finding lifecycle and bounded correction policy for CodingMage"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+codingmage-contracts.workspace = true
+serde.workspace = true
+
+[lints]
+workspace = true
