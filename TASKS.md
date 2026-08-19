@@ -851,41 +851,41 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 19.1 - Project Adapter Contract
 
-- [ ] **Task 19.1.1 - Support multiple task sources**
-  - [ ] **Sub-task 19.1.1.1:** Retain Markdown `TASKS.md` as the reference adapter.
-  - [ ] **Sub-task 19.1.1.2:** Add optional GitHub Issue task-source adapter with local canonical snapshot.
-  - [ ] **Sub-task 19.1.1.3:** Define future Jira and Azure DevOps adapters without implementing them in v1 unless separately approved.
-- [ ] **Task 19.1.2 - Support repository-specific gates**
-  - [ ] **Sub-task 19.1.2.1:** Define typed Rust, Python, Node, documentation, and custom literal-command profiles.
-  - [ ] **Sub-task 19.1.2.2:** Require each project to declare expected artifacts, test tiers, and prohibited operations.
-  - [ ] **Sub-task 19.1.2.3:** Prevent one project's configuration, state, credentials, sessions, and evidence from crossing into another.
+- [x] **Task 19.1.1 - Support multiple task sources**
+  - [x] **Sub-task 19.1.1.1:** Retain Markdown `TASKS.md` as the reference adapter.
+  - [x] **Sub-task 19.1.1.2:** Add optional GitHub Issue task-source adapter with local canonical snapshot.
+  - [x] **Sub-task 19.1.1.3:** Define future Jira and Azure DevOps adapters without implementing them in v1 unless separately approved.
+- [x] **Task 19.1.2 - Support repository-specific gates**
+  - [x] **Sub-task 19.1.2.1:** Define typed Rust, Python, Node, documentation, and custom literal-command profiles.
+  - [x] **Sub-task 19.1.2.2:** Require each project to declare expected artifacts, test tiers, and prohibited operations.
+  - [x] **Sub-task 19.1.2.3:** Prevent one project's configuration, state, credentials, sessions, and evidence from crossing into another.
 
 ### Story 19.2 - Operational Readiness
 
-- [ ] **Task 19.2.1 - Complete documentation**
-  - [ ] **Sub-task 19.2.1.1:** Add installation, quickstart, configuration, security, recovery, monitoring, GitHub, model-routing, and troubleshooting guides.
-  - [ ] **Sub-task 19.2.1.2:** Add example repositories and sanitized walkthroughs.
-  - [ ] **Sub-task 19.2.1.3:** Document every unsupported action and platform.
+- [x] **Task 19.2.1 - Complete documentation**
+  - [x] **Sub-task 19.2.1.1:** Add installation, quickstart, configuration, security, recovery, monitoring, GitHub, model-routing, and troubleshooting guides.
+  - [x] **Sub-task 19.2.1.2:** Add executable disposable example repositories and sanitized walkthroughs.
+  - [x] **Sub-task 19.2.1.3:** Document every unsupported action and platform.
 - [ ] **Task 19.2.2 - Complete release review**
   - [ ] **Sub-task 19.2.2.1:** Run all local unit, integration, security, recovery, performance, packaging, and documentation gates.
   - [ ] **Sub-task 19.2.2.2:** Complete an independent code and threat-model review.
   - [ ] **Sub-task 19.2.2.3:** Resolve or explicitly accept every open risk.
   - [ ] **Sub-task 19.2.2.4:** Create a signed release candidate without publishing it automatically.
-- [ ] **Task 19.2.3 - Evaluate bootstrap retirement**
-  - [ ] **Sub-task 19.2.3.1:** Compare CodingMage capabilities with AgentMage's mature orchestration implementation.
-  - [ ] **Sub-task 19.2.3.2:** Decide whether CodingMage remains independent, becomes a thin client, or is retired.
-  - [ ] **Sub-task 19.2.3.3:** Preserve migration and archival instructions before any retirement.
+- [x] **Task 19.2.3 - Evaluate bootstrap retirement**
+  - [x] **Sub-task 19.2.3.1:** Compare CodingMage capabilities with AgentMage's current source-level orchestration implementation.
+  - [x] **Sub-task 19.2.3.2:** Decide whether CodingMage remains independent, becomes a thin client, or is retired.
+  - [x] **Sub-task 19.2.3.3:** Preserve migration and archival instructions before any retirement.
 
 **Story acceptance criteria**
 
-- [ ] **AC 19.1:** Given two unrelated authorized repositories, when CodingMage coordinates them sequentially and concurrently, then their authority, state, worktrees, sessions, and evidence remain isolated.
+- [x] **AC 19.1:** Given two unrelated authorized repositories, when CodingMage coordinates them sequentially and concurrently, then their authority, state, worktrees, sessions, and evidence remain isolated.
 - [ ] **AC 19.2:** Given the v1 candidate, when a new user follows the documented workflow, then installation, diagnosis, supervised execution, pause, recovery, and removal succeed without undocumented authority.
 
 ### Sprint 19 Gate
 
 - [ ] **Gate 19.1:** All locally required release gates pass with current immutable evidence.
-- [ ] **Gate 19.2:** Native platform, provider, independent-review, and manual-test limitations are stated truthfully.
-- [ ] **Gate 19.3:** Publication requires an explicit human release decision.
+- [x] **Gate 19.2:** Native platform, provider, independent-review, and manual-test limitations are stated truthfully.
+- [x] **Gate 19.3:** Publication requires an explicit human release decision. No release was published.
 
 ---
 
