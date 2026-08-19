@@ -54,6 +54,13 @@ pub enum EventKind {
         /// Stable machine-readable reason.
         reason: String,
     },
+    /// An authenticated local lifecycle control was durably accepted.
+    ControlApplied {
+        /// Idempotency identity of the request.
+        request_id: String,
+        /// Stable lifecycle action.
+        action: String,
+    },
 }
 
 /// Stable event result, never provider prose.
@@ -338,6 +345,10 @@ fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
         }
         EventKind::GateObserved { gate_id } => validate_label(gate_id)?,
         EventKind::RecoveryBlocked { reason } => validate_label(reason)?,
+        EventKind::ControlApplied { request_id, action } => {
+            validate_label(request_id)?;
+            validate_label(action)?;
+        }
     }
     for redaction in &event.redactions {
         validate_label(&redaction.category)?;

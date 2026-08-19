@@ -95,7 +95,9 @@ pub fn reconcile_after_restart(
         } if last.event.outcome != EventOutcome::Failed => {
             (RecoveryDecision::Reobserve, RecoveryReason::UncertainEffect)
         }
-        EventKind::Transition { .. } | EventKind::GateObserved { .. } => {
+        EventKind::Transition { .. }
+        | EventKind::GateObserved { .. }
+        | EventKind::ControlApplied { .. } => {
             (RecoveryDecision::Resume, RecoveryReason::RecoverablePhase)
         }
         EventKind::EffectObserved { .. } => {

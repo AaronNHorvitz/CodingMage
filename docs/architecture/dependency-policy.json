@@ -7,6 +7,7 @@
     "codingmage-contracts": [],
     "codingmage-core": ["codingmage-contracts"],
     "codingmage-git": ["codingmage-contracts", "codingmage-core"],
+    "codingmage-monitor": ["codingmage-contracts", "codingmage-state"],
     "codingmage-gate": ["codingmage-contracts", "codingmage-process"],
     "codingmage-plan": ["codingmage-contracts"],
     "codingmage-orchestrator": ["codingmage-contracts", "codingmage-plan", "codingmage-state"],
