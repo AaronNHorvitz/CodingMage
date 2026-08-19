@@ -282,4 +282,21 @@ mod tests {
         drop(journal);
         fs::remove_dir_all(root).unwrap();
     }
+
+    #[test]
+    fn abandoned_temporary_write_cannot_replace_last_durable_snapshot() {
+        let root = root();
+        let mut journal = Journal::open(&root, "owner").unwrap();
+        journal.append(event("task-1", "ready", 1)).unwrap();
+        let expected = Snapshot::derive(journal.records())
+            .write_atomic(&root)
+            .unwrap();
+        fs::write(root.join("snapshot.json.tmp"), b"{torn").unwrap();
+        assert_eq!(
+            SnapshotEnvelope::load(&root, journal.records()).unwrap(),
+            expected
+        );
+        drop(journal);
+        fs::remove_dir_all(root).unwrap();
+    }
 }
