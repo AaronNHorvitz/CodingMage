@@ -779,12 +779,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 17.2 - Controlled AgentMage Pilot
 
-- [ ] **Task 17.2.1 - Prepare AgentMage authorization**
-  - [ ] **Sub-task 17.2.1.1:** Review AgentMage instructions, branch policy, task structure, commands, blockers, and current clean checkpoint.
-  - [ ] **Sub-task 17.2.1.2:** Create a minimal CodingMage target configuration with network and GitHub publication disabled initially.
-  - [ ] **Sub-task 17.2.1.3:** Select one low-risk, dependency-ready AgentMage fixture task.
+- [x] **Task 17.2.1 - Prepare AgentMage authorization.** See `docs/evidence/sprint-17-agentmage-preflight.md`.
+  - [x] **Sub-task 17.2.1.1:** Review AgentMage instructions, branch policy, task structure, commands, blockers, and current clean checkpoint.
+  - [x] **Sub-task 17.2.1.2:** Create a minimal disposable CodingMage target configuration with network, GitHub mutation, and publication disabled.
+  - [x] **Sub-task 17.2.1.3:** Select a low-risk read-only patch-transfer preview fixture mapped to AgentMage sub-task `42.1.1.7` without modifying the real checkout.
 - [ ] **Task 17.2.2 - Run supervised pilot units**
-  - [ ] **Sub-task 17.2.2.1:** Complete one dry run using fake agents against an AgentMage fixture copy.
+  - [x] **Sub-task 17.2.2.1:** Complete one dry run using fake agents against a source-free AgentMage-shaped disposable fixture; exact lifecycle order and zero repository mutation are asserted in `codingmage-soak`.
   - [ ] **Sub-task 17.2.2.2:** Complete one live Claude implementation and Codex review on a disposable AgentMage branch.
   - [ ] **Sub-task 17.2.2.3:** Complete five supervised bounded units with no authority or recovery defect.
   - [ ] **Sub-task 17.2.2.4:** Enable background execution only after explicit owner approval of retained evidence.
