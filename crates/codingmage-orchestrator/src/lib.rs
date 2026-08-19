@@ -3,6 +3,7 @@
 use std::{collections::BTreeSet, fmt};
 
 use codingmage_contracts::{EvidenceId, RunId, TaskId};
+use codingmage_plan::{CheckState, PlanError, SelectedWork, TaskPlan};
 use serde::{Deserialize, Serialize};
 
 /// Durable lifecycle state for one bounded task.
@@ -358,6 +359,67 @@ impl OneUnitCoordinator {
     }
 }
 
+/// Reconciles one evidenced canonical checkbox transition and selects subsequent ready work.
+///
+/// The function reparses both exact source versions. Exactly one checklist item may change, and
+/// that change must be the named open-to-checked item with a new line hash. All titles,
+/// dependencies, hierarchy, and other states must remain byte-derived equivalents.
+///
+/// # Errors
+///
+/// Returns [`OrchestrationError`] when parsing fails, completion evidence is absent, the named item
+/// does not make the exact transition, or any unrelated plan structure changes.
+pub fn reconcile_and_select_next(
+    before_source: &[u8],
+    after_source: &[u8],
+    completed_item_id: &str,
+    completion_evidence: &EvidenceId,
+    blockers: &BTreeSet<String>,
+) -> Result<Option<SelectedWork>, OrchestrationError> {
+    if completion_evidence.as_str().is_empty() {
+        return Err(OrchestrationError::Evidence);
+    }
+    let before = TaskPlan::parse(before_source).map_err(map_plan_error)?;
+    let after = TaskPlan::parse(after_source).map_err(map_plan_error)?;
+    if before.version != after.version
+        || before.sprints != after.sprints
+        || before.stories != after.stories
+        || before.items.len() != after.items.len()
+    {
+        return Err(OrchestrationError::PlanDrift);
+    }
+    let mut changed = 0_usize;
+    for (prior, current) in before.items.iter().zip(&after.items) {
+        if prior.id != current.id
+            || prior.kind != current.kind
+            || prior.title != current.title
+            || prior.parent_id != current.parent_id
+            || prior.dependencies != current.dependencies
+            || prior.anchor.line != current.anchor.line
+        {
+            return Err(OrchestrationError::PlanDrift);
+        }
+        if prior != current {
+            changed = changed.saturating_add(1);
+            if prior.id != completed_item_id
+                || prior.state != CheckState::Open
+                || current.state != CheckState::Checked
+                || prior.anchor.line_sha256 == current.anchor.line_sha256
+            {
+                return Err(OrchestrationError::PlanDrift);
+            }
+        }
+    }
+    if changed != 1 {
+        return Err(OrchestrationError::Evidence);
+    }
+    match after.select_next(blockers) {
+        Ok(selected) => Ok(Some(selected)),
+        Err(PlanError::NoReadyWork) => Ok(None),
+        Err(error) => Err(map_plan_error(error)),
+    }
+}
+
 /// Content-free orchestration failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OrchestrationError {
@@ -371,6 +433,8 @@ pub enum OrchestrationError {
     Evidence,
     /// A workflow port failed.
     Port,
+    /// Canonical plan changed outside the exact evidenced completion.
+    PlanDrift,
 }
 
 impl fmt::Display for OrchestrationError {
@@ -381,6 +445,7 @@ impl fmt::Display for OrchestrationError {
             Self::Transition => "codingmage.orchestration.transition",
             Self::Evidence => "codingmage.orchestration.evidence",
             Self::Port => "codingmage.orchestration.port",
+            Self::PlanDrift => "codingmage.orchestration.plan_drift",
         })
     }
 }
@@ -450,6 +515,10 @@ fn legal_transition(from: TaskState, to: TaskState, intent: SideEffectIntent) ->
 
 fn evidence(value: &str) -> EvidenceId {
     EvidenceId::new(value).expect("static evidence IDs are valid")
+}
+
+const fn map_plan_error(_error: PlanError) -> OrchestrationError {
+    OrchestrationError::PlanDrift
 }
 
 #[cfg(test)]
@@ -654,5 +723,60 @@ mod tests {
             intent: SideEffectIntent::AcquireClaim,
         };
         assert_eq!(machine.apply(&reused), Err(OrchestrationError::Evidence));
+    }
+
+    #[test]
+    fn canonical_progression_accepts_one_completion_and_selects_next() {
+        const BEFORE: &str = "# Plan\n\n## Sprint 0 - Work\n\n**Sprint goal:** Finish work.\n\n### Story 0.1 - Units\n\n- [ ] **Task 0.1.1 - Complete units**\n  - [ ] **Sub-task 0.1.1.1:** Finish first unit.\n  - [ ] **Sub-task 0.1.1.2:** Finish second unit.\n\n- [ ] **AC 0.1.1:** Units pass.\n\n### Sprint 0 Gate\n\n- [ ] **Gate 0.1:** Work passes.\n";
+        let after = BEFORE.replacen("[ ] **Sub-task 0.1.1.1", "[x] **Sub-task 0.1.1.1", 1);
+        let next = reconcile_and_select_next(
+            BEFORE.as_bytes(),
+            after.as_bytes(),
+            "0.1.1.1",
+            &evidence("completion"),
+            &BTreeSet::new(),
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(next.item.id, "0.1.1.2");
+        let blocked = BTreeSet::from(["0.1.1.2".to_owned()]);
+        assert_eq!(
+            reconcile_and_select_next(
+                BEFORE.as_bytes(),
+                after.as_bytes(),
+                "0.1.1.1",
+                &evidence("completion"),
+                &blocked,
+            ),
+            Ok(None)
+        );
+    }
+
+    #[test]
+    fn canonical_progression_rejects_false_completion_and_unrelated_drift() {
+        const BEFORE: &str = "# Plan\n\n## Sprint 0 - Work\n\n**Sprint goal:** Finish work.\n\n### Story 0.1 - Units\n\n- [ ] **Task 0.1.1 - Complete units**\n  - [ ] **Sub-task 0.1.1.1:** Finish first unit.\n  - [ ] **Sub-task 0.1.1.2:** Finish second unit.\n\n- [ ] **AC 0.1.1:** Units pass.\n\n### Sprint 0 Gate\n\n- [ ] **Gate 0.1:** Work passes.\n";
+        assert_eq!(
+            reconcile_and_select_next(
+                BEFORE.as_bytes(),
+                BEFORE.as_bytes(),
+                "0.1.1.1",
+                &evidence("completion"),
+                &BTreeSet::new(),
+            ),
+            Err(OrchestrationError::Evidence)
+        );
+        let drift = BEFORE
+            .replacen("[ ] **Sub-task 0.1.1.1", "[x] **Sub-task 0.1.1.1", 1)
+            .replace("Finish second unit", "Silently expand second unit");
+        assert_eq!(
+            reconcile_and_select_next(
+                BEFORE.as_bytes(),
+                drift.as_bytes(),
+                "0.1.1.1",
+                &evidence("completion"),
+                &BTreeSet::new(),
+            ),
+            Err(OrchestrationError::PlanDrift)
+        );
     }
 }
