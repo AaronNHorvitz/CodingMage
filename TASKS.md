@@ -2,7 +2,7 @@
 
 This file is the canonical implementation sequence for CodingMage. It is intentionally granular so a human or coding agent can select one bounded, dependency-ready unit without reconstructing the project from conversation history.
 
-CodingMage is currently planning-only. A checked item means its complete implementation, tests, acceptance criteria, and required evidence genuinely exist in this repository. Documentation existence alone does not close an implementation item.
+CodingMage is under active implementation. A checked item means its complete implementation, tests, acceptance criteria, and required evidence genuinely exist in this repository. Documentation existence alone does not close an implementation item.
 
 ## Execution Rules
 

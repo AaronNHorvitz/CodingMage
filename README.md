@@ -3,13 +3,13 @@
 CodingMage is a local, reusable development coordinator for running bounded implementation and review loops across coding agents. Its first workflow uses Claude Code as the implementation agent and Codex as the senior review and verification agent, while deterministic local tools remain the authority for formatting, tests, schemas, and repository state.
 
 > [!IMPORTANT]
-> CodingMage is under active implementation. Its typed contracts, repository and process controls, agent adapters, deterministic gate runner, task planner, coordinator, review loop, routing policy, durable journal, recovery logic, and operator-control protocol are implemented and locally tested. The background service, live authenticated provider workflow, GitHub automation, packaging, and unattended release gates remain development targets and are not current capabilities.
+> CodingMage is under active implementation. Its typed contracts, repository and process controls, agent adapters, deterministic gate runner, task planner, coordinator, review loop, routing policy, durable journal, recovery logic, operator controls, background-service core, GitHub synchronization core, adversarial harness, release tooling, project adapters, and local diagnostic CLI are implemented and locally tested. Live authenticated provider execution, authenticated GitHub evidence, sustained soak evidence, native macOS/Windows evidence, and unattended release gates remain open.
 
 ## Why CodingMage Exists
 
 Large development roadmaps outlive individual model sessions, provider limits, and chat context. Manually transferring every checkpoint between agents is slow and error-prone. CodingMage is intended to make that handoff explicit, durable, reviewable, and safe.
 
-CodingMage will:
+CodingMage is designed to:
 
 - Point at an explicitly authorized local Git repository.
 - Read a declared task source such as `TASKS.md`.
@@ -213,23 +213,22 @@ AgentMage will be CodingMage's first controlled pilot. CodingMage must remain a 
 
 The pilot will begin with disposable fixtures, then a CodingMage-owned AgentMage test branch, and only later an explicitly authorized development branch. The pilot must prove clean interruption, exact commit review, concurrent user-work preservation, quota pause/resume, malformed-output handling, and bounded disagreement before unattended operation is allowed.
 
-## Planned CLI
+## Local CLI
 
-These commands are illustrative and are not implemented yet:
+The current binary supports deny-first initialization, repository diagnosis, task selection, and local status. `run` deliberately exits with `codingmage.cli.execution_unavailable` until live composition gates pass.
 
 ```bash
-codingmage init --repo /path/to/repository
-codingmage doctor --repo /path/to/repository
-codingmage plan --repo /path/to/repository --task-source TASKS.md
-codingmage run --repo /path/to/repository --task-source TASKS.md
-codingmage status --repo /path/to/repository
-codingmage pause --repo /path/to/repository
-codingmage resume --repo /path/to/repository
-codingmage stop-after-unit --repo /path/to/repository
-codingmage explain-blocker --repo /path/to/repository
+codingmage init --repo /absolute/repository --config /absolute/codingmage.toml \
+  --scratch /absolute/worktrees --state /absolute/state
+codingmage doctor --config /absolute/codingmage.toml
+codingmage plan --config /absolute/codingmage.toml
+codingmage status --config /absolute/codingmage.toml
+codingmage run
 ```
 
-## Planned Repository Layout
+Operator output is structured and content-minimized. Paths, source text, changed filenames, command output, and credential values are not emitted by these commands.
+
+## Repository Layout
 
 ```text
 CodingMage/
@@ -239,9 +238,14 @@ CodingMage/
 |   |-- codingmage-core/
 |   |-- codingmage-agent/
 |   |-- codingmage-git/
-|   |-- codingmage-gates/
+|   |-- codingmage-gate/
+|   |-- codingmage-github/
+|   |-- codingmage-platform/
+|   |-- codingmage-project/
 |   |-- codingmage-state/
 |   |-- codingmage-monitor/
+|   |-- codingmage-service/
+|   |-- codingmage-soak/
 |   `-- codingmage-cli/
 |-- schemas/
 |-- fixtures/
@@ -251,7 +255,7 @@ CodingMage/
 `-- TASKS.md
 ```
 
-The workspace may begin with fewer crates and split only when ownership boundaries become real. The intended implementation is Rust-first, with agent processes invoked through structured CLI protocols. No provider SDK is permitted to become an alternate authority path around the core coordinator.
+The implementation is Rust-first, with agent processes invoked through structured CLI protocols. No provider SDK is permitted to become an alternate authority path around the core coordinator.
 
 ## Delivery Strategy
 
@@ -280,6 +284,8 @@ follow [`SECURITY.md`](SECURITY.md), and repository changes must follow
 [`CONTRIBUTING.md`](CONTRIBUTING.md). CodingMage is licensed under
 [`Apache-2.0`](LICENSE).
 
+Operational guides are indexed in [`docs/operations/README.md`](docs/operations/README.md).
+
 ## Current Status
 
 - Repository created: yes
@@ -288,7 +294,7 @@ follow [`SECURITY.md`](SECURITY.md), and repository changes must follow
 - License and governance policies: yes
 - Accepted bootstrap architecture decisions: yes
 - Deterministic documentation gate: yes
-- Executable foundation: yes (typed contracts and empty CLI bootstrap)
+- Executable foundation: yes (typed contracts and local diagnostic CLI)
 - Configuration and Linux repository authorization: yes
 - Linux Git inventory and owned worktrees: yes
 - Bounded Linux process runtime: yes
@@ -297,7 +303,9 @@ follow [`SECURITY.md`](SECURITY.md), and repository changes must follow
 - Claude and Codex adapter cores with deterministic fixtures: yes
 - Live confined Claude task and live Codex review: no
 - Complete agent-adapter integration: no
-- Background service: no
-- GitHub automation: no
+- Background service core: yes; isolated login/logout evidence remains open
+- GitHub synchronization core: yes; authenticated disposable-repository evidence remains open
+- Reproducible Linux packaging and rootless lifecycle: yes
+- Reusable project task and gate adapters: yes
 - AgentMage authorization: no
 - Unattended operation approved: no
