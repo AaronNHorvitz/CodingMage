@@ -3,6 +3,7 @@ members = [
     "crates/codingmage-cli",
     "crates/codingmage-contracts",
     "crates/codingmage-core",
+    "crates/codingmage-git",
 ]
 resolver = "3"
 
@@ -16,6 +17,7 @@ version = "0.1.0"
 [workspace.dependencies]
 codingmage-contracts = { path = "crates/codingmage-contracts", version = "=0.1.0" }
 codingmage-core = { path = "crates/codingmage-core", version = "=0.1.0" }
+codingmage-git = { path = "crates/codingmage-git", version = "=0.1.0" }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.151"
 sha2 = "=0.11.0"

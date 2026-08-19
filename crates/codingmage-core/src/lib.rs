@@ -9,7 +9,8 @@ pub use config::{
     EffectiveConfigView, PublicationMode, PublicationPolicy, load_config,
 };
 pub use repository::{
-    RemoteIdentity, RepositoryAuthorization, RepositoryAuthorizationError, RepositoryIdentity,
+    FilesystemIdentity, RemoteIdentity, RepositoryAuthorization, RepositoryAuthorizationError,
+    RepositoryIdentity,
 };
 
 /// Returns the coordinator contract version implemented by this core.
