@@ -72,7 +72,7 @@ def build_binary(target_dir: Path) -> Path:
             os.environ.pop("CARGO_TARGET_DIR", None)
         else:
             os.environ["CARGO_TARGET_DIR"] = previous
-    binary = target_dir / "release" / "codingmage-cli"
+    binary = target_dir / "release" / "codingmage"
     if not binary.is_file():
         raise RuntimeError("release binary is missing")
     return binary
