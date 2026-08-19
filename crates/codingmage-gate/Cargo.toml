@@ -1,0 +1,26 @@
+[package]
+name = "codingmage-gate"
+description = "Deterministic gate scheduling and evidence for CodingMage"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+codingmage-contracts.workspace = true
+codingmage-process.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "codingmage-gate-guard"
+path = "src/bin/codingmage-gate-guard.rs"
+
+[[bin]]
+name = "codingmage-gate-fixture"
+path = "src/bin/codingmage-gate-fixture.rs"
