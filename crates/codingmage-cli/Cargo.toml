@@ -1,0 +1,15 @@
+[package]
+name = "codingmage-cli"
+description = "Command-line operator surface for CodingMage"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+codingmage-contracts.workspace = true
+codingmage-core.workspace = true
+
+[lints]
+workspace = true

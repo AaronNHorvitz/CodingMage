@@ -1,0 +1,7 @@
+{
+  "allowed_internal_dependencies": {
+    "codingmage-cli": ["codingmage-contracts", "codingmage-core"],
+    "codingmage-contracts": [],
+    "codingmage-core": ["codingmage-contracts"]
+  }
+}

@@ -1,0 +1,17 @@
+[package]
+name = "codingmage-contracts"
+description = "Stable, content-minimized contracts for CodingMage"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true
