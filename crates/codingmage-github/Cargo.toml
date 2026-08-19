@@ -1,0 +1,17 @@
+[package]
+name = "codingmage-github"
+description = "Deny-first GitHub issue and draft pull-request synchronization for CodingMage"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+codingmage-contracts.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+
+[lints]
+workspace = true
