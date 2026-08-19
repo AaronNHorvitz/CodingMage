@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "verdict": {
+      "enum": ["pass", "changes_required", "disputed", "blocked"]
+    },
+    "base_commit": {
+      "type": "string"
+    },
+    "target_commit": {
+      "type": "string"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "kind": { "enum": ["defect", "external_blocker", "suggestion"] },
+          "severity": { "enum": ["low", "medium", "high", "critical"] },
+          "file": { "type": ["string", "null"] },
+          "line": { "type": ["integer", "null"], "minimum": 1 },
+          "claim": { "type": "string" },
+          "evidence": { "type": "string" },
+          "requested_correction": { "type": "string" },
+          "acceptance_test": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "kind",
+          "severity",
+          "file",
+          "line",
+          "claim",
+          "evidence",
+          "requested_correction",
+          "acceptance_test"
+        ]
+      }
+    },
+    "blocker_code": {
+      "type": ["string", "null"]
+    }
+  },
+  "required": ["verdict", "base_commit", "target_commit", "findings", "blocker_code"]
+}

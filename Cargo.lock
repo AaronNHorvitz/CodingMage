@@ -60,6 +60,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "codingmage-codex"
+version = "0.1.0"
+dependencies = [
+ "codingmage-agent",
+ "codingmage-contracts",
+ "codingmage-process",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "codingmage-contracts"
 version = "0.1.0"
 dependencies = [
