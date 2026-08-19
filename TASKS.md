@@ -1,0 +1,910 @@
+# CodingMage Development Plan
+
+This file is the canonical implementation sequence for CodingMage. It is intentionally granular so a human or coding agent can select one bounded, dependency-ready unit without reconstructing the project from conversation history.
+
+CodingMage is currently planning-only. A checked item means its complete implementation, tests, acceptance criteria, and required evidence genuinely exist in this repository. Documentation existence alone does not close an implementation item.
+
+## Execution Rules
+
+1. Work in sprint and dependency order unless an item explicitly declares itself dependency-independent.
+2. Select one bounded sub-task or tightly coupled group per implementation cycle.
+3. Inspect Git state before every change and publication action.
+4. Never modify a target repository outside a CodingMage-owned worktree.
+5. Never let two agents write the same worktree concurrently.
+6. Never mark an item complete from model prose alone.
+7. Run the required deterministic checks before senior model review.
+8. Record exact commits, commands, outcomes, limitations, and blockers.
+9. Preserve unsupported platform, provider, credential, hardware, and independent-review claims as open.
+10. Do not merge, release, incur costs, alter external infrastructure, or weaken policy without explicit product-owner authority.
+11. Stop a correction loop after its configured bound and record a dispute instead of looping forever.
+12. Keep runtime logs, credentials, target source copies, and local state out of this source repository.
+
+## Universal Definition of Done
+
+Every completed implementation sub-task must satisfy all applicable conditions:
+
+- [ ] **DoD.1:** The implementation is present in the intended ownership boundary and contains no unrelated refactor.
+- [ ] **DoD.2:** Focused positive, negative, boundary, and recovery tests pass.
+- [ ] **DoD.3:** Formatting, strict linting, and `git diff --check` pass.
+- [ ] **DoD.4:** Public contracts and schemas reject unknown fields and invalid state transitions.
+- [ ] **DoD.5:** Sensitive values, target source, credentials, and hidden model reasoning are absent from retained evidence.
+- [ ] **DoD.6:** Documentation states current behavior and limitations without claiming unexecuted evidence.
+- [ ] **DoD.7:** The source commit and deterministic evidence are linked by immutable identity.
+- [ ] **DoD.8:** The working tree is clean and the intended branch is synchronized after publication.
+
+---
+
+## Sprint 0 - Repository, Scope, and Governance Baseline
+
+**Sprint goal:** Establish an unambiguous, reviewable project boundary before executable orchestration begins.
+
+### Story 0.1 - Canonical Product Boundary
+
+**User-facing value:** As a maintainer, I need one authoritative description of CodingMage so implementation cannot silently become a general-purpose autonomous shell or alternate release authority.
+
+- [x] **Task 0.1.1 - Create the initial project explanation**
+  - [x] **Sub-task 0.1.1.1:** Define CodingMage as a local development coordinator rather than a coding model or unrestricted agent.
+  - [x] **Sub-task 0.1.1.2:** Define the initial Claude Code implementer and Codex senior-review roles.
+  - [x] **Sub-task 0.1.1.3:** Define deterministic local tools as the authority for mechanical verification.
+  - [x] **Sub-task 0.1.1.4:** State that the repository is planning-only and proposed commands are not implemented.
+- [x] **Task 0.1.2 - Define initial authority boundaries**
+  - [x] **Sub-task 0.1.2.1:** Enumerate initially permitted local operations.
+  - [x] **Sub-task 0.1.2.2:** Enumerate prohibited destructive, external, credential, merge, release, and cost-bearing operations.
+  - [x] **Sub-task 0.1.2.3:** Define human product-owner authority and bounded agent authority.
+
+**Story acceptance criteria**
+
+- [x] **AC 0.1.1:** Given the README, when a reviewer inspects the roles and authority sections, then no agent has merge, release, destructive Git, credential, or external-infrastructure authority.
+- [x] **AC 0.1.2:** Given proposed commands and features, when current status is reviewed, then every unimplemented capability is visibly identified as planned.
+
+### Story 0.2 - Planning and Contribution Controls
+
+**User-facing value:** As a contributor, I need stable planning, security, and decision rules so future automation can distinguish requirements from suggestions.
+
+- [ ] **Task 0.2.1 - Add foundational policy documents**
+  - [ ] **Sub-task 0.2.1.1:** Choose and add a public software license after explicit owner approval.
+  - [ ] **Sub-task 0.2.1.2:** Add `SECURITY.md` with private vulnerability reporting, supported versions, response expectations, and safe-disable behavior.
+  - [ ] **Sub-task 0.2.1.3:** Add `CONTRIBUTING.md` with branch, test, review, evidence, and commit expectations.
+  - [ ] **Sub-task 0.2.1.4:** Add `CODE_OF_CONDUCT.md` if the repository will accept external contributions.
+- [ ] **Task 0.2.2 - Add architectural decision records**
+  - [ ] **Sub-task 0.2.2.1:** Create an ADR template with context, decision, alternatives, consequences, status, and supersession fields.
+  - [ ] **Sub-task 0.2.2.2:** Record the Rust-first bootstrap coordinator decision.
+  - [ ] **Sub-task 0.2.2.3:** Record the external-to-target and no-self-modification decision.
+  - [ ] **Sub-task 0.2.2.4:** Record the CLI-adapter-first provider boundary.
+  - [ ] **Sub-task 0.2.2.5:** Record the append-only journal plus atomic snapshot decision.
+- [ ] **Task 0.2.3 - Establish documentation checks**
+  - [ ] **Sub-task 0.2.3.1:** Add Markdown formatting and lint configuration.
+  - [ ] **Sub-task 0.2.3.2:** Add local-link validation.
+  - [ ] **Sub-task 0.2.3.3:** Add Mermaid syntax validation.
+  - [ ] **Sub-task 0.2.3.4:** Add prohibited-claim checks for unimplemented, merged, released, approved, or independently reviewed behavior.
+  - [ ] **Sub-task 0.2.3.5:** Add secret-pattern checks that report locations without printing matched values.
+
+**Story acceptance criteria**
+
+- [ ] **AC 0.2.1:** Given a clean checkout, when the documentation gate runs, then Markdown, links, Mermaid, claims, and synthetic-secret fixtures produce deterministic pass or fail results.
+- [ ] **AC 0.2.2:** Given a material architectural change, when it is proposed, then an ADR records its authority, consequences, and relationship to existing decisions before implementation.
+
+### Sprint 0 Gate
+
+- [ ] **Gate 0.1:** README, TASKS, security policy, contribution policy, license, and accepted ADRs agree on scope and authority.
+- [ ] **Gate 0.2:** Documentation and secret checks pass from a clean checkout.
+- [ ] **Gate 0.3:** No executable coordinator behavior is claimed before code and tests exist.
+
+---
+
+## Sprint 1 - Rust Workspace and Core Contracts
+
+**Sprint goal:** Create the smallest compilable Rust workspace with typed identities and fail-closed contract validation.
+
+### Story 1.1 - Workspace Bootstrap
+
+- [ ] **Task 1.1.1 - Create the workspace**
+  - [ ] **Sub-task 1.1.1.1:** Add a pinned Rust toolchain and supported minimum Rust version.
+  - [ ] **Sub-task 1.1.1.2:** Create `codingmage-contracts`, `codingmage-core`, and `codingmage-cli` crates.
+  - [ ] **Sub-task 1.1.1.3:** Deny warnings in continuous integration and define strict Clippy settings.
+  - [ ] **Sub-task 1.1.1.4:** Add formatting, unit-test, and documentation commands.
+  - [ ] **Sub-task 1.1.1.5:** Add `.gitignore` entries for build output, local state, logs, worktrees, credentials, and provider caches.
+- [ ] **Task 1.1.2 - Define dependency direction**
+  - [ ] **Sub-task 1.1.2.1:** Prevent contracts from depending on runtime, Git, provider, monitor, or CLI crates.
+  - [ ] **Sub-task 1.1.2.2:** Prevent provider adapters from bypassing core orchestration decisions.
+  - [ ] **Sub-task 1.1.2.3:** Add an automated dependency-direction test.
+
+**Story acceptance criteria**
+
+- [ ] **AC 1.1.1:** Given a clean checkout, when the workspace build and tests run, then all crates compile with pinned dependencies and zero warnings.
+- [ ] **AC 1.1.2:** Given a seeded forbidden dependency, when the architecture test runs, then it names and rejects the exact edge.
+
+### Story 1.2 - Stable Identities and Errors
+
+- [ ] **Task 1.2.1 - Define identifier types**
+  - [ ] **Sub-task 1.2.1.1:** Add validated `RepositoryId`, `RunId`, `TaskId`, `WorktreeId`, `AgentId`, `AttemptId`, `ReviewId`, and `EvidenceId` types.
+  - [ ] **Sub-task 1.2.1.2:** Reject empty, oversized, path-bearing, control-character, and ambiguous identifiers.
+  - [ ] **Sub-task 1.2.1.3:** Add canonical serialization and ordering tests.
+- [ ] **Task 1.2.2 - Define content-free errors**
+  - [ ] **Sub-task 1.2.2.1:** Create stable error codes for configuration, repository, Git, process, provider, gate, state, quota, and evidence failures.
+  - [ ] **Sub-task 1.2.2.2:** Ensure errors carry bounded metadata without source excerpts, commands containing secrets, or environment dumps.
+  - [ ] **Sub-task 1.2.2.3:** Add round-trip and unknown-code compatibility tests.
+
+**Story acceptance criteria**
+
+- [ ] **AC 1.2.1:** Given malformed and adversarial identifier inputs, when constructors or deserializers run, then every invalid value fails before becoming authority.
+- [ ] **AC 1.2.2:** Given synthetic secrets in lower-level failures, when public errors serialize, then no secret value appears.
+
+### Sprint 1 Gate
+
+- [ ] **Gate 1.1:** Workspace, dependency direction, identifiers, and errors pass focused tests and strict Clippy.
+- [ ] **Gate 1.2:** Generated API documentation contains no unimplemented capability claim.
+
+---
+
+## Sprint 2 - Configuration and Target Authorization
+
+**Sprint goal:** Admit only explicit target repositories and typed, versioned configuration.
+
+### Story 2.1 - Configuration Contract
+
+- [ ] **Task 2.1.1 - Define project configuration**
+  - [ ] **Sub-task 2.1.1.1:** Define a versioned `codingmage.toml` schema.
+  - [ ] **Sub-task 2.1.1.2:** Include target path, task source, default branch, integration branch, scratch root, agent profiles, correction limits, gate commands, and publication policy.
+  - [ ] **Sub-task 2.1.1.3:** Require explicit opt-in for network, push, issue, and pull-request capabilities.
+  - [ ] **Sub-task 2.1.1.4:** Reject unknown fields, duplicate keys, unsupported versions, relative authority roots, and conflicting policies.
+- [ ] **Task 2.1.2 - Add configuration loading**
+  - [ ] **Sub-task 2.1.2.1:** Load only the explicitly selected configuration file.
+  - [ ] **Sub-task 2.1.2.2:** Prohibit ambient parent-directory discovery unless explicitly enabled.
+  - [ ] **Sub-task 2.1.2.3:** Canonicalize paths without following an unapproved repository replacement.
+  - [ ] **Sub-task 2.1.2.4:** Produce a redacted effective-configuration view.
+
+**Story acceptance criteria**
+
+- [ ] **AC 2.1.1:** Given valid configuration, when loaded twice, then canonical output is byte-identical.
+- [ ] **AC 2.1.2:** Given unknown, conflicting, traversing, or secret-bearing configuration, when loading runs, then it fails closed without printing sensitive values.
+
+### Story 2.2 - Repository Authorization
+
+- [ ] **Task 2.2.1 - Bind repository identity**
+  - [ ] **Sub-task 2.2.1.1:** Resolve the target through a held directory handle where supported.
+  - [ ] **Sub-task 2.2.1.2:** Record canonical path, filesystem identity, Git directory identity, initial `HEAD`, and remote identities.
+  - [ ] **Sub-task 2.2.1.3:** Reject bare repositories, nested ambiguity, symlink replacement, unsafe ownership, and unsupported repository formats by default.
+  - [ ] **Sub-task 2.2.1.4:** Revalidate repository identity before every state-changing phase.
+- [ ] **Task 2.2.2 - Enforce self-target prohibition**
+  - [ ] **Sub-task 2.2.2.1:** Detect when CodingMage is pointed at its own source or runtime-state directory.
+  - [ ] **Sub-task 2.2.2.2:** Reject overlapping source, scratch, state, and target roots.
+  - [ ] **Sub-task 2.2.2.3:** Add symlink, bind-path, and renamed-directory fixtures.
+
+**Story acceptance criteria**
+
+- [ ] **AC 2.2.1:** Given a replaced or moved target after authorization, when revalidation runs, then no command or write executes.
+- [ ] **AC 2.2.2:** Given CodingMage itself or an overlapping state root as target, when authorization runs, then the request is denied with a stable code.
+
+### Sprint 2 Gate
+
+- [ ] **Gate 2.1:** Configuration and repository identity mutation suites pass.
+- [ ] **Gate 2.2:** No target operation can begin from implicit or stale authorization.
+
+---
+
+## Sprint 3 - Git Safety and Worktree Isolation
+
+**Sprint goal:** Create and manage exact CodingMage-owned Git worktrees without disturbing user-owned repository state.
+
+### Story 3.1 - Read-Only Repository Inventory
+
+- [ ] **Task 3.1.1 - Capture repository state**
+  - [ ] **Sub-task 3.1.1.1:** Record `HEAD`, current branch/detached state, index identity, porcelain status, refs, tags, notes, stash, worktrees, configuration, hooks, in-progress operations, and remotes.
+  - [ ] **Sub-task 3.1.1.2:** Bound output, records, runtime, and retained data.
+  - [ ] **Sub-task 3.1.1.3:** Disable aliases, pagers, editors, signers, hooks, filters, helpers, replacement refs, alternates, and ambient Git variables.
+  - [ ] **Sub-task 3.1.1.4:** Prohibit network during local inventory.
+- [ ] **Task 3.1.2 - Detect dirty and unsafe state**
+  - [ ] **Sub-task 3.1.2.1:** Classify clean, staged, unstaged, untracked, detached, conflicted, rebasing, merging, bisecting, and locked states.
+  - [ ] **Sub-task 3.1.2.2:** Refuse unknown or unsupported states without altering them.
+  - [ ] **Sub-task 3.1.2.3:** Preserve unrelated user changes and notes exactly.
+
+**Story acceptance criteria**
+
+- [ ] **AC 3.1.1:** Given hostile Git configuration, when inventory runs, then no executable canary fires and no network connection occurs.
+- [ ] **AC 3.1.2:** Given every supported dirty state, when inventory completes, then the state is classified without mutation.
+
+### Story 3.2 - Owned Worktrees and Branches
+
+- [ ] **Task 3.2.1 - Create owned worktrees**
+  - [ ] **Sub-task 3.2.1.1:** Generate collision-resistant branch and worktree identities.
+  - [ ] **Sub-task 3.2.1.2:** Create under the configured scratch root from an exact source commit.
+  - [ ] **Sub-task 3.2.1.3:** Record ownership manifest, expected path identity, source commit, task, run, and process owner.
+  - [ ] **Sub-task 3.2.1.4:** Apply private permissions and reject preexisting destinations.
+- [ ] **Task 3.2.2 - Revalidate and remove owned worktrees**
+  - [ ] **Sub-task 3.2.2.1:** Revalidate path, Git registration, branch, source lineage, and ownership manifest before mutation.
+  - [ ] **Sub-task 3.2.2.2:** Fail closed if the worktree is missing, renamed, replaced, or no longer owned.
+  - [ ] **Sub-task 3.2.2.3:** Remove only the exact owned worktree and retain a truthful result.
+  - [ ] **Sub-task 3.2.2.4:** Preserve active checkout, index, files, refs, notes, stash, tags, configuration, and hooks.
+- [ ] **Task 3.2.3 - Enforce prohibited Git operations**
+  - [ ] **Sub-task 3.2.3.1:** Deny force push, reset, clean, checkout-overwrite, branch deletion, prune, garbage collection, and history rewriting.
+  - [ ] **Sub-task 3.2.3.2:** Deny default-branch writes and merges in the bootstrap release.
+  - [ ] **Sub-task 3.2.3.3:** Add literal argument templates rather than shell-composed Git commands.
+
+**Story acceptance criteria**
+
+- [ ] **AC 3.2.1:** Given clean, dirty, detached, missing, renamed, and concurrently changed repositories, when worktree lifecycle operations run, then only exact CodingMage-owned artifacts change.
+- [ ] **AC 3.2.2:** Given every prohibited Git operation, when requested through configuration, model output, or task content, then it is rejected before process spawn.
+
+### Sprint 3 Gate
+
+- [ ] **Gate 3.1:** Worktree lifecycle and hostile-repository fixtures pass repeatedly with zero user-state drift.
+- [ ] **Gate 3.2:** Crash cleanup identifies owned artifacts exactly and never by name-pattern adoption.
+
+---
+
+## Sprint 4 - Bounded Process Runtime and Agent Contract
+
+**Sprint goal:** Execute provider CLIs through one constrained, observable process boundary.
+
+### Story 4.1 - Process Execution Contract
+
+- [ ] **Task 4.1.1 - Define process request and result schemas**
+  - [ ] **Sub-task 4.1.1.1:** Define executable identity, literal arguments, working directory, environment template, stdin source, output bounds, deadline, cancellation, and expected exit classifications.
+  - [ ] **Sub-task 4.1.1.2:** Define stdout/stderr digest, truncation, elapsed time, process identity, descendant cleanup, and terminal outcome fields.
+  - [ ] **Sub-task 4.1.1.3:** Reject shell strings, unknown flags, unbounded output, absent deadlines, and ambient environment inheritance.
+- [ ] **Task 4.1.2 - Implement bounded subprocesses**
+  - [ ] **Sub-task 4.1.2.1:** Resolve and pin executable identity before spawn.
+  - [ ] **Sub-task 4.1.2.2:** Clear environment and add only declared variables.
+  - [ ] **Sub-task 4.1.2.3:** Use literal argument vectors and explicit working directories.
+  - [ ] **Sub-task 4.1.2.4:** Bound output, runtime, retries, processes, and open descriptors.
+  - [ ] **Sub-task 4.1.2.5:** Kill and reap the exact process tree on timeout, cancellation, or parent failure.
+
+**Story acceptance criteria**
+
+- [ ] **AC 4.1.1:** Given metacharacters, response files, configuration discovery, environment injection, and executable replacement, when execution is attempted, then no alternate interpretation occurs.
+- [ ] **AC 4.1.2:** Given cancellation, timeout, crash, and descendant spawning fixtures, when the process ends, then every owned descendant is terminated and exactly one truthful terminal result exists.
+
+### Story 4.2 - Provider-Neutral Agent Adapter
+
+- [ ] **Task 4.2.1 - Define adapter operations**
+  - [ ] **Sub-task 4.2.1.1:** Define capability probe, start, continue, cancel, usage observation, and result normalization operations.
+  - [ ] **Sub-task 4.2.1.2:** Define implementation, review, correction, verification, and administrative roles.
+  - [ ] **Sub-task 4.2.1.3:** Define structured event streaming and final-response schemas.
+  - [ ] **Sub-task 4.2.1.4:** Treat all provider output as untrusted data.
+- [ ] **Task 4.2.2 - Build fake adapters**
+  - [ ] **Sub-task 4.2.2.1:** Add deterministic success, failure, malformed output, timeout, quota, cancellation, and contradictory-result fixtures.
+  - [ ] **Sub-task 4.2.2.2:** Add scripted multi-turn implementation and review conversations.
+  - [ ] **Sub-task 4.2.2.3:** Prove adapters cannot directly advance task state or perform Git publication.
+
+**Story acceptance criteria**
+
+- [ ] **AC 4.2.1:** Given any provider event order, when normalization runs, then only schema-valid ordered events reach the coordinator.
+- [ ] **AC 4.2.2:** Given a malicious adapter result claiming tests passed or a merge completed, when received, then no state advances without independent evidence.
+
+### Sprint 4 Gate
+
+- [ ] **Gate 4.1:** Process containment, output bounds, cancellation, and fake-adapter campaigns pass.
+- [ ] **Gate 4.2:** Provider adapters have no direct repository, task-state, merge, or release authority.
+
+---
+
+## Sprint 5 - Claude Code Implementation Adapter
+
+**Sprint goal:** Run Claude Code as a bounded implementation agent with structured input and output.
+
+### Story 5.1 - Claude Capability and Session Management
+
+- [ ] **Task 5.1.1 - Probe installed Claude Code**
+  - [ ] **Sub-task 5.1.1.1:** Verify executable identity and supported version range.
+  - [ ] **Sub-task 5.1.1.2:** Probe non-interactive mode, JSON output, JSON Schema output, session resume, model selection, effort selection, and permission modes.
+  - [ ] **Sub-task 5.1.1.3:** Record supported capabilities without reading or copying authentication material.
+  - [ ] **Sub-task 5.1.1.4:** Fail visibly when required flags or behavior are unavailable.
+- [ ] **Task 5.1.2 - Implement session lifecycle**
+  - [ ] **Sub-task 5.1.2.1:** Start a named implementation session bound to one run, task, repository, and worktree.
+  - [ ] **Sub-task 5.1.2.2:** Continue only the exact retained session.
+  - [ ] **Sub-task 5.1.2.3:** Detect context exhaustion, provider errors, rate limits, and session disappearance.
+  - [ ] **Sub-task 5.1.2.4:** Cancel and reap the exact Claude process tree.
+
+### Story 5.2 - Claude Work Packet and Permissions
+
+- [ ] **Task 5.2.1 - Render implementation instructions**
+  - [ ] **Sub-task 5.2.1.1:** Include exact task text, dependencies, owned paths, source commit, branch, acceptance criteria, test commands, and prohibited actions.
+  - [ ] **Sub-task 5.2.1.2:** Mark repository text, issues, comments, fixtures, and tool output as untrusted content rather than instructions.
+  - [ ] **Sub-task 5.2.1.3:** Require a structured completion report with changes, tests, commit, limitations, and blockers.
+- [ ] **Task 5.2.2 - Enforce implementation authority**
+  - [ ] **Sub-task 5.2.2.1:** Allow writes only in the assigned worktree.
+  - [ ] **Sub-task 5.2.2.2:** Allow only configured local tools and Git operations.
+  - [ ] **Sub-task 5.2.2.3:** Deny merge, release, default-branch push, destructive Git, credential access, and external infrastructure.
+  - [ ] **Sub-task 5.2.2.4:** Refuse a completion report that lacks a coherent commit or truthful blocker.
+
+**Story acceptance criteria**
+
+- [ ] **AC 5.1:** Given fake and live disposable repositories, when Claude performs a bounded task, then changes remain inside its worktree and its structured report binds to the actual commit.
+- [ ] **AC 5.2:** Given malicious repository instructions or a request for prohibited authority, when Claude runs, then CodingMage blocks the effect regardless of model response.
+
+### Sprint 5 Gate
+
+- [ ] **Gate 5.1:** Claude adapter fixtures and one disposable live task pass with exact session, commit, process, and permission evidence.
+- [ ] **Gate 5.2:** No Claude authentication secret or hidden reasoning appears in CodingMage state or logs.
+
+---
+
+## Sprint 6 - Codex Senior Review Adapter
+
+**Sprint goal:** Run Codex against exact commits as a read-only senior reviewer and verifier.
+
+### Story 6.1 - Codex Capability and Thread Management
+
+- [ ] **Task 6.1.1 - Probe installed Codex**
+  - [ ] **Sub-task 6.1.1.1:** Verify executable identity and supported version range.
+  - [ ] **Sub-task 6.1.1.2:** Probe non-interactive execution, JSONL events, output schemas, thread continuation, model selection, effort selection, and sandbox modes.
+  - [ ] **Sub-task 6.1.1.3:** Record supported capabilities without reading or copying authentication material.
+  - [ ] **Sub-task 6.1.1.4:** Fail visibly when required review behavior is unavailable.
+- [ ] **Task 6.1.2 - Implement review thread lifecycle**
+  - [ ] **Sub-task 6.1.2.1:** Start a review thread bound to one target commit, base commit, task, and evidence set.
+  - [ ] **Sub-task 6.1.2.2:** Resume only the exact thread for correction verification.
+  - [ ] **Sub-task 6.1.2.3:** Run review with read-only repository authority.
+  - [ ] **Sub-task 6.1.2.4:** Cancel and reap the exact Codex process tree.
+
+### Story 6.2 - Structured Senior Findings
+
+- [ ] **Task 6.2.1 - Define review output**
+  - [ ] **Sub-task 6.2.1.1:** Require `pass`, `changes_required`, `disputed`, or `blocked` verdicts.
+  - [ ] **Sub-task 6.2.1.2:** Require stable finding ID, severity, file, line, claim, evidence, requested correction, and acceptance test.
+  - [ ] **Sub-task 6.2.1.3:** Reject findings against files or commits outside the bound review scope.
+  - [ ] **Sub-task 6.2.1.4:** Separate implementation defects from external blockers and optional suggestions.
+- [ ] **Task 6.2.2 - Verify review integrity**
+  - [ ] **Sub-task 6.2.2.1:** Revalidate target and base commits before and after review.
+  - [ ] **Sub-task 6.2.2.2:** Verify referenced files and lines exist in the reviewed commit.
+  - [ ] **Sub-task 6.2.2.3:** Prevent Codex prose from marking tests, tasks, or gates complete.
+
+**Story acceptance criteria**
+
+- [ ] **AC 6.1:** Given a known-defective commit corpus, when Codex reviews each exact commit, then normalized findings point only to that commit and malformed findings fail closed.
+- [ ] **AC 6.2:** Given repository changes during review, when commit identity is revalidated, then the review is rejected as stale rather than applied to newer work.
+
+### Sprint 6 Gate
+
+- [ ] **Gate 6.1:** Codex review and resume fixtures pass under read-only authority.
+- [ ] **Gate 6.2:** Codex has no write, publication, merge, release, or task-state authority.
+
+---
+
+## Sprint 7 - Task Sources and Work Packets
+
+**Sprint goal:** Convert large plans into exact, dependency-ready units without allowing prose to become executable authority.
+
+### Story 7.1 - Markdown Task Plan Adapter
+
+- [ ] **Task 7.1.1 - Parse structured checklist plans**
+  - [ ] **Sub-task 7.1.1.1:** Parse sprint, story, task, sub-task, goal, dependency, acceptance criteria, and checkbox state.
+  - [ ] **Sub-task 7.1.1.2:** Preserve source anchors and exact text hashes.
+  - [ ] **Sub-task 7.1.1.3:** Detect duplicate IDs, malformed nesting, missing parents, conflicting states, and ambiguous dependencies.
+  - [ ] **Sub-task 7.1.1.4:** Read without rewriting or reformatting the source plan.
+- [ ] **Task 7.1.2 - Select dependency-ready work**
+  - [ ] **Sub-task 7.1.2.1:** Select the first open unit whose declared dependencies are complete or explicitly nonblocking.
+  - [ ] **Sub-task 7.1.2.2:** Skip external blockers without representing them as complete.
+  - [ ] **Sub-task 7.1.2.3:** Reject vague, oversized, or internally contradictory units for decomposition.
+  - [ ] **Sub-task 7.1.2.4:** Persist the selected source hash so changed plans invalidate stale work.
+
+### Story 7.2 - Bounded Work Packet
+
+- [ ] **Task 7.2.1 - Define work-packet schema**
+  - [ ] **Sub-task 7.2.1.1:** Include identities, source anchors, dependencies, scope, owned paths, commands, acceptance criteria, risks, limits, and prohibited actions.
+  - [ ] **Sub-task 7.2.1.2:** Include exact repository, base commit, branch, and worktree bindings.
+  - [ ] **Sub-task 7.2.1.3:** Include expected artifacts and truthful-blocker format.
+  - [ ] **Sub-task 7.2.1.4:** Canonically hash and version every packet.
+- [ ] **Task 7.2.2 - Add decomposition flow**
+  - [ ] **Sub-task 7.2.2.1:** Allow Codex to propose smaller units without changing canonical scope.
+  - [ ] **Sub-task 7.2.2.2:** Require deterministic validation and product-owner policy for material scope changes.
+  - [ ] **Sub-task 7.2.2.3:** Link derived units back to the original task and acceptance criteria.
+
+**Story acceptance criteria**
+
+- [ ] **AC 7.1:** Given valid, malformed, contradictory, and changing task plans, when selection runs, then only one exact dependency-ready unit is claimed and stale packets are rejected.
+- [ ] **AC 7.2:** Given an oversized task, when decomposition runs, then every original requirement remains mapped and no new authority appears.
+
+### Sprint 7 Gate
+
+- [ ] **Gate 7.1:** Task parser corpus, dependency selection, plan mutation, and work-packet schemas pass.
+- [ ] **Gate 7.2:** CodingMage can select and explain the next unit without editing the plan.
+
+---
+
+## Sprint 8 - Deterministic Gate Runner
+
+**Sprint goal:** Reject mechanically invalid work before spending senior-review capacity.
+
+### Story 8.1 - Gate Registry and Execution
+
+- [ ] **Task 8.1.1 - Define gate profiles**
+  - [ ] **Sub-task 8.1.1.1:** Define Tier 0 through Tier 4 gate identities and triggers.
+  - [ ] **Sub-task 8.1.1.2:** Define literal executable, arguments, working directory, environment, deadline, output, and expected-result contracts.
+  - [ ] **Sub-task 8.1.1.3:** Define required, optional, unavailable, skipped-with-policy, and failed outcomes.
+  - [ ] **Sub-task 8.1.1.4:** Prohibit model-generated executable gate definitions.
+- [ ] **Task 8.1.2 - Implement gate execution**
+  - [ ] **Sub-task 8.1.2.1:** Run independent gates concurrently only when their declared resources do not conflict.
+  - [ ] **Sub-task 8.1.2.2:** Stream bounded progress and retain sanitized output digests.
+  - [ ] **Sub-task 8.1.2.3:** Cancel remaining gates after a configured blocking failure.
+  - [ ] **Sub-task 8.1.2.4:** Reap every owned process and release locks.
+
+### Story 8.2 - Evidence and Mutation Checks
+
+- [ ] **Task 8.2.1 - Produce gate evidence**
+  - [ ] **Sub-task 8.2.1.1:** Bind gate definition, source commit, executable identity, environment profile, start/end time, outcome, and output digest.
+  - [ ] **Sub-task 8.2.1.2:** Record truncation and unavailable evidence visibly.
+  - [ ] **Sub-task 8.2.1.3:** Prevent a successful process exit from substituting for expected assertions.
+- [ ] **Task 8.2.2 - Test gate integrity**
+  - [ ] **Sub-task 8.2.2.1:** Mutate command, arguments, timeout, source commit, expected result, and output digest independently.
+  - [ ] **Sub-task 8.2.2.2:** Assert every mutation invalidates the evidence or gate decision.
+
+**Story acceptance criteria**
+
+- [ ] **AC 8.1:** Given passing, failing, hanging, noisy, and malformed gate fixtures, when executed, then outcomes and cleanup are deterministic and bounded.
+- [ ] **AC 8.2:** Given tampered evidence, when verification runs, then no senior review or task completion may rely on it.
+
+### Sprint 8 Gate
+
+- [ ] **Gate 8.1:** Tiered gate scheduling, process cleanup, evidence, and mutation suites pass.
+- [ ] **Gate 8.2:** A failed required gate prevents model review and advancement.
+
+---
+
+## Sprint 9 - Risk Classification and Model Routing
+
+**Sprint goal:** Select efficient models without silently weakening high-risk engineering review.
+
+### Story 9.1 - Deterministic Risk Classification
+
+- [ ] **Task 9.1.1 - Define risk signals**
+  - [ ] **Sub-task 9.1.1.1:** Classify security, authentication, credentials, cryptography, concurrency, process control, Git mutation, persistence, cross-platform, packaging, release, and architecture paths as elevated risk.
+  - [ ] **Sub-task 9.1.1.2:** Include task labels, changed paths, dependency breadth, diff shape, prior failures, and unresolved findings.
+  - [ ] **Sub-task 9.1.1.3:** Ensure unrecognized signals increase rather than reduce review strength.
+- [ ] **Task 9.1.2 - Produce routing decision**
+  - [ ] **Sub-task 9.1.2.1:** Define requested provider, role, model profile, effort, speed, reason codes, and escalation conditions.
+  - [ ] **Sub-task 9.1.2.2:** Record exact resolved model identity when the provider exposes it.
+  - [ ] **Sub-task 9.1.2.3:** Reject unavailable profiles rather than silently falling back across a required gate.
+
+### Story 9.2 - Adaptive Escalation
+
+- [ ] **Task 9.2.1 - Implement initial routing table**
+  - [ ] **Sub-task 9.2.1.1:** Route routine Claude implementation to Sonnet.
+  - [ ] **Sub-task 9.2.1.2:** Route high-risk or repeatedly failed implementation to Opus.
+  - [ ] **Sub-task 9.2.1.3:** Route routine Codex review to Terra High.
+  - [ ] **Sub-task 9.2.1.4:** Route high-risk, disputed, and final story reviews to Sol High.
+  - [ ] **Sub-task 9.2.1.5:** Route mechanical administration to deterministic code or Luna without gate authority.
+- [ ] **Task 9.2.2 - Add performance feedback**
+  - [ ] **Sub-task 9.2.2.1:** Track elapsed time, retries, correction count, gate failures, review findings, and exposed usage metrics.
+  - [ ] **Sub-task 9.2.2.2:** Escalate after configured failure or disagreement thresholds.
+  - [ ] **Sub-task 9.2.2.3:** Never downgrade a mandatory final gate based solely on usage pressure.
+  - [ ] **Sub-task 9.2.2.4:** Allow an explicit operator pin or override with journaled reason.
+
+**Story acceptance criteria**
+
+- [ ] **AC 9.1:** Given a fixed task/diff corpus, when classification runs repeatedly, then routing decisions are identical and high-risk cases never reach a weaker gate.
+- [ ] **AC 9.2:** Given provider unavailability or quota pressure, when routing cannot satisfy policy, then work pauses rather than silently substituting an unauthorized model.
+
+### Sprint 9 Gate
+
+- [ ] **Gate 9.1:** Risk corpus and routing mutation tests pass.
+- [ ] **Gate 9.2:** Every model decision is explainable from retained non-sensitive inputs.
+
+---
+
+## Sprint 10 - Orchestration State Machine
+
+**Sprint goal:** Execute exactly one legal transition at a time and recover safely from every interruption point.
+
+### Story 10.1 - Run and Task Lifecycle
+
+- [ ] **Task 10.1.1 - Define lifecycle states and events**
+  - [ ] **Sub-task 10.1.1.1:** Implement discovered, ready, claimed, implementing, local-verification, senior-review, correcting, final-verification, checkpointed, and complete states.
+  - [ ] **Sub-task 10.1.1.2:** Implement blocked, paused, recoverable-failure, terminal-failure, and cancelled states.
+  - [ ] **Sub-task 10.1.1.3:** Define allowed prior state, triggering evidence, resulting state, and side-effect intent for every transition.
+  - [ ] **Sub-task 10.1.1.4:** Reject duplicate, stale, reordered, skipped, or contradictory transitions.
+- [ ] **Task 10.1.2 - Implement one-unit coordinator**
+  - [ ] **Sub-task 10.1.2.1:** Discover and claim one task.
+  - [ ] **Sub-task 10.1.2.2:** Create one owned worktree and implementation session.
+  - [ ] **Sub-task 10.1.2.3:** Execute local gates and senior review.
+  - [ ] **Sub-task 10.1.2.4:** Checkpoint pass, correction, block, or failure outcomes.
+  - [ ] **Sub-task 10.1.2.5:** Release locks and owned processes on every terminal path.
+
+### Story 10.2 - Multi-Unit Progression
+
+- [ ] **Task 10.2.1 - Advance through dependency-ready work**
+  - [ ] **Sub-task 10.2.1.1:** Reparse and revalidate the canonical task source after every accepted unit.
+  - [ ] **Sub-task 10.2.1.2:** Refuse to advance if completion evidence or plan state disagrees.
+  - [ ] **Sub-task 10.2.1.3:** Continue past precise external blockers when downstream work is independently safe.
+  - [ ] **Sub-task 10.2.1.4:** Stop when no dependency-ready work remains.
+
+**Story acceptance criteria**
+
+- [ ] **AC 10.1:** Given every interruption point in a scripted fake-agent workflow, when recovery runs, then the state machine resumes or stops from the last durable legal transition without duplicate effects.
+- [ ] **AC 10.2:** Given reordered, replayed, or fabricated events, when applied, then state and repository remain unchanged.
+
+### Sprint 10 Gate
+
+- [ ] **Gate 10.1:** Exhaustive state-transition and interruption tests pass.
+- [ ] **Gate 10.2:** One complete fake-model vertical slice advances exactly one fixture task.
+
+---
+
+## Sprint 11 - Review, Correction, and Disagreement Control
+
+**Sprint goal:** Turn senior findings into bounded corrections without endless model argument or self-review.
+
+### Story 11.1 - Finding Lifecycle
+
+- [ ] **Task 11.1.1 - Validate and track findings**
+  - [ ] **Sub-task 11.1.1.1:** Deduplicate findings by stable identity and reviewed commit.
+  - [ ] **Sub-task 11.1.1.2:** Track open, accepted, corrected, verified, disputed, withdrawn, and blocked states.
+  - [ ] **Sub-task 11.1.1.3:** Require correction commits to reference addressed finding IDs.
+  - [ ] **Sub-task 11.1.1.4:** Reject a finding as verified when the relevant code or test did not change and no valid explanation exists.
+- [ ] **Task 11.1.2 - Build correction packets**
+  - [ ] **Sub-task 11.1.2.1:** Include only validated findings, exact reviewed/correction commits, requested tests, and unchanged task scope.
+  - [ ] **Sub-task 11.1.2.2:** Prevent optional suggestions from becoming mandatory scope silently.
+
+### Story 11.2 - Bounded Review Loop
+
+- [ ] **Task 11.2.1 - Enforce correction budget**
+  - [ ] **Sub-task 11.2.1.1:** Set a configurable default maximum of three review/correction rounds.
+  - [ ] **Sub-task 11.2.1.2:** Escalate implementation model or review model according to policy before the final round.
+  - [ ] **Sub-task 11.2.1.3:** Record a dispute or blocker when the bound is reached.
+  - [ ] **Sub-task 11.2.1.4:** Require human resolution for material architecture disagreement.
+- [ ] **Task 11.2.2 - Preserve independent review**
+  - [ ] **Sub-task 11.2.2.1:** Prevent the agent that authored a correction from being its sole final reviewer.
+  - [ ] **Sub-task 11.2.2.2:** If Codex performs an emergency correction, require Claude or a human to review it before closure.
+
+**Story acceptance criteria**
+
+- [ ] **AC 11.1:** Given pass, repeated finding, contradictory finding, optional suggestion, and unresolved disagreement fixtures, when the loop runs, then every outcome is bounded and truthful.
+- [ ] **AC 11.2:** Given three failed correction rounds, when the limit is reached, then no fourth autonomous round starts.
+
+### Sprint 11 Gate
+
+- [ ] **Gate 11.1:** Finding lifecycle, correction binding, escalation, and disagreement tests pass.
+- [ ] **Gate 11.2:** No agent is permitted to author and solely approve the same material correction.
+
+---
+
+## Sprint 12 - Durable Journal, Checkpoints, and Recovery
+
+**Sprint goal:** Preserve continuity across process crashes, context limits, provider limits, restart, and power loss.
+
+### Story 12.1 - Append-Only Event Journal
+
+- [ ] **Task 12.1.1 - Define journal records**
+  - [ ] **Sub-task 12.1.1.1:** Include sequence, schema version, prior-event hash, timestamp, run/task/repository identities, event kind, outcome, and evidence references.
+  - [ ] **Sub-task 12.1.1.2:** Canonically serialize and hash each record.
+  - [ ] **Sub-task 12.1.1.3:** Bound record size and reject unknown critical fields.
+  - [ ] **Sub-task 12.1.1.4:** Redact sensitive values before persistence without storing removed content.
+- [ ] **Task 12.1.2 - Implement durable append**
+  - [ ] **Sub-task 12.1.2.1:** Use atomic create/append and explicit flush policy.
+  - [ ] **Sub-task 12.1.2.2:** Detect truncation, corruption, reordering, duplication, and chain breaks.
+  - [ ] **Sub-task 12.1.2.3:** Prevent concurrent writers through exact lock ownership.
+
+### Story 12.2 - Snapshots and Resume
+
+- [ ] **Task 12.2.1 - Maintain current-state snapshot**
+  - [ ] **Sub-task 12.2.1.1:** Derive snapshots from accepted journal events.
+  - [ ] **Sub-task 12.2.1.2:** Write through temporary file, flush, and atomic replacement.
+  - [ ] **Sub-task 12.2.1.3:** Verify snapshot hash and journal position on load.
+- [ ] **Task 12.2.2 - Reconcile live state after restart**
+  - [ ] **Sub-task 12.2.2.1:** Reconcile repository, worktree, branch, commit, process, agent session, gate, and evidence identities.
+  - [ ] **Sub-task 12.2.2.2:** Resume only idempotent or explicitly recoverable phases.
+  - [ ] **Sub-task 12.2.2.3:** Mark uncertain effects visibly and require re-observation before action.
+  - [ ] **Sub-task 12.2.2.4:** Never replay a state-changing provider or Git action merely to discover whether it happened.
+
+**Story acceptance criteria**
+
+- [ ] **AC 12.1:** Given torn writes and every single-field journal mutation, when recovery loads state, then corruption is identified at the exact record and no action resumes.
+- [ ] **AC 12.2:** Given crashes at every orchestration transition, when CodingMage restarts, then it resumes safely or stops with an exact blocker and no duplicated Git or provider effect.
+
+### Sprint 12 Gate
+
+- [ ] **Gate 12.1:** Journal mutation, concurrent writer, snapshot, and crash-recovery campaigns pass.
+- [ ] **Gate 12.2:** Recovery requires no target-source copy or raw provider transcript in durable state.
+
+---
+
+## Sprint 13 - Monitoring and Operator Controls
+
+**Sprint goal:** Make progress, limitations, and intervention controls visible from a VS Code terminal.
+
+### Story 13.1 - Status Model and Event Stream
+
+- [ ] **Task 13.1.1 - Define status schema**
+  - [ ] **Sub-task 13.1.1.1:** Include target, task, state, agent, model, branch, commit, command, gate, findings, correction count, elapsed time, pause, and blocker fields.
+  - [ ] **Sub-task 13.1.1.2:** Mark unavailable usage and reset information as unknown rather than zero.
+  - [ ] **Sub-task 13.1.1.3:** Provide stable JSON and human-readable renderings.
+- [ ] **Task 13.1.2 - Stream ordered events**
+  - [ ] **Sub-task 13.1.2.1:** Stream lifecycle events with sequence and correlation IDs.
+  - [ ] **Sub-task 13.1.2.2:** Bound update rate and coalesce noisy command output.
+  - [ ] **Sub-task 13.1.2.3:** Reconnect a monitor without affecting the running coordinator.
+
+### Story 13.2 - Operator Commands
+
+- [ ] **Task 13.2.1 - Implement read-only controls**
+  - [ ] **Sub-task 13.2.1.1:** Add `status`, `explain-blocker`, `open-diff`, `open-log`, and `doctor`.
+  - [ ] **Sub-task 13.2.1.2:** Ensure read-only commands cannot acquire mutation grants.
+- [ ] **Task 13.2.2 - Implement lifecycle controls**
+  - [ ] **Sub-task 13.2.2.1:** Add `pause`, `resume`, `stop-after-unit`, and `cancel`.
+  - [ ] **Sub-task 13.2.2.2:** Authenticate control requests to the same local user and exact run.
+  - [ ] **Sub-task 13.2.2.3:** Make repeated commands idempotent.
+  - [ ] **Sub-task 13.2.2.4:** Preserve recovery state after cancellation.
+
+**Story acceptance criteria**
+
+- [ ] **AC 13.1:** Given a running fake workflow, when monitors attach, disconnect, and reattach, then they reconstruct identical current status without changing execution.
+- [ ] **AC 13.2:** Given repeated or stale control commands, when received, then only the exact active run can change state once.
+
+### Sprint 13 Gate
+
+- [ ] **Gate 13.1:** VS Code terminal rendering, JSON status, reconnect, and control tests pass.
+- [ ] **Gate 13.2:** Monitoring exposes no credential, hidden reasoning, or unnecessary source content.
+
+---
+
+## Sprint 14 - Background Service, Quotas, and Scheduling
+
+**Sprint goal:** Run unattended as an unprivileged Fedora user service without busy loops or orphaned work.
+
+### Story 14.1 - User Service Lifecycle
+
+- [ ] **Task 14.1.1 - Define systemd user service**
+  - [ ] **Sub-task 14.1.1.1:** Generate a user-owned service with explicit executable, configuration, state root, restart policy, and resource limits.
+  - [ ] **Sub-task 14.1.1.2:** Do not install system services, request root, or enable lingering automatically.
+  - [ ] **Sub-task 14.1.1.3:** Add install, verify, start, stop, and uninstall commands with previews.
+- [ ] **Task 14.1.2 - Enforce single ownership**
+  - [ ] **Sub-task 14.1.2.1:** Hold one coordinator lock per target repository.
+  - [ ] **Sub-task 14.1.2.2:** Detect stale lock owners without adopting unrelated processes.
+  - [ ] **Sub-task 14.1.2.3:** Release locks and descendants on normal stop, failure, logout, and shutdown.
+
+### Story 14.2 - Provider Capacity and Backoff
+
+- [ ] **Task 14.2.1 - Normalize capacity signals**
+  - [ ] **Sub-task 14.2.1.1:** Parse exposed token usage, cost, rate-limit, remaining-capacity, and reset data without relying on message text alone where structured fields exist.
+  - [ ] **Sub-task 14.2.1.2:** Represent unavailable metrics explicitly.
+  - [ ] **Sub-task 14.2.1.3:** Detect authentication expiry separately from quota exhaustion.
+- [ ] **Task 14.2.2 - Implement pause and retry**
+  - [ ] **Sub-task 14.2.2.1:** Pause until a known reset with bounded jitter.
+  - [ ] **Sub-task 14.2.2.2:** Use capped exponential backoff when reset is unknown.
+  - [ ] **Sub-task 14.2.2.3:** Persist retry count and next attempt across restarts.
+  - [ ] **Sub-task 14.2.2.4:** Stop after configured terminal authentication or provider failures.
+
+**Story acceptance criteria**
+
+- [ ] **AC 14.1:** Given service restart, logout simulation, crash, and duplicate launch, when lifecycle handling runs, then exactly one coordinator owns the target and no child survives incorrectly.
+- [ ] **AC 14.2:** Given quota, network, authentication, overload, and malformed provider errors, when classified, then CodingMage pauses, retries, or stops according to exact policy without spinning.
+
+### Sprint 14 Gate
+
+- [ ] **Gate 14.1:** User-service install/uninstall and lifecycle tests pass in an isolated Fedora user session.
+- [ ] **Gate 14.2:** A sustained fake-provider run demonstrates bounded retry and clean recovery.
+
+---
+
+## Sprint 15 - GitHub Issues and Pull Requests
+
+**Sprint goal:** Synchronize reviewable story-level work with GitHub without making GitHub metadata the authority for local execution.
+
+### Story 15.1 - Authenticated GitHub Adapter
+
+- [ ] **Task 15.1.1 - Define GitHub capability boundary**
+  - [ ] **Sub-task 15.1.1.1:** Use authenticated `gh` or an approved API adapter without reading raw tokens.
+  - [ ] **Sub-task 15.1.1.2:** Bind account, host, owner, repository, branch, and pull-request identities.
+  - [ ] **Sub-task 15.1.1.3:** Require explicit configuration for issue read/write, pull-request read/write, comments, and branch push.
+  - [ ] **Sub-task 15.1.1.4:** Deny merge, release, repository settings, secrets, Actions configuration, and destructive administration.
+- [ ] **Task 15.1.2 - Handle uncertain network effects**
+  - [ ] **Sub-task 15.1.2.1:** Assign idempotency keys to issue, comment, and pull-request operations.
+  - [ ] **Sub-task 15.1.2.2:** Reconcile remote state after timeout rather than blindly replaying writes.
+  - [ ] **Sub-task 15.1.2.3:** Record redirects, host changes, authentication changes, and permission reductions.
+
+### Story 15.2 - Story Issues and Draft Pull Requests
+
+- [ ] **Task 15.2.1 - Synchronize story issues**
+  - [ ] **Sub-task 15.2.1.1:** Create one issue per configured story with canonical source links and sub-task checkboxes.
+  - [ ] **Sub-task 15.2.1.2:** Update only CodingMage-owned issue sections.
+  - [ ] **Sub-task 15.2.1.3:** Preserve human comments, labels, assignments, and edits.
+  - [ ] **Sub-task 15.2.1.4:** Never treat issue checkbox edits as local completion evidence.
+- [ ] **Task 15.2.2 - Create and update draft pull requests**
+  - [ ] **Sub-task 15.2.2.1:** Push only the exact authorized feature branch after local gates pass.
+  - [ ] **Sub-task 15.2.2.2:** Create a draft PR with scope, commits, tests, findings, limitations, and blockers.
+  - [ ] **Sub-task 15.2.2.3:** Add Codex findings as structured review output without impersonating human approval.
+  - [ ] **Sub-task 15.2.2.4:** Update the PR after correction and final verification.
+  - [ ] **Sub-task 15.2.2.5:** Leave readiness, approval, and merge to configured human policy.
+
+**Story acceptance criteria**
+
+- [ ] **AC 15.1:** Given timeouts, duplicate delivery, redirects, permission loss, and concurrent human edits, when synchronization runs, then effects are idempotent and human-owned content survives.
+- [ ] **AC 15.2:** Given a locally verified story, when publication is enabled, then one draft PR points to the exact branch and evidence while no merge or protected-branch effect occurs.
+
+### Sprint 15 Gate
+
+- [ ] **Gate 15.1:** Fake GitHub server and authorized test-repository campaigns pass.
+- [ ] **Gate 15.2:** GitHub integration can be disabled completely without affecting local orchestration.
+
+---
+
+## Sprint 16 - Security and Adversarial Hardening
+
+**Sprint goal:** Prove hostile repositories, agents, processes, outputs, and concurrent activity cannot escape CodingMage's authority boundaries.
+
+### Story 16.1 - Prompt and Output Hostility
+
+- [ ] **Task 16.1.1 - Build hostile-content corpus**
+  - [ ] **Sub-task 16.1.1.1:** Seed instructions in source, comments, filenames, task text, issues, logs, test output, and model responses requesting broader authority.
+  - [ ] **Sub-task 16.1.1.2:** Seed fabricated pass claims, commits, tests, reviews, blockers, and quota notices.
+  - [ ] **Sub-task 16.1.1.3:** Seed oversized, malformed, reordered, duplicated, and future-version JSON events.
+- [ ] **Task 16.1.2 - Verify containment**
+  - [ ] **Sub-task 16.1.2.1:** Assert no hostile content changes policy, routing, command templates, repository scope, or task state.
+  - [ ] **Sub-task 16.1.2.2:** Assert sensitive canaries do not enter prompts, logs, evidence, GitHub content, or diagnostics without explicit policy.
+
+### Story 16.2 - Git, Filesystem, and Process Attacks
+
+- [ ] **Task 16.2.1 - Exercise repository attacks**
+  - [ ] **Sub-task 16.2.1.1:** Test hooks, aliases, filters, drivers, helpers, pagers, editors, signers, URL rewrites, alternates, replacement refs, malicious objects, submodules, LFS, unsafe ownership, case collisions, and Unicode collisions.
+  - [ ] **Sub-task 16.2.1.2:** Test active-checkout changes during create, commit, review, cleanup, push, and recovery.
+  - [ ] **Sub-task 16.2.1.3:** Test renamed, deleted, replaced, and overlapping repository/worktree paths.
+- [ ] **Task 16.2.2 - Exercise process attacks**
+  - [ ] **Sub-task 16.2.2.1:** Test parent, child, and grandchild crashes, hangs, output floods, descriptor inheritance, and process-name collisions.
+  - [ ] **Sub-task 16.2.2.2:** Test unrelated matching processes and units appearing during cleanup.
+  - [ ] **Sub-task 16.2.2.3:** Assert cleanup acts only on proven owned identities.
+
+### Story 16.3 - State and Evidence Attacks
+
+- [ ] **Task 16.3.1 - Mutate durable records**
+  - [ ] **Sub-task 16.3.1.1:** Mutate identity, sequence, hash chain, repository, task, branch, commit, model, outcome, and evidence fields independently.
+  - [ ] **Sub-task 16.3.1.2:** Test rollback, replay, truncation, concurrent writer, and stale snapshot attacks.
+  - [ ] **Sub-task 16.3.1.3:** Assert no corrupted record authorizes a new effect.
+
+**Story acceptance criteria**
+
+- [ ] **AC 16.1:** Given the complete hostile-content corpus, when every boundary processes it, then authority remains unchanged and no synthetic secret leaks.
+- [ ] **AC 16.2:** Given concurrent repository and process attacks, when CodingMage operates or recovers, then user state survives and cleanup touches only proven owned artifacts.
+- [ ] **AC 16.3:** Given every single-field evidence mutation, when verification runs, then the exact corruption blocks advancement.
+
+### Sprint 16 Gate
+
+- [ ] **Gate 16.1:** Hostile-content, Git, filesystem, process, state, and evidence campaigns pass locally.
+- [ ] **Gate 16.2:** Manual fuzzing remains a separate explicit gate and is not claimed by deterministic mutation tests.
+
+---
+
+## Sprint 17 - Soak Testing and AgentMage Pilot
+
+**Sprint goal:** Demonstrate sustained reliable operation before CodingMage receives unattended access to real AgentMage development work.
+
+### Story 17.1 - Disposable Soak Campaign
+
+- [ ] **Task 17.1.1 - Build disposable target fixtures**
+  - [ ] **Sub-task 17.1.1.1:** Create small Rust, Python, JavaScript, documentation-only, dirty, conflicted, and malformed-plan repositories.
+  - [ ] **Sub-task 17.1.1.2:** Create fake Claude, Codex, GitHub, quota, network, sleep, crash, and restart schedules.
+- [ ] **Task 17.1.2 - Run sustained operation**
+  - [ ] **Sub-task 17.1.2.1:** Execute repeated implementation-review-correction cycles for at least 24 continuous hours.
+  - [ ] **Sub-task 17.1.2.2:** Extend to 48 hours after correcting every blocking reliability defect.
+  - [ ] **Sub-task 17.1.2.3:** Inject provider limits, network loss, process crashes, service restarts, malformed output, stale commits, concurrent user changes, and operator controls.
+  - [ ] **Sub-task 17.1.2.4:** Verify zero duplicate tasks, skipped gates, false completions, orphan processes, unowned mutations, and unbounded storage growth.
+
+### Story 17.2 - Controlled AgentMage Pilot
+
+- [ ] **Task 17.2.1 - Prepare AgentMage authorization**
+  - [ ] **Sub-task 17.2.1.1:** Review AgentMage instructions, branch policy, task structure, commands, blockers, and current clean checkpoint.
+  - [ ] **Sub-task 17.2.1.2:** Create a minimal CodingMage target configuration with network and GitHub publication disabled initially.
+  - [ ] **Sub-task 17.2.1.3:** Select one low-risk, dependency-ready AgentMage fixture task.
+- [ ] **Task 17.2.2 - Run supervised pilot units**
+  - [ ] **Sub-task 17.2.2.1:** Complete one dry run using fake agents against an AgentMage fixture copy.
+  - [ ] **Sub-task 17.2.2.2:** Complete one live Claude implementation and Codex review on a disposable AgentMage branch.
+  - [ ] **Sub-task 17.2.2.3:** Complete five supervised bounded units with no authority or recovery defect.
+  - [ ] **Sub-task 17.2.2.4:** Enable background execution only after explicit owner approval of retained evidence.
+- [ ] **Task 17.2.3 - Run unattended pilot**
+  - [ ] **Sub-task 17.2.3.1:** Run one story through implementation, review, correction, and checkpoint without operator intervention.
+  - [ ] **Sub-task 17.2.3.2:** Pause correctly on every external blocker and quota event.
+  - [ ] **Sub-task 17.2.3.3:** Produce a complete handoff and status report for human inspection.
+
+**Story acceptance criteria**
+
+- [ ] **AC 17.1:** Given the 48-hour disposable campaign, when evidence is reviewed, then every injected interruption is recovered or blocked exactly and no uncontrolled residue exists.
+- [ ] **AC 17.2:** Given the AgentMage pilot, when human review compares repository state and CodingMage claims, then every commit, test, finding, limitation, and blocker is accurate.
+
+### Sprint 17 Gate
+
+- [ ] **Gate 17.1:** Disposable soak campaign passes after the last reliability correction.
+- [ ] **Gate 17.2:** AgentMage unattended operation requires explicit product-owner approval and remains disabled until granted.
+
+---
+
+## Sprint 18 - Packaging and Cross-Platform Foundations
+
+**Sprint goal:** Package a reproducible Linux release and prepare truthful macOS and Windows adaptation without claiming unexecuted evidence.
+
+### Story 18.1 - Fedora Release Package
+
+- [ ] **Task 18.1.1 - Produce reproducible binary**
+  - [ ] **Sub-task 18.1.1.1:** Pin dependencies and verify license/provenance inventory.
+  - [ ] **Sub-task 18.1.1.2:** Build release artifacts from a clean checkout twice and compare outputs.
+  - [ ] **Sub-task 18.1.1.3:** Generate SBOM, checksums, build manifest, and installation layout.
+  - [ ] **Sub-task 18.1.1.4:** Verify no credentials, logs, target source, local paths, or debug-only authority enter the package.
+- [ ] **Task 18.1.2 - Installation and removal**
+  - [ ] **Sub-task 18.1.2.1:** Install under user-owned paths without root.
+  - [ ] **Sub-task 18.1.2.2:** Install, verify, start, stop, upgrade, rollback, and remove the user service.
+  - [ ] **Sub-task 18.1.2.3:** Preserve user configuration and state only according to explicit retention policy.
+
+### Story 18.2 - macOS and Windows Design
+
+- [ ] **Task 18.2.1 - Define platform adapter contracts**
+  - [ ] **Sub-task 18.2.1.1:** Separate filesystem identity, process containment, service management, credential references, and monitoring behind platform interfaces.
+  - [ ] **Sub-task 18.2.1.2:** Document Linux evidence as Linux-only.
+- [ ] **Task 18.2.2 - Implement macOS adapter**
+  - [ ] **Sub-task 18.2.2.1:** Implement Apple Silicon process, filesystem, launch-agent, and keychain-reference behavior.
+  - [ ] **Sub-task 18.2.2.2:** Run native macOS lifecycle, Git safety, provider, monitoring, and recovery tests on supported hardware.
+- [ ] **Task 18.2.3 - Plan Windows adapter**
+  - [ ] **Sub-task 18.2.3.1:** Define native Windows process, job-object, NTFS identity, service/task, credential, and console requirements.
+  - [ ] **Sub-task 18.2.3.2:** Keep Windows support explicitly unimplemented until native evidence exists.
+
+**Story acceptance criteria**
+
+- [ ] **AC 18.1:** Given two clean Fedora builds, when artifacts are compared and installed, then identities are reproducible and removal leaves only explicitly retained user data.
+- [ ] **AC 18.2:** Given platform documentation and packages, when reviewed, then no Linux result is represented as macOS or Windows evidence.
+
+### Sprint 18 Gate
+
+- [ ] **Gate 18.1:** Fedora package, install, upgrade, rollback, removal, SBOM, and provenance gates pass.
+- [ ] **Gate 18.2:** macOS and Windows claims remain blocked until native execution evidence exists.
+
+---
+
+## Sprint 19 - Reusable Project Adapters and v1 Readiness
+
+**Sprint goal:** Generalize the proven AgentMage workflow into a reusable tool without weakening target-specific safety.
+
+### Story 19.1 - Project Adapter Contract
+
+- [ ] **Task 19.1.1 - Support multiple task sources**
+  - [ ] **Sub-task 19.1.1.1:** Retain Markdown `TASKS.md` as the reference adapter.
+  - [ ] **Sub-task 19.1.1.2:** Add optional GitHub Issue task-source adapter with local canonical snapshot.
+  - [ ] **Sub-task 19.1.1.3:** Define future Jira and Azure DevOps adapters without implementing them in v1 unless separately approved.
+- [ ] **Task 19.1.2 - Support repository-specific gates**
+  - [ ] **Sub-task 19.1.2.1:** Define typed Rust, Python, Node, documentation, and custom literal-command profiles.
+  - [ ] **Sub-task 19.1.2.2:** Require each project to declare expected artifacts, test tiers, and prohibited operations.
+  - [ ] **Sub-task 19.1.2.3:** Prevent one project's configuration, state, credentials, sessions, and evidence from crossing into another.
+
+### Story 19.2 - Operational Readiness
+
+- [ ] **Task 19.2.1 - Complete documentation**
+  - [ ] **Sub-task 19.2.1.1:** Add installation, quickstart, configuration, security, recovery, monitoring, GitHub, model-routing, and troubleshooting guides.
+  - [ ] **Sub-task 19.2.1.2:** Add example repositories and sanitized walkthroughs.
+  - [ ] **Sub-task 19.2.1.3:** Document every unsupported action and platform.
+- [ ] **Task 19.2.2 - Complete release review**
+  - [ ] **Sub-task 19.2.2.1:** Run all local unit, integration, security, recovery, performance, packaging, and documentation gates.
+  - [ ] **Sub-task 19.2.2.2:** Complete an independent code and threat-model review.
+  - [ ] **Sub-task 19.2.2.3:** Resolve or explicitly accept every open risk.
+  - [ ] **Sub-task 19.2.2.4:** Create a signed release candidate without publishing it automatically.
+- [ ] **Task 19.2.3 - Evaluate bootstrap retirement**
+  - [ ] **Sub-task 19.2.3.1:** Compare CodingMage capabilities with AgentMage's mature orchestration implementation.
+  - [ ] **Sub-task 19.2.3.2:** Decide whether CodingMage remains independent, becomes a thin client, or is retired.
+  - [ ] **Sub-task 19.2.3.3:** Preserve migration and archival instructions before any retirement.
+
+**Story acceptance criteria**
+
+- [ ] **AC 19.1:** Given two unrelated authorized repositories, when CodingMage coordinates them sequentially and concurrently, then their authority, state, worktrees, sessions, and evidence remain isolated.
+- [ ] **AC 19.2:** Given the v1 candidate, when a new user follows the documented workflow, then installation, diagnosis, supervised execution, pause, recovery, and removal succeed without undocumented authority.
+
+### Sprint 19 Gate
+
+- [ ] **Gate 19.1:** All locally required release gates pass with current immutable evidence.
+- [ ] **Gate 19.2:** Native platform, provider, independent-review, and manual-test limitations are stated truthfully.
+- [ ] **Gate 19.3:** Publication requires an explicit human release decision.
+
+---
+
+## External and Deferred Evidence Register
+
+These items must remain open until their prerequisites actually exist:
+
+- [ ] **External 1:** Native macOS implementation and execution evidence on supported Apple Silicon hardware.
+- [ ] **External 2:** Native Windows implementation and execution evidence on supported Windows hardware.
+- [ ] **External 3:** Authenticated GitHub issue and pull-request tests against an explicitly approved test repository.
+- [ ] **External 4:** Independent security and architecture review by a qualified human reviewer.
+- [ ] **External 5:** Manual fuzzing campaign after the deterministic attack corpus is stable.
+- [ ] **External 6:** Explicit product-owner approval before unattended AgentMage operation.
+- [ ] **External 7:** Explicit product-owner approval before any public release or package publication.
+
+## Immediate Next Unit
+
+The first dependency-ready implementation unit after this planning baseline is:
+
+- [ ] **Next 1:** Complete Story 0.2 by adding the approved license, `SECURITY.md`, `CONTRIBUTING.md`, ADR template and initial decisions, plus deterministic documentation checks.
+
+Only after Sprint 0 passes should Sprint 1 create executable Rust code.
