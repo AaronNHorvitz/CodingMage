@@ -1,6 +1,11 @@
 //! Deterministic, content-free soak schedules and invariant accounting.
 
-use std::{collections::BTreeSet, fmt};
+use std::{
+    collections::BTreeSet,
+    fmt, fs,
+    path::{Path, PathBuf},
+    process::{Command, Stdio},
+};
 
 /// Disposable target shape exercised by a campaign.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -24,6 +29,12 @@ pub enum FixtureKind {
 /// Deterministic interruption injected at a cycle boundary.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum FaultKind {
+    /// Claude adapter returns a bounded provider failure.
+    ClaudeFailure,
+    /// Codex adapter returns a bounded provider failure.
+    CodexFailure,
+    /// GitHub adapter returns an external-boundary failure.
+    GitHubFailure,
     /// Provider quota pause and bounded resume.
     Quota,
     /// Network loss at an external boundary.
@@ -32,6 +43,8 @@ pub enum FaultKind {
     AgentCrash,
     /// Coordinator restarts from durable state.
     ServiceRestart,
+    /// Campaign pauses without consuming work or retry budget.
+    Sleep,
     /// Provider emits invalid structured output.
     MalformedOutput,
     /// Reviewed commit is no longer current.
@@ -42,6 +55,187 @@ pub enum FaultKind {
     PauseResume,
     /// Operator cancels the exact run.
     Cancel,
+}
+
+/// Expected initial condition of a materialized disposable repository.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FixtureCondition {
+    /// Clean repository with a valid task plan.
+    Clean,
+    /// Repository containing staged or unstaged user work.
+    Dirty,
+    /// Repository with an unresolved merge conflict.
+    Conflicted,
+    /// Clean repository whose task plan is deliberately malformed.
+    MalformedPlan,
+}
+
+/// One materialized disposable repository.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FixtureRepository {
+    /// Fixture family.
+    pub kind: FixtureKind,
+    /// Canonical repository root.
+    pub root: PathBuf,
+    /// Expected initial condition.
+    pub condition: FixtureCondition,
+}
+
+/// Creates every disposable target fixture below a new empty root.
+///
+/// A fixed Git executable, empty environment, disabled hooks, and repository-local identity are
+/// used. The caller must provide a dedicated existing empty directory.
+///
+/// # Errors
+///
+/// Returns [`SoakError::Fixture`] if the root is missing, linked, nonempty, or any bounded file or
+/// Git operation fails.
+pub fn materialize_fixtures(root: &Path) -> Result<Vec<FixtureRepository>, SoakError> {
+    let metadata = fs::symlink_metadata(root).map_err(|_| SoakError::Fixture)?;
+    if metadata.file_type().is_symlink()
+        || !metadata.is_dir()
+        || fs::read_dir(root)
+            .map_err(|_| SoakError::Fixture)?
+            .next()
+            .is_some()
+    {
+        return Err(SoakError::Fixture);
+    }
+    let root = fs::canonicalize(root).map_err(|_| SoakError::Fixture)?;
+    let mut repositories = Vec::new();
+    for kind in [
+        FixtureKind::Rust,
+        FixtureKind::Python,
+        FixtureKind::JavaScript,
+        FixtureKind::Documentation,
+        FixtureKind::Dirty,
+        FixtureKind::Conflicted,
+        FixtureKind::MalformedPlan,
+    ] {
+        let path = root.join(fixture_name(kind));
+        fs::create_dir(&path).map_err(|_| SoakError::Fixture)?;
+        git(&path, &["init", "--initial-branch=main"])?;
+        git(&path, &["config", "user.name", "CodingMage Fixture"])?;
+        git(&path, &["config", "user.email", "fixture@invalid.example"])?;
+        write_fixture(kind, &path)?;
+        git(&path, &["add", "."])?;
+        git(&path, &["commit", "-m", "fixture baseline"])?;
+        let condition = match kind {
+            FixtureKind::Dirty => {
+                fs::write(path.join("tracked.txt"), "user edit\n")
+                    .map_err(|_| SoakError::Fixture)?;
+                fs::write(path.join("untracked.txt"), "preserve\n")
+                    .map_err(|_| SoakError::Fixture)?;
+                FixtureCondition::Dirty
+            }
+            FixtureKind::Conflicted => {
+                git(&path, &["switch", "-c", "fixture-side"])?;
+                fs::write(path.join("conflict.txt"), "side\n").map_err(|_| SoakError::Fixture)?;
+                git(&path, &["add", "conflict.txt"])?;
+                git(&path, &["commit", "-m", "side change"])?;
+                git(&path, &["switch", "main"])?;
+                fs::write(path.join("conflict.txt"), "main\n").map_err(|_| SoakError::Fixture)?;
+                git(&path, &["add", "conflict.txt"])?;
+                git(&path, &["commit", "-m", "main change"])?;
+                if git_status(&path, &["merge", "fixture-side"])? == 0 {
+                    return Err(SoakError::Fixture);
+                }
+                FixtureCondition::Conflicted
+            }
+            FixtureKind::MalformedPlan => FixtureCondition::MalformedPlan,
+            _ => FixtureCondition::Clean,
+        };
+        repositories.push(FixtureRepository {
+            kind,
+            root: path,
+            condition,
+        });
+    }
+    Ok(repositories)
+}
+
+fn fixture_name(kind: FixtureKind) -> &'static str {
+    match kind {
+        FixtureKind::Rust => "rust",
+        FixtureKind::Python => "python",
+        FixtureKind::JavaScript => "javascript",
+        FixtureKind::Documentation => "documentation",
+        FixtureKind::Dirty => "dirty",
+        FixtureKind::Conflicted => "conflicted",
+        FixtureKind::MalformedPlan => "malformed-plan",
+    }
+}
+
+fn write_fixture(kind: FixtureKind, root: &Path) -> Result<(), SoakError> {
+    let task_plan = if kind == FixtureKind::MalformedPlan {
+        "- [ ] orphan task without sprint or story\n"
+    } else {
+        "# Tasks\n\n## Sprint 0\n\n### Story 0.1\n\n- [ ] **Task 0.1.1:** Fixture task.\n"
+    };
+    fs::write(root.join("TASKS.md"), task_plan).map_err(|_| SoakError::Fixture)?;
+    match kind {
+        FixtureKind::Rust => {
+            fs::create_dir(root.join("src")).map_err(|_| SoakError::Fixture)?;
+            fs::write(
+                root.join("Cargo.toml"),
+                "[package]\nname = \"fixture\"\nversion = \"0.1.0\"\nedition = \"2024\"\n",
+            )
+            .map_err(|_| SoakError::Fixture)?;
+            fs::write(root.join("src/lib.rs"), "pub fn value() -> u8 { 1 }\n")
+                .map_err(|_| SoakError::Fixture)?;
+        }
+        FixtureKind::Python => {
+            fs::write(
+                root.join("pyproject.toml"),
+                "[project]\nname='fixture'\nversion='0.1.0'\n",
+            )
+            .map_err(|_| SoakError::Fixture)?;
+            fs::write(root.join("fixture.py"), "VALUE = 1\n").map_err(|_| SoakError::Fixture)?;
+        }
+        FixtureKind::JavaScript => {
+            fs::write(
+                root.join("package.json"),
+                "{\"name\":\"fixture\",\"version\":\"0.1.0\"}\n",
+            )
+            .map_err(|_| SoakError::Fixture)?;
+            fs::write(root.join("index.js"), "export const value = 1;\n")
+                .map_err(|_| SoakError::Fixture)?;
+        }
+        FixtureKind::Documentation => {
+            fs::write(root.join("README.md"), "# Fixture\n").map_err(|_| SoakError::Fixture)?;
+        }
+        FixtureKind::Dirty => {
+            fs::write(root.join("tracked.txt"), "baseline\n").map_err(|_| SoakError::Fixture)?;
+        }
+        FixtureKind::Conflicted => {
+            fs::write(root.join("conflict.txt"), "baseline\n").map_err(|_| SoakError::Fixture)?;
+        }
+        FixtureKind::MalformedPlan => {}
+    }
+    Ok(())
+}
+
+fn git(root: &Path, arguments: &[&str]) -> Result<(), SoakError> {
+    (git_status(root, arguments)? == 0)
+        .then_some(())
+        .ok_or(SoakError::Fixture)
+}
+
+fn git_status(root: &Path, arguments: &[&str]) -> Result<i32, SoakError> {
+    let status = Command::new("/usr/bin/git")
+        .current_dir(root)
+        .env_clear()
+        .env("HOME", "/nonexistent")
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .args(["--no-pager", "-c", "core.hooksPath=/dev/null"])
+        .args(arguments)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map_err(|_| SoakError::Fixture)?;
+    Ok(status.code().unwrap_or(-1))
 }
 
 /// One exact fault injection.
@@ -195,6 +389,8 @@ pub enum SoakError {
     InvalidConfiguration,
     /// A prohibited observation occurred.
     InvariantViolation,
+    /// Disposable fixture creation failed.
+    Fixture,
 }
 
 impl fmt::Display for SoakError {
@@ -202,6 +398,7 @@ impl fmt::Display for SoakError {
         formatter.write_str(match self {
             Self::InvalidConfiguration => "codingmage.soak.invalid_configuration",
             Self::InvariantViolation => "codingmage.soak.invariant_violation",
+            Self::Fixture => "codingmage.soak.fixture",
         })
     }
 }
@@ -214,10 +411,14 @@ mod tests {
 
     fn complete_config(cycles: u64) -> CampaignConfig {
         let kinds = [
+            FaultKind::ClaudeFailure,
+            FaultKind::CodexFailure,
+            FaultKind::GitHubFailure,
             FaultKind::Quota,
             FaultKind::NetworkLoss,
             FaultKind::AgentCrash,
             FaultKind::ServiceRestart,
+            FaultKind::Sleep,
             FaultKind::MalformedOutput,
             FaultKind::StaleCommit,
             FaultKind::ConcurrentUserChange,
@@ -252,10 +453,55 @@ mod tests {
         let config = complete_config(10_000);
         let report = run_accelerated(&config).unwrap();
         assert_eq!(report.completed_cycles, 10_000);
-        assert_eq!(report.injected_faults, 9);
-        assert_eq!(report.fault_coverage.len(), 9);
+        assert_eq!(report.injected_faults, 13);
+        assert_eq!(report.fault_coverage.len(), 13);
         assert_eq!(report.peak_retained_events, 128);
         report.verify().unwrap();
+    }
+
+    #[test]
+    fn materialized_repositories_have_every_required_initial_condition() {
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-soak-fixtures-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&root).unwrap();
+        let fixtures = materialize_fixtures(&root).unwrap();
+        assert_eq!(fixtures.len(), 7);
+        assert!(
+            fixtures
+                .iter()
+                .all(|fixture| fixture.root.join(".git").is_dir())
+        );
+        assert_eq!(
+            fixtures
+                .iter()
+                .find(|fixture| fixture.kind == FixtureKind::Dirty)
+                .unwrap()
+                .condition,
+            FixtureCondition::Dirty
+        );
+        assert_eq!(
+            fixtures
+                .iter()
+                .find(|fixture| fixture.kind == FixtureKind::Conflicted)
+                .unwrap()
+                .condition,
+            FixtureCondition::Conflicted
+        );
+        assert_eq!(
+            fixtures
+                .iter()
+                .find(|fixture| fixture.kind == FixtureKind::MalformedPlan)
+                .unwrap()
+                .condition,
+            FixtureCondition::MalformedPlan
+        );
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
