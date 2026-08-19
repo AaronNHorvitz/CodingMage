@@ -1,6 +1,11 @@
 //! Reusable project task sources, verification profiles, and isolation policy.
 
-use std::{collections::BTreeSet, fmt, fs, path::PathBuf};
+use std::{
+    collections::BTreeSet,
+    fmt, fs,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 use codingmage_plan::TaskPlan;
 use serde::{Deserialize, Serialize};
@@ -259,6 +264,80 @@ pub fn verify_isolation(left: &ProjectPolicy, right: &ProjectPolicy) -> Result<(
     Ok(())
 }
 
+/// Registry of pairwise-isolated projects with exact in-process ownership.
+#[derive(Clone, Debug)]
+pub struct ProjectRegistry {
+    projects: Arc<Vec<ProjectPolicy>>,
+    active: Arc<Mutex<BTreeSet<usize>>>,
+}
+
+impl ProjectRegistry {
+    /// Creates a registry after pairwise isolation validation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProjectError::Isolation`] for an empty registry or any overlapping pair.
+    pub fn new(projects: Vec<ProjectPolicy>) -> Result<Self, ProjectError> {
+        if projects.is_empty() {
+            return Err(ProjectError::Isolation);
+        }
+        for (index, left) in projects.iter().enumerate() {
+            left.validate()?;
+            for right in projects.iter().skip(index + 1) {
+                verify_isolation(left, right)?;
+            }
+        }
+        Ok(Self {
+            projects: Arc::new(projects),
+            active: Arc::new(Mutex::new(BTreeSet::new())),
+        })
+    }
+
+    /// Claims one exact project until the returned lease is dropped.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProjectError::Ownership`] for an unknown or already-active project.
+    pub fn claim(&self, index: usize) -> Result<ProjectLease, ProjectError> {
+        if self.projects.get(index).is_none() {
+            return Err(ProjectError::Ownership);
+        }
+        let mut active = self.active.lock().map_err(|_| ProjectError::Ownership)?;
+        if !active.insert(index) {
+            return Err(ProjectError::Ownership);
+        }
+        Ok(ProjectLease {
+            index,
+            projects: Arc::clone(&self.projects),
+            active: Arc::clone(&self.active),
+        })
+    }
+}
+
+/// Exact project ownership released automatically on drop.
+#[derive(Debug)]
+pub struct ProjectLease {
+    index: usize,
+    projects: Arc<Vec<ProjectPolicy>>,
+    active: Arc<Mutex<BTreeSet<usize>>>,
+}
+
+impl ProjectLease {
+    /// Returns the exact leased policy.
+    #[must_use]
+    pub fn policy(&self) -> &ProjectPolicy {
+        &self.projects[self.index]
+    }
+}
+
+impl Drop for ProjectLease {
+    fn drop(&mut self) {
+        if let Ok(mut active) = self.active.lock() {
+            active.remove(&self.index);
+        }
+    }
+}
+
 fn component(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 128
@@ -290,6 +369,8 @@ pub enum ProjectError {
     GateProfile,
     /// Project authority overlaps or is incomplete.
     Isolation,
+    /// Exact project is unknown or already owned.
+    Ownership,
 }
 
 impl fmt::Display for ProjectError {
@@ -298,6 +379,7 @@ impl fmt::Display for ProjectError {
             Self::TaskSource => "codingmage.project.task_source",
             Self::GateProfile => "codingmage.project.gate_profile",
             Self::Isolation => "codingmage.project.isolation",
+            Self::Ownership => "codingmage.project.ownership",
         })
     }
 }
@@ -394,6 +476,51 @@ mod tests {
             verify_isolation(&left, &right),
             Err(ProjectError::Isolation)
         );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn unrelated_projects_run_sequentially_and_concurrently_without_cross_ownership() {
+        let root = root("registry");
+        let policy = |label: &str| {
+            let repository = root.join(format!("{label}-repository"));
+            let state = root.join(format!("{label}-state"));
+            let worktrees = root.join(format!("{label}-worktrees"));
+            for path in [&repository, &state, &worktrees] {
+                fs::create_dir(path).unwrap();
+            }
+            ProjectPolicy {
+                repository,
+                state,
+                worktrees,
+                credential_namespace: format!("{label}-credentials"),
+                session_namespace: format!("{label}-sessions"),
+                evidence_namespace: format!("{label}-evidence"),
+                expected_artifacts: BTreeSet::from([PathBuf::from("artifact")]),
+                prohibited_operations: BTreeSet::from(["force-push".to_owned()]),
+                gates: GateProfile::Documentation,
+            }
+        };
+        let registry = ProjectRegistry::new(vec![policy("left"), policy("right")]).unwrap();
+        {
+            let left = registry.claim(0).unwrap();
+            assert_eq!(registry.claim(0).unwrap_err(), ProjectError::Ownership);
+            assert!(left.policy().state.ends_with("left-state"));
+        }
+        registry.claim(0).unwrap();
+
+        let left_registry = registry.clone();
+        let right_registry = registry.clone();
+        let left = std::thread::spawn(move || {
+            let lease = left_registry.claim(0).unwrap();
+            lease.policy().evidence_namespace.clone()
+        });
+        let right = std::thread::spawn(move || {
+            let lease = right_registry.claim(1).unwrap();
+            lease.policy().evidence_namespace.clone()
+        });
+        assert_eq!(left.join().unwrap(), "left-evidence");
+        assert_eq!(right.join().unwrap(), "right-evidence");
         fs::remove_dir_all(root).unwrap();
     }
 }
