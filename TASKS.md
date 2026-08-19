@@ -326,28 +326,28 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 6.1 - Codex Capability and Thread Management
 
-- [ ] **Task 6.1.1 - Probe installed Codex**
-  - [ ] **Sub-task 6.1.1.1:** Verify executable identity and supported version range.
-  - [ ] **Sub-task 6.1.1.2:** Probe non-interactive execution, JSONL events, output schemas, thread continuation, model selection, effort selection, and sandbox modes.
-  - [ ] **Sub-task 6.1.1.3:** Record supported capabilities without reading or copying authentication material.
-  - [ ] **Sub-task 6.1.1.4:** Fail visibly when required review behavior is unavailable.
-- [ ] **Task 6.1.2 - Implement review thread lifecycle**
-  - [ ] **Sub-task 6.1.2.1:** Start a review thread bound to one target commit, base commit, task, and evidence set.
-  - [ ] **Sub-task 6.1.2.2:** Resume only the exact thread for correction verification.
-  - [ ] **Sub-task 6.1.2.3:** Run review with read-only repository authority.
-  - [ ] **Sub-task 6.1.2.4:** Cancel and reap the exact Codex process tree.
+- [x] **Task 6.1.1 - Probe installed Codex**
+  - [x] **Sub-task 6.1.1.1:** Verify executable identity and supported version range.
+  - [x] **Sub-task 6.1.1.2:** Probe non-interactive execution, JSONL events, output schemas, thread continuation, model selection, effort selection, and sandbox modes.
+  - [x] **Sub-task 6.1.1.3:** Record supported capabilities without reading or copying authentication material.
+  - [x] **Sub-task 6.1.1.4:** Fail visibly when required review behavior is unavailable.
+- [x] **Task 6.1.2 - Implement review thread lifecycle**
+  - [x] **Sub-task 6.1.2.1:** Start a review thread bound to one target commit, base commit, task, and evidence set.
+  - [x] **Sub-task 6.1.2.2:** Resume only the exact thread for correction verification.
+  - [x] **Sub-task 6.1.2.3:** Run review with read-only repository authority.
+  - [x] **Sub-task 6.1.2.4:** Cancel and reap the exact Codex process tree.
 
 ### Story 6.2 - Structured Senior Findings
 
 - [ ] **Task 6.2.1 - Define review output**
-  - [ ] **Sub-task 6.2.1.1:** Require `pass`, `changes_required`, `disputed`, or `blocked` verdicts.
-  - [ ] **Sub-task 6.2.1.2:** Require stable finding ID, severity, file, line, claim, evidence, requested correction, and acceptance test.
+  - [x] **Sub-task 6.2.1.1:** Require `pass`, `changes_required`, `disputed`, or `blocked` verdicts.
+  - [x] **Sub-task 6.2.1.2:** Require stable finding ID, severity, file, line, claim, evidence, requested correction, and acceptance test. File and line are mandatory for implementation defects and nullable for separately typed external blockers or suggestions.
   - [ ] **Sub-task 6.2.1.3:** Reject findings against files or commits outside the bound review scope.
-  - [ ] **Sub-task 6.2.1.4:** Separate implementation defects from external blockers and optional suggestions.
+  - [x] **Sub-task 6.2.1.4:** Separate implementation defects from external blockers and optional suggestions.
 - [ ] **Task 6.2.2 - Verify review integrity**
   - [ ] **Sub-task 6.2.2.1:** Revalidate target and base commits before and after review.
   - [ ] **Sub-task 6.2.2.2:** Verify referenced files and lines exist in the reviewed commit.
-  - [ ] **Sub-task 6.2.2.3:** Prevent Codex prose from marking tests, tasks, or gates complete.
+  - [x] **Sub-task 6.2.2.3:** Prevent Codex prose from marking tests, tasks, or gates complete.
 
 **Story acceptance criteria**
 

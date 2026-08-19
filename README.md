@@ -294,7 +294,8 @@ follow [`SECURITY.md`](SECURITY.md), and repository changes must follow
 - Bounded Linux process runtime: yes
 - Provider-neutral adapter contract and fakes: yes
 - Claude adapter core and deterministic fixtures: yes
-- Live confined Claude task and Codex adapter: no
+- Claude and Codex adapter cores with deterministic fixtures: yes
+- Live confined Claude task and live Codex review: no
 - Complete agent-adapter integration: no
 - Background service: no
 - GitHub automation: no
