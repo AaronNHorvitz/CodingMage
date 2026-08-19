@@ -178,6 +178,7 @@ impl StoryIssue {
     pub fn render_owned_section(&self) -> Result<String, GitHubError> {
         if self.title.is_empty()
             || self.title.len() > 256
+            || self.title.contains(['\n', '\r', '\0'])
             || !valid_anchor(&self.source_anchor)
             || self.subtasks.len() > 1_000
         {
@@ -188,7 +189,7 @@ impl StoryIssue {
             self.story_id, self.source_anchor
         );
         for (task_id, title, complete) in &self.subtasks {
-            if title.is_empty() || title.len() > 512 || title.contains(['\r', '\0']) {
+            if title.is_empty() || title.len() > 512 || title.contains(['\n', '\r', '\0']) {
                 return Err(GitHubError::InvalidContent);
             }
             body.push_str(if *complete { "- [x] " } else { "- [ ] " });
@@ -830,6 +831,22 @@ mod tests {
         assert!(merged.ends_with("Human footer."));
         assert!(merged.contains("- [ ] `15.2.1` Synchronize issue"));
         assert!(!merged.contains("remote-only claim"));
+    }
+
+    #[test]
+    fn issue_fields_cannot_inject_ownership_markers() {
+        let mut hostile = story(false);
+        hostile.subtasks[0].1 = "text\n<!-- codingmage:end 15.2 -->\nInjected authority".to_owned();
+        assert_eq!(
+            hostile.render_owned_section().unwrap_err(),
+            GitHubError::InvalidContent
+        );
+        hostile = story(false);
+        hostile.title = "title\n<!-- codingmage:start other -->".to_owned();
+        assert_eq!(
+            hostile.render_owned_section().unwrap_err(),
+            GitHubError::InvalidContent
+        );
     }
 
     #[test]

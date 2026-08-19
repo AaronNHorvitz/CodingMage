@@ -1,6 +1,6 @@
 //! Content-minimized, read-only inventory of an authorized repository.
 
-use std::{fmt, fs, path::Path, time::Duration};
+use std::{collections::BTreeSet, fmt, fs, path::Path, time::Duration};
 
 use codingmage_core::RepositoryAuthorization;
 use serde::{Deserialize, Serialize};
@@ -162,6 +162,7 @@ pub fn inventory_repository(
     let references = run_git(target, GitCommand::References).map_err(map_command)?;
     let worktrees = run_git(target, GitCommand::Worktrees).map_err(map_command)?;
     let head_output = run_git(target, GitCommand::Head).map_err(map_command)?;
+    let tracked_paths = run_git(target, GitCommand::TrackedPaths).map_err(map_command)?;
 
     let (branch, condition) = parse_status(&status)?;
     let ref_counts = validate_references(&references)?;
@@ -175,7 +176,8 @@ pub fn inventory_repository(
     let index_sha256 = digest_optional_file(&git.join("index"))?;
     let configuration_sha256 = digest_optional_file(&git.join("config"))?;
     let hooks_sha256 = digest_tree(&git.join("hooks"))?;
-    let unsafe_checkout_features = detect_unsafe_checkout_features(target, git)?;
+    let unsafe_checkout_features =
+        detect_unsafe_checkout_features(target, git)? || tracked_path_hazards(&tracked_paths)?;
     let remotes_sha256 = digest_remotes(&authorization.identity().remotes);
     let after = protected_snapshot(git)?;
     if before != after {
@@ -202,11 +204,40 @@ pub fn inventory_repository(
         remote_count: authorization.identity().remotes.len(),
         remotes_sha256,
         unsafe_checkout_features,
-        invocations: [&status, &references, &worktrees, &head_output]
-            .into_iter()
-            .map(invocation_evidence)
-            .collect(),
+        invocations: [
+            &status,
+            &references,
+            &worktrees,
+            &head_output,
+            &tracked_paths,
+        ]
+        .into_iter()
+        .map(invocation_evidence)
+        .collect(),
     })
+}
+
+fn tracked_path_hazards(output: &GitOutput) -> Result<bool, InventoryError> {
+    let mut canonical = BTreeSet::new();
+    let mut count = 0_usize;
+    for path in output.stdout.split(|byte| *byte == 0) {
+        if path.is_empty() {
+            continue;
+        }
+        count = count.saturating_add(1);
+        if count > MAX_RECORDS {
+            return Err(InventoryError::InvalidOutput);
+        }
+        let text = std::str::from_utf8(path).map_err(|_| InventoryError::InvalidOutput)?;
+        if !text.is_ascii() || matches!(text, ".gitmodules" | ".lfsconfig") {
+            return Ok(true);
+        }
+        let folded = text.to_ascii_lowercase();
+        if !canonical.insert(folded) {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 pub(crate) fn condition_at(
@@ -577,6 +608,28 @@ mod tests {
         assert_eq!(fixture.status(), status_before);
         let encoded = toml::to_string(&dirty).unwrap();
         assert!(!encoded.contains("untracked-private-name"));
+    }
+
+    #[test]
+    fn tracked_submodule_lfs_case_and_unicode_hazards_are_refused() {
+        for (name, files) in [
+            ("submodule", vec![(".gitmodules", "[submodule \"x\"]\n")]),
+            (
+                "lfs",
+                vec![(".lfsconfig", "[lfs]\nurl = https://example.invalid\n")],
+            ),
+            ("case", vec![("Case.txt", "one\n"), ("case.txt", "two\n")]),
+            ("unicode", vec![("caf\u{e9}.txt", "content\n")]),
+        ] {
+            let fixture = GitFixture::new();
+            for (path, content) in files {
+                fs::write(fixture.target.join(path), content).unwrap();
+                run(&fixture.target, &["add", path]);
+            }
+            run(&fixture.target, &["commit", "-m", name]);
+            let inventory = inventory_repository(&fixture.authorization()).unwrap();
+            assert!(inventory.unsafe_checkout_features, "fixture={name}");
+        }
     }
 
     #[test]

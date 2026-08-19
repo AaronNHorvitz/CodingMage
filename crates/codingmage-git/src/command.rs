@@ -22,6 +22,7 @@ pub(crate) enum GitCommand<'a> {
     References,
     Worktrees,
     Head,
+    TrackedPaths,
     VerifyCommit(&'a str),
     IsAncestor {
         ancestor: &'a str,
@@ -173,6 +174,7 @@ fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
             .into_iter()
             .map(OsString::from)
             .collect(),
+        GitCommand::TrackedPaths => ["ls-files", "-z"].into_iter().map(OsString::from).collect(),
         GitCommand::VerifyCommit(object) => {
             vec![
                 "cat-file".into(),
