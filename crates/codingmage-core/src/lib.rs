@@ -1,6 +1,16 @@
 //! Authority and orchestration policy for `CodingMage`.
 
+mod config;
+mod repository;
+
 pub use codingmage_contracts as contracts;
+pub use config::{
+    AgentProfile, CapabilityGrant, CapabilityPolicy, CommandSpec, Config, ConfigLoadError,
+    EffectiveConfigView, PublicationMode, PublicationPolicy, load_config,
+};
+pub use repository::{
+    RemoteIdentity, RepositoryAuthorization, RepositoryAuthorizationError, RepositoryIdentity,
+};
 
 /// Returns the coordinator contract version implemented by this core.
 #[must_use]
