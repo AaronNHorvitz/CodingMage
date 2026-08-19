@@ -61,34 +61,34 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 **User-facing value:** As a contributor, I need stable planning, security, and decision rules so future automation can distinguish requirements from suggestions.
 
-- [ ] **Task 0.2.1 - Add foundational policy documents**
-  - [ ] **Sub-task 0.2.1.1:** Choose and add a public software license after explicit owner approval.
-  - [ ] **Sub-task 0.2.1.2:** Add `SECURITY.md` with private vulnerability reporting, supported versions, response expectations, and safe-disable behavior.
-  - [ ] **Sub-task 0.2.1.3:** Add `CONTRIBUTING.md` with branch, test, review, evidence, and commit expectations.
-  - [ ] **Sub-task 0.2.1.4:** Add `CODE_OF_CONDUCT.md` if the repository will accept external contributions.
-- [ ] **Task 0.2.2 - Add architectural decision records**
-  - [ ] **Sub-task 0.2.2.1:** Create an ADR template with context, decision, alternatives, consequences, status, and supersession fields.
-  - [ ] **Sub-task 0.2.2.2:** Record the Rust-first bootstrap coordinator decision.
-  - [ ] **Sub-task 0.2.2.3:** Record the external-to-target and no-self-modification decision.
-  - [ ] **Sub-task 0.2.2.4:** Record the CLI-adapter-first provider boundary.
-  - [ ] **Sub-task 0.2.2.5:** Record the append-only journal plus atomic snapshot decision.
-- [ ] **Task 0.2.3 - Establish documentation checks**
-  - [ ] **Sub-task 0.2.3.1:** Add Markdown formatting and lint configuration.
-  - [ ] **Sub-task 0.2.3.2:** Add local-link validation.
-  - [ ] **Sub-task 0.2.3.3:** Add Mermaid syntax validation.
-  - [ ] **Sub-task 0.2.3.4:** Add prohibited-claim checks for unimplemented, merged, released, approved, or independently reviewed behavior.
-  - [ ] **Sub-task 0.2.3.5:** Add secret-pattern checks that report locations without printing matched values.
+- [x] **Task 0.2.1 - Add foundational policy documents**
+  - [x] **Sub-task 0.2.1.1:** Choose and add a public software license after explicit owner approval.
+  - [x] **Sub-task 0.2.1.2:** Add `SECURITY.md` with private vulnerability reporting, supported versions, response expectations, and safe-disable behavior.
+  - [x] **Sub-task 0.2.1.3:** Add `CONTRIBUTING.md` with branch, test, review, evidence, and commit expectations.
+  - [x] **Sub-task 0.2.1.4:** Add `CODE_OF_CONDUCT.md` if the repository will accept external contributions. External contributions are closed during bootstrap, so the conditional document is deferred.
+- [x] **Task 0.2.2 - Add architectural decision records**
+  - [x] **Sub-task 0.2.2.1:** Create an ADR template with context, decision, alternatives, consequences, status, and supersession fields.
+  - [x] **Sub-task 0.2.2.2:** Record the Rust-first bootstrap coordinator decision.
+  - [x] **Sub-task 0.2.2.3:** Record the external-to-target and no-self-modification decision.
+  - [x] **Sub-task 0.2.2.4:** Record the CLI-adapter-first provider boundary.
+  - [x] **Sub-task 0.2.2.5:** Record the append-only journal plus atomic snapshot decision.
+- [x] **Task 0.2.3 - Establish documentation checks**
+  - [x] **Sub-task 0.2.3.1:** Add Markdown formatting and lint configuration.
+  - [x] **Sub-task 0.2.3.2:** Add local-link validation.
+  - [x] **Sub-task 0.2.3.3:** Add Mermaid syntax validation.
+  - [x] **Sub-task 0.2.3.4:** Add prohibited-claim checks for unimplemented, merged, released, approved, or independently reviewed behavior.
+  - [x] **Sub-task 0.2.3.5:** Add secret-pattern checks that report locations without printing matched values.
 
 **Story acceptance criteria**
 
-- [ ] **AC 0.2.1:** Given a clean checkout, when the documentation gate runs, then Markdown, links, Mermaid, claims, and synthetic-secret fixtures produce deterministic pass or fail results.
-- [ ] **AC 0.2.2:** Given a material architectural change, when it is proposed, then an ADR records its authority, consequences, and relationship to existing decisions before implementation.
+- [x] **AC 0.2.1:** Given a clean checkout, when the documentation gate runs, then Markdown, links, Mermaid, claims, and synthetic-secret fixtures produce deterministic pass or fail results.
+- [x] **AC 0.2.2:** Given a material architectural change, when it is proposed, then an ADR records its authority, consequences, and relationship to existing decisions before implementation.
 
 ### Sprint 0 Gate
 
-- [ ] **Gate 0.1:** README, TASKS, security policy, contribution policy, license, and accepted ADRs agree on scope and authority.
-- [ ] **Gate 0.2:** Documentation and secret checks pass from a clean checkout.
-- [ ] **Gate 0.3:** No executable coordinator behavior is claimed before code and tests exist.
+- [x] **Gate 0.1:** README, TASKS, security policy, contribution policy, license, and accepted ADRs agree on scope and authority.
+- [x] **Gate 0.2:** Documentation and secret checks pass from a clean checkout. See `docs/evidence/sprint-0.md`.
+- [x] **Gate 0.3:** No executable coordinator behavior is claimed before code and tests exist.
 
 ---
 
@@ -903,8 +903,6 @@ These items must remain open until their prerequisites actually exist:
 
 ## Immediate Next Unit
 
-The first dependency-ready implementation unit after this planning baseline is:
+The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Story 0.2 by adding the approved license, `SECURITY.md`, `CONTRIBUTING.md`, ADR template and initial decisions, plus deterministic documentation checks.
-
-Only after Sprint 0 passes should Sprint 1 create executable Rust code.
+- [ ] **Next 1:** Complete Story 1.1 by creating the pinned Rust workspace, enforcing dependency direction, and passing strict local build, test, formatting, lint, and documentation gates.
