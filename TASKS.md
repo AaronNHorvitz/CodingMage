@@ -642,36 +642,36 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 14.1 - User Service Lifecycle
 
-- [ ] **Task 14.1.1 - Define systemd user service**
-  - [ ] **Sub-task 14.1.1.1:** Generate a user-owned service with explicit executable, configuration, state root, restart policy, and resource limits.
-  - [ ] **Sub-task 14.1.1.2:** Do not install system services, request root, or enable lingering automatically.
-  - [ ] **Sub-task 14.1.1.3:** Add install, verify, start, stop, and uninstall commands with previews.
-- [ ] **Task 14.1.2 - Enforce single ownership**
-  - [ ] **Sub-task 14.1.2.1:** Hold one coordinator lock per target repository.
-  - [ ] **Sub-task 14.1.2.2:** Detect stale lock owners without adopting unrelated processes.
-  - [ ] **Sub-task 14.1.2.3:** Release locks and descendants on normal stop, failure, logout, and shutdown.
+- [x] **Task 14.1.1 - Define systemd user service**
+  - [x] **Sub-task 14.1.1.1:** Generate a user-owned service with explicit executable, configuration, state root, restart policy, and resource limits.
+  - [x] **Sub-task 14.1.1.2:** Do not install system services, request root, or enable lingering automatically.
+  - [x] **Sub-task 14.1.1.3:** Add install, verify, start, stop, and uninstall commands with previews.
+- [x] **Task 14.1.2 - Enforce single ownership**
+  - [x] **Sub-task 14.1.2.1:** Hold one coordinator lock per target repository.
+  - [x] **Sub-task 14.1.2.2:** Detect stale lock owners without adopting unrelated processes.
+  - [x] **Sub-task 14.1.2.3:** Release locks and descendants on normal stop, failure, logout, and shutdown.
 
 ### Story 14.2 - Provider Capacity and Backoff
 
-- [ ] **Task 14.2.1 - Normalize capacity signals**
-  - [ ] **Sub-task 14.2.1.1:** Parse exposed token usage, cost, rate-limit, remaining-capacity, and reset data without relying on message text alone where structured fields exist.
-  - [ ] **Sub-task 14.2.1.2:** Represent unavailable metrics explicitly.
-  - [ ] **Sub-task 14.2.1.3:** Detect authentication expiry separately from quota exhaustion.
-- [ ] **Task 14.2.2 - Implement pause and retry**
-  - [ ] **Sub-task 14.2.2.1:** Pause until a known reset with bounded jitter.
-  - [ ] **Sub-task 14.2.2.2:** Use capped exponential backoff when reset is unknown.
-  - [ ] **Sub-task 14.2.2.3:** Persist retry count and next attempt across restarts.
-  - [ ] **Sub-task 14.2.2.4:** Stop after configured terminal authentication or provider failures.
+- [x] **Task 14.2.1 - Normalize capacity signals**
+  - [x] **Sub-task 14.2.1.1:** Parse exposed token usage, cost, rate-limit, remaining-capacity, and reset data without relying on message text alone where structured fields exist.
+  - [x] **Sub-task 14.2.1.2:** Represent unavailable metrics explicitly.
+  - [x] **Sub-task 14.2.1.3:** Detect authentication expiry separately from quota exhaustion.
+- [x] **Task 14.2.2 - Implement pause and retry**
+  - [x] **Sub-task 14.2.2.1:** Pause until a known reset with bounded jitter.
+  - [x] **Sub-task 14.2.2.2:** Use capped exponential backoff when reset is unknown.
+  - [x] **Sub-task 14.2.2.3:** Persist retry count and next attempt across restarts.
+  - [x] **Sub-task 14.2.2.4:** Stop after configured terminal authentication or provider failures.
 
 **Story acceptance criteria**
 
 - [ ] **AC 14.1:** Given service restart, logout simulation, crash, and duplicate launch, when lifecycle handling runs, then exactly one coordinator owns the target and no child survives incorrectly.
-- [ ] **AC 14.2:** Given quota, network, authentication, overload, and malformed provider errors, when classified, then CodingMage pauses, retries, or stops according to exact policy without spinning.
+- [x] **AC 14.2:** Given quota, network, authentication, overload, and malformed provider errors, when classified, then CodingMage pauses, retries, or stops according to exact policy without spinning.
 
 ### Sprint 14 Gate
 
-- [ ] **Gate 14.1:** User-service install/uninstall and lifecycle tests pass in an isolated Fedora user session.
-- [ ] **Gate 14.2:** A sustained fake-provider run demonstrates bounded retry and clean recovery.
+- [ ] **Gate 14.1:** User-service install/uninstall and lifecycle tests pass in an isolated Fedora user session. Local unit generation, native parsing, filesystem lifecycle, duplicate ownership, crash release, and cleanup policy pass; a real isolated login/logout session remains external evidence. See `docs/evidence/sprint-14-local.md`.
+- [x] **Gate 14.2:** A sustained fake-provider run demonstrates bounded retry and clean recovery. See `docs/evidence/sprint-14-local.md`.
 
 ---
 

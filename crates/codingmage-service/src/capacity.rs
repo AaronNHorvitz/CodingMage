@@ -69,7 +69,8 @@ impl CapacityClass {
 }
 
 /// Provider-reported metrics, each explicitly optional.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct CapacityMetrics {
     /// Used provider units.
     pub used_units: Option<u64>,
@@ -80,6 +81,32 @@ pub struct CapacityMetrics {
     /// Reset as Unix milliseconds.
     pub reset_at_ms: Option<u64>,
 }
+
+impl CapacityMetrics {
+    /// Decodes a bounded structured metrics object without consulting provider prose.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CapacityDecodeError`] for oversized, malformed, or unknown fields.
+    pub fn decode(bytes: &[u8]) -> Result<Self, CapacityDecodeError> {
+        if bytes.len() > 16 * 1024 {
+            return Err(CapacityDecodeError);
+        }
+        serde_json::from_slice(bytes).map_err(|_| CapacityDecodeError)
+    }
+}
+
+/// Structured capacity metrics failed bounded schema validation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CapacityDecodeError;
+
+impl fmt::Display for CapacityDecodeError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("codingmage.capacity.invalid_metrics")
+    }
+}
+
+impl std::error::Error for CapacityDecodeError {}
 
 /// Classifies structured data first and HTTP status only as an explicit fallback.
 #[must_use]

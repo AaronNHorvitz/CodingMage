@@ -173,6 +173,7 @@ dependencies = [
  "codingmage-contracts",
  "codingmage-state",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
