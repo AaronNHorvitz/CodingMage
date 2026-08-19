@@ -220,8 +220,11 @@ impl ClaudeWorkPacket {
             &self.prohibited_actions,
         );
         rendered.push_str(
-            "\nReturn only the required structured completion report. A claimed test, commit, merge,\n\
-             or release has no authority until CodingMage verifies it independently.\n",
+            "\nDo not run tests, Git, network, or external-infrastructure commands. CodingMage owns\n\
+             deterministic verification and commit creation. Return only the required structured\n\
+             completion report with ready_for_commit=true after finishing file edits, or a truthful\n\
+             blocker. A claimed test, commit, merge, or release has no authority until CodingMage\n\
+             verifies it independently.\n",
         );
         if rendered.len() > MAX_PACKET_BYTES {
             return Err(ClaudeError::InvalidPacket);
@@ -240,6 +243,8 @@ pub struct ClaudeCompletionReport {
     pub tests: Vec<ClaudeTestClaim>,
     /// Claimed coherent commit.
     pub commit: Option<String>,
+    /// The bounded file edits are ready for coordinator-owned verification and commit creation.
+    pub ready_for_commit: bool,
     /// Content-minimized limitation codes.
     pub limitations: Vec<String>,
     /// Stable blocker code if work could not complete.
@@ -264,8 +269,10 @@ impl ClaudeCompletionReport {
     /// Returns [`ClaudeError::InvalidReport`] when commit and blocker state conflict or path and
     /// command fields are unsafe.
     pub fn validate(&self) -> Result<(), ClaudeError> {
-        let completed = self.commit.is_some();
-        if completed == self.blocker_code.is_some()
+        let dispositions = usize::from(self.commit.is_some())
+            + usize::from(self.ready_for_commit)
+            + usize::from(self.blocker_code.is_some());
+        if dispositions != 1
             || self
                 .commit
                 .as_ref()
@@ -431,7 +438,13 @@ impl ClaudeAdapter {
         resume: bool,
     ) -> Result<ClaudeInvocationPlan, ClaudeError> {
         let stdin = packet.render(session)?;
+        let settings = authority_settings(session)?;
+        let permission_root = permission_root(&session.worktree)?;
+        let allowed_tools = ["Read", "Edit", "Write"]
+            .map(|tool| format!("{tool}({permission_root})"))
+            .join(",");
         let mut arguments = vec![
+            "--bare".to_owned(),
             "--print".to_owned(),
             "--output-format".to_owned(),
             "json".to_owned(),
@@ -443,6 +456,12 @@ impl ClaudeAdapter {
             self.effort.clone(),
             "--permission-mode".to_owned(),
             "dontAsk".to_owned(),
+            "--tools".to_owned(),
+            "Read,Edit,Write".to_owned(),
+            "--allowedTools".to_owned(),
+            allowed_tools,
+            "--disallowedTools".to_owned(),
+            "Bash,WebFetch,WebSearch,NotebookEdit,Agent,Task,Skill".to_owned(),
             "--disable-slash-commands".to_owned(),
             "--no-chrome".to_owned(),
             "--strict-mcp-config".to_owned(),
@@ -450,6 +469,8 @@ impl ClaudeAdapter {
             "{}".to_owned(),
             "--setting-sources".to_owned(),
             String::new(),
+            "--settings".to_owned(),
+            settings,
             "--max-budget-usd".to_owned(),
             self.maximum_budget_usd.clone(),
         ];
@@ -645,12 +666,57 @@ fn completion_schema() -> String {
                 }
             },
             "commit": {"type": ["string", "null"]},
+            "ready_for_commit": {"type": "boolean"},
             "limitations": {"type": "array", "items": {"type": "string"}},
             "blocker_code": {"type": ["string", "null"]}
         },
-        "required": ["changed_paths", "tests", "commit", "limitations", "blocker_code"]
+        "required": ["changed_paths", "tests", "commit", "ready_for_commit", "limitations", "blocker_code"]
     })
     .to_string()
+}
+
+fn authority_settings(session: &ClaudeSession) -> Result<String, ClaudeError> {
+    let root = permission_root(&session.worktree)?;
+    let allow = ["Read", "Edit", "Write"]
+        .map(|tool| format!("{tool}({root})"))
+        .to_vec();
+    serde_json::to_string(&serde_json::json!({
+        "permissions": {
+            "defaultMode": "dontAsk",
+            "allow": allow,
+            "deny": ["Bash", "WebFetch", "WebSearch", "NotebookEdit", "Agent", "Task", "Skill"]
+        },
+        "sandbox": {
+            "enabled": true,
+            "failIfUnavailable": true,
+            "autoAllowBashIfSandboxed": false,
+            "excludedCommands": [],
+            "allowUnsandboxedCommands": false,
+            "network": {
+                "allowedDomains": [],
+                "deniedDomains": ["*"],
+                "allowAllUnixSockets": false,
+                "allowLocalBinding": false
+            },
+            "filesystem": {
+                "allowWrite": [session.worktree],
+                "allowRead": [session.worktree]
+            }
+        }
+    }))
+    .map_err(|_| ClaudeError::InvalidBinding)
+}
+
+fn permission_root(path: &std::path::Path) -> Result<String, ClaudeError> {
+    let path = path.to_str().ok_or(ClaudeError::InvalidBinding)?;
+    if !path.starts_with('/')
+        || path
+            .bytes()
+            .any(|byte| !byte.is_ascii_alphanumeric() && !matches!(byte, b'/' | b'-' | b'_' | b'.'))
+    {
+        return Err(ClaudeError::InvalidBinding);
+    }
+    Ok(format!("/{}/**", path.trim_end_matches('/')))
 }
 
 fn append_list(rendered: &mut String, heading: &str, values: &[String]) {
@@ -811,6 +877,27 @@ mod tests {
                 .iter()
                 .any(|argument| argument == "--dangerously-skip-permissions")
         );
+        assert!(start.arguments.iter().any(|argument| argument == "--bare"));
+        assert!(
+            start
+                .arguments
+                .windows(2)
+                .any(|pair| pair == ["--tools", "Read,Edit,Write"])
+        );
+        let settings = start
+            .arguments
+            .windows(2)
+            .find(|pair| pair[0] == "--settings")
+            .map(|pair| serde_json::from_str::<serde_json::Value>(&pair[1]).unwrap())
+            .unwrap();
+        assert_eq!(settings["sandbox"]["enabled"], true);
+        assert_eq!(settings["sandbox"]["failIfUnavailable"], true);
+        assert_eq!(settings["sandbox"]["allowUnsandboxedCommands"], false);
+        assert_eq!(settings["sandbox"]["network"]["deniedDomains"][0], "*");
+        assert_eq!(
+            settings["sandbox"]["filesystem"]["allowWrite"][0],
+            fixture.root.to_str().unwrap()
+        );
     }
 
     #[test]
@@ -822,13 +909,24 @@ mod tests {
                 exit_code: 0,
             }],
             commit: Some("b".repeat(40)),
+            ready_for_commit: false,
             limitations: Vec::new(),
             blocker_code: None,
         };
         assert_eq!(complete.validate(), Ok(()));
         let mut contradictory = complete;
-        contradictory.blocker_code = Some("external".to_owned());
+        contradictory.ready_for_commit = true;
         assert_eq!(contradictory.validate(), Err(ClaudeError::InvalidReport));
+
+        let ready = ClaudeCompletionReport {
+            changed_paths: vec![PathBuf::from("src/lib.rs")],
+            tests: Vec::new(),
+            commit: None,
+            ready_for_commit: true,
+            limitations: Vec::new(),
+            blocker_code: None,
+        };
+        assert_eq!(ready.validate(), Ok(()));
     }
 
     #[test]
@@ -840,6 +938,7 @@ mod tests {
                 "changed_paths": ["src/lib.rs"],
                 "tests": [{"command": ["cargo", "test"], "exit_code": 0}],
                 "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "ready_for_commit": false,
                 "limitations": [],
                 "blocker_code": null
             }
