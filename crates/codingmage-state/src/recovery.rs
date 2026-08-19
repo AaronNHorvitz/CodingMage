@@ -97,7 +97,8 @@ pub fn reconcile_after_restart(
         }
         EventKind::Transition { .. }
         | EventKind::GateObserved { .. }
-        | EventKind::ControlApplied { .. } => {
+        | EventKind::ControlApplied { .. }
+        | EventKind::RetryScheduled { .. } => {
             (RecoveryDecision::Resume, RecoveryReason::RecoverablePhase)
         }
         EventKind::EffectObserved { .. } => {

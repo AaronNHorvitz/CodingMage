@@ -61,6 +61,15 @@ pub enum EventKind {
         /// Stable lifecycle action.
         action: String,
     },
+    /// A bounded provider retry or terminal stop was scheduled.
+    RetryScheduled {
+        /// One-based retry attempt.
+        attempt: u32,
+        /// Next Unix millisecond, absent for a terminal stop.
+        next_at_ms: Option<u64>,
+        /// Stable capacity reason.
+        reason: String,
+    },
 }
 
 /// Stable event result, never provider prose.
@@ -344,7 +353,9 @@ fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
             validate_label(phase)?;
         }
         EventKind::GateObserved { gate_id } => validate_label(gate_id)?,
-        EventKind::RecoveryBlocked { reason } => validate_label(reason)?,
+        EventKind::RecoveryBlocked { reason } | EventKind::RetryScheduled { reason, .. } => {
+            validate_label(reason)?;
+        }
         EventKind::ControlApplied { request_id, action } => {
             validate_label(request_id)?;
             validate_label(action)?;

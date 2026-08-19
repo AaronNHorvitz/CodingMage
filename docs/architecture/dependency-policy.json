@@ -14,6 +14,7 @@
     "codingmage-process": ["codingmage-contracts"],
     "codingmage-review": ["codingmage-contracts"],
     "codingmage-routing": [],
+    "codingmage-service": ["codingmage-contracts", "codingmage-state"],
     "codingmage-state": ["codingmage-contracts"]
   }
 }

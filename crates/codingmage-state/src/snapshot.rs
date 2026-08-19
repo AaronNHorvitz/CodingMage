@@ -56,6 +56,7 @@ impl Snapshot {
                 EventKind::GateObserved { gate_id } => format!("gate.{gate_id}"),
                 EventKind::RecoveryBlocked { reason } => format!("blocked.{reason}"),
                 EventKind::ControlApplied { action, .. } => format!("control.{action}"),
+                EventKind::RetryScheduled { reason, .. } => format!("retry.{reason}"),
             };
             tasks.insert(
                 record.event.task_id.clone(),

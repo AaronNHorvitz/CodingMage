@@ -15,6 +15,7 @@ members = [
     "crates/codingmage-routing",
     "crates/codingmage-review",
     "crates/codingmage-state",
+    "crates/codingmage-service",
 ]
 resolver = "3"
 
@@ -40,6 +41,7 @@ codingmage-process = { path = "crates/codingmage-process", version = "=0.1.0" }
 codingmage-routing = { path = "crates/codingmage-routing", version = "=0.1.0" }
 codingmage-review = { path = "crates/codingmage-review", version = "=0.1.0" }
 codingmage-state = { path = "crates/codingmage-state", version = "=0.1.0" }
+codingmage-service = { path = "crates/codingmage-service", version = "=0.1.0" }
 nix = { version = "=0.31.3", default-features = false, features = ["process", "resource", "signal"] }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.151"
