@@ -14,6 +14,7 @@ members = [
     "crates/codingmage-platform",
     "crates/codingmage-monitor",
     "crates/codingmage-process",
+    "crates/codingmage-project",
     "crates/codingmage-routing",
     "crates/codingmage-review",
     "crates/codingmage-state",
@@ -43,6 +44,7 @@ codingmage-orchestrator = { path = "crates/codingmage-orchestrator", version = "
 codingmage-platform = { path = "crates/codingmage-platform", version = "=0.1.0" }
 codingmage-monitor = { path = "crates/codingmage-monitor", version = "=0.1.0" }
 codingmage-process = { path = "crates/codingmage-process", version = "=0.1.0" }
+codingmage-project = { path = "crates/codingmage-project", version = "=0.1.0" }
 codingmage-routing = { path = "crates/codingmage-routing", version = "=0.1.0" }
 codingmage-review = { path = "crates/codingmage-review", version = "=0.1.0" }
 codingmage-state = { path = "crates/codingmage-state", version = "=0.1.0" }

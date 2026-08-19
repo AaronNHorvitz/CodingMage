@@ -14,6 +14,7 @@
     "codingmage-orchestrator": ["codingmage-contracts", "codingmage-plan", "codingmage-state"],
     "codingmage-platform": [],
     "codingmage-process": ["codingmage-contracts"],
+    "codingmage-project": ["codingmage-plan"],
     "codingmage-review": ["codingmage-contracts"],
     "codingmage-routing": [],
     "codingmage-service": ["codingmage-contracts", "codingmage-state"],

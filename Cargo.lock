@@ -171,6 +171,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "codingmage-project"
+version = "0.1.0"
+dependencies = [
+ "codingmage-plan",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "codingmage-review"
 version = "0.1.0"
 dependencies = [
