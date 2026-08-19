@@ -681,39 +681,39 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 15.1 - Authenticated GitHub Adapter
 
-- [ ] **Task 15.1.1 - Define GitHub capability boundary**
-  - [ ] **Sub-task 15.1.1.1:** Use authenticated `gh` or an approved API adapter without reading raw tokens.
-  - [ ] **Sub-task 15.1.1.2:** Bind account, host, owner, repository, branch, and pull-request identities.
-  - [ ] **Sub-task 15.1.1.3:** Require explicit configuration for issue read/write, pull-request read/write, comments, and branch push.
-  - [ ] **Sub-task 15.1.1.4:** Deny merge, release, repository settings, secrets, Actions configuration, and destructive administration.
-- [ ] **Task 15.1.2 - Handle uncertain network effects**
-  - [ ] **Sub-task 15.1.2.1:** Assign idempotency keys to issue, comment, and pull-request operations.
-  - [ ] **Sub-task 15.1.2.2:** Reconcile remote state after timeout rather than blindly replaying writes.
-  - [ ] **Sub-task 15.1.2.3:** Record redirects, host changes, authentication changes, and permission reductions.
+- [x] **Task 15.1.1 - Define GitHub capability boundary**
+  - [x] **Sub-task 15.1.1.1:** Use authenticated `gh` or an approved API adapter without reading raw tokens.
+  - [x] **Sub-task 15.1.1.2:** Bind account, host, owner, repository, branch, and pull-request identities.
+  - [x] **Sub-task 15.1.1.3:** Require explicit configuration for issue read/write, pull-request read/write, comments, and branch push.
+  - [x] **Sub-task 15.1.1.4:** Deny merge, release, repository settings, secrets, Actions configuration, and destructive administration.
+- [x] **Task 15.1.2 - Handle uncertain network effects**
+  - [x] **Sub-task 15.1.2.1:** Assign idempotency keys to issue, comment, and pull-request operations.
+  - [x] **Sub-task 15.1.2.2:** Reconcile remote state after timeout rather than blindly replaying writes.
+  - [x] **Sub-task 15.1.2.3:** Record redirects, host changes, authentication changes, and permission reductions.
 
 ### Story 15.2 - Story Issues and Draft Pull Requests
 
-- [ ] **Task 15.2.1 - Synchronize story issues**
-  - [ ] **Sub-task 15.2.1.1:** Create one issue per configured story with canonical source links and sub-task checkboxes.
-  - [ ] **Sub-task 15.2.1.2:** Update only CodingMage-owned issue sections.
-  - [ ] **Sub-task 15.2.1.3:** Preserve human comments, labels, assignments, and edits.
-  - [ ] **Sub-task 15.2.1.4:** Never treat issue checkbox edits as local completion evidence.
-- [ ] **Task 15.2.2 - Create and update draft pull requests**
-  - [ ] **Sub-task 15.2.2.1:** Push only the exact authorized feature branch after local gates pass.
-  - [ ] **Sub-task 15.2.2.2:** Create a draft PR with scope, commits, tests, findings, limitations, and blockers.
-  - [ ] **Sub-task 15.2.2.3:** Add Codex findings as structured review output without impersonating human approval.
-  - [ ] **Sub-task 15.2.2.4:** Update the PR after correction and final verification.
-  - [ ] **Sub-task 15.2.2.5:** Leave readiness, approval, and merge to configured human policy.
+- [x] **Task 15.2.1 - Synchronize story issues**
+  - [x] **Sub-task 15.2.1.1:** Create one issue per configured story with canonical source links and sub-task checkboxes.
+  - [x] **Sub-task 15.2.1.2:** Update only CodingMage-owned issue sections.
+  - [x] **Sub-task 15.2.1.3:** Preserve human comments, labels, assignments, and edits.
+  - [x] **Sub-task 15.2.1.4:** Never treat issue checkbox edits as local completion evidence.
+- [x] **Task 15.2.2 - Create and update draft pull requests**
+  - [x] **Sub-task 15.2.2.1:** Push only the exact authorized feature branch after local gates pass.
+  - [x] **Sub-task 15.2.2.2:** Create a draft PR with scope, commits, tests, findings, limitations, and blockers.
+  - [x] **Sub-task 15.2.2.3:** Add Codex findings as structured review output without impersonating human approval.
+  - [x] **Sub-task 15.2.2.4:** Update the PR after correction and final verification.
+  - [x] **Sub-task 15.2.2.5:** Leave readiness, approval, and merge to configured human policy.
 
 **Story acceptance criteria**
 
-- [ ] **AC 15.1:** Given timeouts, duplicate delivery, redirects, permission loss, and concurrent human edits, when synchronization runs, then effects are idempotent and human-owned content survives.
-- [ ] **AC 15.2:** Given a locally verified story, when publication is enabled, then one draft PR points to the exact branch and evidence while no merge or protected-branch effect occurs.
+- [x] **AC 15.1:** Given timeouts, duplicate delivery, redirects, permission loss, and concurrent human edits, when synchronization runs, then effects are idempotent and human-owned content survives.
+- [x] **AC 15.2:** Given a locally verified story, when publication is enabled, then one draft PR points to the exact branch and evidence while no merge or protected-branch effect occurs.
 
 ### Sprint 15 Gate
 
-- [ ] **Gate 15.1:** Fake GitHub server and authorized test-repository campaigns pass.
-- [ ] **Gate 15.2:** GitHub integration can be disabled completely without affecting local orchestration.
+- [ ] **Gate 15.1:** Fake GitHub server and authorized test-repository campaigns pass. The fake-server campaign passes; an authenticated disposable test-repository campaign remains external evidence. See `docs/evidence/sprint-15-local.md`.
+- [x] **Gate 15.2:** GitHub integration can be disabled completely without affecting local orchestration. See `docs/evidence/sprint-15-local.md`.
 
 ---
 
