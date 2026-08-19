@@ -239,43 +239,43 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 4.1 - Process Execution Contract
 
-- [ ] **Task 4.1.1 - Define process request and result schemas**
-  - [ ] **Sub-task 4.1.1.1:** Define executable identity, literal arguments, working directory, environment template, stdin source, output bounds, deadline, cancellation, and expected exit classifications.
-  - [ ] **Sub-task 4.1.1.2:** Define stdout/stderr digest, truncation, elapsed time, process identity, descendant cleanup, and terminal outcome fields.
-  - [ ] **Sub-task 4.1.1.3:** Reject shell strings, unknown flags, unbounded output, absent deadlines, and ambient environment inheritance.
-- [ ] **Task 4.1.2 - Implement bounded subprocesses**
-  - [ ] **Sub-task 4.1.2.1:** Resolve and pin executable identity before spawn.
-  - [ ] **Sub-task 4.1.2.2:** Clear environment and add only declared variables.
-  - [ ] **Sub-task 4.1.2.3:** Use literal argument vectors and explicit working directories.
-  - [ ] **Sub-task 4.1.2.4:** Bound output, runtime, retries, processes, and open descriptors.
-  - [ ] **Sub-task 4.1.2.5:** Kill and reap the exact process tree on timeout, cancellation, or parent failure.
+- [x] **Task 4.1.1 - Define process request and result schemas**
+  - [x] **Sub-task 4.1.1.1:** Define executable identity, literal arguments, working directory, environment template, stdin source, output bounds, deadline, cancellation, and expected exit classifications.
+  - [x] **Sub-task 4.1.1.2:** Define stdout/stderr digest, truncation, elapsed time, process identity, descendant cleanup, and terminal outcome fields.
+  - [x] **Sub-task 4.1.1.3:** Reject shell strings, unknown flags, unbounded output, absent deadlines, and ambient environment inheritance.
+- [x] **Task 4.1.2 - Implement bounded subprocesses**
+  - [x] **Sub-task 4.1.2.1:** Resolve and pin executable identity before spawn.
+  - [x] **Sub-task 4.1.2.2:** Clear environment and add only declared variables.
+  - [x] **Sub-task 4.1.2.3:** Use literal argument vectors and explicit working directories.
+  - [x] **Sub-task 4.1.2.4:** Bound output, runtime, retries, processes, and open descriptors. The runtime performs exactly one attempt; orchestration-level retries are not process authority.
+  - [x] **Sub-task 4.1.2.5:** Kill and reap the exact process tree on timeout, cancellation, or parent failure.
 
 **Story acceptance criteria**
 
-- [ ] **AC 4.1.1:** Given metacharacters, response files, configuration discovery, environment injection, and executable replacement, when execution is attempted, then no alternate interpretation occurs.
-- [ ] **AC 4.1.2:** Given cancellation, timeout, crash, and descendant spawning fixtures, when the process ends, then every owned descendant is terminated and exactly one truthful terminal result exists.
+- [x] **AC 4.1.1:** Given metacharacters, response files, configuration discovery, environment injection, and executable replacement, when execution is attempted, then no alternate interpretation occurs.
+- [x] **AC 4.1.2:** Given cancellation, timeout, crash, and descendant spawning fixtures, when the process ends, then every owned descendant is terminated and exactly one truthful terminal result exists.
 
 ### Story 4.2 - Provider-Neutral Agent Adapter
 
-- [ ] **Task 4.2.1 - Define adapter operations**
-  - [ ] **Sub-task 4.2.1.1:** Define capability probe, start, continue, cancel, usage observation, and result normalization operations.
-  - [ ] **Sub-task 4.2.1.2:** Define implementation, review, correction, verification, and administrative roles.
-  - [ ] **Sub-task 4.2.1.3:** Define structured event streaming and final-response schemas.
-  - [ ] **Sub-task 4.2.1.4:** Treat all provider output as untrusted data.
-- [ ] **Task 4.2.2 - Build fake adapters**
-  - [ ] **Sub-task 4.2.2.1:** Add deterministic success, failure, malformed output, timeout, quota, cancellation, and contradictory-result fixtures.
-  - [ ] **Sub-task 4.2.2.2:** Add scripted multi-turn implementation and review conversations.
-  - [ ] **Sub-task 4.2.2.3:** Prove adapters cannot directly advance task state or perform Git publication.
+- [x] **Task 4.2.1 - Define adapter operations**
+  - [x] **Sub-task 4.2.1.1:** Define capability probe, start, continue, cancel, usage observation, and result normalization operations.
+  - [x] **Sub-task 4.2.1.2:** Define implementation, review, correction, verification, and administrative roles.
+  - [x] **Sub-task 4.2.1.3:** Define structured event streaming and final-response schemas.
+  - [x] **Sub-task 4.2.1.4:** Treat all provider output as untrusted data.
+- [x] **Task 4.2.2 - Build fake adapters**
+  - [x] **Sub-task 4.2.2.1:** Add deterministic success, failure, malformed output, timeout, quota, cancellation, and contradictory-result fixtures.
+  - [x] **Sub-task 4.2.2.2:** Add scripted multi-turn implementation and review conversations.
+  - [x] **Sub-task 4.2.2.3:** Prove adapters cannot directly advance task state or perform Git publication.
 
 **Story acceptance criteria**
 
-- [ ] **AC 4.2.1:** Given any provider event order, when normalization runs, then only schema-valid ordered events reach the coordinator.
-- [ ] **AC 4.2.2:** Given a malicious adapter result claiming tests passed or a merge completed, when received, then no state advances without independent evidence.
+- [x] **AC 4.2.1:** Given any provider event order, when normalization runs, then only schema-valid ordered events reach the coordinator.
+- [x] **AC 4.2.2:** Given a malicious adapter result claiming tests passed or a merge completed, when received, then no state advances without independent evidence.
 
 ### Sprint 4 Gate
 
-- [ ] **Gate 4.1:** Process containment, output bounds, cancellation, and fake-adapter campaigns pass.
-- [ ] **Gate 4.2:** Provider adapters have no direct repository, task-state, merge, or release authority.
+- [x] **Gate 4.1:** Process containment, output bounds, cancellation, and fake-adapter campaigns pass. See `docs/evidence/sprint-4.md`.
+- [x] **Gate 4.2:** Provider adapters have no direct repository, task-state, merge, or release authority.
 
 ---
 
@@ -905,4 +905,4 @@ These items must remain open until their prerequisites actually exist:
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 4 by implementing the general bounded process runtime and provider-neutral fake-agent contract.
+- [ ] **Next 1:** Complete Sprint 5 by probing and integrating Claude Code through the bounded process and authority contracts.

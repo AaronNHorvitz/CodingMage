@@ -291,7 +291,9 @@ follow [`SECURITY.md`](SECURITY.md), and repository changes must follow
 - Executable foundation: yes (typed contracts and empty CLI bootstrap)
 - Configuration and Linux repository authorization: yes
 - Linux Git inventory and owned worktrees: yes
-- Bounded general process runtime: no
+- Bounded Linux process runtime: yes
+- Provider-neutral adapter contract and fakes: yes
+- Live Claude and Codex adapters: no
 - Agent adapters: no
 - Background service: no
 - GitHub automation: no
