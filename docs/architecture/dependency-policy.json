@@ -11,7 +11,8 @@
     "codingmage-plan": ["codingmage-contracts"],
     "codingmage-orchestrator": ["codingmage-contracts", "codingmage-plan"],
     "codingmage-process": ["codingmage-contracts"],
-    "codingmage-routing": []
-    ,"codingmage-review": ["codingmage-contracts"]
+    "codingmage-review": ["codingmage-contracts"],
+    "codingmage-routing": [],
+    "codingmage-state": ["codingmage-contracts"]
   }
 }
