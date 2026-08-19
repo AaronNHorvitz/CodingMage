@@ -604,35 +604,35 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 13.1 - Status Model and Event Stream
 
-- [ ] **Task 13.1.1 - Define status schema**
-  - [ ] **Sub-task 13.1.1.1:** Include target, task, state, agent, model, branch, commit, command, gate, findings, correction count, elapsed time, pause, and blocker fields.
-  - [ ] **Sub-task 13.1.1.2:** Mark unavailable usage and reset information as unknown rather than zero.
-  - [ ] **Sub-task 13.1.1.3:** Provide stable JSON and human-readable renderings.
-- [ ] **Task 13.1.2 - Stream ordered events**
-  - [ ] **Sub-task 13.1.2.1:** Stream lifecycle events with sequence and correlation IDs.
-  - [ ] **Sub-task 13.1.2.2:** Bound update rate and coalesce noisy command output.
-  - [ ] **Sub-task 13.1.2.3:** Reconnect a monitor without affecting the running coordinator.
+- [x] **Task 13.1.1 - Define status schema**
+  - [x] **Sub-task 13.1.1.1:** Include target, task, state, agent, model, branch, commit, command, gate, findings, correction count, elapsed time, pause, and blocker fields.
+  - [x] **Sub-task 13.1.1.2:** Mark unavailable usage and reset information as unknown rather than zero.
+  - [x] **Sub-task 13.1.1.3:** Provide stable JSON and human-readable renderings.
+- [x] **Task 13.1.2 - Stream ordered events**
+  - [x] **Sub-task 13.1.2.1:** Stream lifecycle events with sequence and correlation IDs.
+  - [x] **Sub-task 13.1.2.2:** Bound update rate and coalesce noisy command output.
+  - [x] **Sub-task 13.1.2.3:** Reconnect a monitor without affecting the running coordinator.
 
 ### Story 13.2 - Operator Commands
 
-- [ ] **Task 13.2.1 - Implement read-only controls**
-  - [ ] **Sub-task 13.2.1.1:** Add `status`, `explain-blocker`, `open-diff`, `open-log`, and `doctor`.
-  - [ ] **Sub-task 13.2.1.2:** Ensure read-only commands cannot acquire mutation grants.
-- [ ] **Task 13.2.2 - Implement lifecycle controls**
-  - [ ] **Sub-task 13.2.2.1:** Add `pause`, `resume`, `stop-after-unit`, and `cancel`.
-  - [ ] **Sub-task 13.2.2.2:** Authenticate control requests to the same local user and exact run.
-  - [ ] **Sub-task 13.2.2.3:** Make repeated commands idempotent.
-  - [ ] **Sub-task 13.2.2.4:** Preserve recovery state after cancellation.
+- [x] **Task 13.2.1 - Implement read-only controls**
+  - [x] **Sub-task 13.2.1.1:** Add `status`, `explain-blocker`, `open-diff`, `open-log`, and `doctor`.
+  - [x] **Sub-task 13.2.1.2:** Ensure read-only commands cannot acquire mutation grants.
+- [x] **Task 13.2.2 - Implement lifecycle controls**
+  - [x] **Sub-task 13.2.2.1:** Add `pause`, `resume`, `stop-after-unit`, and `cancel`.
+  - [x] **Sub-task 13.2.2.2:** Authenticate control requests to the same local user and exact run.
+  - [x] **Sub-task 13.2.2.3:** Make repeated commands idempotent.
+  - [x] **Sub-task 13.2.2.4:** Preserve recovery state after cancellation.
 
 **Story acceptance criteria**
 
-- [ ] **AC 13.1:** Given a running fake workflow, when monitors attach, disconnect, and reattach, then they reconstruct identical current status without changing execution.
-- [ ] **AC 13.2:** Given repeated or stale control commands, when received, then only the exact active run can change state once.
+- [x] **AC 13.1:** Given a running fake workflow, when monitors attach, disconnect, and reattach, then they reconstruct identical current status without changing execution.
+- [x] **AC 13.2:** Given repeated or stale control commands, when received, then only the exact active run can change state once.
 
 ### Sprint 13 Gate
 
-- [ ] **Gate 13.1:** VS Code terminal rendering, JSON status, reconnect, and control tests pass.
-- [ ] **Gate 13.2:** Monitoring exposes no credential, hidden reasoning, or unnecessary source content.
+- [x] **Gate 13.1:** VS Code terminal rendering, JSON status, reconnect, and control tests pass. See `docs/evidence/sprint-13.md`.
+- [x] **Gate 13.2:** Monitoring exposes no credential, hidden reasoning, or unnecessary source content.
 
 ---
 

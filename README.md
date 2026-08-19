@@ -3,7 +3,7 @@
 CodingMage is a local, reusable development coordinator for running bounded implementation and review loops across coding agents. Its first workflow uses Claude Code as the implementation agent and Codex as the senior review and verification agent, while deterministic local tools remain the authority for formatting, tests, schemas, and repository state.
 
 > [!IMPORTANT]
-> CodingMage is currently a planning-only repository. No executable coordinator, background service, GitHub automation, or autonomous development capability exists yet. The proposed commands and interfaces below are design targets, not current functionality.
+> CodingMage is under active implementation. Its typed contracts, repository and process controls, agent adapters, deterministic gate runner, task planner, coordinator, review loop, routing policy, durable journal, recovery logic, and operator-control protocol are implemented and locally tested. The background service, live authenticated provider workflow, GitHub automation, packaging, and unattended release gates remain development targets and are not current capabilities.
 
 ## Why CodingMage Exists
 
