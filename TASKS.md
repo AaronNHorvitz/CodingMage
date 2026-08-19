@@ -447,38 +447,38 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 9.1 - Deterministic Risk Classification
 
-- [ ] **Task 9.1.1 - Define risk signals**
-  - [ ] **Sub-task 9.1.1.1:** Classify security, authentication, credentials, cryptography, concurrency, process control, Git mutation, persistence, cross-platform, packaging, release, and architecture paths as elevated risk.
-  - [ ] **Sub-task 9.1.1.2:** Include task labels, changed paths, dependency breadth, diff shape, prior failures, and unresolved findings.
-  - [ ] **Sub-task 9.1.1.3:** Ensure unrecognized signals increase rather than reduce review strength.
-- [ ] **Task 9.1.2 - Produce routing decision**
-  - [ ] **Sub-task 9.1.2.1:** Define requested provider, role, model profile, effort, speed, reason codes, and escalation conditions.
-  - [ ] **Sub-task 9.1.2.2:** Record exact resolved model identity when the provider exposes it.
-  - [ ] **Sub-task 9.1.2.3:** Reject unavailable profiles rather than silently falling back across a required gate.
+- [x] **Task 9.1.1 - Define risk signals**
+  - [x] **Sub-task 9.1.1.1:** Classify security, authentication, credentials, cryptography, concurrency, process control, Git mutation, persistence, cross-platform, packaging, release, and architecture paths as elevated risk.
+  - [x] **Sub-task 9.1.1.2:** Include task labels, changed paths, dependency breadth, diff shape, prior failures, and unresolved findings.
+  - [x] **Sub-task 9.1.1.3:** Ensure unrecognized signals increase rather than reduce review strength.
+- [x] **Task 9.1.2 - Produce routing decision**
+  - [x] **Sub-task 9.1.2.1:** Define requested provider, role, model profile, effort, speed, reason codes, and escalation conditions.
+  - [x] **Sub-task 9.1.2.2:** Record exact resolved model identity when the provider exposes it.
+  - [x] **Sub-task 9.1.2.3:** Reject unavailable profiles rather than silently falling back across a required gate.
 
 ### Story 9.2 - Adaptive Escalation
 
-- [ ] **Task 9.2.1 - Implement initial routing table**
-  - [ ] **Sub-task 9.2.1.1:** Route routine Claude implementation to Sonnet.
-  - [ ] **Sub-task 9.2.1.2:** Route high-risk or repeatedly failed implementation to Opus.
-  - [ ] **Sub-task 9.2.1.3:** Route routine Codex review to Terra High.
-  - [ ] **Sub-task 9.2.1.4:** Route high-risk, disputed, and final story reviews to Sol High.
-  - [ ] **Sub-task 9.2.1.5:** Route mechanical administration to deterministic code or Luna without gate authority.
-- [ ] **Task 9.2.2 - Add performance feedback**
-  - [ ] **Sub-task 9.2.2.1:** Track elapsed time, retries, correction count, gate failures, review findings, and exposed usage metrics.
-  - [ ] **Sub-task 9.2.2.2:** Escalate after configured failure or disagreement thresholds.
-  - [ ] **Sub-task 9.2.2.3:** Never downgrade a mandatory final gate based solely on usage pressure.
-  - [ ] **Sub-task 9.2.2.4:** Allow an explicit operator pin or override with journaled reason.
+- [x] **Task 9.2.1 - Implement initial routing table**
+  - [x] **Sub-task 9.2.1.1:** Route routine Claude implementation to Sonnet.
+  - [x] **Sub-task 9.2.1.2:** Route high-risk or repeatedly failed implementation to Opus.
+  - [x] **Sub-task 9.2.1.3:** Route routine Codex review to Terra High.
+  - [x] **Sub-task 9.2.1.4:** Route high-risk, disputed, and final story reviews to Sol High.
+  - [x] **Sub-task 9.2.1.5:** Route mechanical administration to deterministic code or Luna without gate authority.
+- [x] **Task 9.2.2 - Add performance feedback**
+  - [x] **Sub-task 9.2.2.1:** Track elapsed time, retries, correction count, gate failures, review findings, and exposed usage metrics.
+  - [x] **Sub-task 9.2.2.2:** Escalate after configured failure or disagreement thresholds.
+  - [x] **Sub-task 9.2.2.3:** Never downgrade a mandatory final gate based solely on usage pressure.
+  - [x] **Sub-task 9.2.2.4:** Allow an explicit operator pin or override with journaled reason.
 
 **Story acceptance criteria**
 
-- [ ] **AC 9.1:** Given a fixed task/diff corpus, when classification runs repeatedly, then routing decisions are identical and high-risk cases never reach a weaker gate.
-- [ ] **AC 9.2:** Given provider unavailability or quota pressure, when routing cannot satisfy policy, then work pauses rather than silently substituting an unauthorized model.
+- [x] **AC 9.1:** Given a fixed task/diff corpus, when classification runs repeatedly, then routing decisions are identical and high-risk cases never reach a weaker gate.
+- [x] **AC 9.2:** Given provider unavailability or quota pressure, when routing cannot satisfy policy, then work pauses rather than silently substituting an unauthorized model.
 
 ### Sprint 9 Gate
 
-- [ ] **Gate 9.1:** Risk corpus and routing mutation tests pass.
-- [ ] **Gate 9.2:** Every model decision is explainable from retained non-sensitive inputs.
+- [x] **Gate 9.1:** Risk corpus and routing mutation tests pass. See `docs/evidence/sprint-9.md`.
+- [x] **Gate 9.2:** Every model decision is explainable from retained non-sensitive inputs.
 
 ---
 
