@@ -380,3 +380,81 @@ fn parent_failure_guard_reaps_the_descendant_group() {
     let _ = parent.wait();
     wait_absent(child_pid);
 }
+
+#[test]
+fn cancellation_reaps_children_and_grandchildren() {
+    let fixture = Fixture::new();
+    let child_pid_path = fixture.root.join("grandchild-parent.pid");
+    let grandchild_pid_path = fixture.root.join("grandchild.pid");
+    let vector = vec![
+        "spawn-grandchild".to_owned(),
+        child_pid_path.display().to_string(),
+        grandchild_pid_path.display().to_string(),
+        "10000".to_owned(),
+    ];
+    let profile = ProcessProfile::new(&fixture.executable, [vector.clone()], []).unwrap();
+    let cancellation = CancellationToken::default();
+    let token = cancellation.clone();
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(150));
+        token.cancel();
+    });
+    let result = fixture
+        .executor()
+        .execute(&profile, &fixture.request(vector), &cancellation)
+        .unwrap();
+    assert_eq!(result.outcome, ProcessOutcome::Cancelled);
+    assert_eq!(result.descendant_cleanup, DescendantCleanup::Verified);
+    wait_for(&child_pid_path);
+    wait_for(&grandchild_pid_path);
+    wait_absent(fs::read_to_string(child_pid_path).unwrap().parse().unwrap());
+    wait_absent(
+        fs::read_to_string(grandchild_pid_path)
+            .unwrap()
+            .parse()
+            .unwrap(),
+    );
+}
+
+#[test]
+fn child_inherits_no_control_files_or_ambient_environment() {
+    let fixture = Fixture::new();
+    let vector = strings(&["fds"]);
+    let profile = ProcessProfile::new(&fixture.executable, [vector.clone()], []).unwrap();
+    let result = fixture
+        .executor()
+        .execute(
+            &profile,
+            &fixture.request(vector),
+            &CancellationToken::default(),
+        )
+        .unwrap();
+    let output = String::from_utf8(result.stdout.retained).unwrap();
+    assert!(!output.contains(&fixture.root.display().to_string()));
+    assert!(!output.contains("journal.lock"));
+    assert!(!output.contains("events.jsonl"));
+}
+
+#[test]
+fn cleanup_does_not_touch_unrelated_matching_executable() {
+    let fixture = Fixture::new();
+    let mut unrelated = Command::new(&fixture.executable)
+        .args(["sleep", "10000"])
+        .spawn()
+        .unwrap();
+    let unrelated_pid = unrelated.id();
+
+    let vector = strings(&["sleep", "10000"]);
+    let profile = ProcessProfile::new(&fixture.executable, [vector.clone()], []).unwrap();
+    let mut request = fixture.request(vector);
+    request.deadline_millis = 100;
+    let result = fixture
+        .executor()
+        .execute(&profile, &request, &CancellationToken::default())
+        .unwrap();
+    assert_eq!(result.outcome, ProcessOutcome::TimedOut);
+    assert!(PathBuf::from(format!("/proc/{unrelated_pid}")).exists());
+
+    unrelated.kill().unwrap();
+    unrelated.wait().unwrap();
+}

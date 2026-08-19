@@ -46,6 +46,30 @@ fn main() {
             let status = child.wait().unwrap();
             std::process::exit(status.code().unwrap_or(1));
         }
+        "spawn-grandchild" => {
+            let child_pid_path = arguments.get(1).unwrap();
+            let grandchild_pid_path = arguments.get(2).unwrap();
+            let millis = arguments.get(3).unwrap();
+            let mut child = Command::new(env::current_exe().unwrap())
+                .args(["spawn-child", grandchild_pid_path, millis])
+                .spawn()
+                .unwrap();
+            fs::write(child_pid_path, child.id().to_string()).unwrap();
+            let status = child.wait().unwrap();
+            std::process::exit(status.code().unwrap_or(1));
+        }
+        "fds" => {
+            let mut entries = fs::read_dir("/proc/self/fd")
+                .unwrap()
+                .filter_map(Result::ok)
+                .filter_map(|entry| fs::read_link(entry.path()).ok())
+                .map(|path| path.display().to_string())
+                .collect::<Vec<_>>();
+            entries.sort();
+            for entry in entries {
+                println!("{entry}");
+            }
+        }
         "fail" => {
             let code = arguments.get(1).unwrap().parse::<i32>().unwrap();
             std::process::exit(code);
