@@ -289,6 +289,7 @@ impl RetryPolicy {
             .append(JournalEvent {
                 timestamp_ms,
                 repository_id: identities.0.clone(),
+                identities: codingmage_state::DurableIdentities::default(),
                 run_id: identities.1.clone(),
                 task_id: identities.2.clone(),
                 kind: EventKind::RetryScheduled {

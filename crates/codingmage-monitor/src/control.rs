@@ -254,6 +254,7 @@ impl ControlEngine {
                 run_id: self.run_id.clone(),
                 task_id: self.task_id.clone(),
                 repository_id: self.repository_id.clone(),
+                identities: codingmage_state::DurableIdentities::default(),
                 kind: EventKind::ControlApplied {
                     request_id: request.request_id.as_str().to_owned(),
                     action: request.action.label().to_owned(),

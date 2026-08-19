@@ -347,6 +347,7 @@ pub fn record_boundary_change(
             run_id,
             task_id,
             repository_id,
+            identities: codingmage_state::DurableIdentities::default(),
             kind: EventKind::ExternalBoundaryChanged {
                 system: "github".to_owned(),
                 change: change.to_owned(),
