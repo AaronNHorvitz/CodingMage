@@ -7,6 +7,7 @@
     "codingmage-contracts": [],
     "codingmage-core": ["codingmage-contracts"],
     "codingmage-git": ["codingmage-contracts", "codingmage-core"],
+    "codingmage-plan": ["codingmage-contracts"],
     "codingmage-process": ["codingmage-contracts"]
   }
 }
