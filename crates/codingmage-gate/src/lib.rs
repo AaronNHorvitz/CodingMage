@@ -238,6 +238,32 @@ pub struct GateProcessEvidence {
     pub descendant_cleanup: String,
 }
 
+/// Complete content-minimized gate-definition identity.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct GateDefinitionEvidence {
+    /// Deterministic trigger.
+    pub trigger: GateTrigger,
+    /// Declared conflicting resources.
+    pub resources: BTreeSet<String>,
+    /// SHA-256 of the exact working-directory bytes.
+    pub working_directory_sha256: String,
+    /// SHA-256 of bounded standard input.
+    pub stdin_sha256: String,
+    /// Output retention ceiling per stream.
+    pub max_output_bytes: u64,
+    /// Wall-clock deadline.
+    pub deadline_millis: u64,
+    /// Process-count ceiling.
+    pub max_processes: u32,
+    /// Open-file ceiling.
+    pub max_open_files: u64,
+    /// Exit codes eligible for success before assertions.
+    pub expected_exit_codes: BTreeSet<i32>,
+    /// Required observations beyond exit status.
+    pub assertions: Vec<GateAssertion>,
+}
+
 /// Tamper-evident outcome for one gate.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -260,6 +286,8 @@ pub struct GateEvidence {
     pub outcome: GateOutcome,
     /// Content-free reason for unavailable or skipped work.
     pub reason_code: Option<String>,
+    /// Complete trusted definition when an executable gate was scheduled.
+    pub definition: Option<GateDefinitionEvidence>,
     /// Process evidence when execution began.
     pub process: Option<GateProcessEvidence>,
     /// Hash of all preceding fields.
@@ -557,6 +585,7 @@ fn execute_gate(
             GateOutcome::Failed
         },
         reason_code: None,
+        definition: Some(definition_evidence(definition)),
         process: Some(process_evidence(definition, &result)?),
         integrity_sha256: String::new(),
     })
@@ -582,6 +611,7 @@ fn unavailable_evidence(
             GateOutcome::Unavailable
         },
         reason_code: Some(gate.reason_code.clone()),
+        definition: None,
         process: None,
         integrity_sha256: String::new(),
     })
@@ -603,6 +633,7 @@ fn skipped_evidence(
         ended_unix_ms: now,
         outcome: GateOutcome::SkippedWithPolicy,
         reason_code: Some(reason_code.to_owned()),
+        definition: Some(definition_evidence(gate)),
         process: None,
         integrity_sha256: String::new(),
     })
@@ -627,6 +658,27 @@ fn process_evidence(
         truncated: result.stdout.truncated || result.stderr.truncated,
         descendant_cleanup: cleanup_name(result.descendant_cleanup).to_owned(),
     })
+}
+
+fn definition_evidence(definition: &TrustedGateDefinition) -> GateDefinitionEvidence {
+    GateDefinitionEvidence {
+        trigger: definition.trigger,
+        resources: definition.resources.clone(),
+        working_directory_sha256: sha256(
+            definition
+                .request
+                .working_directory
+                .as_os_str()
+                .as_encoded_bytes(),
+        ),
+        stdin_sha256: sha256(&definition.request.stdin),
+        max_output_bytes: definition.request.max_output_bytes,
+        deadline_millis: definition.request.deadline_millis,
+        max_processes: definition.request.max_processes,
+        max_open_files: definition.request.max_open_files,
+        expected_exit_codes: definition.request.expected_exit_codes.clone(),
+        assertions: definition.assertions.clone(),
+    }
 }
 
 fn assertion_matches(assertion: &GateAssertion, result: &ProcessResult) -> bool {

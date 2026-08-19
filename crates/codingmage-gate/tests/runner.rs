@@ -193,6 +193,20 @@ fn every_evidence_field_mutation_breaks_integrity() {
     let mut changed = original.clone();
     changed.process.as_mut().unwrap().stdout_bytes += 1;
     mutations.push(changed);
+    let mut changed = original.clone();
+    changed.definition.as_mut().unwrap().deadline_millis += 1;
+    mutations.push(changed);
+    let mut changed = original.clone();
+    changed
+        .definition
+        .as_mut()
+        .unwrap()
+        .expected_exit_codes
+        .insert(9);
+    mutations.push(changed);
+    let mut changed = original.clone();
+    changed.definition.as_mut().unwrap().assertions = vec![GateAssertion::StdoutBytes { value: 1 }];
+    mutations.push(changed);
     let mut changed = original;
     changed.integrity_sha256.replace_range(..1, "0");
     mutations.push(changed);
