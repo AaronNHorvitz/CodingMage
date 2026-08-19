@@ -90,12 +90,25 @@ impl ReviewScope {
         worktree: &Path,
         locations: &[ReviewLocation],
     ) -> Result<(), ReviewScopeError> {
+        self.verify_locations_inner(worktree, locations, || {})
+    }
+
+    fn verify_locations_inner(
+        &self,
+        worktree: &Path,
+        locations: &[ReviewLocation],
+        after_binding_check: impl FnOnce(),
+    ) -> Result<(), ReviewScopeError> {
+        let mut after_binding_check = Some(after_binding_check);
         for location in locations {
             if location.line == 0
                 || !safe_path(&location.path)
                 || !self.paths.contains(&location.path)
             {
                 return Err(ReviewScopeError::InvalidLocation);
+            }
+            if let Some(observer) = after_binding_check.take() {
+                observer();
             }
             let blob = run_git(
                 worktree,
@@ -239,6 +252,46 @@ mod tests {
         assert_eq!(
             ReviewScope::capture(&fixture.target, &unrelated, &target),
             Err(ReviewScopeError::InvalidBinding)
+        );
+    }
+
+    #[test]
+    fn active_checkout_edit_during_review_does_not_change_immutable_scope() {
+        let fixture = GitFixture::new();
+        let base = fixture.head();
+        fs::write(fixture.target.join("review.txt"), "one\ntwo\n").unwrap();
+        run(&fixture.target, &["add", "review.txt"]);
+        run(&fixture.target, &["commit", "-m", "review target"]);
+        let target = fixture.head();
+        let review_tree = fixture.root.join("review-tree");
+        run(
+            &fixture.target,
+            &[
+                "worktree",
+                "add",
+                "--detach",
+                review_tree.to_str().unwrap(),
+                &target,
+            ],
+        );
+        let scope = ReviewScope::capture(&review_tree, &base, &target).unwrap();
+        let active = fixture.target.join("tracked-one.txt");
+
+        scope
+            .verify_locations_inner(
+                &review_tree,
+                &[ReviewLocation {
+                    path: "review.txt".to_owned(),
+                    line: 2,
+                }],
+                || fs::write(&active, "concurrent-user-edit\n").unwrap(),
+            )
+            .unwrap();
+
+        scope.revalidate(&review_tree).unwrap();
+        assert_eq!(
+            fs::read_to_string(active).unwrap(),
+            "concurrent-user-edit\n"
         );
     }
 }
