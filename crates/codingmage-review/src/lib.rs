@@ -295,6 +295,23 @@ impl IndependentReview {
     }
 }
 
+/// Validates resolution authority for a bounded review dispute.
+///
+/// # Errors
+///
+/// Returns [`ReviewError::HumanResolutionRequired`] when a material architecture disagreement has
+/// no explicit human resolution.
+pub const fn validate_dispute_resolution(
+    material_architecture: bool,
+    human_resolved: bool,
+) -> Result<(), ReviewError> {
+    if material_architecture && !human_resolved {
+        Err(ReviewError::HumanResolutionRequired)
+    } else {
+        Ok(())
+    }
+}
+
 /// Content-free review lifecycle failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ReviewError {
@@ -316,6 +333,8 @@ pub enum ReviewError {
     BudgetExhausted,
     /// Author would be the sole final reviewer.
     SelfReview,
+    /// Material architecture dispute lacks human resolution.
+    HumanResolutionRequired,
 }
 
 impl fmt::Display for ReviewError {
@@ -330,6 +349,7 @@ impl fmt::Display for ReviewError {
             Self::InvalidBudget => "codingmage.review.invalid_budget",
             Self::BudgetExhausted => "codingmage.review.budget_exhausted",
             Self::SelfReview => "codingmage.review.self_review",
+            Self::HumanResolutionRequired => "codingmage.review.human_resolution_required",
         })
     }
 }
@@ -554,6 +574,11 @@ mod tests {
             .validate(),
             Err(ReviewError::SelfReview)
         );
+        assert_eq!(
+            validate_dispute_resolution(true, false),
+            Err(ReviewError::HumanResolutionRequired)
+        );
+        assert_eq!(validate_dispute_resolution(true, true), Ok(()));
         assert_eq!(
             IndependentReview {
                 author: AgentId::new("codex-fixer").unwrap(),
