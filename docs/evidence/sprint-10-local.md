@@ -1,7 +1,8 @@
 # Sprint 10 Local Evidence
 
 - **Status:** Partially complete; multi-unit progression and crash recovery remain open
-- **Source commit:** `10f0e91b0b1cf87c9ff38ab98865e0862b40aab1`
+- **Source commits:** `10f0e91b0b1cf87c9ff38ab98865e0862b40aab1` and
+  `53c85f1331123a1898d8b53174a5f9858d2702ac`
 - **Executed:** 2026-08-19 on Fedora Linux with Rust 1.95.0
 - **Scope:** Legal task lifecycle and one-unit fake-port coordinator
 
@@ -26,11 +27,13 @@ and `git diff --check` passed. Five focused coordinator tests exercise legal and
   correction, precise blocking, recoverable and terminal gate failures, and a port failure.
 - Once a claim succeeds, release is attempted on every success and failure return path. A release
   failure remains visible rather than being hidden by an earlier result.
+- Canonical progression reparses exact before/after plan bytes, accepts exactly one named
+  open-to-checked transition backed by completion evidence, and rejects changed titles,
+  dependencies, hierarchy, anchors, or any unrelated checkbox drift. It then selects the next
+  dependency-ready unblocked unit or returns a truthful no-ready-work result.
 
 ## Open Conditions
 
-- Multi-unit progression, canonical plan completion reconciliation, continuing past independent
-  blockers, and no-ready-work termination remain open under Story 10.2.
 - Crash injection at every transition and durable replay protection depend on Sprint 12's journal
   and snapshot implementation. Acceptance criteria and Sprint 10 gates remain open until those
   campaigns pass.

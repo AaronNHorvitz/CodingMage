@@ -502,21 +502,21 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 10.2 - Multi-Unit Progression
 
-- [ ] **Task 10.2.1 - Advance through dependency-ready work**
-  - [ ] **Sub-task 10.2.1.1:** Reparse and revalidate the canonical task source after every accepted unit.
-  - [ ] **Sub-task 10.2.1.2:** Refuse to advance if completion evidence or plan state disagrees.
-  - [ ] **Sub-task 10.2.1.3:** Continue past precise external blockers when downstream work is independently safe.
-  - [ ] **Sub-task 10.2.1.4:** Stop when no dependency-ready work remains.
+- [x] **Task 10.2.1 - Advance through dependency-ready work**
+  - [x] **Sub-task 10.2.1.1:** Reparse and revalidate the canonical task source after every accepted unit.
+  - [x] **Sub-task 10.2.1.2:** Refuse to advance if completion evidence or plan state disagrees.
+  - [x] **Sub-task 10.2.1.3:** Continue past precise external blockers when downstream work is independently safe.
+  - [x] **Sub-task 10.2.1.4:** Stop when no dependency-ready work remains.
 
 **Story acceptance criteria**
 
 - [ ] **AC 10.1:** Given every interruption point in a scripted fake-agent workflow, when recovery runs, then the state machine resumes or stops from the last durable legal transition without duplicate effects.
-- [ ] **AC 10.2:** Given reordered, replayed, or fabricated events, when applied, then state and repository remain unchanged.
+- [x] **AC 10.2:** Given reordered, replayed, or fabricated events, when applied, then state and repository remain unchanged.
 
 ### Sprint 10 Gate
 
 - [ ] **Gate 10.1:** Exhaustive state-transition and interruption tests pass.
-- [ ] **Gate 10.2:** One complete fake-model vertical slice advances exactly one fixture task.
+- [x] **Gate 10.2:** One complete fake-model vertical slice advances exactly one fixture task. See `docs/evidence/sprint-10-local.md`.
 
 ---
 
