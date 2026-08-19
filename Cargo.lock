@@ -188,6 +188,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "codingmage-soak"
+version = "0.1.0"
+
+[[package]]
 name = "codingmage-state"
 version = "0.1.0"
 dependencies = [

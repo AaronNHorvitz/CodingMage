@@ -16,6 +16,7 @@
     "codingmage-review": ["codingmage-contracts"],
     "codingmage-routing": [],
     "codingmage-service": ["codingmage-contracts", "codingmage-state"],
+    "codingmage-soak": [],
     "codingmage-state": ["codingmage-contracts"]
   }
 }
