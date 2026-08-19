@@ -868,4 +868,20 @@ mod tests {
                 .unsafe_checkout_features
         );
     }
+
+    #[test]
+    fn unreachable_malformed_object_is_inert_and_preserved() {
+        let fixture = GitFixture::new();
+        let authorization = fixture.authorization();
+        let object_directory = fixture.target.join(".git/objects/aa");
+        fs::create_dir_all(&object_directory).unwrap();
+        let object = object_directory.join("malformed-unreachable-object");
+        fs::write(&object, b"not a git object and never interpreted").unwrap();
+        let before = fs::read(&object).unwrap();
+
+        let inventory = inventory_repository(&authorization).unwrap();
+
+        assert_eq!(inventory.head, fixture.head());
+        assert_eq!(fs::read(object).unwrap(), before);
+    }
 }
