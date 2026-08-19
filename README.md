@@ -293,8 +293,9 @@ follow [`SECURITY.md`](SECURITY.md), and repository changes must follow
 - Linux Git inventory and owned worktrees: yes
 - Bounded Linux process runtime: yes
 - Provider-neutral adapter contract and fakes: yes
-- Live Claude and Codex adapters: no
-- Agent adapters: no
+- Claude adapter core and deterministic fixtures: yes
+- Live confined Claude task and Codex adapter: no
+- Complete agent-adapter integration: no
 - Background service: no
 - GitHub automation: no
 - AgentMage authorization: no

@@ -285,28 +285,28 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 5.1 - Claude Capability and Session Management
 
-- [ ] **Task 5.1.1 - Probe installed Claude Code**
-  - [ ] **Sub-task 5.1.1.1:** Verify executable identity and supported version range.
-  - [ ] **Sub-task 5.1.1.2:** Probe non-interactive mode, JSON output, JSON Schema output, session resume, model selection, effort selection, and permission modes.
-  - [ ] **Sub-task 5.1.1.3:** Record supported capabilities without reading or copying authentication material.
-  - [ ] **Sub-task 5.1.1.4:** Fail visibly when required flags or behavior are unavailable.
-- [ ] **Task 5.1.2 - Implement session lifecycle**
-  - [ ] **Sub-task 5.1.2.1:** Start a named implementation session bound to one run, task, repository, and worktree.
-  - [ ] **Sub-task 5.1.2.2:** Continue only the exact retained session.
-  - [ ] **Sub-task 5.1.2.3:** Detect context exhaustion, provider errors, rate limits, and session disappearance.
-  - [ ] **Sub-task 5.1.2.4:** Cancel and reap the exact Claude process tree.
+- [x] **Task 5.1.1 - Probe installed Claude Code**
+  - [x] **Sub-task 5.1.1.1:** Verify executable identity and supported version range.
+  - [x] **Sub-task 5.1.1.2:** Probe non-interactive mode, JSON output, JSON Schema output, session resume, model selection, effort selection, and permission modes.
+  - [x] **Sub-task 5.1.1.3:** Record supported capabilities without reading or copying authentication material.
+  - [x] **Sub-task 5.1.1.4:** Fail visibly when required flags or behavior are unavailable.
+- [x] **Task 5.1.2 - Implement session lifecycle**
+  - [x] **Sub-task 5.1.2.1:** Start a named implementation session bound to one run, task, repository, and worktree.
+  - [x] **Sub-task 5.1.2.2:** Continue only the exact retained session.
+  - [x] **Sub-task 5.1.2.3:** Detect context exhaustion, provider errors, rate limits, and session disappearance.
+  - [x] **Sub-task 5.1.2.4:** Cancel and reap the exact Claude process tree.
 
 ### Story 5.2 - Claude Work Packet and Permissions
 
-- [ ] **Task 5.2.1 - Render implementation instructions**
-  - [ ] **Sub-task 5.2.1.1:** Include exact task text, dependencies, owned paths, source commit, branch, acceptance criteria, test commands, and prohibited actions.
-  - [ ] **Sub-task 5.2.1.2:** Mark repository text, issues, comments, fixtures, and tool output as untrusted content rather than instructions.
-  - [ ] **Sub-task 5.2.1.3:** Require a structured completion report with changes, tests, commit, limitations, and blockers.
+- [x] **Task 5.2.1 - Render implementation instructions**
+  - [x] **Sub-task 5.2.1.1:** Include exact task text, dependencies, owned paths, source commit, branch, acceptance criteria, test commands, and prohibited actions.
+  - [x] **Sub-task 5.2.1.2:** Mark repository text, issues, comments, fixtures, and tool output as untrusted content rather than instructions.
+  - [x] **Sub-task 5.2.1.3:** Require a structured completion report with changes, tests, commit, limitations, and blockers.
 - [ ] **Task 5.2.2 - Enforce implementation authority**
   - [ ] **Sub-task 5.2.2.1:** Allow writes only in the assigned worktree.
   - [ ] **Sub-task 5.2.2.2:** Allow only configured local tools and Git operations.
   - [ ] **Sub-task 5.2.2.3:** Deny merge, release, default-branch push, destructive Git, credential access, and external infrastructure.
-  - [ ] **Sub-task 5.2.2.4:** Refuse a completion report that lacks a coherent commit or truthful blocker.
+  - [x] **Sub-task 5.2.2.4:** Refuse a completion report that lacks a coherent commit or truthful blocker.
 
 **Story acceptance criteria**
 
@@ -905,4 +905,4 @@ These items must remain open until their prerequisites actually exist:
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 5 by probing and integrating Claude Code through the bounded process and authority contracts.
+- [ ] **Next 1:** Complete Sprint 5 worktree-only and configured-tool enforcement, then execute one explicitly authorized disposable live task.
