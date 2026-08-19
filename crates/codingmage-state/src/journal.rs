@@ -191,7 +191,7 @@ impl JournalRecord {
 /// Exclusive exact-owner lock for one journal writer.
 #[derive(Debug)]
 pub struct JournalLock {
-    _file: File,
+    file: File,
 }
 
 impl JournalLock {
@@ -221,7 +221,13 @@ impl JournalLock {
             .map_err(|_| JournalError::Io)?;
         file.sync_all().map_err(|_| JournalError::Io)?;
         sync_directory(root)?;
-        Ok(Self { _file: file })
+        Ok(Self { file })
+    }
+}
+
+impl Drop for JournalLock {
+    fn drop(&mut self) {
+        let _ = File::unlock(&self.file);
     }
 }
 
@@ -568,20 +574,48 @@ mod tests {
         let path = root.join("events.jsonl");
         let original = fs::read_to_string(&path).unwrap();
         let value: serde_json::Value = serde_json::from_str(original.trim()).unwrap();
-        for pointer in [
-            "/sequence",
-            "/schema_version",
-            "/prior_hash",
-            "/event/timestamp_ms",
-            "/event/run_id",
-            "/event/task_id",
-            "/event/repository_id",
-            "/event/outcome",
-            "/record_hash",
-        ] {
+        let mutations = [
+            ("/sequence", serde_json::Value::from(1)),
+            ("/schema_version", serde_json::Value::from(2)),
+            ("/prior_hash", serde_json::Value::String("1".repeat(64))),
+            ("/event/timestamp_ms", serde_json::Value::from(2)),
+            (
+                "/event/run_id",
+                serde_json::Value::String("run-2".to_owned()),
+            ),
+            (
+                "/event/task_id",
+                serde_json::Value::String("task-2".to_owned()),
+            ),
+            (
+                "/event/repository_id",
+                serde_json::Value::String("repo-2".to_owned()),
+            ),
+            (
+                "/event/kind/transition/phase",
+                serde_json::Value::String("review".to_owned()),
+            ),
+            (
+                "/event/kind/transition/effect",
+                serde_json::Value::String("read_only".to_owned()),
+            ),
+            (
+                "/event/outcome",
+                serde_json::Value::String("blocked".to_owned()),
+            ),
+            (
+                "/event/evidence/0",
+                serde_json::Value::String("evidence-other".to_owned()),
+            ),
+            (
+                "/event/redactions/0/category",
+                serde_json::Value::String("source_content".to_owned()),
+            ),
+            ("/record_hash", serde_json::Value::String("2".repeat(64))),
+        ];
+        for (pointer, replacement) in mutations {
             let mut mutated = value.clone();
-            *mutated.pointer_mut(pointer).unwrap() =
-                serde_json::Value::String("mutated".to_owned());
+            *mutated.pointer_mut(pointer).unwrap() = replacement;
             fs::write(
                 &path,
                 format!("{}\n", serde_json::to_string(&mutated).unwrap()),
