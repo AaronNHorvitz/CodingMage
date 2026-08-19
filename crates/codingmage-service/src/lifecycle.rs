@@ -65,7 +65,7 @@ impl ServiceSpec {
     #[must_use]
     pub fn render_unit(&self) -> String {
         format!(
-            "[Unit]\nDescription=CodingMage local development coordinator\nAfter=default.target\n\n[Service]\nType=simple\nExecStart={} run --config {}\nRestart=on-failure\nRestartSec=10s\nNoNewPrivileges=true\nPrivateTmp=true\nProtectSystem=strict\nProtectHome=read-only\nReadWritePaths={} {}\nMemoryMax={}\nTasksMax={}\nCPUQuota={}%\n\n[Install]\nWantedBy=default.target\n",
+            "[Unit]\nDescription=CodingMage local development coordinator\nAfter=default.target\n\n[Service]\nType=simple\nExecStart={} run --config {}\nRestart=on-failure\nRestartSec=10s\nKillMode=control-group\nTimeoutStopSec=30s\nNoNewPrivileges=true\nPrivateTmp=true\nProtectSystem=strict\nProtectHome=read-only\nReadWritePaths={} {}\nMemoryMax={}\nTasksMax={}\nCPUQuota={}%\n\n[Install]\nWantedBy=default.target\n",
             systemd_argument(&self.executable),
             systemd_argument(&self.configuration),
             systemd_argument(&self.state_root),

@@ -59,6 +59,8 @@ mod tests {
         let unit = spec.render_unit();
         for expected in [
             "NoNewPrivileges=true",
+            "KillMode=control-group",
+            "TimeoutStopSec=30s",
             "ProtectSystem=strict",
             "ProtectHome=read-only",
             "MemoryMax=1073741824",
