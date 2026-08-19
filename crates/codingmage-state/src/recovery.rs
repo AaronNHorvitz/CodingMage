@@ -160,6 +160,7 @@ mod tests {
     use super::*;
     use crate::{JournalEvent, RedactedField};
     use codingmage_contracts::{EvidenceId, RepositoryId, RunId, TaskId};
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     fn record(effect: EffectClass, outcome: EventOutcome) -> JournalRecord {
         let event = JournalEvent {
@@ -184,7 +185,14 @@ mod tests {
             evidence: vec![EvidenceId::new("evidence-1").unwrap()],
             redactions: vec![RedactedField::new("provider_output").unwrap()],
         };
-        let root = std::env::temp_dir().join(format!("codingmage-recovery-{}", std::process::id()));
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-recovery-{}-{unique}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&root);
         let mut journal = crate::Journal::open(&root, "owner").unwrap();
         let value = journal.append(event).unwrap().clone();
@@ -271,7 +279,10 @@ mod tests {
         let derived = IdentitySet::from_record(&record);
         assert_eq!(derived.worktree.as_deref(), Some("worktree-1"));
         assert_eq!(derived.branch.as_deref(), Some("codingmage/task-1"));
-        assert_eq!(derived.commit.as_deref(), Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        assert_eq!(
+            derived.commit.as_deref(),
+            Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        );
         assert_eq!(derived.process.as_deref(), Some("pid-10-start-20"));
         assert_eq!(derived.agent_session.as_deref(), Some("session-1"));
         assert_eq!(derived.model.as_deref(), Some("model-1"));
