@@ -1,0 +1,20 @@
+# Python documentation checks
+__pycache__/
+*.py[cod]
+
+# Rust build output
+/target/
+
+# CodingMage runtime data must never enter the source repository.
+/.codingmage/
+/state/
+/logs/
+/worktrees/
+
+# Local credentials and provider state
+.env
+.env.*
+*.pem
+*.key
+.claude/
+.codex/

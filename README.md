@@ -268,11 +268,26 @@ The implementation order is recorded in [`TASKS.md`](TASKS.md). The critical pat
 9. Run adversarial testing and a sustained soak campaign.
 10. Pilot against AgentMage, then generalize for other repositories.
 
+Documentation changes are checked locally without downloading a toolchain:
+
+```bash
+python3 scripts/docs_check.py
+python3 -m unittest discover -s tests -p 'test_*.py'
+```
+
+Project decisions are recorded in [`docs/decisions`](docs/decisions). Security concerns should
+follow [`SECURITY.md`](SECURITY.md), and repository changes must follow
+[`CONTRIBUTING.md`](CONTRIBUTING.md). CodingMage is licensed under
+[`Apache-2.0`](LICENSE).
+
 ## Current Status
 
 - Repository created: yes
 - Product boundary documented: yes
 - Granular development plan: yes
+- License and governance policies: yes
+- Accepted bootstrap architecture decisions: yes
+- Deterministic documentation gate: yes
 - Executable code: no
 - Agent adapters: no
 - Background service: no

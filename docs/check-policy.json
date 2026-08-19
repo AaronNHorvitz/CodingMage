@@ -1,0 +1,25 @@
+{
+  "required_files": [
+    "README.md",
+    "TASKS.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    ".markdownlint.json",
+    "docs/decisions/template.md",
+    "docs/decisions/0001-rust-first-bootstrap.md",
+    "docs/decisions/0002-external-target-no-self-modification.md",
+    "docs/decisions/0003-cli-adapter-provider-boundary.md",
+    "docs/decisions/0004-append-only-journal-atomic-snapshot.md"
+  ],
+  "prohibited_claims": [
+    "CodingMage is production ready",
+    "CodingMage is production-ready",
+    "all tasks are complete",
+    "all sprints are complete",
+    "unattended operation is approved",
+    "independently certified",
+    "independently reviewed and approved",
+    "the public release is available"
+  ]
+}
