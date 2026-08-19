@@ -40,6 +40,17 @@ pub enum Provider {
     Deterministic,
 }
 
+/// Current capacity state for the otherwise configured selected profile.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CapacityState {
+    /// Profile may be invoked.
+    Available,
+    /// Provider reports a temporary quota or rate limit.
+    QuotaLimited,
+    /// Provider or profile is operationally unavailable.
+    Unavailable,
+}
+
 /// Fixed model profile selected by policy.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -201,6 +212,29 @@ impl RoutingPolicy {
         feedback: &PerformanceFeedback,
         operator_override: Option<&OperatorOverride>,
     ) -> Result<RoutingDecision, RoutingError> {
+        self.route_with_capacity(
+            role,
+            input,
+            feedback,
+            operator_override,
+            CapacityState::Available,
+        )
+    }
+
+    /// Produces a route while enforcing the selected profile's current capacity state.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RoutingError::QuotaLimited`] or [`RoutingError::ProfileUnavailable`] rather than
+    /// substituting a weaker model when current capacity cannot satisfy policy.
+    pub fn route_with_capacity(
+        &self,
+        role: RoutingRole,
+        input: &RiskInput,
+        feedback: &PerformanceFeedback,
+        operator_override: Option<&OperatorOverride>,
+        capacity: CapacityState,
+    ) -> Result<RoutingDecision, RoutingError> {
         if self.failure_escalation_threshold == 0 || self.correction_escalation_threshold == 0 {
             return Err(RoutingError::InvalidPolicy);
         }
@@ -222,6 +256,11 @@ impl RoutingPolicy {
         }
         if !self.available_profiles.contains(&selected) {
             return Err(RoutingError::ProfileUnavailable);
+        }
+        match capacity {
+            CapacityState::Available => {}
+            CapacityState::QuotaLimited => return Err(RoutingError::QuotaLimited),
+            CapacityState::Unavailable => return Err(RoutingError::ProfileUnavailable),
         }
         let (effort, speed) = profile_controls(selected);
         Ok(RoutingDecision {
@@ -250,6 +289,8 @@ pub enum RoutingError {
     InvalidPolicy,
     /// Required profile is not available; no fallback occurred.
     ProfileUnavailable,
+    /// Required profile is temporarily quota limited; no fallback occurred.
+    QuotaLimited,
     /// Operator pin is malformed, cross-provider, or weaker than mandatory policy.
     OverrideDenied,
     /// Provider-resolved model identity is unsafe to retain.
@@ -261,6 +302,7 @@ impl fmt::Display for RoutingError {
         formatter.write_str(match self {
             Self::InvalidPolicy => "codingmage.routing.invalid_policy",
             Self::ProfileUnavailable => "codingmage.routing.profile_unavailable",
+            Self::QuotaLimited => "codingmage.routing.quota_limited",
             Self::OverrideDenied => "codingmage.routing.override_denied",
             Self::InvalidResolvedModel => "codingmage.routing.invalid_resolved_model",
         })
@@ -555,6 +597,16 @@ mod tests {
                 None
             ),
             Err(RoutingError::ProfileUnavailable)
+        );
+        assert_eq!(
+            policy().route_with_capacity(
+                RoutingRole::Implementation,
+                &RiskInput::default(),
+                &PerformanceFeedback::default(),
+                None,
+                CapacityState::QuotaLimited,
+            ),
+            Err(RoutingError::QuotaLimited)
         );
     }
 
