@@ -811,37 +811,37 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 18.1 - Fedora Release Package
 
-- [ ] **Task 18.1.1 - Produce reproducible binary**
-  - [ ] **Sub-task 18.1.1.1:** Pin dependencies and verify license/provenance inventory.
-  - [ ] **Sub-task 18.1.1.2:** Build release artifacts from a clean checkout twice and compare outputs.
-  - [ ] **Sub-task 18.1.1.3:** Generate SBOM, checksums, build manifest, and installation layout.
-  - [ ] **Sub-task 18.1.1.4:** Verify no credentials, logs, target source, local paths, or debug-only authority enter the package.
-- [ ] **Task 18.1.2 - Installation and removal**
-  - [ ] **Sub-task 18.1.2.1:** Install under user-owned paths without root.
+- [x] **Task 18.1.1 - Produce reproducible binary**
+  - [x] **Sub-task 18.1.1.1:** Pin dependencies and verify license/provenance inventory.
+  - [x] **Sub-task 18.1.1.2:** Build release artifacts from a clean checkout twice and compare outputs.
+  - [x] **Sub-task 18.1.1.3:** Generate SBOM, checksums, build manifest, and installation layout.
+  - [x] **Sub-task 18.1.1.4:** Verify no credentials, logs, target source, local paths, or debug-only authority enter the package.
+- [ ] **Task 18.1.2 - Installation and removal.** Binary lifecycle passes; packaged user-service lifecycle remains open. See `docs/evidence/sprint-18-linux-package.md`.
+  - [x] **Sub-task 18.1.2.1:** Install under user-owned paths without root.
   - [ ] **Sub-task 18.1.2.2:** Install, verify, start, stop, upgrade, rollback, and remove the user service.
-  - [ ] **Sub-task 18.1.2.3:** Preserve user configuration and state only according to explicit retention policy.
+  - [x] **Sub-task 18.1.2.3:** Preserve user configuration and state only according to explicit retention policy.
 
 ### Story 18.2 - macOS and Windows Design
 
-- [ ] **Task 18.2.1 - Define platform adapter contracts**
-  - [ ] **Sub-task 18.2.1.1:** Separate filesystem identity, process containment, service management, credential references, and monitoring behind platform interfaces.
-  - [ ] **Sub-task 18.2.1.2:** Document Linux evidence as Linux-only.
+- [x] **Task 18.2.1 - Define platform adapter contracts**
+  - [x] **Sub-task 18.2.1.1:** Separate filesystem identity, process containment, service management, credential references, and monitoring behind platform interfaces.
+  - [x] **Sub-task 18.2.1.2:** Document Linux evidence as Linux-only.
 - [ ] **Task 18.2.2 - Implement macOS adapter**
   - [ ] **Sub-task 18.2.2.1:** Implement Apple Silicon process, filesystem, launch-agent, and keychain-reference behavior.
   - [ ] **Sub-task 18.2.2.2:** Run native macOS lifecycle, Git safety, provider, monitoring, and recovery tests on supported hardware.
-- [ ] **Task 18.2.3 - Plan Windows adapter**
-  - [ ] **Sub-task 18.2.3.1:** Define native Windows process, job-object, NTFS identity, service/task, credential, and console requirements.
-  - [ ] **Sub-task 18.2.3.2:** Keep Windows support explicitly unimplemented until native evidence exists.
+- [x] **Task 18.2.3 - Plan Windows adapter**
+  - [x] **Sub-task 18.2.3.1:** Define native Windows process, job-object, NTFS identity, service/task, credential, and console requirements.
+  - [x] **Sub-task 18.2.3.2:** Keep Windows support explicitly unimplemented until native evidence exists.
 
 **Story acceptance criteria**
 
-- [ ] **AC 18.1:** Given two clean Fedora builds, when artifacts are compared and installed, then identities are reproducible and removal leaves only explicitly retained user data.
-- [ ] **AC 18.2:** Given platform documentation and packages, when reviewed, then no Linux result is represented as macOS or Windows evidence.
+- [x] **AC 18.1:** Given two clean Fedora builds, when artifacts are compared and installed, then identities are reproducible and removal leaves only explicitly retained user data.
+- [x] **AC 18.2:** Given platform documentation and packages, when reviewed, then no Linux result is represented as macOS or Windows evidence.
 
 ### Sprint 18 Gate
 
 - [ ] **Gate 18.1:** Fedora package, install, upgrade, rollback, removal, SBOM, and provenance gates pass.
-- [ ] **Gate 18.2:** macOS and Windows claims remain blocked until native execution evidence exists.
+- [x] **Gate 18.2:** macOS and Windows claims remain blocked until native execution evidence exists.
 
 ---
 
