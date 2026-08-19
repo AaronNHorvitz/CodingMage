@@ -33,7 +33,8 @@ This evidence covers deterministic hostile-content, repository, filesystem, proc
 
 ## Verification
 
-Implementation commits: `df000e5`, `88f8010`, `e1f5f38`, `6596628`, and `9c70c2d`.
+Implementation commits: `df000e5`, `88f8010`, `e1f5f38`, `6596628`, `9c70c2d`,
+`13fc191`, `6eed277`, and `ec78f40`.
 
 ```text
 cargo test --workspace --all-targets
@@ -62,6 +63,14 @@ The focused Git campaign was rerun after the full workspace command and passed 1
 
 ## Open Evidence
 
-Sub-task `16.2.1.2`, `AC 16.2`, and `Gate 16.1` remain open because CodingMage does not yet have locally executable commit, review, authenticated push, and network-recovery composition through which to inject concurrent active-checkout mutations. Existing create, inventory, cleanup, filesystem replacement, and recovery campaigns pass, but they are not a substitute for that later end-to-end operation.
+The local campaign now injects active-checkout edits deterministically between controlled-commit
+preflight and staging and between review location binding and immutable-blob inspection. The edits
+survive byte-for-byte while the owned commit retains its exact direct parent and the review scope
+revalidates. Create, inventory, cleanup, filesystem replacement, process, and local recovery cases
+also pass, so `AC 16.2` and local `Gate 16.1` are complete.
+
+Sub-task `16.2.1.2` remains open only for active-checkout mutation during authenticated push and
+real network recovery. Those cases require an explicitly approved remote and credentials; local
+fixtures do not substitute for them.
 
 Manual fuzzing remains the separately deferred `External 5` gate. Deterministic mutation and hostile-corpus tests do not claim fuzz coverage.

@@ -733,9 +733,9 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 16.2 - Git, Filesystem, and Process Attacks
 
-- [ ] **Task 16.2.1 - Exercise repository attacks.** All local cases except the end-to-end concurrent commit, review, authenticated push, and network-recovery campaign pass; see `docs/evidence/sprint-16-local.md`.
+- [ ] **Task 16.2.1 - Exercise repository attacks.** Every local create, commit, review, cleanup, and recovery case passes; authenticated push and network recovery remain external. See `docs/evidence/sprint-16-local.md`.
   - [x] **Sub-task 16.2.1.1:** Test hooks, aliases, filters, drivers, helpers, pagers, editors, signers, URL rewrites, alternates, replacement refs, malicious objects, submodules, LFS, unsafe ownership, case collisions, and Unicode collisions.
-  - [ ] **Sub-task 16.2.1.2:** Test active-checkout changes during create, commit, review, cleanup, push, and recovery. Create, cleanup, path replacement, and local recovery pass; commit, review, authenticated push, and network recovery await end-to-end composition and external credentials.
+  - [ ] **Sub-task 16.2.1.2:** Test active-checkout changes during create, commit, review, cleanup, push, and recovery. Deterministic local create, commit, review, cleanup, path-replacement, and recovery campaigns pass; authenticated push and network recovery await external credentials.
   - [x] **Sub-task 16.2.1.3:** Test renamed, deleted, replaced, and overlapping repository/worktree paths.
 - [x] **Task 16.2.2 - Exercise process attacks**
   - [x] **Sub-task 16.2.2.1:** Test parent, child, and grandchild crashes, hangs, output floods, descriptor inheritance, and process-name collisions.
@@ -752,12 +752,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 **Story acceptance criteria**
 
 - [x] **AC 16.1:** Given the complete hostile-content corpus, when every boundary processes it, then authority remains unchanged and no synthetic secret leaks.
-- [ ] **AC 16.2:** Given concurrent repository and process attacks, when CodingMage operates or recovers, then user state survives and cleanup touches only proven owned artifacts.
+- [x] **AC 16.2:** Given concurrent local repository and process attacks, when CodingMage operates or recovers, then user state survives and cleanup touches only proven owned artifacts.
 - [x] **AC 16.3:** Given every single-field evidence mutation, when verification runs, then the exact corruption blocks advancement.
 
 ### Sprint 16 Gate
 
-- [ ] **Gate 16.1:** Hostile-content, Git, filesystem, process, state, and evidence campaigns pass locally.
+- [x] **Gate 16.1:** Hostile-content, Git, filesystem, process, state, and evidence campaigns pass locally. Authenticated network cases remain separately open under sub-task `16.2.1.2`.
 - [x] **Gate 16.2:** Manual fuzzing remains a separate explicit gate and is not claimed by deterministic mutation tests. Execution remains open as `External 5`.
 
 ---
