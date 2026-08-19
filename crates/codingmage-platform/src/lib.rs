@@ -57,6 +57,17 @@ pub enum CredentialStore {
     CredentialManager,
 }
 
+/// Native local monitoring and control transport.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MonitorTransport {
+    /// Private Unix-domain socket owned by the current Linux user.
+    LinuxUnixSocket,
+    /// Private Unix-domain socket owned by the current macOS user.
+    DarwinUnixSocket,
+    /// Current-user Windows named pipe with an explicit access control list.
+    WindowsNamedPipe,
+}
+
 /// Reviewable platform capabilities without a claim of native execution.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct PlatformCapabilities {
@@ -70,6 +81,8 @@ pub struct PlatformCapabilities {
     pub service: ServiceManager,
     /// Credential-reference primitive.
     pub credentials: CredentialStore,
+    /// Local monitoring/control transport.
+    pub monitoring: MonitorTransport,
     /// Whether physical filesystem identity has an implementation.
     pub filesystem_identity: bool,
     /// Whether native lifecycle tests have actually run.
@@ -119,6 +132,7 @@ impl PlatformAdapter for LinuxAdapter {
             process: ProcessContainment::LinuxProcessGroup,
             service: ServiceManager::SystemdUser,
             credentials: CredentialStore::SecretService,
+            monitoring: MonitorTransport::LinuxUnixSocket,
             filesystem_identity: true,
             native_lifecycle_evidence: cfg!(target_os = "linux"),
         }
@@ -148,6 +162,7 @@ impl PlatformAdapter for MacOsAdapter {
             process: ProcessContainment::DarwinProcessGroup,
             service: ServiceManager::LaunchAgent,
             credentials: CredentialStore::Keychain,
+            monitoring: MonitorTransport::DarwinUnixSocket,
             filesystem_identity: true,
             native_lifecycle_evidence: false,
         }
@@ -181,6 +196,7 @@ impl PlatformAdapter for WindowsPlan {
             process: ProcessContainment::WindowsJobObject,
             service: ServiceManager::WindowsTask,
             credentials: CredentialStore::CredentialManager,
+            monitoring: MonitorTransport::WindowsNamedPipe,
             filesystem_identity: false,
             native_lifecycle_evidence: false,
         }
@@ -235,6 +251,7 @@ mod tests {
     fn linux_is_the_only_native_evidence_on_linux() {
         let linux = LinuxAdapter.capabilities();
         assert_eq!(linux.platform, Platform::Linux);
+        assert_eq!(linux.monitoring, MonitorTransport::LinuxUnixSocket);
         assert_eq!(linux.support, SupportLevel::NativeTested);
         assert!(linux.native_lifecycle_evidence);
         for capabilities in [MacOsAdapter.capabilities(), WindowsPlan.capabilities()] {
