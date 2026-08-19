@@ -143,43 +143,43 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 2.1 - Configuration Contract
 
-- [ ] **Task 2.1.1 - Define project configuration**
-  - [ ] **Sub-task 2.1.1.1:** Define a versioned `codingmage.toml` schema.
-  - [ ] **Sub-task 2.1.1.2:** Include target path, task source, default branch, integration branch, scratch root, agent profiles, correction limits, gate commands, and publication policy.
-  - [ ] **Sub-task 2.1.1.3:** Require explicit opt-in for network, push, issue, and pull-request capabilities.
-  - [ ] **Sub-task 2.1.1.4:** Reject unknown fields, duplicate keys, unsupported versions, relative authority roots, and conflicting policies.
-- [ ] **Task 2.1.2 - Add configuration loading**
-  - [ ] **Sub-task 2.1.2.1:** Load only the explicitly selected configuration file.
-  - [ ] **Sub-task 2.1.2.2:** Prohibit ambient parent-directory discovery unless explicitly enabled.
-  - [ ] **Sub-task 2.1.2.3:** Canonicalize paths without following an unapproved repository replacement.
-  - [ ] **Sub-task 2.1.2.4:** Produce a redacted effective-configuration view.
+- [x] **Task 2.1.1 - Define project configuration**
+  - [x] **Sub-task 2.1.1.1:** Define a versioned `codingmage.toml` schema.
+  - [x] **Sub-task 2.1.1.2:** Include target path, task source, default branch, integration branch, scratch root, agent profiles, correction limits, gate commands, and publication policy.
+  - [x] **Sub-task 2.1.1.3:** Require explicit opt-in for network, push, issue, and pull-request capabilities.
+  - [x] **Sub-task 2.1.1.4:** Reject unknown fields, duplicate keys, unsupported versions, relative authority roots, and conflicting policies.
+- [x] **Task 2.1.2 - Add configuration loading**
+  - [x] **Sub-task 2.1.2.1:** Load only the explicitly selected configuration file.
+  - [x] **Sub-task 2.1.2.2:** Prohibit ambient parent-directory discovery unless explicitly enabled.
+  - [x] **Sub-task 2.1.2.3:** Canonicalize paths without following an unapproved repository replacement.
+  - [x] **Sub-task 2.1.2.4:** Produce a redacted effective-configuration view.
 
 **Story acceptance criteria**
 
-- [ ] **AC 2.1.1:** Given valid configuration, when loaded twice, then canonical output is byte-identical.
-- [ ] **AC 2.1.2:** Given unknown, conflicting, traversing, or secret-bearing configuration, when loading runs, then it fails closed without printing sensitive values.
+- [x] **AC 2.1.1:** Given valid configuration, when loaded twice, then canonical output is byte-identical.
+- [x] **AC 2.1.2:** Given unknown, conflicting, traversing, or secret-bearing configuration, when loading runs, then it fails closed without printing sensitive values.
 
 ### Story 2.2 - Repository Authorization
 
-- [ ] **Task 2.2.1 - Bind repository identity**
-  - [ ] **Sub-task 2.2.1.1:** Resolve the target through a held directory handle where supported.
-  - [ ] **Sub-task 2.2.1.2:** Record canonical path, filesystem identity, Git directory identity, initial `HEAD`, and remote identities.
-  - [ ] **Sub-task 2.2.1.3:** Reject bare repositories, nested ambiguity, symlink replacement, unsafe ownership, and unsupported repository formats by default.
-  - [ ] **Sub-task 2.2.1.4:** Revalidate repository identity before every state-changing phase.
-- [ ] **Task 2.2.2 - Enforce self-target prohibition**
-  - [ ] **Sub-task 2.2.2.1:** Detect when CodingMage is pointed at its own source or runtime-state directory.
-  - [ ] **Sub-task 2.2.2.2:** Reject overlapping source, scratch, state, and target roots.
-  - [ ] **Sub-task 2.2.2.3:** Add symlink, bind-path, and renamed-directory fixtures.
+- [x] **Task 2.2.1 - Bind repository identity**
+  - [x] **Sub-task 2.2.1.1:** Resolve the target through a held directory handle where supported.
+  - [x] **Sub-task 2.2.1.2:** Record canonical path, filesystem identity, Git directory identity, initial `HEAD`, and remote identities.
+  - [x] **Sub-task 2.2.1.3:** Reject bare repositories, nested ambiguity, symlink replacement, unsafe ownership, and unsupported repository formats by default.
+  - [x] **Sub-task 2.2.1.4:** Revalidate repository identity before every state-changing phase.
+- [x] **Task 2.2.2 - Enforce self-target prohibition**
+  - [x] **Sub-task 2.2.2.1:** Detect when CodingMage is pointed at its own source or runtime-state directory.
+  - [x] **Sub-task 2.2.2.2:** Reject overlapping source, scratch, state, and target roots.
+  - [x] **Sub-task 2.2.2.3:** Add symlink, bind-path, and renamed-directory fixtures. The bind-path predicate is verified with synthetic equal physical identities without requiring a privileged mount.
 
 **Story acceptance criteria**
 
-- [ ] **AC 2.2.1:** Given a replaced or moved target after authorization, when revalidation runs, then no command or write executes.
-- [ ] **AC 2.2.2:** Given CodingMage itself or an overlapping state root as target, when authorization runs, then the request is denied with a stable code.
+- [x] **AC 2.2.1:** Given a replaced or moved target after authorization, when revalidation runs, then no command or write executes.
+- [x] **AC 2.2.2:** Given CodingMage itself or an overlapping state root as target, when authorization runs, then the request is denied with a stable code.
 
 ### Sprint 2 Gate
 
-- [ ] **Gate 2.1:** Configuration and repository identity mutation suites pass.
-- [ ] **Gate 2.2:** No target operation can begin from implicit or stale authorization.
+- [x] **Gate 2.1:** Configuration and repository identity mutation suites pass. See `docs/evidence/sprint-2.md`.
+- [x] **Gate 2.2:** No target operation can begin from implicit or stale authorization.
 
 ---
 
@@ -905,4 +905,4 @@ These items must remain open until their prerequisites actually exist:
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 2 by implementing versioned configuration loading and fail-closed repository authorization without adding Git write behavior.
+- [ ] **Next 1:** Complete Sprint 3 by implementing hostile-safe read-only Git inventory and exact owned-worktree lifecycle controls.
