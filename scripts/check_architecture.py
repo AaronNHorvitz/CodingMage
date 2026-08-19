@@ -14,6 +14,7 @@ def validate_edges(metadata: dict[str, object], policy: dict[str, object]) -> li
     packages = metadata.get("packages", [])
     internal = {package["name"] for package in packages if package["name"].startswith("codingmage-")}
     allowed = policy.get("allowed_internal_dependencies", {})
+    allowed_dev = policy.get("allowed_internal_dev_dependencies", {})
     findings: list[str] = []
     for package in packages:
         name = package["name"]
@@ -25,7 +26,10 @@ def validate_edges(metadata: dict[str, object], policy: dict[str, object]) -> li
         granted = set(allowed[name])
         for dependency in package.get("dependencies", []):
             target = dependency["name"]
-            if target in internal and target not in granted:
+            dependency_grants = granted
+            if dependency.get("kind") == "dev":
+                dependency_grants = granted | set(allowed_dev.get(name, []))
+            if target in internal and target not in dependency_grants:
                 findings.append(f"architecture.edge.forbidden: {name} -> {target}")
     return sorted(findings)
 

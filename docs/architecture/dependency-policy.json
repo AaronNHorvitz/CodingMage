@@ -20,5 +20,8 @@
     "codingmage-service": ["codingmage-contracts", "codingmage-state"],
     "codingmage-soak": [],
     "codingmage-state": ["codingmage-contracts"]
+  },
+  "allowed_internal_dev_dependencies": {
+    "codingmage-soak": ["codingmage-contracts", "codingmage-orchestrator", "codingmage-plan"]
   }
 }

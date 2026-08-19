@@ -54,6 +54,44 @@ class ArchitecturePolicyTest(unittest.TestCase):
         }
         self.assertEqual([], check_architecture.validate_edges(metadata, policy))
 
+    def test_explicit_test_only_edge_does_not_grant_production_edge(self) -> None:
+        policy = {
+            "allowed_internal_dependencies": {
+                "codingmage-soak": [],
+                "codingmage-orchestrator": [],
+            },
+            "allowed_internal_dev_dependencies": {
+                "codingmage-soak": ["codingmage-orchestrator"],
+            },
+        }
+        test_only = {
+            "packages": [
+                {
+                    "name": "codingmage-soak",
+                    "dependencies": [
+                        {"name": "codingmage-orchestrator", "kind": "dev"}
+                    ],
+                },
+                {"name": "codingmage-orchestrator", "dependencies": []},
+            ]
+        }
+        production = {
+            "packages": [
+                {
+                    "name": "codingmage-soak",
+                    "dependencies": [
+                        {"name": "codingmage-orchestrator", "kind": None}
+                    ],
+                },
+                {"name": "codingmage-orchestrator", "dependencies": []},
+            ]
+        }
+        self.assertEqual([], check_architecture.validate_edges(test_only, policy))
+        self.assertEqual(
+            ["architecture.edge.forbidden: codingmage-soak -> codingmage-orchestrator"],
+            check_architecture.validate_edges(production, policy),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
