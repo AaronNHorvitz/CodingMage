@@ -118,6 +118,19 @@ pub enum GateProfile {
     Custom(Vec<LiteralCommand>),
 }
 
+/// Required verification depth declared by a project.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum TestTier {
+    /// Changed-file and focused unit checks.
+    Focused,
+    /// Package or workspace integration checks.
+    Package,
+    /// Security, mutation, and recovery checks.
+    Security,
+    /// Packaging, platform, and release-candidate checks.
+    Release,
+}
+
 /// One shell-free verification command.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -194,6 +207,8 @@ pub struct ProjectPolicy {
     pub evidence_namespace: String,
     /// Expected relative artifact paths.
     pub expected_artifacts: BTreeSet<PathBuf>,
+    /// Required verification depth for a completion candidate.
+    pub required_test_tiers: BTreeSet<TestTier>,
     /// Stable prohibited operation labels.
     pub prohibited_operations: BTreeSet<String>,
     /// Verification profile.
@@ -226,6 +241,7 @@ impl ProjectPolicy {
             || !component(&self.session_namespace)
             || !component(&self.evidence_namespace)
             || self.expected_artifacts.is_empty()
+            || self.required_test_tiers.is_empty()
             || self.prohibited_operations.is_empty()
             || self.expected_artifacts.iter().any(|path| {
                 path.is_absolute()
@@ -464,6 +480,7 @@ mod tests {
                 session_namespace: format!("{label}-sessions"),
                 evidence_namespace: format!("{label}-evidence"),
                 expected_artifacts: BTreeSet::from([PathBuf::from("target/artifact")]),
+                required_test_tiers: BTreeSet::from([TestTier::Focused, TestTier::Package]),
                 prohibited_operations: BTreeSet::from(["force-push".to_owned()]),
                 gates: GateProfile::Rust,
             }
@@ -497,6 +514,7 @@ mod tests {
                 session_namespace: format!("{label}-sessions"),
                 evidence_namespace: format!("{label}-evidence"),
                 expected_artifacts: BTreeSet::from([PathBuf::from("artifact")]),
+                required_test_tiers: BTreeSet::from([TestTier::Focused]),
                 prohibited_operations: BTreeSet::from(["force-push".to_owned()]),
                 gates: GateProfile::Documentation,
             }
