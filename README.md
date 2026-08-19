@@ -288,7 +288,8 @@ follow [`SECURITY.md`](SECURITY.md), and repository changes must follow
 - License and governance policies: yes
 - Accepted bootstrap architecture decisions: yes
 - Deterministic documentation gate: yes
-- Executable code: no
+- Executable foundation: yes (typed contracts and empty CLI bootstrap)
+- Configuration and repository authorization: no
 - Agent adapters: no
 - Background service: no
 - GitHub automation: no

@@ -98,42 +98,42 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 1.1 - Workspace Bootstrap
 
-- [ ] **Task 1.1.1 - Create the workspace**
-  - [ ] **Sub-task 1.1.1.1:** Add a pinned Rust toolchain and supported minimum Rust version.
-  - [ ] **Sub-task 1.1.1.2:** Create `codingmage-contracts`, `codingmage-core`, and `codingmage-cli` crates.
-  - [ ] **Sub-task 1.1.1.3:** Deny warnings in continuous integration and define strict Clippy settings.
-  - [ ] **Sub-task 1.1.1.4:** Add formatting, unit-test, and documentation commands.
-  - [ ] **Sub-task 1.1.1.5:** Add `.gitignore` entries for build output, local state, logs, worktrees, credentials, and provider caches.
-- [ ] **Task 1.1.2 - Define dependency direction**
-  - [ ] **Sub-task 1.1.2.1:** Prevent contracts from depending on runtime, Git, provider, monitor, or CLI crates.
-  - [ ] **Sub-task 1.1.2.2:** Prevent provider adapters from bypassing core orchestration decisions.
-  - [ ] **Sub-task 1.1.2.3:** Add an automated dependency-direction test.
+- [x] **Task 1.1.1 - Create the workspace**
+  - [x] **Sub-task 1.1.1.1:** Add a pinned Rust toolchain and supported minimum Rust version.
+  - [x] **Sub-task 1.1.1.2:** Create `codingmage-contracts`, `codingmage-core`, and `codingmage-cli` crates.
+  - [x] **Sub-task 1.1.1.3:** Deny warnings in continuous integration and define strict Clippy settings.
+  - [x] **Sub-task 1.1.1.4:** Add formatting, unit-test, and documentation commands.
+  - [x] **Sub-task 1.1.1.5:** Add `.gitignore` entries for build output, local state, logs, worktrees, credentials, and provider caches.
+- [x] **Task 1.1.2 - Define dependency direction**
+  - [x] **Sub-task 1.1.2.1:** Prevent contracts from depending on runtime, Git, provider, monitor, or CLI crates.
+  - [x] **Sub-task 1.1.2.2:** Prevent provider adapters from bypassing core orchestration decisions.
+  - [x] **Sub-task 1.1.2.3:** Add an automated dependency-direction test.
 
 **Story acceptance criteria**
 
-- [ ] **AC 1.1.1:** Given a clean checkout, when the workspace build and tests run, then all crates compile with pinned dependencies and zero warnings.
-- [ ] **AC 1.1.2:** Given a seeded forbidden dependency, when the architecture test runs, then it names and rejects the exact edge.
+- [x] **AC 1.1.1:** Given a clean checkout, when the workspace build and tests run, then all crates compile with pinned dependencies and zero warnings.
+- [x] **AC 1.1.2:** Given a seeded forbidden dependency, when the architecture test runs, then it names and rejects the exact edge.
 
 ### Story 1.2 - Stable Identities and Errors
 
-- [ ] **Task 1.2.1 - Define identifier types**
-  - [ ] **Sub-task 1.2.1.1:** Add validated `RepositoryId`, `RunId`, `TaskId`, `WorktreeId`, `AgentId`, `AttemptId`, `ReviewId`, and `EvidenceId` types.
-  - [ ] **Sub-task 1.2.1.2:** Reject empty, oversized, path-bearing, control-character, and ambiguous identifiers.
-  - [ ] **Sub-task 1.2.1.3:** Add canonical serialization and ordering tests.
-- [ ] **Task 1.2.2 - Define content-free errors**
-  - [ ] **Sub-task 1.2.2.1:** Create stable error codes for configuration, repository, Git, process, provider, gate, state, quota, and evidence failures.
-  - [ ] **Sub-task 1.2.2.2:** Ensure errors carry bounded metadata without source excerpts, commands containing secrets, or environment dumps.
-  - [ ] **Sub-task 1.2.2.3:** Add round-trip and unknown-code compatibility tests.
+- [x] **Task 1.2.1 - Define identifier types**
+  - [x] **Sub-task 1.2.1.1:** Add validated `RepositoryId`, `RunId`, `TaskId`, `WorktreeId`, `AgentId`, `AttemptId`, `ReviewId`, and `EvidenceId` types.
+  - [x] **Sub-task 1.2.1.2:** Reject empty, oversized, path-bearing, control-character, and ambiguous identifiers.
+  - [x] **Sub-task 1.2.1.3:** Add canonical serialization and ordering tests.
+- [x] **Task 1.2.2 - Define content-free errors**
+  - [x] **Sub-task 1.2.2.1:** Create stable error codes for configuration, repository, Git, process, provider, gate, state, quota, and evidence failures.
+  - [x] **Sub-task 1.2.2.2:** Ensure errors carry bounded metadata without source excerpts, commands containing secrets, or environment dumps.
+  - [x] **Sub-task 1.2.2.3:** Add round-trip and unknown-code compatibility tests.
 
 **Story acceptance criteria**
 
-- [ ] **AC 1.2.1:** Given malformed and adversarial identifier inputs, when constructors or deserializers run, then every invalid value fails before becoming authority.
-- [ ] **AC 1.2.2:** Given synthetic secrets in lower-level failures, when public errors serialize, then no secret value appears.
+- [x] **AC 1.2.1:** Given malformed and adversarial identifier inputs, when constructors or deserializers run, then every invalid value fails before becoming authority.
+- [x] **AC 1.2.2:** Given synthetic secrets in lower-level failures, when public errors serialize, then no secret value appears.
 
 ### Sprint 1 Gate
 
-- [ ] **Gate 1.1:** Workspace, dependency direction, identifiers, and errors pass focused tests and strict Clippy.
-- [ ] **Gate 1.2:** Generated API documentation contains no unimplemented capability claim.
+- [x] **Gate 1.1:** Workspace, dependency direction, identifiers, and errors pass focused tests and strict Clippy. See `docs/evidence/sprint-1.md`.
+- [x] **Gate 1.2:** Generated API documentation contains no unimplemented capability claim.
 
 ---
 
@@ -905,4 +905,4 @@ These items must remain open until their prerequisites actually exist:
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Story 1.1 by creating the pinned Rust workspace, enforcing dependency direction, and passing strict local build, test, formatting, lint, and documentation gates.
+- [ ] **Next 1:** Complete Sprint 2 by implementing versioned configuration loading and fail-closed repository authorization without adding Git write behavior.
