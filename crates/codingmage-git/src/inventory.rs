@@ -384,10 +384,34 @@ fn operation_state(git: &Path) -> OperationState {
 fn detect_unsafe_checkout_features(target: &Path, git: &Path) -> Result<bool, InventoryError> {
     let config = read_optional_bounded(&git.join("config"))?.unwrap_or_default();
     let lower = config.to_ascii_lowercase();
-    if lower.contains("[filter ") || lower.contains("[include") {
+    let unsafe_config_markers = [
+        "[alias",
+        "[credential",
+        "[diff ",
+        "[filter ",
+        "[include",
+        "[merge ",
+        "[url ",
+        "askpass",
+        "editor =",
+        "fsmonitor =",
+        "pager =",
+        "program =",
+    ];
+    if unsafe_config_markers
+        .iter()
+        .any(|marker| lower.contains(marker))
+    {
         return Ok(true);
     }
     if git.join("objects/info/alternates").exists() {
+        return Ok(true);
+    }
+    if directory_has_entries(&git.join("refs/replace"))?
+        || read_optional_bounded(&git.join("packed-refs"))?
+            .is_some_and(|packed| packed.lines().any(|line| line.contains(" refs/replace/")))
+        || directory_has_active_hooks(&git.join("hooks"))?
+    {
         return Ok(true);
     }
     for attributes in [target.join(".gitattributes"), git.join("info/attributes")] {
@@ -404,6 +428,37 @@ fn detect_unsafe_checkout_features(target: &Path, git: &Path) -> Result<bool, In
         }
     }
     Ok(false)
+}
+
+fn directory_has_entries(path: &Path) -> Result<bool, InventoryError> {
+    match fs::read_dir(path) {
+        Ok(mut entries) => Ok(entries.next().is_some()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(_) => Err(InventoryError::InvalidOutput),
+    }
+}
+
+fn directory_has_active_hooks(path: &Path) -> Result<bool, InventoryError> {
+    match fs::read_dir(path) {
+        Ok(entries) => {
+            for entry in entries {
+                let entry = entry.map_err(|_| InventoryError::InvalidOutput)?;
+                let name = entry.file_name();
+                let name = name.to_str().ok_or(InventoryError::InvalidOutput)?;
+                if entry
+                    .file_type()
+                    .map_err(|_| InventoryError::InvalidOutput)?
+                    .is_file()
+                    && !name.ends_with(".sample")
+                {
+                    return Ok(true);
+                }
+            }
+            Ok(false)
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(_) => Err(InventoryError::InvalidOutput),
+    }
 }
 
 #[derive(Eq, PartialEq)]
@@ -750,5 +805,67 @@ mod tests {
         .unwrap();
         let inventory = inventory_repository(&fixture.authorization()).unwrap();
         assert!(inventory.unsafe_checkout_features);
+    }
+
+    #[test]
+    fn every_hostile_configuration_family_and_replacement_ref_is_refused() {
+        let fragments = [
+            "\n[alias]\n  status = !false\n",
+            "\n[credential]\n  helper = !false\n",
+            "\n[diff \"x\"]\n  external = false\n",
+            "\n[filter \"x\"]\n  clean = false\n",
+            "\n[include]\n  path = /tmp/hostile\n",
+            "\n[merge \"x\"]\n  driver = false\n",
+            "\n[url \"https://example.invalid\"]\n  insteadOf = fixture:\n",
+            "\n[core]\n  askPass = false\n",
+            "\n[core]\n  editor = false\n",
+            "\n[core]\n  fsmonitor = false\n",
+            "\n[core]\n  pager = false\n",
+            "\n[gpg]\n  program = false\n",
+        ];
+        for fragment in fragments {
+            let fixture = GitFixture::new();
+            let authorization = fixture.authorization();
+            let path = fixture.target.join(".git/config");
+            let mut config = fs::read_to_string(&path).unwrap();
+            config.push_str(fragment);
+            fs::write(path, config).unwrap();
+            assert!(
+                inventory_repository(&authorization)
+                    .unwrap()
+                    .unsafe_checkout_features,
+                "fragment={fragment:?}"
+            );
+        }
+
+        let fixture = GitFixture::new();
+        let authorization = fixture.authorization();
+        let replacement = fixture.target.join(".git/refs/replace");
+        fs::create_dir_all(&replacement).unwrap();
+        fs::write(replacement.join(fixture.head()), fixture.head()).unwrap();
+        assert!(
+            inventory_repository(&authorization)
+                .unwrap()
+                .unsafe_checkout_features
+        );
+    }
+
+    #[test]
+    fn active_hook_alone_is_refused_but_sample_hooks_are_inert() {
+        let fixture = GitFixture::new();
+        let hooks = fixture.target.join(".git/hooks");
+        fs::create_dir_all(&hooks).unwrap();
+        fs::write(hooks.join("pre-commit.sample"), "sample\n").unwrap();
+        assert!(
+            !inventory_repository(&fixture.authorization())
+                .unwrap()
+                .unsafe_checkout_features
+        );
+        fs::write(hooks.join("pre-commit"), "active\n").unwrap();
+        assert!(
+            inventory_repository(&fixture.authorization())
+                .unwrap()
+                .unsafe_checkout_features
+        );
     }
 }
