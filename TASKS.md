@@ -768,9 +768,9 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 17.1 - Disposable Soak Campaign
 
-- [ ] **Task 17.1.1 - Build disposable target fixtures**
-  - [ ] **Sub-task 17.1.1.1:** Create small Rust, Python, JavaScript, documentation-only, dirty, conflicted, and malformed-plan repositories.
-  - [ ] **Sub-task 17.1.1.2:** Create fake Claude, Codex, GitHub, quota, network, sleep, crash, and restart schedules.
+- [x] **Task 17.1.1 - Build disposable target fixtures**
+  - [x] **Sub-task 17.1.1.1:** Create small Rust, Python, JavaScript, documentation-only, dirty, conflicted, and malformed-plan repositories.
+  - [x] **Sub-task 17.1.1.2:** Create fake Claude, Codex, GitHub, quota, network, sleep, crash, and restart schedules.
 - [ ] **Task 17.1.2 - Run sustained operation**
   - [ ] **Sub-task 17.1.2.1:** Execute repeated implementation-review-correction cycles for at least 24 continuous hours.
   - [ ] **Sub-task 17.1.2.2:** Extend to 48 hours after correcting every blocking reliability defect.
