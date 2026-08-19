@@ -488,17 +488,17 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 10.1 - Run and Task Lifecycle
 
-- [ ] **Task 10.1.1 - Define lifecycle states and events**
-  - [ ] **Sub-task 10.1.1.1:** Implement discovered, ready, claimed, implementing, local-verification, senior-review, correcting, final-verification, checkpointed, and complete states.
-  - [ ] **Sub-task 10.1.1.2:** Implement blocked, paused, recoverable-failure, terminal-failure, and cancelled states.
-  - [ ] **Sub-task 10.1.1.3:** Define allowed prior state, triggering evidence, resulting state, and side-effect intent for every transition.
-  - [ ] **Sub-task 10.1.1.4:** Reject duplicate, stale, reordered, skipped, or contradictory transitions.
-- [ ] **Task 10.1.2 - Implement one-unit coordinator**
-  - [ ] **Sub-task 10.1.2.1:** Discover and claim one task.
-  - [ ] **Sub-task 10.1.2.2:** Create one owned worktree and implementation session.
-  - [ ] **Sub-task 10.1.2.3:** Execute local gates and senior review.
-  - [ ] **Sub-task 10.1.2.4:** Checkpoint pass, correction, block, or failure outcomes.
-  - [ ] **Sub-task 10.1.2.5:** Release locks and owned processes on every terminal path.
+- [x] **Task 10.1.1 - Define lifecycle states and events**
+  - [x] **Sub-task 10.1.1.1:** Implement discovered, ready, claimed, implementing, local-verification, senior-review, correcting, final-verification, checkpointed, and complete states.
+  - [x] **Sub-task 10.1.1.2:** Implement blocked, paused, recoverable-failure, terminal-failure, and cancelled states.
+  - [x] **Sub-task 10.1.1.3:** Define allowed prior state, triggering evidence, resulting state, and side-effect intent for every transition.
+  - [x] **Sub-task 10.1.1.4:** Reject duplicate, stale, reordered, skipped, or contradictory transitions.
+- [x] **Task 10.1.2 - Implement one-unit coordinator**
+  - [x] **Sub-task 10.1.2.1:** Discover and claim one task.
+  - [x] **Sub-task 10.1.2.2:** Create one owned worktree and implementation session.
+  - [x] **Sub-task 10.1.2.3:** Execute local gates and senior review.
+  - [x] **Sub-task 10.1.2.4:** Checkpoint pass, correction, block, or failure outcomes.
+  - [x] **Sub-task 10.1.2.5:** Release locks and owned processes on every terminal path.
 
 ### Story 10.2 - Multi-Unit Progression
 
