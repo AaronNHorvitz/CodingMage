@@ -98,7 +98,8 @@ pub fn reconcile_after_restart(
         EventKind::Transition { .. }
         | EventKind::GateObserved { .. }
         | EventKind::ControlApplied { .. }
-        | EventKind::RetryScheduled { .. } => {
+        | EventKind::RetryScheduled { .. }
+        | EventKind::ExternalBoundaryChanged { .. } => {
             (RecoveryDecision::Resume, RecoveryReason::RecoverablePhase)
         }
         EventKind::EffectObserved { .. } => {

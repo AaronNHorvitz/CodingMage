@@ -70,6 +70,13 @@ pub enum EventKind {
         /// Stable capacity reason.
         reason: String,
     },
+    /// A configured external boundary changed and was refused.
+    ExternalBoundaryChanged {
+        /// Stable external system identifier.
+        system: String,
+        /// Stable change category.
+        change: String,
+    },
 }
 
 /// Stable event result, never provider prose.
@@ -359,6 +366,10 @@ fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
         EventKind::ControlApplied { request_id, action } => {
             validate_label(request_id)?;
             validate_label(action)?;
+        }
+        EventKind::ExternalBoundaryChanged { system, change } => {
+            validate_label(system)?;
+            validate_label(change)?;
         }
     }
     for redaction in &event.redactions {

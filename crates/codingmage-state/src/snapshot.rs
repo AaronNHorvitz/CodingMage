@@ -57,6 +57,9 @@ impl Snapshot {
                 EventKind::RecoveryBlocked { reason } => format!("blocked.{reason}"),
                 EventKind::ControlApplied { action, .. } => format!("control.{action}"),
                 EventKind::RetryScheduled { reason, .. } => format!("retry.{reason}"),
+                EventKind::ExternalBoundaryChanged { system, change } => {
+                    format!("boundary.{system}.{change}")
+                }
             };
             tasks.insert(
                 record.event.task_id.clone(),

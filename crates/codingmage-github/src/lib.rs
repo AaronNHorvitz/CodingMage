@@ -5,7 +5,8 @@ use std::{
     fmt::{self, Write as _},
 };
 
-use codingmage_contracts::{EvidenceId, TaskId};
+use codingmage_contracts::{EvidenceId, RepositoryId, RunId, TaskId};
+use codingmage_state::{EventKind, EventOutcome, Journal, JournalEvent};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
@@ -289,6 +290,75 @@ impl DraftPullRequest {
     }
 }
 
+/// Automated review comment that cannot represent human approval.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AutomatedReviewComment {
+    /// Exact reviewed commit.
+    pub reviewed_commit: String,
+    /// Stable structured finding identities.
+    pub finding_ids: Vec<String>,
+}
+
+impl AutomatedReviewComment {
+    /// Renders a bounded explicitly automated comment.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GitHubError::InvalidContent`] for invalid commit or finding identities.
+    pub fn render(&self) -> Result<String, GitHubError> {
+        if !valid_commit(&self.reviewed_commit)
+            || self.finding_ids.is_empty()
+            || self.finding_ids.iter().any(|value| !valid_component(value))
+        {
+            return Err(GitHubError::InvalidContent);
+        }
+        Ok(format!(
+            "CodingMage automated review output; this is not human approval.\nReviewed commit: `{}`\nFindings: {}",
+            self.reviewed_commit,
+            self.finding_ids.join(", ")
+        ))
+    }
+}
+
+/// Durably records a refused GitHub identity, redirect, or permission change.
+///
+/// # Errors
+///
+/// Returns a journal error for persistence failure, or [`GitHubError::InvalidContent`] when the
+/// supplied error is not an external-boundary change.
+pub fn record_boundary_change(
+    error: GitHubError,
+    repository_id: RepositoryId,
+    run_id: RunId,
+    task_id: TaskId,
+    timestamp_ms: u64,
+    journal: &mut Journal,
+) -> Result<(), GitHubError> {
+    let change = match error {
+        GitHubError::Redirect => "redirect",
+        GitHubError::IdentityChanged => "identity_changed",
+        GitHubError::PermissionChanged => "permission_changed",
+        _ => return Err(GitHubError::InvalidContent),
+    };
+    journal
+        .append(JournalEvent {
+            timestamp_ms,
+            run_id,
+            task_id,
+            repository_id,
+            kind: EventKind::ExternalBoundaryChanged {
+                system: "github".to_owned(),
+                change: change.to_owned(),
+            },
+            outcome: EventOutcome::Blocked,
+            evidence: Vec::new(),
+            redactions: Vec::new(),
+        })
+        .map_err(|_| GitHubError::Journal)?;
+    journal.write_snapshot().map_err(|_| GitHubError::Journal)?;
+    Ok(())
+}
+
 /// One idempotent remote write request.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WriteRequest {
@@ -499,6 +569,8 @@ pub enum GitHubError {
     Redirect,
     /// Remote permission was reduced or revoked.
     PermissionChanged,
+    /// Durable boundary-change recording failed.
+    Journal,
 }
 
 impl fmt::Display for GitHubError {
@@ -514,6 +586,7 @@ impl fmt::Display for GitHubError {
             Self::Uncertain => "codingmage.github.uncertain",
             Self::Redirect => "codingmage.github.redirect",
             Self::PermissionChanged => "codingmage.github.permission_changed",
+            Self::Journal => "codingmage.github.journal",
         })
     }
 }
@@ -586,6 +659,7 @@ fn sha256_hex(bytes: &[u8]) -> String {
 mod tests {
     use super::*;
     use std::collections::VecDeque;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     #[derive(Clone, Copy, Debug)]
     enum Behavior {
@@ -834,6 +908,13 @@ mod tests {
         };
         let body = draft.render(&identity).unwrap();
         assert!(body.contains("not human approval"));
+        let comment = AutomatedReviewComment {
+            reviewed_commit: "a".repeat(40),
+            finding_ids: vec!["finding-1".to_owned()],
+        }
+        .render()
+        .unwrap();
+        assert!(comment.contains("not human approval"));
         let sync = GitHubSynchronizer::new(identity, permissions(), FakeGitHub::default()).unwrap();
         assert!(sync.authorize_push("codingmage/story-15", true).is_ok());
         assert_eq!(
@@ -861,5 +942,41 @@ mod tests {
         assert_eq!(first, second);
         assert_eq!(second.applied_keys.len(), 1);
         assert!(second.draft);
+    }
+
+    #[test]
+    fn boundary_changes_are_durably_recorded_without_remote_content() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-github-boundary-{}-{unique}",
+            std::process::id()
+        ));
+        let mut journal = Journal::open(&root, "owner").unwrap();
+        for (index, error) in [
+            GitHubError::Redirect,
+            GitHubError::IdentityChanged,
+            GitHubError::PermissionChanged,
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            record_boundary_change(
+                error,
+                RepositoryId::new("repo-1").unwrap(),
+                RunId::new("run-1").unwrap(),
+                TaskId::new("task-15").unwrap(),
+                index as u64,
+                &mut journal,
+            )
+            .unwrap();
+        }
+        assert_eq!(journal.records().len(), 3);
+        let persisted = std::fs::read_to_string(root.join("events.jsonl")).unwrap();
+        assert!(!persisted.contains("remote body"));
+        drop(journal);
+        std::fs::remove_dir_all(root).unwrap();
     }
 }
