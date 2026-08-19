@@ -408,36 +408,36 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 8.1 - Gate Registry and Execution
 
-- [ ] **Task 8.1.1 - Define gate profiles**
-  - [ ] **Sub-task 8.1.1.1:** Define Tier 0 through Tier 4 gate identities and triggers.
-  - [ ] **Sub-task 8.1.1.2:** Define literal executable, arguments, working directory, environment, deadline, output, and expected-result contracts.
-  - [ ] **Sub-task 8.1.1.3:** Define required, optional, unavailable, skipped-with-policy, and failed outcomes.
-  - [ ] **Sub-task 8.1.1.4:** Prohibit model-generated executable gate definitions.
-- [ ] **Task 8.1.2 - Implement gate execution**
-  - [ ] **Sub-task 8.1.2.1:** Run independent gates concurrently only when their declared resources do not conflict.
-  - [ ] **Sub-task 8.1.2.2:** Stream bounded progress and retain sanitized output digests.
-  - [ ] **Sub-task 8.1.2.3:** Cancel remaining gates after a configured blocking failure.
-  - [ ] **Sub-task 8.1.2.4:** Reap every owned process and release locks.
+- [x] **Task 8.1.1 - Define gate profiles**
+  - [x] **Sub-task 8.1.1.1:** Define Tier 0 through Tier 4 gate identities and triggers.
+  - [x] **Sub-task 8.1.1.2:** Define literal executable, arguments, working directory, environment, deadline, output, and expected-result contracts.
+  - [x] **Sub-task 8.1.1.3:** Define required, optional, unavailable, skipped-with-policy, and failed outcomes.
+  - [x] **Sub-task 8.1.1.4:** Prohibit model-generated executable gate definitions.
+- [x] **Task 8.1.2 - Implement gate execution**
+  - [x] **Sub-task 8.1.2.1:** Run independent gates concurrently only when their declared resources do not conflict.
+  - [x] **Sub-task 8.1.2.2:** Stream bounded progress and retain sanitized output digests.
+  - [x] **Sub-task 8.1.2.3:** Cancel remaining gates after a configured blocking failure.
+  - [x] **Sub-task 8.1.2.4:** Reap every owned process and release locks.
 
 ### Story 8.2 - Evidence and Mutation Checks
 
-- [ ] **Task 8.2.1 - Produce gate evidence**
-  - [ ] **Sub-task 8.2.1.1:** Bind gate definition, source commit, executable identity, environment profile, start/end time, outcome, and output digest.
-  - [ ] **Sub-task 8.2.1.2:** Record truncation and unavailable evidence visibly.
-  - [ ] **Sub-task 8.2.1.3:** Prevent a successful process exit from substituting for expected assertions.
-- [ ] **Task 8.2.2 - Test gate integrity**
-  - [ ] **Sub-task 8.2.2.1:** Mutate command, arguments, timeout, source commit, expected result, and output digest independently.
-  - [ ] **Sub-task 8.2.2.2:** Assert every mutation invalidates the evidence or gate decision.
+- [x] **Task 8.2.1 - Produce gate evidence**
+  - [x] **Sub-task 8.2.1.1:** Bind gate definition, source commit, executable identity, environment profile, start/end time, outcome, and output digest.
+  - [x] **Sub-task 8.2.1.2:** Record truncation and unavailable evidence visibly.
+  - [x] **Sub-task 8.2.1.3:** Prevent a successful process exit from substituting for expected assertions.
+- [x] **Task 8.2.2 - Test gate integrity**
+  - [x] **Sub-task 8.2.2.1:** Mutate command, arguments, timeout, source commit, expected result, and output digest independently.
+  - [x] **Sub-task 8.2.2.2:** Assert every mutation invalidates the evidence or gate decision.
 
 **Story acceptance criteria**
 
-- [ ] **AC 8.1:** Given passing, failing, hanging, noisy, and malformed gate fixtures, when executed, then outcomes and cleanup are deterministic and bounded.
-- [ ] **AC 8.2:** Given tampered evidence, when verification runs, then no senior review or task completion may rely on it.
+- [x] **AC 8.1:** Given passing, failing, hanging, noisy, and malformed gate fixtures, when executed, then outcomes and cleanup are deterministic and bounded.
+- [x] **AC 8.2:** Given tampered evidence, when verification runs, then no senior review or task completion may rely on it.
 
 ### Sprint 8 Gate
 
-- [ ] **Gate 8.1:** Tiered gate scheduling, process cleanup, evidence, and mutation suites pass.
-- [ ] **Gate 8.2:** A failed required gate prevents model review and advancement.
+- [x] **Gate 8.1:** Tiered gate scheduling, process cleanup, evidence, and mutation suites pass. See `docs/evidence/sprint-8.md`.
+- [x] **Gate 8.2:** A failed required gate prevents model review and advancement.
 
 ---
 
