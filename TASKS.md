@@ -367,38 +367,38 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 7.1 - Markdown Task Plan Adapter
 
-- [ ] **Task 7.1.1 - Parse structured checklist plans**
-  - [ ] **Sub-task 7.1.1.1:** Parse sprint, story, task, sub-task, goal, dependency, acceptance criteria, and checkbox state.
-  - [ ] **Sub-task 7.1.1.2:** Preserve source anchors and exact text hashes.
-  - [ ] **Sub-task 7.1.1.3:** Detect duplicate IDs, malformed nesting, missing parents, conflicting states, and ambiguous dependencies.
-  - [ ] **Sub-task 7.1.1.4:** Read without rewriting or reformatting the source plan.
-- [ ] **Task 7.1.2 - Select dependency-ready work**
-  - [ ] **Sub-task 7.1.2.1:** Select the first open unit whose declared dependencies are complete or explicitly nonblocking.
-  - [ ] **Sub-task 7.1.2.2:** Skip external blockers without representing them as complete.
-  - [ ] **Sub-task 7.1.2.3:** Reject vague, oversized, or internally contradictory units for decomposition.
-  - [ ] **Sub-task 7.1.2.4:** Persist the selected source hash so changed plans invalidate stale work.
+- [x] **Task 7.1.1 - Parse structured checklist plans**
+  - [x] **Sub-task 7.1.1.1:** Parse sprint, story, task, sub-task, goal, dependency, acceptance criteria, and checkbox state.
+  - [x] **Sub-task 7.1.1.2:** Preserve source anchors and exact text hashes.
+  - [x] **Sub-task 7.1.1.3:** Detect duplicate IDs, malformed nesting, missing parents, conflicting states, and ambiguous dependencies.
+  - [x] **Sub-task 7.1.1.4:** Read without rewriting or reformatting the source plan.
+- [x] **Task 7.1.2 - Select dependency-ready work**
+  - [x] **Sub-task 7.1.2.1:** Select the first open unit whose declared dependencies are complete or explicitly nonblocking.
+  - [x] **Sub-task 7.1.2.2:** Skip external blockers without representing them as complete.
+  - [x] **Sub-task 7.1.2.3:** Reject vague, oversized, or internally contradictory units for decomposition.
+  - [x] **Sub-task 7.1.2.4:** Persist the selected source hash so changed plans invalidate stale work.
 
 ### Story 7.2 - Bounded Work Packet
 
-- [ ] **Task 7.2.1 - Define work-packet schema**
-  - [ ] **Sub-task 7.2.1.1:** Include identities, source anchors, dependencies, scope, owned paths, commands, acceptance criteria, risks, limits, and prohibited actions.
-  - [ ] **Sub-task 7.2.1.2:** Include exact repository, base commit, branch, and worktree bindings.
-  - [ ] **Sub-task 7.2.1.3:** Include expected artifacts and truthful-blocker format.
-  - [ ] **Sub-task 7.2.1.4:** Canonically hash and version every packet.
-- [ ] **Task 7.2.2 - Add decomposition flow**
-  - [ ] **Sub-task 7.2.2.1:** Allow Codex to propose smaller units without changing canonical scope.
-  - [ ] **Sub-task 7.2.2.2:** Require deterministic validation and product-owner policy for material scope changes.
-  - [ ] **Sub-task 7.2.2.3:** Link derived units back to the original task and acceptance criteria.
+- [x] **Task 7.2.1 - Define work-packet schema**
+  - [x] **Sub-task 7.2.1.1:** Include identities, source anchors, dependencies, scope, owned paths, commands, acceptance criteria, risks, limits, and prohibited actions.
+  - [x] **Sub-task 7.2.1.2:** Include exact repository, base commit, branch, and worktree bindings.
+  - [x] **Sub-task 7.2.1.3:** Include expected artifacts and truthful-blocker format.
+  - [x] **Sub-task 7.2.1.4:** Canonically hash and version every packet.
+- [x] **Task 7.2.2 - Add decomposition flow**
+  - [x] **Sub-task 7.2.2.1:** Allow Codex to propose smaller units without changing canonical scope.
+  - [x] **Sub-task 7.2.2.2:** Require deterministic validation and product-owner policy for material scope changes.
+  - [x] **Sub-task 7.2.2.3:** Link derived units back to the original task and acceptance criteria.
 
 **Story acceptance criteria**
 
-- [ ] **AC 7.1:** Given valid, malformed, contradictory, and changing task plans, when selection runs, then only one exact dependency-ready unit is claimed and stale packets are rejected.
-- [ ] **AC 7.2:** Given an oversized task, when decomposition runs, then every original requirement remains mapped and no new authority appears.
+- [x] **AC 7.1:** Given valid, malformed, contradictory, and changing task plans, when selection runs, then only one exact dependency-ready unit is claimed and stale packets are rejected.
+- [x] **AC 7.2:** Given an oversized task, when decomposition runs, then every original requirement remains mapped and no new authority appears.
 
 ### Sprint 7 Gate
 
-- [ ] **Gate 7.1:** Task parser corpus, dependency selection, plan mutation, and work-packet schemas pass.
-- [ ] **Gate 7.2:** CodingMage can select and explain the next unit without editing the plan.
+- [x] **Gate 7.1:** Task parser corpus, dependency selection, plan mutation, and work-packet schemas pass. See `docs/evidence/sprint-7.md`.
+- [x] **Gate 7.2:** CodingMage can select and explain the next unit without editing the plan.
 
 ---
 
