@@ -9,6 +9,7 @@
     "codingmage-git": ["codingmage-contracts", "codingmage-core"],
     "codingmage-gate": ["codingmage-contracts", "codingmage-process"],
     "codingmage-plan": ["codingmage-contracts"],
-    "codingmage-process": ["codingmage-contracts"]
+    "codingmage-process": ["codingmage-contracts"],
+    "codingmage-routing": []
   }
 }
