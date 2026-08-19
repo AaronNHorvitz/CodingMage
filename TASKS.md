@@ -189,47 +189,47 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 3.1 - Read-Only Repository Inventory
 
-- [ ] **Task 3.1.1 - Capture repository state**
-  - [ ] **Sub-task 3.1.1.1:** Record `HEAD`, current branch/detached state, index identity, porcelain status, refs, tags, notes, stash, worktrees, configuration, hooks, in-progress operations, and remotes.
-  - [ ] **Sub-task 3.1.1.2:** Bound output, records, runtime, and retained data.
-  - [ ] **Sub-task 3.1.1.3:** Disable aliases, pagers, editors, signers, hooks, filters, helpers, replacement refs, alternates, and ambient Git variables.
-  - [ ] **Sub-task 3.1.1.4:** Prohibit network during local inventory.
-- [ ] **Task 3.1.2 - Detect dirty and unsafe state**
-  - [ ] **Sub-task 3.1.2.1:** Classify clean, staged, unstaged, untracked, detached, conflicted, rebasing, merging, bisecting, and locked states.
-  - [ ] **Sub-task 3.1.2.2:** Refuse unknown or unsupported states without altering them.
-  - [ ] **Sub-task 3.1.2.3:** Preserve unrelated user changes and notes exactly.
+- [x] **Task 3.1.1 - Capture repository state**
+  - [x] **Sub-task 3.1.1.1:** Record `HEAD`, current branch/detached state, index identity, porcelain status, refs, tags, notes, stash, worktrees, configuration, hooks, in-progress operations, and remotes.
+  - [x] **Sub-task 3.1.1.2:** Bound output, records, runtime, and retained data.
+  - [x] **Sub-task 3.1.1.3:** Disable aliases, pagers, editors, signers, hooks, filters, helpers, replacement refs, alternates, and ambient Git variables.
+  - [x] **Sub-task 3.1.1.4:** Prohibit network during local inventory.
+- [x] **Task 3.1.2 - Detect dirty and unsafe state**
+  - [x] **Sub-task 3.1.2.1:** Classify clean, staged, unstaged, untracked, detached, conflicted, rebasing, merging, bisecting, and locked states.
+  - [x] **Sub-task 3.1.2.2:** Refuse unknown or unsupported states without altering them.
+  - [x] **Sub-task 3.1.2.3:** Preserve unrelated user changes and notes exactly.
 
 **Story acceptance criteria**
 
-- [ ] **AC 3.1.1:** Given hostile Git configuration, when inventory runs, then no executable canary fires and no network connection occurs.
-- [ ] **AC 3.1.2:** Given every supported dirty state, when inventory completes, then the state is classified without mutation.
+- [x] **AC 3.1.1:** Given hostile Git configuration, when inventory runs, then no executable canary fires and no network connection occurs.
+- [x] **AC 3.1.2:** Given every supported dirty state, when inventory completes, then the state is classified without mutation.
 
 ### Story 3.2 - Owned Worktrees and Branches
 
-- [ ] **Task 3.2.1 - Create owned worktrees**
-  - [ ] **Sub-task 3.2.1.1:** Generate collision-resistant branch and worktree identities.
-  - [ ] **Sub-task 3.2.1.2:** Create under the configured scratch root from an exact source commit.
-  - [ ] **Sub-task 3.2.1.3:** Record ownership manifest, expected path identity, source commit, task, run, and process owner.
-  - [ ] **Sub-task 3.2.1.4:** Apply private permissions and reject preexisting destinations.
-- [ ] **Task 3.2.2 - Revalidate and remove owned worktrees**
-  - [ ] **Sub-task 3.2.2.1:** Revalidate path, Git registration, branch, source lineage, and ownership manifest before mutation.
-  - [ ] **Sub-task 3.2.2.2:** Fail closed if the worktree is missing, renamed, replaced, or no longer owned.
-  - [ ] **Sub-task 3.2.2.3:** Remove only the exact owned worktree and retain a truthful result.
-  - [ ] **Sub-task 3.2.2.4:** Preserve active checkout, index, files, refs, notes, stash, tags, configuration, and hooks.
-- [ ] **Task 3.2.3 - Enforce prohibited Git operations**
-  - [ ] **Sub-task 3.2.3.1:** Deny force push, reset, clean, checkout-overwrite, branch deletion, prune, garbage collection, and history rewriting.
-  - [ ] **Sub-task 3.2.3.2:** Deny default-branch writes and merges in the bootstrap release.
-  - [ ] **Sub-task 3.2.3.3:** Add literal argument templates rather than shell-composed Git commands.
+- [x] **Task 3.2.1 - Create owned worktrees**
+  - [x] **Sub-task 3.2.1.1:** Generate collision-resistant branch and worktree identities.
+  - [x] **Sub-task 3.2.1.2:** Create under the configured scratch root from an exact source commit.
+  - [x] **Sub-task 3.2.1.3:** Record ownership manifest, expected path identity, source commit, task, run, and process owner.
+  - [x] **Sub-task 3.2.1.4:** Apply private permissions and reject preexisting destinations.
+- [x] **Task 3.2.2 - Revalidate and remove owned worktrees**
+  - [x] **Sub-task 3.2.2.1:** Revalidate path, Git registration, branch, source lineage, and ownership manifest before mutation.
+  - [x] **Sub-task 3.2.2.2:** Fail closed if the worktree is missing, renamed, replaced, or no longer owned.
+  - [x] **Sub-task 3.2.2.3:** Remove only the exact owned worktree and retain a truthful result.
+  - [x] **Sub-task 3.2.2.4:** Preserve active checkout, index, files, refs, notes, stash, tags, configuration, and hooks.
+- [x] **Task 3.2.3 - Enforce prohibited Git operations**
+  - [x] **Sub-task 3.2.3.1:** Deny force push, reset, clean, checkout-overwrite, branch deletion, prune, garbage collection, and history rewriting.
+  - [x] **Sub-task 3.2.3.2:** Deny default-branch writes and merges in the bootstrap release.
+  - [x] **Sub-task 3.2.3.3:** Add literal argument templates rather than shell-composed Git commands.
 
 **Story acceptance criteria**
 
-- [ ] **AC 3.2.1:** Given clean, dirty, detached, missing, renamed, and concurrently changed repositories, when worktree lifecycle operations run, then only exact CodingMage-owned artifacts change.
-- [ ] **AC 3.2.2:** Given every prohibited Git operation, when requested through configuration, model output, or task content, then it is rejected before process spawn.
+- [x] **AC 3.2.1:** Given clean, dirty, detached, missing, renamed, and concurrently changed repositories, when worktree lifecycle operations run, then only exact CodingMage-owned artifacts change.
+- [x] **AC 3.2.2:** Given every prohibited Git operation, when requested through configuration, model output, or task content, then it is rejected before process spawn.
 
 ### Sprint 3 Gate
 
-- [ ] **Gate 3.1:** Worktree lifecycle and hostile-repository fixtures pass repeatedly with zero user-state drift.
-- [ ] **Gate 3.2:** Crash cleanup identifies owned artifacts exactly and never by name-pattern adoption.
+- [x] **Gate 3.1:** Worktree lifecycle and hostile-repository fixtures pass repeatedly with zero user-state drift. See `docs/evidence/sprint-3.md`.
+- [x] **Gate 3.2:** Crash cleanup identifies owned artifacts exactly and never by name-pattern adoption. Recovery loads one validated manifest identifier and leaves similarly named directories untouched.
 
 ---
 
@@ -905,4 +905,4 @@ These items must remain open until their prerequisites actually exist:
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 3 by implementing hostile-safe read-only Git inventory and exact owned-worktree lifecycle controls.
+- [ ] **Next 1:** Complete Sprint 4 by implementing the general bounded process runtime and provider-neutral fake-agent contract.

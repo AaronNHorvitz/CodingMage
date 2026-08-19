@@ -290,7 +290,8 @@ follow [`SECURITY.md`](SECURITY.md), and repository changes must follow
 - Deterministic documentation gate: yes
 - Executable foundation: yes (typed contracts and empty CLI bootstrap)
 - Configuration and Linux repository authorization: yes
-- Git inventory and owned worktrees: no
+- Linux Git inventory and owned worktrees: yes
+- Bounded general process runtime: no
 - Agent adapters: no
 - Background service: no
 - GitHub automation: no
