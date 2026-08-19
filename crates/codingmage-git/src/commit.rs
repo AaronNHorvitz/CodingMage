@@ -69,6 +69,16 @@ pub fn commit_owned_changes(
     expected_parent: &str,
     owned_paths: &[PathBuf],
 ) -> Result<CommitReceipt, CommitError> {
+    commit_owned_changes_inner(authorization, owned, expected_parent, owned_paths, || {})
+}
+
+fn commit_owned_changes_inner(
+    authorization: &RepositoryAuthorization,
+    owned: &OwnedWorktree,
+    expected_parent: &str,
+    owned_paths: &[PathBuf],
+    after_preflight: impl FnOnce(),
+) -> Result<CommitReceipt, CommitError> {
     revalidate_active_worktree(authorization, owned, expected_parent)
         .map_err(|_| CommitError::Identity)?;
     if owned_paths.is_empty() || owned_paths.iter().any(|path| !safe_relative(path)) {
@@ -90,6 +100,7 @@ pub fn commit_owned_changes(
     }) {
         return Err(CommitError::PathAuthority);
     }
+    after_preflight();
 
     let paths: Vec<PathBuf> = changed_paths.iter().cloned().collect();
     run_git(
@@ -249,6 +260,30 @@ mod tests {
             .unwrap();
         assert!(index.status.success());
         assert!(index.stdout.is_empty());
+    }
+
+    #[test]
+    fn active_checkout_edit_during_commit_survives_exactly() {
+        let fixture = GitFixture::new();
+        let (authorization, owned, parent) = create(&fixture);
+        fs::write(owned.manifest().path.join("tracked-one.txt"), "candidate\n").unwrap();
+        let active = fixture.target.join("tracked-two.txt");
+
+        let receipt = commit_owned_changes_inner(
+            &authorization,
+            &owned,
+            &parent,
+            &[PathBuf::from("tracked-one.txt")],
+            || fs::write(&active, "concurrent-user-edit\n").unwrap(),
+        )
+        .unwrap();
+
+        assert_ne!(receipt.commit, parent);
+        assert_eq!(
+            fs::read_to_string(active).unwrap(),
+            "concurrent-user-edit\n"
+        );
+        assert!(fixture.status().windows(2).any(|bytes| bytes == b".M"));
     }
 
     #[test]
