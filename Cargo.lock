@@ -209,6 +209,11 @@ dependencies = [
 [[package]]
 name = "codingmage-soak"
 version = "0.1.0"
+dependencies = [
+ "codingmage-contracts",
+ "codingmage-orchestrator",
+ "codingmage-plan",
+]
 
 [[package]]
 name = "codingmage-state"

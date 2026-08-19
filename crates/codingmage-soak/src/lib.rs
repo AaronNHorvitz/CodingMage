@@ -154,6 +154,57 @@ pub fn materialize_fixtures(root: &Path) -> Result<Vec<FixtureRepository>, SoakE
     Ok(repositories)
 }
 
+/// Creates a clean disposable AgentMage-shaped documentation fixture with one canonical pilot.
+///
+/// The fixture contains no source copied from `AgentMage`. It models only the bounded patch-preview
+/// workflow selected during pilot preparation, keeping the real target checkout read-only.
+///
+/// # Errors
+///
+/// Returns [`SoakError::Fixture`] unless `root` is a new empty directory and every local Git or
+/// filesystem operation succeeds.
+pub fn materialize_agentmage_pilot_fixture(root: &Path) -> Result<FixtureRepository, SoakError> {
+    let metadata = fs::symlink_metadata(root).map_err(|_| SoakError::Fixture)?;
+    if metadata.file_type().is_symlink()
+        || !metadata.is_dir()
+        || fs::read_dir(root)
+            .map_err(|_| SoakError::Fixture)?
+            .next()
+            .is_some()
+    {
+        return Err(SoakError::Fixture);
+    }
+    let root = fs::canonicalize(root).map_err(|_| SoakError::Fixture)?;
+    git(&root, &["init", "--initial-branch=main"])?;
+    git(&root, &["config", "user.name", "CodingMage Fixture"])?;
+    git(&root, &["config", "user.email", "fixture@invalid.example"])?;
+    fs::write(
+        root.join("README.md"),
+        "# Disposable AgentMage Pilot\n\nNo production source is present.\n",
+    )
+    .map_err(|_| SoakError::Fixture)?;
+    fs::write(
+        root.join("TASKS.md"),
+        "# AgentMage Disposable Pilot\n\n\
+         ## Sprint 0 - Patch Preview Fixture\n\n\
+         **Sprint goal:** Verify a read-only patch-transfer preview.\n\n\
+         ### Story 0.1 - Read-Only Preview\n\n\
+         - [ ] **Task 0.1.1 - Exercise one bounded preview**\n\
+           - [ ] **Sub-task 0.1.1.1:** Produce a deterministic preview without applying, merging, pushing, or publishing it.\n\n\
+         - [ ] **AC 0.1:** Given the fixture, when fake agents run, then the repository remains unchanged.\n\n\
+         ### Sprint 0 Gate\n\n\
+         - [ ] **Gate 0.1:** The fake cycle and preservation assertions pass.\n",
+    )
+    .map_err(|_| SoakError::Fixture)?;
+    git(&root, &["add", "."])?;
+    git(&root, &["commit", "-m", "agentmage pilot baseline"])?;
+    Ok(FixtureRepository {
+        kind: FixtureKind::Documentation,
+        root,
+        condition: FixtureCondition::Clean,
+    })
+}
+
 fn fixture_name(kind: FixtureKind) -> &'static str {
     match kind {
         FixtureKind::Rust => "rust",
