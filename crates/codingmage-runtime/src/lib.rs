@@ -416,6 +416,32 @@ impl<'a> ProductionWorkflowPort<'a> {
     fn run_gates(&mut self) -> Result<VerificationOutcome, OrchestrationError> {
         let commit = self.candidate()?.commit.clone();
         let worktree = self.worktree()?.manifest().path.clone();
+        let registry = match self.gate_registry(&worktree) {
+            Ok(value) => value,
+            Err(error) => {
+                self.failure = Some(RuntimeError::Verification);
+                return Err(error);
+            }
+        };
+        let Ok(result) =
+            GateRunner::new(self.executor.clone()).run(&registry, &commit, &BTreeSet::new())
+        else {
+            self.failure = Some(RuntimeError::Verification);
+            return Err(OrchestrationError::Port);
+        };
+        self.gate_evidence = result
+            .evidence
+            .iter()
+            .map(|evidence| evidence_id(&evidence.integrity_sha256))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(if result.blocked {
+            VerificationOutcome::RecoverableFailure
+        } else {
+            VerificationOutcome::Pass
+        })
+    }
+
+    fn gate_registry(&self, worktree: &Path) -> Result<GateRegistry, OrchestrationError> {
         let entries = self
             .config
             .gate_commands
@@ -437,7 +463,7 @@ impl<'a> ProductionWorkflowPort<'a> {
                     profile,
                     request: ProcessRequest {
                         arguments: command.args.clone(),
-                        working_directory: worktree.clone(),
+                        working_directory: worktree.to_path_buf(),
                         environment: BTreeMap::new(),
                         stdin: Vec::new(),
                         max_output_bytes: 16 * 1024 * 1024,
@@ -450,20 +476,7 @@ impl<'a> ProductionWorkflowPort<'a> {
                 })))
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let registry = GateRegistry::new(entries).map_err(|_| OrchestrationError::Port)?;
-        let result = GateRunner::new(self.executor.clone())
-            .run(&registry, &commit, &BTreeSet::new())
-            .map_err(|_| OrchestrationError::Port)?;
-        self.gate_evidence = result
-            .evidence
-            .iter()
-            .map(|evidence| evidence_id(&evidence.integrity_sha256))
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(if result.blocked {
-            VerificationOutcome::RecoverableFailure
-        } else {
-            VerificationOutcome::Pass
-        })
+        GateRegistry::new(entries).map_err(|_| OrchestrationError::Port)
     }
 }
 
@@ -490,6 +503,10 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         )
         .map_err(|_| OrchestrationError::Port)?;
         let worktree = owned.manifest().path.clone();
+        if self.gate_registry(&worktree).is_err() {
+            self.failure = Some(RuntimeError::Verification);
+            return Err(OrchestrationError::Port);
+        }
         let claude = self.claude_adapter()?;
         if let Err(error) = claude.probe(
             &self.executor,
@@ -909,6 +926,8 @@ pub enum RuntimeError {
     Implementer(ClaudeError),
     /// Codex review adapter failed with a content-free diagnostic.
     Reviewer(CodexError),
+    /// A deterministic gate profile or execution failed before trustworthy evidence existed.
+    Verification,
 }
 
 impl RuntimeError {
@@ -925,6 +944,7 @@ impl RuntimeError {
             Self::Orchestration => "codingmage.runtime.orchestration",
             Self::Implementer(error) => error.code(),
             Self::Reviewer(error) => error.code(),
+            Self::Verification => "codingmage.runtime.verification",
         }
     }
 }
