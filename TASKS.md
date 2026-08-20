@@ -904,11 +904,11 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 20.1.2.1:** Map `changes_required` to correction instead of blocker state.
   - [x] **Sub-task 20.1.2.2:** Send only structured findings, evidence, requested corrections, and acceptance tests to the implementer.
   - [x] **Sub-task 20.1.2.3:** Review the complete cumulative task diff after every correction.
-  - [ ] **Sub-task 20.1.2.4:** Add a process-backed fixture in which Codex requests a correction, Claude corrects it, and a fresh Codex review passes.
+  - [x] **Sub-task 20.1.2.4:** Add a process-backed fixture in which Codex requests a correction, Claude corrects it, and a fresh Codex review passes.
 - [ ] **Task 20.1.3 - Close bounded-loop behavior**
   - [x] **Sub-task 20.1.3.1:** Apply one shared configurable correction limit across gate and review failures.
   - [x] **Sub-task 20.1.3.2:** End in a truthful recoverable state when the limit is exhausted.
-  - [ ] **Sub-task 20.1.3.3:** Retain correction-round identities and outcomes in checkpoint and status surfaces.
+  - [x] **Sub-task 20.1.3.3:** Retain correction-round identities and outcomes in checkpoint and status surfaces.
   - [ ] **Sub-task 20.1.3.4:** Reobserve and resume an interrupted correction without replaying a provider or Git effect.
 
 **Story acceptance criteria**

@@ -85,7 +85,7 @@ if "--help" in sys.argv:
     raise SystemExit(0)
 path = Path("src/lib.rs")
 prior = path.read_text(encoding="utf-8")
-value = 2 if "{ 1 }" in prior else 3
+value = 2 if "{ 1 }" in prior else 3 if "{ 2 }" in prior else 4
 path.write_text(f"pub fn value() -> u8 {{ {value} }}\n", encoding="utf-8")
 print(json.dumps({
     "type": "result",
@@ -105,6 +105,7 @@ print(json.dumps({
         "fake-codex",
         r#"#!/usr/bin/python3
 import json, re, sys
+from pathlib import Path
 if "--version" in sys.argv:
     print("codex-cli 0.144.5")
     raise SystemExit(0)
@@ -117,11 +118,22 @@ if "--help" in sys.argv:
 packet = sys.stdin.read()
 base = re.search(r"Base commit: ([0-9a-f]{40,64})", packet).group(1)
 target = re.search(r"Target commit: ([0-9a-f]{40,64})", packet).group(1)
+needs_correction = "{ 3 }" in Path("src/lib.rs").read_text(encoding="utf-8")
 report = json.dumps({
-    "verdict": "pass",
+    "verdict": "changes_required" if needs_correction else "pass",
     "base_commit": base,
     "target_commit": target,
-    "findings": [],
+    "findings": [{
+        "id": "FIX-1",
+        "kind": "defect",
+        "severity": "medium",
+        "file": "src/lib.rs",
+        "line": 1,
+        "claim": "The fixture still needs the reviewed correction.",
+        "evidence": "The current value is three.",
+        "requested_correction": "Change the value to four.",
+        "acceptance_test": "The source contains value four."
+    }] if needs_correction else [],
     "blocker_code": None
 })
 print(json.dumps({"type": "thread.started", "thread_id": "123e4567-e89b-12d3-a456-426614174000"}))
@@ -152,7 +164,8 @@ print(json.dumps({"type": "turn.completed"}))
         r#"#!/usr/bin/python3
 from pathlib import Path
 import sys
-if "{ 3 }" not in Path("src/lib.rs").read_text(encoding="utf-8"):
+source = Path("src/lib.rs").read_text(encoding="utf-8")
+if "{ 3 }" not in source and "{ 4 }" not in source:
     print("fixture requires one bounded correction", file=sys.stderr)
     raise SystemExit(1)
 "#,
@@ -205,6 +218,7 @@ effort = "high"
     let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
     assert_eq!(outcome["state"], "complete");
     assert_eq!(outcome["review_verdict"], "pass");
+    assert_eq!(outcome["correction_rounds"], 2);
     assert!(outcome["candidate_commit"].as_str().is_some());
     assert!(outcome["completion_commit"].as_str().is_some());
     let progress = String::from_utf8(run.stderr).unwrap();
@@ -215,6 +229,9 @@ effort = "high"
         "claude      implementing the bounded task in the isolated worktree",
         "local-gates running deterministic gates on the candidate",
         "local-gates candidate gates blocked; bounded correction will run",
+        "claude      correcting the bounded candidate from verified diagnostics",
+        "local-gates running deterministic gates on the candidate",
+        "codex       reviewing the immutable candidate commit read-only",
         "claude      correcting the bounded candidate from verified diagnostics",
         "local-gates running deterministic gates on the candidate",
         "codex       reviewing the immutable candidate commit read-only",
@@ -262,7 +279,7 @@ effort = "high"
     assert!(corrected.status.success());
     assert_eq!(
         String::from_utf8(corrected.stdout).unwrap(),
-        "pub fn value() -> u8 { 3 }\n"
+        "pub fn value() -> u8 { 4 }\n"
     );
 }
 

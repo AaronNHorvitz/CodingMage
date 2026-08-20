@@ -254,6 +254,8 @@ pub struct RunOutcome {
     pub completion_commit: Option<String>,
     /// Structured review verdict when review ran.
     pub review_verdict: Option<String>,
+    /// Number of gate or review correction rounds consumed.
+    pub correction_rounds: u16,
 }
 
 /// Runs one exact supervised unit using durable intent records and bounded provider processes.
@@ -550,6 +552,7 @@ impl<'a> ProductionWorkflowPort<'a> {
                 .as_ref()
                 .map(|receipt| receipt.commit.clone()),
             review_verdict: self.review_verdict.map(verdict_name).map(str::to_owned),
+            correction_rounds: self.correction_round,
         }
     }
 
@@ -1003,6 +1006,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             "task_id": self.task_id,
             "candidate_commit": candidate.commit,
             "review_verdict": self.review_verdict.map(verdict_name),
+            "correction_rounds": self.correction_round,
             "gate_evidence": self.gate_evidence,
         });
         write_private_idempotent(
