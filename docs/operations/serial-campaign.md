@@ -77,16 +77,45 @@ cargo build --locked --release -p codingmage-cli
 ./target/release/codingmage campaign \
   --config /absolute/codingmage.toml \
   --campaign /absolute/campaign.toml
+./target/release/codingmage campaign-status \
+  --config /absolute/codingmage.toml \
+  --campaign /absolute/campaign.toml
 ```
 
 The final JSON reports campaign identity, terminal state, retained local branch, exact head,
 completed-unit count, last task, and a content-free blocker code when applicable. Live stderr adds
 `codex-lead` and `integration` stages to the existing per-unit activity stream.
 
+`campaign-status` validates the original campaign authority and checkpoint integrity before showing
+only the durable phase, actor category, local branch, reconciled head, current and last task IDs,
+completed count, blocker count and code, and elapsed time. It does not expose prompts, provider
+output, source text, repository paths, credentials, or diagnostics.
+
+## Restart Behavior
+
+The campaign checkpoint is atomically replaced under the private campaign state directory. It binds
+the original authority digest, repository identity, campaign worktree identity, branch, initial and
+reconciled heads, active task, pending integration, completed count, blocker, and timestamps.
+
+| Durable interruption point | Restart behavior |
+| --- | --- |
+| Before a unit starts | Revalidate the exact owned campaign worktree and continue planning. |
+| After a unit is reviewed and before campaign integration | Reobserve the expected and target heads, apply or recognize the exact reviewed fast-forward once, then continue. |
+| After a reconciled unit | Adopt the recorded head and do not replay the accepted unit. |
+| After campaign completion | Return the identical completed outcome without starting a provider or Git effect. |
+| During an active provider unit | Preserve the state and stop with `codingmage.campaign.interrupted_unit_requires_reconciliation`; automatic provider-session recovery remains open. |
+
+Quota and authentication failures are classified separately and become durable campaign pauses.
+A planning-time pause can be retried by invoking the same exact campaign after provider access is
+restored. A pause during an active unit remains blocked from automatic replay until exact provider
+session recovery is implemented.
+
 ## Current Limits
 
-- Campaign-level durable journaling and same-campaign restart recovery are not complete.
-- Provider quota pause/resume and operator stop-after-unit controls are not complete.
+- Campaign checkpoints and accepted-head recovery are implemented; complete event journaling,
+  attempt/correction projections, and active-provider-session resume remain open.
+- Provider quota/authentication pauses are durable; automatic revalidation and active-unit resume,
+  plus operator stop-after-unit controls, remain open.
 - Aggregate observed provider cost is not yet reconciled; configured unit and per-invocation
   ceilings remain the enforceable bounds.
 - Parallel live pods remain disabled even if the authority ceiling is greater than one.

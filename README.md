@@ -69,7 +69,7 @@ flowchart TD
 The router does not let a model choose its own authority or quietly downgrade a required gate. Task class, risk, failure history, review disagreement, configured policy, and operator overrides determine the profile; CodingMage records the decision and the resolved model identity when the provider exposes it.
 
 > [!IMPORTANT]
-> CodingMage is under active implementation. Its supervised one-unit `run` path now composes an isolated worktree, file-only Claude candidate, coordinator-owned commit, bounded gate and review corrections, deterministic verification, immutable Codex review, exact checklist reconciliation, durable checkpoint, and verified cleanup. Its initial `campaign` path can repeat that workflow across dependency-ordered tasks on one isolated evolving campaign branch. Campaign restart recovery, parallel live pods, story-level draft PR publication, authenticated GitHub evidence, sustained soak evidence, native macOS/Windows evidence, and unattended release gates remain open.
+> CodingMage is under active implementation. Its supervised one-unit `run` path now composes an isolated worktree, file-only Claude candidate, coordinator-owned commit, bounded gate and review corrections, deterministic verification, immutable Codex review, exact checklist reconciliation, durable checkpoint, and verified cleanup. Its initial `campaign` path can repeat that workflow across dependency-ordered tasks on one isolated evolving campaign branch. Durable campaign-head and interrupted-integration recovery now exist; active-provider-session recovery, parallel live pods, story-level draft PR publication, authenticated GitHub evidence, sustained soak evidence, native macOS/Windows evidence, and unattended release gates remain open.
 
 ## Why CodingMage Exists
 
@@ -318,6 +318,7 @@ codingmage plan --config /absolute/codingmage.toml
 codingmage status --config /absolute/codingmage.toml
 codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml
 codingmage campaign --config /absolute/codingmage.toml --campaign /absolute/campaign.toml
+codingmage campaign-status --config /absolute/codingmage.toml --campaign /absolute/campaign.toml
 ```
 
 `campaign` intentionally starts with one pod regardless of available hardware. For each iteration,
@@ -325,6 +326,9 @@ Codex proposes one task from the deterministic ready set in a read-only snapshot
 inside a separate worktree, local gates and Codex review must pass, and only a fixed coordinator
 fast-forward may advance the isolated campaign branch. The active checkout remains unchanged. See
 [`Serial Campaign`](docs/operations/serial-campaign.md) for the authority file and current limits.
+The same campaign can be restarted from its exact reconciled head, and `campaign-status` exposes a
+content-minimized durable view. An interruption during an active provider turn currently blocks
+automatic replay and requires reconciliation; this limitation is enforced rather than hidden.
 
 Run `codingmage` from a normal VS Code terminal and leave that terminal open until the final JSON
 appears. During `run`, a live activity stream is written to stderr while the machine-readable final
