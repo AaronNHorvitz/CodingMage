@@ -1,5 +1,7 @@
 //! Concrete, fail-closed composition for one supervised `CodingMage` unit.
 
+mod campaign_state;
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt, fs,
@@ -40,6 +42,8 @@ use codingmage_service::CoordinatorLock;
 use codingmage_state::Journal;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+
+use campaign_state::{ActiveUnit, CampaignCheckpoint, CampaignPhase, PendingIntegration};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 const MAX_SPEC_BYTES: u64 = 1024 * 1024;
@@ -329,6 +333,7 @@ pub fn run_serial_campaign_with_progress(
         ProgressStage::Preparing,
     ));
     spec.verify().map_err(RuntimeError::Campaign)?;
+    let authority_sha256 = spec.authority_sha256().map_err(RuntimeError::Campaign)?;
     let binary = canonical_file(codingmage_binary)?;
     let source_root = binary.parent().ok_or(RuntimeError::Authority)?;
     let authorization = RepositoryAuthorization::authorize(config, source_root)
@@ -350,31 +355,57 @@ pub fn run_serial_campaign_with_progress(
         return Err(RuntimeError::Plan);
     }
 
-    let campaign_run_id = generated_run_id()?;
+    let invocation_id = generated_run_id()?;
     let _campaign_lock = CoordinatorLock::acquire(
         &config.state_root.join("campaign-locks"),
         &authorization.identity().repository_id,
-        campaign_run_id.as_str(),
+        invocation_id.as_str(),
     )
     .map_err(|_| RuntimeError::Orchestration)?;
     let mut campaign_config = config.clone();
     campaign_config
         .integration_branch
         .clone_from(&spec.campaign_branch);
-    let campaign = create_owned_worktree(
-        &authorization,
-        &campaign_config,
-        campaign_run_id.clone(),
-        TaskId::new("campaign-root")
-            .map_err(|_| RuntimeError::Campaign(CampaignError::InvalidSpec))?,
-        &inventory.head,
-    )
-    .map_err(|_| RuntimeError::Repository)?;
-    let campaign_root = config
-        .state_root
-        .join("campaigns")
-        .join(&spec.campaign_id)
-        .join(campaign_run_id.as_str());
+    let campaign_root = config.state_root.join("campaigns").join(&spec.campaign_id);
+    private_directory(&campaign_root)?;
+    let (campaign, mut checkpoint) =
+        if let Some(mut checkpoint) = CampaignCheckpoint::load(&campaign_root)? {
+            checkpoint.validate_authority(
+                &authority_sha256,
+                &spec.campaign_id,
+                &spec.repository_id,
+                &spec.initial_commit,
+            )?;
+            let campaign = OwnedWorktree::load(&campaign_config, &checkpoint.worktree_id)
+                .map_err(|_| RuntimeError::Repository)?;
+            if campaign.manifest().branch != checkpoint.branch {
+                return Err(RuntimeError::Authority);
+            }
+            reconcile_campaign_restart(&authorization, &campaign, &mut checkpoint, &campaign_root)?;
+            (campaign, checkpoint)
+        } else {
+            let campaign_run_id = generated_run_id()?;
+            let campaign = create_owned_worktree(
+                &authorization,
+                &campaign_config,
+                campaign_run_id.clone(),
+                TaskId::new("campaign-root")
+                    .map_err(|_| RuntimeError::Campaign(CampaignError::InvalidSpec))?,
+                &inventory.head,
+            )
+            .map_err(|_| RuntimeError::Repository)?;
+            let mut checkpoint = CampaignCheckpoint::new(
+                authority_sha256,
+                spec.campaign_id.clone(),
+                spec.repository_id.clone(),
+                campaign_run_id,
+                campaign.manifest().worktree_id.clone(),
+                campaign.manifest().branch.clone(),
+                inventory.head.clone(),
+            )?;
+            checkpoint.persist(&campaign_root)?;
+            (campaign, checkpoint)
+        };
     let pod_scratch = campaign_root.join("scratch");
     let pod_state = campaign_root.join("state");
     private_directory(&pod_scratch)?;
@@ -387,7 +418,7 @@ pub fn run_serial_campaign_with_progress(
     )
     .map_err(|_| RuntimeError::Process)?;
     let lead_schema_path = campaign_root.join("team-lead.schema.json");
-    write_private_new(&lead_schema_path, team_lead_schema().as_bytes())?;
+    write_private_idempotent(&lead_schema_path, team_lead_schema().as_bytes())?;
     let login_environment = login_discovery_environment()?;
     let lead = CodexLeadAdapter::new(
         spec.team_lead.executable.clone(),
@@ -398,9 +429,38 @@ pub fn run_serial_campaign_with_progress(
     .and_then(|adapter| adapter.with_login_environment(login_environment.clone()))
     .map_err(RuntimeError::Reviewer)?;
 
-    let mut head = inventory.head;
-    let mut completed_units = 0_u32;
-    let mut last_task_id = None;
+    if checkpoint.phase == CampaignPhase::Complete {
+        return Ok(campaign_outcome(
+            &spec,
+            CampaignState::Complete,
+            &campaign,
+            checkpoint.head,
+            checkpoint.completed_units,
+            checkpoint.last_task_id,
+            None,
+        ));
+    }
+    if checkpoint.active_unit.is_some() {
+        checkpoint.phase = CampaignPhase::Blocked;
+        checkpoint.blocker_code =
+            Some("codingmage.campaign.interrupted_unit_requires_reconciliation".to_owned());
+        checkpoint.persist(&campaign_root)?;
+        return Ok(campaign_outcome(
+            &spec,
+            CampaignState::Blocked,
+            &campaign,
+            checkpoint.head,
+            checkpoint.completed_units,
+            checkpoint.last_task_id,
+            checkpoint.blocker_code,
+        ));
+    }
+    checkpoint.phase = CampaignPhase::Ready;
+    checkpoint.blocker_code = None;
+    checkpoint.persist(&campaign_root)?;
+    let mut head = checkpoint.head.clone();
+    let mut completed_units = checkpoint.completed_units;
+    let mut last_task_id = checkpoint.last_task_id.clone();
     loop {
         let source = fs::read(campaign.manifest().path.join(&config.task_source))
             .map_err(|_| RuntimeError::Plan)?;
@@ -409,6 +469,9 @@ pub fn run_serial_campaign_with_progress(
             item.kind == PlanItemKind::SubTask && item.state == codingmage_plan::CheckState::Open
         });
         if !open_subtasks {
+            checkpoint.phase = CampaignPhase::Complete;
+            checkpoint.blocker_code = None;
+            checkpoint.persist(&campaign_root)?;
             return Ok(campaign_outcome(
                 &spec,
                 CampaignState::Complete,
@@ -420,6 +483,9 @@ pub fn run_serial_campaign_with_progress(
             ));
         }
         if completed_units >= spec.max_units {
+            checkpoint.phase = CampaignPhase::Paused;
+            checkpoint.blocker_code = Some("codingmage.campaign.unit_ceiling".to_owned());
+            checkpoint.persist(&campaign_root)?;
             return Ok(campaign_outcome(
                 &spec,
                 CampaignState::Paused,
@@ -436,6 +502,9 @@ pub fn run_serial_campaign_with_progress(
         spec.initial_commit.clone_from(&head);
         spec.task_source_sha256.clone_from(&plan.source_sha256);
         let binding = lead_binding(&spec, &campaign, &ready);
+        checkpoint.phase = CampaignPhase::Planning;
+        checkpoint.blocker_code = None;
+        checkpoint.persist(&campaign_root)?;
         observer(RunProgress::new(
             ProgressActor::CampaignLead,
             ProgressStage::PlanningCampaign,
@@ -454,6 +523,10 @@ pub fn run_serial_campaign_with_progress(
         let proposals = match outcome {
             TeamLeadOutcome::Proposals(proposals) => proposals,
             TeamLeadOutcome::HumanDecision(blocker) => {
+                let blocker_code = format!("codingmage.campaign.human_decision.{}", blocker.code);
+                checkpoint.phase = CampaignPhase::Blocked;
+                checkpoint.blocker_code = Some(blocker_code.clone());
+                checkpoint.persist(&campaign_root)?;
                 return Ok(campaign_outcome(
                     &spec,
                     CampaignState::Blocked,
@@ -461,10 +534,7 @@ pub fn run_serial_campaign_with_progress(
                     head,
                     completed_units,
                     last_task_id,
-                    Some(format!(
-                        "codingmage.campaign.human_decision.{}",
-                        blocker.code
-                    )),
+                    Some(blocker_code),
                 ));
             }
         };
@@ -485,6 +555,15 @@ pub fn run_serial_campaign_with_progress(
             .admit(&spec, selected, proposal)
             .map_err(RuntimeError::Campaign)?;
         last_task_id = Some(lease.task_id.clone());
+        checkpoint.last_task_id.clone_from(&last_task_id);
+        checkpoint.phase = CampaignPhase::RunningUnit;
+        checkpoint.active_unit = Some(ActiveUnit {
+            task_id: lease.task_id.clone(),
+            source_head: head.clone(),
+            task_source_sha256: plan.source_sha256.clone(),
+            owned_paths: lease.owned_paths.clone(),
+        });
+        checkpoint.persist(&campaign_root)?;
 
         let mut pod_config = config.clone();
         pod_config.target_path.clone_from(&campaign.manifest().path);
@@ -516,6 +595,14 @@ pub fn run_serial_campaign_with_progress(
         let reviewed_head = unit.completion_commit.ok_or(RuntimeError::Orchestration)?;
         let mut integration_paths = lease.owned_paths.clone();
         integration_paths.push(config.task_source.clone());
+        checkpoint.phase = CampaignPhase::Integrating;
+        checkpoint.pending_integration = Some(PendingIntegration {
+            task_id: lease.task_id.clone(),
+            expected_head: head.clone(),
+            target_head: reviewed_head.clone(),
+            owned_paths: integration_paths.clone(),
+        });
+        checkpoint.persist(&campaign_root)?;
         observer(RunProgress::new(
             ProgressActor::IntegrationLead,
             ProgressStage::Integrating,
@@ -530,10 +617,65 @@ pub fn run_serial_campaign_with_progress(
         .map_err(|_| RuntimeError::Integration)?;
         head = reviewed_head;
         completed_units = completed_units.saturating_add(1);
+        checkpoint.head.clone_from(&head);
+        checkpoint.completed_units = completed_units;
+        checkpoint.phase = CampaignPhase::Ready;
+        checkpoint.active_unit = None;
+        checkpoint.pending_integration = None;
+        checkpoint.blocker_code = None;
+        checkpoint.persist(&campaign_root)?;
         scheduler
             .release(&lease.pod_id)
             .map_err(RuntimeError::Campaign)?;
     }
+}
+
+fn reconcile_campaign_restart(
+    authorization: &RepositoryAuthorization,
+    campaign: &OwnedWorktree,
+    checkpoint: &mut CampaignCheckpoint,
+    campaign_root: &Path,
+) -> Result<(), RuntimeError> {
+    let Some(pending) = checkpoint.pending_integration.clone() else {
+        campaign
+            .revalidate(authorization, &checkpoint.head)
+            .map_err(|_| RuntimeError::Repository)?;
+        return Ok(());
+    };
+    if checkpoint.phase != CampaignPhase::Integrating
+        || checkpoint
+            .active_unit
+            .as_ref()
+            .map(|unit| unit.task_id.as_str())
+            != Some(pending.task_id.as_str())
+        || checkpoint.head != pending.expected_head
+    {
+        return Err(RuntimeError::State);
+    }
+    if campaign
+        .revalidate(authorization, &pending.expected_head)
+        .is_ok()
+    {
+        integrate_reviewed_descendant(
+            authorization,
+            campaign,
+            &pending.expected_head,
+            &pending.target_head,
+            &pending.owned_paths,
+        )
+        .map_err(|_| RuntimeError::Integration)?;
+    } else {
+        campaign
+            .revalidate(authorization, &pending.target_head)
+            .map_err(|_| RuntimeError::Integration)?;
+    }
+    checkpoint.head = pending.target_head;
+    checkpoint.completed_units = checkpoint.completed_units.saturating_add(1);
+    checkpoint.phase = CampaignPhase::Ready;
+    checkpoint.active_unit = None;
+    checkpoint.pending_integration = None;
+    checkpoint.blocker_code = None;
+    checkpoint.persist(campaign_root)
 }
 
 fn provider_spec(provider: &codingmage_campaign::CampaignProvider) -> ProviderSpec {

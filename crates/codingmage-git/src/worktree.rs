@@ -104,6 +104,20 @@ impl OwnedWorktree {
             manifest_path,
         })
     }
+
+    /// Revalidates this active worktree against its durable identity and exact expected head.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`WorktreeError`] if repository authority, manifest identity, registration,
+    /// branch, lineage, physical directory identity, or the observed head differs.
+    pub fn revalidate(
+        &self,
+        authorization: &RepositoryAuthorization,
+        expected_head: &str,
+    ) -> Result<(), WorktreeError> {
+        revalidate_active_worktree(authorization, self, expected_head)
+    }
 }
 
 pub(crate) fn revalidate_active_worktree(

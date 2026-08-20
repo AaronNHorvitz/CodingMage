@@ -479,6 +479,27 @@ profiles = ["configured-gates"]
     let progress = String::from_utf8(run.stderr).unwrap();
     assert_eq!(progress.matches("codex-lead  proposing").count(), 2);
     assert_eq!(progress.matches("integration advancing").count(), 2);
+
+    let resumed = Fixture::command(&[
+        "campaign",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(
+        resumed.status.success(),
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&resumed.stderr),
+        String::from_utf8_lossy(&resumed.stdout)
+    );
+    let resumed_outcome: serde_json::Value = serde_json::from_slice(&resumed.stdout).unwrap();
+    assert_eq!(resumed_outcome, outcome);
+    let resumed_progress = String::from_utf8(resumed.stderr).unwrap();
+    assert!(!resumed_progress.contains("codex-lead"));
+    assert!(!resumed_progress.contains("claude"));
+    assert!(!resumed_progress.contains("codex       reviewing"));
+    assert!(!resumed_progress.contains("integration"));
 }
 
 fn git(root: &Path, arguments: &[&str]) {
