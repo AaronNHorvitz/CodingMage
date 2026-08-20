@@ -245,7 +245,13 @@ The journal should retain identities, hashes, outcomes, durations, and sanitized
 
 ## Monitoring and Controls
 
-The first monitoring surface will be a structured terminal view that works inside VS Code. It will display:
+The current `run` command emits privacy-preserving lifecycle progress in any VS Code terminal. It
+shows the active coordinator, agent, or local-gate stage and elapsed time while reserving stdout for
+the final machine-readable result.
+
+### Planned Interactive Dashboard
+
+A planned attachable terminal dashboard will build on those typed events. It is expected to display:
 
 - Target repository and branch.
 - Current sprint, story, task, and sub-task.
@@ -258,7 +264,19 @@ The first monitoring surface will be a structured terminal view that works insid
 - Quota/rate-limit pauses and known reset time.
 - External blockers and unsupported evidence.
 
-Planned controls include `status`, `pause`, `resume`, `stop-after-unit`, `cancel`, `open-diff`, `open-log`, and `explain-blocker`. Cancellation must terminate only CodingMage-owned descendants and leave the target repository recoverable.
+The dashboard may show sanitized adapter activity such as reading permitted files, editing within the
+owned worktree, awaiting a model result, or validating a structured response. It will not display or
+persist hidden model reasoning, unrestricted model prose, prompts, source content, credentials, or
+raw environment data. Model-authored activity summaries are informative only; typed coordinator
+events, immutable commits, and deterministic evidence remain authoritative.
+
+The intended entry point is `codingmage monitor --config /absolute/codingmage.toml`, but that
+attachable TUI is not implemented in the current release. The current stderr activity stream and the
+process-level `watch` command below are the available monitoring surfaces today.
+
+Planned controls include `status`, `pause`, `resume`, `stop-after-unit`, `cancel`, `open-diff`,
+`open-log`, and `explain-blocker`. Cancellation must terminate only CodingMage-owned descendants and
+leave the target repository recoverable.
 
 ## Background Operation
 
@@ -334,6 +352,29 @@ watch -n 2 'ps -C codingmage,claude,2.1.136,cargo,codex -o pid,ppid,stat,etime,c
 Press `q` or `Ctrl+C` in the `watch` terminal to stop monitoring; that does not stop the separate
 CodingMage run. Do not send `Ctrl+C` to the terminal that is running `codingmage run` unless you
 intend to interrupt that run.
+
+### Stop and Restart
+
+`codingmage run` currently executes exactly one bounded unit; it is not a persistent daemon. The
+normal and safest shutdown is to let the command reach its final JSON result. It then releases its
+owned resources and exits on its own. Stopping the separate `watch` display has no effect on the run.
+
+For an emergency interruption, press `Ctrl+C` in the terminal that owns `codingmage run`. The
+process guard terminates CodingMage-owned provider descendants, and durable state remains available
+for diagnosis. Because production re-observation and same-run resume are not complete yet, an
+interrupted unit must not be assumed successful or automatically resumed. Do not manually delete its
+state, worktree, or retained branch; inspect the repository and run `doctor` first.
+
+To start a new supervised unit with the installed live-progress feature:
+
+```bash
+codingmage --version
+codingmage doctor --config /absolute/codingmage.toml
+codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml
+```
+
+Proceed only when `doctor` reports a clean, ready repository. The new run receives a new run identity
+and isolated branch; it does not silently continue or claim completion for an interrupted run.
 
 Operator output is structured and content-minimized. Final JSON can still be captured separately
 without losing live progress:
