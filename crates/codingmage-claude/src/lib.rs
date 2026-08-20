@@ -221,10 +221,15 @@ impl ClaudeWorkPacket {
         );
         rendered.push_str(
             "\nDo not run tests, Git, network, or external-infrastructure commands. CodingMage owns\n\
-             deterministic verification and commit creation. Return only the required structured\n\
-             completion report with ready_for_commit=true after finishing file edits, or a truthful\n\
-             blocker. A claimed test, commit, merge, or release has no authority until CodingMage\n\
-             verifies it independently.\n",
+             deterministic verification and commit creation. In the structured completion report:\n\
+             - changed_paths must contain only exact repository-relative paths, never absolute paths.\n\
+             - tests must be empty because this provider has no test-command authority.\n\
+             - commit must be null because CodingMage alone creates the commit.\n\
+             - after completed edits, set ready_for_commit=true and blocker_code=null.\n\
+             - when blocked, set ready_for_commit=false and provide one short stable blocker_code.\n\
+             Exactly one of ready_for_commit=true or a non-null blocker_code is permitted.\n\
+             Return only the required structured completion report. A claimed test, commit, merge,\n\
+             or release has no authority until CodingMage verifies it independently.\n",
         );
         if rendered.len() > MAX_PACKET_BYTES {
             return Err(ClaudeError::InvalidPacket);
@@ -716,9 +721,16 @@ fn completion_schema() -> String {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-            "changed_paths": {"type": "array", "items": {"type": "string"}},
-            "tests": {
+            "changed_paths": {
+                "description": "Exact repository-relative changed paths; absolute and parent-traversing paths are forbidden.",
                 "type": "array",
+                "maxItems": 256,
+                "items": {"type": "string", "minLength": 1, "maxLength": 4096}
+            },
+            "tests": {
+                "description": "Must be empty because deterministic tests are coordinator-owned.",
+                "type": "array",
+                "maxItems": 0,
                 "items": {
                     "type": "object",
                     "additionalProperties": false,
@@ -729,10 +741,10 @@ fn completion_schema() -> String {
                     "required": ["command", "exit_code"]
                 }
             },
-            "commit": {"type": ["string", "null"]},
-            "ready_for_commit": {"type": "boolean"},
-            "limitations": {"type": "array", "items": {"type": "string"}},
-            "blocker_code": {"type": ["string", "null"]}
+            "commit": {"description": "Must be null; commit creation is coordinator-owned.", "type": ["string", "null"]},
+            "ready_for_commit": {"description": "True only when edits are complete and blocker_code is null.", "type": "boolean"},
+            "limitations": {"type": "array", "maxItems": 256, "items": {"type": "string", "minLength": 1, "maxLength": 4096}},
+            "blocker_code": {"description": "Null when ready; otherwise one short stable code.", "type": ["string", "null"]}
         },
         "required": ["changed_paths", "tests", "commit", "ready_for_commit", "limitations", "blocker_code"]
     })
@@ -955,6 +967,10 @@ mod tests {
         let text = String::from_utf8(first).unwrap();
         assert!(text.contains("UNTRUSTED DATA"));
         assert!(text.contains("Do not merge or release"));
+        assert!(text.contains("exact repository-relative paths"));
+        assert!(text.contains("tests must be empty"));
+        assert!(text.contains("commit must be null"));
+        assert!(text.contains("Exactly one of ready_for_commit=true"));
     }
 
     #[test]
