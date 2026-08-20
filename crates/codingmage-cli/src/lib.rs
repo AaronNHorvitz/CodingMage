@@ -8,6 +8,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use codingmage_campaign::CampaignSpec;
 use codingmage_contracts::AgentId;
 use codingmage_core::{
     AgentProfile, CapabilityPolicy, CommandSpec, Config, PublicationMode, PublicationPolicy,
@@ -15,7 +16,9 @@ use codingmage_core::{
 };
 use codingmage_git::inventory_repository;
 use codingmage_plan::TaskPlan;
-use codingmage_runtime::{RunProgress, RunSpec, RuntimeError, run_one_with_progress};
+use codingmage_runtime::{
+    RunProgress, RunSpec, RuntimeError, run_one_with_progress, run_serial_campaign_with_progress,
+};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -36,6 +39,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "status" => diagnose(&arguments[1..], "status"),
         "plan" => select_plan(&arguments[1..]),
         "run" => execute(&arguments[1..]),
+        "campaign" => execute_campaign(&arguments[1..]),
         _ => Err(CliError::Usage),
     }
 }
@@ -128,6 +132,20 @@ fn execute(arguments: &[String]) -> Result<String, CliError> {
     let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
     let started = Instant::now();
     let outcome = run_one_with_progress(&config, spec, &executable, |progress| {
+        write_progress(started.elapsed(), progress);
+    })
+    .map_err(CliError::Runtime)?;
+    serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)
+}
+
+fn execute_campaign(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "campaign"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let started = Instant::now();
+    let outcome = run_serial_campaign_with_progress(&config, spec, &executable, |progress| {
         write_progress(started.elapsed(), progress);
     })
     .map_err(CliError::Runtime)?;

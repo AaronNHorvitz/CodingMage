@@ -8,13 +8,17 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use codingmage_campaign::{
+    CampaignAuthentication, CampaignError, CampaignSpec, PodScheduler, TeamLeadOutcome,
+    validate_team_lead_report,
+};
 use codingmage_claude::{
     ClaudeAdapter, ClaudeAuthentication, ClaudeCompletionReport, ClaudeError, ClaudeSession,
     ClaudeWorkPacket,
 };
 use codingmage_codex::{
-    CodexAdapter, CodexError, CodexReviewBinding, CodexReviewReport, ReviewVerdict,
-    codex_review_schema,
+    CodexAdapter, CodexError, CodexLeadAdapter, CodexLeadBinding, CodexLeadTask,
+    CodexReviewBinding, CodexReviewReport, ReviewVerdict, codex_review_schema, team_lead_schema,
 };
 use codingmage_contracts::{AgentId, AttemptId, EvidenceId, RunId, TaskId};
 use codingmage_core::{Config, RepositoryAuthorization};
@@ -24,7 +28,7 @@ use codingmage_gate::{
 };
 use codingmage_git::{
     CommitReceipt, OwnedWorktree, commit_owned_changes, create_owned_worktree,
-    inventory_repository, remove_owned_worktree,
+    integrate_reviewed_descendant, inventory_repository, remove_owned_worktree,
 };
 use codingmage_orchestrator::{
     DurableWorkflowPort, OneUnitCoordinator, OrchestrationError, ReviewOutcome, TaskState,
@@ -49,6 +53,10 @@ pub enum ProgressActor {
     Claude,
     /// Codex is performing an immutable, read-only review.
     Codex,
+    /// Codex is proposing dependency-ready campaign work read-only.
+    CampaignLead,
+    /// Deterministic coordinator is integrating an accepted pod commit.
+    IntegrationLead,
     /// Allowlisted deterministic commands are verifying the candidate.
     LocalGates,
 }
@@ -61,6 +69,8 @@ impl ProgressActor {
             Self::Coordinator => "coordinator",
             Self::Claude => "claude",
             Self::Codex => "codex",
+            Self::CampaignLead => "codex-lead",
+            Self::IntegrationLead => "integration",
             Self::LocalGates => "local-gates",
         }
     }
@@ -71,6 +81,8 @@ impl ProgressActor {
 pub enum ProgressStage {
     /// Configuration, repository identity, and task authority are being validated.
     Preparing,
+    /// Read-only campaign lead is proposing one dependency-ready unit.
+    PlanningCampaign,
     /// Exact repository and task ownership are being acquired.
     Claiming,
     /// The isolated worktree and provider capability probes are being prepared.
@@ -89,6 +101,8 @@ pub enum ProgressStage {
     VerifyingFinal,
     /// The reviewed result is being persisted durably.
     Checkpointing,
+    /// Exact reviewed descendant is advancing the isolated campaign branch.
+    Integrating,
     /// The exact canonical completion marker is being reconciled.
     Reconciling,
     /// Owned processes, locks, and the clean worktree are being released.
@@ -105,6 +119,7 @@ impl ProgressStage {
     pub const fn summary(self) -> &'static str {
         match self {
             Self::Preparing => "validating configuration, repository, and task authority",
+            Self::PlanningCampaign => "proposing the next dependency-ready campaign unit",
             Self::Claiming => "acquiring the exact repository and task claim",
             Self::ProbingProviders => "creating the worktree and probing provider capabilities",
             Self::Implementing => "implementing the bounded task in the isolated worktree",
@@ -114,6 +129,7 @@ impl ProgressStage {
             Self::Reviewing => "reviewing the immutable candidate commit read-only",
             Self::VerifyingFinal => "repeating deterministic gates after review",
             Self::Checkpointing => "writing the durable reviewed checkpoint",
+            Self::Integrating => "advancing the isolated campaign head to reviewed work",
             Self::Reconciling => "reconciling the exact task completion marker",
             Self::Releasing => "releasing owned worktree, processes, and locks",
             Self::Finished => "run finished; inspect the final JSON state",
@@ -256,6 +272,327 @@ pub struct RunOutcome {
     pub review_verdict: Option<String>,
     /// Number of gate or review correction rounds consumed.
     pub correction_rounds: u16,
+}
+
+/// Terminal state of the initial one-pod campaign engine.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CampaignState {
+    /// Every canonical sub-task in the observed plan is checked.
+    Complete,
+    /// A configured unit ceiling was reached at a clean campaign head.
+    Paused,
+    /// No independently safe proposal could proceed without external authority.
+    Blocked,
+}
+
+/// Content-minimized result of one serial campaign invocation.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignOutcome {
+    /// Operator-selected campaign identity.
+    pub campaign_id: String,
+    /// Terminal campaign state.
+    pub state: CampaignState,
+    /// Coordinator-owned local campaign branch.
+    pub branch: String,
+    /// Exact last integrated campaign head.
+    pub head: String,
+    /// Number of units integrated by this invocation.
+    pub completed_units: u32,
+    /// Last selected task, absent when no unit started.
+    pub last_task_id: Option<String>,
+    /// Content-free blocker code when blocked.
+    pub blocker_code: Option<String>,
+}
+
+/// Runs a bounded serial campaign from one isolated evolving head.
+///
+/// The current rollout deliberately admits one pod at a time even when the campaign ceiling is
+/// higher. Every unit still uses the production implementation, gates, correction, independent
+/// review, completion, and cleanup workflow. Only the deterministic integration primitive advances
+/// the campaign branch; the active checkout and protected branches are never mutated.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] for invalid authority, stale lead output, provider failure, unit
+/// failure, or uncertain integration. The isolated campaign branch is retained for diagnosis.
+#[allow(clippy::too_many_lines)]
+pub fn run_serial_campaign_with_progress(
+    config: &Config,
+    mut spec: CampaignSpec,
+    codingmage_binary: &Path,
+    mut observer: impl FnMut(RunProgress),
+) -> Result<CampaignOutcome, RuntimeError> {
+    observer(RunProgress::new(
+        ProgressActor::Coordinator,
+        ProgressStage::Preparing,
+    ));
+    spec.verify().map_err(RuntimeError::Campaign)?;
+    let binary = canonical_file(codingmage_binary)?;
+    let source_root = binary.parent().ok_or(RuntimeError::Authority)?;
+    let authorization = RepositoryAuthorization::authorize(config, source_root)
+        .map_err(|_| RuntimeError::Authority)?;
+    let inventory = inventory_repository(&authorization).map_err(|_| RuntimeError::Repository)?;
+    let configured_target =
+        fs::canonicalize(&config.target_path).map_err(|_| RuntimeError::Authority)?;
+    if !inventory.condition.is_clean()
+        || configured_target != spec.repository_path
+        || authorization.identity().repository_id.as_str() != spec.repository_id
+        || inventory.head != spec.initial_commit
+    {
+        return Err(RuntimeError::Authority);
+    }
+    let initial_source =
+        fs::read(config.target_path.join(&config.task_source)).map_err(|_| RuntimeError::Plan)?;
+    let initial_plan = TaskPlan::parse(&initial_source).map_err(|_| RuntimeError::Plan)?;
+    if initial_plan.source_sha256 != spec.task_source_sha256 {
+        return Err(RuntimeError::Plan);
+    }
+
+    let campaign_run_id = generated_run_id()?;
+    let _campaign_lock = CoordinatorLock::acquire(
+        &config.state_root.join("campaign-locks"),
+        &authorization.identity().repository_id,
+        campaign_run_id.as_str(),
+    )
+    .map_err(|_| RuntimeError::Orchestration)?;
+    let mut campaign_config = config.clone();
+    campaign_config
+        .integration_branch
+        .clone_from(&spec.campaign_branch);
+    let campaign = create_owned_worktree(
+        &authorization,
+        &campaign_config,
+        campaign_run_id.clone(),
+        TaskId::new("campaign-root")
+            .map_err(|_| RuntimeError::Campaign(CampaignError::InvalidSpec))?,
+        &inventory.head,
+    )
+    .map_err(|_| RuntimeError::Repository)?;
+    let campaign_root = config
+        .state_root
+        .join("campaigns")
+        .join(&spec.campaign_id)
+        .join(campaign_run_id.as_str());
+    let pod_scratch = campaign_root.join("scratch");
+    let pod_state = campaign_root.join("state");
+    private_directory(&pod_scratch)?;
+    private_directory(&pod_state)?;
+    let process_root = campaign_root.join("lead-processes");
+    let executor = ProcessExecutor::new_with_guard_arguments(
+        &binary,
+        vec!["__process-guard".to_owned()],
+        &process_root,
+    )
+    .map_err(|_| RuntimeError::Process)?;
+    let lead_schema_path = campaign_root.join("team-lead.schema.json");
+    write_private_new(&lead_schema_path, team_lead_schema().as_bytes())?;
+    let login_environment = login_discovery_environment()?;
+    let lead = CodexLeadAdapter::new(
+        spec.team_lead.executable.clone(),
+        &spec.team_lead.model,
+        &spec.team_lead.effort,
+        lead_schema_path,
+    )
+    .and_then(|adapter| adapter.with_login_environment(login_environment.clone()))
+    .map_err(RuntimeError::Reviewer)?;
+
+    let mut head = inventory.head;
+    let mut completed_units = 0_u32;
+    let mut last_task_id = None;
+    loop {
+        let source = fs::read(campaign.manifest().path.join(&config.task_source))
+            .map_err(|_| RuntimeError::Plan)?;
+        let plan = TaskPlan::parse(&source).map_err(|_| RuntimeError::Plan)?;
+        let open_subtasks = plan.items.iter().any(|item| {
+            item.kind == PlanItemKind::SubTask && item.state == codingmage_plan::CheckState::Open
+        });
+        if !open_subtasks {
+            return Ok(campaign_outcome(
+                &spec,
+                CampaignState::Complete,
+                &campaign,
+                head,
+                completed_units,
+                last_task_id,
+                None,
+            ));
+        }
+        if completed_units >= spec.max_units {
+            return Ok(campaign_outcome(
+                &spec,
+                CampaignState::Paused,
+                &campaign,
+                head,
+                completed_units,
+                last_task_id,
+                Some("codingmage.campaign.unit_ceiling".to_owned()),
+            ));
+        }
+        let ready = plan
+            .select_ready(&BTreeSet::new(), &BTreeSet::new(), 1)
+            .map_err(|_| RuntimeError::Plan)?;
+        spec.initial_commit.clone_from(&head);
+        spec.task_source_sha256.clone_from(&plan.source_sha256);
+        let binding = lead_binding(&spec, &campaign, &ready);
+        observer(RunProgress::new(
+            ProgressActor::CampaignLead,
+            ProgressStage::PlanningCampaign,
+        ));
+        let invocation = lead.plan(&binding).map_err(RuntimeError::Reviewer)?;
+        let (lead_result, _) = lead
+            .execute(
+                &executor,
+                &invocation,
+                &binding,
+                &CancellationToken::default(),
+            )
+            .map_err(RuntimeError::Reviewer)?;
+        let outcome = validate_team_lead_report(lead_result.report, &spec, &ready)
+            .map_err(RuntimeError::Campaign)?;
+        let proposals = match outcome {
+            TeamLeadOutcome::Proposals(proposals) => proposals,
+            TeamLeadOutcome::HumanDecision(blocker) => {
+                return Ok(campaign_outcome(
+                    &spec,
+                    CampaignState::Blocked,
+                    &campaign,
+                    head,
+                    completed_units,
+                    last_task_id,
+                    Some(format!(
+                        "codingmage.campaign.human_decision.{}",
+                        blocker.code
+                    )),
+                ));
+            }
+        };
+        let proposal = proposals
+            .into_iter()
+            .next()
+            .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
+        if proposal.owned_paths.iter().any(|path| {
+            path == &config.task_source
+                || path.starts_with(&config.task_source)
+                || config.task_source.starts_with(path)
+        }) {
+            return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
+        }
+        let selected = &ready[0];
+        let mut scheduler = PodScheduler::new(&spec).map_err(RuntimeError::Campaign)?;
+        let lease = scheduler
+            .admit(&spec, selected, proposal)
+            .map_err(RuntimeError::Campaign)?;
+        last_task_id = Some(lease.task_id.clone());
+
+        let mut pod_config = config.clone();
+        pod_config.target_path.clone_from(&campaign.manifest().path);
+        pod_config
+            .default_branch
+            .clone_from(&campaign.manifest().branch);
+        pod_config.integration_branch = format!("{}/pod", spec.campaign_branch);
+        pod_config.scratch_root.clone_from(&pod_scratch);
+        pod_config.state_root.clone_from(&pod_state);
+        let unit_spec = RunSpec {
+            version: 1,
+            task_id: lease.task_id.clone(),
+            owned_paths: lease.owned_paths.clone(),
+            completion_policy: CompletionPolicy::CloseTask,
+            implementer: ImplementerSpec {
+                provider: provider_spec(&spec.implementer),
+                authentication: match spec.implementer_authentication {
+                    CampaignAuthentication::Bare => AuthenticationMode::Bare,
+                    CampaignAuthentication::ExistingLogin => AuthenticationMode::ExistingLogin,
+                },
+                maximum_budget_usd: spec.maximum_invocation_budget_usd.clone(),
+            },
+            reviewer: provider_spec(&spec.reviewer),
+        };
+        let unit = run_one_with_progress(&pod_config, unit_spec, &binary, &mut observer)?;
+        if unit.state != TaskState::Complete || unit.review_verdict.as_deref() != Some("pass") {
+            return Err(RuntimeError::Orchestration);
+        }
+        let reviewed_head = unit.completion_commit.ok_or(RuntimeError::Orchestration)?;
+        let mut integration_paths = lease.owned_paths.clone();
+        integration_paths.push(config.task_source.clone());
+        observer(RunProgress::new(
+            ProgressActor::IntegrationLead,
+            ProgressStage::Integrating,
+        ));
+        integrate_reviewed_descendant(
+            &authorization,
+            &campaign,
+            &head,
+            &reviewed_head,
+            &integration_paths,
+        )
+        .map_err(|_| RuntimeError::Integration)?;
+        head = reviewed_head;
+        completed_units = completed_units.saturating_add(1);
+        scheduler
+            .release(&lease.pod_id)
+            .map_err(RuntimeError::Campaign)?;
+    }
+}
+
+fn provider_spec(provider: &codingmage_campaign::CampaignProvider) -> ProviderSpec {
+    ProviderSpec {
+        executable: provider.executable.clone(),
+        model: provider.model.clone(),
+        effort: provider.effort.clone(),
+    }
+}
+
+fn lead_binding(
+    spec: &CampaignSpec,
+    campaign: &OwnedWorktree,
+    ready: &[SelectedWork],
+) -> CodexLeadBinding {
+    let ready_tasks = ready
+        .iter()
+        .map(|selected| CodexLeadTask {
+            task_id: selected.item.id.clone(),
+            title: selected.item.title.clone(),
+            dependencies: selected.item.dependencies.clone(),
+        })
+        .collect::<Vec<_>>();
+    CodexLeadBinding {
+        campaign_id: spec.campaign_id.clone(),
+        repository_id: spec.repository_id.clone(),
+        worktree: campaign.manifest().path.clone(),
+        campaign_head: spec.initial_commit.clone(),
+        task_source_sha256: spec.task_source_sha256.clone(),
+        maximum_proposals: 1,
+        allowed_paths: spec.allowed_paths.clone(),
+        denied_paths: spec.denied_paths.clone(),
+        gate_tiers: spec
+            .gate_tiers
+            .iter()
+            .map(|tier| tier.name.clone())
+            .collect(),
+        ready_tasks,
+    }
+}
+
+fn campaign_outcome(
+    spec: &CampaignSpec,
+    state: CampaignState,
+    campaign: &OwnedWorktree,
+    head: String,
+    completed_units: u32,
+    last_task_id: Option<String>,
+    blocker_code: Option<String>,
+) -> CampaignOutcome {
+    CampaignOutcome {
+        campaign_id: spec.campaign_id.clone(),
+        state,
+        branch: campaign.manifest().branch.clone(),
+        head,
+        completed_units,
+        last_task_id,
+        blocker_code,
+    }
 }
 
 /// Runs one exact supervised unit using durable intent records and bounded provider processes.
@@ -1279,6 +1616,10 @@ pub enum RuntimeError {
     State,
     /// One-unit orchestration failed closed.
     Orchestration,
+    /// Campaign authority, proposal, or lease validation failed.
+    Campaign(CampaignError),
+    /// Deterministic campaign-head integration failed or was uncertain.
+    Integration,
     /// Claude implementation adapter failed with a content-free diagnostic.
     Implementer(ClaudeError),
     /// Codex review adapter failed with a content-free diagnostic.
@@ -1299,6 +1640,17 @@ impl RuntimeError {
             Self::Process => "codingmage.runtime.process",
             Self::State => "codingmage.runtime.state",
             Self::Orchestration => "codingmage.runtime.orchestration",
+            Self::Campaign(error) => match error {
+                CampaignError::InvalidSpec => "codingmage.runtime.campaign.spec",
+                CampaignError::InvalidAuthority => "codingmage.runtime.campaign.authority",
+                CampaignError::InvalidProposal => "codingmage.runtime.campaign.proposal",
+                CampaignError::StaleProposal => "codingmage.runtime.campaign.stale_proposal",
+                CampaignError::Conflict => "codingmage.runtime.campaign.conflict",
+                CampaignError::Capacity => "codingmage.runtime.campaign.capacity",
+                CampaignError::UnknownLease => "codingmage.runtime.campaign.unknown_lease",
+                CampaignError::Serialization => "codingmage.runtime.campaign.serialization",
+            },
+            Self::Integration => "codingmage.runtime.integration",
             Self::Implementer(error) => error.code(),
             Self::Reviewer(error) => error.code(),
             Self::Verification => "codingmage.runtime.verification",

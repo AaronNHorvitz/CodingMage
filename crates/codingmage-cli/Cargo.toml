@@ -8,6 +8,7 @@ rust-version.workspace = true
 version.workspace = true
 
 [dependencies]
+codingmage-campaign.workspace = true
 codingmage-contracts.workspace = true
 codingmage-core.workspace = true
 codingmage-git.workspace = true

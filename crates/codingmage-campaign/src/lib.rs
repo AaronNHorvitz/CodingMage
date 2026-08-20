@@ -31,6 +31,16 @@ pub struct CampaignProvider {
     pub effort: String,
 }
 
+/// Credential discovery available to the implementation provider.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CampaignAuthentication {
+    /// Provider runs without inherited login discovery.
+    Bare,
+    /// Provider may discover its existing local login; `CodingMage` never reads the credential.
+    ExistingLogin,
+}
+
 /// Named deterministic gate tier available to pod proposals.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -80,6 +90,10 @@ pub struct CampaignSpec {
     pub team_lead: CampaignProvider,
     /// Pod implementation profile.
     pub implementer: CampaignProvider,
+    /// Implementation-provider login boundary.
+    pub implementer_authentication: CampaignAuthentication,
+    /// Literal provider-side ceiling for each implementation or correction invocation.
+    pub maximum_invocation_budget_usd: String,
     /// Independent pod review profile.
     pub reviewer: CampaignProvider,
     /// Closed deterministic gate tiers proposals may request.
@@ -139,6 +153,13 @@ impl CampaignSpec {
             || !valid_budget(&self.maximum_budget_usd)
             || !valid_provider(&self.team_lead)
             || !valid_provider(&self.implementer)
+            || !valid_budget(&self.maximum_invocation_budget_usd)
+            || self
+                .maximum_invocation_budget_usd
+                .parse::<f64>()
+                .ok()
+                .zip(self.maximum_budget_usd.parse::<f64>().ok())
+                .is_none_or(|(invocation, campaign)| invocation > campaign)
             || !valid_provider(&self.reviewer)
             || self.gate_tiers.is_empty()
             || self.gate_tiers.len() > MAX_RESOURCES
@@ -657,6 +678,8 @@ mod tests {
             maximum_budget_usd: "50.00".to_owned(),
             team_lead: provider("gpt-lead", "high"),
             implementer: provider("claude-implementer", "high"),
+            implementer_authentication: CampaignAuthentication::ExistingLogin,
+            maximum_invocation_budget_usd: "5.00".to_owned(),
             reviewer: provider("gpt-reviewer", "xhigh"),
             gate_tiers: vec![CampaignGateTier {
                 name: "rust-focused".to_owned(),
