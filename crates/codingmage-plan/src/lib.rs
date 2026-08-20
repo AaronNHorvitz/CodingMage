@@ -820,11 +820,11 @@ mod tests {
 
     const PLAN: &str = "# Plan\n\n## Sprint 0 - Foundation\n\n**Sprint goal:** Build safely.\n\n### Story 0.1 - Parser\n\n- [ ] **Task 0.1.1 - Parse work**\n  - [x] **Sub-task 0.1.1.1:** Parse prior work.\n  - [ ] **Sub-task 0.1.1.2:** Select next work.\n<!-- depends-on: 0.1.1.1 -->\n\n- [ ] **AC 0.1.1:** Selection is exact.\n\n### Sprint 0 Gate\n\n- [ ] **Gate 0.1:** Parser passes.\n";
 
-    const AGENTMAGE_PLAN: &str = "# Tasks\n\n### [ ] Sprint 42 - Repository Safety\n\n**Sprint goal:** Preserve repository state.\n\n#### [ ] Story 42.1 - Hostile Repositories\n\n- [ ] **Task 42.1.3 - Verify the story**\n  - [ ] **Sub-task 42.1.3.2** (legacy `S-035-ST01`): Exercise hostile repository state.\n\n- [ ] **Story AC 42.1.AC1:** Given hostile state, when inspected, then no command executes.\n- [ ] **Sprint AC 42.AC1:** Every unrelated ref remains exact.\n\n### [ ] Sprint Completion Record Template\n";
+    const CHECKBOX_HEADING_PLAN: &str = "# Tasks\n\n### [ ] Sprint 42 - Repository Safety\n\n**Sprint goal:** Preserve repository state.\n\n#### [ ] Story 42.1 - Hostile Repositories\n\n- [ ] **Task 42.1.3 - Verify the story**\n  - [ ] **Sub-task 42.1.3.2** (legacy `S-035-ST01`): Exercise hostile repository state.\n\n- [ ] **Story AC 42.1.AC1:** Given hostile state, when inspected, then no command executes.\n- [ ] **Sprint AC 42.AC1:** Every unrelated ref remains exact.\n\n### [ ] Sprint Completion Record Template\n";
 
     #[test]
-    fn parses_agentmage_checkbox_headings_legacy_suffixes_and_acceptance_ids() {
-        let plan = TaskPlan::parse(AGENTMAGE_PLAN.as_bytes()).unwrap();
+    fn parses_checkbox_headings_legacy_suffixes_and_acceptance_ids() {
+        let plan = TaskPlan::parse(CHECKBOX_HEADING_PLAN.as_bytes()).unwrap();
         assert_eq!(plan.sprints.len(), 1);
         assert_eq!(plan.stories.len(), 1);
         assert_eq!(plan.select_exact("42.1.3.2").unwrap().item.id, "42.1.3.2");

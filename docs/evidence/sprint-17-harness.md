@@ -2,7 +2,7 @@
 
 ## Scope
 
-This evidence covers the deterministic disposable-fixture and fault-schedule foundation for Sprint 17. It is not 24-hour or 48-hour wall-clock evidence and is not an AgentMage pilot result.
+This evidence covers the deterministic disposable-fixture and fault-schedule foundation for Sprint 17. It is not 24-hour or 48-hour wall-clock evidence and is not a controlled-target pilot result.
 
 ## Fixture Matrix
 
@@ -41,4 +41,4 @@ passed
 
 ## Open Evidence
 
-Task `17.1.2`, both Sprint 17 acceptance criteria, and both sprint gates remain open. The required 24-hour campaign, corrected 48-hour campaign, real fault injection through composed provider/repository/service boundaries, supervised AgentMage units, unattended AgentMage story, and owner review have not been executed.
+Task `17.1.2`, both Sprint 17 acceptance criteria, and both sprint gates remain open. The required 24-hour campaign, corrected 48-hour campaign, real fault injection through composed provider/repository/service boundaries, supervised target units, unattended target story, and owner review have not been executed.

@@ -9,7 +9,7 @@
 
 - `cargo test --workspace --all-targets --quiet`: 165 declared Rust tests passed across all
   workspace targets, including hostile Git, process, recovery, provider, service, package, and
-  AgentMage-shaped pilot fixtures.
+  controlled-target pilot fixtures.
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`: passed.
 - `cargo fmt --all -- --check`: passed.
 - `python3 scripts/check_architecture.py`: passed, including explicit test-only dependency policy.
@@ -40,5 +40,5 @@ unit around the refusing command would produce false lifecycle evidence.
 ## External Evidence
 
 No authenticated live Claude, Codex, or GitHub campaign; native macOS or Windows execution;
-24-hour or 48-hour elapsed soak; supervised or unattended live AgentMage pilot; independent human
+24-hour or 48-hour elapsed soak; supervised or unattended live target pilot; independent human
 review; deferred manual fuzzing; release signature; or public release was performed or claimed.

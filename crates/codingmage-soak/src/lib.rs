@@ -154,16 +154,18 @@ pub fn materialize_fixtures(root: &Path) -> Result<Vec<FixtureRepository>, SoakE
     Ok(repositories)
 }
 
-/// Creates a clean disposable AgentMage-shaped documentation fixture with one canonical pilot.
+/// Creates a clean disposable controlled-target documentation fixture with one canonical pilot.
 ///
-/// The fixture contains no source copied from `AgentMage`. It models only the bounded patch-preview
-/// workflow selected during pilot preparation, keeping the real target checkout read-only.
+/// The fixture contains no source copied from another repository. It models only a bounded
+/// patch-preview workflow, keeping every real target checkout read-only.
 ///
 /// # Errors
 ///
 /// Returns [`SoakError::Fixture`] unless `root` is a new empty directory and every local Git or
 /// filesystem operation succeeds.
-pub fn materialize_agentmage_pilot_fixture(root: &Path) -> Result<FixtureRepository, SoakError> {
+pub fn materialize_controlled_target_pilot_fixture(
+    root: &Path,
+) -> Result<FixtureRepository, SoakError> {
     let metadata = fs::symlink_metadata(root).map_err(|_| SoakError::Fixture)?;
     if metadata.file_type().is_symlink()
         || !metadata.is_dir()
@@ -180,12 +182,12 @@ pub fn materialize_agentmage_pilot_fixture(root: &Path) -> Result<FixtureReposit
     git(&root, &["config", "user.email", "fixture@invalid.example"])?;
     fs::write(
         root.join("README.md"),
-        "# Disposable AgentMage Pilot\n\nNo production source is present.\n",
+        "# Disposable Controlled Target Pilot\n\nNo production source is present.\n",
     )
     .map_err(|_| SoakError::Fixture)?;
     fs::write(
         root.join("TASKS.md"),
-        "# AgentMage Disposable Pilot\n\n\
+        "# Controlled Target Disposable Pilot\n\n\
          ## Sprint 0 - Patch Preview Fixture\n\n\
          **Sprint goal:** Verify a read-only patch-transfer preview.\n\n\
          ### Story 0.1 - Read-Only Preview\n\n\
@@ -197,7 +199,7 @@ pub fn materialize_agentmage_pilot_fixture(root: &Path) -> Result<FixtureReposit
     )
     .map_err(|_| SoakError::Fixture)?;
     git(&root, &["add", "."])?;
-    git(&root, &["commit", "-m", "agentmage pilot baseline"])?;
+    git(&root, &["commit", "-m", "controlled target pilot baseline"])?;
     Ok(FixtureRepository {
         kind: FixtureKind::Documentation,
         root,

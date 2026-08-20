@@ -207,11 +207,11 @@ The service must:
 - Bound child processes, output, retries, and storage.
 - Never claim success merely because an agent process exited successfully.
 
-## Initial Target: AgentMage
+## Controlled Target Pilot
 
-AgentMage will be CodingMage's first controlled pilot. CodingMage must remain a separate repository and process so it cannot rewrite its own authority logic while coordinating AgentMage.
+CodingMage begins with a controlled pilot against an independently authorized target repository. CodingMage remains a separate repository and process so it cannot rewrite its own authority logic while coordinating target work.
 
-The pilot will begin with disposable fixtures, then a CodingMage-owned AgentMage test branch, and only later an explicitly authorized development branch. The pilot must prove clean interruption, exact commit review, concurrent user-work preservation, quota pause/resume, malformed-output handling, and bounded disagreement before unattended operation is allowed.
+The pilot begins with disposable fixtures, then a CodingMage-owned test branch, and only later an explicitly authorized development branch. It must prove clean interruption, exact commit review, concurrent user-work preservation, quota pause/resume, malformed-output handling, and bounded disagreement before unattended operation is allowed.
 
 ## Local CLI
 
@@ -275,7 +275,7 @@ The implementation order is recorded in [`TASKS.md`](TASKS.md). The critical pat
 7. Add durable recovery, monitoring, and background execution.
 8. Add optional GitHub issue and pull-request synchronization.
 9. Run adversarial testing and a sustained soak campaign.
-10. Pilot against AgentMage, then generalize for other repositories.
+10. Pilot against a disposable controlled target, then validate reusable project adapters.
 
 Documentation changes are checked locally without downloading a toolchain:
 
@@ -312,5 +312,5 @@ Operational guides are indexed in [`docs/operations/README.md`](docs/operations/
 - GitHub synchronization core: yes; authenticated disposable-repository evidence remains open
 - Reproducible Linux packaging and rootless lifecycle: yes
 - Reusable project task and gate adapters: yes
-- AgentMage authorization: no
+- Unattended target-repository authorization: no
 - Unattended operation approved: no

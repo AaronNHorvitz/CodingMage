@@ -1,4 +1,4 @@
-//! Disposable AgentMage-shaped fake-agent pilot and repository-preservation evidence.
+//! Disposable controlled-target fake-agent pilot and repository-preservation evidence.
 
 use std::{
     collections::BTreeSet,
@@ -13,7 +13,7 @@ use codingmage_orchestrator::{
     WorkflowPort,
 };
 use codingmage_plan::TaskPlan;
-use codingmage_soak::materialize_agentmage_pilot_fixture;
+use codingmage_soak::materialize_controlled_target_pilot_fixture;
 
 struct FakeAgents {
     calls: Vec<&'static str>,
@@ -85,9 +85,9 @@ fn observe(repository: &std::path::Path) -> (Vec<u8>, Vec<u8>) {
 }
 
 #[test]
-fn fake_agentmage_pilot_completes_without_repository_mutation() {
+fn fake_controlled_target_pilot_completes_without_repository_mutation() {
     let root = std::env::temp_dir().join(format!(
-        "codingmage-agentmage-pilot-{}-{}",
+        "codingmage-controlled-target-pilot-{}-{}",
         std::process::id(),
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -95,7 +95,7 @@ fn fake_agentmage_pilot_completes_without_repository_mutation() {
             .as_nanos()
     ));
     fs::create_dir(&root).unwrap();
-    let fixture = materialize_agentmage_pilot_fixture(&root).unwrap();
+    let fixture = materialize_controlled_target_pilot_fixture(&root).unwrap();
     let before = observe(&fixture.root);
     let source = fs::read(fixture.root.join("TASKS.md")).unwrap();
     let plan = TaskPlan::parse(&source).unwrap();
@@ -103,8 +103,8 @@ fn fake_agentmage_pilot_completes_without_repository_mutation() {
     assert_eq!(selected.item.id, "0.1.1.1");
 
     let mut coordinator = OneUnitCoordinator::new(
-        RunId::new("agentmage-pilot-run").unwrap(),
-        TaskId::new("agentmage-preview").unwrap(),
+        RunId::new("controlled-target-pilot-run").unwrap(),
+        TaskId::new("controlled-target-preview").unwrap(),
     );
     let mut agents = FakeAgents { calls: Vec::new() };
     assert_eq!(coordinator.run(&mut agents), Ok(TaskState::Complete));

@@ -762,9 +762,9 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ---
 
-## Sprint 17 - Soak Testing and AgentMage Pilot
+## Sprint 17 - Soak Testing and Controlled Target Pilot
 
-**Sprint goal:** Demonstrate sustained reliable operation before CodingMage receives unattended access to real AgentMage development work.
+**Sprint goal:** Demonstrate sustained reliable operation before CodingMage receives unattended access to any real target-repository development work.
 
 ### Story 17.1 - Disposable Soak Campaign
 
@@ -777,15 +777,15 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 17.1.2.3:** Inject provider limits, network loss, process crashes, service restarts, malformed output, stale commits, concurrent user changes, and operator controls.
   - [ ] **Sub-task 17.1.2.4:** Verify zero duplicate tasks, skipped gates, false completions, orphan processes, unowned mutations, and unbounded storage growth.
 
-### Story 17.2 - Controlled AgentMage Pilot
+### Story 17.2 - Controlled Target Pilot
 
-- [x] **Task 17.2.1 - Prepare AgentMage authorization.** See `docs/evidence/sprint-17-agentmage-preflight.md`.
-  - [x] **Sub-task 17.2.1.1:** Review AgentMage instructions, branch policy, task structure, commands, blockers, and current clean checkpoint.
+- [x] **Task 17.2.1 - Prepare controlled-target authorization.** See `docs/evidence/sprint-17-controlled-pilot.md`.
+  - [x] **Sub-task 17.2.1.1:** Review the target's instructions, branch policy, task structure, commands, blockers, and current clean checkpoint.
   - [x] **Sub-task 17.2.1.2:** Create a minimal disposable CodingMage target configuration with network, GitHub mutation, and publication disabled.
-  - [x] **Sub-task 17.2.1.3:** Select a low-risk read-only patch-transfer preview fixture mapped to AgentMage sub-task `42.1.1.7` without modifying the real checkout.
+  - [x] **Sub-task 17.2.1.3:** Select a low-risk read-only patch-transfer preview fixture without modifying an active checkout.
 - [ ] **Task 17.2.2 - Run supervised pilot units**
-  - [x] **Sub-task 17.2.2.1:** Complete one dry run using fake agents against a source-free AgentMage-shaped disposable fixture; exact lifecycle order and zero repository mutation are asserted in `codingmage-soak`.
-  - [x] **Sub-task 17.2.2.2:** Complete one live Claude implementation and Codex review on a disposable AgentMage branch. The local-only candidate, deterministic gates, exact-SHA read-only review, fail-closed defects, and manual correction limitation are recorded in `docs/evidence/sprint-17-agentmage-preflight.md`.
+  - [x] **Sub-task 17.2.2.1:** Complete one dry run using fake agents against a source-free controlled-target fixture; exact lifecycle order and zero repository mutation are asserted in `codingmage-soak`.
+  - [x] **Sub-task 17.2.2.2:** Complete one live Claude implementation and Codex review on a disposable target branch. The local-only candidate, deterministic gates, exact-SHA read-only review, fail-closed defects, and manual correction limitation are recorded in `docs/evidence/sprint-17-controlled-pilot.md`.
   - [ ] **Sub-task 17.2.2.3:** Complete five supervised bounded units with no authority or recovery defect.
   - [ ] **Sub-task 17.2.2.4:** Enable background execution only after explicit owner approval of retained evidence.
 - [ ] **Task 17.2.3 - Run unattended pilot**
@@ -796,12 +796,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 **Story acceptance criteria**
 
 - [ ] **AC 17.1:** Given the 48-hour disposable campaign, when evidence is reviewed, then every injected interruption is recovered or blocked exactly and no uncontrolled residue exists.
-- [ ] **AC 17.2:** Given the AgentMage pilot, when human review compares repository state and CodingMage claims, then every commit, test, finding, limitation, and blocker is accurate.
+- [ ] **AC 17.2:** Given the controlled target pilot, when human review compares repository state and CodingMage claims, then every commit, test, finding, limitation, and blocker is accurate.
 
 ### Sprint 17 Gate
 
 - [ ] **Gate 17.1:** Disposable soak campaign passes after the last reliability correction.
-- [ ] **Gate 17.2:** AgentMage unattended operation requires explicit product-owner approval and remains disabled until granted.
+- [ ] **Gate 17.2:** Unattended target-repository operation requires explicit product-owner approval and remains disabled until granted.
 
 ---
 
@@ -847,7 +847,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ## Sprint 19 - Reusable Project Adapters and v1 Readiness
 
-**Sprint goal:** Generalize the proven AgentMage workflow into a reusable tool without weakening target-specific safety.
+**Sprint goal:** Generalize the proven controlled-target workflow into a reusable tool without weakening target-specific safety.
 
 ### Story 19.1 - Project Adapter Contract
 
@@ -872,7 +872,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 19.2.2.3:** Resolve or explicitly accept every open risk.
   - [ ] **Sub-task 19.2.2.4:** Create a signed release candidate without publishing it automatically.
 - [x] **Task 19.2.3 - Evaluate bootstrap retirement**
-  - [x] **Sub-task 19.2.3.1:** Compare CodingMage capabilities with AgentMage's current source-level orchestration implementation.
+  - [x] **Sub-task 19.2.3.1:** Compare CodingMage capabilities with the target repository's available orchestration interfaces.
   - [x] **Sub-task 19.2.3.2:** Decide whether CodingMage remains independent, becomes a thin client, or is retired.
   - [x] **Sub-task 19.2.3.3:** Preserve migration and archival instructions before any retirement.
 
@@ -898,7 +898,7 @@ These items must remain open until their prerequisites actually exist:
 - [ ] **External 3:** Authenticated GitHub issue and pull-request tests against an explicitly approved test repository.
 - [ ] **External 4:** Independent security and architecture review by a qualified human reviewer.
 - [ ] **External 5:** Manual fuzzing campaign after the deterministic attack corpus is stable.
-- [ ] **External 6:** Explicit product-owner approval before unattended AgentMage operation.
+- [ ] **External 6:** Explicit product-owner approval before unattended target-repository operation.
 - [ ] **External 7:** Explicit product-owner approval before any public release or package publication.
 
 ## Immediate Next Unit
