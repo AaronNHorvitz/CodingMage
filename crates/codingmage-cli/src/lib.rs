@@ -1,6 +1,12 @@
 //! Content-minimized operator commands for configuration and local diagnosis.
 
-use std::{collections::BTreeSet, fmt, fs, io::Write as _, path::PathBuf};
+use std::{
+    collections::BTreeSet,
+    fmt, fs,
+    io::Write as _,
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 use codingmage_contracts::AgentId;
 use codingmage_core::{
@@ -9,7 +15,7 @@ use codingmage_core::{
 };
 use codingmage_git::inventory_repository;
 use codingmage_plan::TaskPlan;
-use codingmage_runtime::{RunSpec, RuntimeError, run_one};
+use codingmage_runtime::{RunProgress, RunSpec, RuntimeError, run_one_with_progress};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -120,8 +126,26 @@ fn execute(arguments: &[String]) -> Result<String, CliError> {
     let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
     let spec = RunSpec::load(&parsed.absolute_file("spec")?).map_err(CliError::Runtime)?;
     let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
-    let outcome = run_one(&config, spec, &executable).map_err(CliError::Runtime)?;
+    let started = Instant::now();
+    let outcome = run_one_with_progress(&config, spec, &executable, |progress| {
+        write_progress(started.elapsed(), progress);
+    })
+    .map_err(CliError::Runtime)?;
     serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)
+}
+
+fn write_progress(elapsed: Duration, progress: RunProgress) {
+    let total_seconds = elapsed.as_secs();
+    let minutes = total_seconds / 60;
+    let seconds = total_seconds % 60;
+    let mut stderr = std::io::stderr().lock();
+    let _ = writeln!(
+        stderr,
+        "[codingmage +{minutes:02}:{seconds:02}] {:<11} {}",
+        progress.actor.label(),
+        progress.stage.summary()
+    );
+    let _ = stderr.flush();
 }
 
 fn select_plan(arguments: &[String]) -> Result<String, CliError> {

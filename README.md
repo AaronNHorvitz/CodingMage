@@ -292,7 +292,55 @@ codingmage status --config /absolute/codingmage.toml
 codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml
 ```
 
-Operator output is structured and content-minimized. Paths, source text, changed filenames, command output, and credential values are not emitted by these commands.
+Run `codingmage` from a normal VS Code terminal and leave that terminal open until the final JSON
+appears. During `run`, a live activity stream is written to stderr while the machine-readable final
+result remains isolated on stdout:
+
+```text
+[codingmage +00:00] coordinator validating configuration, repository, and task authority
+[codingmage +00:00] coordinator acquiring the exact repository and task claim
+[codingmage +00:01] coordinator creating the worktree and probing provider capabilities
+[codingmage +00:04] claude      implementing the bounded task in the isolated worktree
+[codingmage +08:12] local-gates running deterministic gates on the candidate
+[codingmage +10:41] codex       reviewing the immutable candidate commit read-only
+[codingmage +14:03] local-gates repeating deterministic gates after review
+[codingmage +16:25] coordinator writing the durable reviewed checkpoint
+[codingmage +16:25] coordinator releasing owned worktree, processes, and locks
+[codingmage +16:26] coordinator run finished; inspect the final JSON state
+```
+
+The active line tells you which component currently owns the work:
+
+- `claude` is editing packet-owned files in the isolated implementation worktree.
+- `local-gates` is running the configured deterministic test, lint, format, or integrity commands.
+- `codex` is reviewing the exact immutable candidate commit read-only.
+- `coordinator` is validating authority, managing owned Git state, checkpointing, or cleaning up.
+
+If a candidate gate fails, the stream prints `candidate gates blocked; senior review will not run`
+before cleanup. The retained branch and final `recoverable_failure` JSON can then be inspected and
+corrected without spending reviewer tokens or claiming completion.
+
+The stream intentionally reports lifecycle activity rather than model prose or hidden reasoning.
+Paths, prompts, source text, changed filenames, command output, environment values, and credentials
+are never printed. This makes progress visible without turning the terminal into another source-code
+or credential log.
+
+If you need an independent process-level check from a second VS Code terminal, use:
+
+```bash
+watch -n 2 'ps -C codingmage,claude,2.1.136,cargo,codex -o pid,ppid,stat,etime,comm'
+```
+
+Press `q` or `Ctrl+C` in the `watch` terminal to stop monitoring; that does not stop the separate
+CodingMage run. Do not send `Ctrl+C` to the terminal that is running `codingmage run` unless you
+intend to interrupt that run.
+
+Operator output is structured and content-minimized. Final JSON can still be captured separately
+without losing live progress:
+
+```bash
+codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml > outcome.json
+```
 
 Existing provider logins are discovered through a four-name, non-secret ambient allowlist plus the compiled literal `PATH=/usr/bin:/bin` required to locate sandbox dependencies. CodingMage does not accept raw API-key or token fields, inherit arbitrary environment variables or ambient `PATH`, or persist login-discovery values.
 

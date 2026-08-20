@@ -188,6 +188,29 @@ effort = "high"
     assert_eq!(outcome["review_verdict"], "pass");
     assert!(outcome["candidate_commit"].as_str().is_some());
     assert!(outcome["completion_commit"].as_str().is_some());
+    let progress = String::from_utf8(run.stderr).unwrap();
+    let expected_progress = [
+        "coordinator validating configuration, repository, and task authority",
+        "coordinator acquiring the exact repository and task claim",
+        "coordinator creating the worktree and probing provider capabilities",
+        "claude      implementing the bounded task in the isolated worktree",
+        "local-gates running deterministic gates on the candidate",
+        "codex       reviewing the immutable candidate commit read-only",
+        "local-gates repeating deterministic gates after review",
+        "coordinator writing the durable reviewed checkpoint",
+        "coordinator reconciling the exact task completion marker",
+        "coordinator releasing owned worktree, processes, and locks",
+        "coordinator run finished; inspect the final JSON state",
+    ];
+    let mut prior = 0;
+    for expected in expected_progress {
+        let offset = progress[prior..]
+            .find(expected)
+            .unwrap_or_else(|| panic!("missing ordered progress {expected:?}: {progress}"));
+        prior += offset + expected.len();
+    }
+    assert!(!progress.contains(fixture.root.to_str().unwrap()));
+    assert!(!progress.contains("Complete the exact fixture operation"));
     assert_eq!(
         fs::read_to_string(target.join("src/lib.rs")).unwrap(),
         "pub fn value() -> u8 { 1 }\n"

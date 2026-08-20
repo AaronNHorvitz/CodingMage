@@ -39,6 +39,100 @@ use sha2::{Digest, Sha256};
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 const MAX_SPEC_BYTES: u64 = 1024 * 1024;
 
+/// Content-minimized actor shown by the live CLI progress stream.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProgressActor {
+    /// The deterministic coordinator owns the current operation.
+    Coordinator,
+    /// Claude Code is producing or correcting the bounded implementation.
+    Claude,
+    /// Codex is performing an immutable, read-only review.
+    Codex,
+    /// Allowlisted deterministic commands are verifying the candidate.
+    LocalGates,
+}
+
+impl ProgressActor {
+    /// Stable human-readable label that never contains provider output.
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Coordinator => "coordinator",
+            Self::Claude => "claude",
+            Self::Codex => "codex",
+            Self::LocalGates => "local-gates",
+        }
+    }
+}
+
+/// Typed lifecycle stage exposed to a local operator during one run.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProgressStage {
+    /// Configuration, repository identity, and task authority are being validated.
+    Preparing,
+    /// Exact repository and task ownership are being acquired.
+    Claiming,
+    /// The isolated worktree and provider capability probes are being prepared.
+    ProbingProviders,
+    /// The implementation model is editing only packet-owned files.
+    Implementing,
+    /// Deterministic gates are checking the candidate commit.
+    VerifyingCandidate,
+    /// At least one candidate gate did not pass, so senior review will not run.
+    CandidateBlocked,
+    /// The review model is inspecting the immutable candidate.
+    Reviewing,
+    /// Deterministic gates are being repeated after review.
+    VerifyingFinal,
+    /// The reviewed result is being persisted durably.
+    Checkpointing,
+    /// The exact canonical completion marker is being reconciled.
+    Reconciling,
+    /// Owned processes, locks, and the clean worktree are being released.
+    Releasing,
+    /// The coordinator reached its intended terminal state.
+    Finished,
+    /// The run stopped safely before its intended terminal state.
+    Failed,
+}
+
+impl ProgressStage {
+    /// Stable operator-facing summary with no repository or provider content.
+    #[must_use]
+    pub const fn summary(self) -> &'static str {
+        match self {
+            Self::Preparing => "validating configuration, repository, and task authority",
+            Self::Claiming => "acquiring the exact repository and task claim",
+            Self::ProbingProviders => "creating the worktree and probing provider capabilities",
+            Self::Implementing => "implementing the bounded task in the isolated worktree",
+            Self::VerifyingCandidate => "running deterministic gates on the candidate",
+            Self::CandidateBlocked => "candidate gates blocked; senior review will not run",
+            Self::Reviewing => "reviewing the immutable candidate commit read-only",
+            Self::VerifyingFinal => "repeating deterministic gates after review",
+            Self::Checkpointing => "writing the durable reviewed checkpoint",
+            Self::Reconciling => "reconciling the exact task completion marker",
+            Self::Releasing => "releasing owned worktree, processes, and locks",
+            Self::Finished => "run finished; inspect the final JSON state",
+            Self::Failed => "run stopped safely; inspect the final error code",
+        }
+    }
+}
+
+/// One privacy-preserving live progress observation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RunProgress {
+    /// Actor that owns the current operation.
+    pub actor: ProgressActor,
+    /// Typed lifecycle stage currently executing.
+    pub stage: ProgressStage,
+}
+
+impl RunProgress {
+    const fn new(actor: ProgressActor, stage: ProgressStage) -> Self {
+        Self { actor, stage }
+    }
+}
+
 /// Credential discovery available to one implementation invocation.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -173,6 +267,45 @@ pub fn run_one(
     spec: RunSpec,
     codingmage_binary: &Path,
 ) -> Result<RunOutcome, RuntimeError> {
+    run_one_with_progress(config, spec, codingmage_binary, |_| {})
+}
+
+/// Runs one exact supervised unit and reports content-minimized lifecycle progress.
+///
+/// The observer receives only typed actor and stage values. It never receives prompts, model
+/// output, repository paths, source text, command output, or credential material.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] under the same conditions as [`run_one`].
+pub fn run_one_with_progress(
+    config: &Config,
+    spec: RunSpec,
+    codingmage_binary: &Path,
+    mut observer: impl FnMut(RunProgress),
+) -> Result<RunOutcome, RuntimeError> {
+    observer(RunProgress::new(
+        ProgressActor::Coordinator,
+        ProgressStage::Preparing,
+    ));
+    let result = run_one_observed(config, spec, codingmage_binary, &mut observer);
+    observer(RunProgress::new(
+        ProgressActor::Coordinator,
+        if result.is_ok() {
+            ProgressStage::Finished
+        } else {
+            ProgressStage::Failed
+        },
+    ));
+    result
+}
+
+fn run_one_observed(
+    config: &Config,
+    spec: RunSpec,
+    codingmage_binary: &Path,
+    observer: &mut impl FnMut(RunProgress),
+) -> Result<RunOutcome, RuntimeError> {
     spec.validate()?;
     let codingmage_binary = canonical_file(codingmage_binary)?;
     let source_root = codingmage_binary.parent().ok_or(RuntimeError::Authority)?;
@@ -204,7 +337,7 @@ pub fn run_one(
     write_private_new(&schema_path, codex_review_schema().as_bytes())?;
     let mut journal = Journal::open(&run_root, format!("{}-journal", run_id.as_str()))
         .map_err(|_| RuntimeError::State)?;
-    let mut port = ProductionWorkflowPort::new(ProductionInputs {
+    let port = ProductionWorkflowPort::new(ProductionInputs {
         config,
         authorization,
         selected,
@@ -220,6 +353,7 @@ pub fn run_one(
     });
     let repository_id = port.authorization.identity().repository_id.clone();
     let completion_policy = port.spec.completion_policy;
+    let mut port = ProgressWorkflowPort::new(port, observer);
     let mut coordinator = OneUnitCoordinator::new(run_id.clone(), task_id.clone());
     let result = {
         let mut durable = DurableWorkflowPort::new(
@@ -234,11 +368,92 @@ pub fn run_one(
             CompletionPolicy::CloseTask => coordinator.run(&mut durable),
         }
     };
-    let outcome = port.outcome(run_id, task_id, coordinator.state());
+    let outcome = port.inner.outcome(run_id, task_id, coordinator.state());
     if result.is_err() {
-        return Err(port.failure.unwrap_or(RuntimeError::Orchestration));
+        return Err(port.inner.failure.unwrap_or(RuntimeError::Orchestration));
     }
     Ok(outcome)
+}
+
+struct ProgressWorkflowPort<'a, P, F> {
+    inner: P,
+    observer: &'a mut F,
+}
+
+impl<'a, P, F> ProgressWorkflowPort<'a, P, F>
+where
+    F: FnMut(RunProgress),
+{
+    const fn new(inner: P, observer: &'a mut F) -> Self {
+        Self { inner, observer }
+    }
+
+    fn report(&mut self, actor: ProgressActor, stage: ProgressStage) {
+        (self.observer)(RunProgress::new(actor, stage));
+    }
+}
+
+impl<P, F> WorkflowPort for ProgressWorkflowPort<'_, P, F>
+where
+    P: WorkflowPort,
+    F: FnMut(RunProgress),
+{
+    fn claim(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.report(ProgressActor::Coordinator, ProgressStage::Claiming);
+        self.inner.claim()
+    }
+
+    fn start_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.report(ProgressActor::Coordinator, ProgressStage::ProbingProviders);
+        self.inner.start_implementation()
+    }
+
+    fn finish_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.report(ProgressActor::Claude, ProgressStage::Implementing);
+        self.inner.finish_implementation()
+    }
+
+    fn verify_local(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError> {
+        self.report(ProgressActor::LocalGates, ProgressStage::VerifyingCandidate);
+        let result = self.inner.verify_local();
+        if matches!(
+            &result,
+            Ok((outcome, _)) if *outcome != VerificationOutcome::Pass
+        ) {
+            self.report(ProgressActor::LocalGates, ProgressStage::CandidateBlocked);
+        }
+        result
+    }
+
+    fn review(&mut self) -> Result<(ReviewOutcome, EvidenceId), OrchestrationError> {
+        self.report(ProgressActor::Codex, ProgressStage::Reviewing);
+        self.inner.review()
+    }
+
+    fn correct(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.report(ProgressActor::Claude, ProgressStage::Implementing);
+        self.inner.correct()
+    }
+
+    fn verify_final(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError> {
+        self.report(ProgressActor::LocalGates, ProgressStage::VerifyingFinal);
+        self.inner.verify_final()
+    }
+
+    fn checkpoint(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.report(ProgressActor::Coordinator, ProgressStage::Checkpointing);
+        self.inner.checkpoint()
+    }
+
+    fn reconcile_completion(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.report(ProgressActor::Coordinator, ProgressStage::Reconciling);
+        self.inner.reconcile_completion()
+    }
+
+    fn release(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.report(ProgressActor::Coordinator, ProgressStage::Releasing);
+        self.inner.release()
+    }
 }
 
 struct ProductionInputs<'a> {
