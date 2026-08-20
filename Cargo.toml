@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/codingmage-campaign",
     "crates/codingmage-cli",
     "crates/codingmage-claude",
     "crates/codingmage-codex",
@@ -32,6 +33,7 @@ rust-version = "1.95"
 version = "0.1.0"
 
 [workspace.dependencies]
+codingmage-campaign = { path = "crates/codingmage-campaign", version = "=0.1.0" }
 codingmage-agent = { path = "crates/codingmage-agent", version = "=0.1.0" }
 codingmage-claude = { path = "crates/codingmage-claude", version = "=0.1.0" }
 codingmage-codex = { path = "crates/codingmage-codex", version = "=0.1.0" }

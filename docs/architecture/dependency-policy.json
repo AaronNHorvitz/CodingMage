@@ -1,5 +1,6 @@
 {
   "allowed_internal_dependencies": {
+    "codingmage-campaign": ["codingmage-contracts", "codingmage-plan"],
     "codingmage-agent": ["codingmage-contracts", "codingmage-process"],
     "codingmage-claude": ["codingmage-agent", "codingmage-contracts", "codingmage-process"],
     "codingmage-codex": ["codingmage-agent", "codingmage-contracts", "codingmage-git", "codingmage-process"],

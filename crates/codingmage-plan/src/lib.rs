@@ -326,18 +326,44 @@ impl TaskPlan {
     ///
     /// Returns [`PlanError`] for unknown blockers, unresolved ambiguity, or no ready work.
     pub fn select_next(&self, blockers: &BTreeSet<String>) -> Result<SelectedWork, PlanError> {
+        self.select_ready(blockers, &BTreeSet::new(), 1)?
+            .into_iter()
+            .next()
+            .ok_or(PlanError::NoReadyWork)
+    }
+
+    /// Selects a stable bounded set of open, unclaimed, dependency-ready sub-tasks.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanError`] for invalid blockers or claims, an invalid limit, an oversized ready
+    /// item, or when no independently ready work remains.
+    pub fn select_ready(
+        &self,
+        blockers: &BTreeSet<String>,
+        claimed: &BTreeSet<String>,
+        limit: usize,
+    ) -> Result<Vec<SelectedWork>, PlanError> {
         let by_id: BTreeMap<&str, &PlanItem> = self
             .items
             .iter()
             .map(|item| (item.id.as_str(), item))
             .collect();
-        if blockers.iter().any(|id| !by_id.contains_key(id.as_str())) {
+        if limit == 0
+            || limit > 64
+            || blockers
+                .iter()
+                .chain(claimed)
+                .any(|id| !by_id.contains_key(id.as_str()))
+        {
             return Err(PlanError::InvalidDependency);
         }
+        let mut selected = Vec::new();
         for item in &self.items {
             if item.kind != PlanItemKind::SubTask
                 || item.state == CheckState::Checked
                 || blockers.contains(&item.id)
+                || claimed.contains(&item.id)
             {
                 continue;
             }
@@ -350,13 +376,20 @@ impl TaskPlan {
                 if item.title.len() < 8 || item.title.len() > 4096 {
                     return Err(PlanError::NeedsDecomposition);
                 }
-                return Ok(SelectedWork {
+                selected.push(SelectedWork {
                     item: item.clone(),
                     source_sha256: self.source_sha256.clone(),
                 });
+                if selected.len() == limit {
+                    return Ok(selected);
+                }
             }
         }
-        Err(PlanError::NoReadyWork)
+        if selected.is_empty() {
+            Err(PlanError::NoReadyWork)
+        } else {
+            Ok(selected)
+        }
     }
 
     /// Selects one exact open sub-task after verifying all of its declared dependencies.
@@ -899,6 +932,25 @@ mod tests {
         assert_eq!(plan.select_exact("0.1.1.1"), Err(PlanError::NoReadyWork));
         assert_eq!(plan.select_exact("0.1.1"), Err(PlanError::NoReadyWork));
         assert_eq!(plan.select_exact("9.9.9.9"), Err(PlanError::NoReadyWork));
+    }
+
+    #[test]
+    fn ready_set_is_stable_bounded_and_excludes_claimed_work() {
+        let source = b"# Tasks\n\n## Sprint 1 - Build\n\n**Sprint goal:** Build safely.\n\n### Story 1.1 - Units\n\n- [ ] **Task 1.1.1 - Work**\n  - [ ] **Sub-task 1.1.1.1:** Complete the first independent bounded unit.\n  - [ ] **Sub-task 1.1.1.2:** Complete the second independent bounded unit.\n  - [ ] **Sub-task 1.1.1.3:** Complete the third independent bounded unit.\n";
+        let plan = TaskPlan::parse(source).unwrap();
+        let claimed = BTreeSet::from(["1.1.1.2".to_owned()]);
+        let selected = plan.select_ready(&BTreeSet::new(), &claimed, 2).unwrap();
+        assert_eq!(
+            selected
+                .iter()
+                .map(|work| work.item.id.as_str())
+                .collect::<Vec<_>>(),
+            ["1.1.1.1", "1.1.1.3"]
+        );
+        assert_eq!(
+            plan.select_ready(&BTreeSet::new(), &claimed, 0),
+            Err(PlanError::InvalidDependency)
+        );
     }
 
     #[test]
