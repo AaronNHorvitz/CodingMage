@@ -243,6 +243,7 @@ impl std::error::Error for ProcessError {}
 #[derive(Clone, Debug)]
 pub struct ProcessExecutor {
     guard: ExecutableIdentity,
+    guard_arguments: Vec<String>,
     control_root: PathBuf,
 }
 
@@ -253,10 +254,36 @@ impl ProcessExecutor {
     ///
     /// Returns [`ProcessError`] when guard or control-root identity and permissions are unsafe.
     pub fn new(guard: &Path, control_root: &Path) -> Result<Self, ProcessError> {
+        Self::new_with_guard_arguments(guard, Vec::new(), control_root)
+    }
+
+    /// Pins a guard binary plus an exact literal argument vector and prepares a private control
+    /// root.
+    ///
+    /// This permits a packaged application to expose its guard as a hidden subcommand without
+    /// falling back to a shell, path search, or mutable wrapper script.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProcessError`] when guard identity, arguments, or control-root permissions are
+    /// unsafe.
+    pub fn new_with_guard_arguments(
+        guard: &Path,
+        guard_arguments: Vec<String>,
+        control_root: &Path,
+    ) -> Result<Self, ProcessError> {
+        if guard_arguments.len() > MAX_ARGUMENTS
+            || guard_arguments
+                .iter()
+                .any(|argument| argument.is_empty() || argument.contains('\0'))
+        {
+            return Err(ProcessError::InvalidRequest);
+        }
         let guard = executable_identity(guard)?;
         prepare_private_directory(control_root)?;
         Ok(Self {
             guard,
+            guard_arguments,
             control_root: fs::canonicalize(control_root).map_err(|_| ProcessError::Control)?,
         })
     }
@@ -308,6 +335,7 @@ impl ProcessExecutor {
             command.process_group(0);
         }
         command
+            .args(&self.guard_arguments)
             .env_clear()
             .current_dir(&control)
             .stdin(Stdio::piped())

@@ -59,6 +59,7 @@ dependencies = [
  "codingmage-core",
  "codingmage-git",
  "codingmage-plan",
+ "codingmage-process",
  "serde_json",
  "toml",
 ]
