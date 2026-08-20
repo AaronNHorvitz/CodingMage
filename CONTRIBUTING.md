@@ -4,6 +4,18 @@ CodingMage is in a private bootstrap phase and is not accepting external contrib
 This policy records the requirements that apply to owner-authored and agent-assisted changes.
 A code of conduct will be added before external contributions are opened.
 
+## Contribution Provenance
+
+Every owner-authored, agent-assisted, and future external contribution must contain only material
+the contributor is authorized to submit and license under Apache-2.0. Contributions must not
+include employer or client source code, confidential information, credentials, proprietary
+materials, nonpublic work product, or third-party content without documented permission and
+compatible licensing. AI assistance does not transfer that responsibility away from the person
+submitting and reviewing the change.
+
+External contributions will remain closed until the project adopts an explicit contributor
+sign-off or equivalent provenance process.
+
 ## Change Workflow
 
 1. Start from a clean, current default branch.

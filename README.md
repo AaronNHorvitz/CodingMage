@@ -12,6 +12,14 @@ Instead of paying frontier-model prices for every mechanical step, or trusting a
 - **Keep long builds moving:** durable checkpoints preserve task state across context limits, quotas, crashes, and restarts.
 - **Stay in control:** deny-first permissions isolate worktrees and reserve merges, releases, credentials, and external consequences for the human owner.
 
+## Authorship, Independence, and License
+
+CodingMage was conceived, designed, and directed by **Aaron Horvitz** as an independent personal project. It was created on Aaron's own non-work time, using his personally owned hardware and personally obtained development tools and AI subscriptions. OpenAI Codex and Anthropic Claude Code assisted with research, planning, implementation, testing, and review under Aaron's direction.
+
+CodingMage was not created for, commissioned by, or developed on behalf of Aaron's employer or any client. The project is not sponsored, endorsed, approved by, or affiliated with any employer or client, and its contents and views are Aaron's own. No employer or client source code, confidential information, credentials, proprietary materials, or nonpublic work product are intended to be included in this repository.
+
+Copyright 2026 Aaron Horvitz. CodingMage is open-source software licensed under the [Apache License 2.0](LICENSE), which includes express copyright and patent grants while providing the software on an "AS IS" basis without warranties or conditions. References to third-party products, models, and companies identify interoperability or development tools only and do not imply sponsorship, endorsement, or affiliation. This provenance notice records the project's history; it does not override applicable law, contracts, or third-party license terms.
+
 ## How CodingMage Optimizes Every Model Call
 
 ```mermaid
