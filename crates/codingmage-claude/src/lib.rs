@@ -506,7 +506,7 @@ impl ClaudeAdapter {
             "--no-chrome".to_owned(),
             "--strict-mcp-config".to_owned(),
             "--mcp-config".to_owned(),
-            "{}".to_owned(),
+            r#"{"mcpServers":{}}"#.to_owned(),
             "--setting-sources".to_owned(),
             String::new(),
             "--settings".to_owned(),
@@ -1020,6 +1020,12 @@ mod tests {
                 .arguments
                 .windows(2)
                 .any(|pair| pair == ["--strict-mcp-config", "--mcp-config"])
+        );
+        assert!(
+            existing_login
+                .arguments
+                .windows(2)
+                .any(|pair| pair == ["--mcp-config", r#"{"mcpServers":{}}"#])
         );
     }
 
