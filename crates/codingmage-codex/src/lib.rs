@@ -287,6 +287,7 @@ pub struct CodexAdapter {
     model: String,
     effort: String,
     output_schema: PathBuf,
+    environment: BTreeMap<String, String>,
 }
 
 impl CodexAdapter {
@@ -317,12 +318,29 @@ impl CodexAdapter {
             model: model.to_owned(),
             effort: effort.to_owned(),
             output_schema,
+            environment: BTreeMap::new(),
         })
+    }
+
+    /// Supplies a minimal validated login-discovery environment without accepting secret values.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CodexError::InvalidProfile`] for unknown names, empty or oversized values, or
+    /// control characters.
+    pub fn with_login_environment(
+        mut self,
+        environment: BTreeMap<String, String>,
+    ) -> Result<Self, CodexError> {
+        validate_login_environment(&environment)?;
+        self.environment = environment;
+        Ok(self)
     }
 
     /// Runs version, execution-help, and resume-help probes through the bounded process runtime.
     ///
-    /// The probes use an empty environment and do not read account or authentication state.
+    /// The probes use either an empty environment or the explicitly validated login-discovery
+    /// environment and do not read account or authentication contents.
     ///
     /// # Errors
     ///
@@ -369,12 +387,16 @@ impl CodexAdapter {
         arguments: Vec<String>,
         cancellation: &CancellationToken,
     ) -> Result<ProcessResult, CodexError> {
-        let profile = ProcessProfile::new(&self.executable, [arguments.clone()], [])
-            .map_err(|_| CodexError::Process)?;
+        let profile = ProcessProfile::new(
+            &self.executable,
+            [arguments.clone()],
+            self.environment.keys().cloned(),
+        )
+        .map_err(|_| CodexError::Process)?;
         let request = ProcessRequest {
             arguments,
             working_directory,
-            environment: BTreeMap::new(),
+            environment: self.environment.clone(),
             stdin: Vec::new(),
             max_output_bytes: 1024 * 1024,
             deadline_millis: 30_000,
@@ -494,12 +516,16 @@ impl CodexAdapter {
             &binding.target_commit,
         )
         .map_err(|_| CodexError::StaleScope)?;
-        let profile = ProcessProfile::new(&self.executable, [plan.arguments.clone()], [])
-            .map_err(|_| CodexError::Process)?;
+        let profile = ProcessProfile::new(
+            &self.executable,
+            [plan.arguments.clone()],
+            self.environment.keys().cloned(),
+        )
+        .map_err(|_| CodexError::Process)?;
         let request = ProcessRequest {
             arguments: plan.arguments.clone(),
             working_directory: plan.working_directory.clone(),
-            environment: BTreeMap::new(),
+            environment: self.environment.clone(),
             stdin: plan.stdin.clone(),
             max_output_bytes: 8 * 1024 * 1024,
             deadline_millis: 60 * 60 * 1000,
@@ -754,6 +780,26 @@ fn valid_finding_id(value: &str) -> bool {
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
 }
 
+fn validate_login_environment(environment: &BTreeMap<String, String>) -> Result<(), CodexError> {
+    const ALLOWED: [&str; 4] = [
+        "HOME",
+        "XDG_RUNTIME_DIR",
+        "XDG_CONFIG_HOME",
+        "DBUS_SESSION_BUS_ADDRESS",
+    ];
+    if environment.is_empty()
+        || environment.iter().any(|(name, value)| {
+            !ALLOWED.contains(&name.as_str())
+                || value.is_empty()
+                || value.len() > 4096
+                || value.chars().any(char::is_control)
+        })
+    {
+        return Err(CodexError::InvalidProfile);
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use std::{
@@ -929,5 +975,26 @@ mod tests {
             parse_jsonl(b"not-json\n", &fixture.binding(None)),
             Err(CodexError::InvalidOutput)
         );
+    }
+
+    #[test]
+    fn login_environment_is_an_explicit_non_secret_allowlist() {
+        let fixture = Fixture::new();
+        let adapter = fixture.adapter();
+        let allowed = BTreeMap::from([
+            ("HOME".to_owned(), "/home/tester".to_owned()),
+            ("XDG_RUNTIME_DIR".to_owned(), "/run/user/1000".to_owned()),
+        ]);
+        assert!(adapter.clone().with_login_environment(allowed).is_ok());
+        assert!(
+            adapter
+                .clone()
+                .with_login_environment(BTreeMap::from([(
+                    "OPENAI_API_KEY".to_owned(),
+                    "not-a-real-secret".to_owned(),
+                )]))
+                .is_err()
+        );
+        assert!(adapter.with_login_environment(BTreeMap::new()).is_err());
     }
 }

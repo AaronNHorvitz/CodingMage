@@ -185,6 +185,7 @@ pub fn run_one(
     let selected = plan
         .select_exact(&spec.task_id)
         .map_err(|_| RuntimeError::Plan)?;
+    let login_environment = login_discovery_environment()?;
     let run_id = generated_run_id()?;
     let task_id = TaskId::new(spec.task_id.clone()).map_err(|_| RuntimeError::Spec)?;
     let run_root = config.state_root.join("runs").join(run_id.as_str());
@@ -212,6 +213,7 @@ pub fn run_one(
         executor,
         schema_path,
         run_root,
+        login_environment,
     });
     let repository_id = port.authorization.identity().repository_id.clone();
     let completion_policy = port.spec.completion_policy;
@@ -246,6 +248,7 @@ struct ProductionInputs<'a> {
     executor: ProcessExecutor,
     schema_path: PathBuf,
     run_root: PathBuf,
+    login_environment: BTreeMap<String, String>,
 }
 
 struct ProductionWorkflowPort<'a> {
@@ -260,6 +263,7 @@ struct ProductionWorkflowPort<'a> {
     executor: ProcessExecutor,
     schema_path: PathBuf,
     run_root: PathBuf,
+    login_environment: BTreeMap<String, String>,
     lock: Option<CoordinatorLock>,
     worktree: Option<OwnedWorktree>,
     implementation: Option<ClaudeCompletionReport>,
@@ -283,6 +287,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             executor: inputs.executor,
             schema_path: inputs.schema_path,
             run_root: inputs.run_root,
+            login_environment: inputs.login_environment,
             lock: None,
             worktree: None,
             implementation: None,
@@ -349,14 +354,20 @@ impl<'a> ProductionWorkflowPort<'a> {
             AuthenticationMode::Bare => ClaudeAuthentication::Bare,
             AuthenticationMode::ExistingLogin => ClaudeAuthentication::ExistingLogin,
         };
-        ClaudeAdapter::new(
+        let adapter = ClaudeAdapter::new(
             self.spec.implementer.provider.executable.clone(),
             &self.spec.implementer.provider.model,
             &self.spec.implementer.provider.effort,
             &self.spec.implementer.maximum_budget_usd,
         )
         .map(|adapter| adapter.with_authentication(authentication))
-        .map_err(|_| OrchestrationError::Port)
+        .map_err(|_| OrchestrationError::Port)?;
+        match authentication {
+            ClaudeAuthentication::Bare => Ok(adapter),
+            ClaudeAuthentication::ExistingLogin => adapter
+                .with_login_environment(self.login_environment.clone())
+                .map_err(|_| OrchestrationError::Port),
+        }
     }
 
     fn codex_adapter(&self) -> Result<CodexAdapter, OrchestrationError> {
@@ -366,6 +377,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             &self.spec.reviewer.effort,
             self.schema_path.clone(),
         )
+        .and_then(|adapter| adapter.with_login_environment(self.login_environment.clone()))
         .map_err(|_| OrchestrationError::Port)
     }
 
@@ -748,6 +760,51 @@ fn safe_relative(path: &Path) -> bool {
             .all(|part| matches!(part, std::path::Component::Normal(_)))
 }
 
+fn login_discovery_environment() -> Result<BTreeMap<String, String>, RuntimeError> {
+    const NAMES: [&str; 4] = [
+        "HOME",
+        "XDG_RUNTIME_DIR",
+        "XDG_CONFIG_HOME",
+        "DBUS_SESSION_BUS_ADDRESS",
+    ];
+    let environment = NAMES
+        .into_iter()
+        .filter_map(|name| {
+            std::env::var(name)
+                .ok()
+                .map(|value| (name.to_owned(), value))
+        })
+        .collect::<BTreeMap<_, _>>();
+    validate_login_discovery_environment(&environment)?;
+    Ok(environment)
+}
+
+fn validate_login_discovery_environment(
+    environment: &BTreeMap<String, String>,
+) -> Result<(), RuntimeError> {
+    const ALLOWED: [&str; 4] = [
+        "HOME",
+        "XDG_RUNTIME_DIR",
+        "XDG_CONFIG_HOME",
+        "DBUS_SESSION_BUS_ADDRESS",
+    ];
+    if !environment.contains_key("HOME")
+        || environment.iter().any(|(name, value)| {
+            !ALLOWED.contains(&name.as_str())
+                || value.is_empty()
+                || value.len() > 4096
+                || value.chars().any(char::is_control)
+                || matches!(
+                    name.as_str(),
+                    "HOME" | "XDG_RUNTIME_DIR" | "XDG_CONFIG_HOME"
+                ) && !Path::new(value).is_absolute()
+        })
+    {
+        return Err(RuntimeError::Authority);
+    }
+    Ok(())
+}
+
 fn canonical_file(path: &Path) -> Result<PathBuf, RuntimeError> {
     if !path.is_absolute() {
         return Err(RuntimeError::Spec);
@@ -894,6 +951,28 @@ effort = "high"
         assert_eq!(
             check_exact_line(before, 1),
             Err(OrchestrationError::PlanDrift)
+        );
+    }
+
+    #[test]
+    fn login_discovery_requires_home_and_rejects_credential_names() {
+        let allowed = BTreeMap::from([
+            ("HOME".to_owned(), "/home/tester".to_owned()),
+            (
+                "DBUS_SESSION_BUS_ADDRESS".to_owned(),
+                "unix:path=/run/user/1000/bus".to_owned(),
+            ),
+        ]);
+        assert_eq!(validate_login_discovery_environment(&allowed), Ok(()));
+        assert_eq!(
+            validate_login_discovery_environment(&BTreeMap::new()),
+            Err(RuntimeError::Authority)
+        );
+        let mut credential = allowed;
+        credential.insert("OPENAI_API_KEY".to_owned(), "not-a-real-secret".to_owned());
+        assert_eq!(
+            validate_login_discovery_environment(&credential),
+            Err(RuntimeError::Authority)
         );
     }
 }

@@ -312,6 +312,7 @@ pub struct ClaudeAdapter {
     effort: String,
     maximum_budget_usd: String,
     authentication: ClaudeAuthentication,
+    environment: BTreeMap<String, String>,
 }
 
 /// Credential-discovery boundary used by a Claude invocation.
@@ -353,6 +354,7 @@ impl ClaudeAdapter {
             effort: effort.to_owned(),
             maximum_budget_usd: maximum_budget_usd.to_owned(),
             authentication: ClaudeAuthentication::Bare,
+            environment: BTreeMap::new(),
         })
     }
 
@@ -363,10 +365,25 @@ impl ClaudeAdapter {
         self
     }
 
+    /// Supplies a minimal validated login-discovery environment without accepting secret values.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ClaudeError::InvalidProfile`] for unknown names, empty or oversized values, or
+    /// control characters.
+    pub fn with_login_environment(
+        mut self,
+        environment: BTreeMap<String, String>,
+    ) -> Result<Self, ClaudeError> {
+        validate_login_environment(&environment)?;
+        self.environment = environment;
+        Ok(self)
+    }
+
     /// Runs content-minimized version and help probes through the shared process runtime.
     ///
-    /// The probe receives an empty environment and never requests account, configuration, or
-    /// authentication state.
+    /// The probe receives either an empty environment or the explicitly validated login-discovery
+    /// environment and never requests account, configuration, or credential contents.
     ///
     /// # Errors
     ///
@@ -405,12 +422,16 @@ impl ClaudeAdapter {
         arguments: Vec<String>,
         cancellation: &CancellationToken,
     ) -> Result<ProcessResult, ClaudeError> {
-        let profile = ProcessProfile::new(&self.executable, [arguments.clone()], [])
-            .map_err(|_| ClaudeError::Process)?;
+        let profile = ProcessProfile::new(
+            &self.executable,
+            [arguments.clone()],
+            self.environment.keys().cloned(),
+        )
+        .map_err(|_| ClaudeError::Process)?;
         let request = ProcessRequest {
             arguments,
             working_directory,
-            environment: BTreeMap::new(),
+            environment: self.environment.clone(),
             stdin: Vec::new(),
             max_output_bytes: 1024 * 1024,
             deadline_millis: 30_000,
@@ -521,12 +542,16 @@ impl ClaudeAdapter {
         plan: &ClaudeInvocationPlan,
         cancellation: &CancellationToken,
     ) -> Result<(ClaudeCompletionReport, ProcessResult), ClaudeError> {
-        let profile = ProcessProfile::new(&self.executable, [plan.arguments.clone()], [])
-            .map_err(|_| ClaudeError::Process)?;
+        let profile = ProcessProfile::new(
+            &self.executable,
+            [plan.arguments.clone()],
+            self.environment.keys().cloned(),
+        )
+        .map_err(|_| ClaudeError::Process)?;
         let request = ProcessRequest {
             arguments: plan.arguments.clone(),
             working_directory: plan.working_directory.clone(),
-            environment: BTreeMap::new(),
+            environment: self.environment.clone(),
             stdin: plan.stdin.clone(),
             max_output_bytes: 4 * 1024 * 1024,
             deadline_millis: 60 * 60 * 1000,
@@ -798,6 +823,26 @@ fn valid_budget(value: &str) -> bool {
             .is_ok_and(|number| number > 0.0 && number <= 100.0)
 }
 
+fn validate_login_environment(environment: &BTreeMap<String, String>) -> Result<(), ClaudeError> {
+    const ALLOWED: [&str; 4] = [
+        "HOME",
+        "XDG_RUNTIME_DIR",
+        "XDG_CONFIG_HOME",
+        "DBUS_SESSION_BUS_ADDRESS",
+    ];
+    if environment.is_empty()
+        || environment.iter().any(|(name, value)| {
+            !ALLOWED.contains(&name.as_str())
+                || value.is_empty()
+                || value.len() > 4096
+                || value.chars().any(char::is_control)
+        })
+    {
+        return Err(ClaudeError::InvalidProfile);
+    }
+    Ok(())
+}
+
 fn sha256(bytes: &[u8]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let digest = Sha256::digest(bytes);
@@ -1055,5 +1100,29 @@ mod tests {
             missing.render(&fixture.session()),
             Err(ClaudeError::InvalidPacket)
         );
+    }
+
+    #[test]
+    fn login_environment_is_an_explicit_non_secret_allowlist() {
+        let adapter =
+            ClaudeAdapter::new(PathBuf::from("/bin/true"), "sonnet", "high", "1.00").unwrap();
+        let allowed = BTreeMap::from([
+            ("HOME".to_owned(), "/home/tester".to_owned()),
+            (
+                "DBUS_SESSION_BUS_ADDRESS".to_owned(),
+                "unix:path=/run/user/1000/bus".to_owned(),
+            ),
+        ]);
+        assert!(adapter.clone().with_login_environment(allowed).is_ok());
+        assert!(
+            adapter
+                .clone()
+                .with_login_environment(BTreeMap::from([(
+                    "ANTHROPIC_API_KEY".to_owned(),
+                    "not-a-real-secret".to_owned(),
+                )]))
+                .is_err()
+        );
+        assert!(adapter.with_login_environment(BTreeMap::new()).is_err());
     }
 }

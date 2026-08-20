@@ -228,6 +228,8 @@ codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml
 
 Operator output is structured and content-minimized. Paths, source text, changed filenames, command output, and credential values are not emitted by these commands.
 
+Existing provider logins are discovered through a four-name, non-secret environment allowlist. CodingMage does not accept raw API-key or token fields, inherit arbitrary environment variables, or persist login-discovery values.
+
 `run` never merges, pushes, opens a pull request, publishes, or modifies the active checkout. A passing unit leaves a local `codingmage/integration/...` branch containing the reviewed implementation commit and a separate mechanically verified checklist commit. See [`docs/operations/supervised-run.md`](docs/operations/supervised-run.md).
 
 ## Repository Layout
