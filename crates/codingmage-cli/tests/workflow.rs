@@ -500,6 +500,22 @@ profiles = ["configured-gates"]
     assert!(!resumed_progress.contains("claude"));
     assert!(!resumed_progress.contains("codex       reviewing"));
     assert!(!resumed_progress.contains("integration"));
+
+    let status = Fixture::command(&[
+        "campaign-status",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(status.status.success());
+    let status: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
+    assert_eq!(status["state"], "complete");
+    assert_eq!(status["actor"], "coordinator");
+    assert_eq!(status["completed_units"], 2);
+    assert_eq!(status["blocker_count"], 0);
+    assert_eq!(status["current_task_id"], serde_json::Value::Null);
+    assert_eq!(status["last_task_id"], "0.1.1.2");
 }
 
 fn git(root: &Path, arguments: &[&str]) {

@@ -186,6 +186,33 @@ impl CampaignCheckpoint {
         }
         Ok(())
     }
+
+    pub(crate) fn elapsed_ms(&self) -> Result<u64, RuntimeError> {
+        Ok(timestamp_ms()?.saturating_sub(self.started_at_ms))
+    }
+}
+
+impl CampaignPhase {
+    pub(crate) const fn label(self) -> &'static str {
+        match self {
+            Self::Ready => "ready",
+            Self::Planning => "planning",
+            Self::RunningUnit => "running_unit",
+            Self::Integrating => "integrating",
+            Self::Paused => "paused",
+            Self::Blocked => "blocked",
+            Self::Complete => "complete",
+        }
+    }
+
+    pub(crate) const fn actor(self) -> &'static str {
+        match self {
+            Self::Planning => "codex-lead",
+            Self::RunningUnit => "pod",
+            Self::Integrating => "integration",
+            Self::Ready | Self::Paused | Self::Blocked | Self::Complete => "coordinator",
+        }
+    }
 }
 
 fn timestamp_ms() -> Result<u64, RuntimeError> {

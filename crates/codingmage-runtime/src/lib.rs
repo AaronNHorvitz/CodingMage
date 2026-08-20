@@ -310,6 +310,85 @@ pub struct CampaignOutcome {
     pub blocker_code: Option<String>,
 }
 
+/// Privacy-safe durable campaign status without provider or repository content.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignStatus {
+    /// Status schema version.
+    pub schema_version: u16,
+    /// Operator-selected campaign identity.
+    pub campaign_id: String,
+    /// Stable durable lifecycle phase.
+    pub state: String,
+    /// Content-minimized actor category owning the durable phase.
+    pub actor: String,
+    /// Coordinator-owned local campaign branch.
+    pub branch: String,
+    /// Exact last reconciled campaign head.
+    pub head: String,
+    /// Current task only while a unit is active.
+    pub current_task_id: Option<String>,
+    /// Last selected task at a clean boundary.
+    pub last_task_id: Option<String>,
+    /// Number of accepted, reconciled campaign units.
+    pub completed_units: u32,
+    /// Number of durable blockers, currently zero or one.
+    pub blocker_count: u32,
+    /// Content-free durable blocker code.
+    pub blocker_code: Option<String>,
+    /// Milliseconds since the durable campaign was first created.
+    pub elapsed_ms: u64,
+    /// Last durable checkpoint timestamp.
+    pub updated_at_ms: u64,
+}
+
+/// Reads and validates the durable status for one exact campaign authority.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] for invalid authority, repository identity, or checkpoint integrity.
+pub fn campaign_status(
+    config: &Config,
+    spec: &CampaignSpec,
+    codingmage_binary: &Path,
+) -> Result<Option<CampaignStatus>, RuntimeError> {
+    spec.verify().map_err(RuntimeError::Campaign)?;
+    let authority_sha256 = spec.authority_sha256().map_err(RuntimeError::Campaign)?;
+    let binary = canonical_file(codingmage_binary)?;
+    let source_root = binary.parent().ok_or(RuntimeError::Authority)?;
+    let authorization = RepositoryAuthorization::authorize(config, source_root)
+        .map_err(|_| RuntimeError::Authority)?;
+    if authorization.identity().repository_id.as_str() != spec.repository_id {
+        return Err(RuntimeError::Authority);
+    }
+    let root = config.state_root.join("campaigns").join(&spec.campaign_id);
+    let Some(checkpoint) = CampaignCheckpoint::load(&root)? else {
+        return Ok(None);
+    };
+    checkpoint.validate_authority(
+        &authority_sha256,
+        &spec.campaign_id,
+        &spec.repository_id,
+        &spec.initial_commit,
+    )?;
+    let elapsed_ms = checkpoint.elapsed_ms()?;
+    Ok(Some(CampaignStatus {
+        schema_version: 1,
+        campaign_id: checkpoint.campaign_id,
+        state: checkpoint.phase.label().to_owned(),
+        actor: checkpoint.phase.actor().to_owned(),
+        branch: checkpoint.branch,
+        head: checkpoint.head,
+        current_task_id: checkpoint.active_unit.map(|unit| unit.task_id),
+        last_task_id: checkpoint.last_task_id,
+        completed_units: checkpoint.completed_units,
+        blocker_count: u32::from(checkpoint.blocker_code.is_some()),
+        blocker_code: checkpoint.blocker_code,
+        elapsed_ms,
+        updated_at_ms: checkpoint.updated_at_ms,
+    }))
+}
+
 /// Runs a bounded serial campaign from one isolated evolving head.
 ///
 /// The current rollout deliberately admits one pod at a time even when the campaign ceiling is
