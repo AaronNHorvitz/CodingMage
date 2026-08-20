@@ -889,6 +889,191 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ---
 
+## Sprint 20 - Production Correction Loop
+
+**Sprint goal:** Make one live coding pod correct ordinary gate and review failures without operator intervention while preserving bounded authority.
+
+### Story 20.1 - Gate and Review Correction
+
+- [ ] **Task 20.1.1 - Return deterministic gate failures to the implementer**
+  - [x] **Sub-task 20.1.1.1:** Retain bounded failed-gate stdout and stderr ephemerally while keeping durable evidence content-minimized.
+  - [x] **Sub-task 20.1.1.2:** Convert recoverable local and final gate failures into correction transitions.
+  - [x] **Sub-task 20.1.1.3:** Commit every correction as a child of the exact failed candidate and revalidate packet-owned paths.
+  - [x] **Sub-task 20.1.1.4:** Rerun deterministic gates before spending reviewer tokens.
+- [ ] **Task 20.1.2 - Complete independent review correction**
+  - [x] **Sub-task 20.1.2.1:** Map `changes_required` to correction instead of blocker state.
+  - [x] **Sub-task 20.1.2.2:** Send only structured findings, evidence, requested corrections, and acceptance tests to the implementer.
+  - [x] **Sub-task 20.1.2.3:** Review the complete cumulative task diff after every correction.
+  - [ ] **Sub-task 20.1.2.4:** Add a process-backed fixture in which Codex requests a correction, Claude corrects it, and a fresh Codex review passes.
+- [ ] **Task 20.1.3 - Close bounded-loop behavior**
+  - [x] **Sub-task 20.1.3.1:** Apply one shared configurable correction limit across gate and review failures.
+  - [x] **Sub-task 20.1.3.2:** End in a truthful recoverable state when the limit is exhausted.
+  - [ ] **Sub-task 20.1.3.3:** Retain correction-round identities and outcomes in checkpoint and status surfaces.
+  - [ ] **Sub-task 20.1.3.4:** Reobserve and resume an interrupted correction without replaying a provider or Git effect.
+
+**Story acceptance criteria**
+
+- [ ] **AC 20.1:** Given a compile failure followed by a valid correction, when the pod runs unattended, then the corrected child commit passes gates and receives independent review without operator action.
+- [ ] **AC 20.2:** Given repeated gate or review failure, when the configured correction limit is reached, then no additional provider call starts and the exact candidate remains recoverable.
+
+### Sprint 20 Gate
+
+- [ ] **Gate 20.1:** Gate-failure, review-finding, correction-limit, malformed-diagnostic, interruption, and cumulative-review fixtures pass.
+- [ ] **Gate 20.2:** One authorized live correction unit passes without manual repair or broadened authority.
+
+---
+
+## Sprint 21 - Campaign Authority and Team-Lead Planning
+
+**Sprint goal:** Authorize one bounded roadmap campaign and convert dependency-ready work into deterministic pod proposals.
+
+### Story 21.1 - Campaign Specification
+
+- [ ] **Task 21.1.1 - Define campaign authority**
+  - [ ] **Sub-task 21.1.1.1:** Add a versioned campaign specification with campaign identity, allowed and denied roots, pod ceiling, unit ceiling, budget ceiling, provider profiles, gate tiers, and publication ceiling.
+  - [ ] **Sub-task 21.1.1.2:** Reject linked files, relative authority roots, overlapping allowed/denied roots, unbounded concurrency, raw credentials, and protected-branch targets.
+  - [ ] **Sub-task 21.1.1.3:** Bind every campaign to repository identity, initial commit, task-source digest, and operator authorization digest.
+  - [ ] **Sub-task 21.1.1.4:** Make one-pod serial execution the default regardless of available hardware.
+- [ ] **Task 21.1.2 - Build the read-only campaign lead**
+  - [ ] **Sub-task 21.1.2.1:** Define a strict team-lead proposal schema for task identity, exact paths, dependencies, risk, gates, expected artifacts, and rationale summary.
+  - [ ] **Sub-task 21.1.2.2:** Give the lead read-only repository and task-plan access with no Git, write, credential, publication, or state-transition authority.
+  - [ ] **Sub-task 21.1.2.3:** Deterministically reject stale, non-ready, escaping, overbroad, contradictory, duplicate, or undeclared proposals.
+  - [ ] **Sub-task 21.1.2.4:** Route ambiguous architecture or authority decisions to a recorded human-decision blocker.
+
+**Story acceptance criteria**
+
+- [ ] **AC 21.1:** Given hostile roadmap and repository text, when the campaign lead proposes work, then only dependency-ready tasks inside preapproved authority can become pod leases.
+- [ ] **AC 21.2:** Given a stale campaign head or task-source digest, when a proposal is admitted, then no worktree or provider starts.
+
+### Sprint 21 Gate
+
+- [ ] **Gate 21.1:** Campaign-spec mutation, hostile-proposal, stale-source, authority-escape, and deterministic-repeatability corpora pass.
+
+---
+
+## Sprint 22 - Durable Serial Campaign Progression
+
+**Sprint goal:** Advance multiple reviewed tasks from one evolving campaign head without touching the user's active checkout.
+
+### Story 22.1 - Campaign Head and Queue
+
+- [ ] **Task 22.1.1 - Execute dependency-ordered units**
+  - [ ] **Sub-task 22.1.1.1:** Add a `codingmage campaign` command that acquires one campaign lease and loads one campaign specification.
+  - [ ] **Sub-task 22.1.1.2:** Reparse the task source from the exact campaign head after every accepted unit.
+  - [ ] **Sub-task 22.1.1.3:** Select the next ready unit while preserving precise blockers and completed evidence.
+  - [ ] **Sub-task 22.1.1.4:** Use each accepted completion commit as the exact base of the next unit.
+  - [ ] **Sub-task 22.1.1.5:** Stop only on completion, operator cancellation, capacity pause, exhausted budget, no independently safe ready work, or terminal policy failure.
+- [ ] **Task 22.1.2 - Persist campaign recovery**
+  - [ ] **Sub-task 22.1.2.1:** Journal campaign head, queue, active pod, attempts, corrections, blockers, budgets, and completion evidence.
+  - [ ] **Sub-task 22.1.2.2:** Resume from the last reconciled campaign head after restart without replaying accepted commits.
+  - [ ] **Sub-task 22.1.2.3:** Pause on provider quota or authentication expiration and resume after revalidation.
+  - [ ] **Sub-task 22.1.2.4:** Expose privacy-safe campaign status, current task, actor, round, completed count, blocker count, and elapsed time.
+
+**Story acceptance criteria**
+
+- [ ] **AC 22.1:** Given a disposable five-unit dependency graph with recoverable failures and one external blocker, when campaign mode runs, then all independently safe units complete in dependency order and the blocker remains truthful.
+- [ ] **AC 22.2:** Given interruption after every durable intent, when campaign mode restarts, then it resumes or reobserves without duplicate provider, commit, or completion effects.
+
+### Sprint 22 Gate
+
+- [ ] **Gate 22.1:** Multi-unit, evolving-head, blocker-skip, quota-pause, cancellation, crash-recovery, and active-checkout preservation campaigns pass.
+
+---
+
+## Sprint 23 - Bounded Parallel Coding Pods
+
+**Sprint goal:** Run dependency-independent pods concurrently without overlapping repository or verification authority.
+
+### Story 23.1 - Pod Leases and Scheduling
+
+- [ ] **Task 23.1.1 - Replace the coarse repository lock**
+  - [ ] **Sub-task 23.1.1.1:** Retain one campaign lease while issuing exact task, worktree, path, process, model, and resource leases per pod.
+  - [ ] **Sub-task 23.1.1.2:** Serialize Git metadata mutations through a coordinator-owned queue.
+  - [ ] **Sub-task 23.1.1.3:** Reject equal, ancestor, descendant, rename-source, generated-artifact, and shared-contract path conflicts.
+  - [ ] **Sub-task 23.1.1.4:** Release leases exactly on pass, block, failure, cancellation, crash recovery, and integration refusal.
+- [ ] **Task 23.1.2 - Schedule bounded parallel work**
+  - [ ] **Sub-task 23.1.2.1:** Compute a stable ready set and deterministic priority order.
+  - [ ] **Sub-task 23.1.2.2:** Admit at most the configured pod count after CPU, memory, process, provider, budget, path, and gate-resource checks.
+  - [ ] **Sub-task 23.1.2.3:** Prevent shared provider quotas from creating retry storms.
+  - [ ] **Sub-task 23.1.2.4:** Begin rollout at one pod, then require evidence before enabling two, three, or four.
+
+**Story acceptance criteria**
+
+- [ ] **AC 23.1:** Given disjoint and overlapping task proposals in every completion order, when pods are scheduled, then only disjoint authority runs concurrently and the resulting lease order is reproducible.
+- [ ] **AC 23.2:** Given one failed or stalled pod, when other pods are independent, then they continue without adopting its paths, processes, state, or findings.
+
+### Sprint 23 Gate
+
+- [ ] **Gate 23.1:** Path-collision, rename, shared-schema, generated-file, resource-contention, quota, cancellation, and completion-order permutation campaigns pass.
+
+---
+
+## Sprint 24 - Integration Lead and Story Pull Requests
+
+**Sprint goal:** Compose accepted pod commits deterministically and publish coherent story-level review surfaces without granting models merge authority.
+
+### Story 24.1 - Deterministic Integration
+
+- [ ] **Task 24.1.1 - Preview and apply accepted pod work**
+  - [ ] **Sub-task 24.1.1.1:** Bind each pod candidate to original campaign base, latest reviewed head, path lease, gates, review, and correction history.
+  - [ ] **Sub-task 24.1.1.2:** Produce a complete integration preview before any campaign-head mutation.
+  - [ ] **Sub-task 24.1.1.3:** Apply only exact fast-forward or deterministic patch-transfer operations with compare-and-swap campaign-head updates.
+  - [ ] **Sub-task 24.1.1.4:** Run affected and batch-level gates after composition and return bounded integration findings to the owning pods.
+  - [ ] **Sub-task 24.1.1.5:** Preserve accepted but not integrated commits when conflict or stale-head checks refuse.
+- [ ] **Task 24.1.2 - Enforce independent integration review**
+  - [ ] **Sub-task 24.1.2.1:** Give the integration lead the complete cumulative batch diff and pod evidence read-only.
+  - [ ] **Sub-task 24.1.2.2:** Prevent any pod implementer or reviewer from solely approving its own integration effect.
+  - [ ] **Sub-task 24.1.2.3:** Require stronger review profiles for shared contracts, security boundaries, and architecture changes.
+
+### Story 24.2 - GitHub Visibility
+
+- [ ] **Task 24.2.1 - Publish coherent story branches and draft PRs**
+  - [ ] **Sub-task 24.2.1.1:** Push only exact verified story or campaign branches after explicit capability checks.
+  - [ ] **Sub-task 24.2.1.2:** Create or update one draft PR per story or configured integration batch.
+  - [ ] **Sub-task 24.2.1.3:** Preserve human PR text and label automated findings without impersonating approval.
+  - [ ] **Sub-task 24.2.1.4:** Keep local task state canonical when GitHub is unavailable, delayed, or edited concurrently.
+  - [ ] **Sub-task 24.2.1.5:** Omit protected/default-branch merge, release, branch deletion, settings, secrets, and Actions-administration operations.
+
+**Story acceptance criteria**
+
+- [ ] **AC 24.1:** Given accepted pods in every completion order, when integration runs, then one deterministic campaign head results or the exact conflict is preserved without partial mutation.
+- [ ] **AC 24.2:** Given enabled GitHub publication, when a story batch passes, then one idempotent draft PR reflects exact local evidence and no model can merge it.
+
+### Sprint 24 Gate
+
+- [ ] **Gate 24.1:** Integration-order, stale-head, semantic-conflict, batch-gate, rollback, timeout-reconciliation, and draft-PR idempotency fixtures pass.
+
+---
+
+## Sprint 25 - Unattended Campaign Hardening
+
+**Sprint goal:** Establish evidence for cautiously increasing campaign duration and pod concurrency.
+
+### Story 25.1 - Adversarial and Soak Evidence
+
+- [ ] **Task 25.1.1 - Expand fault campaigns**
+  - [ ] **Sub-task 25.1.1.1:** Inject malformed lead plans, provider output, reviews, diagnostics, Git state, task-source changes, and checkpoint records.
+  - [ ] **Sub-task 25.1.1.2:** Interrupt every provider, gate, commit, integration, publication, and cleanup intent.
+  - [ ] **Sub-task 25.1.1.3:** Exercise sleep, restart, logout, quota exhaustion, authentication expiration, network loss, disk pressure, and process loss.
+  - [ ] **Sub-task 25.1.1.4:** Prove bounded storage, output, process, retry, token, and cost growth.
+- [ ] **Task 25.1.2 - Stage unattended rollout**
+  - [ ] **Sub-task 25.1.2.1:** Pass accelerated deterministic campaigns with one through four pods.
+  - [ ] **Sub-task 25.1.2.2:** Pass a sustained disposable one-pod campaign after the last reliability correction.
+  - [ ] **Sub-task 25.1.2.3:** Pass a sustained disposable multi-pod campaign after the last concurrency correction.
+  - [ ] **Sub-task 25.1.2.4:** Require product-owner approval before pointing unattended campaign mode at a valuable repository.
+
+**Story acceptance criteria**
+
+- [ ] **AC 25.1:** Given the complete fault corpus and sustained disposable campaign, when evidence is reconciled, then every effect is exact, recoverable, or truthfully blocked with no uncontrolled residue.
+- [ ] **AC 25.2:** Given provider and machine capacity changes, when concurrency adapts, then required model strength and verification depth never silently decrease.
+
+### Sprint 25 Gate
+
+- [ ] **Gate 25.1:** Deterministic adversarial campaigns pass after the final correction.
+- [ ] **Gate 25.2:** Sustained one-pod and multi-pod soak evidence passes before unattended valuable-target use.
+
+---
+
 ## External and Deferred Evidence Register
 
 These items must remain open until their prerequisites actually exist:
@@ -905,4 +1090,4 @@ These items must remain open until their prerequisites actually exist:
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Implement the concrete production `WorkflowPort` composition behind `codingmage run`, including durable intent, owned worktree, file-only Claude candidate, coordinator gates and commit, immutable Codex review, checkpoint, cleanup, and fail-closed recovery. The supervised composition and complete fake-provider binary fixture now pass locally; repeat senior review after correction, concrete restart re-observation/resume, background run-spec queue binding, and one explicitly authorized disposable live task remain open. See `docs/operations/supervised-run.md`.
+- [ ] **Next 1:** Complete sub-task `20.1.2.4`, then retain correction-round checkpoint/status identity under `20.1.3.3`. After Sprint 20 closes, implement the campaign authority and team-lead proposal contracts in Sprint 21 before adding serial campaign progression or parallel pods.

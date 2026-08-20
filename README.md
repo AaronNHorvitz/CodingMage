@@ -1,6 +1,6 @@
 # CodingMage
 
-CodingMage is a local coding-agent coordinator designed to deliver better verified results per token. It routes each bounded task according to complexity and risk, uses efficient models for routine implementation, escalates demanding work to stronger profiles, and gives the resulting commit to an independent senior-review model. Deterministic local checks remain the final authority for tests, formatting, schemas, and repository state.
+CodingMage is a local multi-agent engineering coordinator designed to move through large development roadmaps with better verified results per token. It assigns bounded tasks to isolated coding pods, routes work according to complexity and risk, and gives every candidate to deterministic checks and an independent senior-review model before integration.
 
 Instead of paying frontier-model prices for every mechanical step, or trusting a cheaper model with every architectural decision, CodingMage combines both where they are strongest:
 
@@ -69,7 +69,7 @@ flowchart TD
 The router does not let a model choose its own authority or quietly downgrade a required gate. Task class, risk, failure history, review disagreement, configured policy, and operator overrides determine the profile; CodingMage records the decision and the resolved model identity when the provider exposes it.
 
 > [!IMPORTANT]
-> CodingMage is under active implementation. Its supervised one-unit `run` path now composes an isolated worktree, file-only Claude candidate, coordinator-owned commit, deterministic gates, immutable Codex review, exact checklist reconciliation, durable checkpoint, and verified cleanup. That complete path passes with fake provider executables. Live authenticated provider evidence, automatic correction, authenticated GitHub evidence, sustained soak evidence, native macOS/Windows evidence, and unattended release gates remain open.
+> CodingMage is under active implementation. Its supervised one-unit `run` path now composes an isolated worktree, file-only Claude candidate, coordinator-owned commit, bounded gate and review corrections, deterministic verification, immutable Codex review, exact checklist reconciliation, durable checkpoint, and verified cleanup. The hierarchical campaign and parallel-pod scheduler described below remains under implementation. Authenticated GitHub evidence, sustained soak evidence, native macOS/Windows evidence, and unattended release gates remain open.
 
 ## Why CodingMage Exists
 
@@ -99,6 +99,11 @@ CodingMage is not intended to replace human product ownership. Scope changes, de
 | Implementation agent | Claude Code | Edits only packet-owned files and returns a structured candidate or truthful blocker. |
 | Senior review agent | Codex | Reviews exact commits, validates claims and architecture, identifies defects, and verifies corrections. |
 | Deterministic verifier | Local tools | Runs formatting, linting, tests, schemas, traceability, and repository checks without model judgment. |
+
+The planned campaign mode adds a read-only campaign lead, multiple bounded implementation/review
+pods, and one deterministic integration lead. See
+[`Hierarchical Campaign Architecture`](docs/architecture/hierarchical-campaigns.md) and
+[`Decision 0007`](docs/decisions/0007-hierarchical-campaign-pods.md).
 
 The role names describe authority within the workflow, not a permanent judgment about either model. Agent providers and models will be configurable behind typed adapter contracts.
 
@@ -212,8 +217,9 @@ The initial Git workflow is intentionally conservative:
 6. Give Codex read-only access to the exact commit and relevant comparison base.
 7. Apply corrections only through the implementation worktree.
 8. Run final deterministic gates and senior verification.
-9. Push only the configured feature branch.
-10. Leave merge, release, and protected-branch decisions to the product owner unless a future explicitly approved policy says otherwise.
+9. Promote accepted pod commits only through the deterministic integration lead.
+10. Push only the configured story or campaign branch and create a draft PR when policy permits.
+11. Keep protected/default-branch promotion and release under a separate explicit policy.
 
 GitHub issues and pull requests are workflow views, not the canonical source of authority. The local task plan and CodingMage state remain canonical. The proposed default is one issue and one draft pull request per coherent story, with sub-tasks represented as checkboxes rather than thousands of tiny pull requests.
 
