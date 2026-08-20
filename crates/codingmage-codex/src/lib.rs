@@ -818,6 +818,8 @@ pub enum CodexError {
     Provider,
     /// Provider reported quota or rate limiting.
     Quota,
+    /// Provider authentication is unavailable or expired.
+    Authentication,
     /// Invocation timed out.
     Timeout,
     /// Invocation was cancelled.
@@ -842,6 +844,7 @@ impl CodexError {
             Self::Process => "codingmage.provider.codex.process",
             Self::Provider => "codingmage.provider.codex.failed",
             Self::Quota => "codingmage.provider.codex.quota",
+            Self::Authentication => "codingmage.provider.codex.authentication",
             Self::Timeout => "codingmage.provider.codex.timeout",
             Self::Cancelled => "codingmage.provider.codex.cancelled",
             Self::Thread => "codingmage.provider.codex.thread",
@@ -861,6 +864,7 @@ impl From<CodexError> for AdapterError {
     fn from(error: CodexError) -> Self {
         match error {
             CodexError::Quota => Self::Quota,
+            CodexError::Authentication => Self::Authentication,
             CodexError::Timeout => Self::Timeout,
             CodexError::Cancelled => Self::Cancelled,
             CodexError::InvalidOutput | CodexError::InvalidReport | CodexError::StaleScope => {
@@ -989,7 +993,7 @@ fn parse_jsonl(bytes: &[u8], binding: &CodexReviewBinding) -> Result<CodexResult
                 }
             }
             Some("turn.completed" | "turn.started" | "item.started") => {}
-            Some("error" | "turn.failed") => return Err(CodexError::Provider),
+            Some("error" | "turn.failed") => return Err(classify_codex_error_event(&event)),
             _ => return Err(CodexError::InvalidOutput),
         }
     }
@@ -1039,7 +1043,7 @@ fn parse_lead_jsonl(
                 }
             }
             Some("turn.completed" | "turn.started" | "item.started") => {}
-            Some("error" | "turn.failed") => return Err(CodexError::Provider),
+            Some("error" | "turn.failed") => return Err(classify_codex_error_event(&event)),
             _ => return Err(CodexError::InvalidOutput),
         }
     }
@@ -1076,6 +1080,8 @@ fn map_process_outcome(result: &ProcessResult) -> Result<(), CodexError> {
             let stderr = String::from_utf8_lossy(&result.stderr.retained).to_ascii_lowercase();
             if stderr.contains("rate limit") || stderr.contains("quota") {
                 Err(CodexError::Quota)
+            } else if authentication_failure(&stderr) {
+                Err(CodexError::Authentication)
             } else if stderr.contains("thread") && stderr.contains("not found") {
                 Err(CodexError::Thread)
             } else {
@@ -1084,6 +1090,24 @@ fn map_process_outcome(result: &ProcessResult) -> Result<(), CodexError> {
         }
         ProcessOutcome::ParentLost | ProcessOutcome::RuntimeFailure => Err(CodexError::Provider),
     }
+}
+
+fn classify_codex_error_event(event: &serde_json::Value) -> CodexError {
+    let diagnostic = event.to_string().to_ascii_lowercase();
+    if diagnostic.contains("rate limit") || diagnostic.contains("quota") {
+        CodexError::Quota
+    } else if authentication_failure(&diagnostic) {
+        CodexError::Authentication
+    } else {
+        CodexError::Provider
+    }
+}
+
+fn authentication_failure(diagnostic: &str) -> bool {
+    diagnostic.contains("authentication")
+        || diagnostic.contains("unauthorized")
+        || diagnostic.contains("not logged in")
+        || diagnostic.contains("login required")
 }
 
 fn safe_relative(path: &Path) -> bool {
@@ -1361,6 +1385,25 @@ mod tests {
         assert_eq!(
             parse_jsonl(b"not-json\n", &fixture.binding(None)),
             Err(CodexError::InvalidOutput)
+        );
+        let authentication = serde_json::json!({
+            "type": "turn.failed",
+            "error": {"message": "authentication expired"}
+        });
+        assert_eq!(
+            parse_jsonl(
+                format!("{authentication}\n").as_bytes(),
+                &fixture.binding(None)
+            ),
+            Err(CodexError::Authentication)
+        );
+        let quota = serde_json::json!({
+            "type": "error",
+            "message": "quota exhausted"
+        });
+        assert_eq!(
+            parse_jsonl(format!("{quota}\n").as_bytes(), &fixture.binding(None)),
+            Err(CodexError::Quota)
         );
     }
 

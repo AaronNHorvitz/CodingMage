@@ -591,6 +591,8 @@ pub enum ClaudeError {
     Provider,
     /// Provider reported quota or rate limit.
     Quota,
+    /// Provider authentication is unavailable or expired.
+    Authentication,
     /// Provider reported that its usable context was exhausted.
     ContextExhausted,
     /// Invocation timed out.
@@ -616,6 +618,7 @@ impl ClaudeError {
             Self::Process => "codingmage.provider.claude.process",
             Self::Provider => "codingmage.provider.claude.failed",
             Self::Quota => "codingmage.provider.claude.quota",
+            Self::Authentication => "codingmage.provider.claude.authentication",
             Self::ContextExhausted => "codingmage.provider.claude.context_exhausted",
             Self::Timeout => "codingmage.provider.claude.timeout",
             Self::Cancelled => "codingmage.provider.claude.cancelled",
@@ -636,6 +639,7 @@ impl From<ClaudeError> for AdapterError {
     fn from(error: ClaudeError) -> Self {
         match error {
             ClaudeError::Quota => Self::Quota,
+            ClaudeError::Authentication => Self::Authentication,
             ClaudeError::ContextExhausted => Self::Exhausted,
             ClaudeError::Timeout => Self::Timeout,
             ClaudeError::Cancelled => Self::Cancelled,
@@ -693,6 +697,11 @@ fn map_process_outcome(result: &ProcessResult) -> Result<(), ClaudeError> {
 fn classify_provider_error(subtype: &str) -> ClaudeError {
     if subtype.contains("rate") || subtype.contains("quota") {
         ClaudeError::Quota
+    } else if subtype.contains("auth")
+        || subtype.contains("unauthorized")
+        || subtype.contains("login")
+    {
+        ClaudeError::Authentication
     } else if subtype.contains("context") || subtype.contains("max_turn") {
         ClaudeError::ContextExhausted
     } else if subtype.contains("session") || subtype.contains("resume") {
@@ -1080,6 +1089,13 @@ mod tests {
         assert_eq!(
             parse_result(quota.to_string().as_bytes()),
             Err(ClaudeError::Quota)
+        );
+        let authentication = serde_json::json!({
+            "type": "result", "is_error": true, "subtype": "authentication_expired"
+        });
+        assert_eq!(
+            parse_result(authentication.to_string().as_bytes()),
+            Err(ClaudeError::Authentication)
         );
         let context =
             serde_json::json!({"type": "result", "is_error": true, "subtype": "context_exhausted"});

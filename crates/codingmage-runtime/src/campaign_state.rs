@@ -223,8 +223,8 @@ fn timestamp_ms() -> Result<u64, RuntimeError> {
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {
-    let digest = Sha256::digest(bytes);
     const HEX: &[u8; 16] = b"0123456789abcdef";
+    let digest = Sha256::digest(bytes);
     let mut encoded = String::with_capacity(64);
     for byte in digest {
         encoded.push(char::from(HEX[usize::from(byte >> 4)]));

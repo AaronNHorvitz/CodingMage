@@ -589,14 +589,30 @@ pub fn run_serial_campaign_with_progress(
             ProgressStage::PlanningCampaign,
         ));
         let invocation = lead.plan(&binding).map_err(RuntimeError::Reviewer)?;
-        let (lead_result, _) = lead
-            .execute(
-                &executor,
-                &invocation,
-                &binding,
-                &CancellationToken::default(),
-            )
-            .map_err(RuntimeError::Reviewer)?;
+        let (lead_result, _) = match lead.execute(
+            &executor,
+            &invocation,
+            &binding,
+            &CancellationToken::default(),
+        ) {
+            Ok(value) => value,
+            Err(error @ (CodexError::Quota | CodexError::Authentication)) => {
+                let blocker_code = error.code().to_owned();
+                checkpoint.phase = CampaignPhase::Paused;
+                checkpoint.blocker_code = Some(blocker_code.clone());
+                checkpoint.persist(&campaign_root)?;
+                return Ok(campaign_outcome(
+                    &spec,
+                    CampaignState::Paused,
+                    &campaign,
+                    head,
+                    completed_units,
+                    last_task_id,
+                    Some(blocker_code),
+                ));
+            }
+            Err(error) => return Err(RuntimeError::Reviewer(error)),
+        };
         let outcome = validate_team_lead_report(lead_result.report, &spec, &ready)
             .map_err(RuntimeError::Campaign)?;
         let proposals = match outcome {
@@ -667,7 +683,27 @@ pub fn run_serial_campaign_with_progress(
             },
             reviewer: provider_spec(&spec.reviewer),
         };
-        let unit = run_one_with_progress(&pod_config, unit_spec, &binary, &mut observer)?;
+        let unit = match run_one_with_progress(&pod_config, unit_spec, &binary, &mut observer) {
+            Ok(unit) => unit,
+            Err(error) if provider_pause_code(error).is_some() => {
+                let blocker_code = provider_pause_code(error)
+                    .ok_or(RuntimeError::Orchestration)?
+                    .to_owned();
+                checkpoint.phase = CampaignPhase::Paused;
+                checkpoint.blocker_code = Some(blocker_code.clone());
+                checkpoint.persist(&campaign_root)?;
+                return Ok(campaign_outcome(
+                    &spec,
+                    CampaignState::Paused,
+                    &campaign,
+                    head,
+                    completed_units,
+                    last_task_id,
+                    Some(blocker_code),
+                ));
+            }
+            Err(error) => return Err(error),
+        };
         if unit.state != TaskState::Complete || unit.review_verdict.as_deref() != Some("pass") {
             return Err(RuntimeError::Orchestration);
         }
@@ -706,6 +742,18 @@ pub fn run_serial_campaign_with_progress(
         scheduler
             .release(&lease.pod_id)
             .map_err(RuntimeError::Campaign)?;
+    }
+}
+
+const fn provider_pause_code(error: RuntimeError) -> Option<&'static str> {
+    match error {
+        RuntimeError::Implementer(ClaudeError::Quota)
+        | RuntimeError::Reviewer(CodexError::Quota) => Some("codingmage.campaign.provider_quota"),
+        RuntimeError::Implementer(ClaudeError::Authentication)
+        | RuntimeError::Reviewer(CodexError::Authentication) => {
+            Some("codingmage.campaign.provider_authentication")
+        }
+        _ => None,
     }
 }
 
@@ -1963,5 +2011,18 @@ effort = "high"
             validate_login_discovery_environment(&wrong_path),
             Err(RuntimeError::Authority)
         );
+    }
+
+    #[test]
+    fn provider_capacity_failures_have_only_explicit_pause_codes() {
+        assert_eq!(
+            provider_pause_code(RuntimeError::Implementer(ClaudeError::Quota)),
+            Some("codingmage.campaign.provider_quota")
+        );
+        assert_eq!(
+            provider_pause_code(RuntimeError::Reviewer(CodexError::Authentication)),
+            Some("codingmage.campaign.provider_authentication")
+        );
+        assert_eq!(provider_pause_code(RuntimeError::Verification), None);
     }
 }

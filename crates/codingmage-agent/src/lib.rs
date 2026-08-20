@@ -214,6 +214,8 @@ pub enum AdapterError {
     Provider,
     /// Provider quota or rate limit.
     Quota,
+    /// Provider authentication is unavailable or expired.
+    Authentication,
     /// Exact operation was cancelled.
     Cancelled,
     /// Adapter invocation timed out.
@@ -229,6 +231,7 @@ impl fmt::Display for AdapterError {
             Self::InvalidOutput => "codingmage.provider.invalid_output",
             Self::Provider => "codingmage.provider.failed",
             Self::Quota => "codingmage.provider.quota",
+            Self::Authentication => "codingmage.provider.authentication",
             Self::Cancelled => "codingmage.provider.cancelled",
             Self::Timeout => "codingmage.provider.timeout",
             Self::Exhausted => "codingmage.provider.fixture_exhausted",
