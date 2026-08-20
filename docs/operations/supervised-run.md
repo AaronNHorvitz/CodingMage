@@ -62,8 +62,8 @@ The terminal JSON identifies the run, task, terminal state, retained branch, can
 
 ## Current Limits
 
-- Live authenticated Claude and Codex execution has not yet been admitted as evidence.
-- `bare` Claude authentication has no production credential-helper composition yet; use of `existing_login` is explicit and still requires live verification.
+- One live existing-login Claude implementation and exact-SHA Codex review are admitted as supervised local evidence; the five-unit and unattended campaigns remain open.
+- `bare` Claude authentication has no production credential-helper composition yet.
 - Automatic correction and repeat senior review are not implemented.
 - The background service generator does not yet bind a run-spec queue to `codingmage run`.
 - No branch is pushed or merged automatically.
