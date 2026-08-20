@@ -117,6 +117,9 @@ fn required_failure_cancels_other_live_gate_and_blocks() {
         .unwrap();
     assert!(run.blocked);
     assert_eq!(run.evidence[0].outcome, GateOutcome::Failed);
+    assert_eq!(run.diagnostics.len(), 2);
+    assert_eq!(run.diagnostics[0].gate_id, "required");
+    assert!(!run.diagnostics[0].truncated);
     assert_eq!(
         run.evidence[1].process.as_ref().unwrap().process_outcome,
         "cancelled"

@@ -17,6 +17,7 @@ use sha2::{Digest, Sha256};
 
 const MAX_GATES: usize = 256;
 const MAX_ASSERTIONS: usize = 32;
+const MAX_DIAGNOSTIC_BYTES: usize = 64 * 1024;
 
 /// Deterministic verification depth.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
@@ -324,8 +325,28 @@ impl GateEvidence {
 pub struct GateRun {
     /// Evidence in registry order.
     pub evidence: Vec<GateEvidence>,
+    /// Ephemeral bounded output for failed gates, never part of durable evidence.
+    pub diagnostics: Vec<GateDiagnostic>,
     /// Whether any required gate failed or was unavailable.
     pub blocked: bool,
+}
+
+/// Bounded gate output returned only to the active correction loop.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GateDiagnostic {
+    /// Stable gate identity.
+    pub gate_id: String,
+    /// Retained standard output, bounded independently from process evidence.
+    pub stdout: String,
+    /// Retained standard error, bounded independently from process evidence.
+    pub stderr: String,
+    /// Whether either source stream exceeded the diagnostic bound.
+    pub truncated: bool,
+}
+
+struct GateExecution {
+    evidence: GateEvidence,
+    diagnostic: Option<GateDiagnostic>,
 }
 
 /// Bounded gate-progress phase.
@@ -446,6 +467,7 @@ impl GateRunner {
         }
 
         let mut completed = immediate;
+        let mut diagnostics = BTreeMap::new();
         for batch in conflict_free_batches(indexed) {
             if completed.values().any(blocking_evidence) {
                 for (index, definition) in batch {
@@ -473,16 +495,22 @@ impl GateRunner {
                     scope.spawn(move || {
                         let evidence =
                             execute_gate(&executor, &definition, &source_commit, &cancellation);
-                        let blocking = evidence.as_ref().is_ok_and(blocking_evidence);
+                        let blocking = evidence
+                            .as_ref()
+                            .is_ok_and(|execution| blocking_evidence(&execution.evidence));
                         let _ = sender.send((index, evidence, blocking));
                     });
                 }
                 drop(sender);
-                for (index, evidence, blocking) in receiver {
+                for (index, execution, blocking) in receiver {
                     if blocking {
                         cancellation.cancel();
                     }
-                    let evidence = evidence?;
+                    let execution = execution?;
+                    let evidence = execution.evidence;
+                    if let Some(diagnostic) = execution.diagnostic {
+                        diagnostics.insert(index, diagnostic);
+                    }
                     observe(&GateProgress {
                         sequence: progress_sequence,
                         gate_id: evidence.gate_id.clone(),
@@ -499,7 +527,12 @@ impl GateRunner {
         evidence.sort_by_key(|(index, _)| *index);
         let evidence: Vec<GateEvidence> = evidence.into_iter().map(|(_, item)| item).collect();
         let blocked = evidence.iter().any(blocking_evidence);
-        Ok(GateRun { evidence, blocked })
+        let diagnostics = diagnostics.into_values().collect();
+        Ok(GateRun {
+            evidence,
+            diagnostics,
+            blocked,
+        })
     }
 }
 
@@ -563,7 +596,7 @@ fn execute_gate(
     definition: &TrustedGateDefinition,
     source_commit: &str,
     cancellation: &CancellationToken,
-) -> Result<GateEvidence, GateError> {
+) -> Result<GateExecution, GateError> {
     definition.validate()?;
     let started = unix_millis()?;
     let result = executor
@@ -575,7 +608,7 @@ fn execute_gate(
         .all(|assertion| assertion_matches(assertion, &result));
     let passed = result.outcome == ProcessOutcome::Succeeded && assertions_pass;
     let ended = unix_millis()?;
-    sign_evidence(GateEvidence {
+    let evidence = sign_evidence(GateEvidence {
         version: 1,
         gate_id: definition.id.clone(),
         tier: definition.tier,
@@ -592,7 +625,24 @@ fn execute_gate(
         definition: Some(definition_evidence(definition)),
         process: Some(process_evidence(definition, &result)?),
         integrity_sha256: String::new(),
+    })?;
+    let diagnostic = (!passed).then(|| GateDiagnostic {
+        gate_id: definition.id.clone(),
+        stdout: bounded_diagnostic(&result.stdout.retained),
+        stderr: bounded_diagnostic(&result.stderr.retained),
+        truncated: result.stdout.retained.len() > MAX_DIAGNOSTIC_BYTES
+            || result.stderr.retained.len() > MAX_DIAGNOSTIC_BYTES
+            || result.stdout.truncated
+            || result.stderr.truncated,
+    });
+    Ok(GateExecution {
+        evidence,
+        diagnostic,
     })
+}
+
+fn bounded_diagnostic(bytes: &[u8]) -> String {
+    String::from_utf8_lossy(&bytes[..bytes.len().min(MAX_DIAGNOSTIC_BYTES)]).into_owned()
 }
 
 fn unavailable_evidence(
