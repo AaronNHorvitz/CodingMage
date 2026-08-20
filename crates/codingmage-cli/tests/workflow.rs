@@ -1,6 +1,15 @@
 //! Binary-level local operator workflow.
 
-use std::{fs, path::Path, process::Command};
+use std::{
+    fs,
+    panic::{AssertUnwindSafe, catch_unwind},
+    path::Path,
+    process::Command,
+};
+
+use codingmage_campaign::CampaignSpec;
+use codingmage_core::load_config;
+use codingmage_runtime::{ProgressStage, run_serial_campaign_with_progress};
 
 struct Fixture {
     root: std::path::PathBuf,
@@ -433,6 +442,37 @@ profiles = ["configured-gates"]
     )
     .unwrap();
 
+    let config_value = load_config(&config).unwrap();
+    let campaign_value = CampaignSpec::load(&campaign).unwrap();
+    let interrupted = catch_unwind(AssertUnwindSafe(|| {
+        run_serial_campaign_with_progress(
+            &config_value,
+            campaign_value,
+            Path::new(env!("CARGO_BIN_EXE_codingmage")),
+            |progress| {
+                assert_ne!(progress.stage, ProgressStage::Failed);
+                if progress.stage == ProgressStage::Integrating {
+                    panic!("fixture interruption after durable integration intent");
+                }
+            },
+        )
+        .unwrap();
+    }));
+    assert!(interrupted.is_err());
+    let interrupted_status = Fixture::command(&[
+        "campaign-status",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(interrupted_status.status.success());
+    let interrupted_status: serde_json::Value =
+        serde_json::from_slice(&interrupted_status.stdout).unwrap();
+    assert_eq!(interrupted_status["state"], "integrating");
+    assert_eq!(interrupted_status["current_task_id"], "0.1.1.1");
+    assert_eq!(interrupted_status["completed_units"], 0);
+
     let run = Fixture::command(&[
         "campaign",
         "--config",
@@ -477,7 +517,7 @@ profiles = ["configured-gates"]
         "pub fn value() -> u8 { 3 }\n"
     );
     let progress = String::from_utf8(run.stderr).unwrap();
-    assert_eq!(progress.matches("codex-lead  proposing").count(), 2);
+    assert_eq!(progress.matches("codex-lead  proposing").count(), 1);
     assert_eq!(progress.matches("integration advancing").count(), 2);
 
     let resumed = Fixture::command(&[

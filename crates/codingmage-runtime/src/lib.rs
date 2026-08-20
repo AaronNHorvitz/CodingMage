@@ -460,6 +460,12 @@ pub fn run_serial_campaign_with_progress(
             if campaign.manifest().branch != checkpoint.branch {
                 return Err(RuntimeError::Authority);
             }
+            if checkpoint.pending_integration.is_some() {
+                observer(RunProgress::new(
+                    ProgressActor::IntegrationLead,
+                    ProgressStage::Integrating,
+                ));
+            }
             reconcile_campaign_restart(&authorization, &campaign, &mut checkpoint, &campaign_root)?;
             (campaign, checkpoint)
         } else {
