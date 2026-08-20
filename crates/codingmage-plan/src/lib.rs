@@ -351,6 +351,48 @@ impl TaskPlan {
         }
         Err(PlanError::NoReadyWork)
     }
+
+    /// Selects one exact open sub-task after verifying all of its declared dependencies.
+    ///
+    /// This is the safe operator-directed alternative when earlier open items are known external
+    /// blockers that cannot be inferred from Markdown checkbox state alone.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanError`] when the identifier is absent, ambiguous, checked, not a sub-task,
+    /// dependency-blocked, or too broad for one bounded unit.
+    pub fn select_exact(&self, item_id: &str) -> Result<SelectedWork, PlanError> {
+        let matches = self
+            .items
+            .iter()
+            .filter(|item| item.id == item_id)
+            .collect::<Vec<_>>();
+        let [item] = matches.as_slice() else {
+            return Err(PlanError::NoReadyWork);
+        };
+        if item.kind != PlanItemKind::SubTask || item.state != CheckState::Open {
+            return Err(PlanError::NoReadyWork);
+        }
+        let by_id = self
+            .items
+            .iter()
+            .map(|candidate| (candidate.id.as_str(), candidate))
+            .collect::<BTreeMap<_, _>>();
+        if item.dependencies.iter().any(|dependency| {
+            !by_id
+                .get(dependency.as_str())
+                .is_some_and(|candidate| candidate.state == CheckState::Checked)
+        }) {
+            return Err(PlanError::InvalidDependency);
+        }
+        if item.title.len() < 8 || item.title.len() > 4096 {
+            return Err(PlanError::NeedsDecomposition);
+        }
+        Ok(SelectedWork {
+            item: (*item).clone(),
+            source_sha256: self.source_sha256.clone(),
+        })
+    }
 }
 
 /// One exact dependency-ready selection.
@@ -801,6 +843,24 @@ mod tests {
                 .unwrap()
                 .state,
             CheckState::Open
+        );
+    }
+
+    #[test]
+    fn exact_selection_requires_an_open_dependency_ready_subtask() {
+        let plan = TaskPlan::parse(PLAN.as_bytes()).unwrap();
+        assert_eq!(plan.select_exact("0.1.1.2").unwrap().item.id, "0.1.1.2");
+        assert_eq!(
+            plan.select_exact("0.1.1.1"),
+            Err(PlanError::NoReadyWork)
+        );
+        assert_eq!(
+            plan.select_exact("0.1.1"),
+            Err(PlanError::NoReadyWork)
+        );
+        assert_eq!(
+            plan.select_exact("9.9.9.9"),
+            Err(PlanError::NoReadyWork)
         );
     }
 
