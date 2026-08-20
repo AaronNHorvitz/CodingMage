@@ -83,7 +83,10 @@ if "--version" in sys.argv:
 if "--help" in sys.argv:
     print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
     raise SystemExit(0)
-Path("src/lib.rs").write_text("pub fn value() -> u8 { 2 }\n", encoding="utf-8")
+path = Path("src/lib.rs")
+prior = path.read_text(encoding="utf-8")
+value = 2 if "{ 1 }" in prior else 3
+path.write_text(f"pub fn value() -> u8 {{ {value} }}\n", encoding="utf-8")
 print(json.dumps({
     "type": "result",
     "is_error": False,
@@ -144,6 +147,22 @@ print(json.dumps({"type": "turn.completed"}))
         .status
         .success()
     );
+    let gate = fixture.executable(
+        "fake-gate",
+        r#"#!/usr/bin/python3
+from pathlib import Path
+import sys
+if "{ 3 }" not in Path("src/lib.rs").read_text(encoding="utf-8"):
+    print("fixture requires one bounded correction", file=sys.stderr)
+    raise SystemExit(1)
+"#,
+    );
+    let configured = fs::read_to_string(&config).unwrap();
+    fs::write(
+        &config,
+        configured.replace("/usr/bin/git", gate.to_str().unwrap()),
+    )
+    .unwrap();
     let spec = fixture.root.join("run.toml");
     fs::write(
         &spec,
@@ -195,6 +214,9 @@ effort = "high"
         "coordinator creating the worktree and probing provider capabilities",
         "claude      implementing the bounded task in the isolated worktree",
         "local-gates running deterministic gates on the candidate",
+        "local-gates candidate gates blocked; bounded correction will run",
+        "claude      correcting the bounded candidate from verified diagnostics",
+        "local-gates running deterministic gates on the candidate",
         "codex       reviewing the immutable candidate commit read-only",
         "local-gates repeating deterministic gates after review",
         "coordinator writing the durable reviewed checkpoint",
@@ -231,6 +253,16 @@ effort = "high"
         String::from_utf8(completed.stdout)
             .unwrap()
             .contains("- [x] **Sub-task 0.1.1.1:**")
+    );
+    let corrected = Command::new("/usr/bin/git")
+        .current_dir(&target)
+        .args(["show", &format!("{branch}:src/lib.rs")])
+        .output()
+        .unwrap();
+    assert!(corrected.status.success());
+    assert_eq!(
+        String::from_utf8(corrected.stdout).unwrap(),
+        "pub fn value() -> u8 { 3 }\n"
     );
 }
 

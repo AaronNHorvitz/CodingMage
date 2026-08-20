@@ -435,6 +435,8 @@ fn timestamp_ms() -> Result<u64, OrchestrationError> {
 #[derive(Clone, Debug)]
 pub struct OneUnitCoordinator {
     machine: TaskMachine,
+    correction_limit: u16,
+    correction_count: u16,
 }
 
 impl OneUnitCoordinator {
@@ -443,7 +445,22 @@ impl OneUnitCoordinator {
     pub fn new(run_id: RunId, task_id: TaskId) -> Self {
         Self {
             machine: TaskMachine::new(run_id, task_id),
+            correction_limit: 3,
+            correction_count: 0,
         }
+    }
+
+    /// Sets the total gate-and-review correction budget for this unit.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`OrchestrationError::Transition`] for a zero or excessive limit.
+    pub fn with_correction_limit(mut self, limit: u16) -> Result<Self, OrchestrationError> {
+        if limit == 0 || limit > 100 {
+            return Err(OrchestrationError::Transition);
+        }
+        self.correction_limit = limit;
+        Ok(self)
     }
 
     /// Returns the current state.
@@ -511,56 +528,64 @@ impl OneUnitCoordinator {
             SideEffectIntent::RunLocalGates,
             implemented,
         )?;
-        let (local, local_evidence) = port.verify_local()?;
-        if local != VerificationOutcome::Pass {
-            return self.finish_failure(local, local_evidence);
-        }
-        self.transition(
-            TaskState::SeniorReview,
-            SideEffectIntent::StartReview,
-            local_evidence,
-        )?;
-        let (review, review_evidence) = port.review()?;
-        match review {
-            ReviewOutcome::Pass => {}
-            ReviewOutcome::Blocked => {
-                self.transition(
-                    TaskState::Blocked,
-                    SideEffectIntent::ReleaseOwnedResources,
-                    review_evidence,
-                )?;
-                return Ok(self.state());
+        loop {
+            let (local, local_evidence) = port.verify_local()?;
+            if local != VerificationOutcome::Pass {
+                if local == VerificationOutcome::TerminalFailure || !self.correction_available() {
+                    return self.finish_failure(local, local_evidence);
+                }
+                self.apply_correction(port, local_evidence)?;
+                continue;
             }
-            ReviewOutcome::ChangesRequired => {
-                self.transition(
-                    TaskState::Correcting,
-                    SideEffectIntent::StartCorrection,
-                    review_evidence.clone(),
-                )?;
-                let correction = port.correct()?;
-                self.transition(
-                    TaskState::FinalVerification,
-                    SideEffectIntent::RunFinalVerification,
-                    correction,
-                )?;
+            self.transition(
+                TaskState::SeniorReview,
+                SideEffectIntent::StartReview,
+                local_evidence,
+            )?;
+            let (review, review_evidence) = port.review()?;
+            match review {
+                ReviewOutcome::Blocked => {
+                    self.transition(
+                        TaskState::Blocked,
+                        SideEffectIntent::ReleaseOwnedResources,
+                        review_evidence,
+                    )?;
+                    return Ok(self.state());
+                }
+                ReviewOutcome::ChangesRequired => {
+                    if !self.correction_available() {
+                        self.transition(
+                            TaskState::RecoverableFailure,
+                            SideEffectIntent::ReleaseOwnedResources,
+                            review_evidence,
+                        )?;
+                        return Ok(self.state());
+                    }
+                    self.apply_correction(port, review_evidence)?;
+                    continue;
+                }
+                ReviewOutcome::Pass => {}
             }
-        }
-        if review == ReviewOutcome::Pass {
             self.transition(
                 TaskState::FinalVerification,
                 SideEffectIntent::RunFinalVerification,
                 review_evidence,
             )?;
+            let (final_outcome, final_evidence) = port.verify_final()?;
+            if final_outcome == VerificationOutcome::Pass {
+                self.transition(
+                    TaskState::Checkpointed,
+                    SideEffectIntent::WriteCheckpoint,
+                    final_evidence,
+                )?;
+                break;
+            }
+            if final_outcome == VerificationOutcome::TerminalFailure || !self.correction_available()
+            {
+                return self.finish_failure(final_outcome, final_evidence);
+            }
+            self.apply_correction(port, final_evidence)?;
         }
-        let (final_outcome, final_evidence) = port.verify_final()?;
-        if final_outcome != VerificationOutcome::Pass {
-            return self.finish_failure(final_outcome, final_evidence);
-        }
-        self.transition(
-            TaskState::Checkpointed,
-            SideEffectIntent::WriteCheckpoint,
-            final_evidence,
-        )?;
         let checkpoint = port.checkpoint()?;
         if !reconcile {
             return Ok(self.state());
@@ -572,6 +597,29 @@ impl OneUnitCoordinator {
             vec![checkpoint, completion],
         )?;
         Ok(self.state())
+    }
+
+    fn correction_available(&self) -> bool {
+        self.correction_count < self.correction_limit
+    }
+
+    fn apply_correction(
+        &mut self,
+        port: &mut impl WorkflowPort,
+        evidence: EvidenceId,
+    ) -> Result<(), OrchestrationError> {
+        self.transition(
+            TaskState::Correcting,
+            SideEffectIntent::StartCorrection,
+            evidence,
+        )?;
+        let correction = port.correct()?;
+        self.correction_count = self.correction_count.saturating_add(1);
+        self.transition(
+            TaskState::LocalVerification,
+            SideEffectIntent::RunLocalGates,
+            correction,
+        )
     }
 
     fn finish_failure(
@@ -740,6 +788,14 @@ fn legal_transition(from: TaskState, to: TaskState, intent: SideEffectIntent) ->
             TaskState::Correcting,
             SideEffectIntent::StartCorrection
         ) | (
+            TaskState::LocalVerification | TaskState::FinalVerification,
+            TaskState::Correcting,
+            SideEffectIntent::StartCorrection
+        ) | (
+            TaskState::Correcting,
+            TaskState::LocalVerification,
+            SideEffectIntent::RunLocalGates
+        ) | (
             TaskState::SeniorReview,
             TaskState::FinalVerification,
             SideEffectIntent::RunFinalVerification
@@ -792,6 +848,7 @@ mod tests {
     struct FakePort {
         calls: Vec<&'static str>,
         review: Option<ReviewOutcome>,
+        review_calls: usize,
         local: Option<VerificationOutcome>,
         final_outcome: Option<VerificationOutcome>,
         fail_at: Option<&'static str>,
@@ -803,7 +860,7 @@ mod tests {
             if self.fail_at == Some(name) {
                 Err(OrchestrationError::Port)
             } else {
-                Ok(evidence(name))
+                Ok(evidence(&format!("{name}-{}", self.calls.len())))
             }
         }
     }
@@ -826,7 +883,12 @@ mod tests {
         }
         fn review(&mut self) -> Result<(ReviewOutcome, EvidenceId), OrchestrationError> {
             let evidence = self.call("review")?;
-            Ok((self.review.unwrap_or(ReviewOutcome::Pass), evidence))
+            self.review_calls = self.review_calls.saturating_add(1);
+            let outcome = match (self.review, self.review_calls) {
+                (Some(ReviewOutcome::ChangesRequired), 2..) | (None, _) => ReviewOutcome::Pass,
+                (Some(value), _) => value,
+            };
+            Ok((outcome, evidence))
         }
         fn correct(&mut self) -> Result<EvidenceId, OrchestrationError> {
             self.call("correct")
@@ -978,6 +1040,10 @@ mod tests {
             port.calls.iter().filter(|call| **call == "correct").count(),
             1
         );
+        assert_eq!(
+            port.calls.iter().filter(|call| **call == "review").count(),
+            2
+        );
         let mut coordinator = new_coordinator();
         let mut port = FakePort {
             review: Some(ReviewOutcome::Blocked),
@@ -1023,6 +1089,24 @@ mod tests {
             ..FakePort::default()
         };
         assert_eq!(coordinator.run(&mut port), Err(OrchestrationError::Port));
+        assert_eq!(port.calls.last(), Some(&"release"));
+    }
+
+    #[test]
+    fn repeated_gate_failure_consumes_the_exact_correction_budget() {
+        let mut coordinator = new_coordinator().with_correction_limit(2).unwrap();
+        let mut port = FakePort {
+            local: Some(VerificationOutcome::RecoverableFailure),
+            ..FakePort::default()
+        };
+        assert_eq!(
+            coordinator.run(&mut port),
+            Ok(TaskState::RecoverableFailure)
+        );
+        assert_eq!(
+            port.calls.iter().filter(|call| **call == "correct").count(),
+            2
+        );
         assert_eq!(port.calls.last(), Some(&"release"));
     }
 
