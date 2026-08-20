@@ -1060,7 +1060,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 25.1.2.1:** Pass accelerated deterministic campaigns with one through four pods.
   - [ ] **Sub-task 25.1.2.2:** Pass a sustained disposable one-pod campaign after the last reliability correction.
   - [ ] **Sub-task 25.1.2.3:** Pass a sustained disposable multi-pod campaign after the last concurrency correction.
-  - [ ] **Sub-task 25.1.2.4:** Require product-owner approval before pointing unattended campaign mode at a valuable repository.
+  - [x] **Sub-task 25.1.2.4:** Require product-owner approval before pointing unattended campaign mode at a valuable repository.
 
 **Story acceptance criteria**
 
@@ -1083,11 +1083,11 @@ These items must remain open until their prerequisites actually exist:
 - [ ] **External 3:** Authenticated GitHub issue and pull-request tests against an explicitly approved test repository.
 - [ ] **External 4:** Independent security and architecture review by a qualified human reviewer.
 - [ ] **External 5:** Manual fuzzing campaign after the deterministic attack corpus is stable.
-- [ ] **External 6:** Explicit product-owner approval before unattended target-repository operation.
+- [x] **External 6:** Explicit product-owner approval before unattended target-repository operation.
 - [ ] **External 7:** Explicit product-owner approval before any public release or package publication.
 
 ## Immediate Next Unit
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete sub-task `20.1.2.4`, then retain correction-round checkpoint/status identity under `20.1.3.3`. After Sprint 20 closes, implement the campaign authority and team-lead proposal contracts in Sprint 21 before adding serial campaign progression or parallel pods.
+- [ ] **Next 1:** Complete exact active-provider and correction-session reobservation under sub-task `20.1.3.4`, then finish campaign attempt, correction, blocker, budget, and evidence projection under `22.1.2.1` before claiming automatic quota/authentication resume or the full Sprint 22 gate.
