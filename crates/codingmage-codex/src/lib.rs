@@ -337,7 +337,7 @@ impl CodexLeadBinding {
             || self.allowed_paths.is_empty()
             || self.gate_tiers.is_empty()
             || self.ready_tasks.is_empty()
-            || self.ready_tasks.len() > usize::from(self.maximum_proposals)
+            || self.ready_tasks.len() > 64
             || self
                 .allowed_paths
                 .iter()
@@ -1435,7 +1435,13 @@ mod tests {
     #[test]
     fn campaign_lead_plan_is_read_only_and_binds_the_ready_set() {
         let fixture = Fixture::new();
-        let binding = fixture.lead_binding(&"c".repeat(64));
+        let mut binding = fixture.lead_binding(&"c".repeat(64));
+        binding.ready_tasks.push(CodexLeadTask {
+            task_id: "1.1.1.2".to_owned(),
+            title: "Implement a second independent bounded unit.".to_owned(),
+            dependencies: Vec::new(),
+        });
+        assert_eq!(binding.maximum_proposals, 1);
         let invocation = fixture.lead_adapter().plan(&binding).unwrap();
         assert!(
             invocation
