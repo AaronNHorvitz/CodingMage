@@ -788,7 +788,7 @@ fn login_discovery_environment() -> Result<BTreeMap<String, String>, RuntimeErro
         "XDG_CONFIG_HOME",
         "DBUS_SESSION_BUS_ADDRESS",
     ];
-    let environment = NAMES
+    let mut environment = NAMES
         .into_iter()
         .filter_map(|name| {
             std::env::var(name)
@@ -796,6 +796,7 @@ fn login_discovery_environment() -> Result<BTreeMap<String, String>, RuntimeErro
                 .map(|value| (name.to_owned(), value))
         })
         .collect::<BTreeMap<_, _>>();
+    environment.insert("PATH".to_owned(), "/usr/bin:/bin".to_owned());
     validate_login_discovery_environment(&environment)?;
     Ok(environment)
 }
@@ -803,11 +804,12 @@ fn login_discovery_environment() -> Result<BTreeMap<String, String>, RuntimeErro
 fn validate_login_discovery_environment(
     environment: &BTreeMap<String, String>,
 ) -> Result<(), RuntimeError> {
-    const ALLOWED: [&str; 4] = [
+    const ALLOWED: [&str; 5] = [
         "HOME",
         "XDG_RUNTIME_DIR",
         "XDG_CONFIG_HOME",
         "DBUS_SESSION_BUS_ADDRESS",
+        "PATH",
     ];
     if !environment.contains_key("HOME")
         || environment.iter().any(|(name, value)| {
@@ -819,6 +821,7 @@ fn validate_login_discovery_environment(
                     name.as_str(),
                     "HOME" | "XDG_RUNTIME_DIR" | "XDG_CONFIG_HOME"
                 ) && !Path::new(value).is_absolute()
+                || name == "PATH" && value != "/usr/bin:/bin"
         })
     {
         return Err(RuntimeError::Authority);
@@ -985,6 +988,7 @@ effort = "high"
     fn login_discovery_requires_home_and_rejects_credential_names() {
         let allowed = BTreeMap::from([
             ("HOME".to_owned(), "/home/tester".to_owned()),
+            ("PATH".to_owned(), "/usr/bin:/bin".to_owned()),
             (
                 "DBUS_SESSION_BUS_ADDRESS".to_owned(),
                 "unix:path=/run/user/1000/bus".to_owned(),
@@ -999,6 +1003,14 @@ effort = "high"
         credential.insert("OPENAI_API_KEY".to_owned(), "not-a-real-secret".to_owned());
         assert_eq!(
             validate_login_discovery_environment(&credential),
+            Err(RuntimeError::Authority)
+        );
+        let wrong_path = BTreeMap::from([
+            ("HOME".to_owned(), "/home/tester".to_owned()),
+            ("PATH".to_owned(), "/custom/bin".to_owned()),
+        ]);
+        assert_eq!(
+            validate_login_discovery_environment(&wrong_path),
             Err(RuntimeError::Authority)
         );
     }

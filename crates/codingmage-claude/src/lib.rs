@@ -832,11 +832,12 @@ fn valid_budget(value: &str) -> bool {
 }
 
 fn validate_login_environment(environment: &BTreeMap<String, String>) -> Result<(), ClaudeError> {
-    const ALLOWED: [&str; 4] = [
+    const ALLOWED: [&str; 5] = [
         "HOME",
         "XDG_RUNTIME_DIR",
         "XDG_CONFIG_HOME",
         "DBUS_SESSION_BUS_ADDRESS",
+        "PATH",
     ];
     if environment.is_empty()
         || environment.iter().any(|(name, value)| {
@@ -844,6 +845,7 @@ fn validate_login_environment(environment: &BTreeMap<String, String>) -> Result<
                 || value.is_empty()
                 || value.len() > 4096
                 || value.chars().any(char::is_control)
+                || name == "PATH" && value != "/usr/bin:/bin"
         })
     {
         return Err(ClaudeError::InvalidProfile);
@@ -1122,6 +1124,7 @@ mod tests {
             ClaudeAdapter::new(PathBuf::from("/bin/true"), "sonnet", "high", "1.00").unwrap();
         let allowed = BTreeMap::from([
             ("HOME".to_owned(), "/home/tester".to_owned()),
+            ("PATH".to_owned(), "/usr/bin:/bin".to_owned()),
             (
                 "DBUS_SESSION_BUS_ADDRESS".to_owned(),
                 "unix:path=/run/user/1000/bus".to_owned(),

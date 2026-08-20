@@ -58,7 +58,7 @@ cargo build --locked --release -p codingmage-cli
 
 The terminal JSON identifies the run, task, terminal state, retained branch, candidate commit, completion commit, and review verdict. Provider output, prompts, source text, file names, paths, credentials, and hidden reasoning are not emitted.
 
-`existing_login` passes only `HOME` and any present `XDG_RUNTIME_DIR`, `XDG_CONFIG_HOME`, and `DBUS_SESSION_BUS_ADDRESS` references to the provider processes. CodingMage keeps these values in memory, does not emit or journal them, and rejects every other ambient environment name. API keys, tokens, arbitrary configuration variables, and `PATH` are never accepted through this boundary.
+`existing_login` passes only `HOME` and any present `XDG_RUNTIME_DIR`, `XDG_CONFIG_HOME`, and `DBUS_SESSION_BUS_ADDRESS` references to the provider processes. CodingMage adds the compiled literal `PATH=/usr/bin:/bin` so installed sandbox dependencies can be found; it never inherits ambient `PATH`. Login-discovery values remain in memory and are not emitted or journaled. API keys, tokens, and arbitrary configuration variables are never accepted through this boundary.
 
 ## Current Limits
 
