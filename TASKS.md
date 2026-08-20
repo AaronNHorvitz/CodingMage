@@ -942,7 +942,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 **Story acceptance criteria**
 
-- [ ] **AC 21.1:** Given hostile roadmap and repository text, when the campaign lead proposes work, then only dependency-ready tasks inside preapproved authority can become pod leases.
+- [x] **AC 21.1:** Given hostile roadmap and repository text, when the campaign lead proposes work, then only dependency-ready tasks inside preapproved authority can become pod leases.
 - [ ] **AC 21.2:** Given a stale campaign head or task-source digest, when a proposal is admitted, then no worktree or provider starts.
 
 ### Sprint 21 Gate
@@ -958,10 +958,10 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 ### Story 22.1 - Campaign Head and Queue
 
 - [ ] **Task 22.1.1 - Execute dependency-ordered units**
-  - [ ] **Sub-task 22.1.1.1:** Add a `codingmage campaign` command that acquires one campaign lease and loads one campaign specification.
-  - [ ] **Sub-task 22.1.1.2:** Reparse the task source from the exact campaign head after every accepted unit.
+  - [x] **Sub-task 22.1.1.1:** Add a `codingmage campaign` command that acquires one campaign lease and loads one campaign specification.
+  - [x] **Sub-task 22.1.1.2:** Reparse the task source from the exact campaign head after every accepted unit.
   - [ ] **Sub-task 22.1.1.3:** Select the next ready unit while preserving precise blockers and completed evidence.
-  - [ ] **Sub-task 22.1.1.4:** Use each accepted completion commit as the exact base of the next unit.
+  - [x] **Sub-task 22.1.1.4:** Use each accepted completion commit as the exact base of the next unit.
   - [ ] **Sub-task 22.1.1.5:** Stop only on completion, operator cancellation, capacity pause, exhausted budget, no independently safe ready work, or terminal policy failure.
 - [ ] **Task 22.1.2 - Persist campaign recovery**
   - [ ] **Sub-task 22.1.2.1:** Journal campaign head, queue, active pod, attempts, corrections, blockers, budgets, and completion evidence.
