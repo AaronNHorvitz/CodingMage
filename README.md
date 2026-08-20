@@ -1,6 +1,66 @@
 # CodingMage
 
-CodingMage is a local, reusable development coordinator for running bounded implementation and review loops across coding agents. Its first workflow uses Claude Code as the implementation agent and Codex as the senior review and verification agent, while deterministic local tools remain the authority for formatting, tests, schemas, and repository state.
+**Build with the right model. Review with a stronger one. Trust the evidence, not the chat.**
+
+CodingMage is a local coding-agent coordinator designed to deliver better verified results per token. It routes each bounded task according to complexity and risk, uses efficient models for routine implementation, escalates demanding work to stronger profiles, and gives the resulting commit to an independent senior-review model. Deterministic local checks remain the final authority for tests, formatting, schemas, and repository state.
+
+Instead of paying frontier-model prices for every mechanical step, or trusting a cheaper model with every architectural decision, CodingMage combines both where they are strongest:
+
+- **Spend fewer model tokens:** reject formatting, test, schema, and scope failures locally before invoking an expensive reviewer.
+- **Protect coding quality:** escalate security-sensitive, architectural, disputed, or repeatedly failing work to stronger profiles.
+- **Separate writing from judgment:** one agent implements; another reviews the exact immutable commit and evidence.
+- **Keep long builds moving:** durable checkpoints preserve task state across context limits, quotas, crashes, and restarts.
+- **Stay in control:** deny-first permissions isolate worktrees and reserve merges, releases, credentials, and external consequences for the human owner.
+
+## How CodingMage Optimizes Every Model Call
+
+```mermaid
+flowchart TD
+    A[Roadmap and repository state] --> B[Deterministic task and risk classification]
+    B --> C{Work class and failure history}
+
+    C -- Routine and bounded --> D[Efficient implementation profile]
+    C -- Complex or high risk --> E[Strong implementation profile]
+    C -- Unclear authority --> X[Pause for human decision]
+
+    D --> F[Isolated implementation worktree]
+    E --> F
+    F --> G[Local gates: scope, format, lint, tests, schemas]
+
+    G -- Fail: zero review tokens --> H[Return focused failures]
+    H --> I{Correction budget remains?}
+    I -- Yes --> B
+    I -- No --> X
+
+    G -- Pass --> J{Review risk}
+    J -- Routine --> K[Efficient review profile]
+    J -- Security, architecture, or disagreement --> L[Senior review profile]
+    K --> M[Review exact commit and evidence]
+    L --> M
+
+    M -- Changes required --> H
+    M -- Pass --> N[Final deterministic verification]
+    N -- Fail --> H
+    N -- Pass --> O[Durable reviewed checkpoint]
+
+    O --> P[Higher coding confidence per token]
+
+    classDef input fill:#dbeafe,stroke:#2563eb,color:#111827
+    classDef efficient fill:#dcfce7,stroke:#16a34a,color:#111827
+    classDef strong fill:#fef3c7,stroke:#d97706,color:#111827
+    classDef verify fill:#f3f4f6,stroke:#4b5563,color:#111827
+    classDef stop fill:#fee2e2,stroke:#dc2626,color:#111827
+    classDef result fill:#ede9fe,stroke:#7c3aed,color:#111827
+
+    class A,B input
+    class D,K efficient
+    class E,L strong
+    class F,G,M,N verify
+    class X stop
+    class O,P result
+```
+
+The router does not let a model choose its own authority or quietly downgrade a required gate. Task class, risk, failure history, review disagreement, configured policy, and operator overrides determine the profile; CodingMage records the decision and the resolved model identity when the provider exposes it.
 
 > [!IMPORTANT]
 > CodingMage is under active implementation. Its supervised one-unit `run` path now composes an isolated worktree, file-only Claude candidate, coordinator-owned commit, deterministic gates, immutable Codex review, exact checklist reconciliation, durable checkpoint, and verified cleanup. That complete path passes with fake provider executables. Live authenticated provider evidence, automatic correction, authenticated GitHub evidence, sustained soak evidence, native macOS/Windows evidence, and unattended release gates remain open.
