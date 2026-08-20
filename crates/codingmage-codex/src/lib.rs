@@ -956,6 +956,21 @@ fn render_lead_packet(binding: &CodexLeadBinding) -> Result<Vec<u8>, CodexError>
         );
     }
     packet.push_str(
+        "PROPOSAL FIELD RULES:\n\
+         - task_id must exactly match one supplied ready-task id.\n\
+         - dependencies must exactly reproduce that ready task's dependency array.\n\
+         - owned_paths must contain only non-overlapping repository-relative paths under an\n\
+           allowed root, outside every denied root, and must not include the task-source file.\n\
+         - gate_tiers must use only names from Available gate tiers.\n\
+         - test_resources must be short identifier names, not paths or prose.\n\
+         - expected_artifacts must contain only repository-relative artifact paths, each nested\n\
+           under one owned_path; use an empty array when no exact artifact path is known.\n\
+         - rationale_summary is the only proposal field that may contain explanatory prose.\n\
+         - return no more proposals than Maximum proposals.\n\
+         \n\
+         ",
+    );
+    packet.push_str(
         "Return only the required structured response. Prefer one independently implementable local\n\
          task from the supplied ready set; an unavailable external prerequisite on one task must not\n\
          block a different ready task. If every supplied task requires a material architecture,\n\
@@ -1455,11 +1470,15 @@ mod tests {
                 .windows(2)
                 .any(|pair| pair == ["--sandbox", "read-only"])
         );
+        let packet = String::from_utf8(invocation.stdin).unwrap();
+        assert!(packet.contains("id=1.1.1.1"));
         assert!(
-            String::from_utf8(invocation.stdin)
-                .unwrap()
-                .contains("id=1.1.1.1")
+            packet.contains(
+                "expected_artifacts must contain only repository-relative artifact paths"
+            )
         );
+        assert!(packet.contains("dependencies must exactly reproduce"));
+        assert!(packet.contains("return no more proposals than Maximum proposals"));
     }
 
     #[test]

@@ -15,11 +15,11 @@
         "required": ["task_id", "dependencies", "owned_paths", "gate_tiers", "test_resources", "expected_artifacts", "risk", "rationale_summary"],
         "properties": {
           "task_id": { "type": "string", "minLength": 1, "maxLength": 128 },
-          "dependencies": { "type": "array", "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
-          "owned_paths": { "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 4096 } },
-          "gate_tiers": { "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
-          "test_resources": { "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
-          "expected_artifacts": { "type": "array", "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 4096 } },
+          "dependencies": { "description": "Exact dependency array from the selected ready task.", "type": "array", "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
+          "owned_paths": { "description": "Non-overlapping repository-relative paths within campaign authority.", "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 4096 } },
+          "gate_tiers": { "description": "Names selected only from the supplied available gate tiers.", "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
+          "test_resources": { "description": "Short resource identifiers, never paths or prose.", "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
+          "expected_artifacts": { "description": "Repository-relative artifact paths nested under an owned path; empty when unknown.", "type": "array", "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 4096 } },
           "risk": { "enum": ["routine", "high"] },
           "rationale_summary": { "type": "string", "minLength": 1, "maxLength": 4096 }
         }
