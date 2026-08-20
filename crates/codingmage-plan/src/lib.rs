@@ -142,7 +142,7 @@ impl TaskPlan {
         for (index, exact) in lines.iter().enumerate() {
             let line_number = index + 1;
             let line = exact.trim_end_matches(['\r', '\n']);
-            if let Some(rest) = line.strip_prefix("## Sprint ") {
+            if let Some(rest) = sprint_heading(line) {
                 let (id, title) = split_heading(rest)?;
                 insert_id(&mut ids, "sprint", &id)?;
                 sprints.push(PlanSprint {
@@ -174,7 +174,7 @@ impl TaskPlan {
                 goal.trim().clone_into(&mut sprints[position].goal);
                 continue;
             }
-            if let Some(rest) = line.strip_prefix("### Story ") {
+            if let Some(rest) = story_heading(line) {
                 let sprint = current_sprint
                     .clone()
                     .ok_or_else(|| missing_parent(line_number, "story"))?;
@@ -201,6 +201,10 @@ impl TaskPlan {
                     (PlanItemKind::Task, "Task ")
                 } else if label.starts_with("Sub-task ") {
                     (PlanItemKind::SubTask, "Sub-task ")
+                } else if label.starts_with("Story AC ") {
+                    (PlanItemKind::AcceptanceCriterion, "Story AC ")
+                } else if label.starts_with("Sprint AC ") {
+                    (PlanItemKind::AcceptanceCriterion, "Sprint AC ")
                 } else if label.starts_with("AC ") {
                     (PlanItemKind::AcceptanceCriterion, "AC ")
                 } else if label.starts_with("Gate ") {
@@ -238,10 +242,13 @@ impl TaskPlan {
                             dotted_parent(&id)
                                 .ok_or_else(|| missing_parent(line_number, "acceptance"))?
                         };
-                        if !stories.iter().any(|candidate| candidate.id == story) {
-                            return Err(missing_parent(line_number, "acceptance-story"));
+                        if stories.iter().any(|candidate| candidate.id == story)
+                            || current_sprint.as_deref() == Some(story)
+                        {
+                            story.to_owned()
+                        } else {
+                            return Err(missing_parent(line_number, "acceptance-parent"));
                         }
-                        story.to_owned()
                     }
                     PlanItemKind::SubTask => {
                         let task = current_task
@@ -634,6 +641,26 @@ fn split_heading(value: &str) -> Result<(String, String), PlanError> {
     Ok((id.to_owned(), title.trim().to_owned()))
 }
 
+fn sprint_heading(line: &str) -> Option<&str> {
+    line.strip_prefix("## Sprint ")
+        .or_else(|| line.strip_prefix("### [ ] Sprint "))
+        .or_else(|| line.strip_prefix("### [x] Sprint "))
+        .filter(|value| numbered_heading(value))
+}
+
+fn story_heading(line: &str) -> Option<&str> {
+    line.strip_prefix("### Story ")
+        .or_else(|| line.strip_prefix("#### [ ] Story "))
+        .or_else(|| line.strip_prefix("#### [x] Story "))
+        .filter(|value| numbered_heading(value))
+}
+
+fn numbered_heading(value: &str) -> bool {
+    value
+        .split_once(" - ")
+        .is_some_and(|(id, title)| valid_id(id) && !title.trim().is_empty())
+}
+
 fn missing_parent(line: usize, kind: &str) -> PlanError {
     let _ = (line, kind);
     PlanError::MissingParent
@@ -661,11 +688,14 @@ fn parse_checkbox(line: &str) -> Option<(CheckState, String)> {
 }
 
 fn split_item(value: &str) -> Result<(String, String), PlanError> {
-    let (id, title) = value
+    let (identity, title) = value
         .split_once(':')
         .or_else(|| value.split_once(" - "))
         .ok_or(PlanError::InvalidSource)?;
-    let id = id.trim();
+    let id = identity
+        .split_ascii_whitespace()
+        .next()
+        .ok_or(PlanError::InvalidSource)?;
     if !valid_id(id) || title.trim().is_empty() {
         return Err(PlanError::InvalidSource);
     }
@@ -679,9 +709,13 @@ fn dotted_parent(value: &str) -> Option<&str> {
 fn valid_id(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 64
-        && value
-            .split('.')
-            .all(|segment| !segment.is_empty() && segment.bytes().all(|byte| byte.is_ascii_digit()))
+        && value.split('.').all(|segment| {
+            !segment.is_empty()
+                && (segment.bytes().all(|byte| byte.is_ascii_digit())
+                    || segment.strip_prefix("AC").is_some_and(|suffix| {
+                        !suffix.is_empty() && suffix.bytes().all(|byte| byte.is_ascii_digit())
+                    }))
+        })
 }
 
 fn insert_id(ids: &mut BTreeSet<String>, namespace: &str, id: &str) -> Result<(), PlanError> {
@@ -785,6 +819,18 @@ mod tests {
     use super::*;
 
     const PLAN: &str = "# Plan\n\n## Sprint 0 - Foundation\n\n**Sprint goal:** Build safely.\n\n### Story 0.1 - Parser\n\n- [ ] **Task 0.1.1 - Parse work**\n  - [x] **Sub-task 0.1.1.1:** Parse prior work.\n  - [ ] **Sub-task 0.1.1.2:** Select next work.\n<!-- depends-on: 0.1.1.1 -->\n\n- [ ] **AC 0.1.1:** Selection is exact.\n\n### Sprint 0 Gate\n\n- [ ] **Gate 0.1:** Parser passes.\n";
+
+    const AGENTMAGE_PLAN: &str = "# Tasks\n\n### [ ] Sprint 42 - Repository Safety\n\n**Sprint goal:** Preserve repository state.\n\n#### [ ] Story 42.1 - Hostile Repositories\n\n- [ ] **Task 42.1.3 - Verify the story**\n  - [ ] **Sub-task 42.1.3.2** (legacy `S-035-ST01`): Exercise hostile repository state.\n\n- [ ] **Story AC 42.1.AC1:** Given hostile state, when inspected, then no command executes.\n- [ ] **Sprint AC 42.AC1:** Every unrelated ref remains exact.\n\n### [ ] Sprint Completion Record Template\n";
+
+    #[test]
+    fn parses_agentmage_checkbox_headings_legacy_suffixes_and_acceptance_ids() {
+        let plan = TaskPlan::parse(AGENTMAGE_PLAN.as_bytes()).unwrap();
+        assert_eq!(plan.sprints.len(), 1);
+        assert_eq!(plan.stories.len(), 1);
+        assert_eq!(plan.select_exact("42.1.3.2").unwrap().item.id, "42.1.3.2");
+        assert!(plan.items.iter().any(|item| item.id == "42.1.AC1"));
+        assert!(plan.items.iter().any(|item| item.id == "42.AC1"));
+    }
 
     fn body() -> WorkPacketBody {
         WorkPacketBody {
