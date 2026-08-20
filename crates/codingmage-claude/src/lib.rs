@@ -601,9 +601,11 @@ pub enum ClaudeError {
     Session,
 }
 
-impl fmt::Display for ClaudeError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(match self {
+impl ClaudeError {
+    /// Stable content-free diagnostic code.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
             Self::UnsupportedVersion => "codingmage.provider.claude.unsupported_version",
             Self::CapabilityMissing => "codingmage.provider.claude.capability_missing",
             Self::InvalidProfile => "codingmage.provider.claude.invalid_profile",
@@ -618,7 +620,13 @@ impl fmt::Display for ClaudeError {
             Self::Timeout => "codingmage.provider.claude.timeout",
             Self::Cancelled => "codingmage.provider.claude.cancelled",
             Self::Session => "codingmage.provider.claude.session",
-        })
+        }
+    }
+}
+
+impl fmt::Display for ClaudeError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.code())
     }
 }
 

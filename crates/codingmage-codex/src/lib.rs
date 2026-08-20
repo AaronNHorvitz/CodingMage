@@ -607,9 +607,11 @@ pub enum CodexError {
     Thread,
 }
 
-impl fmt::Display for CodexError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(match self {
+impl CodexError {
+    /// Stable content-free diagnostic code.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
             Self::UnsupportedVersion => "codingmage.provider.codex.unsupported_version",
             Self::CapabilityMissing => "codingmage.provider.codex.capability_missing",
             Self::InvalidProfile => "codingmage.provider.codex.invalid_profile",
@@ -624,7 +626,13 @@ impl fmt::Display for CodexError {
             Self::Timeout => "codingmage.provider.codex.timeout",
             Self::Cancelled => "codingmage.provider.codex.cancelled",
             Self::Thread => "codingmage.provider.codex.thread",
-        })
+        }
+    }
+}
+
+impl fmt::Display for CodexError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.code())
     }
 }
 

@@ -9,9 +9,12 @@ use std::{
 };
 
 use codingmage_claude::{
-    ClaudeAdapter, ClaudeAuthentication, ClaudeCompletionReport, ClaudeSession, ClaudeWorkPacket,
+    ClaudeAdapter, ClaudeAuthentication, ClaudeCompletionReport, ClaudeError, ClaudeSession,
+    ClaudeWorkPacket,
 };
-use codingmage_codex::{CodexAdapter, CodexReviewBinding, ReviewVerdict, codex_review_schema};
+use codingmage_codex::{
+    CodexAdapter, CodexError, CodexReviewBinding, ReviewVerdict, codex_review_schema,
+};
 use codingmage_contracts::{AgentId, AttemptId, EvidenceId, RunId, TaskId};
 use codingmage_core::{Config, RepositoryAuthorization};
 use codingmage_gate::{
@@ -232,7 +235,9 @@ pub fn run_one(
         }
     };
     let outcome = port.outcome(run_id, task_id, coordinator.state());
-    result.map_err(|_| RuntimeError::Orchestration)?;
+    if result.is_err() {
+        return Err(port.failure.unwrap_or(RuntimeError::Orchestration));
+    }
     Ok(outcome)
 }
 
@@ -271,6 +276,7 @@ struct ProductionWorkflowPort<'a> {
     completion: Option<CommitReceipt>,
     gate_evidence: Vec<EvidenceId>,
     review_verdict: Option<ReviewVerdict>,
+    failure: Option<RuntimeError>,
 }
 
 impl<'a> ProductionWorkflowPort<'a> {
@@ -295,6 +301,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             completion: None,
             gate_evidence: Vec::new(),
             review_verdict: None,
+            failure: None,
         }
     }
 
@@ -483,16 +490,20 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         )
         .map_err(|_| OrchestrationError::Port)?;
         let worktree = owned.manifest().path.clone();
-        self.claude_adapter()?
-            .probe(
-                &self.executor,
-                worktree.clone(),
-                &CancellationToken::default(),
-            )
-            .map_err(|_| OrchestrationError::Port)?;
-        self.codex_adapter()?
-            .probe(&self.executor, worktree, &CancellationToken::default())
-            .map_err(|_| OrchestrationError::Port)?;
+        let claude = self.claude_adapter()?;
+        if let Err(error) = claude.probe(
+            &self.executor,
+            worktree.clone(),
+            &CancellationToken::default(),
+        ) {
+            self.failure = Some(RuntimeError::Implementer(error));
+            return Err(OrchestrationError::Port);
+        }
+        let codex = self.codex_adapter()?;
+        if let Err(error) = codex.probe(&self.executor, worktree, &CancellationToken::default()) {
+            self.failure = Some(RuntimeError::Reviewer(error));
+            return Err(OrchestrationError::Port);
+        }
         self.worktree = Some(owned);
         evidence_id("implementation-started")
     }
@@ -512,9 +523,14 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         let plan = adapter
             .plan_start(&session, &self.claude_packet())
             .map_err(|_| OrchestrationError::Port)?;
-        let (report, _) = adapter
-            .execute(&self.executor, &plan, &CancellationToken::default())
-            .map_err(|_| OrchestrationError::Port)?;
+        let execution = adapter.execute(&self.executor, &plan, &CancellationToken::default());
+        let (report, _) = match execution {
+            Ok(value) => value,
+            Err(error) => {
+                self.failure = Some(RuntimeError::Implementer(error));
+                return Err(OrchestrationError::Port);
+            }
+        };
         if !report.ready_for_commit || report.blocker_code.is_some() || report.commit.is_some() {
             return Err(OrchestrationError::Port);
         }
@@ -572,14 +588,19 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         let plan = adapter
             .plan_start(&binding, &self.selected.item.title)
             .map_err(|_| OrchestrationError::Port)?;
-        let (result, _) = adapter
-            .execute(
-                &self.executor,
-                &plan,
-                &binding,
-                &CancellationToken::default(),
-            )
-            .map_err(|_| OrchestrationError::Port)?;
+        let execution = adapter.execute(
+            &self.executor,
+            &plan,
+            &binding,
+            &CancellationToken::default(),
+        );
+        let (result, _) = match execution {
+            Ok(value) => value,
+            Err(error) => {
+                self.failure = Some(RuntimeError::Reviewer(error));
+                return Err(OrchestrationError::Port);
+            }
+        };
         self.review_verdict = Some(result.report.verdict);
         let evidence = evidence_id(&format!(
             "review-{}-{}",
@@ -881,6 +902,10 @@ pub enum RuntimeError {
     State,
     /// One-unit orchestration failed closed.
     Orchestration,
+    /// Claude implementation adapter failed with a content-free diagnostic.
+    Implementer(ClaudeError),
+    /// Codex review adapter failed with a content-free diagnostic.
+    Reviewer(CodexError),
 }
 
 impl RuntimeError {
@@ -895,6 +920,8 @@ impl RuntimeError {
             Self::Process => "codingmage.runtime.process",
             Self::State => "codingmage.runtime.state",
             Self::Orchestration => "codingmage.runtime.orchestration",
+            Self::Implementer(error) => error.code(),
+            Self::Reviewer(error) => error.code(),
         }
     }
 }

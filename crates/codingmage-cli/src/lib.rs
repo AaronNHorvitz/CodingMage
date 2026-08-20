@@ -9,7 +9,7 @@ use codingmage_core::{
 };
 use codingmage_git::inventory_repository;
 use codingmage_plan::TaskPlan;
-use codingmage_runtime::{RunSpec, run_one};
+use codingmage_runtime::{RunSpec, RuntimeError, run_one};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -118,9 +118,9 @@ fn diagnose(arguments: &[String], command: &str) -> Result<String, CliError> {
 fn execute(arguments: &[String]) -> Result<String, CliError> {
     let parsed = ParsedArguments::new(arguments, &["config", "spec"])?;
     let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
-    let spec = RunSpec::load(&parsed.absolute_file("spec")?).map_err(|_| CliError::Runtime)?;
+    let spec = RunSpec::load(&parsed.absolute_file("spec")?).map_err(CliError::Runtime)?;
     let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
-    let outcome = run_one(&config, spec, &executable).map_err(|_| CliError::Runtime)?;
+    let outcome = run_one(&config, spec, &executable).map_err(CliError::Runtime)?;
     serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)
 }
 
@@ -237,7 +237,7 @@ pub enum CliError {
     /// Live orchestration is deliberately not enabled.
     ExecutionUnavailable,
     /// Supervised one-unit execution failed closed.
-    Runtime,
+    Runtime(RuntimeError),
     /// Content-free internal failure.
     Internal,
 }
@@ -255,7 +255,7 @@ impl CliError {
             Self::NoReadyWork => "codingmage.cli.no_ready_work",
             Self::Refused => "codingmage.cli.refused",
             Self::ExecutionUnavailable => "codingmage.cli.execution_unavailable",
-            Self::Runtime => "codingmage.cli.runtime",
+            Self::Runtime(error) => error.code(),
             Self::Internal => "codingmage.cli.internal",
         }
     }
@@ -271,7 +271,7 @@ impl CliError {
             | Self::Repository
             | Self::Plan
             | Self::Refused
-            | Self::Runtime
+            | Self::Runtime(_)
             | Self::Internal => 1,
         }
     }
