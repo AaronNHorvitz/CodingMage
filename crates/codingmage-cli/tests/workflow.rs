@@ -61,6 +61,7 @@ impl Drop for Fixture {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn supervised_run_composes_fake_agents_git_gates_state_and_cleanup() {
     let fixture = Fixture::new();
     let target = fixture.root.join("target");
@@ -73,7 +74,7 @@ fn supervised_run_composes_fake_agents_git_gates_state_and_cleanup() {
 
     let claude = fixture.executable(
         "fake-claude",
-        r##"#!/usr/bin/python3
+        r#"#!/usr/bin/python3
 import json, sys
 from pathlib import Path
 if "--version" in sys.argv:
@@ -95,11 +96,11 @@ print(json.dumps({
         "blocker_code": None
     }
 }))
-"##,
+"#,
     );
     let codex = fixture.executable(
         "fake-codex",
-        r##"#!/usr/bin/python3
+        r#"#!/usr/bin/python3
 import json, re, sys
 if "--version" in sys.argv:
     print("codex-cli 0.144.5")
@@ -123,7 +124,7 @@ report = json.dumps({
 print(json.dumps({"type": "thread.started", "thread_id": "123e4567-e89b-12d3-a456-426614174000"}))
 print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": report}}))
 print(json.dumps({"type": "turn.completed"}))
-"##,
+"#,
     );
     let config = fixture.root.join("config/codingmage.toml");
     let scratch = fixture.root.join("scratch");
@@ -150,6 +151,7 @@ print(json.dumps({"type": "turn.completed"}))
             r#"version = 1
 task_id = "0.1.1.1"
 owned_paths = ["src"]
+completion_policy = "close_task"
 
 [implementer]
 executable = "{}"

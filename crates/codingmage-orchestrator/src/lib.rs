@@ -458,10 +458,35 @@ impl OneUnitCoordinator {
     ///
     /// Returns the precise port or transition error after attempting exact resource release.
     pub fn run(&mut self, port: &mut impl WorkflowPort) -> Result<TaskState, OrchestrationError> {
+        self.run_with_completion(port, true)
+    }
+
+    /// Executes one bounded unit through checkpoint creation without claiming canonical task
+    /// completion.
+    ///
+    /// This path is used for truthful partial progress when one task includes an unavailable
+    /// external prerequisite. The reviewed candidate remains checkpointed and its canonical
+    /// checkbox remains open.
+    ///
+    /// # Errors
+    ///
+    /// Returns the precise port or transition error after attempting exact resource release.
+    pub fn run_to_checkpoint(
+        &mut self,
+        port: &mut impl WorkflowPort,
+    ) -> Result<TaskState, OrchestrationError> {
+        self.run_with_completion(port, false)
+    }
+
+    fn run_with_completion(
+        &mut self,
+        port: &mut impl WorkflowPort,
+        reconcile: bool,
+    ) -> Result<TaskState, OrchestrationError> {
         self.transition(TaskState::Ready, SideEffectIntent::None, evidence("ready"))?;
         let claim = port.claim()?;
         self.transition(TaskState::Claimed, SideEffectIntent::AcquireClaim, claim)?;
-        let result = self.run_claimed(port);
+        let result = self.run_claimed(port, reconcile);
         let release = port.release();
         match release {
             Ok(_) => result,
@@ -472,6 +497,7 @@ impl OneUnitCoordinator {
     fn run_claimed(
         &mut self,
         port: &mut impl WorkflowPort,
+        reconcile: bool,
     ) -> Result<TaskState, OrchestrationError> {
         let started = port.start_implementation()?;
         self.transition(
@@ -536,6 +562,9 @@ impl OneUnitCoordinator {
             final_evidence,
         )?;
         let checkpoint = port.checkpoint()?;
+        if !reconcile {
+            return Ok(self.state());
+        }
         let completion = port.reconcile_completion()?;
         self.transition_many(
             TaskState::Complete,
@@ -955,6 +984,19 @@ mod tests {
             ..FakePort::default()
         };
         assert_eq!(coordinator.run(&mut port), Ok(TaskState::Blocked));
+        assert_eq!(port.calls.last(), Some(&"release"));
+    }
+
+    #[test]
+    fn candidate_only_progress_stops_at_checkpoint_without_reconciliation() {
+        let mut coordinator = new_coordinator();
+        let mut port = FakePort::default();
+        assert_eq!(
+            coordinator.run_to_checkpoint(&mut port),
+            Ok(TaskState::Checkpointed)
+        );
+        assert!(port.calls.contains(&"checkpoint"));
+        assert!(!port.calls.contains(&"reconcile"));
         assert_eq!(port.calls.last(), Some(&"release"));
     }
 

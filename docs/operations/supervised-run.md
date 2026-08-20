@@ -29,6 +29,7 @@ The first production composition performs these operations in order:
 version = 1
 task_id = "42.1.3.2"
 owned_paths = ["kernel", "tests", "docs", "artifacts"]
+completion_policy = "candidate_only"
 
 [implementer]
 executable = "/absolute/path/to/claude"
@@ -44,6 +45,8 @@ effort = "high"
 ```
 
 The owned paths are authority, not suggestions. Every actual changed path must be reported by Claude and fall under one of them before the coordinator stages anything. `TASKS.md` is not delegated to Claude; CodingMage changes it mechanically only after gates and a passing exact-commit review.
+
+Use `candidate_only` when a task has useful local work but still contains an unavailable external prerequisite. It stops in `checkpointed`, retains the reviewed implementation branch, and leaves the task checkbox open. Use `close_task` only when the complete task is achievable; any provider-reported limitation then fails closed before a completion claim.
 
 ## Invocation
 

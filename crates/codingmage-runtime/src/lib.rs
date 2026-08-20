@@ -81,10 +81,22 @@ pub struct RunSpec {
     pub task_id: String,
     /// Relative paths the implementation may change.
     pub owned_paths: Vec<PathBuf>,
+    /// Whether a passing run may close the canonical task or must stop at a reviewed checkpoint.
+    pub completion_policy: CompletionPolicy,
     /// Claude implementation profile.
     pub implementer: ImplementerSpec,
     /// Codex read-only review profile.
     pub reviewer: ProviderSpec,
+}
+
+/// Canonical completion authority for one run.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CompletionPolicy {
+    /// Retain reviewed implementation progress without changing the canonical task checkbox.
+    CandidateOnly,
+    /// Require zero provider-reported limitations and create an exact completion marker.
+    CloseTask,
 }
 
 impl RunSpec {
@@ -202,6 +214,7 @@ pub fn run_one(
         run_root,
     });
     let repository_id = port.authorization.identity().repository_id.clone();
+    let completion_policy = port.spec.completion_policy;
     let mut coordinator = OneUnitCoordinator::new(run_id.clone(), task_id.clone());
     let result = {
         let mut durable = DurableWorkflowPort::new(
@@ -211,7 +224,10 @@ pub fn run_one(
             run_id.clone(),
             task_id.clone(),
         );
-        coordinator.run(&mut durable)
+        match completion_policy {
+            CompletionPolicy::CandidateOnly => coordinator.run_to_checkpoint(&mut durable),
+            CompletionPolicy::CloseTask => coordinator.run(&mut durable),
+        }
     };
     let outcome = port.outcome(run_id, task_id, coordinator.state());
     result.map_err(|_| RuntimeError::Orchestration)?;
@@ -488,6 +504,11 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             .execute(&self.executor, &plan, &CancellationToken::default())
             .map_err(|_| OrchestrationError::Port)?;
         if !report.ready_for_commit || report.blocker_code.is_some() || report.commit.is_some() {
+            return Err(OrchestrationError::Port);
+        }
+        if self.spec.completion_policy == CompletionPolicy::CloseTask
+            && !report.limitations.is_empty()
+        {
             return Err(OrchestrationError::Port);
         }
         let receipt = commit_owned_changes(
@@ -770,11 +791,10 @@ fn write_private_new(path: &Path, bytes: &[u8]) -> Result<(), RuntimeError> {
 fn write_private_idempotent(path: &Path, bytes: &[u8]) -> Result<(), RuntimeError> {
     match fs::read(path) {
         Ok(existing) if existing == bytes => Ok(()),
-        Ok(_) => Err(RuntimeError::State),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             write_private_new(path, bytes)
         }
-        Err(_) => Err(RuntimeError::State),
+        Ok(_) | Err(_) => Err(RuntimeError::State),
     }
 }
 
@@ -840,6 +860,7 @@ mod tests {
 version = 1
 task_id = "1.2.3.4"
 owned_paths = ["src"]
+completion_policy = "close_task"
 unexpected = "secret"
 
 [implementer]
