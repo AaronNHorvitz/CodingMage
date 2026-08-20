@@ -9,6 +9,7 @@ use codingmage_core::{
 };
 use codingmage_git::inventory_repository;
 use codingmage_plan::TaskPlan;
+use codingmage_runtime::{RunSpec, run_one};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -28,7 +29,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "doctor" => diagnose(&arguments[1..], "doctor"),
         "status" => diagnose(&arguments[1..], "status"),
         "plan" => select_plan(&arguments[1..]),
-        "run" if arguments.len() == 1 => Err(CliError::ExecutionUnavailable),
+        "run" => execute(&arguments[1..]),
         _ => Err(CliError::Usage),
     }
 }
@@ -108,9 +109,19 @@ fn diagnose(arguments: &[String], command: &str) -> Result<String, CliError> {
         "stories": plan.stories.len(),
         "items": plan.items.len(),
         "configuration": config.redacted_view(),
-        "execution_available": false,
+        "execution_available": true,
+        "requires_run_spec": true,
     });
     serde_json::to_string_pretty(&value).map_err(|_| CliError::Internal)
+}
+
+fn execute(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "spec"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = RunSpec::load(&parsed.absolute_file("spec")?).map_err(|_| CliError::Runtime)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let outcome = run_one(&config, spec, &executable).map_err(|_| CliError::Runtime)?;
+    serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)
 }
 
 fn select_plan(arguments: &[String]) -> Result<String, CliError> {
@@ -225,6 +236,8 @@ pub enum CliError {
     Refused,
     /// Live orchestration is deliberately not enabled.
     ExecutionUnavailable,
+    /// Supervised one-unit execution failed closed.
+    Runtime,
     /// Content-free internal failure.
     Internal,
 }
@@ -242,6 +255,7 @@ impl CliError {
             Self::NoReadyWork => "codingmage.cli.no_ready_work",
             Self::Refused => "codingmage.cli.refused",
             Self::ExecutionUnavailable => "codingmage.cli.execution_unavailable",
+            Self::Runtime => "codingmage.cli.runtime",
             Self::Internal => "codingmage.cli.internal",
         }
     }
@@ -253,7 +267,12 @@ impl CliError {
             Self::Usage | Self::InvalidArgument => 2,
             Self::NoReadyWork => 3,
             Self::ExecutionUnavailable => 4,
-            Self::Config | Self::Repository | Self::Plan | Self::Refused | Self::Internal => 1,
+            Self::Config
+            | Self::Repository
+            | Self::Plan
+            | Self::Refused
+            | Self::Runtime
+            | Self::Internal => 1,
         }
     }
 }
@@ -271,13 +290,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn version_usage_and_execution_refusal_are_stable() {
+    fn version_usage_and_run_contract_are_stable() {
         assert_eq!(run(&["--version".to_owned()]).unwrap(), "codingmage 0.1.0");
         assert_eq!(run(&[]), Err(CliError::Usage));
-        assert_eq!(
-            run(&["run".to_owned()]),
-            Err(CliError::ExecutionUnavailable)
-        );
+        assert_eq!(run(&["run".to_owned()]), Err(CliError::Usage));
     }
 
     #[test]

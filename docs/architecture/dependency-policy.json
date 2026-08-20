@@ -3,7 +3,7 @@
     "codingmage-agent": ["codingmage-contracts", "codingmage-process"],
     "codingmage-claude": ["codingmage-agent", "codingmage-contracts", "codingmage-process"],
     "codingmage-codex": ["codingmage-agent", "codingmage-contracts", "codingmage-git", "codingmage-process"],
-    "codingmage-cli": ["codingmage-contracts", "codingmage-core", "codingmage-git", "codingmage-plan", "codingmage-process"],
+    "codingmage-cli": ["codingmage-contracts", "codingmage-core", "codingmage-git", "codingmage-plan", "codingmage-process", "codingmage-runtime"],
     "codingmage-contracts": [],
     "codingmage-core": ["codingmage-contracts"],
     "codingmage-git": ["codingmage-contracts", "codingmage-core"],
@@ -17,6 +17,7 @@
     "codingmage-project": ["codingmage-plan"],
     "codingmage-review": ["codingmage-contracts"],
     "codingmage-routing": [],
+    "codingmage-runtime": ["codingmage-claude", "codingmage-codex", "codingmage-contracts", "codingmage-core", "codingmage-gate", "codingmage-git", "codingmage-orchestrator", "codingmage-plan", "codingmage-process", "codingmage-service", "codingmage-state"],
     "codingmage-service": ["codingmage-contracts", "codingmage-state"],
     "codingmage-soak": [],
     "codingmage-state": ["codingmage-contracts"]

@@ -1,6 +1,6 @@
 [package]
-name = "codingmage-cli"
-description = "Command-line operator surface for CodingMage"
+name = "codingmage-runtime"
+description = "Production one-unit composition for CodingMage"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -8,18 +8,21 @@ rust-version.workspace = true
 version.workspace = true
 
 [dependencies]
+codingmage-claude.workspace = true
+codingmage-codex.workspace = true
 codingmage-contracts.workspace = true
 codingmage-core.workspace = true
+codingmage-gate.workspace = true
 codingmage-git.workspace = true
+codingmage-orchestrator.workspace = true
 codingmage-plan.workspace = true
 codingmage-process.workspace = true
-codingmage-runtime.workspace = true
+codingmage-service.workspace = true
+codingmage-state.workspace = true
+serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 toml.workspace = true
-
-[[bin]]
-name = "codingmage"
-path = "src/main.rs"
 
 [lints]
 workspace = true

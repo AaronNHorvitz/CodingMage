@@ -3,7 +3,7 @@
 CodingMage is a local, reusable development coordinator for running bounded implementation and review loops across coding agents. Its first workflow uses Claude Code as the implementation agent and Codex as the senior review and verification agent, while deterministic local tools remain the authority for formatting, tests, schemas, and repository state.
 
 > [!IMPORTANT]
-> CodingMage is under active implementation. Its typed contracts, repository and process controls, agent adapters, deterministic gate runner, task planner, coordinator, review loop, routing policy, durable journal, recovery logic, operator controls, background-service core, GitHub synchronization core, adversarial harness, release tooling, project adapters, and local diagnostic CLI are implemented and locally tested. Live authenticated provider execution, authenticated GitHub evidence, sustained soak evidence, native macOS/Windows evidence, and unattended release gates remain open.
+> CodingMage is under active implementation. Its supervised one-unit `run` path now composes an isolated worktree, file-only Claude candidate, coordinator-owned commit, deterministic gates, immutable Codex review, exact checklist reconciliation, durable checkpoint, and verified cleanup. That complete path passes with fake provider executables. Live authenticated provider evidence, automatic correction, authenticated GitHub evidence, sustained soak evidence, native macOS/Windows evidence, and unattended release gates remain open.
 
 ## Why CodingMage Exists
 
@@ -215,7 +215,7 @@ The pilot will begin with disposable fixtures, then a CodingMage-owned AgentMage
 
 ## Local CLI
 
-The current binary supports deny-first initialization, repository diagnosis, task selection, and local status. `run` deliberately exits with `codingmage.cli.execution_unavailable` until live composition gates pass.
+The current binary supports deny-first initialization, repository diagnosis, task selection, local status, and one explicitly scoped supervised run. A run requires a separate absolute run-spec file so task identity, path authority, provider executables, model profiles, authentication mode, and the Claude call budget cannot be inferred silently.
 
 ```bash
 codingmage init --repo /absolute/repository --config /absolute/codingmage.toml \
@@ -223,10 +223,12 @@ codingmage init --repo /absolute/repository --config /absolute/codingmage.toml \
 codingmage doctor --config /absolute/codingmage.toml
 codingmage plan --config /absolute/codingmage.toml
 codingmage status --config /absolute/codingmage.toml
-codingmage run
+codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml
 ```
 
 Operator output is structured and content-minimized. Paths, source text, changed filenames, command output, and credential values are not emitted by these commands.
+
+`run` never merges, pushes, opens a pull request, publishes, or modifies the active checkout. A passing unit leaves a local `codingmage/integration/...` branch containing the reviewed implementation commit and a separate mechanically verified checklist commit. See [`docs/operations/supervised-run.md`](docs/operations/supervised-run.md).
 
 ## Repository Layout
 
@@ -246,6 +248,7 @@ CodingMage/
 |   |-- codingmage-monitor/
 |   |-- codingmage-service/
 |   |-- codingmage-soak/
+|   |-- codingmage-runtime/
 |   `-- codingmage-cli/
 |-- schemas/
 |-- fixtures/

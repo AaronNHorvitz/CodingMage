@@ -850,18 +850,9 @@ mod tests {
     fn exact_selection_requires_an_open_dependency_ready_subtask() {
         let plan = TaskPlan::parse(PLAN.as_bytes()).unwrap();
         assert_eq!(plan.select_exact("0.1.1.2").unwrap().item.id, "0.1.1.2");
-        assert_eq!(
-            plan.select_exact("0.1.1.1"),
-            Err(PlanError::NoReadyWork)
-        );
-        assert_eq!(
-            plan.select_exact("0.1.1"),
-            Err(PlanError::NoReadyWork)
-        );
-        assert_eq!(
-            plan.select_exact("9.9.9.9"),
-            Err(PlanError::NoReadyWork)
-        );
+        assert_eq!(plan.select_exact("0.1.1.1"), Err(PlanError::NoReadyWork));
+        assert_eq!(plan.select_exact("0.1.1"), Err(PlanError::NoReadyWork));
+        assert_eq!(plan.select_exact("9.9.9.9"), Err(PlanError::NoReadyWork));
     }
 
     #[test]

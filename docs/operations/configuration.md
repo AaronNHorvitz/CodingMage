@@ -13,3 +13,9 @@ Agent profiles name a stable identifier, provider, and model. Gate commands cont
 Network, feature-branch push, issue synchronization, and draft pull requests are separately denied by default. Push, issues, or pull requests cannot be enabled while network is denied. Publication mode must agree exactly with the grants.
 
 Configuration contains references and policy, not raw credentials. Native credential-store integration remains outside the current CLI workflow.
+
+## Supervised Run Specification
+
+One-unit execution additionally requires an absolute, regular, nonsymlink run-spec file. It names one exact open dependency-ready sub-task, explicit relative owned paths, absolute provider executables, model and effort selectors, Claude authentication mode, and a per-call budget ceiling. Unknown fields, relative executables, escaping paths, malformed identifiers, and excessive budgets fail closed. The run spec contains no credential value.
+
+The `existing_login` mode permits the Claude CLI to use its own established login while CodingMage supplies empty setting sources, strict empty MCP configuration, no network tools, and file-only worktree permissions. `bare` retains Claude's stricter bare boundary but requires separately implemented external credential-helper integration before it is usable in production.

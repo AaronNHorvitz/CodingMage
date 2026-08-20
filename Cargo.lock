@@ -60,6 +60,7 @@ dependencies = [
  "codingmage-git",
  "codingmage-plan",
  "codingmage-process",
+ "codingmage-runtime",
  "serde_json",
  "toml",
 ]
@@ -195,6 +196,27 @@ name = "codingmage-routing"
 version = "0.1.0"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "codingmage-runtime"
+version = "0.1.0"
+dependencies = [
+ "codingmage-claude",
+ "codingmage-codex",
+ "codingmage-contracts",
+ "codingmage-core",
+ "codingmage-gate",
+ "codingmage-git",
+ "codingmage-orchestrator",
+ "codingmage-plan",
+ "codingmage-process",
+ "codingmage-service",
+ "codingmage-state",
+ "serde",
+ "serde_json",
+ "sha2",
+ "toml",
 ]
 
 [[package]]

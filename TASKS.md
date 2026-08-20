@@ -905,4 +905,4 @@ These items must remain open until their prerequisites actually exist:
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Implement the concrete production `WorkflowPort` composition behind `codingmage run`, including durable intent, owned worktree, file-only Claude candidate, coordinator gates and commit, immutable Codex review, checkpoint, cleanup, and fail-closed recovery. Then execute one explicitly authorized disposable live task without broadening credentials or publication authority.
+- [ ] **Next 1:** Implement the concrete production `WorkflowPort` composition behind `codingmage run`, including durable intent, owned worktree, file-only Claude candidate, coordinator gates and commit, immutable Codex review, checkpoint, cleanup, and fail-closed recovery. The supervised composition and complete fake-provider binary fixture now pass locally; repeat senior review after correction, concrete restart re-observation/resume, background run-spec queue binding, and one explicitly authorized disposable live task remain open. See `docs/operations/supervised-run.md`.
