@@ -15,13 +15,15 @@ The first production composition performs these operations in order:
 7. Give Claude file-only authority inside the worktree, with Git, shell, web, MCP, skills, subagents, notebooks, and `.git` denied.
 8. Verify Claude's claimed changed paths and create the implementation commit in the coordinator.
 9. Execute configured shell-free deterministic gates through the bounded process guard.
-10. Give Codex read-only authority over the exact base and candidate commits and validate its structured report against the immutable diff.
-11. Repeat deterministic gates after a passing review.
-12. Write a content-minimized idempotent checkpoint.
-13. Change exactly the selected Markdown checkbox, validate that no other plan structure changed, and create a separate coordinator-owned completion commit.
-14. Remove the clean owned worktree, release the repository lock, and retain the local feature branch.
+10. Return bounded ephemeral diagnostics to Claude when a required gate fails, create a child correction commit, and rerun the gates within the shared correction limit.
+11. Give Codex read-only authority over the exact original base and latest candidate commits and validate its structured report against the cumulative immutable diff.
+12. Return structured `changes_required` findings to Claude, create a child correction commit, rerun gates, and obtain a fresh full-diff review within the same limit.
+13. Repeat deterministic gates after a passing review.
+14. Write a content-minimized idempotent checkpoint including the correction count.
+15. Change exactly the selected Markdown checkbox, validate that no other plan structure changed, and create a separate coordinator-owned completion commit.
+16. Remove the clean owned worktree, release the repository lock, and retain the local feature branch.
 
-`changes_required`, `disputed`, and `blocked` reviews stop as blocked in this first usable path. Automatic correction is not yet enabled because a corrected commit must receive another immutable senior review before it can be accepted.
+`disputed` and `blocked` reviews stop as blocked. Gate and `changes_required` outcomes use the one configured correction budget; exhaustion stops in a recoverable state with the latest candidate retained.
 
 ## Run Spec
 
@@ -64,7 +66,7 @@ The terminal JSON identifies the run, task, terminal state, retained branch, can
 
 - One live existing-login Claude implementation and exact-SHA Codex review are admitted as supervised local evidence; the five-unit and unattended campaigns remain open.
 - `bare` Claude authentication has no production credential-helper composition yet.
-- Automatic correction and repeat senior review are not implemented.
+- Production restart re-observation cannot yet resume an interrupted correction in place.
 - The background service generator does not yet bind a run-spec queue to `codingmage run`.
 - No branch is pushed or merged automatically.
 - Crash recovery records state-changing uncertainty correctly, but production re-observation and resume of this concrete port remain open.

@@ -340,9 +340,11 @@ The active line tells you which component currently owns the work:
 - `codex` is reviewing the exact immutable candidate commit read-only.
 - `coordinator` is validating authority, managing owned Git state, checkpointing, or cleaning up.
 
-If a candidate gate fails, the stream prints `candidate gates blocked; senior review will not run`
-before cleanup. The retained branch and final `recoverable_failure` JSON can then be inspected and
-corrected without spending reviewer tokens or claiming completion.
+If a candidate gate fails, the stream prints `candidate gates blocked; bounded correction will
+run`. Claude receives bounded ephemeral diagnostics, creates a coordinator-committed correction,
+and the gates rerun. Codex review begins only after those gates pass. Gate and review corrections
+share the configured correction limit; exhaustion retains the latest branch and returns a truthful
+`recoverable_failure` result.
 
 The stream intentionally reports lifecycle activity rather than model prose or hidden reasoning.
 Paths, prompts, source text, changed filenames, command output, environment values, and credentials
