@@ -225,8 +225,10 @@ impl ClaudeWorkPacket {
              - changed_paths must contain only exact repository-relative paths, never absolute paths.\n\
              - tests must be empty because this provider has no test-command authority.\n\
              - commit must be null because CodingMage alone creates the commit.\n\
-             - after completed edits, set ready_for_commit=true and blocker_code=null.\n\
-             - when blocked, set ready_for_commit=false and provide one short stable blocker_code.\n\
+             - after completed edits, set ready_for_commit=true, limitations=[], and blocker_code=null.\n\
+             - coordinator-owned test execution is expected and must not be reported as a limitation.\n\
+             - when any real limitation remains, set ready_for_commit=false, list it, and provide one\n\
+               short stable blocker_code.\n\
              Exactly one of ready_for_commit=true or a non-null blocker_code is permitted.\n\
              Return only the required structured completion report. A claimed test, commit, merge,\n\
              or release has no authority until CodingMage verifies it independently.\n",
@@ -290,6 +292,10 @@ impl ClaudeCompletionReport {
             })
             || self.tests.iter().any(|test| {
                 test.command.is_empty() || test.command.iter().any(|part| part.contains('\0'))
+            })
+            || self.blocker_code.is_none() && !self.limitations.is_empty()
+            || self.limitations.iter().any(|value| {
+                value.is_empty() || value.len() > 4096 || value.chars().any(char::is_control)
             })
         {
             return Err(ClaudeError::InvalidReport);
@@ -743,7 +749,7 @@ fn completion_schema() -> String {
             },
             "commit": {"description": "Must be null; commit creation is coordinator-owned.", "type": ["string", "null"]},
             "ready_for_commit": {"description": "True only when edits are complete and blocker_code is null.", "type": "boolean"},
-            "limitations": {"type": "array", "maxItems": 256, "items": {"type": "string", "minLength": 1, "maxLength": 4096}},
+            "limitations": {"description": "Empty when ready. List only real unresolved limitations, never coordinator-owned test execution.", "type": "array", "maxItems": 256, "items": {"type": "string", "minLength": 1, "maxLength": 4096}},
             "blocker_code": {"description": "Null when ready; otherwise one short stable code.", "type": ["string", "null"]}
         },
         "required": ["changed_paths", "tests", "commit", "ready_for_commit", "limitations", "blocker_code"]
@@ -970,6 +976,8 @@ mod tests {
         assert!(text.contains("exact repository-relative paths"));
         assert!(text.contains("tests must be empty"));
         assert!(text.contains("commit must be null"));
+        assert!(text.contains("limitations=[]"));
+        assert!(text.contains("must not be reported as a limitation"));
         assert!(text.contains("Exactly one of ready_for_commit=true"));
     }
 
@@ -1083,6 +1091,14 @@ mod tests {
             blocker_code: None,
         };
         assert_eq!(ready.validate(), Ok(()));
+        let mut improperly_limited = ready;
+        improperly_limited
+            .limitations
+            .push("coordinator_will_run_tests".to_owned());
+        assert_eq!(
+            improperly_limited.validate(),
+            Err(ClaudeError::InvalidReport)
+        );
     }
 
     #[test]
