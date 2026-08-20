@@ -492,7 +492,7 @@ impl ClaudeAdapter {
         let stdin = packet.render(session)?;
         let settings = authority_settings(session)?;
         let permission_root = permission_root(&session.worktree)?;
-        let allowed_tools = ["Read", "Edit", "Write"]
+        let allowed_tools = ["Read", "Edit", "Write", "Glob", "Grep"]
             .map(|tool| format!("{tool}({permission_root})"))
             .join(",");
         let mut arguments = vec![
@@ -508,7 +508,7 @@ impl ClaudeAdapter {
             "--permission-mode".to_owned(),
             "dontAsk".to_owned(),
             "--tools".to_owned(),
-            "Read,Edit,Write".to_owned(),
+            "Read,Edit,Write,Glob,Grep".to_owned(),
             "--allowedTools".to_owned(),
             allowed_tools,
             "--disallowedTools".to_owned(),
@@ -760,7 +760,7 @@ fn completion_schema() -> String {
 fn authority_settings(session: &ClaudeSession) -> Result<String, ClaudeError> {
     let root = permission_root(&session.worktree)?;
     let git_metadata = format!("{}/.git", permission_path(&session.worktree)?);
-    let allow = ["Read", "Edit", "Write"]
+    let allow = ["Read", "Edit", "Write", "Glob", "Grep"]
         .map(|tool| format!("{tool}({root})"))
         .to_vec();
     let deny = [
@@ -774,6 +774,8 @@ fn authority_settings(session: &ClaudeSession) -> Result<String, ClaudeError> {
         format!("Read({git_metadata})"),
         format!("Edit({git_metadata})"),
         format!("Write({git_metadata})"),
+        format!("Glob({git_metadata})"),
+        format!("Grep({git_metadata})"),
     ];
     serde_json::to_string(&serde_json::json!({
         "permissions": {
@@ -1011,7 +1013,7 @@ mod tests {
             start
                 .arguments
                 .windows(2)
-                .any(|pair| pair == ["--tools", "Read,Edit,Write"])
+                .any(|pair| pair == ["--tools", "Read,Edit,Write,Glob,Grep"])
         );
         let settings = start
             .arguments
@@ -1030,6 +1032,21 @@ mod tests {
         assert_eq!(
             settings["sandbox"]["filesystem"]["denyWrite"][0],
             fixture.root.join(".git").to_str().unwrap()
+        );
+        assert!(
+            settings["permissions"]["allow"]
+                .as_array()
+                .is_some_and(|values| values.iter().any(|value| value
+                    .as_str()
+                    .is_some_and(|permission| permission.starts_with("Glob("))))
+        );
+        assert!(
+            settings["permissions"]["deny"]
+                .as_array()
+                .is_some_and(|values| values.iter().any(|value| value
+                    .as_str()
+                    .is_some_and(|permission| permission.starts_with("Grep(")
+                        && permission.ends_with("/.git)"))))
         );
 
         let existing_login =
