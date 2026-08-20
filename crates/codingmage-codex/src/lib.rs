@@ -956,8 +956,11 @@ fn render_lead_packet(binding: &CodexLeadBinding) -> Result<Vec<u8>, CodexError>
         );
     }
     packet.push_str(
-        "Return only the required structured response. If a material architecture or authority\n\
-         choice cannot be made from existing policy, return no proposals and one human_decision.\n",
+        "Return only the required structured response. Prefer one independently implementable local\n\
+         task from the supplied ready set; an unavailable external prerequisite on one task must not\n\
+         block a different ready task. If every supplied task requires a material architecture,\n\
+         external, or authority decision not resolved by existing policy, return no proposals and\n\
+         one human_decision.\n",
     );
     if packet.len() > MAX_PROMPT_BYTES {
         return Err(CodexError::InvalidPacket);

@@ -582,7 +582,7 @@ pub fn run_serial_campaign_with_progress(
             ));
         }
         let ready = plan
-            .select_ready(&BTreeSet::new(), &BTreeSet::new(), 1)
+            .select_ready(&BTreeSet::new(), &BTreeSet::new(), 64)
             .map_err(|_| RuntimeError::Plan)?;
         spec.initial_commit.clone_from(&head);
         spec.task_source_sha256.clone_from(&plan.source_sha256);
@@ -650,7 +650,10 @@ pub fn run_serial_campaign_with_progress(
         }) {
             return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
         }
-        let selected = &ready[0];
+        let selected = ready
+            .iter()
+            .find(|selected| selected.item.id == proposal.task_id)
+            .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
         let mut scheduler = PodScheduler::new(&spec).map_err(RuntimeError::Campaign)?;
         let lease = scheduler
             .admit(&spec, selected, proposal)
