@@ -208,7 +208,12 @@ fn every_evidence_field_mutation_breaks_integrity() {
     changed.definition.as_mut().unwrap().assertions = vec![GateAssertion::StdoutBytes { value: 1 }];
     mutations.push(changed);
     let mut changed = original;
-    changed.integrity_sha256.replace_range(..1, "0");
+    let replacement = if changed.integrity_sha256.starts_with('0') {
+        "1"
+    } else {
+        "0"
+    };
+    changed.integrity_sha256.replace_range(..1, replacement);
     mutations.push(changed);
     assert!(
         mutations
