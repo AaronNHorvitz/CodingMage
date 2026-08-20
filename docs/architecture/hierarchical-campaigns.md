@@ -58,6 +58,12 @@ A pod starts only when all of the following are true:
 - Required provider profiles, local capacity, and configured budget remain available.
 - No unresolved architecture decision requires product-owner authority.
 
+The campaign lead itself is a process-backed Codex profile in a read-only sandbox. Its strict
+response is untrusted data, not an allocation decision. Before a pod lease exists, the coordinator
+rechecks the exact campaign head, task-source digest, dependency-ready set, paths, dependencies,
+gate tiers, shared resources, expected artifacts, and risk. The lead can instead return one bounded
+human-decision blocker, but it cannot combine that blocker with executable proposals.
+
 ## Correction Loop
 
 Gate output used for correction is ephemeral, bounded, and delivered only to the currently

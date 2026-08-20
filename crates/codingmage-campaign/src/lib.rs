@@ -7,6 +7,7 @@ use std::{
 };
 
 use codingmage_contracts::TaskId;
+pub use codingmage_contracts::{HumanDecisionBlocker, PodRisk, TeamLeadProposal, TeamLeadReport};
 use codingmage_plan::SelectedWork;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -207,62 +208,6 @@ impl CampaignSpec {
     }
 }
 
-/// Deterministic task risk class proposed by the read-only campaign lead.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum PodRisk {
-    /// Bounded implementation with no shared security or architecture contract.
-    Routine,
-    /// Shared contract, architecture, security, concurrency, or publication-sensitive work.
-    High,
-}
-
-/// Untrusted model-authored proposal before deterministic sealing.
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct TeamLeadProposal {
-    /// Exact dependency-ready task identifier.
-    pub task_id: String,
-    /// Dependencies claimed from the canonical plan.
-    pub dependencies: Vec<String>,
-    /// Exact requested write roots.
-    pub owned_paths: Vec<PathBuf>,
-    /// Required operator-defined gate tiers.
-    pub gate_tiers: Vec<String>,
-    /// Shared test resources that must be leased exclusively.
-    pub test_resources: Vec<String>,
-    /// Expected outputs under the requested write roots.
-    pub expected_artifacts: Vec<PathBuf>,
-    /// Proposed risk, subject to deterministic escalation.
-    pub risk: PodRisk,
-    /// Concise inspectable summary; never used as authority.
-    pub rationale_summary: String,
-}
-
-/// Bounded request for an operator decision when no proposal is independently safe.
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct HumanDecisionBlocker {
-    /// Stable content-free reason code.
-    pub code: String,
-    /// Concise inspectable question with no hidden reasoning.
-    pub summary: String,
-}
-
-/// Strict read-only campaign-lead response.
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(deny_unknown_fields)]
-pub struct TeamLeadReport {
-    /// Exact starting commit observed by the lead.
-    pub campaign_head: String,
-    /// Exact canonical task source observed by the lead.
-    pub task_source_sha256: String,
-    /// Bounded proposals selected only from the supplied ready set.
-    pub proposals: Vec<TeamLeadProposal>,
-    /// Present only when no proposal can be made without an operator decision.
-    pub human_decision: Option<HumanDecisionBlocker>,
-}
-
 /// Deterministically validated lead outcome.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum TeamLeadOutcome {
@@ -272,77 +217,69 @@ pub enum TeamLeadOutcome {
     HumanDecision(HumanDecisionBlocker),
 }
 
-impl TeamLeadReport {
-    /// Validates a lead response against immutable campaign authority and the coordinator's ready set.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`CampaignError`] for stale, contradictory, duplicate, escaping, or non-ready output.
-    pub fn validate(
-        self,
-        spec: &CampaignSpec,
-        ready: &[SelectedWork],
-    ) -> Result<TeamLeadOutcome, CampaignError> {
-        spec.verify()?;
-        if self.campaign_head != spec.initial_commit
-            || self.task_source_sha256 != spec.task_source_sha256
-            || self.proposals.len() > usize::from(spec.max_parallel_pods)
-            || self.proposals.is_empty() == self.human_decision.is_none()
+/// Validates a lead response against immutable campaign authority and the coordinator's ready set.
+///
+/// # Errors
+///
+/// Returns [`CampaignError`] for stale, contradictory, duplicate, escaping, or non-ready output.
+pub fn validate_team_lead_report(
+    report: TeamLeadReport,
+    spec: &CampaignSpec,
+    ready: &[SelectedWork],
+) -> Result<TeamLeadOutcome, CampaignError> {
+    spec.verify()?;
+    if report.campaign_head != spec.initial_commit
+        || report.task_source_sha256 != spec.task_source_sha256
+        || report.proposals.len() > usize::from(spec.max_parallel_pods)
+        || report.proposals.is_empty() == report.human_decision.is_none()
+    {
+        return Err(CampaignError::InvalidProposal);
+    }
+    if let Some(blocker) = report.human_decision {
+        if !valid_component(&blocker.code)
+            || blocker.summary.is_empty()
+            || blocker.summary.len() > MAX_SUMMARY_BYTES
+            || blocker.summary.chars().any(char::is_control)
         {
             return Err(CampaignError::InvalidProposal);
         }
-        if let Some(blocker) = self.human_decision {
-            if !valid_component(&blocker.code)
-                || blocker.summary.is_empty()
-                || blocker.summary.len() > MAX_SUMMARY_BYTES
-                || blocker.summary.chars().any(char::is_control)
-            {
-                return Err(CampaignError::InvalidProposal);
-            }
-            return Ok(TeamLeadOutcome::HumanDecision(blocker));
-        }
-
-        let ready_by_id = ready
-            .iter()
-            .map(|selected| (selected.item.id.as_str(), selected))
-            .collect::<BTreeMap<_, _>>();
-        let mut task_ids = BTreeSet::new();
-        let mut sealed = Vec::with_capacity(self.proposals.len());
-        for proposal in self.proposals {
-            if !task_ids.insert(proposal.task_id.clone()) {
-                return Err(CampaignError::InvalidProposal);
-            }
-            let selected = ready_by_id
-                .get(proposal.task_id.as_str())
-                .ok_or(CampaignError::InvalidProposal)?;
-            if proposal.dependencies != selected.item.dependencies {
-                return Err(CampaignError::InvalidProposal);
-            }
-            sealed.push(PodProposal::seal(
-                PodProposal {
-                    version: CAMPAIGN_VERSION,
-                    task_id: proposal.task_id,
-                    task_source_sha256: self.task_source_sha256.clone(),
-                    owned_paths: proposal.owned_paths,
-                    dependencies: proposal.dependencies,
-                    gate_tiers: proposal.gate_tiers,
-                    test_resources: proposal.test_resources,
-                    expected_artifacts: proposal.expected_artifacts,
-                    risk: proposal.risk,
-                    rationale_summary: proposal.rationale_summary,
-                    proposal_sha256: ZERO_SHA256.to_owned(),
-                },
-                spec,
-            )?);
-        }
-        Ok(TeamLeadOutcome::Proposals(sealed))
+        return Ok(TeamLeadOutcome::HumanDecision(blocker));
     }
-}
 
-/// Returns the exact JSON Schema required for a campaign-lead response.
-#[must_use]
-pub fn team_lead_schema() -> &'static str {
-    include_str!("team-lead.schema.json")
+    let ready_by_id = ready
+        .iter()
+        .map(|selected| (selected.item.id.as_str(), selected))
+        .collect::<BTreeMap<_, _>>();
+    let mut task_ids = BTreeSet::new();
+    let mut sealed = Vec::with_capacity(report.proposals.len());
+    for proposal in report.proposals {
+        if !task_ids.insert(proposal.task_id.clone()) {
+            return Err(CampaignError::InvalidProposal);
+        }
+        let selected = ready_by_id
+            .get(proposal.task_id.as_str())
+            .ok_or(CampaignError::InvalidProposal)?;
+        if proposal.dependencies != selected.item.dependencies {
+            return Err(CampaignError::InvalidProposal);
+        }
+        sealed.push(PodProposal::seal(
+            PodProposal {
+                version: CAMPAIGN_VERSION,
+                task_id: proposal.task_id,
+                task_source_sha256: report.task_source_sha256.clone(),
+                owned_paths: proposal.owned_paths,
+                dependencies: proposal.dependencies,
+                gate_tiers: proposal.gate_tiers,
+                test_resources: proposal.test_resources,
+                expected_artifacts: proposal.expected_artifacts,
+                risk: proposal.risk,
+                rationale_summary: proposal.rationale_summary,
+                proposal_sha256: ZERO_SHA256.to_owned(),
+            },
+            spec,
+        )?);
+    }
+    Ok(TeamLeadOutcome::Proposals(sealed))
 }
 
 /// Hash-bound, model-proposed pod packet with no authority until admission.
@@ -888,7 +825,9 @@ mod tests {
         };
         let mut matching = authority.clone();
         matching.task_source_sha256 = ready[0].source_sha256.clone();
-        let TeamLeadOutcome::Proposals(sealed) = report.validate(&matching, &ready).unwrap() else {
+        let TeamLeadOutcome::Proposals(sealed) =
+            validate_team_lead_report(report, &matching, &ready).unwrap()
+        else {
             panic!("expected sealed proposals");
         };
         assert_eq!(sealed.len(), 1);
@@ -903,7 +842,7 @@ mod tests {
             human_decision: None,
         };
         assert_eq!(
-            hostile.validate(&matching, &ready),
+            validate_team_lead_report(hostile, &matching, &ready),
             Err(CampaignError::InvalidProposal)
         );
     }
@@ -921,10 +860,8 @@ mod tests {
             }),
         };
         assert!(matches!(
-            report.validate(&authority, &[]).unwrap(),
+            validate_team_lead_report(report, &authority, &[]).unwrap(),
             TeamLeadOutcome::HumanDecision(_)
         ));
-
-        assert!(serde_json::from_str::<serde_json::Value>(team_lead_schema()).is_ok());
     }
 }

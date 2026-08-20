@@ -930,15 +930,15 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 ### Story 21.1 - Campaign Specification
 
 - [ ] **Task 21.1.1 - Define campaign authority**
-  - [ ] **Sub-task 21.1.1.1:** Add a versioned campaign specification with campaign identity, allowed and denied roots, pod ceiling, unit ceiling, budget ceiling, provider profiles, gate tiers, and publication ceiling.
-  - [ ] **Sub-task 21.1.1.2:** Reject linked files, relative authority roots, overlapping allowed/denied roots, unbounded concurrency, raw credentials, and protected-branch targets.
-  - [ ] **Sub-task 21.1.1.3:** Bind every campaign to repository identity, initial commit, task-source digest, and operator authorization digest.
-  - [ ] **Sub-task 21.1.1.4:** Make one-pod serial execution the default regardless of available hardware.
+  - [x] **Sub-task 21.1.1.1:** Add a versioned campaign specification with campaign identity, allowed and denied roots, pod ceiling, unit ceiling, budget ceiling, provider profiles, gate tiers, and publication ceiling.
+  - [x] **Sub-task 21.1.1.2:** Reject linked files, relative authority roots, overlapping allowed/denied roots, unbounded concurrency, raw credentials, and protected-branch targets.
+  - [x] **Sub-task 21.1.1.3:** Bind every campaign to repository identity, initial commit, task-source digest, and operator authorization digest.
+  - [x] **Sub-task 21.1.1.4:** Make one-pod serial execution the default regardless of available hardware.
 - [ ] **Task 21.1.2 - Build the read-only campaign lead**
-  - [ ] **Sub-task 21.1.2.1:** Define a strict team-lead proposal schema for task identity, exact paths, dependencies, risk, gates, expected artifacts, and rationale summary.
-  - [ ] **Sub-task 21.1.2.2:** Give the lead read-only repository and task-plan access with no Git, write, credential, publication, or state-transition authority.
-  - [ ] **Sub-task 21.1.2.3:** Deterministically reject stale, non-ready, escaping, overbroad, contradictory, duplicate, or undeclared proposals.
-  - [ ] **Sub-task 21.1.2.4:** Route ambiguous architecture or authority decisions to a recorded human-decision blocker.
+  - [x] **Sub-task 21.1.2.1:** Define a strict team-lead proposal schema for task identity, exact paths, dependencies, risk, gates, expected artifacts, and rationale summary.
+  - [x] **Sub-task 21.1.2.2:** Give the lead read-only repository and task-plan access with no Git, write, credential, publication, or state-transition authority.
+  - [x] **Sub-task 21.1.2.3:** Deterministically reject stale, non-ready, escaping, overbroad, contradictory, duplicate, or undeclared proposals.
+  - [x] **Sub-task 21.1.2.4:** Route ambiguous architecture or authority decisions to a recorded human-decision blocker.
 
 **Story acceptance criteria**
 

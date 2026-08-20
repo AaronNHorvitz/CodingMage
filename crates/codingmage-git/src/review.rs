@@ -25,6 +25,64 @@ pub struct ReviewScope {
     paths: BTreeSet<String>,
 }
 
+/// Exact clean commit snapshot observed around a read-only provider invocation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReadOnlyScope {
+    commit: String,
+    tree_sha256: String,
+    tracked_paths_sha256: String,
+}
+
+impl ReadOnlyScope {
+    /// Captures one clean checkout at an exact commit using hardened Git observations.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ReviewScopeError`] for stale, dirty, malformed, or excessive snapshots.
+    pub fn capture(worktree: &Path, commit: &str) -> Result<Self, ReviewScopeError> {
+        if !worktree.is_absolute() || !worktree.is_dir() || !object_id(commit) {
+            return Err(ReviewScopeError::InvalidBinding);
+        }
+        run_git(worktree, GitCommand::VerifyCommit(commit)).map_err(|_| ReviewScopeError::Git)?;
+        let head = run_git(worktree, GitCommand::Head).map_err(|_| ReviewScopeError::Git)?;
+        if text(&head).map_err(|_| ReviewScopeError::Git)?.trim() != commit {
+            return Err(ReviewScopeError::Stale);
+        }
+        let changed = run_git(worktree, GitCommand::ChangedTrackedPaths)
+            .map_err(|_| ReviewScopeError::Git)?;
+        let untracked =
+            run_git(worktree, GitCommand::UntrackedPaths).map_err(|_| ReviewScopeError::Git)?;
+        if !changed.stdout.is_empty() || !untracked.stdout.is_empty() {
+            return Err(ReviewScopeError::Stale);
+        }
+        let tree =
+            run_git(worktree, GitCommand::TreePaths(commit)).map_err(|_| ReviewScopeError::Git)?;
+        let tracked =
+            run_git(worktree, GitCommand::TrackedPaths).map_err(|_| ReviewScopeError::Git)?;
+        if tree.stdout.len() > MAX_PATHS * 4096 || tracked.stdout.len() > MAX_PATHS * 4096 {
+            return Err(ReviewScopeError::InvalidTree);
+        }
+        Ok(Self {
+            commit: commit.to_owned(),
+            tree_sha256: tree.stdout_sha256,
+            tracked_paths_sha256: tracked.stdout_sha256,
+        })
+    }
+
+    /// Requires the exact clean commit snapshot to remain unchanged.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ReviewScopeError::Stale`] after any checkout, tree, or path change.
+    pub fn revalidate(&self, worktree: &Path) -> Result<(), ReviewScopeError> {
+        if Self::capture(worktree, &self.commit)? == *self {
+            Ok(())
+        } else {
+            Err(ReviewScopeError::Stale)
+        }
+    }
+}
+
 impl ReviewScope {
     /// Captures and validates an exact review scope from a read-only checkout.
     ///
@@ -292,6 +350,35 @@ mod tests {
         assert_eq!(
             fs::read_to_string(active).unwrap(),
             "concurrent-user-edit\n"
+        );
+    }
+
+    #[test]
+    fn read_only_scope_requires_and_revalidates_a_clean_exact_snapshot() {
+        let fixture = GitFixture::new();
+        let head = fixture.head();
+        let scope = ReadOnlyScope::capture(&fixture.target, &head).unwrap();
+        scope.revalidate(&fixture.target).unwrap();
+
+        fs::write(
+            fixture.target.join("tracked-one.txt"),
+            "provider-mutation\n",
+        )
+        .unwrap();
+        assert_eq!(
+            scope.revalidate(&fixture.target),
+            Err(ReviewScopeError::Stale)
+        );
+        assert_eq!(
+            ReadOnlyScope::capture(&fixture.target, &head),
+            Err(ReviewScopeError::Stale)
+        );
+
+        run(&fixture.target, &["checkout", "--", "tracked-one.txt"]);
+        fs::write(fixture.target.join("untracked.txt"), "untracked\n").unwrap();
+        assert_eq!(
+            ReadOnlyScope::capture(&fixture.target, &head),
+            Err(ReviewScopeError::Stale)
         );
     }
 }
