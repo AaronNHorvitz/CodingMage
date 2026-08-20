@@ -1282,6 +1282,12 @@ mod tests {
             CodexCapabilities::parse("codex-cli 0.120.0", exec, resume),
             Err(CodexError::UnsupportedVersion)
         );
+        let schema: serde_json::Value = serde_json::from_str(team_lead_schema()).unwrap();
+        assert!(schema.to_string().find("oneOf").is_none());
+        assert_eq!(
+            schema["properties"]["human_decision"]["type"],
+            serde_json::json!(["object", "null"])
+        );
     }
 
     #[test]

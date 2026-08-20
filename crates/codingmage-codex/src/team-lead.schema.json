@@ -26,18 +26,13 @@
       }
     },
     "human_decision": {
-      "oneOf": [
-        { "type": "null" },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["code", "summary"],
-          "properties": {
-            "code": { "type": "string", "minLength": 1, "maxLength": 128 },
-            "summary": { "type": "string", "minLength": 1, "maxLength": 4096 }
-          }
-        }
-      ]
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["code", "summary"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 4096 }
+      }
     }
   }
 }
