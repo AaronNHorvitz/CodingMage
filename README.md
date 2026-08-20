@@ -1,7 +1,5 @@
 # CodingMage
 
-**Build with the right model. Review with a stronger one. Trust the evidence, not the chat.**
-
 CodingMage is a local coding-agent coordinator designed to deliver better verified results per token. It routes each bounded task according to complexity and risk, uses efficient models for routine implementation, escalates demanding work to stronger profiles, and gives the resulting commit to an independent senior-review model. Deterministic local checks remain the final authority for tests, formatting, schemas, and repository state.
 
 Instead of paying frontier-model prices for every mechanical step, or trusting a cheaper model with every architectural decision, CodingMage combines both where they are strongest:
