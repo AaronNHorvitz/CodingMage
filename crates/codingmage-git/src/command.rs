@@ -25,6 +25,10 @@ pub(crate) enum GitCommand<'a> {
     TrackedPaths,
     ChangedTrackedPaths,
     UntrackedPaths,
+    DiffPaths {
+        base: &'a str,
+        target: &'a str,
+    },
     VerifyCommit(&'a str),
     Parent(&'a str),
     IsAncestor {
@@ -41,6 +45,9 @@ pub(crate) enum GitCommand<'a> {
     },
     Commit {
         message: &'a str,
+    },
+    FastForward {
+        target: &'a str,
     },
     AddWorktree {
         destination: &'a Path,
@@ -158,6 +165,7 @@ pub(crate) fn run_git_with_codes(
     })
 }
 
+#[allow(clippy::too_many_lines)]
 fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
     match request {
         GitCommand::Status => [
@@ -197,6 +205,14 @@ fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
             .into_iter()
             .map(OsString::from)
             .collect(),
+        GitCommand::DiffPaths { base, target } => vec![
+            "diff".into(),
+            "--name-only".into(),
+            "-z".into(),
+            base.into(),
+            target.into(),
+            "--".into(),
+        ],
         GitCommand::VerifyCommit(object) => {
             vec![
                 "cat-file".into(),
@@ -238,6 +254,14 @@ fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
             "--no-gpg-sign".into(),
             "--message".into(),
             message.into(),
+        ],
+        GitCommand::FastForward { target } => vec![
+            "-c".into(),
+            "commit.gpgsign=false".into(),
+            "merge".into(),
+            "--ff-only".into(),
+            "--no-edit".into(),
+            target.into(),
         ],
         GitCommand::AddWorktree {
             destination,

@@ -2,6 +2,7 @@
 
 mod command;
 mod commit;
+mod integration;
 mod inventory;
 mod policy;
 mod review;
@@ -11,6 +12,7 @@ mod worktree;
 mod test_support;
 
 pub use commit::{CommitError, CommitReceipt, commit_owned_changes};
+pub use integration::{IntegrationError, IntegrationReceipt, integrate_reviewed_descendant};
 pub use inventory::{
     Inventory, InventoryError, OperationState, RepositoryCondition, inventory_repository,
 };
