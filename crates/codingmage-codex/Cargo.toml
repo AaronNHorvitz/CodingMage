@@ -9,8 +9,11 @@ version.workspace = true
 
 [dependencies]
 codingmage-agent.workspace = true
+codingmage-campaign.workspace = true
 codingmage-contracts.workspace = true
+codingmage-core.workspace = true
 codingmage-git.workspace = true
+codingmage-plan.workspace = true
 codingmage-process.workspace = true
 serde.workspace = true
 serde_json.workspace = true

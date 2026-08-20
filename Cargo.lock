@@ -82,8 +82,11 @@ name = "codingmage-codex"
 version = "0.1.0"
 dependencies = [
  "codingmage-agent",
+ "codingmage-campaign",
  "codingmage-contracts",
+ "codingmage-core",
  "codingmage-git",
+ "codingmage-plan",
  "codingmage-process",
  "serde",
  "serde_json",

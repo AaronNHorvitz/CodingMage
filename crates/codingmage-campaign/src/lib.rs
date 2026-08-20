@@ -15,7 +15,30 @@ const CAMPAIGN_VERSION: u16 = 1;
 const MAX_SPEC_BYTES: u64 = 1024 * 1024;
 const MAX_PATHS: usize = 256;
 const MAX_RESOURCES: usize = 256;
+const MAX_SUMMARY_BYTES: usize = 4 * 1024;
 const ZERO_SHA256: &str = "0000000000000000000000000000000000000000000000000000000000000000";
+
+/// Exact operator-selected provider profile. Provider output never changes this authority.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignProvider {
+    /// Absolute provider executable selected outside model context.
+    pub executable: PathBuf,
+    /// Exact model selector.
+    pub model: String,
+    /// Exact effort selector.
+    pub effort: String,
+}
+
+/// Named deterministic gate tier available to pod proposals.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignGateTier {
+    /// Stable tier name referenced by proposals.
+    pub name: String,
+    /// Operator-authored gate profile names. These are data, never shell commands.
+    pub profiles: Vec<String>,
+}
 
 /// Highest GitHub visibility permitted for one campaign.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -35,12 +58,31 @@ pub struct CampaignSpec {
     pub version: u16,
     /// Stable campaign identity.
     pub campaign_id: String,
+    /// Stable repository identity obtained from the validated target.
+    pub repository_id: String,
+    /// Absolute repository root; model output cannot replace it.
+    pub repository_path: PathBuf,
+    /// Exact campaign starting commit.
+    pub initial_commit: String,
+    /// Exact canonical task source observed at the starting commit.
+    pub task_source_sha256: String,
+    /// Digest of the external operator authorization record.
+    pub operator_authorization_sha256: String,
     /// Maximum simultaneous implementation pods.
+    #[serde(default = "default_parallel_pods")]
     pub max_parallel_pods: u16,
     /// Maximum accepted units before an operator-authored continuation is required.
     pub max_units: u32,
     /// Maximum aggregate provider spend represented as a decimal string.
     pub maximum_budget_usd: String,
+    /// Read-only campaign planning profile.
+    pub team_lead: CampaignProvider,
+    /// Pod implementation profile.
+    pub implementer: CampaignProvider,
+    /// Independent pod review profile.
+    pub reviewer: CampaignProvider,
+    /// Closed deterministic gate tiers proposals may request.
+    pub gate_tiers: Vec<CampaignGateTier>,
     /// Coordinator-owned campaign branch prefix.
     pub campaign_branch: String,
     /// Relative repository roots from which exact pod paths may be leased.
@@ -85,10 +127,37 @@ impl CampaignSpec {
     pub fn verify(&self) -> Result<(), CampaignError> {
         if self.version != CAMPAIGN_VERSION
             || !valid_component(&self.campaign_id)
+            || !valid_component(&self.repository_id)
+            || !self.repository_path.is_absolute()
+            || !valid_commit(&self.initial_commit)
+            || !valid_sha256(&self.task_source_sha256)
+            || !valid_sha256(&self.operator_authorization_sha256)
             || !(1..=16).contains(&self.max_parallel_pods)
             || self.max_units == 0
             || self.max_units > 100_000
             || !valid_budget(&self.maximum_budget_usd)
+            || !valid_provider(&self.team_lead)
+            || !valid_provider(&self.implementer)
+            || !valid_provider(&self.reviewer)
+            || self.gate_tiers.is_empty()
+            || self.gate_tiers.len() > MAX_RESOURCES
+            || self.gate_tiers.iter().any(|tier| {
+                !valid_component(&tier.name)
+                    || tier.profiles.is_empty()
+                    || tier.profiles.len() > MAX_RESOURCES
+                    || tier
+                        .profiles
+                        .iter()
+                        .any(|profile| !valid_component(profile))
+                    || tier.profiles.iter().collect::<BTreeSet<_>>().len() != tier.profiles.len()
+            })
+            || self
+                .gate_tiers
+                .iter()
+                .map(|tier| &tier.name)
+                .collect::<BTreeSet<_>>()
+                .len()
+                != self.gate_tiers.len()
             || !valid_branch(&self.campaign_branch)
             || !self.campaign_branch.starts_with("codingmage/")
             || self.allowed_paths.is_empty()
@@ -107,10 +176,9 @@ impl CampaignSpec {
             || any_overlap(&self.allowed_paths)
             || any_overlap(&self.denied_paths)
             || self.denied_paths.iter().any(|denied| {
-                !self
-                    .allowed_paths
+                self.allowed_paths
                     .iter()
-                    .any(|allowed| path_contains(allowed, denied))
+                    .any(|allowed| paths_overlap(allowed, denied))
             })
         {
             return Err(CampaignError::InvalidAuthority);
@@ -149,6 +217,134 @@ pub enum PodRisk {
     High,
 }
 
+/// Untrusted model-authored proposal before deterministic sealing.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TeamLeadProposal {
+    /// Exact dependency-ready task identifier.
+    pub task_id: String,
+    /// Dependencies claimed from the canonical plan.
+    pub dependencies: Vec<String>,
+    /// Exact requested write roots.
+    pub owned_paths: Vec<PathBuf>,
+    /// Required operator-defined gate tiers.
+    pub gate_tiers: Vec<String>,
+    /// Shared test resources that must be leased exclusively.
+    pub test_resources: Vec<String>,
+    /// Expected outputs under the requested write roots.
+    pub expected_artifacts: Vec<PathBuf>,
+    /// Proposed risk, subject to deterministic escalation.
+    pub risk: PodRisk,
+    /// Concise inspectable summary; never used as authority.
+    pub rationale_summary: String,
+}
+
+/// Bounded request for an operator decision when no proposal is independently safe.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct HumanDecisionBlocker {
+    /// Stable content-free reason code.
+    pub code: String,
+    /// Concise inspectable question with no hidden reasoning.
+    pub summary: String,
+}
+
+/// Strict read-only campaign-lead response.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TeamLeadReport {
+    /// Exact starting commit observed by the lead.
+    pub campaign_head: String,
+    /// Exact canonical task source observed by the lead.
+    pub task_source_sha256: String,
+    /// Bounded proposals selected only from the supplied ready set.
+    pub proposals: Vec<TeamLeadProposal>,
+    /// Present only when no proposal can be made without an operator decision.
+    pub human_decision: Option<HumanDecisionBlocker>,
+}
+
+/// Deterministically validated lead outcome.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TeamLeadOutcome {
+    /// Sealed proposals eligible for scheduler admission.
+    Proposals(Vec<PodProposal>),
+    /// Recorded question requiring external authority.
+    HumanDecision(HumanDecisionBlocker),
+}
+
+impl TeamLeadReport {
+    /// Validates a lead response against immutable campaign authority and the coordinator's ready set.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CampaignError`] for stale, contradictory, duplicate, escaping, or non-ready output.
+    pub fn validate(
+        self,
+        spec: &CampaignSpec,
+        ready: &[SelectedWork],
+    ) -> Result<TeamLeadOutcome, CampaignError> {
+        spec.verify()?;
+        if self.campaign_head != spec.initial_commit
+            || self.task_source_sha256 != spec.task_source_sha256
+            || self.proposals.len() > usize::from(spec.max_parallel_pods)
+            || self.proposals.is_empty() == self.human_decision.is_none()
+        {
+            return Err(CampaignError::InvalidProposal);
+        }
+        if let Some(blocker) = self.human_decision {
+            if !valid_component(&blocker.code)
+                || blocker.summary.is_empty()
+                || blocker.summary.len() > MAX_SUMMARY_BYTES
+                || blocker.summary.chars().any(char::is_control)
+            {
+                return Err(CampaignError::InvalidProposal);
+            }
+            return Ok(TeamLeadOutcome::HumanDecision(blocker));
+        }
+
+        let ready_by_id = ready
+            .iter()
+            .map(|selected| (selected.item.id.as_str(), selected))
+            .collect::<BTreeMap<_, _>>();
+        let mut task_ids = BTreeSet::new();
+        let mut sealed = Vec::with_capacity(self.proposals.len());
+        for proposal in self.proposals {
+            if !task_ids.insert(proposal.task_id.clone()) {
+                return Err(CampaignError::InvalidProposal);
+            }
+            let selected = ready_by_id
+                .get(proposal.task_id.as_str())
+                .ok_or(CampaignError::InvalidProposal)?;
+            if proposal.dependencies != selected.item.dependencies {
+                return Err(CampaignError::InvalidProposal);
+            }
+            sealed.push(PodProposal::seal(
+                PodProposal {
+                    version: CAMPAIGN_VERSION,
+                    task_id: proposal.task_id,
+                    task_source_sha256: self.task_source_sha256.clone(),
+                    owned_paths: proposal.owned_paths,
+                    dependencies: proposal.dependencies,
+                    gate_tiers: proposal.gate_tiers,
+                    test_resources: proposal.test_resources,
+                    expected_artifacts: proposal.expected_artifacts,
+                    risk: proposal.risk,
+                    rationale_summary: proposal.rationale_summary,
+                    proposal_sha256: ZERO_SHA256.to_owned(),
+                },
+                spec,
+            )?);
+        }
+        Ok(TeamLeadOutcome::Proposals(sealed))
+    }
+}
+
+/// Returns the exact JSON Schema required for a campaign-lead response.
+#[must_use]
+pub fn team_lead_schema() -> &'static str {
+    include_str!("team-lead.schema.json")
+}
+
 /// Hash-bound, model-proposed pod packet with no authority until admission.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -161,10 +357,18 @@ pub struct PodProposal {
     pub task_source_sha256: String,
     /// Exact paths requested for this pod.
     pub owned_paths: Vec<PathBuf>,
+    /// Exact dependencies copied from the canonical task item.
+    pub dependencies: Vec<String>,
+    /// Operator-defined gate tiers required for this pod.
+    pub gate_tiers: Vec<String>,
     /// Shared gate or integration resources requested by this pod.
     pub test_resources: Vec<String>,
+    /// Expected relative artifacts; these do not grant additional write authority.
+    pub expected_artifacts: Vec<PathBuf>,
     /// Deterministic risk class subject to coordinator escalation.
     pub risk: PodRisk,
+    /// Bounded lead summary retained for human inspection, never authority.
+    pub rationale_summary: String,
     /// SHA-256 over all preceding fields.
     pub proposal_sha256: String,
 }
@@ -254,6 +458,7 @@ impl PodScheduler {
         }
         if proposal.task_id != selected.item.id
             || proposal.task_source_sha256 != selected.source_sha256
+            || proposal.dependencies != selected.item.dependencies
             || self
                 .active
                 .values()
@@ -319,6 +524,9 @@ fn validate_proposal_shape(
         || !valid_sha256(&proposal.task_source_sha256)
         || proposal.owned_paths.is_empty()
         || proposal.owned_paths.len() > MAX_PATHS
+        || proposal.dependencies.len() > MAX_RESOURCES
+        || proposal.gate_tiers.is_empty()
+        || proposal.gate_tiers.len() > MAX_RESOURCES
         || proposal.test_resources.is_empty()
         || proposal.test_resources.len() > MAX_RESOURCES
         || proposal
@@ -326,6 +534,16 @@ fn validate_proposal_shape(
             .iter()
             .any(|path| !safe_relative(path) || !spec.permits(path))
         || any_overlap(&proposal.owned_paths)
+        || proposal.dependencies.iter().any(|dependency| {
+            TaskId::new(dependency.clone()).is_err() || dependency == &proposal.task_id
+        })
+        || proposal.dependencies.iter().collect::<BTreeSet<_>>().len()
+            != proposal.dependencies.len()
+        || proposal
+            .gate_tiers
+            .iter()
+            .any(|requested| !spec.gate_tiers.iter().any(|tier| &tier.name == requested))
+        || proposal.gate_tiers.iter().collect::<BTreeSet<_>>().len() != proposal.gate_tiers.len()
         || proposal
             .test_resources
             .iter()
@@ -336,6 +554,17 @@ fn validate_proposal_shape(
             .collect::<BTreeSet<_>>()
             .len()
             != proposal.test_resources.len()
+        || proposal.expected_artifacts.len() > MAX_PATHS
+        || proposal.expected_artifacts.iter().any(|path| {
+            !safe_relative(path)
+                || !proposal
+                    .owned_paths
+                    .iter()
+                    .any(|root| path_contains(root, path))
+        })
+        || proposal.rationale_summary.is_empty()
+        || proposal.rationale_summary.len() > MAX_SUMMARY_BYTES
+        || proposal.rationale_summary.chars().any(char::is_control)
         || !valid_sha256(&proposal.proposal_sha256)
     {
         return Err(CampaignError::InvalidProposal);
@@ -349,6 +578,10 @@ fn safe_relative(path: &Path) -> bool {
         && path
             .components()
             .all(|part| matches!(part, std::path::Component::Normal(_)))
+}
+
+const fn default_parallel_pods() -> u16 {
+    1
 }
 
 fn any_overlap(paths: &[PathBuf]) -> bool {
@@ -393,6 +626,22 @@ fn valid_budget(value: &str) -> bool {
         && value
             .parse::<f64>()
             .is_ok_and(|budget| budget > 0.0 && budget <= 1_000_000.0)
+}
+
+fn valid_provider(provider: &CampaignProvider) -> bool {
+    provider.executable.is_absolute()
+        && valid_component(&provider.model)
+        && matches!(
+            provider.effort.as_str(),
+            "low" | "medium" | "high" | "xhigh" | "max"
+        )
+}
+
+fn valid_commit(value: &str) -> bool {
+    value.len() == 40
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 fn valid_sha256(value: &str) -> bool {
@@ -461,14 +710,34 @@ mod tests {
         CampaignSpec {
             version: 1,
             campaign_id: "campaign-1".to_owned(),
+            repository_id: "repo-1".to_owned(),
+            repository_path: PathBuf::from("/tmp/codingmage-campaign-target"),
+            initial_commit: "a".repeat(40),
+            task_source_sha256: "b".repeat(64),
+            operator_authorization_sha256: "c".repeat(64),
             max_parallel_pods,
             max_units: 100,
             maximum_budget_usd: "50.00".to_owned(),
+            team_lead: provider("gpt-lead", "high"),
+            implementer: provider("claude-implementer", "high"),
+            reviewer: provider("gpt-reviewer", "xhigh"),
+            gate_tiers: vec![CampaignGateTier {
+                name: "rust-focused".to_owned(),
+                profiles: vec!["rust-test".to_owned(), "rust-clippy".to_owned()],
+            }],
             campaign_branch: "codingmage/campaign-1".to_owned(),
-            allowed_paths: vec![PathBuf::from("crates"), PathBuf::from("docs")],
+            allowed_paths: vec![PathBuf::from("crates"), PathBuf::from("docs/public")],
             denied_paths: vec![PathBuf::from("docs/private")],
             protected_branches: vec!["main".to_owned()],
             publication: CampaignPublication::LocalOnly,
+        }
+    }
+
+    fn provider(model: &str, effort: &str) -> CampaignProvider {
+        CampaignProvider {
+            executable: PathBuf::from("/usr/bin/provider"),
+            model: model.to_owned(),
+            effort: effort.to_owned(),
         }
     }
 
@@ -483,13 +752,30 @@ mod tests {
                 task_id: selected.item.id.clone(),
                 task_source_sha256: selected.source_sha256.clone(),
                 owned_paths: vec![PathBuf::from(path)],
+                dependencies: selected.item.dependencies.clone(),
+                gate_tiers: vec!["rust-focused".to_owned()],
                 test_resources: vec![resource.to_owned()],
+                expected_artifacts: vec![PathBuf::from(path).join("artifact")],
                 risk: PodRisk::Routine,
+                rationale_summary: "Bounded independent fixture work.".to_owned(),
                 proposal_sha256: ZERO_SHA256.to_owned(),
             },
             &spec(2),
         )
         .unwrap()
+    }
+
+    fn lead_proposal(selected: &SelectedWork, path: &str) -> TeamLeadProposal {
+        TeamLeadProposal {
+            task_id: selected.item.id.clone(),
+            dependencies: selected.item.dependencies.clone(),
+            owned_paths: vec![PathBuf::from(path)],
+            gate_tiers: vec!["rust-focused".to_owned()],
+            test_resources: vec![format!("resource-{}", selected.item.id.replace('.', "-"))],
+            expected_artifacts: vec![PathBuf::from(path).join("artifact")],
+            risk: PodRisk::Routine,
+            rationale_summary: "Dependency-ready and path-bounded.".to_owned(),
+        }
     }
 
     #[test]
@@ -586,5 +872,59 @@ mod tests {
                 .admit(&authority, &stale, valid),
             Err(CampaignError::Conflict)
         );
+    }
+
+    #[test]
+    fn team_lead_output_is_only_untrusted_bounded_input() {
+        let authority = spec(2);
+        let ready = plan()
+            .select_ready(&BTreeSet::new(), &BTreeSet::new(), 3)
+            .unwrap();
+        let report = TeamLeadReport {
+            campaign_head: authority.initial_commit.clone(),
+            task_source_sha256: ready[0].source_sha256.clone(),
+            proposals: vec![lead_proposal(&ready[0], "crates/engine")],
+            human_decision: None,
+        };
+        let mut matching = authority.clone();
+        matching.task_source_sha256 = ready[0].source_sha256.clone();
+        let TeamLeadOutcome::Proposals(sealed) = report.validate(&matching, &ready).unwrap() else {
+            panic!("expected sealed proposals");
+        };
+        assert_eq!(sealed.len(), 1);
+        assert!(sealed[0].verify(&matching).is_ok());
+
+        let mut invented = lead_proposal(&ready[0], "crates/engine");
+        invented.dependencies.push("9.9.9.9".to_owned());
+        let hostile = TeamLeadReport {
+            campaign_head: matching.initial_commit.clone(),
+            task_source_sha256: matching.task_source_sha256.clone(),
+            proposals: vec![invented],
+            human_decision: None,
+        };
+        assert_eq!(
+            hostile.validate(&matching, &ready),
+            Err(CampaignError::InvalidProposal)
+        );
+    }
+
+    #[test]
+    fn team_lead_human_decision_is_exclusive_and_bounded() {
+        let authority = spec(1);
+        let report = TeamLeadReport {
+            campaign_head: authority.initial_commit.clone(),
+            task_source_sha256: authority.task_source_sha256.clone(),
+            proposals: Vec::new(),
+            human_decision: Some(HumanDecisionBlocker {
+                code: "architecture-choice".to_owned(),
+                summary: "Select the public compatibility boundary.".to_owned(),
+            }),
+        };
+        assert!(matches!(
+            report.validate(&authority, &[]).unwrap(),
+            TeamLeadOutcome::HumanDecision(_)
+        ));
+
+        assert!(serde_json::from_str::<serde_json::Value>(team_lead_schema()).is_ok());
     }
 }
