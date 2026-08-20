@@ -451,9 +451,11 @@ profiles = ["configured-gates"]
             Path::new(env!("CARGO_BIN_EXE_codingmage")),
             |progress| {
                 assert_ne!(progress.stage, ProgressStage::Failed);
-                if progress.stage == ProgressStage::Integrating {
-                    panic!("fixture interruption after durable integration intent");
-                }
+                assert_ne!(
+                    progress.stage,
+                    ProgressStage::Integrating,
+                    "fixture interruption after durable integration intent"
+                );
             },
         )
         .unwrap();
