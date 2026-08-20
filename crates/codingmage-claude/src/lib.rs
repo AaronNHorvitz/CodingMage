@@ -311,6 +311,18 @@ pub struct ClaudeAdapter {
     model: String,
     effort: String,
     maximum_budget_usd: String,
+    authentication: ClaudeAuthentication,
+}
+
+/// Credential-discovery boundary used by a Claude invocation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ClaudeAuthentication {
+    /// Strict bare mode; authentication must come from an API-key helper or explicit process
+    /// environment configured outside `CodingMage`.
+    Bare,
+    /// Permit Claude Code to read its existing login. `CodingMage` still supplies empty setting
+    /// sources, an empty strict MCP configuration, and the same deny-first tool policy.
+    ExistingLogin,
 }
 
 impl ClaudeAdapter {
@@ -340,7 +352,15 @@ impl ClaudeAdapter {
             model: model.to_owned(),
             effort: effort.to_owned(),
             maximum_budget_usd: maximum_budget_usd.to_owned(),
+            authentication: ClaudeAuthentication::Bare,
         })
+    }
+
+    /// Selects the credential-discovery boundary without accepting credential material.
+    #[must_use]
+    pub const fn with_authentication(mut self, authentication: ClaudeAuthentication) -> Self {
+        self.authentication = authentication;
+        self
     }
 
     /// Runs content-minimized version and help probes through the shared process runtime.
@@ -444,7 +464,6 @@ impl ClaudeAdapter {
             .map(|tool| format!("{tool}({permission_root})"))
             .join(",");
         let mut arguments = vec![
-            "--bare".to_owned(),
             "--print".to_owned(),
             "--output-format".to_owned(),
             "json".to_owned(),
@@ -474,6 +493,9 @@ impl ClaudeAdapter {
             "--max-budget-usd".to_owned(),
             self.maximum_budget_usd.clone(),
         ];
+        if self.authentication == ClaudeAuthentication::Bare {
+            arguments.insert(0, "--bare".to_owned());
+        }
         if resume {
             arguments.push("--resume".to_owned());
         } else {
@@ -920,6 +942,31 @@ mod tests {
         assert_eq!(
             settings["sandbox"]["filesystem"]["denyWrite"][0],
             fixture.root.join(".git").to_str().unwrap()
+        );
+
+        let existing_login =
+            ClaudeAdapter::new(PathBuf::from("/bin/true"), "sonnet", "high", "1.00")
+                .unwrap()
+                .with_authentication(ClaudeAuthentication::ExistingLogin)
+                .plan_start(&fixture.session(), &packet())
+                .unwrap();
+        assert!(
+            !existing_login
+                .arguments
+                .iter()
+                .any(|value| value == "--bare")
+        );
+        assert!(
+            existing_login
+                .arguments
+                .windows(2)
+                .any(|pair| pair == ["--setting-sources", ""])
+        );
+        assert!(
+            existing_login
+                .arguments
+                .windows(2)
+                .any(|pair| pair == ["--strict-mcp-config", "--mcp-config"])
         );
     }
 

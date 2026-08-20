@@ -254,13 +254,13 @@ impl WorkflowOperation {
 
     const fn effect(self) -> EffectClass {
         match self {
-            Self::FinishImplementation | Self::VerifyLocal | Self::Review | Self::VerifyFinal => {
-                EffectClass::ReadOnly
-            }
+            Self::VerifyLocal | Self::Review | Self::VerifyFinal => EffectClass::ReadOnly,
             Self::Checkpoint | Self::Release => EffectClass::Idempotent,
-            Self::Claim | Self::StartImplementation | Self::Correct | Self::ReconcileCompletion => {
-                EffectClass::StateChanging
-            }
+            Self::Claim
+            | Self::StartImplementation
+            | Self::FinishImplementation
+            | Self::Correct
+            | Self::ReconcileCompletion => EffectClass::StateChanging,
         }
     }
 }

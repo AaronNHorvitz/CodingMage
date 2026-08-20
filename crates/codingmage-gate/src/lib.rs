@@ -62,6 +62,8 @@ pub enum GateTrigger {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum GateAssertion {
+    /// Neither retained output stream crossed its configured byte ceiling.
+    OutputNotTruncated,
     /// Exact standard-output digest.
     StdoutSha256 {
         /// Expected lowercase hexadecimal digest.
@@ -121,7 +123,9 @@ impl TrustedGateDefinition {
                 GateAssertion::StdoutSha256 { value } | GateAssertion::StderrSha256 { value } => {
                     !valid_sha256(value)
                 }
-                GateAssertion::StdoutBytes { .. } | GateAssertion::StderrBytes { .. } => false,
+                GateAssertion::OutputNotTruncated
+                | GateAssertion::StdoutBytes { .. }
+                | GateAssertion::StderrBytes { .. } => false,
             })
         {
             return Err(GateError::InvalidDefinition);
@@ -683,6 +687,7 @@ fn definition_evidence(definition: &TrustedGateDefinition) -> GateDefinitionEvid
 
 fn assertion_matches(assertion: &GateAssertion, result: &ProcessResult) -> bool {
     match assertion {
+        GateAssertion::OutputNotTruncated => !result.stdout.truncated && !result.stderr.truncated,
         GateAssertion::StdoutSha256 { value } => &result.stdout.sha256 == value,
         GateAssertion::StderrSha256 { value } => &result.stderr.sha256 == value,
         GateAssertion::StdoutBytes { value } => result.stdout.total_bytes == *value,
