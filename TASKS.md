@@ -794,10 +794,10 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 17.2.2.2:** Complete one live Claude implementation and Codex review on a disposable target branch. The local-only candidate, deterministic gates, exact-SHA read-only review, fail-closed defects, and manual correction limitation are recorded in `docs/evidence/sprint-17-controlled-pilot.md`.
   - [x] **Sub-task 17.2.2.3:** Complete five supervised bounded units with no authority or recovery defect. Five independent local-only units passed after the last permission-rule reliability correction; exact commits, repository preservation, resource cleanup, and retained limits are recorded in `docs/evidence/sprint-17-controlled-pilot.md`.
   - [x] **Sub-task 17.2.2.4:** Enable background execution only after explicit owner approval of retained evidence. The owner approved the retained five-unit evidence and authorized the next bounded unattended pilot on 2026-08-21.
-- [ ] **Task 17.2.3 - Run unattended pilot**
+- [x] **Task 17.2.3 - Run unattended pilot.** The bounded story, exact blocker/quota pauses, and independently reconciled human handoff are recorded in `docs/evidence/sprint-17-controlled-pilot.md` and `docs/evidence/sprint-17-unattended-handoff.md`; broader production and human-acceptance gates remain open.
   - [x] **Sub-task 17.2.3.1:** Run one story through implementation, review, correction, and checkpoint without operator intervention. The one-pod local-only campaign completed one resumed correction and reconciled its exact durable state; see `docs/evidence/sprint-17-controlled-pilot.md`.
   - [x] **Sub-task 17.2.3.2:** Pause correctly on every external blocker and quota event. Nine disposable unattended cases covered all six blocker reasons valid for dependency-ready work plus lead, implementer, and reviewer quota boundaries with exact bounded attempts, no false completion, and reconciled durable state; see `docs/evidence/sprint-17-controlled-pilot.md`.
-  - [ ] **Sub-task 17.2.3.3:** Produce a complete handoff and status report for human inspection.
+  - [x] **Sub-task 17.2.3.3:** Produce a complete handoff and status report for human inspection. The report was independently reconciled against ten retained checkpoints, seven Git identities, the clean synchronized branch, and repository documentation gates; see `docs/evidence/sprint-17-unattended-handoff.md`.
 
 **Story acceptance criteria**
 
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 17 sub-task `17.2.3.3`: produce and independently reconcile a complete unattended handoff and status report for human inspection.
+- [ ] **Next 1:** Complete Sprint 22 sub-task `22.3.1.1`: run the production campaign coordinator against the prescribed ten-outcome disposable schedule without broadening one-pod, local-only authority.

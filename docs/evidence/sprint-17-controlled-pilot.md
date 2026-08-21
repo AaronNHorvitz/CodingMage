@@ -1,6 +1,6 @@
 # Sprint 17 Controlled Target Pilot Evidence
 
-- **Status:** Preparation, fake-agent dry run, first live unit, five-unit supervised qualification, owner-approved background enablement, one unattended corrected story, and exact blocker/quota pause qualification complete; handoff evidence remains open
+- **Status:** Pilot execution, exact blocker/quota qualification, and independently reconciled handoff complete; human acceptance and later production-campaign gates remain open
 - **Initial CodingMage pilot build:** commit `c3b3103`
 - **Five-unit qualification build:** commit `2631265`
 - **Executed:** 2026-08-19 and 2026-08-21 on Fedora Linux with Rust 1.95.0
@@ -105,4 +105,4 @@ Every case stopped after the exact listed invocation sequence with no uncontroll
 
 ## Preserved Limits
 
-The original pilot branch was local only. It was not pushed, merged, or used to change the target's canonical task checkbox. The original durable run did not reach its checkpoint because the gate profile failed before execution; the subsequent gate and review evidence was supervised manually and is stated as such. The later disposable campaign closes the five-unit supervised requirement after the permission-rule correction, but not background enablement, an unattended workflow, service execution, sustained production-target soak, external blocker handling, or publication gates.
+The original pilot branch was local only. It was not pushed, merged, or used to change the target's canonical task checkbox. The original durable run did not reach its checkpoint because the gate profile failed before execution; the subsequent gate and review evidence was supervised manually and is stated as such. Later disposable campaigns close the five-unit supervised requirement, owner-authorized bounded background execution, one corrected unattended story, exact dependency-ready external-blocker handling, provider quota pauses, and a human-readable handoff. They do not establish service execution, the production ten-outcome schedule, a ten-task controlled-target soak, multi-pod operation, external publication, or release gates. The complete inspection handoff is `docs/evidence/sprint-17-unattended-handoff.md`.
