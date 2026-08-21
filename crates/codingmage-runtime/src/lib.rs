@@ -933,6 +933,7 @@ pub fn run_serial_campaign_with_progress(
                 campaign.manifest().worktree_id.clone(),
                 campaign.manifest().branch.clone(),
                 inventory.head.clone(),
+                spec.max_units,
             )?;
             checkpoint.persist(&campaign_root)?;
             (campaign, checkpoint)
@@ -1033,12 +1034,7 @@ pub fn run_serial_campaign_with_progress(
                 ),
             ));
         }
-        if completed_units
-            .saturating_add(u32::try_from(checkpoint.blocked_task_ids.len()).unwrap_or(u32::MAX))
-            .saturating_add(u32::try_from(checkpoint.deferred_tasks.len()).unwrap_or(u32::MAX))
-            .saturating_add(u32::try_from(checkpoint.human_decisions.len()).unwrap_or(u32::MAX))
-            >= spec.max_units
-        {
+        if checkpoint.outcomes.accepted >= checkpoint.outcomes.max_accepted {
             checkpoint.phase = CampaignPhase::Paused;
             checkpoint.blocker_code = Some("codingmage.campaign.unit_ceiling".to_owned());
             checkpoint.persist(&campaign_root)?;
@@ -3402,6 +3398,7 @@ effort = "high"
             codingmage_contracts::WorktreeId::new("worktree-1").unwrap(),
             "codingmage/campaign-1".to_owned(),
             "b".repeat(40),
+            10,
         )
         .unwrap();
         let head_deferral = DeferredTaskProjection {
@@ -3485,6 +3482,7 @@ effort = "high"
             codingmage_contracts::WorktreeId::new("worktree-1").unwrap(),
             "codingmage/campaign-1".to_owned(),
             "b".repeat(40),
+            10,
         )
         .unwrap();
         record_human_decision(
@@ -3596,6 +3594,7 @@ effort = "high"
             codingmage_contracts::WorktreeId::new("worktree-1").unwrap(),
             "codingmage/campaign-1".to_owned(),
             "b".repeat(40),
+            10,
         )
         .unwrap();
         checkpoint.blocked_task_ids.insert("1.1.1.2".to_owned());
@@ -3664,6 +3663,7 @@ effort = "high"
             codingmage_contracts::WorktreeId::new("worktree-1").unwrap(),
             "codingmage/campaign-1".to_owned(),
             "b".repeat(40),
+            10,
         )
         .unwrap();
         checkpoint.blocked_task_ids.insert("1.1.1.1".to_owned());

@@ -20,7 +20,7 @@ use sha2::{Digest, Sha256};
 
 use crate::RuntimeError;
 
-const SCHEMA_VERSION: u16 = 2;
+const SCHEMA_VERSION: u16 = 3;
 const MAX_CHECKPOINT_BYTES: usize = 1024 * 1024;
 const CLEARANCE_SCHEMA_VERSION: u16 = 1;
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
@@ -108,6 +108,18 @@ pub(crate) struct RejectedProposalProjection {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
+pub(crate) struct CampaignOutcomeProjection {
+    pub completed: u32,
+    pub blocked: u32,
+    pub deferred: u32,
+    pub pending_human_decision: u32,
+    pub rejected_proposals: u32,
+    pub accepted: u32,
+    pub max_accepted: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct CampaignCheckpoint {
     pub schema_version: u16,
     pub authority_sha256: String,
@@ -134,13 +146,14 @@ pub(crate) struct CampaignCheckpoint {
     pub human_decisions: BTreeMap<String, HumanDecisionProjection>,
     #[serde(default)]
     pub rejected_proposals: Vec<RejectedProposalProjection>,
+    pub outcomes: CampaignOutcomeProjection,
     pub active_unit: Option<ActiveUnit>,
     pub pending_integration: Option<PendingIntegration>,
     pub started_at_ms: u64,
     pub updated_at_ms: u64,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct CheckpointEnvelope {
     checkpoint: CampaignCheckpoint,
@@ -367,7 +380,11 @@ impl CampaignCheckpoint {
         worktree_id: WorktreeId,
         branch: String,
         initial_head: String,
+        max_accepted_outcomes: u32,
     ) -> Result<Self, RuntimeError> {
+        if max_accepted_outcomes == 0 {
+            return Err(RuntimeError::State);
+        }
         let now = timestamp_ms()?;
         Ok(Self {
             schema_version: SCHEMA_VERSION,
@@ -389,6 +406,15 @@ impl CampaignCheckpoint {
             satisfied_deferrals: BTreeMap::new(),
             human_decisions: BTreeMap::new(),
             rejected_proposals: Vec::new(),
+            outcomes: CampaignOutcomeProjection {
+                completed: 0,
+                blocked: 0,
+                deferred: 0,
+                pending_human_decision: 0,
+                rejected_proposals: 0,
+                accepted: 0,
+                max_accepted: max_accepted_outcomes,
+            },
             active_unit: None,
             pending_integration: None,
             started_at_ms: now,
@@ -423,11 +449,13 @@ impl CampaignCheckpoint {
         if sha256_hex(&canonical) != envelope.checkpoint_sha256 {
             return Err(RuntimeError::State);
         }
+        envelope.checkpoint.validate_outcomes()?;
         Ok(Some(envelope.checkpoint))
     }
 
     pub(crate) fn persist(&mut self, root: &Path) -> Result<(), RuntimeError> {
         private_directory(root)?;
+        self.refresh_outcomes()?;
         self.updated_at_ms = timestamp_ms()?;
         let canonical = serde_json::to_vec(self).map_err(|_| RuntimeError::State)?;
         let envelope = CheckpointEnvelope {
@@ -461,22 +489,14 @@ impl CampaignCheckpoint {
     }
 
     fn append_journal_projection(&self, root: &Path, canonical: &[u8]) -> Result<(), RuntimeError> {
-        let completed_units = self.completed_units;
-        let blocked_tasks =
-            u32::try_from(self.blocked_task_ids.len()).map_err(|_| RuntimeError::State)?;
-        let deferred_tasks =
-            u32::try_from(self.deferred_tasks.len()).map_err(|_| RuntimeError::State)?;
+        let completed_units = self.outcomes.completed;
+        let blocked_tasks = self.outcomes.blocked;
+        let deferred_tasks = self.outcomes.deferred;
         let satisfied_deferrals =
             u32::try_from(self.satisfied_deferrals.len()).map_err(|_| RuntimeError::State)?;
-        let human_decisions =
-            u32::try_from(self.human_decisions.len()).map_err(|_| RuntimeError::State)?;
-        let rejected_proposals =
-            u32::try_from(self.rejected_proposals.len()).map_err(|_| RuntimeError::State)?;
-        let accepted_outcomes = completed_units
-            .checked_add(blocked_tasks)
-            .and_then(|value| value.checked_add(deferred_tasks))
-            .and_then(|value| value.checked_add(human_decisions))
-            .ok_or(RuntimeError::State)?;
+        let human_decisions = self.outcomes.pending_human_decision;
+        let rejected_proposals = self.outcomes.rejected_proposals;
+        let accepted_outcomes = self.outcomes.accepted;
         let task_id = self
             .active_unit
             .as_ref()
@@ -522,7 +542,7 @@ impl CampaignCheckpoint {
                 human_decisions,
                 rejected_proposals,
                 accepted_outcomes,
-                max_outcomes: None,
+                max_outcomes: Some(self.outcomes.max_accepted),
                 active_unit: self.active_unit.is_some(),
                 provider_attempts: None,
                 correction_round: None,
@@ -562,6 +582,57 @@ impl CampaignCheckpoint {
 
     pub(crate) fn elapsed_ms(&self) -> Result<u64, RuntimeError> {
         Ok(timestamp_ms()?.saturating_sub(self.started_at_ms))
+    }
+
+    fn refresh_outcomes(&mut self) -> Result<(), RuntimeError> {
+        let projection = CampaignOutcomeProjection {
+            completed: self.completed_units,
+            blocked: u32::try_from(self.blocked_task_ids.len()).map_err(|_| RuntimeError::State)?,
+            deferred: u32::try_from(self.deferred_tasks.len()).map_err(|_| RuntimeError::State)?,
+            pending_human_decision: u32::try_from(self.human_decisions.len())
+                .map_err(|_| RuntimeError::State)?,
+            rejected_proposals: u32::try_from(self.rejected_proposals.len())
+                .map_err(|_| RuntimeError::State)?,
+            accepted: 0,
+            max_accepted: self.outcomes.max_accepted,
+        };
+        let accepted = projection
+            .completed
+            .checked_add(projection.blocked)
+            .and_then(|value| value.checked_add(projection.deferred))
+            .and_then(|value| value.checked_add(projection.pending_human_decision))
+            .ok_or(RuntimeError::State)?;
+        self.outcomes = CampaignOutcomeProjection {
+            accepted,
+            ..projection
+        };
+        self.validate_outcomes()
+    }
+
+    fn validate_outcomes(&self) -> Result<(), RuntimeError> {
+        let expected = self
+            .outcomes
+            .completed
+            .checked_add(self.outcomes.blocked)
+            .and_then(|value| value.checked_add(self.outcomes.deferred))
+            .and_then(|value| value.checked_add(self.outcomes.pending_human_decision))
+            .ok_or(RuntimeError::State)?;
+        if self.outcomes.completed != self.completed_units
+            || self.outcomes.blocked
+                != u32::try_from(self.blocked_task_ids.len()).map_err(|_| RuntimeError::State)?
+            || self.outcomes.deferred
+                != u32::try_from(self.deferred_tasks.len()).map_err(|_| RuntimeError::State)?
+            || self.outcomes.pending_human_decision
+                != u32::try_from(self.human_decisions.len()).map_err(|_| RuntimeError::State)?
+            || self.outcomes.rejected_proposals
+                != u32::try_from(self.rejected_proposals.len()).map_err(|_| RuntimeError::State)?
+            || self.outcomes.accepted != expected
+            || self.outcomes.max_accepted == 0
+            || self.outcomes.accepted > self.outcomes.max_accepted
+        {
+            return Err(RuntimeError::State);
+        }
+        Ok(())
     }
 }
 
@@ -845,6 +916,7 @@ mod tests {
             WorktreeId::new("wt-1").unwrap(),
             "codingmage/campaign-1/campaign-root".to_owned(),
             "b".repeat(40),
+            10,
         )
         .unwrap()
     }
@@ -915,7 +987,7 @@ mod tests {
                 human_decisions: 1,
                 rejected_proposals: 1,
                 accepted_outcomes: 3,
-                max_outcomes: None,
+                max_outcomes: Some(10),
                 active_unit: false,
                 provider_attempts: None,
                 correction_round: None,
@@ -940,6 +1012,83 @@ mod tests {
         bytes[index] = b'd';
         fs::write(path, bytes).unwrap();
         assert_eq!(CampaignCheckpoint::load(&root), Err(RuntimeError::State));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn checkpoint_refuses_self_consistent_outcome_projection_mutations() {
+        let root = root("outcome-mutations");
+        let mut checkpoint = checkpoint();
+        checkpoint.completed_units = 1;
+        checkpoint.blocked_task_ids.insert("1.1.1.2".to_owned());
+        checkpoint.deferred_tasks.insert(
+            "1.1.1.3".to_owned(),
+            DeferredTaskProjection {
+                reason: LeadDeferredReason::OperatorPause,
+                trigger: LeadReconsiderationTrigger::OperatorResume,
+                source_head: "b".repeat(40),
+                task_source_sha256: "c".repeat(64),
+            },
+        );
+        checkpoint.human_decisions.insert(
+            "1.1.1.4".to_owned(),
+            HumanDecisionProjection {
+                reason: HumanDecisionProjectionReason::RepeatedSatisfiedDeferral,
+                source_head: "b".repeat(40),
+                task_source_sha256: "c".repeat(64),
+            },
+        );
+        checkpoint
+            .rejected_proposals
+            .push(RejectedProposalProjection {
+                sequence: 1,
+                reason: LeadRejectionReason::MalformedOutput,
+                source_head: "b".repeat(40),
+                task_source_sha256: "c".repeat(64),
+            });
+        checkpoint.persist(&root).unwrap();
+        let bytes = fs::read(root.join("checkpoint.json")).unwrap();
+        let envelope: CheckpointEnvelope = serde_json::from_slice(&bytes).unwrap();
+
+        let mut mutations = Vec::new();
+        let mut changed = envelope.checkpoint.clone();
+        changed.outcomes.completed += 1;
+        mutations.push(changed);
+        let mut changed = envelope.checkpoint.clone();
+        changed.outcomes.blocked += 1;
+        mutations.push(changed);
+        let mut changed = envelope.checkpoint.clone();
+        changed.outcomes.deferred += 1;
+        mutations.push(changed);
+        let mut changed = envelope.checkpoint.clone();
+        changed.outcomes.pending_human_decision += 1;
+        mutations.push(changed);
+        let mut changed = envelope.checkpoint.clone();
+        changed.outcomes.rejected_proposals += 1;
+        mutations.push(changed);
+        let mut changed = envelope.checkpoint.clone();
+        changed.outcomes.accepted += 1;
+        mutations.push(changed);
+        let mut changed = envelope.checkpoint.clone();
+        changed.outcomes.max_accepted = 0;
+        mutations.push(changed);
+        let mut changed = envelope.checkpoint;
+        changed.outcomes.max_accepted = 3;
+        mutations.push(changed);
+
+        for changed in mutations {
+            let canonical = serde_json::to_vec(&changed).unwrap();
+            let changed = CheckpointEnvelope {
+                checkpoint: changed,
+                checkpoint_sha256: sha256_hex(&canonical),
+            };
+            fs::write(
+                root.join("checkpoint.json"),
+                serde_json::to_vec_pretty(&changed).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(CampaignCheckpoint::load(&root), Err(RuntimeError::State));
+        }
         fs::remove_dir_all(root).unwrap();
     }
 
