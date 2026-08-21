@@ -971,6 +971,64 @@ pub fn materialize_controlled_target_pilot_fixture(
     })
 }
 
+/// Creates one clean disposable fixture for the five-unit supervised-provider pilot.
+///
+/// Each numbered fixture contains one exact text replacement, a matching expected file, and one
+/// canonical open sub-task. Separate repositories prevent one retained integration branch from
+/// becoming implicit authority for a later unit.
+///
+/// # Errors
+///
+/// Returns [`SoakError::Fixture`] unless `unit` is in `1..=5`, `root` is a new empty directory,
+/// and every local Git or filesystem operation succeeds.
+pub fn materialize_supervised_pilot_unit_fixture(
+    root: &Path,
+    unit: u8,
+) -> Result<FixtureRepository, SoakError> {
+    if !(1..=5).contains(&unit) {
+        return Err(SoakError::InvalidConfiguration);
+    }
+    let metadata = fs::symlink_metadata(root).map_err(|_| SoakError::Fixture)?;
+    if metadata.file_type().is_symlink()
+        || !metadata.is_dir()
+        || fs::read_dir(root)
+            .map_err(|_| SoakError::Fixture)?
+            .next()
+            .is_some()
+    {
+        return Err(SoakError::Fixture);
+    }
+    let root = fs::canonicalize(root).map_err(|_| SoakError::Fixture)?;
+    git(&root, &["init", "--initial-branch=main"])?;
+    git(&root, &["config", "user.name", "CodingMage Fixture"])?;
+    git(&root, &["config", "user.email", "fixture@invalid.example"])?;
+    let pending = format!("unit-{unit:02}: pending\n");
+    let expected = format!("unit-{unit:02}: complete\n");
+    fs::write(root.join("artifact.txt"), pending).map_err(|_| SoakError::Fixture)?;
+    fs::write(root.join("expected.txt"), &expected).map_err(|_| SoakError::Fixture)?;
+    fs::write(
+        root.join("TASKS.md"),
+        format!(
+            "# Supervised Pilot Unit {unit:02}\n\n\
+             ## Sprint 0 - Bounded Unit\n\n\
+             **Sprint goal:** Complete one exact disposable edit.\n\n\
+             ### Story 0.1 - Exact Artifact\n\n\
+             - [ ] **Task 0.1.1 - Produce the bounded artifact**\n\
+               - [ ] **Sub-task 0.1.1.1:** Replace the only line in `artifact.txt` with exactly `unit-{unit:02}: complete`; do not change any other file.\n\n\
+             **Story acceptance criteria**\n\n\
+             - [ ] **AC 0.1:** Given the pending artifact, when the bounded unit completes, then `artifact.txt` is byte-for-byte identical to `expected.txt`.\n"
+        ),
+    )
+    .map_err(|_| SoakError::Fixture)?;
+    git(&root, &["add", "."])?;
+    git(&root, &["commit", "-m", "supervised pilot baseline"])?;
+    Ok(FixtureRepository {
+        kind: FixtureKind::Documentation,
+        root,
+        condition: FixtureCondition::Clean,
+    })
+}
+
 fn fixture_name(kind: FixtureKind) -> &'static str {
     match kind {
         FixtureKind::Rust => "rust",
@@ -1708,6 +1766,48 @@ mod tests {
                 .unwrap()
                 .condition,
             FixtureCondition::MalformedPlan
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn supervised_pilot_units_are_exact_separate_clean_repositories() {
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-supervised-pilot-fixtures-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&root).unwrap();
+        for unit in 1..=5 {
+            let path = root.join(format!("unit-{unit:02}"));
+            fs::create_dir(&path).unwrap();
+            let fixture = materialize_supervised_pilot_unit_fixture(&path, unit).unwrap();
+            assert_eq!(
+                fs::read_to_string(fixture.root.join("artifact.txt")).unwrap(),
+                format!("unit-{unit:02}: pending\n")
+            );
+            assert_eq!(
+                fs::read_to_string(fixture.root.join("expected.txt")).unwrap(),
+                format!("unit-{unit:02}: complete\n")
+            );
+            assert!(
+                fs::read_to_string(fixture.root.join("TASKS.md"))
+                    .unwrap()
+                    .contains("- [ ] **Sub-task 0.1.1.1:**")
+            );
+            assert_eq!(
+                git_status(&fixture.root, &["status", "--porcelain"]).unwrap(),
+                0
+            );
+        }
+        let invalid = root.join("invalid");
+        fs::create_dir(&invalid).unwrap();
+        assert_eq!(
+            materialize_supervised_pilot_unit_fixture(&invalid, 0),
+            Err(SoakError::InvalidConfiguration)
         );
         fs::remove_dir_all(root).unwrap();
     }
