@@ -948,12 +948,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 21.2 - Lead Dispositions and No-Progress Safety
 
-- [ ] **Task 21.2.1 - Define the closed lead disposition contract**
-  - [ ] **Sub-task 21.2.1.1:** Add mutually exclusive `propose`, `blocked`, `deferred`, and `human_decision_required` dispositions to the versioned lead schema.
-  - [ ] **Sub-task 21.2.1.2:** Define closed typed reason enums for blocked, deferred, and human-decision outcomes exactly as approved in the unattended safeguard contract.
-  - [ ] **Sub-task 21.2.1.3:** Require every nonproposal disposition to bind the campaign identity, exact head, task-source digest, task identity, dependencies, and one content-free reason code.
-  - [ ] **Sub-task 21.2.1.4:** Require every deferral to name one supported reconsideration trigger and reject arbitrary dates, prose conditions, or executable instructions.
-  - [ ] **Sub-task 21.2.1.5:** Keep task completion outside lead authority; only the coordinator may complete a task after implementation, tests, gates, review, checkpoint, and reconciliation.
+- [x] **Task 21.2.1 - Define the closed lead disposition contract**
+  - [x] **Sub-task 21.2.1.1:** Add mutually exclusive `propose`, `blocked`, `deferred`, and `human_decision_required` dispositions to the versioned lead schema.
+  - [x] **Sub-task 21.2.1.2:** Define closed typed reason enums for blocked, deferred, and human-decision outcomes exactly as approved in the unattended safeguard contract.
+  - [x] **Sub-task 21.2.1.3:** Require every nonproposal disposition to bind the campaign identity, exact head, task-source digest, task identity, dependencies, and one content-free reason code.
+  - [x] **Sub-task 21.2.1.4:** Require every deferral to name one supported reconsideration trigger and reject arbitrary dates, prose conditions, or executable instructions.
+  - [x] **Sub-task 21.2.1.5:** Keep task completion outside lead authority; only the coordinator may complete a task after implementation, tests, gates, review, checkpoint, and reconciliation. See `docs/evidence/sprint-21-lead-contract.md`.
 - [ ] **Task 21.2.2 - Validate blocker semantics**
   - [ ] **Sub-task 21.2.2.1:** Accept a blocker only for a dependency-ready task and a reason that cannot be resolved inside current task and path authority.
   - [ ] **Sub-task 21.2.2.2:** Persist the exact blocked task and reason code while leaving its canonical checkbox unchanged.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Implement only sub-task `21.2.1.1`: add mutually exclusive `propose`, `blocked`, `deferred`, and `human_decision_required` dispositions to the versioned lead schema, with focused strict-schema and mixed-disposition rejection tests; leave later Story 21.2 items open.
+- [ ] **Next 1:** Implement sub-tasks `21.2.2.1` through `21.2.2.4`: validate resolvable versus external blocker semantics, persist exact typed blockers without completing tasks, suppress blocked descendants, continue independent ready work, and stop only at `no_unblocked_ready_work`; leave authenticated blocker clearance open.
