@@ -1512,7 +1512,27 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn campaign_limit_boundaries_fail_closed() {
+        let mut minimum_units = spec(1);
+        minimum_units.max_units = 1;
+        minimum_units.verify().unwrap();
+        let mut maximum_units = minimum_units.clone();
+        maximum_units.max_units = 100_000;
+        maximum_units.verify().unwrap();
+        let mut below_minimum_units = minimum_units.clone();
+        below_minimum_units.max_units = 0;
+        assert_eq!(
+            below_minimum_units.verify(),
+            Err(CampaignError::InvalidAuthority)
+        );
+        let mut above_maximum_units = minimum_units;
+        above_maximum_units.max_units = 100_001;
+        assert_eq!(
+            above_maximum_units.verify(),
+            Err(CampaignError::InvalidAuthority)
+        );
+
         let minimum = CampaignLimits {
             provider_attempts: 1,
             malformed_report_repairs: 1,
@@ -1535,30 +1555,92 @@ mod tests {
         .verify()
         .unwrap();
 
-        let mut invalid = Vec::new();
-        let mut value = minimum.clone();
-        value.provider_attempts = 0;
-        invalid.push(value);
-        let mut value = minimum.clone();
-        value.malformed_report_repairs = 2;
-        invalid.push(value);
-        let mut value = minimum.clone();
-        value.correction_rounds = MAX_CAMPAIGN_COUNTER + 1;
-        invalid.push(value);
-        let mut value = minimum.clone();
-        value.process_invocations = 0;
-        invalid.push(value);
-        let mut value = minimum.clone();
-        value.output_bytes = MAX_CAMPAIGN_BYTES + 1;
-        invalid.push(value);
-        let mut value = minimum.clone();
-        value.retained_state_bytes = 0;
-        invalid.push(value);
-        let mut value = minimum;
-        value.execution_elapsed_ms = MAX_CAMPAIGN_ELAPSED_MS + 1;
-        invalid.push(value);
+        let below_minimum = [
+            CampaignLimits {
+                provider_attempts: 0,
+                ..minimum.clone()
+            },
+            CampaignLimits {
+                malformed_report_repairs: 0,
+                ..minimum.clone()
+            },
+            CampaignLimits {
+                correction_rounds: 0,
+                ..minimum.clone()
+            },
+            CampaignLimits {
+                process_invocations: 0,
+                ..minimum.clone()
+            },
+            CampaignLimits {
+                output_bytes: 0,
+                ..minimum.clone()
+            },
+            CampaignLimits {
+                retained_state_bytes: 0,
+                ..minimum.clone()
+            },
+            CampaignLimits {
+                execution_elapsed_ms: 0,
+                ..minimum.clone()
+            },
+        ];
+        let maximum = CampaignLimits {
+            provider_attempts: MAX_CAMPAIGN_COUNTER,
+            malformed_report_repairs: MAX_CAMPAIGN_COUNTER,
+            correction_rounds: MAX_CAMPAIGN_COUNTER,
+            process_invocations: MAX_CAMPAIGN_COUNTER,
+            output_bytes: MAX_CAMPAIGN_BYTES,
+            retained_state_bytes: MAX_CAMPAIGN_BYTES,
+            execution_elapsed_ms: MAX_CAMPAIGN_ELAPSED_MS,
+        };
+        let above_maximum = [
+            CampaignLimits {
+                provider_attempts: MAX_CAMPAIGN_COUNTER + 1,
+                ..maximum.clone()
+            },
+            CampaignLimits {
+                malformed_report_repairs: MAX_CAMPAIGN_COUNTER + 1,
+                ..maximum.clone()
+            },
+            CampaignLimits {
+                correction_rounds: MAX_CAMPAIGN_COUNTER + 1,
+                ..maximum.clone()
+            },
+            CampaignLimits {
+                process_invocations: MAX_CAMPAIGN_COUNTER + 1,
+                ..maximum.clone()
+            },
+            CampaignLimits {
+                output_bytes: MAX_CAMPAIGN_BYTES + 1,
+                ..maximum.clone()
+            },
+            CampaignLimits {
+                retained_state_bytes: MAX_CAMPAIGN_BYTES + 1,
+                ..maximum.clone()
+            },
+            CampaignLimits {
+                execution_elapsed_ms: MAX_CAMPAIGN_ELAPSED_MS + 1,
+                ..maximum
+            },
+        ];
+        let relationally_invalid = [
+            CampaignLimits {
+                malformed_report_repairs: 2,
+                ..minimum.clone()
+            },
+            CampaignLimits {
+                provider_attempts: 2,
+                process_invocations: 1,
+                ..minimum
+            },
+        ];
 
-        for limits in invalid {
+        for limits in below_minimum
+            .into_iter()
+            .chain(above_maximum)
+            .chain(relationally_invalid)
+        {
             assert_eq!(limits.verify(), Err(CampaignError::InvalidAuthority));
         }
     }

@@ -164,6 +164,17 @@ impl CampaignUnitBudget {
         correction_rounds: u16,
         reservation: CampaignReservation,
     ) -> Result<Option<CampaignLimitKind>, RuntimeError> {
+        let retained = retained_tree_bytes(&self.campaign_root)?;
+        self.exhausted_with_observations(unit, correction_rounds, reservation, retained)
+    }
+
+    fn exhausted_with_observations(
+        &self,
+        unit: &RunUtilization,
+        correction_rounds: u16,
+        reservation: CampaignReservation,
+        retained: u64,
+    ) -> Result<Option<CampaignLimitKind>, RuntimeError> {
         let provider_attempts = self
             .baseline
             .provider_attempts
@@ -198,7 +209,6 @@ impl CampaignUnitBudget {
             .execution_elapsed_ms
             .checked_add(unit.execution_elapsed_ms)
             .ok_or(RuntimeError::State)?;
-        let retained = retained_tree_bytes(&self.campaign_root)?;
         Ok([
             (
                 reservation.provider_attempts > 0
@@ -1556,15 +1566,20 @@ fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
             if file_type.is_dir() {
                 pending.push(entry.path());
             } else if file_type.is_file() {
-                total = total
-                    .checked_add(entry.metadata().map_err(|_| RuntimeError::State)?.len())
-                    .ok_or(RuntimeError::State)?;
+                total = checked_retained_total(
+                    total,
+                    entry.metadata().map_err(|_| RuntimeError::State)?.len(),
+                )?;
             } else {
                 return Err(RuntimeError::State);
             }
         }
     }
     Ok(total)
+}
+
+fn checked_retained_total(total: u64, next: u64) -> Result<u64, RuntimeError> {
+    total.checked_add(next).ok_or(RuntimeError::State)
 }
 
 #[cfg(unix)]
@@ -1763,6 +1778,90 @@ mod tests {
                 Err(RuntimeError::Authority)
             );
         }
+    }
+
+    fn matrix_limits(exhausted: CampaignLimitKind) -> CampaignLimits {
+        let mut limits = CampaignLimits {
+            provider_attempts: 10,
+            malformed_report_repairs: 10,
+            correction_rounds: 10,
+            process_invocations: 10,
+            output_bytes: 10,
+            retained_state_bytes: 10,
+            execution_elapsed_ms: 10,
+        };
+        match exhausted {
+            CampaignLimitKind::ProviderAttempts => limits.provider_attempts = 3,
+            CampaignLimitKind::MalformedReportRepairs => {
+                limits.malformed_report_repairs = 3;
+            }
+            CampaignLimitKind::CorrectionRounds => limits.correction_rounds = 3,
+            CampaignLimitKind::ProcessInvocations => limits.process_invocations = 3,
+            CampaignLimitKind::OutputBytes => limits.output_bytes = 3,
+            CampaignLimitKind::RetainedStateBytes => limits.retained_state_bytes = 3,
+            CampaignLimitKind::ExecutionElapsed => limits.execution_elapsed_ms = 3,
+        }
+        limits
+    }
+
+    fn limit_usage(exhausted: CampaignLimitKind, value: u32) -> RunUtilization {
+        let mut usage = RunUtilization::default();
+        match exhausted {
+            CampaignLimitKind::ProviderAttempts => {
+                usage.provider_attempts = value;
+                usage.process_invocations = value;
+            }
+            CampaignLimitKind::MalformedReportRepairs => {
+                usage.provider_attempts = value;
+                usage.malformed_report_repairs = value;
+                usage.process_invocations = value;
+            }
+            CampaignLimitKind::ProcessInvocations => usage.process_invocations = value,
+            CampaignLimitKind::OutputBytes => usage.output_bytes = u64::from(value),
+            CampaignLimitKind::ExecutionElapsed => {
+                usage.execution_elapsed_ms = u64::from(value);
+            }
+            CampaignLimitKind::CorrectionRounds | CampaignLimitKind::RetainedStateBytes => {}
+        }
+        usage
+    }
+
+    fn limit_baseline(exhausted: CampaignLimitKind, value: u32) -> CampaignUtilization {
+        let usage = limit_usage(exhausted, value);
+        CampaignUtilization {
+            provider_attempts: usage.provider_attempts,
+            malformed_report_repairs: usage.malformed_report_repairs,
+            correction_rounds: if exhausted == CampaignLimitKind::CorrectionRounds {
+                value
+            } else {
+                0
+            },
+            process_invocations: usage.process_invocations,
+            output_bytes: usage.output_bytes,
+            retained_state_bytes: 0,
+            execution_elapsed_ms: usage.execution_elapsed_ms,
+        }
+    }
+
+    fn limit_reservation(exhausted: CampaignLimitKind, value: u32) -> CampaignReservation {
+        let mut reservation = CampaignReservation::default();
+        match exhausted {
+            CampaignLimitKind::ProviderAttempts => {
+                reservation.provider_attempts = value;
+                reservation.process_invocations = value;
+            }
+            CampaignLimitKind::MalformedReportRepairs => {
+                reservation.provider_attempts = value;
+                reservation.malformed_report_repairs = value;
+                reservation.process_invocations = value;
+            }
+            CampaignLimitKind::CorrectionRounds => reservation.correction_rounds = value,
+            CampaignLimitKind::ProcessInvocations => reservation.process_invocations = value,
+            CampaignLimitKind::OutputBytes
+            | CampaignLimitKind::RetainedStateBytes
+            | CampaignLimitKind::ExecutionElapsed => {}
+        }
+        reservation
     }
 
     #[test]
@@ -2057,6 +2156,62 @@ mod tests {
     }
 
     #[test]
+    fn accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation() {
+        use std::sync::Arc;
+        use std::thread;
+
+        for (name, completed, accepted) in [("one-below", 9, 9), ("exact", 10, 10)] {
+            let root = root(&format!("accepted-outcomes-{name}"));
+            let mut checkpoint = checkpoint();
+            checkpoint.completed_units = completed;
+            checkpoint.persist(&root).unwrap();
+            let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
+            assert_eq!(loaded.outcomes.accepted, accepted);
+            assert_eq!(loaded.outcomes.max_accepted, 10);
+
+            let loaded = Arc::new(loaded);
+            let handles = (0..4)
+                .map(|_| {
+                    let loaded = Arc::clone(&loaded);
+                    thread::spawn(move || (loaded.outcomes.accepted, loaded.outcomes.max_accepted))
+                })
+                .collect::<Vec<_>>();
+            for handle in handles {
+                assert_eq!(handle.join().unwrap(), (accepted, 10));
+            }
+            fs::remove_dir_all(root).unwrap();
+        }
+
+        let above_root = root("accepted-outcomes-one-above");
+        let mut above = checkpoint();
+        above.completed_units = 11;
+        assert_eq!(above.persist(&above_root), Err(RuntimeError::State));
+        fs::remove_dir_all(above_root).unwrap();
+
+        let overflow_root = root("accepted-outcomes-overflow");
+        let mut overflow = CampaignCheckpoint::new(
+            "a".repeat(64),
+            "campaign-1".to_owned(),
+            "repo-1".to_owned(),
+            RunId::new("outcome-overflow-run").unwrap(),
+            WorktreeId::new("outcome-overflow-worktree").unwrap(),
+            "codingmage/campaign-1/campaign-root".to_owned(),
+            "b".repeat(40),
+            u32::MAX,
+            campaign_limits(),
+        )
+        .unwrap();
+        overflow.completed_units = u32::MAX;
+        overflow.blocked_task_ids.insert("1.1.1.1".to_owned());
+        overflow.blocked_reasons.insert(
+            "1.1.1.1".to_owned(),
+            LeadBlockedReason::UnavailableExternalDependency,
+        );
+        assert_eq!(overflow.persist(&overflow_root), Err(RuntimeError::State));
+        fs::remove_dir_all(overflow_root).unwrap();
+    }
+
+    #[test]
     #[allow(clippy::too_many_lines)]
     fn every_exhausted_campaign_limit_preserves_exact_policy_authority() {
         let limits = [
@@ -2293,6 +2448,195 @@ mod tests {
             ))
         );
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    fn unit_budget_matrix_covers_boundaries_overflow_and_concurrent_observation() {
+        use std::sync::Arc;
+        use std::thread;
+
+        let kinds = [
+            CampaignLimitKind::ProviderAttempts,
+            CampaignLimitKind::MalformedReportRepairs,
+            CampaignLimitKind::CorrectionRounds,
+            CampaignLimitKind::ProcessInvocations,
+            CampaignLimitKind::OutputBytes,
+            CampaignLimitKind::RetainedStateBytes,
+            CampaignLimitKind::ExecutionElapsed,
+        ];
+
+        for kind in kinds {
+            let root = root(&format!("limit-matrix-{kind:?}"));
+            let budget = CampaignUnitBudget {
+                baseline: limit_baseline(kind, 1),
+                limits: matrix_limits(kind),
+                campaign_root: root,
+            };
+            let unit_one = limit_usage(kind, 1);
+            let correction_one = u16::from(kind == CampaignLimitKind::CorrectionRounds);
+            let retained_one_below = if kind == CampaignLimitKind::RetainedStateBytes {
+                2
+            } else {
+                0
+            };
+            assert_eq!(
+                budget
+                    .exhausted_with_observations(
+                        &unit_one,
+                        correction_one,
+                        CampaignReservation::default(),
+                        retained_one_below,
+                    )
+                    .unwrap(),
+                None,
+                "one below {kind:?}"
+            );
+
+            let reservable = matches!(
+                kind,
+                CampaignLimitKind::ProviderAttempts
+                    | CampaignLimitKind::MalformedReportRepairs
+                    | CampaignLimitKind::CorrectionRounds
+                    | CampaignLimitKind::ProcessInvocations
+            );
+            let (exact_unit, exact_corrections, exact_reservation, exact_retained, exact_result) =
+                if reservable {
+                    (
+                        unit_one.clone(),
+                        correction_one,
+                        limit_reservation(kind, 1),
+                        retained_one_below,
+                        None,
+                    )
+                } else {
+                    (
+                        limit_usage(kind, 2),
+                        0,
+                        CampaignReservation::default(),
+                        if kind == CampaignLimitKind::RetainedStateBytes {
+                            3
+                        } else {
+                            0
+                        },
+                        Some(kind),
+                    )
+                };
+            assert_eq!(
+                budget
+                    .exhausted_with_observations(
+                        &exact_unit,
+                        exact_corrections,
+                        exact_reservation,
+                        exact_retained,
+                    )
+                    .unwrap(),
+                exact_result,
+                "exact boundary {kind:?}"
+            );
+
+            let (above_unit, above_corrections, above_reservation, above_retained) = if reservable {
+                (
+                    unit_one.clone(),
+                    correction_one,
+                    limit_reservation(kind, 2),
+                    retained_one_below,
+                )
+            } else {
+                (
+                    limit_usage(kind, 3),
+                    0,
+                    CampaignReservation::default(),
+                    if kind == CampaignLimitKind::RetainedStateBytes {
+                        4
+                    } else {
+                        0
+                    },
+                )
+            };
+            assert_eq!(
+                budget
+                    .exhausted_with_observations(
+                        &above_unit,
+                        above_corrections,
+                        above_reservation,
+                        above_retained,
+                    )
+                    .unwrap(),
+                Some(kind),
+                "one above {kind:?}"
+            );
+
+            let budget = Arc::new(budget);
+            let handles = (0..4)
+                .map(|_| {
+                    let budget = Arc::clone(&budget);
+                    let unit = above_unit.clone();
+                    thread::spawn(move || {
+                        budget.exhausted_with_observations(
+                            &unit,
+                            above_corrections,
+                            above_reservation,
+                            above_retained,
+                        )
+                    })
+                })
+                .collect::<Vec<_>>();
+            for handle in handles {
+                assert_eq!(handle.join().unwrap().unwrap(), Some(kind));
+            }
+
+            let mut overflow = CampaignUtilization::default();
+            let overflow_unit = match kind {
+                CampaignLimitKind::ProviderAttempts => {
+                    overflow.provider_attempts = u32::MAX;
+                    limit_usage(kind, 1)
+                }
+                CampaignLimitKind::MalformedReportRepairs => {
+                    overflow.malformed_report_repairs = u32::MAX;
+                    limit_usage(kind, 1)
+                }
+                CampaignLimitKind::CorrectionRounds => {
+                    overflow.correction_rounds = u32::MAX;
+                    RunUtilization::default()
+                }
+                CampaignLimitKind::ProcessInvocations => {
+                    overflow.process_invocations = u32::MAX;
+                    limit_usage(kind, 1)
+                }
+                CampaignLimitKind::OutputBytes => {
+                    overflow.output_bytes = u64::MAX;
+                    limit_usage(kind, 1)
+                }
+                CampaignLimitKind::RetainedStateBytes => RunUtilization::default(),
+                CampaignLimitKind::ExecutionElapsed => {
+                    overflow.execution_elapsed_ms = u64::MAX;
+                    limit_usage(kind, 1)
+                }
+            };
+            if kind == CampaignLimitKind::RetainedStateBytes {
+                assert_eq!(
+                    checked_retained_total(u64::MAX, 1),
+                    Err(RuntimeError::State)
+                );
+            } else {
+                let overflow_budget = CampaignUnitBudget {
+                    baseline: overflow,
+                    limits: matrix_limits(kind),
+                    campaign_root: PathBuf::new(),
+                };
+                assert_eq!(
+                    overflow_budget.exhausted_with_observations(
+                        &overflow_unit,
+                        u16::from(kind == CampaignLimitKind::CorrectionRounds),
+                        CampaignReservation::default(),
+                        0,
+                    ),
+                    Err(RuntimeError::State),
+                    "overflow {kind:?}"
+                );
+            }
+        }
     }
 
     #[test]
