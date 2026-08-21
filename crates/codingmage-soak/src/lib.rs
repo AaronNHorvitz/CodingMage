@@ -207,6 +207,240 @@ pub fn prescribed_ten_outcome_schedule() -> PrescribedSchedule {
     }
 }
 
+/// Fake campaign boundary exercised by the prescribed adapter harness.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum FakeAdapterKind {
+    /// Campaign team-lead selection boundary.
+    Lead,
+    /// Bounded implementation boundary.
+    Implementer,
+    /// Independent senior-review boundary.
+    Reviewer,
+    /// Deterministic verification boundary.
+    Gate,
+    /// Coordinator-owned repository boundary.
+    Git,
+    /// Guarded subprocess boundary.
+    Process,
+    /// Read-only operator status boundary.
+    Monitor,
+    /// Durable lifecycle and restart boundary.
+    Service,
+}
+
+/// Content-free fake-adapter action.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FakeAdapterAction {
+    /// Load one durable outcome boundary.
+    Load,
+    /// Spawn or observe one guarded process.
+    Process,
+    /// Select or classify one task.
+    Select,
+    /// Implement one admitted task.
+    Implement,
+    /// Run deterministic verification.
+    Verify,
+    /// Review the exact candidate.
+    Review,
+    /// Integrate the exact reviewed candidate.
+    Integrate,
+    /// Observe privacy-safe status.
+    Status,
+    /// Persist one clean outcome checkpoint.
+    Checkpoint,
+}
+
+/// One ordered source-independent fake-adapter observation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FakeAdapterObservation {
+    /// Global contiguous observation sequence.
+    pub sequence: u32,
+    /// Exact prescribed outcome identity.
+    pub outcome_id: &'static str,
+    /// Exact fixture task identity.
+    pub task_id: &'static str,
+    /// Adapter boundary that was exercised.
+    pub adapter: FakeAdapterKind,
+    /// Content-free action at that boundary.
+    pub action: FakeAdapterAction,
+}
+
+/// Reconciled result of the complete prescribed fake-adapter execution.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FakeAdapterReport {
+    /// Accepted outcomes observed exactly once.
+    pub accepted_outcomes: u8,
+    /// Peak simultaneous pod count.
+    pub peak_active_pods: u8,
+    /// Stable configured publication mode.
+    pub publication: &'static str,
+    /// Complete ordered adapter observations.
+    pub observations: Vec<FakeAdapterObservation>,
+}
+
+impl FakeAdapterReport {
+    /// Verifies complete adapter coverage and per-disposition authority boundaries.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SoakError::InvariantViolation`] for an omitted, duplicated, reordered, or
+    /// authority-expanding adapter effect.
+    pub fn verify(&self, schedule: &PrescribedSchedule) -> Result<(), SoakError> {
+        schedule.validate()?;
+        if self.accepted_outcomes != schedule.max_accepted_outcomes
+            || self.peak_active_pods != 1
+            || self.publication != "local_only"
+            || self
+                .observations
+                .iter()
+                .enumerate()
+                .any(|(index, observation)| {
+                    observation.sequence != u32::try_from(index).unwrap_or(u32::MAX)
+                })
+        {
+            return Err(SoakError::InvariantViolation);
+        }
+        let coverage = self
+            .observations
+            .iter()
+            .map(|observation| observation.adapter)
+            .collect::<BTreeSet<_>>();
+        if coverage.len() != 8 {
+            return Err(SoakError::InvariantViolation);
+        }
+        for outcome in &schedule.outcomes {
+            let observed = self
+                .observations
+                .iter()
+                .filter(|observation| observation.outcome_id == outcome.outcome_id)
+                .collect::<Vec<_>>();
+            if observed.first().map(|event| (event.adapter, event.action))
+                != Some((FakeAdapterKind::Service, FakeAdapterAction::Load))
+                || observed.last().map(|event| (event.adapter, event.action))
+                    != Some((FakeAdapterKind::Service, FakeAdapterAction::Checkpoint))
+                || !observed.iter().any(|event| {
+                    (event.adapter, event.action)
+                        == (FakeAdapterKind::Monitor, FakeAdapterAction::Status)
+                })
+            {
+                return Err(SoakError::InvariantViolation);
+            }
+            let mutation_adapters = observed
+                .iter()
+                .filter(|event| {
+                    matches!(
+                        event.adapter,
+                        FakeAdapterKind::Implementer
+                            | FakeAdapterKind::Gate
+                            | FakeAdapterKind::Reviewer
+                            | FakeAdapterKind::Git
+                    )
+                })
+                .count();
+            if (outcome.disposition == PrescribedDisposition::Completed && mutation_adapters != 4)
+                || (outcome.disposition != PrescribedDisposition::Completed
+                    && mutation_adapters != 0)
+            {
+                return Err(SoakError::InvariantViolation);
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Executes the exact schedule through all source-independent fake adapter boundaries.
+///
+/// # Errors
+///
+/// Returns [`SoakError`] if schedule validation or final reconciliation fails.
+pub fn execute_prescribed_fake_adapters(
+    schedule: &PrescribedSchedule,
+) -> Result<FakeAdapterReport, SoakError> {
+    schedule.validate()?;
+    let mut observations = Vec::new();
+    let mut active_pods = 0_u8;
+    let mut peak_active_pods = 0_u8;
+    for outcome in &schedule.outcomes {
+        observe_adapter(
+            &mut observations,
+            outcome,
+            FakeAdapterKind::Service,
+            FakeAdapterAction::Load,
+        )?;
+        observe_adapter(
+            &mut observations,
+            outcome,
+            FakeAdapterKind::Process,
+            FakeAdapterAction::Process,
+        )?;
+        observe_adapter(
+            &mut observations,
+            outcome,
+            FakeAdapterKind::Lead,
+            FakeAdapterAction::Select,
+        )?;
+        if outcome.disposition == PrescribedDisposition::Completed {
+            active_pods = active_pods
+                .checked_add(1)
+                .ok_or(SoakError::InvariantViolation)?;
+            peak_active_pods = peak_active_pods.max(active_pods);
+            for (adapter, action) in [
+                (FakeAdapterKind::Process, FakeAdapterAction::Process),
+                (FakeAdapterKind::Implementer, FakeAdapterAction::Implement),
+                (FakeAdapterKind::Gate, FakeAdapterAction::Verify),
+                (FakeAdapterKind::Reviewer, FakeAdapterAction::Review),
+                (FakeAdapterKind::Git, FakeAdapterAction::Integrate),
+            ] {
+                observe_adapter(&mut observations, outcome, adapter, action)?;
+            }
+            active_pods = active_pods
+                .checked_sub(1)
+                .ok_or(SoakError::InvariantViolation)?;
+        }
+        observe_adapter(
+            &mut observations,
+            outcome,
+            FakeAdapterKind::Monitor,
+            FakeAdapterAction::Status,
+        )?;
+        observe_adapter(
+            &mut observations,
+            outcome,
+            FakeAdapterKind::Service,
+            FakeAdapterAction::Checkpoint,
+        )?;
+    }
+    if active_pods != 0 {
+        return Err(SoakError::InvariantViolation);
+    }
+    let report = FakeAdapterReport {
+        accepted_outcomes: schedule.max_accepted_outcomes,
+        peak_active_pods,
+        publication: schedule.publication,
+        observations,
+    };
+    report.verify(schedule)?;
+    Ok(report)
+}
+
+fn observe_adapter(
+    observations: &mut Vec<FakeAdapterObservation>,
+    outcome: &PrescribedOutcome,
+    adapter: FakeAdapterKind,
+    action: FakeAdapterAction,
+) -> Result<(), SoakError> {
+    let sequence = u32::try_from(observations.len()).map_err(|_| SoakError::InvariantViolation)?;
+    observations.push(FakeAdapterObservation {
+        sequence,
+        outcome_id: outcome.outcome_id,
+        task_id: outcome.task_id,
+        adapter,
+        action,
+    });
+    Ok(())
+}
+
 /// Disposable target shape exercised by a campaign.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum FixtureKind {
@@ -774,6 +1008,103 @@ mod tests {
 
         for mutation in mutations {
             assert_eq!(mutation.validate(), Err(SoakError::InvalidConfiguration));
+        }
+    }
+
+    #[test]
+    fn prescribed_schedule_crosses_every_fake_adapter_without_broadening_authority() {
+        let schedule = prescribed_ten_outcome_schedule();
+        let report = execute_prescribed_fake_adapters(&schedule).unwrap();
+        report.verify(&schedule).unwrap();
+        assert_eq!(report.accepted_outcomes, 10);
+        assert_eq!(report.peak_active_pods, 1);
+        assert_eq!(report.publication, "local_only");
+        assert_eq!(
+            report
+                .observations
+                .iter()
+                .map(|observation| observation.adapter)
+                .collect::<BTreeSet<_>>(),
+            BTreeSet::from([
+                FakeAdapterKind::Lead,
+                FakeAdapterKind::Implementer,
+                FakeAdapterKind::Reviewer,
+                FakeAdapterKind::Gate,
+                FakeAdapterKind::Git,
+                FakeAdapterKind::Process,
+                FakeAdapterKind::Monitor,
+                FakeAdapterKind::Service,
+            ])
+        );
+        for outcome in schedule.outcomes.iter().filter(|outcome| {
+            matches!(
+                outcome.disposition,
+                PrescribedDisposition::Blocked | PrescribedDisposition::Deferred
+            )
+        }) {
+            assert!(
+                report
+                    .observations
+                    .iter()
+                    .filter(|observation| { observation.outcome_id == outcome.outcome_id })
+                    .all(|observation| !matches!(
+                        observation.adapter,
+                        FakeAdapterKind::Implementer
+                            | FakeAdapterKind::Gate
+                            | FakeAdapterKind::Reviewer
+                            | FakeAdapterKind::Git
+                    ))
+            );
+        }
+    }
+
+    #[test]
+    fn fake_adapter_report_refuses_missing_duplicate_reordered_and_broadened_effects() {
+        let schedule = prescribed_ten_outcome_schedule();
+        let baseline = execute_prescribed_fake_adapters(&schedule).unwrap();
+        let mut mutations = Vec::new();
+
+        let mut changed = baseline.clone();
+        changed.observations.remove(0);
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.observations.push(changed.observations[0].clone());
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.observations.swap(0, 1);
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.peak_active_pods = 2;
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.publication = "draft_pull_request";
+        mutations.push(changed);
+        let mut changed = baseline;
+        let blocked = changed
+            .observations
+            .iter()
+            .position(|observation| observation.outcome_id == "outcome-04-blocker")
+            .unwrap();
+        changed.observations.insert(
+            blocked + 1,
+            FakeAdapterObservation {
+                sequence: u32::try_from(blocked + 1).unwrap(),
+                outcome_id: "outcome-04-blocker",
+                task_id: "0.1.1.4",
+                adapter: FakeAdapterKind::Git,
+                action: FakeAdapterAction::Integrate,
+            },
+        );
+        for (index, observation) in changed.observations.iter_mut().enumerate() {
+            observation.sequence = u32::try_from(index).unwrap();
+        }
+        mutations.push(changed);
+
+        for mutation in mutations {
+            assert_eq!(
+                mutation.verify(&schedule),
+                Err(SoakError::InvariantViolation)
+            );
         }
     }
 
