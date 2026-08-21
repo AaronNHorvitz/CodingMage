@@ -5,6 +5,7 @@
 - **Schedule implementation commit:** `8f79bfa`
 - **Fake-adapter execution commit:** `1eb59a3`
 - **Behavioral injection commit:** `1c6f689`
+- **Outcome and residue reconciliation commit:** `dff3395`
 - **Executed:** 2026-08-21 on Fedora Linux with Rust 1.95.0
 
 ## Exact Schedule
@@ -67,6 +68,19 @@ The ten scenario identities produce seventeen ordered behavioral observations. T
 ten scenario families and exact final trigger/ceiling ordering. Removing, reordering, duplicating,
 changing the adapter boundary, or replacing a behavioral phase causes reconciliation failure.
 
-This closes `17.1.2.1` through `17.1.2.3`. It does not yet claim complete artifact reconciliation,
-repeated soak stability, production coordinator qualification, controlled-target execution, or
-installed-package evidence.
+## Outcome And Residue Reconciliation
+
+Each accepted fake outcome now carries deterministic evidence for exact outcome and task identity,
+candidate commit identity where completion is claimed, required gate and review observation counts,
+checkpoint SHA-256, guarded process start/reap counts, and worktree creation/removal. The gate and
+review correction scenarios require two observations at the corrected boundary; blocked and
+deferred outcomes carry no candidate, gate, review, or worktree claim.
+
+Campaign residue requires identical content-free active-checkout manifests, eighteen started and
+reaped fake provider processes, eight created and removed task worktrees, zero orphan processes, and
+zero leaked worktrees. Tests independently falsify candidate identity, gate count, review count,
+blocked worktree authority, checkpoint digest, active-checkout preservation, process reaping,
+worktree cleanup, orphan count, and leak count. Every false claim fails reconciliation.
+
+This closes `17.1.2.1` through `17.1.2.4`. It does not yet claim repeated soak stability,
+production coordinator qualification, controlled-target execution, or installed-package evidence.
