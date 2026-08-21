@@ -1,19 +1,28 @@
 //! Serialized, restart-reconcilable campaign integration.
 
-use std::{collections::BTreeSet, fmt::Write as _, fs};
+use std::{collections::BTreeMap, collections::BTreeSet, fmt::Write as _, fs, path::PathBuf};
 
 use codingmage_campaign::{CampaignTaskState, TeamCampaignSnapshot};
-use codingmage_contracts::{EvidenceId, TaskId};
+use codingmage_codex::{CodexAdapter, CodexReviewBinding, ReviewVerdict, codex_review_schema};
+use codingmage_contracts::{AgentId, EvidenceId, TaskId};
 use codingmage_core::{Config, RepositoryAuthorization};
+use codingmage_gate::{
+    GateAssertion, GateEntry, GateRegistry, GateRequirement, GateRunner, GateTier, GateTrigger,
+    TrustedGateDefinition,
+};
 use codingmage_git::{
     OwnedWorktree, commit_owned_changes, integrate_reviewed_descendant, observe_owned_child_commit,
     prepare_reviewed_delta, release_prepared_integration,
 };
 use codingmage_orchestrator::reconcile_and_select_next;
 use codingmage_plan::{CheckState, TaskPlan};
+use codingmage_process::{CancellationToken, ProcessExecutor, ProcessProfile, ProcessRequest};
 use sha2::{Digest, Sha256};
 
-use crate::{RuntimeError, check_exact_line, generated_run_id};
+use crate::{
+    ProviderSpec, RuntimeError, check_exact_line, generated_run_id, login_discovery_environment,
+    private_directory, write_private_idempotent,
+};
 
 /// Immutable deterministic and independent-review evidence for one prepared integration commit.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -47,6 +56,174 @@ pub trait TeamIntegrationVerifier {
         prepared_worktree: &OwnedWorktree,
         prepared_commit: &str,
     ) -> Result<IntegrationVerification, RuntimeError>;
+}
+
+/// Production integration verifier composed from configured gates and a fresh Codex review.
+#[derive(Clone, Debug)]
+pub struct ProductionTeamIntegrationVerifier {
+    config: Config,
+    executor: ProcessExecutor,
+    reviewer: ProviderSpec,
+    schema_path: PathBuf,
+    login_environment: BTreeMap<String, String>,
+    cancellation: CancellationToken,
+}
+
+impl ProductionTeamIntegrationVerifier {
+    /// Creates a verifier with a private process root and immutable review schema.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RuntimeError`] for unsafe roots, provider identity, or login environment.
+    pub fn new(
+        config: Config,
+        codingmage_binary: &std::path::Path,
+        private_root: &std::path::Path,
+        reviewer: ProviderSpec,
+        cancellation: CancellationToken,
+    ) -> Result<Self, RuntimeError> {
+        private_directory(private_root)?;
+        let process_root = private_root.join("integration-processes");
+        let executor = ProcessExecutor::new_with_guard_arguments(
+            codingmage_binary,
+            vec!["__process-guard".to_owned()],
+            &process_root,
+        )
+        .map_err(|_| RuntimeError::Process)?;
+        let schema_path = private_root.join("integration-review.schema.json");
+        write_private_idempotent(&schema_path, codex_review_schema().as_bytes())?;
+        let login_environment = login_discovery_environment()?;
+        CodexAdapter::new(
+            reviewer.executable.clone(),
+            &reviewer.model,
+            &reviewer.effort,
+            schema_path.clone(),
+        )
+        .and_then(|adapter| adapter.with_login_environment(login_environment.clone()))
+        .map_err(RuntimeError::Reviewer)?;
+        Ok(Self {
+            config,
+            executor,
+            reviewer,
+            schema_path,
+            login_environment,
+            cancellation,
+        })
+    }
+
+    fn gate_registry(&self, worktree: &std::path::Path) -> Result<GateRegistry, RuntimeError> {
+        let entries = self
+            .config
+            .gate_commands
+            .iter()
+            .enumerate()
+            .map(|(index, command)| {
+                let profile = ProcessProfile::new(
+                    &command.executable,
+                    [command.args.clone()],
+                    std::iter::empty::<String>(),
+                )
+                .map_err(|_| RuntimeError::Verification)?;
+                Ok(GateEntry::Available(Box::new(TrustedGateDefinition {
+                    id: format!("integration-gate-{}", index.saturating_add(1)),
+                    tier: GateTier::Tier2,
+                    trigger: GateTrigger::EveryAttempt,
+                    requirement: GateRequirement::Required,
+                    resources: BTreeSet::from(["campaign-integration".to_owned()]),
+                    profile,
+                    request: ProcessRequest {
+                        arguments: command.args.clone(),
+                        working_directory: worktree.to_path_buf(),
+                        environment: BTreeMap::new(),
+                        stdin: Vec::new(),
+                        max_output_bytes: 16 * 1024 * 1024,
+                        deadline_millis: 30 * 60 * 1_000,
+                        max_processes: 64,
+                        max_open_files: 1_024,
+                        expected_exit_codes: BTreeSet::from([0]),
+                    },
+                    assertions: vec![GateAssertion::OutputNotTruncated],
+                })))
+            })
+            .collect::<Result<Vec<_>, RuntimeError>>()?;
+        GateRegistry::new(entries).map_err(|_| RuntimeError::Verification)
+    }
+}
+
+impl TeamIntegrationVerifier for ProductionTeamIntegrationVerifier {
+    fn verify(
+        &mut self,
+        task_id: &str,
+        prepared_worktree: &OwnedWorktree,
+        prepared_commit: &str,
+    ) -> Result<IntegrationVerification, RuntimeError> {
+        let registry = self.gate_registry(&prepared_worktree.manifest().path)?;
+        let gates = GateRunner::new(self.executor.clone())
+            .run_with_cancellation(
+                &registry,
+                prepared_commit,
+                &BTreeSet::new(),
+                &self.cancellation,
+            )
+            .map_err(|_| RuntimeError::Verification)?;
+        if gates.blocked || gates.evidence.is_empty() {
+            return Err(RuntimeError::Verification);
+        }
+        let gate_material = gates
+            .evidence
+            .iter()
+            .map(|evidence| evidence.integrity_sha256.as_str())
+            .collect::<Vec<_>>()
+            .join("\0");
+        let gate_evidence_sha256 = digest(&gate_material);
+        let evidence = gates
+            .evidence
+            .iter()
+            .map(|value| EvidenceId::new(format!("integration-{}", value.integrity_sha256)))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| RuntimeError::Verification)?;
+        let adapter = CodexAdapter::new(
+            self.reviewer.executable.clone(),
+            &self.reviewer.model,
+            &self.reviewer.effort,
+            self.schema_path.clone(),
+        )
+        .and_then(|adapter| adapter.with_login_environment(self.login_environment.clone()))
+        .map_err(RuntimeError::Reviewer)?;
+        let binding = CodexReviewBinding {
+            run_id: generated_run_id()?,
+            task_id: TaskId::new(task_id.to_owned()).map_err(|_| RuntimeError::State)?,
+            agent_id: AgentId::new("codex-integration-reviewer")
+                .map_err(|_| RuntimeError::State)?,
+            thread_id: None,
+            worktree: prepared_worktree.manifest().path.clone(),
+            base_commit: prepared_worktree.manifest().source_commit.clone(),
+            target_commit: prepared_commit.to_owned(),
+            evidence,
+        };
+        let plan = adapter
+            .plan_start(
+                &binding,
+                "Review the exact effective campaign integration delta.",
+            )
+            .map_err(RuntimeError::Reviewer)?;
+        let execution = adapter
+            .execute_observed(&self.executor, &plan, &binding, &self.cancellation)
+            .map_err(RuntimeError::Reviewer)?;
+        let result = execution.report.map_err(RuntimeError::Reviewer)?;
+        if result.report.verdict != ReviewVerdict::Pass
+            || result.report.target_commit != prepared_commit
+        {
+            return Err(RuntimeError::Verification);
+        }
+        Ok(IntegrationVerification {
+            gate_evidence_sha256,
+            review_evidence_sha256: digest(&format!(
+                "{}\0{}\0pass",
+                result.thread_id, result.report.target_commit
+            )),
+        })
+    }
 }
 
 /// Terminal observation from one serialized integration-queue step.
