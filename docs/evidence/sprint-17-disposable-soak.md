@@ -6,6 +6,7 @@
 - **Fake-adapter execution commit:** `1eb59a3`
 - **Behavioral injection commit:** `1c6f689`
 - **Outcome and residue reconciliation commit:** `dff3395`
+- **Repeated-run isolation commit:** `ee1d1bb`
 - **Executed:** 2026-08-21 on Fedora Linux with Rust 1.95.0
 
 ## Exact Schedule
@@ -82,5 +83,17 @@ zero leaked worktrees. Tests independently falsify candidate identity, gate coun
 blocked worktree authority, checkpoint digest, active-checkout preservation, process reaping,
 worktree cleanup, orphan count, and leak count. Every false claim fails reconciliation.
 
-This closes `17.1.2.1` through `17.1.2.4`. It does not yet claim repeated soak stability,
-production coordinator qualification, controlled-target execution, or installed-package evidence.
+## Repeated-Run Isolation
+
+Fake candidate and checkpoint identities now bind a canonical campaign run ID. Thirty-three complete
+runs require identical accepted classifications, adapter ordering, injection ordering, pod and
+publication policy, and residue accounting. Completed candidate and all checkpoint identities must
+remain distinct across runs; blocked and deferred outcomes consistently retain no candidate.
+
+Each later run is then given one outcome-evidence record from the baseline run. Exact-run
+reconciliation rejects the substitution. Empty, overlong, prefixed-dash, slash-bearing,
+whitespace-bearing, and post-execution rebound run identities are also rejected.
+
+This closes `17.1.2.1` through `17.1.2.5`. It does not yet claim the complete prohibited-observation
+gate, production coordinator qualification, controlled-target execution, or installed-package
+evidence.

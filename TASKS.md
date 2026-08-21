@@ -780,7 +780,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 17.1.2.2:** Execute the schedule through fake lead, implementer, reviewer, gate, Git, process, monitor, and service adapters with one pod and local-only publication. See `docs/evidence/sprint-17-disposable-soak.md`.
   - [x] **Sub-task 17.1.2.3:** Inject provider capacity, malformed output, gate correction, review correction, blocker, deferral, interruption, restart, stop-after-unit, and final-ceiling cases at their recorded boundaries. See `docs/evidence/sprint-17-disposable-soak.md`.
   - [x] **Sub-task 17.1.2.4:** Reconcile all ten outcomes against the expected tasks, commits, gates, reviews, checkpoints, processes, worktrees, and active-checkout manifest. See `docs/evidence/sprint-17-disposable-soak.md`.
-  - [ ] **Sub-task 17.1.2.5:** Run the complete schedule repeatedly and prove identical terminal classifications and no cross-run state adoption.
+  - [x] **Sub-task 17.1.2.5:** Run the complete schedule repeatedly and prove identical terminal classifications and no cross-run state adoption. See `docs/evidence/sprint-17-disposable-soak.md`.
   - [ ] **Sub-task 17.1.2.6:** Fail the gate on any duplicate task, skipped gate, false completion, unreviewed commit, orphan process, leaked worktree, unowned mutation, silent model downgrade, or unbounded retained state.
 
 ### Story 17.2 - Controlled Target Pilot
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 17 sub-task `17.1.2.5`: repeat the complete fake schedule and prove deterministic results with no cross-run state adoption.
+- [ ] **Next 1:** Complete Sprint 17 sub-task `17.1.2.6`: fail the fake-soak gate on every prohibited workflow, residue, authority, and resource observation.
