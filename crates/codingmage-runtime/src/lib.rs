@@ -47,7 +47,10 @@ use sha2::{Digest, Sha256};
 
 const RUN_SPEC_VERSION: u16 = 2;
 
-use campaign_state::{ActiveUnit, CampaignCheckpoint, CampaignPhase, PendingIntegration};
+use campaign_state::{
+    ActiveUnit, BlockerClearanceIntent, CampaignCheckpoint, CampaignPhase, PendingIntegration,
+    validate_private_campaign_state,
+};
 use correction_state::{CorrectionCheckpoint, CorrectionPhase};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
@@ -351,6 +354,22 @@ pub struct CampaignStatus {
     pub updated_at_ms: u64,
 }
 
+/// Content-minimized result of one authenticated local blocker-clearance request.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct BlockerClearanceOutcome {
+    /// Exact campaign identity.
+    pub campaign_id: String,
+    /// Exact cleared task identity.
+    pub task_id: String,
+    /// Caller-generated idempotency identity.
+    pub request_id: String,
+    /// True only when this invocation removed the blocker.
+    pub changed: bool,
+    /// Whether campaign execution must revalidate before admitting more work.
+    pub campaign_revalidation_required: bool,
+}
+
 /// Reads and validates the durable status for one exact campaign authority.
 ///
 /// # Errors
@@ -400,6 +419,174 @@ pub fn campaign_status(
         elapsed_ms,
         updated_at_ms: checkpoint.updated_at_ms,
     }))
+}
+
+/// Clears one exact durable blocker after same-user local authentication and full revalidation.
+///
+/// The prerequisite digest is an operator-supplied, content-free binding to the external change.
+/// A create-once intent makes the request idempotent across interruption. This function never
+/// starts a provider, changes a task checkbox, or mutates the active checkout.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] for invalid identity, authentication, authority, state, plan, or
+/// worktree evidence.
+#[allow(clippy::too_many_lines)]
+pub fn clear_campaign_blocker(
+    config: &Config,
+    spec: &CampaignSpec,
+    codingmage_binary: &Path,
+    task_id: &str,
+    request_id: &str,
+    prerequisite_sha256: &str,
+) -> Result<BlockerClearanceOutcome, RuntimeError> {
+    let task_id = TaskId::new(task_id).map_err(|_| RuntimeError::Spec)?;
+    let request_id = RunId::new(request_id).map_err(|_| RuntimeError::Spec)?;
+    if !valid_sha256(prerequisite_sha256) {
+        return Err(RuntimeError::Spec);
+    }
+    spec.verify().map_err(RuntimeError::Campaign)?;
+    let authority_sha256 = spec.authority_sha256().map_err(RuntimeError::Campaign)?;
+    let binary = canonical_file(codingmage_binary)?;
+    let source_root = binary.parent().ok_or(RuntimeError::Authority)?;
+    let authorization = RepositoryAuthorization::authorize(config, source_root)
+        .map_err(|_| RuntimeError::Authority)?;
+    let inventory = inventory_repository(&authorization).map_err(|_| RuntimeError::Repository)?;
+    let configured_target =
+        fs::canonicalize(&config.target_path).map_err(|_| RuntimeError::Authority)?;
+    if !inventory.condition.is_clean()
+        || configured_target != spec.repository_path
+        || authorization.identity().repository_id.as_str() != spec.repository_id
+        || inventory.head != spec.initial_commit
+    {
+        return Err(RuntimeError::Authority);
+    }
+    let initial_source =
+        fs::read(config.target_path.join(&config.task_source)).map_err(|_| RuntimeError::Plan)?;
+    let initial_plan = TaskPlan::parse(&initial_source).map_err(|_| RuntimeError::Plan)?;
+    if initial_plan.source_sha256 != spec.task_source_sha256 {
+        return Err(RuntimeError::Plan);
+    }
+
+    let invocation_id = generated_run_id()?;
+    let _campaign_lock = CoordinatorLock::acquire(
+        &config.state_root.join("campaign-locks"),
+        &authorization.identity().repository_id,
+        invocation_id.as_str(),
+    )
+    .map_err(|_| RuntimeError::Orchestration)?;
+    let campaign_root = config.state_root.join("campaigns").join(&spec.campaign_id);
+    validate_private_campaign_state(&campaign_root)?;
+    let mut checkpoint = CampaignCheckpoint::load(&campaign_root)?.ok_or(RuntimeError::State)?;
+    checkpoint.validate_authority(
+        &authority_sha256,
+        &spec.campaign_id,
+        &spec.repository_id,
+        &spec.initial_commit,
+    )?;
+    if checkpoint.active_unit.is_some()
+        || checkpoint.pending_integration.is_some()
+        || checkpoint.phase == CampaignPhase::Complete
+    {
+        return Err(RuntimeError::State);
+    }
+
+    let existing = BlockerClearanceIntent::load(&campaign_root, request_id.as_str())?;
+    if let Some(intent) = existing.as_ref() {
+        if intent.campaign_id != spec.campaign_id
+            || intent.repository_id != spec.repository_id
+            || intent.task_id != task_id.as_str()
+            || intent.prerequisite_sha256 != prerequisite_sha256
+        {
+            return Err(RuntimeError::Authority);
+        }
+        if !checkpoint.blocked_task_ids.contains(task_id.as_str())
+            && !checkpoint.blocked_reasons.contains_key(task_id.as_str())
+        {
+            return Ok(BlockerClearanceOutcome {
+                campaign_id: spec.campaign_id.clone(),
+                task_id: task_id.as_str().to_owned(),
+                request_id: request_id.as_str().to_owned(),
+                changed: false,
+                campaign_revalidation_required: true,
+            });
+        }
+    }
+
+    let reason = checkpoint
+        .blocked_reasons
+        .get(task_id.as_str())
+        .copied()
+        .ok_or(RuntimeError::State)?;
+    if !checkpoint.blocked_task_ids.contains(task_id.as_str()) {
+        return Err(RuntimeError::State);
+    }
+    let mut campaign_config = config.clone();
+    campaign_config
+        .integration_branch
+        .clone_from(&spec.campaign_branch);
+    let campaign = OwnedWorktree::load(&campaign_config, &checkpoint.worktree_id)
+        .map_err(|_| RuntimeError::Repository)?;
+    if campaign.manifest().branch != checkpoint.branch {
+        return Err(RuntimeError::Authority);
+    }
+    campaign
+        .revalidate(&authorization, &checkpoint.head)
+        .map_err(|_| RuntimeError::Repository)?;
+    let campaign_source = fs::read(campaign.manifest().path.join(&config.task_source))
+        .map_err(|_| RuntimeError::Plan)?;
+    let campaign_plan = TaskPlan::parse(&campaign_source).map_err(|_| RuntimeError::Plan)?;
+    campaign_plan
+        .select_exact(task_id.as_str())
+        .map_err(|_| RuntimeError::Plan)?;
+
+    let intent = BlockerClearanceIntent::new(
+        request_id.as_str().to_owned(),
+        spec.campaign_id.clone(),
+        spec.repository_id.clone(),
+        task_id.as_str().to_owned(),
+        reason,
+        checkpoint.head.clone(),
+        campaign_plan.source_sha256.clone(),
+        prerequisite_sha256.to_owned(),
+    );
+    if let Some(existing) = existing {
+        if existing != intent {
+            return Err(RuntimeError::Authority);
+        }
+    } else {
+        intent.persist_new(&campaign_root)?;
+    }
+
+    campaign
+        .revalidate(&authorization, &checkpoint.head)
+        .map_err(|_| RuntimeError::Repository)?;
+    let reobserved_source = fs::read(campaign.manifest().path.join(&config.task_source))
+        .map_err(|_| RuntimeError::Plan)?;
+    let reobserved_plan = TaskPlan::parse(&reobserved_source).map_err(|_| RuntimeError::Plan)?;
+    if reobserved_plan.source_sha256 != campaign_plan.source_sha256 {
+        return Err(RuntimeError::Plan);
+    }
+    reobserved_plan
+        .select_exact(task_id.as_str())
+        .map_err(|_| RuntimeError::Plan)?;
+    let reloaded = CampaignCheckpoint::load(&campaign_root)?.ok_or(RuntimeError::State)?;
+    if reloaded != checkpoint {
+        return Err(RuntimeError::State);
+    }
+
+    checkpoint.blocked_task_ids.remove(task_id.as_str());
+    checkpoint.blocked_reasons.remove(task_id.as_str());
+    checkpoint.phase = CampaignPhase::Ready;
+    checkpoint.blocker_code = None;
+    checkpoint.persist(&campaign_root)?;
+    Ok(BlockerClearanceOutcome {
+        campaign_id: spec.campaign_id.clone(),
+        task_id: task_id.as_str().to_owned(),
+        request_id: request_id.as_str().to_owned(),
+        changed: true,
+        campaign_revalidation_required: true,
+    })
 }
 
 /// Runs a bounded serial campaign from one isolated evolving head.
@@ -2453,6 +2640,13 @@ fn canonical_file(path: &Path) -> Result<PathBuf, RuntimeError> {
         return Err(RuntimeError::Spec);
     }
     fs::canonicalize(path).map_err(|_| RuntimeError::Spec)
+}
+
+fn valid_sha256(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || matches!(byte, b'a'..=b'f'))
 }
 
 fn private_directory(path: &Path) -> Result<(), RuntimeError> {

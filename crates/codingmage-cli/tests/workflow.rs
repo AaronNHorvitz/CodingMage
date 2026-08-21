@@ -807,7 +807,7 @@ fn serial_campaign_persists_blocker_and_continues_independent_work() {
     let claude = fixture.executable(
         "blocker-claude",
         r#"#!/usr/bin/python3
-import json, sys
+import json, re, sys
 from pathlib import Path
 if "--version" in sys.argv:
     print("2.1.136 (Claude Code)")
@@ -818,7 +818,9 @@ if "--help" in sys.argv:
 root = Path(__file__).parent
 with (root / "blocker-claude.log").open("a", encoding="utf-8") as stream:
     stream.write("implementation\n")
-Path("src/lib.rs").write_text("pub fn value() -> u8 { 2 }\n", encoding="utf-8")
+path = Path("src/lib.rs")
+value = int(re.search(r"\{ (\d+) \}", path.read_text(encoding="utf-8")).group(1)) + 1
+path.write_text(f"pub fn value() -> u8 {{ {value} }}\n", encoding="utf-8")
 print(json.dumps({
     "type": "result", "is_error": False,
     "structured_output": {
@@ -851,7 +853,7 @@ if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
     head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
     digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
     tasks = re.findall(r"- id=([0-9.]+)", packet)
-    if "0.1.1.1" in tasks:
+    if "0.1.1.1" in tasks and not (root / "prerequisite-ready").exists():
         report = {
             "campaign_id": campaign_id, "campaign_head": head,
             "task_source_sha256": digest, "disposition": "blocked",
@@ -867,11 +869,14 @@ if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
             "deferred": None, "human_decision": None
         }
     else:
+        task = tasks[0]
         report = {
             "campaign_id": campaign_id, "campaign_head": head,
             "task_source_sha256": digest, "disposition": "propose",
             "proposals": [{
-                "task_id": "0.1.1.2", "dependencies": [], "owned_paths": ["src"],
+                "task_id": task,
+                "dependencies": [] if task != "0.1.1.3" else ["0.1.1.1"],
+                "owned_paths": ["src"],
                 "gate_tiers": ["focused"], "test_resources": ["rust-tests"],
                 "expected_artifacts": ["src/lib.rs"], "risk": "routine",
                 "rationale_summary": "The independent task is ready and bounded."
@@ -972,7 +977,7 @@ profiles = ["configured-gates"]
         String::from_utf8_lossy(&run.stdout)
     );
     let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
-    assert_eq!(outcome["state"], "blocked");
+    assert_eq!(outcome["state"], "blocked", "outcome={outcome}");
     assert_eq!(outcome["completed_units"], 1);
     assert_eq!(
         outcome["blocker_code"],
@@ -1019,6 +1024,89 @@ profiles = ["configured-gates"]
         task_source
     );
 
+    fs::write(fixture.root.join("prerequisite-ready"), "ready\n").unwrap();
+    let clearance_arguments = [
+        "campaign-clear-blocker",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+        "--task",
+        "0.1.1.1",
+        "--request",
+        "clear-blocker-1",
+        "--prerequisite-sha256",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    ];
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::unix::fs::PermissionsExt;
+
+        let campaign_state = state.join("campaigns/blocker-campaign");
+        fs::set_permissions(&campaign_state, fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(!Fixture::command(&clearance_arguments).status.success());
+        fs::set_permissions(&campaign_state, fs::Permissions::from_mode(0o700)).unwrap();
+    }
+    let cleared = Fixture::command(&clearance_arguments);
+    assert!(
+        cleared.status.success(),
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&cleared.stderr),
+        String::from_utf8_lossy(&cleared.stdout)
+    );
+    let cleared: serde_json::Value = serde_json::from_slice(&cleared.stdout).unwrap();
+    assert_eq!(cleared["changed"], true);
+    assert_eq!(cleared["task_id"], "0.1.1.1");
+    assert_eq!(cleared["request_id"], "clear-blocker-1");
+    assert_eq!(cleared["campaign_revalidation_required"], true);
+    assert_eq!(
+        fs::read_to_string(fixture.root.join("blocker-lead.log"))
+            .unwrap()
+            .lines()
+            .count(),
+        2
+    );
+    assert_eq!(
+        fs::read_to_string(fixture.root.join("blocker-claude.log"))
+            .unwrap()
+            .lines()
+            .count(),
+        1
+    );
+
+    let repeated = Fixture::command(&clearance_arguments);
+    assert!(repeated.status.success());
+    let repeated: serde_json::Value = serde_json::from_slice(&repeated.stdout).unwrap();
+    assert_eq!(repeated["changed"], false);
+
+    let cleared_status = Fixture::command(&[
+        "campaign-status",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(cleared_status.status.success());
+    let cleared_status: serde_json::Value = serde_json::from_slice(&cleared_status.stdout).unwrap();
+    assert_eq!(cleared_status["state"], "ready");
+    assert_eq!(cleared_status["blocker_count"], 0);
+    assert_eq!(cleared_status["blocker_code"], serde_json::Value::Null);
+
+    let conflicting = Fixture::command(&[
+        "campaign-clear-blocker",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+        "--task",
+        "0.1.1.1",
+        "--request",
+        "clear-blocker-1",
+        "--prerequisite-sha256",
+        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    ]);
+    assert!(!conflicting.status.success());
+
     let resumed = Fixture::command(&[
         "campaign",
         "--config",
@@ -1028,18 +1116,31 @@ profiles = ["configured-gates"]
     ]);
     assert!(resumed.status.success());
     let resumed: serde_json::Value = serde_json::from_slice(&resumed.stdout).unwrap();
-    assert_eq!(resumed["state"], "blocked");
-    assert_eq!(resumed["completed_units"], 1);
-    assert_eq!(
-        resumed["blocker_code"],
-        "codingmage.campaign.no_unblocked_ready_work"
-    );
+    assert_eq!(resumed["state"], "complete");
+    assert_eq!(resumed["completed_units"], 3);
+    assert_eq!(resumed["blocker_code"], serde_json::Value::Null);
     assert_eq!(
         fs::read_to_string(fixture.root.join("blocker-lead.log"))
             .unwrap()
             .lines()
             .count(),
-        2
+        4
+    );
+    assert_eq!(
+        fs::read_to_string(fixture.root.join("blocker-claude.log"))
+            .unwrap()
+            .lines()
+            .count(),
+        3
+    );
+    let completed_tasks = git_output(&target, &["show", &format!("{branch}:TASKS.md")]);
+    assert!(completed_tasks.contains("- [x] **Sub-task 0.1.1.1:**"));
+    assert!(completed_tasks.contains("- [x] **Sub-task 0.1.1.2:**"));
+    assert!(completed_tasks.contains("- [x] **Sub-task 0.1.1.3:**"));
+    assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
+    assert_eq!(
+        fs::read_to_string(target.join("TASKS.md")).unwrap(),
+        task_source
     );
 }
 

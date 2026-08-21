@@ -16,6 +16,7 @@ use crate::RuntimeError;
 
 const SCHEMA_VERSION: u16 = 1;
 const MAX_CHECKPOINT_BYTES: usize = 1024 * 1024;
+const CLEARANCE_SCHEMA_VERSION: u16 = 1;
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -81,6 +82,27 @@ pub(crate) struct CampaignCheckpoint {
 struct CheckpointEnvelope {
     checkpoint: CampaignCheckpoint,
     checkpoint_sha256: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct BlockerClearanceIntent {
+    pub schema_version: u16,
+    pub request_id: String,
+    pub campaign_id: String,
+    pub repository_id: String,
+    pub task_id: String,
+    pub blocked_reason: LeadBlockedReason,
+    pub campaign_head: String,
+    pub task_source_sha256: String,
+    pub prerequisite_sha256: String,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct BlockerClearanceEnvelope {
+    intent: BlockerClearanceIntent,
+    intent_sha256: String,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -261,6 +283,119 @@ impl CampaignCheckpoint {
 
     pub(crate) fn elapsed_ms(&self) -> Result<u64, RuntimeError> {
         Ok(timestamp_ms()?.saturating_sub(self.started_at_ms))
+    }
+}
+
+impl BlockerClearanceIntent {
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn new(
+        request_id: String,
+        campaign_id: String,
+        repository_id: String,
+        task_id: String,
+        blocked_reason: LeadBlockedReason,
+        campaign_head: String,
+        task_source_sha256: String,
+        prerequisite_sha256: String,
+    ) -> Self {
+        Self {
+            schema_version: CLEARANCE_SCHEMA_VERSION,
+            request_id,
+            campaign_id,
+            repository_id,
+            task_id,
+            blocked_reason,
+            campaign_head,
+            task_source_sha256,
+            prerequisite_sha256,
+        }
+    }
+
+    pub(crate) fn load(root: &Path, request_id: &str) -> Result<Option<Self>, RuntimeError> {
+        let path = clearance_path(root, request_id);
+        let metadata = match fs::symlink_metadata(&path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(_) => return Err(RuntimeError::State),
+        };
+        if !metadata.is_file()
+            || metadata.file_type().is_symlink()
+            || metadata.len() > MAX_CHECKPOINT_BYTES as u64
+        {
+            return Err(RuntimeError::State);
+        }
+        let bytes = fs::read(path).map_err(|_| RuntimeError::State)?;
+        let envelope: BlockerClearanceEnvelope =
+            serde_json::from_slice(&bytes).map_err(|_| RuntimeError::State)?;
+        let canonical = serde_json::to_vec(&envelope.intent).map_err(|_| RuntimeError::State)?;
+        if envelope.intent.schema_version != CLEARANCE_SCHEMA_VERSION
+            || envelope.intent.request_id != request_id
+            || sha256_hex(&canonical) != envelope.intent_sha256
+        {
+            return Err(RuntimeError::State);
+        }
+        Ok(Some(envelope.intent))
+    }
+
+    pub(crate) fn persist_new(&self, root: &Path) -> Result<(), RuntimeError> {
+        let clearances = root.join("blocker-clearances");
+        private_directory(&clearances)?;
+        let canonical = serde_json::to_vec(self).map_err(|_| RuntimeError::State)?;
+        let envelope = BlockerClearanceEnvelope {
+            intent: self.clone(),
+            intent_sha256: sha256_hex(&canonical),
+        };
+        let bytes = serde_json::to_vec_pretty(&envelope).map_err(|_| RuntimeError::State)?;
+        if bytes.len() > MAX_CHECKPOINT_BYTES {
+            return Err(RuntimeError::State);
+        }
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(clearance_path(root, &self.request_id))
+            .map_err(|_| RuntimeError::State)?;
+        set_file_private(&file)?;
+        file.write_all(&bytes)
+            .and_then(|()| file.sync_all())
+            .map_err(|_| RuntimeError::State)?;
+        File::open(&clearances)
+            .and_then(|directory| directory.sync_all())
+            .map_err(|_| RuntimeError::State)
+    }
+}
+
+fn clearance_path(root: &Path, request_id: &str) -> PathBuf {
+    root.join("blocker-clearances")
+        .join(format!("{request_id}.json"))
+}
+
+pub(crate) fn validate_private_campaign_state(root: &Path) -> Result<(), RuntimeError> {
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::unix::fs::{MetadataExt, PermissionsExt};
+
+        let effective = fs::read_to_string("/proc/self/status")
+            .map_err(|_| RuntimeError::Authority)?
+            .lines()
+            .find_map(|line| line.strip_prefix("Uid:"))
+            .and_then(|line| line.split_whitespace().nth(1))
+            .and_then(|value| value.parse::<u32>().ok())
+            .ok_or(RuntimeError::Authority)?;
+        for path in [root, &root.join("checkpoint.json")] {
+            let metadata = fs::symlink_metadata(path).map_err(|_| RuntimeError::State)?;
+            if metadata.file_type().is_symlink()
+                || metadata.uid() != effective
+                || metadata.permissions().mode() & 0o077 != 0
+            {
+                return Err(RuntimeError::Authority);
+            }
+        }
+        Ok(())
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = root;
+        Err(RuntimeError::Authority)
     }
 }
 
@@ -543,6 +678,38 @@ mod tests {
             BTreeSet::from(["1.1.1.2".to_owned()])
         );
         assert!(loaded.blocked_reasons.is_empty());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn blocker_clearance_intent_is_create_once_and_integrity_bound() {
+        let root = root("clearance-intent");
+        let intent = BlockerClearanceIntent::new(
+            "clear-1".to_owned(),
+            "campaign-1".to_owned(),
+            "repo-1".to_owned(),
+            "1.1.1.2".to_owned(),
+            LeadBlockedReason::UnavailableExternalDependency,
+            "b".repeat(40),
+            "c".repeat(64),
+            "d".repeat(64),
+        );
+        intent.persist_new(&root).unwrap();
+        assert_eq!(
+            BlockerClearanceIntent::load(&root, "clear-1").unwrap(),
+            Some(intent.clone())
+        );
+        assert_eq!(intent.persist_new(&root), Err(RuntimeError::State));
+
+        let path = clearance_path(&root, "clear-1");
+        let mut bytes = fs::read(&path).unwrap();
+        let index = bytes.iter().position(|byte| *byte == b'd').unwrap();
+        bytes[index] = b'e';
+        fs::write(path, bytes).unwrap();
+        assert_eq!(
+            BlockerClearanceIntent::load(&root, "clear-1"),
+            Err(RuntimeError::State)
+        );
         fs::remove_dir_all(root).unwrap();
     }
 }
