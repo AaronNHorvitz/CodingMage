@@ -305,7 +305,7 @@ fn campaign_spec(
          task_source_sha256 = \"{}\"\n\
          operator_authorization_sha256 = \"{}\"\n\
          max_parallel_pods = 1\n\
-         max_units = 1\n\
+         max_units = 2\n\
          implementer_authentication = \"existing_login\"\n\
          campaign_branch = \"codingmage/{case_id}\"\n\
          allowed_paths = [\"artifact.txt\"]\n\
