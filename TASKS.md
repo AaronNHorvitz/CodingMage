@@ -961,8 +961,8 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 21.2.2.4:** Continue every independent ready task and stop with `no_unblocked_ready_work` only when no independent path remains. See `docs/evidence/sprint-21-blocker-continuation.md`.
   - [x] **Sub-task 21.2.2.5:** Permit blocker clearance only through an authenticated operator action that records the changed prerequisite and forces full campaign revalidation. See `docs/evidence/sprint-21-blocker-continuation.md`.
 - [ ] **Task 21.2.3 - Validate deferral and reconsideration semantics**
-  - [ ] **Sub-task 21.2.3.1:** Accept deferral only for temporary provider capacity, active path lease, gate-resource contention, deterministic dependency order, pending stronger review, or operator pause.
-  - [ ] **Sub-task 21.2.3.2:** Bind deferral to campaign-head advancement, lease release, gate-resource release, provider reset, review completion, or operator resume.
+  - [x] **Sub-task 21.2.3.1:** Accept deferral only for temporary provider capacity, active path lease, gate-resource contention, deterministic dependency order, pending stronger review, or operator pause.
+  - [x] **Sub-task 21.2.3.2:** Bind deferral to campaign-head advancement, lease release, gate-resource release, provider reset, review completion, or operator resume. See `docs/evidence/sprint-21-deferral-local.md`.
   - [ ] **Sub-task 21.2.3.3:** Exclude a deferred task until its exact trigger is positively observed, then return it to deterministic ready-set evaluation.
   - [ ] **Sub-task 21.2.3.4:** Reject a repeated same-head deferral whose trigger is already satisfied and route the no-progress condition to a typed human decision.
   - [ ] **Sub-task 21.2.3.5:** Prove deterministic task order and starvation resistance across blocker, deferral, completion, and trigger permutations.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Implement sub-tasks `21.2.3.1` through `21.2.3.5`: persist typed deferrals and exact reconsideration triggers, observe each trigger deterministically, reject satisfied same-state repeats, and prove stable ordering and starvation resistance across disposition permutations.
+- [ ] **Next 1:** Complete sub-tasks `21.2.3.3` through `21.2.3.5`: add authenticated observations for provider reset, review completion, and operator resume; project repeated satisfied deferral as a typed human decision; and pass the full blocker, deferral, completion, trigger, restart, and starvation permutation suite.
