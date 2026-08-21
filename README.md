@@ -326,6 +326,10 @@ Codex proposes one task from the deterministic ready set in a read-only snapshot
 inside a separate worktree, local gates and Codex review must pass, and only a fixed coordinator
 fast-forward may advance the isolated campaign branch. The active checkout remains unchanged. See
 [`Serial Campaign`](docs/operations/serial-campaign.md) for the authority file and current limits.
+Every lead-proposed ownership root is interpreted from the repository root and must identify an
+existing regular file or directory. New files are authorized by leasing their exact existing parent
+directory. Claude can read the worktree but receives Edit/Write permission only for those validated
+roots; the coordinator independently inventories the resulting commit and rejects any path escape.
 The same campaign can be restarted from its exact reconciled head, and `campaign-status` exposes a
 content-minimized durable view. A content-free transient provider or session failure is retried as
 a fresh isolated whole-unit attempt at most three times; exhaustion, quota, and authentication
@@ -338,7 +342,11 @@ one same-session report retry; a second failure pauses with
 still fails deterministic verification or senior review after its configured correction budget,
 the campaign clears the active-unit marker, retains the candidate branch, and pauses with
 `codingmage.campaign.unit_recoverable_failure`; it does not misreport a generic orchestration crash
-or integrate the unaccepted candidate.
+or integrate the unaccepted candidate. An invalid lead ownership root pauses before Claude starts
+with `codingmage.campaign.lead_invalid_owned_paths`. A later repository-boundary violation blocks
+with `codingmage.campaign.unit_repository_boundary`; provider and deterministic-verification
+failures pause under their own content-free codes. All these paths clear the active-unit marker and
+leave the active checkout unchanged.
 
 Run `codingmage` from a normal VS Code terminal and leave that terminal open until the final JSON
 appears. During `run`, a live activity stream is written to stderr while the machine-readable final

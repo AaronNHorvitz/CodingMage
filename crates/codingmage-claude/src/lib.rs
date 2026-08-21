@@ -490,11 +490,8 @@ impl ClaudeAdapter {
         resume: bool,
     ) -> Result<ClaudeInvocationPlan, ClaudeError> {
         let stdin = packet.render(session)?;
-        let settings = authority_settings(session)?;
-        let permission_root = permission_root(&session.worktree)?;
-        let allowed_tools = ["Read", "Edit", "Write", "Glob", "Grep"]
-            .map(|tool| format!("{tool}({permission_root})"))
-            .join(",");
+        let settings = authority_settings(session, packet)?;
+        let allowed_tools = allowed_tool_rules(session, packet)?.join(",");
         let mut arguments = vec![
             "--print".to_owned(),
             "--output-format".to_owned(),
@@ -762,12 +759,17 @@ fn completion_schema() -> String {
     .to_string()
 }
 
-fn authority_settings(session: &ClaudeSession) -> Result<String, ClaudeError> {
-    let root = permission_root(&session.worktree)?;
+fn authority_settings(
+    session: &ClaudeSession,
+    packet: &ClaudeWorkPacket,
+) -> Result<String, ClaudeError> {
     let git_metadata = format!("{}/.git", permission_path(&session.worktree)?);
-    let allow = ["Read", "Edit", "Write", "Glob", "Grep"]
-        .map(|tool| format!("{tool}({root})"))
-        .to_vec();
+    let allow = allowed_tool_rules(session, packet)?;
+    let write_paths = packet
+        .owned_paths
+        .iter()
+        .map(|path| session.worktree.join(path))
+        .collect::<Vec<_>>();
     let deny = [
         "Bash".to_owned(),
         "WebFetch".to_owned(),
@@ -801,7 +803,7 @@ fn authority_settings(session: &ClaudeSession) -> Result<String, ClaudeError> {
                 "allowLocalBinding": false
             },
             "filesystem": {
-                "allowWrite": [session.worktree],
+                "allowWrite": write_paths,
                 "allowRead": [session.worktree],
                 "denyWrite": [session.worktree.join(".git")],
                 "denyRead": [session.worktree.join(".git")]
@@ -809,6 +811,24 @@ fn authority_settings(session: &ClaudeSession) -> Result<String, ClaudeError> {
         }
     }))
     .map_err(|_| ClaudeError::InvalidBinding)
+}
+
+fn allowed_tool_rules(
+    session: &ClaudeSession,
+    packet: &ClaudeWorkPacket,
+) -> Result<Vec<String>, ClaudeError> {
+    let root = permission_root(&session.worktree)?;
+    let mut allow = ["Read", "Glob", "Grep"]
+        .map(|tool| format!("{tool}({root})"))
+        .to_vec();
+    for relative in &packet.owned_paths {
+        let owned = permission_path(&session.worktree.join(relative))?;
+        for tool in ["Edit", "Write"] {
+            allow.push(format!("{tool}({owned})"));
+            allow.push(format!("{tool}({owned}/**)"));
+        }
+    }
+    Ok(allow)
 }
 
 fn permission_root(path: &std::path::Path) -> Result<String, ClaudeError> {
@@ -824,7 +844,7 @@ fn permission_path(path: &std::path::Path) -> Result<String, ClaudeError> {
     {
         return Err(ClaudeError::InvalidBinding);
     }
-    Ok(format!("/{}", path.trim_end_matches('/')))
+    Ok(path.trim_end_matches('/').to_owned())
 }
 
 fn append_list(rendered: &mut String, heading: &str, values: &[String]) {
@@ -1020,6 +1040,17 @@ mod tests {
                 .windows(2)
                 .any(|pair| pair == ["--tools", "Read,Edit,Write,Glob,Grep"])
         );
+        let allowed_tools = start
+            .arguments
+            .windows(2)
+            .find(|pair| pair[0] == "--allowedTools")
+            .map(|pair| pair[1].as_str())
+            .unwrap();
+        assert!(allowed_tools.contains(&format!(
+            "Edit({})",
+            fixture.root.join("src/lib.rs").display()
+        )));
+        assert!(!allowed_tools.contains(&format!("Edit({}/**)", fixture.root.display())));
         let settings = start
             .arguments
             .windows(2)
@@ -1032,7 +1063,7 @@ mod tests {
         assert_eq!(settings["sandbox"]["network"]["deniedDomains"][0], "*");
         assert_eq!(
             settings["sandbox"]["filesystem"]["allowWrite"][0],
-            fixture.root.to_str().unwrap()
+            fixture.root.join("src/lib.rs").to_str().unwrap()
         );
         assert_eq!(
             settings["sandbox"]["filesystem"]["denyWrite"][0],

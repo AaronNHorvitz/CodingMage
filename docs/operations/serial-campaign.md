@@ -69,6 +69,15 @@ operator-authored policy; a model cannot supply shell commands. Omitted `max_par
 defaults to one, and this rollout still admits only one proposal per generation when a higher ceiling
 is explicitly present.
 
+The campaign lead must express every ownership root relative to the repository root, never relative
+to a crate, package, module, or current file. Each root must already be an exact regular file or
+directory in the bound snapshot and cannot be a symbolic link. A proposal that needs to create a
+file owns its existing parent directory and names the new file in `expected_artifacts`. The
+coordinator validates these rules before invoking Claude. Claude receives repository-wide read
+access and Edit/Write permissions only for the validated ownership roots. Coordinator-side Git
+inventory remains authoritative and rejects any change outside those roots even if a provider-side
+permission control fails.
+
 ## Invocation
 
 ```bash
@@ -125,6 +134,15 @@ then clears its active-unit marker, releases the pod lease, retains the candidat
 inspection, and durably pauses with `codingmage.campaign.unit_recoverable_failure`. A terminal or
 explicitly blocked one-unit outcome instead records `codingmage.campaign.unit_blocked`. Neither
 path advances the campaign head or changes the active checkout.
+
+Invalid or ambiguous lead ownership roots pause before implementation with
+`codingmage.campaign.lead_invalid_owned_paths`. Once a unit starts, a repository inventory or
+claimed-path mismatch blocks the campaign with `codingmage.campaign.unit_repository_boundary`.
+Deterministic verification and provider failures pause with
+`codingmage.campaign.unit_verification_failure` and `codingmage.campaign.unit_provider_failure`;
+unexpected internal failures block with `codingmage.campaign.unit_internal_failure`. Each path
+clears the durable active-unit marker, releases the pod lease, preserves any candidate branch or
+scratch state needed for inspection, and never advances the campaign or active checkout.
 
 ## Current Limits
 

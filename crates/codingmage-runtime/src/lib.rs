@@ -650,6 +650,22 @@ pub fn run_serial_campaign_with_progress(
             .into_iter()
             .next()
             .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
+        if !proposal_owned_paths_exist(&campaign.manifest().path, &proposal.owned_paths) {
+            let blocker_code = "codingmage.campaign.lead_invalid_owned_paths".to_owned();
+            checkpoint.phase = CampaignPhase::Paused;
+            checkpoint.active_unit = None;
+            checkpoint.blocker_code = Some(blocker_code.clone());
+            checkpoint.persist(&campaign_root)?;
+            return Ok(campaign_outcome(
+                &spec,
+                CampaignState::Paused,
+                &campaign,
+                head,
+                completed_units,
+                last_task_id,
+                Some(blocker_code),
+            ));
+        }
         if proposal.owned_paths.iter().any(|path| {
             path == &config.task_source
                 || path.starts_with(&config.task_source)
@@ -755,7 +771,25 @@ pub fn run_serial_campaign_with_progress(
                         Some(blocker_code),
                     ));
                 }
-                Err(error) => return Err(error),
+                Err(error) => {
+                    let (campaign_state, phase, blocker_code) = campaign_unit_error(error);
+                    checkpoint.phase = phase;
+                    checkpoint.active_unit = None;
+                    checkpoint.blocker_code = Some(blocker_code.to_owned());
+                    checkpoint.persist(&campaign_root)?;
+                    scheduler
+                        .release(&lease.pod_id)
+                        .map_err(RuntimeError::Campaign)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        campaign_state,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        Some(blocker_code.to_owned()),
+                    ));
+                }
             }
         };
         if let Some((campaign_state, phase, blocker_code)) = campaign_unit_pause(&unit) {
@@ -842,6 +876,47 @@ const fn campaign_unit_pause(
         | TaskState::Checkpointed
         | TaskState::Complete => None,
     }
+}
+
+const fn campaign_unit_error(error: RuntimeError) -> (CampaignState, CampaignPhase, &'static str) {
+    match error {
+        RuntimeError::Verification => (
+            CampaignState::Paused,
+            CampaignPhase::Paused,
+            "codingmage.campaign.unit_verification_failure",
+        ),
+        RuntimeError::Implementer(_) | RuntimeError::Reviewer(_) => (
+            CampaignState::Paused,
+            CampaignPhase::Paused,
+            "codingmage.campaign.unit_provider_failure",
+        ),
+        RuntimeError::Repository => (
+            CampaignState::Blocked,
+            CampaignPhase::Blocked,
+            "codingmage.campaign.unit_repository_boundary",
+        ),
+        RuntimeError::Spec
+        | RuntimeError::Authority
+        | RuntimeError::Plan
+        | RuntimeError::Process
+        | RuntimeError::State
+        | RuntimeError::Orchestration
+        | RuntimeError::Campaign(_)
+        | RuntimeError::Integration => (
+            CampaignState::Blocked,
+            CampaignPhase::Blocked,
+            "codingmage.campaign.unit_internal_failure",
+        ),
+    }
+}
+
+fn proposal_owned_paths_exist(repository: &Path, paths: &[PathBuf]) -> bool {
+    paths.iter().all(|path| {
+        fs::symlink_metadata(repository.join(path)).is_ok_and(|metadata| {
+            !metadata.file_type().is_symlink()
+                && (metadata.file_type().is_file() || metadata.file_type().is_dir())
+        })
+    })
 }
 
 const fn provider_pause_code(error: RuntimeError) -> Option<&'static str> {
@@ -1620,7 +1695,10 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             &self.source_commit,
             &self.spec.owned_paths,
         )
-        .map_err(|_| OrchestrationError::Port)?;
+        .map_err(|_| {
+            self.failure = Some(RuntimeError::Repository);
+            OrchestrationError::Port
+        })?;
         let claimed = report
             .changed_paths
             .iter()
@@ -1632,6 +1710,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             .cloned()
             .collect::<BTreeSet<_>>();
         if claimed != observed {
+            self.failure = Some(RuntimeError::Repository);
             return Err(OrchestrationError::Port);
         }
         let evidence = evidence_id(&receipt.commit)?;
@@ -1699,7 +1778,10 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             &expected_parent,
             &self.spec.owned_paths,
         )
-        .map_err(|_| OrchestrationError::Port)?;
+        .map_err(|_| {
+            self.failure = Some(RuntimeError::Repository);
+            OrchestrationError::Port
+        })?;
         let claimed = report
             .changed_paths
             .iter()
@@ -1711,6 +1793,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             .cloned()
             .collect::<BTreeSet<_>>();
         if claimed != observed {
+            self.failure = Some(RuntimeError::Repository);
             return Err(OrchestrationError::Port);
         }
         let evidence = evidence_id(&receipt.commit)?;
@@ -2227,5 +2310,68 @@ effort = "high"
             ))
         );
         assert_eq!(campaign_unit_pause(&outcome(TaskState::Complete)), None);
+    }
+
+    #[test]
+    fn campaign_maps_unit_errors_to_content_free_durable_states() {
+        assert_eq!(
+            campaign_unit_error(RuntimeError::Repository),
+            (
+                CampaignState::Blocked,
+                CampaignPhase::Blocked,
+                "codingmage.campaign.unit_repository_boundary"
+            )
+        );
+        assert_eq!(
+            campaign_unit_error(RuntimeError::Verification),
+            (
+                CampaignState::Paused,
+                CampaignPhase::Paused,
+                "codingmage.campaign.unit_verification_failure"
+            )
+        );
+        assert_eq!(
+            campaign_unit_error(RuntimeError::Orchestration),
+            (
+                CampaignState::Blocked,
+                CampaignPhase::Blocked,
+                "codingmage.campaign.unit_internal_failure"
+            )
+        );
+    }
+
+    #[test]
+    fn campaign_owned_roots_must_exist_and_cannot_be_symbolic_links() {
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-owned-roots-{}-{}",
+            std::process::id(),
+            NEXT_ID.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(root.join("platforms/linux-inference/tests")).unwrap();
+        fs::write(root.join("platforms/linux-inference/tests/live.rs"), b"").unwrap();
+
+        assert!(proposal_owned_paths_exist(
+            &root,
+            &[PathBuf::from("platforms/linux-inference/tests")]
+        ));
+        assert!(!proposal_owned_paths_exist(
+            &root,
+            &[PathBuf::from("tests/live.rs")]
+        ));
+
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(
+                root.join("platforms/linux-inference/tests"),
+                root.join("tests"),
+            )
+            .unwrap();
+            assert!(!proposal_owned_paths_exist(
+                &root,
+                &[PathBuf::from("tests")]
+            ));
+        }
+
+        fs::remove_dir_all(root).unwrap();
     }
 }

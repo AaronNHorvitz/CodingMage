@@ -961,6 +961,11 @@ fn render_lead_packet(binding: &CodexLeadBinding) -> Result<Vec<u8>, CodexError>
          - dependencies must exactly reproduce that ready task's dependency array.\n\
          - owned_paths must contain only non-overlapping repository-relative paths under an\n\
            allowed root, outside every denied root, and must not include the task-source file.\n\
+           Every path is relative to the repository root, never to a package, crate, module, or\n\
+           current file. Inspect the bound read-only worktree before proposing; use only an exact\n\
+           existing file or directory as an owned path. For a new file, own its exact existing\n\
+           parent directory and put the new repository-root-relative file in expected_artifacts.\n\
+           Never infer or shorten a path shown elsewhere in repository content.\n\
          - gate_tiers must use only names from Available gate tiers.\n\
          - test_resources must be short identifier names, not paths or prose.\n\
          - expected_artifacts must contain only repository-relative artifact paths, each nested\n\
@@ -1478,6 +1483,8 @@ mod tests {
             )
         );
         assert!(packet.contains("dependencies must exactly reproduce"));
+        assert!(packet.contains("relative to the repository root"));
+        assert!(packet.contains("existing file or directory as an owned path"));
         assert!(packet.contains("return no more proposals than Maximum proposals"));
     }
 
