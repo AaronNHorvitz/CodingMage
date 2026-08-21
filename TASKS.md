@@ -1013,7 +1013,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 22.2.1.2:** Record provider attempt, malformed-report repair, correction, process, output, retained-state, elapsed-execution, and accepted-outcome limit utilization independently.
   - [ ] **Sub-task 22.2.1.3:** Bind every deferred task to its reason, trigger, source head, and trigger-observation state without storing unrestricted lead prose.
   - [ ] **Sub-task 22.2.1.4:** Include every new projection in canonical checkpoint hashing, migration refusal, mutation tests, and restart reconstruction.
-  - [ ] **Sub-task 22.2.1.5:** Refuse a legacy or partial checkpoint whenever missing fields could broaden authority or erase a blocker, deferral, limit, or accepted outcome.
+  - [x] **Sub-task 22.2.1.5:** Refuse a legacy or partial checkpoint whenever missing fields could broaden authority or erase a blocker, deferral, limit, or accepted outcome. See `docs/evidence/sprint-22-serial-recovery.md`.
 - [ ] **Task 22.2.2 - Compose campaign operator controls**
   - [ ] **Sub-task 22.2.2.1:** Wire same-user, exact-campaign `pause`, `resume`, `stop-after-unit`, and `cancel` controls into the production campaign loop.
   - [ ] **Sub-task 22.2.2.2:** Journal each control intent and observation with an idempotency key and reject stale, cross-run, duplicate-effect, or unauthorized requests.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 22 sub-task `22.1.2.1`: journal the full campaign queue, active execution, safeguard utilization, operator-control state, and accepted completion evidence without retaining unrestricted provider or repository content.
+- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.1.2`: persist independent campaign utilization for provider attempts, malformed-report repairs, corrections, processes, output, retained state, elapsed execution, and accepted outcomes so `22.1.2.1` can journal those exact values.

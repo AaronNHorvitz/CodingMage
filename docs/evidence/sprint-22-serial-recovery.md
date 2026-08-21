@@ -9,6 +9,7 @@
 - **Status-round implementation commit:** `442eb27`
 - **Campaign-journal foundation commit:** `e3465f1`
 - **Provider-capacity recovery test commit:** `c8efa11`
+- **Fail-closed checkpoint-schema commit:** `a566021`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -108,6 +109,21 @@ campaign-owned counters and control authority are not implemented yet. This comm
 not close `22.1.2.1`; it supplies the typed append path that the remaining Sprint 22 safeguard tasks
 will populate and reconcile. Focused tests verify exact identities and counts, checkpoint-digest
 evidence, redaction markers, journal-chain validity, and rejection of contradictory accepted counts.
+
+## Fail-Closed Checkpoint Schema
+
+Campaign checkpoints now accept only the complete schema-2 projection. The production loader no
+longer migrates an older shape by supplying empty collections for state that the stored digest did
+not authenticate. Five fixtures construct correctly hashed historical shapes that successively lack
+blocked tasks, typed blocker reasons, deferrals, human-decision holds, and rejected-proposal history;
+every one is refused with no recovery effect. A current checkpoint still round-trips exactly and a
+single-byte mutation still fails integrity validation.
+
+This deliberately invalidates restart from pre-schema-2 campaign checkpoints. An operator must
+inspect and explicitly start a new campaign authority from a verified repository state instead of
+allowing CodingMage to infer that absent safety state was empty. The remaining utilization and
+operator-control fields will be required members of this same closed checkpoint shape rather than
+backfilled through a permissive migration.
 
 ## Verification
 

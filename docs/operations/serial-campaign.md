@@ -152,9 +152,9 @@ The campaign checkpoint is atomically replaced under the private campaign state 
 the original authority digest, repository identity, campaign worktree identity, branch, initial and
 reconciled heads, active task, pending integration, completed count, typed blockers, deferrals,
 satisfied-trigger guards, human-decision holds, and timestamps. Every prior checkpoint shape is
-accepted only through an explicit migration that verifies the legacy bytes against their original
-digest before supplying newer empty projections; a defaulted field never bypasses integrity
-verification.
+refused because a missing projection cannot prove that the corresponding blocker, deferral, accepted
+outcome, limit, or control state was empty. Recovery from a prior schema requires explicit operator
+inspection and a new campaign authority rooted at a verified repository state.
 
 | Durable interruption point | Restart behavior |
 | --- | --- |
