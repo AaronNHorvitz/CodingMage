@@ -15,7 +15,9 @@ use super::{
 };
 
 const TEAM_POLICY_VERSION: u16 = 1;
-const TEAM_STATE_VERSION: u16 = 1;
+/// Current closed schema version for durable multi-agent state projections.
+pub const TEAM_STATE_SCHEMA_VERSION: u16 = 2;
+const TEAM_STATE_VERSION: u16 = TEAM_STATE_SCHEMA_VERSION;
 const MAX_PROVIDER_TOKENS: u64 = 1_000_000_000_000;
 const MAX_TASK_RECORDS: usize = 1_000_000;
 const MAX_SESSIONS: usize = 1_024;
@@ -1051,6 +1053,8 @@ pub struct CampaignTaskRecord {
     pub pod_id: Option<String>,
     /// Exact lease identity, absent before leasing.
     pub lease_id: Option<String>,
+    /// Exact one-unit runtime identity, absent before execution admission.
+    pub run_id: Option<String>,
     /// Owned worktree identity, absent before creation.
     pub worktree_id: Option<String>,
     /// Task branch, absent before creation.
@@ -1117,6 +1121,7 @@ impl CampaignTaskRecord {
             generation: 0,
             pod_id: None,
             lease_id: None,
+            run_id: None,
             worktree_id: None,
             branch: None,
             base_commit,
@@ -1214,6 +1219,10 @@ impl CampaignTaskRecord {
             || self.state.is_terminal() != self.terminal_reason.is_some()
             || !valid_optional_component(self.pod_id.as_ref())
             || !valid_optional_component(self.lease_id.as_ref())
+            || self
+                .run_id
+                .as_ref()
+                .is_some_and(|value| codingmage_contracts::RunId::new(value.clone()).is_err())
             || !valid_optional_component(self.worktree_id.as_ref())
             || self.branch.as_ref().is_some_and(|v| !valid_branch(v))
             || !runtime_identity_shape(self)
@@ -1419,6 +1428,34 @@ impl CampaignTaskRecord {
         *self = candidate;
         Ok(())
     }
+
+    /// Binds one exact one-unit runtime identity before any worker effect begins.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for an invalid, duplicate, or incorrectly ordered identity.
+    pub fn bind_run(
+        &mut self,
+        run_id: String,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self.state != CampaignTaskState::Leased
+            || self.run_id.is_some()
+            || codingmage_contracts::RunId::new(run_id.clone()).is_err()
+            || !valid_sha256(&evidence_sha256)
+            || self.last_evidence_sha256.as_ref() == Some(&evidence_sha256)
+        {
+            return Err(TeamStateError::InvalidLease);
+        }
+        let mut candidate = self.clone();
+        candidate.run_id = Some(run_id);
+        candidate.next_transition = candidate.next_transition.saturating_add(1);
+        candidate.last_evidence_sha256 = Some(evidence_sha256);
+        candidate.verify()?;
+        *self = candidate;
+        Ok(())
+    }
 }
 
 /// Complete integrity-validatable multi-agent campaign projection.
@@ -1469,6 +1506,7 @@ impl TeamCampaignSnapshot {
         self.resources.verify()?;
         let mut pod_ids = BTreeSet::new();
         let mut lease_ids = BTreeSet::new();
+        let mut run_ids = BTreeSet::new();
         let mut worktree_ids = BTreeSet::new();
         let mut branches = BTreeSet::new();
         let mut issues = BTreeSet::new();
@@ -1480,6 +1518,7 @@ impl TeamCampaignSnapshot {
                 || record.generation > self.generation
                 || !insert_optional_unique(&mut pod_ids, record.pod_id.as_ref())
                 || !insert_optional_unique(&mut lease_ids, record.lease_id.as_ref())
+                || !insert_optional_unique(&mut run_ids, record.run_id.as_ref())
                 || !insert_optional_unique(&mut worktree_ids, record.worktree_id.as_ref())
                 || !insert_optional_unique(&mut branches, record.branch.as_ref())
                 || record
@@ -2017,11 +2056,13 @@ fn legal_transition(from: CampaignTaskState, to: CampaignTaskState) -> bool {
 fn runtime_identity_shape(record: &CampaignTaskRecord) -> bool {
     let assigned = record.pod_id.is_some()
         && record.lease_id.is_some()
+        && record.run_id.is_some()
         && record.worktree_id.is_some()
         && record.branch.is_some()
         && !record.owned_paths.is_empty();
     let unassigned = record.pod_id.is_none()
         && record.lease_id.is_none()
+        && record.run_id.is_none()
         && record.worktree_id.is_none()
         && record.branch.is_none()
         && record.owned_paths.is_empty()
@@ -2494,16 +2535,19 @@ mod tests {
         record.propose(generation, "2".repeat(64)).unwrap();
         record.bind_lease(&lease, "3".repeat(64)).unwrap();
         record
+            .bind_run("run-23-2-2-1".to_owned(), "4".repeat(64))
+            .unwrap();
+        record
             .bind_worktree(
                 "wt-23-2-2-1".to_owned(),
                 "codingmage/task-23-2-2-1".to_owned(),
-                "4".repeat(64),
+                "5".repeat(64),
             )
             .unwrap();
         record.issue_number = Some(17);
-        record.gate_evidence_sha256.push("5".repeat(64));
+        record.gate_evidence_sha256.push("6".repeat(64));
         let snapshot = TeamCampaignSnapshot {
-            version: 1,
+            version: TEAM_STATE_SCHEMA_VERSION,
             campaign_id: spec.campaign_id.clone(),
             generation,
             campaign_head: spec.initial_commit.clone(),

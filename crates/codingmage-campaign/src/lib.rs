@@ -6,10 +6,10 @@ pub use team::{
     ActorClass, AdmissionDecision, AdmissionReason, CampaignConcurrency, CampaignExecutionMode,
     CampaignTaskRecord, CampaignTaskState, CampaignTaskTransition, DestinationPromotionPolicy,
     DurablePodLease, DurablePodScheduler, DurableSchedulerSnapshot, MultiAgentPolicy,
-    ProviderCircuit, ProviderCircuitStatus, TaskIntegrationPolicy, TaskMergeStrategy,
-    TaskPublicationMode, TaskResourceReservation, TaskTerminalReason, TaskUtilization,
-    TeamCampaignSnapshot, TeamResourceController, TeamResourcePolicy, TeamResourceSnapshot,
-    TeamStateError,
+    ProviderCircuit, ProviderCircuitStatus, TEAM_STATE_SCHEMA_VERSION, TaskIntegrationPolicy,
+    TaskMergeStrategy, TaskPublicationMode, TaskResourceReservation, TaskTerminalReason,
+    TaskUtilization, TeamCampaignSnapshot, TeamResourceController, TeamResourcePolicy,
+    TeamResourceSnapshot, TeamStateError,
 };
 
 use std::{

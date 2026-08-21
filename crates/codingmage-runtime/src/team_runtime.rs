@@ -3,6 +3,7 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
     panic::{AssertUnwindSafe, catch_unwind},
+    path::PathBuf,
     sync::{
         Arc,
         mpsc::{Receiver, RecvTimeoutError, SyncSender, sync_channel},
@@ -12,15 +13,21 @@ use std::{
 };
 
 use codingmage_campaign::{
-    ActorClass, CampaignSpec, CampaignTaskRecord, CampaignTaskState, CampaignTaskTransition,
-    DurablePodLease, DurablePodScheduler, TaskResourceReservation, TaskTerminalReason,
-    TaskUtilization, TeamCampaignSnapshot, TeamResourceController,
+    ActorClass, CampaignAuthentication, CampaignSpec, CampaignTaskRecord, CampaignTaskState,
+    CampaignTaskTransition, DurablePodLease, DurablePodScheduler, TaskResourceReservation,
+    TaskTerminalReason, TaskUtilization, TeamCampaignSnapshot, TeamResourceController,
 };
+use codingmage_contracts::RunId;
+use codingmage_core::Config;
 use codingmage_orchestrator::TaskState;
 use codingmage_process::CancellationToken;
 use sha2::{Digest, Sha256};
 
-use crate::{RunOutcome, RunProgress, RuntimeError, UnitLifecycleEvent};
+use crate::{
+    AuthenticationMode, CompletionPolicy, ImplementerSpec, LifecycleObserver, RunOutcome,
+    RunProgress, RunSpec, RuntimeError, UnitLifecycleEvent, private_directory, provider_spec,
+    run_one_with_progress_id_budget,
+};
 
 const MESSAGE_POLL_INTERVAL: Duration = Duration::from_millis(10);
 const MIN_CHANNEL_CAPACITY: usize = 32;
@@ -30,6 +37,8 @@ const MIN_CHANNEL_CAPACITY: usize = 32;
 pub struct TeamBatchJob {
     /// Stable dispatch order used for deterministic result projection.
     pub sequence: u64,
+    /// Exact one-unit runtime identity, persisted before worker execution.
+    pub run_id: RunId,
     /// Exact durable scheduler lease.
     pub lease: DurablePodLease,
     /// Exact physical and logical resource reservation.
@@ -51,6 +60,10 @@ impl TeamBatchJob {
             || record.state != CampaignTaskState::Leased
             || record.lease_id.as_ref() != Some(&self.lease.lease_id)
             || record.pod_id.as_ref() != Some(&self.lease.pod_id)
+            || record
+                .run_id
+                .as_ref()
+                .is_some_and(|run_id| run_id != self.run_id.as_str())
             || self.reservation.task_id != self.lease.task_id
             || self.reservation.lease_id != self.lease.lease_id
             || self.reservation.actor != ActorClass::Implementer
@@ -134,6 +147,123 @@ pub trait TeamUnitRunner: Send + Sync + 'static {
         cancellation: CancellationToken,
         events: TeamEventSink,
     ) -> Result<RunOutcome, RuntimeError>;
+}
+
+/// Production pod adapter that reuses the proven one-unit implementation and review workflow.
+#[derive(Clone, Debug)]
+pub struct ProductionTeamUnitRunner {
+    base_config: Config,
+    campaign_spec: CampaignSpec,
+    campaign_repository: PathBuf,
+    codingmage_binary: PathBuf,
+    private_root: PathBuf,
+}
+
+impl ProductionTeamUnitRunner {
+    /// Creates a production runner for one isolated campaign repository.
+    ///
+    /// The constructor performs no filesystem writes. Per-pod private roots are created only after
+    /// the batch executor has durably persisted the matching run and resource reservation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RuntimeError::Authority`] for malformed campaign authority or relative roots.
+    pub fn new(
+        base_config: Config,
+        campaign_spec: CampaignSpec,
+        campaign_repository: PathBuf,
+        codingmage_binary: PathBuf,
+        private_root: PathBuf,
+    ) -> Result<Self, RuntimeError> {
+        campaign_spec.verify().map_err(RuntimeError::Campaign)?;
+        if !campaign_repository.is_absolute()
+            || !codingmage_binary.is_absolute()
+            || !private_root.is_absolute()
+            || campaign_repository == private_root
+            || campaign_repository.starts_with(&private_root)
+            || private_root.starts_with(&campaign_repository)
+        {
+            return Err(RuntimeError::Authority);
+        }
+        Ok(Self {
+            base_config,
+            campaign_spec,
+            campaign_repository,
+            codingmage_binary,
+            private_root,
+        })
+    }
+
+    fn config_for(&self, job: &TeamBatchJob) -> Result<Config, RuntimeError> {
+        let pod_root = self.private_root.join("pods").join(&job.lease.lease_id);
+        let scratch_root = pod_root.join("scratch");
+        let state_root = pod_root.join("state");
+        private_directory(&scratch_root)?;
+        private_directory(&state_root)?;
+        let mut config = self.base_config.clone();
+        config.target_path.clone_from(&self.campaign_repository);
+        config
+            .default_branch
+            .clone_from(&self.campaign_spec.campaign_branch);
+        config.integration_branch = format!(
+            "{}/pods/{}",
+            self.campaign_spec.campaign_branch, job.lease.pod_id
+        );
+        config.scratch_root = scratch_root;
+        config.state_root = state_root;
+        Ok(config)
+    }
+
+    fn run_spec_for(&self, job: &TeamBatchJob) -> RunSpec {
+        RunSpec {
+            version: 2,
+            task_id: job.lease.task_id.clone(),
+            owned_paths: job.lease.owned_paths.clone(),
+            completion_policy: CompletionPolicy::CandidateOnly,
+            implementer: ImplementerSpec {
+                provider: provider_spec(&self.campaign_spec.implementer),
+                authentication: match self.campaign_spec.implementer_authentication {
+                    CampaignAuthentication::Bare => AuthenticationMode::Bare,
+                    CampaignAuthentication::ExistingLogin => AuthenticationMode::ExistingLogin,
+                },
+            },
+            reviewer: provider_spec(&self.campaign_spec.reviewer),
+        }
+    }
+}
+
+impl TeamUnitRunner for ProductionTeamUnitRunner {
+    fn run(
+        &self,
+        job: &TeamBatchJob,
+        cancellation: CancellationToken,
+        events: TeamEventSink,
+    ) -> Result<RunOutcome, RuntimeError> {
+        let config = self.config_for(job)?;
+        let spec = self.run_spec_for(job);
+        let progress_sink = events.clone();
+        let progress_cancellation = cancellation.clone();
+        let mut progress = move |event| {
+            if progress_sink.progress(event).is_err() {
+                progress_cancellation.cancel();
+            }
+        };
+        let lifecycle_sink = events.clone();
+        let lifecycle: LifecycleObserver = Arc::new(move |event| lifecycle_sink.lifecycle(event));
+        let outcome = run_one_with_progress_id_budget(
+            &config,
+            spec,
+            &self.codingmage_binary,
+            job.run_id.clone(),
+            &mut progress,
+            None,
+            None,
+            Some(lifecycle),
+            cancellation,
+        )?;
+        events.heartbeat(task_utilization(&outcome.utilization))?;
+        Ok(outcome)
+    }
 }
 
 /// One operator-facing, content-minimized team observation.
@@ -460,6 +590,16 @@ where
     let scheduler = DurablePodScheduler::from_snapshot(candidate.scheduler.clone())
         .map_err(|_| RuntimeError::State)?;
     for job in jobs {
+        let record = candidate
+            .tasks
+            .get_mut(&job.lease.task_id)
+            .ok_or(RuntimeError::State)?;
+        record
+            .bind_run(
+                job.run_id.as_str().to_owned(),
+                event_evidence(record, "run"),
+            )
+            .map_err(|_| RuntimeError::State)?;
         resources
             .reserve(job.reservation.clone())
             .map_err(|_| RuntimeError::State)?;
@@ -702,12 +842,27 @@ fn finish_task(
     result: &Result<RunOutcome, RuntimeError>,
     terminal: TerminalContext,
 ) -> Result<(), RuntimeError> {
+    let record = snapshot.tasks.get(task_id).ok_or(RuntimeError::State)?;
+    if result.as_ref().is_ok_and(|outcome| {
+        outcome.task_id.as_str() != task_id
+            || record.run_id.as_deref() != Some(outcome.run_id.as_str())
+    }) {
+        return Err(RuntimeError::State);
+    }
     let reservation = reservations.get(task_id).ok_or(RuntimeError::State)?;
     let released = resources
         .release(reservation)
         .map_err(|_| RuntimeError::State)?;
     let record = snapshot.tasks.get_mut(task_id).ok_or(RuntimeError::State)?;
     record.utilization = released.observed;
+    if matches!(result, Ok(outcome) if outcome.state == TaskState::Checkpointed)
+        && record.state == CampaignTaskState::Reviewing
+        && record.reviewed_commit.is_some()
+        && record.completion_commit.is_none()
+    {
+        transition(record, CampaignTaskState::PublicationReady, "checkpoint")?;
+        return Ok(());
+    }
     if matches!(result, Ok(outcome) if outcome.state == TaskState::Complete)
         && record.state == CampaignTaskState::PublicationReady
     {
@@ -787,6 +942,18 @@ fn classify_terminal(
             | RuntimeError::Orchestration
             | RuntimeError::Campaign(_),
         ) => (CampaignTaskState::Blocked, TaskTerminalReason::PolicyDenied),
+    }
+}
+
+fn task_utilization(observed: &crate::RunUtilization) -> TaskUtilization {
+    TaskUtilization {
+        provider_attempts: observed.provider_attempts,
+        // Current provider adapters do not expose a trustworthy token count.
+        provider_tokens: 0,
+        process_invocations: observed.process_invocations,
+        output_bytes: observed.output_bytes,
+        retained_state_bytes: observed.retained_state_bytes,
+        execution_elapsed_ms: observed.execution_elapsed_ms,
     }
 }
 
@@ -913,10 +1080,11 @@ mod tests {
     use codingmage_campaign::{
         AdmissionDecision, CampaignAuthentication, CampaignConcurrency, CampaignExecutionMode,
         CampaignGateTier, CampaignLimits, CampaignProvider, CampaignPublication,
-        DestinationPromotionPolicy, MultiAgentPolicy, PodProposal, PodRisk, TaskIntegrationPolicy,
-        TaskMergeStrategy, TaskPublicationMode, TeamResourcePolicy,
+        DestinationPromotionPolicy, MultiAgentPolicy, PodProposal, PodRisk,
+        TEAM_STATE_SCHEMA_VERSION, TaskIntegrationPolicy, TaskMergeStrategy, TaskPublicationMode,
+        TeamResourcePolicy,
     };
-    use codingmage_contracts::{RunId, TaskId};
+    use codingmage_contracts::TaskId;
 
     use super::*;
     use crate::RunUtilization;
@@ -970,6 +1138,34 @@ mod tests {
             }
             self.0.fetch_add(1, Ordering::SeqCst);
             Err(RuntimeError::Process)
+        }
+    }
+
+    struct CheckpointRunner;
+
+    impl TeamUnitRunner for CheckpointRunner {
+        fn run(
+            &self,
+            job: &TeamBatchJob,
+            _: CancellationToken,
+            events: TeamEventSink,
+        ) -> Result<RunOutcome, RuntimeError> {
+            emit_checkpoint(job, &events)
+        }
+    }
+
+    struct WrongRunRunner;
+
+    impl TeamUnitRunner for WrongRunRunner {
+        fn run(
+            &self,
+            job: &TeamBatchJob,
+            _: CancellationToken,
+            events: TeamEventSink,
+        ) -> Result<RunOutcome, RuntimeError> {
+            let mut outcome = emit_success(job, &events)?;
+            outcome.run_id = RunId::new("run-wrong-identity".to_owned()).expect("valid wrong run");
+            Ok(outcome)
         }
     }
 
@@ -1067,12 +1263,57 @@ mod tests {
             execution_elapsed_ms: 10,
         })?;
         Ok(RunOutcome {
-            run_id: RunId::new(format!("run-{}", job.sequence)).expect("valid run"),
+            run_id: job.run_id.clone(),
             task_id: TaskId::new(job.lease.task_id.clone()).expect("valid task"),
             state: TaskState::Complete,
             branch: Some(branch),
             candidate_commit: Some(candidate),
             completion_commit: Some(completion),
+            review_verdict: Some("pass".to_owned()),
+            correction_rounds: 0,
+            utilization: RunUtilization::default(),
+        })
+    }
+
+    fn emit_checkpoint(
+        job: &TeamBatchJob,
+        events: &TeamEventSink,
+    ) -> Result<RunOutcome, RuntimeError> {
+        let branch = format!("codingmage/task-{}", job.sequence);
+        let candidate = format!("{:040x}", job.sequence.saturating_add(1));
+        events.lifecycle(UnitLifecycleEvent::WorktreeCreated {
+            worktree_id: format!("worktree-{}", job.sequence),
+            branch: branch.clone(),
+        })?;
+        events.lifecycle(UnitLifecycleEvent::ImplementationSessionBound {
+            session_id: format!("implementation-{}", job.sequence),
+            correction_round: 0,
+        })?;
+        events.lifecycle(UnitLifecycleEvent::CandidateCommitted {
+            commit: candidate.clone(),
+            correction_round: 0,
+        })?;
+        events.lifecycle(UnitLifecycleEvent::GatesObserved {
+            commit: candidate.clone(),
+            evidence: vec![format!("{:064x}", job.sequence.saturating_add(201))],
+            passed: true,
+        })?;
+        events.lifecycle(UnitLifecycleEvent::ReviewObserved {
+            session_id: format!("review-{}", job.sequence),
+            commit: candidate.clone(),
+            verdict: "pass".to_owned(),
+            evidence: format!("{:064x}", job.sequence.saturating_add(301)),
+        })?;
+        events.lifecycle(UnitLifecycleEvent::WorktreeReleased {
+            worktree_id: format!("worktree-{}", job.sequence),
+        })?;
+        Ok(RunOutcome {
+            run_id: job.run_id.clone(),
+            task_id: TaskId::new(job.lease.task_id.clone()).expect("valid task"),
+            state: TaskState::Checkpointed,
+            branch: Some(branch),
+            candidate_commit: Some(candidate),
+            completion_commit: None,
             review_verdict: Some("pass".to_owned()),
             correction_rounds: 0,
             utilization: RunUtilization::default(),
@@ -1138,12 +1379,13 @@ mod tests {
             records.insert(task_id, record);
             jobs.push(TeamBatchJob {
                 sequence: u64::try_from(sequence).expect("sequence"),
+                run_id: RunId::new(format!("run-team-{sequence}")).expect("valid run identity"),
                 lease,
                 reservation,
             });
         }
         let snapshot = TeamCampaignSnapshot {
-            version: 1,
+            version: TEAM_STATE_SCHEMA_VERSION,
             campaign_id: spec.campaign_id.clone(),
             generation,
             campaign_head: spec.initial_commit.clone(),
@@ -1438,5 +1680,50 @@ mod tests {
         );
         assert_eq!(finished.load(Ordering::SeqCst), 1);
         assert_eq!(persists.load(Ordering::SeqCst), 2);
+    }
+
+    #[test]
+    fn candidate_only_checkpoint_becomes_publication_ready_without_task_completion() {
+        let (spec, mut snapshot, jobs) = fixture(1, 1, 2_000);
+        let runner = Arc::new(CheckpointRunner);
+        let outcome = execute_team_batch(
+            &spec,
+            &mut snapshot,
+            &jobs,
+            &runner,
+            &CancellationToken::default(),
+            |_| Ok(()),
+            |_| {},
+        )
+        .expect("candidate checkpoint");
+        let record = &outcome.snapshot.tasks["23.3.2.1"];
+        assert_eq!(record.state, CampaignTaskState::PublicationReady);
+        assert!(record.reviewed_commit.is_some());
+        assert!(record.completion_commit.is_none());
+        assert!(
+            outcome
+                .snapshot
+                .scheduler
+                .active
+                .contains_key(record.lease_id.as_ref().expect("active lease identity"))
+        );
+    }
+
+    #[test]
+    fn cross_run_terminal_outcome_fails_closed() {
+        let (spec, mut snapshot, jobs) = fixture(1, 1, 2_000);
+        let runner = Arc::new(WrongRunRunner);
+        assert_eq!(
+            execute_team_batch(
+                &spec,
+                &mut snapshot,
+                &jobs,
+                &runner,
+                &CancellationToken::default(),
+                |_| Ok(()),
+                |_| {},
+            ),
+            Err(RuntimeError::State)
+        );
     }
 }

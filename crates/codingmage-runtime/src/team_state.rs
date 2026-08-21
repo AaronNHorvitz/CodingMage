@@ -254,8 +254,8 @@ fn digest_evidence(digest: &str) -> EvidenceId {
 mod tests {
     use super::*;
     use codingmage_campaign::{
-        CampaignConcurrency, DurableSchedulerSnapshot, TaskUtilization, TeamCampaignSnapshot,
-        TeamResourcePolicy, TeamResourceSnapshot,
+        CampaignConcurrency, DurableSchedulerSnapshot, TEAM_STATE_SCHEMA_VERSION, TaskUtilization,
+        TeamCampaignSnapshot, TeamResourcePolicy, TeamResourceSnapshot,
     };
     use std::{
         collections::{BTreeMap, BTreeSet},
@@ -275,13 +275,13 @@ mod tests {
 
     fn snapshot() -> TeamCampaignSnapshot {
         TeamCampaignSnapshot {
-            version: 1,
+            version: TEAM_STATE_SCHEMA_VERSION,
             campaign_id: "campaign-team".to_owned(),
             generation: 0,
             campaign_head: "a".repeat(40),
             task_source_sha256: "b".repeat(64),
             scheduler: DurableSchedulerSnapshot {
-                version: 1,
+                version: TEAM_STATE_SCHEMA_VERSION,
                 campaign_id: "campaign-team".to_owned(),
                 max_parallel_pods: 1,
                 generation: 0,
@@ -291,7 +291,7 @@ mod tests {
                 ready_age: BTreeMap::new(),
             },
             resources: TeamResourceSnapshot {
-                version: 1,
+                version: TEAM_STATE_SCHEMA_VERSION,
                 concurrency: CampaignConcurrency::default(),
                 policy: TeamResourcePolicy::default(),
                 max_campaign_tokens: 1_000_000,
