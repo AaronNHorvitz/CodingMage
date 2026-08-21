@@ -1029,6 +1029,50 @@ pub fn materialize_supervised_pilot_unit_fixture(
     })
 }
 
+/// Creates the clean one-story fixture for the bounded unattended pilot.
+///
+/// The initial task requires one simple edit. A deterministic senior-review fixture can then
+/// require a second bounded line, proving correction and resume without relying on model whim.
+///
+/// # Errors
+///
+/// Returns [`SoakError::Fixture`] unless `root` is a new empty directory and every local Git or
+/// filesystem operation succeeds.
+pub fn materialize_unattended_pilot_fixture(root: &Path) -> Result<FixtureRepository, SoakError> {
+    let metadata = fs::symlink_metadata(root).map_err(|_| SoakError::Fixture)?;
+    if metadata.file_type().is_symlink()
+        || !metadata.is_dir()
+        || fs::read_dir(root)
+            .map_err(|_| SoakError::Fixture)?
+            .next()
+            .is_some()
+    {
+        return Err(SoakError::Fixture);
+    }
+    let root = fs::canonicalize(root).map_err(|_| SoakError::Fixture)?;
+    git(&root, &["init", "--initial-branch=main"])?;
+    git(&root, &["config", "user.name", "CodingMage Fixture"])?;
+    git(&root, &["config", "user.email", "fixture@invalid.example"])?;
+    fs::write(root.join("artifact.txt"), "phase: pending\n").map_err(|_| SoakError::Fixture)?;
+    fs::write(
+        root.join("TASKS.md"),
+        "# Unattended Pilot\n\n\
+         ## Sprint 0 - One Story\n\n\
+         **Sprint goal:** Complete one story without operator intervention.\n\n\
+         ### Story 0.1 - Reviewed Artifact\n\n\
+         - [ ] **Task 0.1.1 - Complete the artifact**\n\
+           - [ ] **Sub-task 0.1.1.1:** Replace the only line in `artifact.txt` with exactly `phase: complete`; incorporate any bounded senior-review correction before completion.\n",
+    )
+    .map_err(|_| SoakError::Fixture)?;
+    git(&root, &["add", "."])?;
+    git(&root, &["commit", "-m", "unattended pilot baseline"])?;
+    Ok(FixtureRepository {
+        kind: FixtureKind::Documentation,
+        root,
+        condition: FixtureCondition::Clean,
+    })
+}
+
 fn fixture_name(kind: FixtureKind) -> &'static str {
     match kind {
         FixtureKind::Rust => "rust",
@@ -1808,6 +1852,31 @@ mod tests {
         assert_eq!(
             materialize_supervised_pilot_unit_fixture(&invalid, 0),
             Err(SoakError::InvalidConfiguration)
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn unattended_pilot_fixture_has_one_exact_clean_story() {
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-unattended-pilot-fixture-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&root).unwrap();
+        let fixture = materialize_unattended_pilot_fixture(&root).unwrap();
+        let plan = fs::read_to_string(fixture.root.join("TASKS.md")).unwrap();
+        assert_eq!(plan.matches("- [ ] **Sub-task").count(), 1);
+        assert_eq!(
+            fs::read_to_string(fixture.root.join("artifact.txt")).unwrap(),
+            "phase: pending\n"
+        );
+        assert_eq!(
+            git_status(&fixture.root, &["status", "--porcelain"]).unwrap(),
+            0
         );
         fs::remove_dir_all(root).unwrap();
     }
