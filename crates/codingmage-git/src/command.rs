@@ -31,6 +31,7 @@ pub(crate) enum GitCommand<'a> {
     },
     VerifyCommit(&'a str),
     Parent(&'a str),
+    CommitMetadata(&'a str),
     IsAncestor {
         ancestor: &'a str,
         child: &'a str,
@@ -221,6 +222,12 @@ fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
             ]
         }
         GitCommand::Parent(commit) => vec!["rev-parse".into(), format!("{commit}^").into()],
+        GitCommand::CommitMetadata(commit) => vec![
+            "show".into(),
+            "--no-patch".into(),
+            "--format=%an%x00%ae%x00%s%x00".into(),
+            commit.into(),
+        ],
         GitCommand::IsAncestor { ancestor, child } => vec![
             "merge-base".into(),
             "--is-ancestor".into(),

@@ -118,6 +118,16 @@ impl TaskMachine {
         }
     }
 
+    fn recovered(run_id: RunId, task_id: TaskId, state: TaskState) -> Self {
+        Self {
+            run_id,
+            task_id,
+            state,
+            next_sequence: 0,
+            accepted_evidence: BTreeSet::new(),
+        }
+    }
+
     /// Returns the current lifecycle state.
     #[must_use]
     pub const fn state(&self) -> TaskState {
@@ -210,6 +220,10 @@ pub trait WorkflowPort {
     fn verify_local(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError>;
     /// Runs read-only senior review.
     fn review(&mut self) -> Result<(ReviewOutcome, EvidenceId), OrchestrationError>;
+    /// Persists exact correction identities before the provider or Git effect can begin.
+    fn prepare_correction(&mut self) -> Result<(), OrchestrationError> {
+        Ok(())
+    }
     /// Applies one bounded correction packet.
     fn correct(&mut self) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError>;
     /// Runs final verification after pass or correction.
@@ -408,6 +422,7 @@ impl<P: WorkflowPort> WorkflowPort for DurableWorkflowPort<'_, P> {
     }
 
     fn correct(&mut self) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
+        self.inner.prepare_correction()?;
         self.record_intent(WorkflowOperation::Correct)?;
         let (outcome, evidence) = self.inner.correct()?;
         let evidence = self.record_observation(WorkflowOperation::Correct, evidence)?;
@@ -437,6 +452,46 @@ impl<P: WorkflowPort> WorkflowPort for DurableWorkflowPort<'_, P> {
         self.record_intent(WorkflowOperation::Release)?;
         let value = self.inner.release()?;
         self.record_observation(WorkflowOperation::Release, value)
+    }
+}
+
+impl<P: WorkflowPort> DurableWorkflowPort<'_, P> {
+    /// Reobserves an interrupted correction under its original durable intent.
+    ///
+    /// This deliberately records no second transition intent. The delegated port must resume or
+    /// reobserve the exact correction identity it persisted before the interrupted provider or Git
+    /// effect. A successful return closes the prior uncertain intent with one observation.
+    ///
+    /// # Errors
+    ///
+    /// Returns the delegated correction or durable-state error without starting another intent.
+    pub fn reobserve_correction(
+        &mut self,
+    ) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
+        let has_open_intent = self
+            .journal
+            .records()
+            .iter()
+            .rev()
+            .find_map(|record| match &record.event.kind {
+                EventKind::EffectObserved { phase }
+                    if phase == WorkflowOperation::Correct.phase() =>
+                {
+                    Some(false)
+                }
+                EventKind::Transition { phase, .. }
+                    if phase == WorkflowOperation::Correct.phase() =>
+                {
+                    Some(true)
+                }
+                _ => None,
+            });
+        if has_open_intent != Some(true) {
+            self.record_intent(WorkflowOperation::Correct)?;
+        }
+        let (outcome, evidence) = self.inner.correct()?;
+        let evidence = self.record_observation(WorkflowOperation::Correct, evidence)?;
+        Ok((outcome, evidence))
     }
 }
 
@@ -477,6 +532,69 @@ impl OneUnitCoordinator {
         }
         self.correction_limit = limit;
         Ok(self)
+    }
+
+    /// Restores only the coordinator projection needed to reobserve one durably interrupted
+    /// correction. Callers must establish the exact run, task, correction count, and external
+    /// identities from integrity-checked state before constructing this value.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`OrchestrationError::Transition`] for an invalid limit or correction count.
+    pub fn recover_interrupted_correction(
+        run_id: RunId,
+        task_id: TaskId,
+        correction_count: u16,
+        correction_limit: u16,
+    ) -> Result<Self, OrchestrationError> {
+        if correction_limit == 0 || correction_limit > 100 || correction_count >= correction_limit {
+            return Err(OrchestrationError::Transition);
+        }
+        Ok(Self {
+            machine: TaskMachine::recovered(run_id, task_id, TaskState::Correcting),
+            correction_limit,
+            correction_count,
+        })
+    }
+
+    /// Reobserves one exact interrupted correction and continues verification without replaying
+    /// the correction intent, implementation, claim, or worktree creation.
+    ///
+    /// # Errors
+    ///
+    /// Returns a durable-port, transition, verification, checkpoint, reconciliation, or release
+    /// failure. Exact resource release is attempted on every path.
+    pub fn resume_interrupted_correction<P: WorkflowPort>(
+        &mut self,
+        port: &mut DurableWorkflowPort<'_, P>,
+        reconcile: bool,
+    ) -> Result<TaskState, OrchestrationError> {
+        if self.state() != TaskState::Correcting {
+            return Err(OrchestrationError::Transition);
+        }
+        let result = (|| {
+            let (outcome, correction) = port.reobserve_correction()?;
+            self.correction_count = self.correction_count.saturating_add(1);
+            if outcome == ImplementationOutcome::Blocked {
+                self.transition(
+                    TaskState::Blocked,
+                    SideEffectIntent::ReleaseOwnedResources,
+                    correction,
+                )?;
+                return Ok(self.state());
+            }
+            self.transition(
+                TaskState::LocalVerification,
+                SideEffectIntent::RunLocalGates,
+                correction,
+            )?;
+            self.run_verification(port, reconcile)
+        })();
+        let release = port.release();
+        match release {
+            Ok(_) => result,
+            Err(error) => Err(error),
+        }
     }
 
     /// Returns the current state.
@@ -552,6 +670,14 @@ impl OneUnitCoordinator {
             SideEffectIntent::RunLocalGates,
             implemented,
         )?;
+        self.run_verification(port, reconcile)
+    }
+
+    fn run_verification(
+        &mut self,
+        port: &mut impl WorkflowPort,
+        reconcile: bool,
+    ) -> Result<TaskState, OrchestrationError> {
         loop {
             let (local, local_evidence) = port.verify_local()?;
             if local != VerificationOutcome::Pass {
@@ -977,6 +1103,78 @@ mod tests {
             "codingmage-orchestrator-{label}-{}-{unique}",
             std::process::id()
         ))
+    }
+
+    #[test]
+    fn interrupted_correction_resumes_without_replaying_prior_effects() {
+        let root = state_root("resume-correction");
+        let run_id = RunId::new("run-resume").unwrap();
+        let task_id = TaskId::new("task-resume").unwrap();
+        let repository_id = RepositoryId::new("repo-resume").unwrap();
+        let mut journal = Journal::open(&root, "resume-owner").unwrap();
+        journal
+            .append(JournalEvent {
+                timestamp_ms: 1,
+                run_id: run_id.clone(),
+                task_id: task_id.clone(),
+                repository_id: repository_id.clone(),
+                identities: DurableIdentities::default(),
+                kind: EventKind::Transition {
+                    phase: WorkflowOperation::Correct.phase().to_owned(),
+                    effect: EffectClass::StateChanging,
+                },
+                outcome: EventOutcome::Uncertain,
+                evidence: Vec::new(),
+                redactions: vec![RedactedField::new("provider_output").unwrap()],
+            })
+            .unwrap();
+        let mut fake = FakePort::default();
+        let mut coordinator = OneUnitCoordinator::recover_interrupted_correction(
+            run_id.clone(),
+            task_id.clone(),
+            0,
+            3,
+        )
+        .unwrap();
+        {
+            let mut durable =
+                DurableWorkflowPort::new(&mut fake, &mut journal, repository_id, run_id, task_id);
+            assert_eq!(
+                coordinator
+                    .resume_interrupted_correction(&mut durable, true)
+                    .unwrap(),
+                TaskState::Complete
+            );
+        }
+        assert_eq!(
+            fake.calls,
+            [
+                "correct",
+                "local",
+                "review",
+                "final",
+                "checkpoint",
+                "complete",
+                "release"
+            ]
+        );
+        let records = journal.records();
+        assert_eq!(
+            records
+                .iter()
+                .filter(|record| matches!(
+                    &record.event.kind,
+                    EventKind::Transition { phase, .. } if phase == "correct"
+                ))
+                .count(),
+            1
+        );
+        assert!(records.iter().any(|record| matches!(
+            &record.event.kind,
+            EventKind::EffectObserved { phase } if phase == "correct"
+        )));
+        drop(journal);
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

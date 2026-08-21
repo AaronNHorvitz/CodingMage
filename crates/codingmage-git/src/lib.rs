@@ -11,7 +11,10 @@ mod worktree;
 #[cfg(test)]
 mod test_support;
 
-pub use commit::{CommitError, CommitReceipt, commit_owned_changes};
+pub use commit::{
+    CommitError, CommitReceipt, commit_owned_changes, observe_owned_child_commit,
+    reobserve_owned_commit,
+};
 pub use integration::{IntegrationError, IntegrationReceipt, integrate_reviewed_descendant};
 pub use inventory::{
     Inventory, InventoryError, OperationState, RepositoryCondition, inventory_repository,

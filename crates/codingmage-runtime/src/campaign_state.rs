@@ -36,6 +36,8 @@ pub(crate) struct ActiveUnit {
     pub source_head: String,
     pub task_source_sha256: String,
     pub owned_paths: Vec<PathBuf>,
+    #[serde(default)]
+    pub run_id: Option<RunId>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]

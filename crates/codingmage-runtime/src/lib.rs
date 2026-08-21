@@ -1,6 +1,7 @@
 //! Concrete, fail-closed composition for one supervised `CodingMage` unit.
 
 mod campaign_state;
+mod correction_state;
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -11,7 +12,7 @@ use std::{
 };
 
 use codingmage_campaign::{
-    CampaignAuthentication, CampaignError, CampaignSpec, PodScheduler, TeamLeadOutcome,
+    CampaignAuthentication, CampaignError, CampaignSpec, PodLease, PodScheduler, TeamLeadOutcome,
     validate_team_lead_report,
 };
 use codingmage_claude::{
@@ -29,8 +30,9 @@ use codingmage_gate::{
     GateTrigger, TrustedGateDefinition,
 };
 use codingmage_git::{
-    CommitReceipt, OwnedWorktree, commit_owned_changes, create_owned_worktree,
-    integrate_reviewed_descendant, inventory_repository, remove_owned_worktree,
+    CommitError, CommitReceipt, OwnedWorktree, commit_owned_changes, create_owned_worktree,
+    integrate_reviewed_descendant, inventory_repository, observe_owned_child_commit,
+    remove_owned_worktree, reobserve_owned_commit,
 };
 use codingmage_orchestrator::{
     DurableWorkflowPort, ImplementationOutcome, OneUnitCoordinator, OrchestrationError,
@@ -46,6 +48,7 @@ use sha2::{Digest, Sha256};
 const RUN_SPEC_VERSION: u16 = 2;
 
 use campaign_state::{ActiveUnit, CampaignCheckpoint, CampaignPhase, PendingIntegration};
+use correction_state::{CorrectionCheckpoint, CorrectionPhase};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 const MAX_SPEC_BYTES: u64 = 1024 * 1024;
@@ -535,7 +538,11 @@ pub fn run_serial_campaign_with_progress(
             None,
         ));
     }
-    if checkpoint.active_unit.is_some() {
+    let mut interrupted_active = checkpoint.active_unit.clone();
+    if interrupted_active
+        .as_ref()
+        .is_some_and(|active| active.run_id.is_none())
+    {
         checkpoint.phase = CampaignPhase::Blocked;
         checkpoint.blocker_code =
             Some("codingmage.campaign.interrupted_unit_requires_reconciliation".to_owned());
@@ -550,9 +557,11 @@ pub fn run_serial_campaign_with_progress(
             checkpoint.blocker_code,
         ));
     }
-    checkpoint.phase = CampaignPhase::Ready;
-    checkpoint.blocker_code = None;
-    checkpoint.persist(&campaign_root)?;
+    if interrupted_active.is_none() {
+        checkpoint.phase = CampaignPhase::Ready;
+        checkpoint.blocker_code = None;
+        checkpoint.persist(&campaign_root)?;
+    }
     let mut head = checkpoint.head.clone();
     let mut completed_units = checkpoint.completed_units;
     let mut last_task_id = checkpoint.last_task_id.clone();
@@ -594,47 +603,120 @@ pub fn run_serial_campaign_with_progress(
                 Some("codingmage.campaign.unit_ceiling".to_owned()),
             ));
         }
-        let ready = match plan.select_ready(&checkpoint.blocked_task_ids, &BTreeSet::new(), 64) {
-            Ok(ready) => ready,
-            Err(PlanError::NoReadyWork) if !checkpoint.blocked_task_ids.is_empty() => {
-                let blocker_code = "codingmage.campaign.no_unblocked_ready_work".to_owned();
-                checkpoint.phase = CampaignPhase::Blocked;
-                checkpoint.active_unit = None;
-                checkpoint.blocker_code = Some(blocker_code.clone());
-                checkpoint.persist(&campaign_root)?;
-                return Ok(campaign_outcome(
-                    &spec,
-                    CampaignState::Blocked,
-                    &campaign,
-                    head,
-                    completed_units,
-                    last_task_id,
-                    Some(blocker_code),
-                ));
+        let mut scheduler = PodScheduler::new(&spec).map_err(RuntimeError::Campaign)?;
+        let (lease, mut unit_run_id, lease_registered) = if let Some(active) =
+            interrupted_active.take()
+        {
+            if active.source_head != head
+                || active.task_source_sha256 != plan.source_sha256
+                || active.owned_paths.is_empty()
+                || active.owned_paths.iter().any(|path| {
+                    path == &config.task_source
+                        || path.starts_with(&config.task_source)
+                        || config.task_source.starts_with(path)
+                })
+            {
+                return Err(RuntimeError::Authority);
             }
-            Err(_) => return Err(RuntimeError::Plan),
-        };
-        spec.initial_commit.clone_from(&head);
-        spec.task_source_sha256.clone_from(&plan.source_sha256);
-        let binding = lead_binding(&spec, &campaign, &ready);
-        checkpoint.phase = CampaignPhase::Planning;
-        checkpoint.blocker_code = None;
-        checkpoint.persist(&campaign_root)?;
-        observer(RunProgress::new(
-            ProgressActor::CampaignLead,
-            ProgressStage::PlanningCampaign,
-        ));
-        let invocation = lead.plan(&binding).map_err(RuntimeError::Reviewer)?;
-        let (lead_result, _) = match lead.execute(
-            &executor,
-            &invocation,
-            &binding,
-            &CancellationToken::default(),
-        ) {
-            Ok(value) => value,
-            Err(error @ (CodexError::Quota | CodexError::Authentication)) => {
-                let blocker_code = error.code().to_owned();
+            plan.select_exact(&active.task_id)
+                .map_err(|_| RuntimeError::Plan)?;
+            (
+                PodLease {
+                    pod_id: "recovered-pod-1".to_owned(),
+                    task_id: active.task_id,
+                    owned_paths: active.owned_paths,
+                    test_resources: Vec::new(),
+                    proposal_sha256: "recovered-from-integrity-bound-checkpoint".to_owned(),
+                },
+                active.run_id.ok_or(RuntimeError::State)?,
+                false,
+            )
+        } else {
+            let ready = match plan.select_ready(&checkpoint.blocked_task_ids, &BTreeSet::new(), 64)
+            {
+                Ok(ready) => ready,
+                Err(PlanError::NoReadyWork) if !checkpoint.blocked_task_ids.is_empty() => {
+                    let blocker_code = "codingmage.campaign.no_unblocked_ready_work".to_owned();
+                    checkpoint.phase = CampaignPhase::Blocked;
+                    checkpoint.active_unit = None;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        CampaignState::Blocked,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        Some(blocker_code),
+                    ));
+                }
+                Err(_) => return Err(RuntimeError::Plan),
+            };
+            spec.initial_commit.clone_from(&head);
+            spec.task_source_sha256.clone_from(&plan.source_sha256);
+            let binding = lead_binding(&spec, &campaign, &ready);
+            checkpoint.phase = CampaignPhase::Planning;
+            checkpoint.blocker_code = None;
+            checkpoint.persist(&campaign_root)?;
+            observer(RunProgress::new(
+                ProgressActor::CampaignLead,
+                ProgressStage::PlanningCampaign,
+            ));
+            let invocation = lead.plan(&binding).map_err(RuntimeError::Reviewer)?;
+            let (lead_result, _) = match lead.execute(
+                &executor,
+                &invocation,
+                &binding,
+                &CancellationToken::default(),
+            ) {
+                Ok(value) => value,
+                Err(error @ (CodexError::Quota | CodexError::Authentication)) => {
+                    let blocker_code = error.code().to_owned();
+                    checkpoint.phase = CampaignPhase::Paused;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        CampaignState::Paused,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        Some(blocker_code),
+                    ));
+                }
+                Err(error) => return Err(RuntimeError::Reviewer(error)),
+            };
+            let outcome = validate_team_lead_report(lead_result.report, &spec, &ready)
+                .map_err(RuntimeError::Campaign)?;
+            let proposals = match outcome {
+                TeamLeadOutcome::Proposals(proposals) => proposals,
+                TeamLeadOutcome::HumanDecision(blocker) => {
+                    let blocker_code =
+                        format!("codingmage.campaign.human_decision.{}", blocker.code);
+                    checkpoint.phase = CampaignPhase::Blocked;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        CampaignState::Blocked,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        Some(blocker_code),
+                    ));
+                }
+            };
+            let proposal = proposals
+                .into_iter()
+                .next()
+                .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
+            if !proposal_owned_paths_exist(&campaign.manifest().path, &proposal.owned_paths) {
+                let blocker_code = "codingmage.campaign.lead_invalid_owned_paths".to_owned();
                 checkpoint.phase = CampaignPhase::Paused;
+                checkpoint.active_unit = None;
                 checkpoint.blocker_code = Some(blocker_code.clone());
                 checkpoint.persist(&campaign_root)?;
                 return Ok(campaign_outcome(
@@ -647,73 +729,34 @@ pub fn run_serial_campaign_with_progress(
                     Some(blocker_code),
                 ));
             }
-            Err(error) => return Err(RuntimeError::Reviewer(error)),
-        };
-        let outcome = validate_team_lead_report(lead_result.report, &spec, &ready)
-            .map_err(RuntimeError::Campaign)?;
-        let proposals = match outcome {
-            TeamLeadOutcome::Proposals(proposals) => proposals,
-            TeamLeadOutcome::HumanDecision(blocker) => {
-                let blocker_code = format!("codingmage.campaign.human_decision.{}", blocker.code);
-                checkpoint.phase = CampaignPhase::Blocked;
-                checkpoint.blocker_code = Some(blocker_code.clone());
-                checkpoint.persist(&campaign_root)?;
-                return Ok(campaign_outcome(
-                    &spec,
-                    CampaignState::Blocked,
-                    &campaign,
-                    head,
-                    completed_units,
-                    last_task_id,
-                    Some(blocker_code),
-                ));
+            if proposal.owned_paths.iter().any(|path| {
+                path == &config.task_source
+                    || path.starts_with(&config.task_source)
+                    || config.task_source.starts_with(path)
+            }) {
+                return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
             }
-        };
-        let proposal = proposals
-            .into_iter()
-            .next()
-            .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
-        if !proposal_owned_paths_exist(&campaign.manifest().path, &proposal.owned_paths) {
-            let blocker_code = "codingmage.campaign.lead_invalid_owned_paths".to_owned();
-            checkpoint.phase = CampaignPhase::Paused;
-            checkpoint.active_unit = None;
-            checkpoint.blocker_code = Some(blocker_code.clone());
+            let selected = ready
+                .iter()
+                .find(|selected| selected.item.id == proposal.task_id)
+                .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
+            let lease = scheduler
+                .admit(&spec, selected, proposal)
+                .map_err(RuntimeError::Campaign)?;
+            let unit_run_id = generated_run_id()?;
+            last_task_id = Some(lease.task_id.clone());
+            checkpoint.last_task_id.clone_from(&last_task_id);
+            checkpoint.phase = CampaignPhase::RunningUnit;
+            checkpoint.active_unit = Some(ActiveUnit {
+                task_id: lease.task_id.clone(),
+                source_head: head.clone(),
+                task_source_sha256: plan.source_sha256.clone(),
+                owned_paths: lease.owned_paths.clone(),
+                run_id: Some(unit_run_id.clone()),
+            });
             checkpoint.persist(&campaign_root)?;
-            return Ok(campaign_outcome(
-                &spec,
-                CampaignState::Paused,
-                &campaign,
-                head,
-                completed_units,
-                last_task_id,
-                Some(blocker_code),
-            ));
-        }
-        if proposal.owned_paths.iter().any(|path| {
-            path == &config.task_source
-                || path.starts_with(&config.task_source)
-                || config.task_source.starts_with(path)
-        }) {
-            return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
-        }
-        let selected = ready
-            .iter()
-            .find(|selected| selected.item.id == proposal.task_id)
-            .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
-        let mut scheduler = PodScheduler::new(&spec).map_err(RuntimeError::Campaign)?;
-        let lease = scheduler
-            .admit(&spec, selected, proposal)
-            .map_err(RuntimeError::Campaign)?;
-        last_task_id = Some(lease.task_id.clone());
-        checkpoint.last_task_id.clone_from(&last_task_id);
-        checkpoint.phase = CampaignPhase::RunningUnit;
-        checkpoint.active_unit = Some(ActiveUnit {
-            task_id: lease.task_id.clone(),
-            source_head: head.clone(),
-            task_source_sha256: plan.source_sha256.clone(),
-            owned_paths: lease.owned_paths.clone(),
-        });
-        checkpoint.persist(&campaign_root)?;
+            (lease, unit_run_id, true)
+        };
 
         let mut pod_config = config.clone();
         pod_config.target_path.clone_from(&campaign.manifest().path);
@@ -739,13 +782,28 @@ pub fn run_serial_campaign_with_progress(
         };
         let mut provider_attempt = 1_u8;
         let unit = loop {
-            match run_one_with_progress(&pod_config, unit_spec.clone(), &binary, &mut observer) {
+            match run_one_with_progress_id(
+                &pod_config,
+                unit_spec.clone(),
+                &binary,
+                unit_run_id.clone(),
+                &mut observer,
+            ) {
                 Ok(unit) => break unit,
                 Err(error)
                     if retryable_campaign_provider_failure(error)
                         && provider_attempt < CAMPAIGN_PROVIDER_ATTEMPT_LIMIT =>
                 {
                     provider_attempt = provider_attempt.saturating_add(1);
+                    let failed_run_root = pod_state.join("runs").join(unit_run_id.as_str());
+                    if CorrectionCheckpoint::latest(&failed_run_root)?.is_none() {
+                        unit_run_id = generated_run_id()?;
+                        checkpoint
+                            .active_unit
+                            .as_mut()
+                            .ok_or(RuntimeError::State)?
+                            .run_id = Some(unit_run_id.clone());
+                    }
                     checkpoint.blocker_code = Some("codingmage.campaign.provider_retry".to_owned());
                     checkpoint.persist(&campaign_root)?;
                     observer(RunProgress::new(
@@ -761,9 +819,11 @@ pub fn run_serial_campaign_with_progress(
                     checkpoint.active_unit = None;
                     checkpoint.blocker_code = Some(blocker_code.clone());
                     checkpoint.persist(&campaign_root)?;
-                    scheduler
-                        .release(&lease.pod_id)
-                        .map_err(RuntimeError::Campaign)?;
+                    if lease_registered {
+                        scheduler
+                            .release(&lease.pod_id)
+                            .map_err(RuntimeError::Campaign)?;
+                    }
                     return Ok(campaign_outcome(
                         &spec,
                         CampaignState::Paused,
@@ -780,9 +840,11 @@ pub fn run_serial_campaign_with_progress(
                     checkpoint.active_unit = None;
                     checkpoint.blocker_code = Some(blocker_code.clone());
                     checkpoint.persist(&campaign_root)?;
-                    scheduler
-                        .release(&lease.pod_id)
-                        .map_err(RuntimeError::Campaign)?;
+                    if lease_registered {
+                        scheduler
+                            .release(&lease.pod_id)
+                            .map_err(RuntimeError::Campaign)?;
+                    }
                     return Ok(campaign_outcome(
                         &spec,
                         CampaignState::Paused,
@@ -799,9 +861,11 @@ pub fn run_serial_campaign_with_progress(
                     checkpoint.active_unit = None;
                     checkpoint.blocker_code = Some(blocker_code.to_owned());
                     checkpoint.persist(&campaign_root)?;
-                    scheduler
-                        .release(&lease.pod_id)
-                        .map_err(RuntimeError::Campaign)?;
+                    if lease_registered {
+                        scheduler
+                            .release(&lease.pod_id)
+                            .map_err(RuntimeError::Campaign)?;
+                    }
                     return Ok(campaign_outcome(
                         &spec,
                         campaign_state,
@@ -820,9 +884,11 @@ pub fn run_serial_campaign_with_progress(
             checkpoint.active_unit = None;
             checkpoint.blocker_code = Some("codingmage.campaign.unit_blocked".to_owned());
             checkpoint.persist(&campaign_root)?;
-            scheduler
-                .release(&lease.pod_id)
-                .map_err(RuntimeError::Campaign)?;
+            if lease_registered {
+                scheduler
+                    .release(&lease.pod_id)
+                    .map_err(RuntimeError::Campaign)?;
+            }
             continue;
         }
         if let Some((campaign_state, phase, blocker_code)) = campaign_unit_pause(&unit) {
@@ -830,9 +896,11 @@ pub fn run_serial_campaign_with_progress(
             checkpoint.active_unit = None;
             checkpoint.blocker_code = Some(blocker_code.to_owned());
             checkpoint.persist(&campaign_root)?;
-            scheduler
-                .release(&lease.pod_id)
-                .map_err(RuntimeError::Campaign)?;
+            if lease_registered {
+                scheduler
+                    .release(&lease.pod_id)
+                    .map_err(RuntimeError::Campaign)?;
+            }
             return Ok(campaign_outcome(
                 &spec,
                 campaign_state,
@@ -878,9 +946,11 @@ pub fn run_serial_campaign_with_progress(
         checkpoint.pending_integration = None;
         checkpoint.blocker_code = None;
         checkpoint.persist(&campaign_root)?;
-        scheduler
-            .release(&lease.pod_id)
-            .map_err(RuntimeError::Campaign)?;
+        if lease_registered {
+            scheduler
+                .release(&lease.pod_id)
+                .map_err(RuntimeError::Campaign)?;
+        }
     }
 }
 
@@ -1123,11 +1193,27 @@ pub fn run_one_with_progress(
     codingmage_binary: &Path,
     mut observer: impl FnMut(RunProgress),
 ) -> Result<RunOutcome, RuntimeError> {
+    run_one_with_progress_id(
+        config,
+        spec,
+        codingmage_binary,
+        generated_run_id()?,
+        &mut observer,
+    )
+}
+
+fn run_one_with_progress_id(
+    config: &Config,
+    spec: RunSpec,
+    codingmage_binary: &Path,
+    run_id: RunId,
+    observer: &mut impl FnMut(RunProgress),
+) -> Result<RunOutcome, RuntimeError> {
     observer(RunProgress::new(
         ProgressActor::Coordinator,
         ProgressStage::Preparing,
     ));
-    let result = run_one_observed(config, spec, codingmage_binary, &mut observer);
+    let result = run_one_observed_with_id(config, spec, codingmage_binary, run_id, observer);
     observer(RunProgress::new(
         ProgressActor::Coordinator,
         if result.is_ok() {
@@ -1139,10 +1225,11 @@ pub fn run_one_with_progress(
     result
 }
 
-fn run_one_observed(
+fn run_one_observed_with_id(
     config: &Config,
     spec: RunSpec,
     codingmage_binary: &Path,
+    run_id: RunId,
     observer: &mut impl FnMut(RunProgress),
 ) -> Result<RunOutcome, RuntimeError> {
     spec.validate()?;
@@ -1161,10 +1248,14 @@ fn run_one_observed(
         .select_exact(&spec.task_id)
         .map_err(|_| RuntimeError::Plan)?;
     let login_environment = login_discovery_environment()?;
-    let run_id = generated_run_id()?;
     let task_id = TaskId::new(spec.task_id.clone()).map_err(|_| RuntimeError::Spec)?;
     let run_root = config.state_root.join("runs").join(run_id.as_str());
+    let run_root_existed = run_root.exists();
     private_directory(&run_root)?;
+    let correction_recovery = CorrectionCheckpoint::latest(&run_root)?;
+    if run_root_existed && correction_recovery.is_none() {
+        return Err(RuntimeError::State);
+    }
     let process_root = run_root.join("processes");
     let executor = ProcessExecutor::new_with_guard_arguments(
         &codingmage_binary,
@@ -1173,10 +1264,10 @@ fn run_one_observed(
     )
     .map_err(|_| RuntimeError::Process)?;
     let schema_path = run_root.join("codex-review.schema.json");
-    write_private_new(&schema_path, codex_review_schema().as_bytes())?;
+    write_private_idempotent(&schema_path, codex_review_schema().as_bytes())?;
     let mut journal = Journal::open(&run_root, format!("{}-journal", run_id.as_str()))
         .map_err(|_| RuntimeError::State)?;
-    let port = ProductionWorkflowPort::new(ProductionInputs {
+    let inputs = ProductionInputs {
         config,
         authorization,
         selected,
@@ -1189,13 +1280,27 @@ fn run_one_observed(
         schema_path,
         run_root,
         login_environment,
-    });
+    };
+    let port = match correction_recovery.as_ref() {
+        Some(checkpoint) => ProductionWorkflowPort::recover_correction(inputs, checkpoint)?,
+        None => ProductionWorkflowPort::new(inputs),
+    };
     let repository_id = port.authorization.identity().repository_id.clone();
     let completion_policy = port.spec.completion_policy;
     let mut port = ProgressWorkflowPort::new(port, observer);
-    let mut coordinator = OneUnitCoordinator::new(run_id.clone(), task_id.clone())
-        .with_correction_limit(config.correction_limit)
-        .map_err(|_| RuntimeError::Orchestration)?;
+    let mut coordinator = if let Some(checkpoint) = correction_recovery.as_ref() {
+        OneUnitCoordinator::recover_interrupted_correction(
+            run_id.clone(),
+            task_id.clone(),
+            checkpoint.correction_round.saturating_sub(1),
+            config.correction_limit,
+        )
+        .map_err(|_| RuntimeError::Orchestration)?
+    } else {
+        OneUnitCoordinator::new(run_id.clone(), task_id.clone())
+            .with_correction_limit(config.correction_limit)
+            .map_err(|_| RuntimeError::Orchestration)?
+    };
     let result = {
         let mut durable = DurableWorkflowPort::new(
             &mut port,
@@ -1204,9 +1309,15 @@ fn run_one_observed(
             run_id.clone(),
             task_id.clone(),
         );
-        match completion_policy {
-            CompletionPolicy::CandidateOnly => coordinator.run_to_checkpoint(&mut durable),
-            CompletionPolicy::CloseTask => coordinator.run(&mut durable),
+        match (completion_policy, correction_recovery.is_some()) {
+            (CompletionPolicy::CandidateOnly, false) => coordinator.run_to_checkpoint(&mut durable),
+            (CompletionPolicy::CloseTask, false) => coordinator.run(&mut durable),
+            (CompletionPolicy::CandidateOnly, true) => {
+                coordinator.resume_interrupted_correction(&mut durable, false)
+            }
+            (CompletionPolicy::CloseTask, true) => {
+                coordinator.resume_interrupted_correction(&mut durable, true)
+            }
         }
     };
     let outcome = port.inner.outcome(run_id, task_id, coordinator.state());
@@ -1273,6 +1384,10 @@ where
         self.inner.review()
     }
 
+    fn prepare_correction(&mut self) -> Result<(), OrchestrationError> {
+        self.inner.prepare_correction()
+    }
+
     fn correct(&mut self) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
         self.report(ProgressActor::Claude, ProgressStage::Correcting);
         self.inner.correct()
@@ -1337,6 +1452,7 @@ struct ProductionWorkflowPort<'a> {
     review_verdict: Option<ReviewVerdict>,
     review_report: Option<CodexReviewReport>,
     correction_round: u16,
+    recovering_correction: bool,
     failure: Option<RuntimeError>,
 }
 
@@ -1365,8 +1481,54 @@ impl<'a> ProductionWorkflowPort<'a> {
             review_verdict: None,
             review_report: None,
             correction_round: 0,
+            recovering_correction: false,
             failure: None,
         }
+    }
+
+    fn recover_correction(
+        inputs: ProductionInputs<'a>,
+        checkpoint: &CorrectionCheckpoint,
+    ) -> Result<Self, RuntimeError> {
+        checkpoint.validate(
+            &inputs.authorization.identity().repository_id,
+            &inputs.run_id,
+            &inputs.task_id,
+            &checkpoint.worktree_id,
+            &checkpoint.branch,
+            &inputs.source_commit,
+            &checkpoint.parent_commit,
+            checkpoint.correction_round,
+        )?;
+        let worktree = OwnedWorktree::load(inputs.config, &checkpoint.worktree_id)
+            .map_err(|_| RuntimeError::Repository)?;
+        if worktree.manifest().branch != checkpoint.branch
+            || worktree.manifest().source_commit != checkpoint.source_commit
+        {
+            return Err(RuntimeError::Authority);
+        }
+        let candidate = observe_owned_child_commit(
+            &inputs.authorization,
+            &worktree,
+            &checkpoint.source_commit,
+            &checkpoint.parent_commit,
+            &inputs.spec.owned_paths,
+        )
+        .map_err(|_| RuntimeError::Repository)?;
+        let mut port = Self::new(inputs);
+        port.lock = Some(
+            CoordinatorLock::acquire(
+                &port.config.state_root.join("locks"),
+                &port.authorization.identity().repository_id,
+                port.run_id.as_str(),
+            )
+            .map_err(|_| RuntimeError::Orchestration)?,
+        );
+        port.worktree = Some(worktree);
+        port.candidate = Some(candidate);
+        port.correction_round = checkpoint.correction_round.saturating_sub(1);
+        port.recovering_correction = true;
+        Ok(port)
     }
 
     fn outcome(&self, run_id: RunId, task_id: TaskId, state: TaskState) -> RunOutcome {
@@ -1490,7 +1652,7 @@ impl<'a> ProductionWorkflowPort<'a> {
 
     fn execute_claude_packet(
         &mut self,
-        mut packet: ClaudeWorkPacket,
+        packet: ClaudeWorkPacket,
         source_commit: String,
     ) -> Result<ClaudeCompletionReport, OrchestrationError> {
         let (worktree, branch) = {
@@ -1509,20 +1671,36 @@ impl<'a> ProductionWorkflowPort<'a> {
             branch,
             source_commit,
         };
+        self.execute_claude_session(packet, &session, false)
+    }
+
+    fn execute_claude_session(
+        &mut self,
+        mut packet: ClaudeWorkPacket,
+        session: &ClaudeSession,
+        resume_first: bool,
+    ) -> Result<ClaudeCompletionReport, OrchestrationError> {
         let adapter = self.claude_adapter()?;
+        let mut resume = resume_first;
         for attempt in 0..CLAUDE_REPORT_ATTEMPT_LIMIT {
-            let plan = if attempt == 0 {
-                adapter.plan_start(&session, &packet)
+            let plan = if resume {
+                adapter.plan_resume(session, &packet)
             } else {
-                adapter.plan_resume(&session, &packet)
+                adapter.plan_start(session, &packet)
             }
             .map_err(|_| OrchestrationError::Port)?;
             match adapter.execute(&self.executor, &plan, &CancellationToken::default()) {
                 Ok((report, _)) => return Ok(report),
+                Err(ClaudeError::Session)
+                    if resume && attempt + 1 < CLAUDE_REPORT_ATTEMPT_LIMIT =>
+                {
+                    resume = false;
+                }
                 Err(error)
                     if retryable_claude_report_failure(error)
                         && attempt + 1 < CLAUDE_REPORT_ATTEMPT_LIMIT =>
                 {
+                    resume = true;
                     packet.task_text.push_str(
                         "\n\nCOMPLETION REPORT RETRY\nThe prior completion metadata was malformed or contradictory. Do not broaden scope, run commands, or change files merely to answer this retry. Reinspect only the authorized worktree files if needed, then return exactly one disposition: (1) ready_for_commit=true with commit=null, blocker_code=null, and limitations=[]; or (2) ready_for_commit=false with commit=null and one non-null blocker_code. Keep tests=[].",
                     );
@@ -1614,10 +1792,119 @@ impl<'a> ProductionWorkflowPort<'a> {
         Ok(context)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn execute_claude_correction(&mut self) -> Result<ClaudeCompletionReport, OrchestrationError> {
-        let source_commit = self.candidate()?.commit.clone();
-        let packet = self.claude_packet(Some(self.correction_context()?));
-        let report = self.execute_claude_packet(packet, source_commit)?;
+        let parent_commit = self.candidate()?.commit.clone();
+        let (worktree_id, worktree, branch) = {
+            let owned = self.worktree()?;
+            (
+                owned.manifest().worktree_id.clone(),
+                owned.manifest().path.clone(),
+                owned.manifest().branch.clone(),
+            )
+        };
+        let next_round = self.correction_round.saturating_add(1);
+        let existing = CorrectionCheckpoint::load(&self.run_root, next_round)
+            .map_err(|_| OrchestrationError::DurableState)?;
+        let mut checkpoint = if let Some(checkpoint) = existing {
+            checkpoint
+                .validate(
+                    &self.authorization.identity().repository_id,
+                    &self.run_id,
+                    &self.task_id,
+                    &worktree_id,
+                    &branch,
+                    &self.source_commit,
+                    &parent_commit,
+                    next_round,
+                )
+                .map_err(|_| OrchestrationError::DurableState)?;
+            checkpoint
+        } else {
+            let checkpoint = CorrectionCheckpoint::new(
+                self.authorization.identity().repository_id.clone(),
+                self.run_id.clone(),
+                self.task_id.clone(),
+                worktree_id,
+                branch.clone(),
+                self.source_commit.clone(),
+                parent_commit.clone(),
+                generated_attempt_id().map_err(|_| OrchestrationError::Port)?,
+                next_round,
+            );
+            checkpoint
+                .persist(&self.run_root)
+                .map_err(|_| OrchestrationError::DurableState)?;
+            checkpoint
+        };
+        let resume = self.recovering_correction;
+        if checkpoint.phase == CorrectionPhase::ProviderBlocked {
+            return Ok(ClaudeCompletionReport {
+                changed_paths: Vec::new(),
+                tests: Vec::new(),
+                commit: None,
+                ready_for_commit: false,
+                limitations: Vec::new(),
+                blocker_code: checkpoint.blocker_code,
+            });
+        }
+        if checkpoint.phase == CorrectionPhase::CommitObserved {
+            return Ok(ClaudeCompletionReport {
+                changed_paths: Vec::new(),
+                tests: Vec::new(),
+                commit: checkpoint.correction_commit,
+                ready_for_commit: false,
+                limitations: Vec::new(),
+                blocker_code: None,
+            });
+        }
+        if resume {
+            match reobserve_owned_commit(
+                &self.authorization,
+                self.worktree()?,
+                &parent_commit,
+                &self.spec.owned_paths,
+            ) {
+                Ok(receipt) => {
+                    checkpoint.phase = CorrectionPhase::CommitObserved;
+                    checkpoint.correction_commit = Some(receipt.commit.clone());
+                    checkpoint
+                        .persist(&self.run_root)
+                        .map_err(|_| OrchestrationError::DurableState)?;
+                    return Ok(ClaudeCompletionReport {
+                        changed_paths: Vec::new(),
+                        tests: Vec::new(),
+                        commit: Some(receipt.commit),
+                        ready_for_commit: false,
+                        limitations: Vec::new(),
+                        blocker_code: None,
+                    });
+                }
+                Err(CommitError::Empty) => {}
+                Err(_) => {
+                    self.failure = Some(RuntimeError::Repository);
+                    return Err(OrchestrationError::Port);
+                }
+            }
+        }
+        let session = ClaudeSession {
+            run_id: self.run_id.clone(),
+            task_id: self.task_id.clone(),
+            agent_id: AgentId::new("claude-implementer").map_err(|_| OrchestrationError::Port)?,
+            session_id: checkpoint.session_id.clone(),
+            worktree,
+            branch,
+            source_commit: parent_commit,
+        };
+        let packet = if resume {
+            self.claude_packet(Some(
+                "Resume only the already-bound correction session. Do not broaden scope or repeat completed edits. Reobserve the authorized worktree, finish any interrupted bounded correction, and return the required completion report."
+                    .to_owned(),
+            ))
+        } else {
+            self.claude_packet(Some(self.correction_context()?))
+        };
+        let report = self.execute_claude_session(packet, &session, resume)?;
         if report.blocker_code.is_none()
             && (!report.ready_for_commit
                 || report.commit.is_some()
@@ -1626,6 +1913,13 @@ impl<'a> ProductionWorkflowPort<'a> {
         {
             self.failure = Some(RuntimeError::Implementer(ClaudeError::InvalidReport));
             return Err(OrchestrationError::Port);
+        }
+        if report.blocker_code.is_some() {
+            checkpoint.phase = CorrectionPhase::ProviderBlocked;
+            checkpoint.blocker_code.clone_from(&report.blocker_code);
+            checkpoint
+                .persist(&self.run_root)
+                .map_err(|_| OrchestrationError::DurableState)?;
         }
         Ok(report)
     }
@@ -1815,6 +2109,41 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         Ok((outcome, evidence))
     }
 
+    fn prepare_correction(&mut self) -> Result<(), OrchestrationError> {
+        let parent_commit = self.candidate()?.commit.clone();
+        let owned = self.worktree()?;
+        let next_round = self.correction_round.saturating_add(1);
+        if let Some(checkpoint) = CorrectionCheckpoint::load(&self.run_root, next_round)
+            .map_err(|_| OrchestrationError::DurableState)?
+        {
+            return checkpoint
+                .validate(
+                    &self.authorization.identity().repository_id,
+                    &self.run_id,
+                    &self.task_id,
+                    &owned.manifest().worktree_id,
+                    &owned.manifest().branch,
+                    &self.source_commit,
+                    &parent_commit,
+                    next_round,
+                )
+                .map_err(|_| OrchestrationError::DurableState);
+        }
+        CorrectionCheckpoint::new(
+            self.authorization.identity().repository_id.clone(),
+            self.run_id.clone(),
+            self.task_id.clone(),
+            owned.manifest().worktree_id.clone(),
+            owned.manifest().branch.clone(),
+            self.source_commit.clone(),
+            parent_commit,
+            generated_attempt_id().map_err(|_| OrchestrationError::Port)?,
+            next_round,
+        )
+        .persist(&self.run_root)
+        .map_err(|_| OrchestrationError::DurableState)
+    }
+
     fn correct(&mut self) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
         let expected_parent = self.candidate()?.commit.clone();
         let report = self.execute_claude_correction()?;
@@ -1825,27 +2154,50 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
                 evidence_id("correction-blocked")?,
             ));
         }
-        let receipt = commit_owned_changes(
-            &self.authorization,
-            self.worktree()?,
-            &expected_parent,
-            &self.spec.owned_paths,
-        )
+        let next_round = self.correction_round.saturating_add(1);
+        let mut checkpoint = CorrectionCheckpoint::load(&self.run_root, next_round)
+            .map_err(|_| OrchestrationError::DurableState)?
+            .ok_or(OrchestrationError::DurableState)?;
+        let receipt = if checkpoint.phase == CorrectionPhase::CommitObserved {
+            reobserve_owned_commit(
+                &self.authorization,
+                self.worktree()?,
+                &expected_parent,
+                &self.spec.owned_paths,
+            )
+        } else {
+            commit_owned_changes(
+                &self.authorization,
+                self.worktree()?,
+                &expected_parent,
+                &self.spec.owned_paths,
+            )
+        }
         .map_err(|_| {
             self.failure = Some(RuntimeError::Repository);
             OrchestrationError::Port
         })?;
-        let claimed = report
-            .changed_paths
-            .iter()
-            .cloned()
-            .collect::<BTreeSet<_>>();
-        let observed = receipt
-            .changed_paths
-            .iter()
-            .cloned()
-            .collect::<BTreeSet<_>>();
-        if claimed != observed {
+        if checkpoint.phase != CorrectionPhase::CommitObserved {
+            let claimed = report
+                .changed_paths
+                .iter()
+                .cloned()
+                .collect::<BTreeSet<_>>();
+            let observed = receipt
+                .changed_paths
+                .iter()
+                .cloned()
+                .collect::<BTreeSet<_>>();
+            if claimed != observed {
+                self.failure = Some(RuntimeError::Repository);
+                return Err(OrchestrationError::Port);
+            }
+            checkpoint.phase = CorrectionPhase::CommitObserved;
+            checkpoint.correction_commit = Some(receipt.commit.clone());
+            checkpoint
+                .persist(&self.run_root)
+                .map_err(|_| OrchestrationError::DurableState)?;
+        } else if checkpoint.correction_commit.as_deref() != Some(receipt.commit.as_str()) {
             self.failure = Some(RuntimeError::Repository);
             return Err(OrchestrationError::Port);
         }
@@ -1856,6 +2208,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         self.review_report = None;
         self.review_verdict = None;
         self.correction_round = self.correction_round.saturating_add(1);
+        self.recovering_correction = false;
         Ok((ImplementationOutcome::Ready, evidence))
     }
 
