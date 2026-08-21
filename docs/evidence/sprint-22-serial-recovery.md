@@ -18,6 +18,7 @@
 - **Stop-after-unit evidence commit:** `800c215`
 - **Resume-revalidation implementation commit:** `d860194`
 - **Durable pending-resume commit:** `a6fe0a9`
+- **Control-boundary restart matrix commit:** `4511b54`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -164,8 +165,15 @@ metered, including receipts collected before a later probe fails.
 The serial binary fixture deliberately removes required Claude capabilities after resume. The
 campaign refuses admission and persists `resume_validation = pending`; after restart and capability
 restoration, the same campaign must repeat and pass the complete proof before the lead can run.
-This evidence closes `22.2.2.1` through `22.2.2.4`. Restart at every control-intent boundary remains
-open under `22.2.2.5`.
+
+A deterministic restart matrix covers pause, resume, stop-after-unit, and cancel at each durable
+boundary: after the intent file, after `ControlRequested`, after the integrity-bound checkpoint
+effect, and after `ControlApplied`. All sixteen cases recover to the exact action state, retain one
+request identity, contain exactly one request and one applied journal observation, remain unchanged
+through two additional replays, and load from the final checkpoint with its digest and outcome
+projection intact. Resume is reported as newly applied only when the crash preceded checkpoint
+persistence; later replay preserves its pending validation prerequisite without repeating the
+effect. This closes `22.2.2.1` through `22.2.2.5` and the parent campaign-control task.
 
 ## Fail-Closed Checkpoint Schema
 

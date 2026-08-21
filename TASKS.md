@@ -1014,12 +1014,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.2.1.3:** Bind every deferred task to its reason, trigger, source head, and trigger-observation state without storing unrestricted lead prose. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.1.4:** Include every new projection in canonical checkpoint hashing, migration refusal, mutation tests, and restart reconstruction. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.1.5:** Refuse a legacy or partial checkpoint whenever missing fields could broaden authority or erase a blocker, deferral, limit, or accepted outcome. See `docs/evidence/sprint-22-serial-recovery.md`.
-- [ ] **Task 22.2.2 - Compose campaign operator controls**
+- [x] **Task 22.2.2 - Compose campaign operator controls**
   - [x] **Sub-task 22.2.2.1:** Wire same-user, exact-campaign `pause`, `resume`, `stop-after-unit`, and `cancel` controls into the production campaign loop. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.2.2:** Journal each control intent and observation with an idempotency key and reject stale, cross-run, duplicate-effect, or unauthorized requests. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.2.3:** Make pause prevent new admission, stop-after-unit finish the current bounded unit and checkpoint, and cancel terminate only exact owned descendants. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.2.4:** Revalidate repository, campaign authority, provider capability, deferred triggers, and limits before resume admits work. See `docs/evidence/sprint-22-serial-recovery.md`.
-  - [ ] **Sub-task 22.2.2.5:** Prove repeated controls and restart at every control intent produce one terminal effect and preserve recoverable state.
+  - [x] **Sub-task 22.2.2.5:** Prove repeated controls and restart at every control intent produce one terminal effect and preserve recoverable state. See `docs/evidence/sprint-22-serial-recovery.md`.
 - [ ] **Task 22.2.3 - Enforce independent campaign limits**
   - [x] **Sub-task 22.2.3.1:** Make the campaign accepted-outcome ceiling count completed, blocked, and accepted deferred outcomes according to the documented contract without counting rejected proposals. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.3.2:** Stop provider admission exactly when the configured outcome, attempt, malformed-report, correction, process, output, storage, or elapsed-execution limit is reached. See `docs/evidence/sprint-22-serial-recovery.md`.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.2.5`: prove restart and repeated delivery at every control-intent boundary produce one terminal effect and preserve recoverable state.
+- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.3.4`: prove campaign-limit exhaustion cannot weaken provider, gate, evidence, path, or publication policy.

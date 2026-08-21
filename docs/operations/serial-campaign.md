@@ -249,8 +249,9 @@ an unbounded provider-invocation loop.
   exists. Aggregate ceilings are enforced before campaign admission and delegated unit effects;
   pause, resume, stop-after-unit, and exact-descendant cancel projections are implemented. Missing
   request or applied journal observations are reconciled exactly once from integrity-bound intent
-  and checkpoint state. Resume revalidation is itself a durable admission prerequisite. Exhaustive
-  control-boundary restart evidence and interrupted initial-implementation resume remain open.
+  and checkpoint state. Resume revalidation is itself a durable admission prerequisite. A complete
+  action-by-boundary matrix proves one effect under repeated restart. Interrupted
+  initial-implementation resume remains open.
 - Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable.
   Binary evidence proves quota and authentication pauses preserve zero accepted work and the active
   checkout before a later authorized provider invocation succeeds; CodingMage does not inspect,
