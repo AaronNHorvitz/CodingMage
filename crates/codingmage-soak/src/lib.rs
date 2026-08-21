@@ -266,6 +266,60 @@ pub struct FakeAdapterObservation {
     pub action: FakeAdapterAction,
 }
 
+/// Closed behavioral phase produced by one prescribed injection.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FakeInjectionPhase {
+    /// Required gate failed.
+    GateFailed,
+    /// Corrected candidate passed the required gate.
+    GateCorrectionPassed,
+    /// Senior reviewer recorded one actionable finding.
+    ReviewFinding,
+    /// Corrected candidate passed fresh senior review.
+    ReviewCorrectionPassed,
+    /// External blocker was durably classified.
+    BlockerRecorded,
+    /// Temporary deferral and its trigger were durably classified.
+    DeferralRecorded,
+    /// Malformed structured output was rejected without effect.
+    MalformedReportRejected,
+    /// Bounded structured-output repair was accepted.
+    ReportRepairAccepted,
+    /// Provider capacity paused admission.
+    CapacityPaused,
+    /// Provider identity and capacity were revalidated before resume.
+    ResumeRevalidated,
+    /// State-changing intent became durable before interruption.
+    IntentPersisted,
+    /// Coordinator interruption occurred after durable intent.
+    CoordinatorInterrupted,
+    /// Restart reobserved the effect without replay.
+    RecoveryWithoutReplay,
+    /// Stop-after-unit control was accepted.
+    StopRequested,
+    /// Campaign stopped at the clean unit checkpoint.
+    StoppedAtCheckpoint,
+    /// Exact reconsideration trigger was observed.
+    DeferralTriggerObserved,
+    /// Further admission was refused at the exact ceiling.
+    CeilingRefused,
+}
+
+/// One ordered behavioral injection observation at an exact adapter boundary.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FakeInjectionObservation {
+    /// Contiguous injection-observation sequence.
+    pub sequence: u32,
+    /// Exact prescribed outcome identity.
+    pub outcome_id: &'static str,
+    /// Prescribed injected scenario.
+    pub injection: PrescribedInjection,
+    /// Adapter boundary after which the phase is observed.
+    pub boundary: FakeAdapterKind,
+    /// Closed behavioral phase.
+    pub phase: FakeInjectionPhase,
+}
+
 /// Reconciled result of the complete prescribed fake-adapter execution.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FakeAdapterReport {
@@ -277,6 +331,8 @@ pub struct FakeAdapterReport {
     pub publication: &'static str,
     /// Complete ordered adapter observations.
     pub observations: Vec<FakeAdapterObservation>,
+    /// Complete ordered behavioral injection observations.
+    pub injections: Vec<FakeInjectionObservation>,
 }
 
 impl FakeAdapterReport {
@@ -299,6 +355,9 @@ impl FakeAdapterReport {
                     observation.sequence != u32::try_from(index).unwrap_or(u32::MAX)
                 })
         {
+            return Err(SoakError::InvariantViolation);
+        }
+        if self.injections != expected_injection_observations(schedule)? {
             return Err(SoakError::InvariantViolation);
         }
         let coverage = self
@@ -419,9 +478,72 @@ pub fn execute_prescribed_fake_adapters(
         peak_active_pods,
         publication: schedule.publication,
         observations,
+        injections: expected_injection_observations(schedule)?,
     };
     report.verify(schedule)?;
     Ok(report)
+}
+
+fn expected_injection_observations(
+    schedule: &PrescribedSchedule,
+) -> Result<Vec<FakeInjectionObservation>, SoakError> {
+    let mut observations = Vec::new();
+    for outcome in &schedule.outcomes {
+        for injection in outcome.injections {
+            for (boundary, phase) in injection_phases(*injection) {
+                let sequence =
+                    u32::try_from(observations.len()).map_err(|_| SoakError::InvariantViolation)?;
+                observations.push(FakeInjectionObservation {
+                    sequence,
+                    outcome_id: outcome.outcome_id,
+                    injection: *injection,
+                    boundary,
+                    phase,
+                });
+            }
+        }
+    }
+    Ok(observations)
+}
+
+fn injection_phases(injection: PrescribedInjection) -> Vec<(FakeAdapterKind, FakeInjectionPhase)> {
+    use FakeAdapterKind::{Gate, Lead, Monitor, Process, Reviewer, Service};
+    use FakeInjectionPhase::{
+        BlockerRecorded, CapacityPaused, CeilingRefused, CoordinatorInterrupted, DeferralRecorded,
+        DeferralTriggerObserved, GateCorrectionPassed, GateFailed, IntentPersisted,
+        MalformedReportRejected, RecoveryWithoutReplay, ReportRepairAccepted, ResumeRevalidated,
+        ReviewCorrectionPassed, ReviewFinding, StopRequested, StoppedAtCheckpoint,
+    };
+    match injection {
+        PrescribedInjection::GateCorrection => {
+            vec![(Gate, GateFailed), (Gate, GateCorrectionPassed)]
+        }
+        PrescribedInjection::ReviewCorrection => vec![
+            (Reviewer, ReviewFinding),
+            (Reviewer, ReviewCorrectionPassed),
+        ],
+        PrescribedInjection::ExternalBlocker => vec![(Lead, BlockerRecorded)],
+        PrescribedInjection::TemporaryDeferral => vec![(Lead, DeferralRecorded)],
+        PrescribedInjection::MalformedReportRepair => vec![
+            (Lead, MalformedReportRejected),
+            (Lead, ReportRepairAccepted),
+        ],
+        PrescribedInjection::CapacityPauseResume => {
+            vec![(Process, CapacityPaused), (Service, ResumeRevalidated)]
+        }
+        PrescribedInjection::InterruptedRecovery => vec![
+            (Service, IntentPersisted),
+            (Service, CoordinatorInterrupted),
+            (Service, RecoveryWithoutReplay),
+        ],
+        PrescribedInjection::StopAfterUnit => {
+            vec![(Monitor, StopRequested), (Service, StoppedAtCheckpoint)]
+        }
+        PrescribedInjection::RecordedDeferralTrigger => {
+            vec![(Monitor, DeferralTriggerObserved)]
+        }
+        PrescribedInjection::FinalCeiling => vec![(Service, CeilingRefused)],
+    }
 }
 
 fn observe_adapter(
@@ -1098,6 +1220,74 @@ mod tests {
         for (index, observation) in changed.observations.iter_mut().enumerate() {
             observation.sequence = u32::try_from(index).unwrap();
         }
+        mutations.push(changed);
+
+        for mutation in mutations {
+            assert_eq!(
+                mutation.verify(&schedule),
+                Err(SoakError::InvariantViolation)
+            );
+        }
+    }
+
+    #[test]
+    fn prescribed_faults_execute_at_their_exact_adapter_boundaries() {
+        let schedule = prescribed_ten_outcome_schedule();
+        let report = execute_prescribed_fake_adapters(&schedule).unwrap();
+        assert_eq!(report.injections.len(), 17);
+        assert_eq!(
+            report
+                .injections
+                .iter()
+                .map(|observation| observation.injection)
+                .collect::<BTreeSet<_>>(),
+            BTreeSet::from([
+                PrescribedInjection::GateCorrection,
+                PrescribedInjection::ReviewCorrection,
+                PrescribedInjection::ExternalBlocker,
+                PrescribedInjection::TemporaryDeferral,
+                PrescribedInjection::MalformedReportRepair,
+                PrescribedInjection::CapacityPauseResume,
+                PrescribedInjection::InterruptedRecovery,
+                PrescribedInjection::StopAfterUnit,
+                PrescribedInjection::RecordedDeferralTrigger,
+                PrescribedInjection::FinalCeiling,
+            ])
+        );
+        assert_eq!(
+            report.injections.last().map(|observation| (
+                observation.outcome_id,
+                observation.boundary,
+                observation.phase,
+            )),
+            Some((
+                "outcome-10-triggered-completion",
+                FakeAdapterKind::Service,
+                FakeInjectionPhase::CeilingRefused,
+            ))
+        );
+    }
+
+    #[test]
+    fn injection_reconciliation_refuses_missing_reordered_duplicate_and_wrong_boundary_events() {
+        let schedule = prescribed_ten_outcome_schedule();
+        let baseline = execute_prescribed_fake_adapters(&schedule).unwrap();
+        let mut mutations = Vec::new();
+
+        let mut changed = baseline.clone();
+        changed.injections.remove(0);
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.injections.swap(0, 1);
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.injections.push(changed.injections[0].clone());
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.injections[0].boundary = FakeAdapterKind::Git;
+        mutations.push(changed);
+        let mut changed = baseline;
+        changed.injections[0].phase = FakeInjectionPhase::ReviewFinding;
         mutations.push(changed);
 
         for mutation in mutations {
