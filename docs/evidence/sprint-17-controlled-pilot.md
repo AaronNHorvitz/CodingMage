@@ -1,8 +1,9 @@
 # Sprint 17 Controlled Target Pilot Evidence
 
-- **Status:** Preparation, fake-agent dry run, and first live supervised unit complete; five-unit and unattended pilots remain open
-- **CodingMage pilot build:** commit `c3b3103`
-- **Executed:** 2026-08-19 on Fedora Linux with Rust 1.95.0
+- **Status:** Preparation, fake-agent dry run, first live unit, and five-unit supervised qualification complete; background enablement and unattended pilots remain open
+- **Initial CodingMage pilot build:** commit `c3b3103`
+- **Five-unit qualification build:** commit `2631265`
+- **Executed:** 2026-08-19 and 2026-08-21 on Fedora Linux with Rust 1.95.0
 
 ## Authorization And Selection
 
@@ -33,6 +34,26 @@ The corrected exact candidate passed:
 
 The configured Codex CLI then reviewed only the exact source-to-candidate range in read-only mode. It verified the exact commit lineage and single-file scope and returned `pass` with zero findings. A deliberately mistyped target SHA in the first manual review packet was refused as missing rather than silently substituted; the corrected exact-SHA packet passed.
 
+## Five-Unit Supervised Qualification
+
+Commit `1c3a54f` added an explicit `codingmage-soak` qualification runner that materializes five separate clean repositories. Each repository contains one canonical open sub-task, one owned text file, one unowned expected file, and an exact-content `/usr/bin/cmp` gate. The runner uses the production `codingmage run` path with existing-login discovery, local-only publication, a Claude `opus` implementation profile, and a Codex `gpt-5.6-sol` read-only review profile. Routine test commands compile the runner but never invoke a live provider.
+
+The first prequalification attempt found a real fail-closed compatibility defect before candidate creation. Claude Code 2.1.136 interpreted CodingMage's single-leading-slash file-tool permission rules as project-relative paths and denied both authorized write tools. CodingMage released the worktree and returned `blocked` with no candidate or completion commit. Commit `2631265` changed only the permission-rule encoding to Claude's documented double-leading-slash absolute form, retained normal absolute paths for the OS sandbox, and added regression assertions for both representations. All eight focused adapter tests and strict Clippy passed before qualification resumed.
+
+The post-correction qualification completed five of five units:
+
+| Unit | Run | Candidate | Completion | Result |
+|---|---|---|---|---|
+| 1 | `run-0450fbb27ac1c964ef703dab76e52162` | `b48370a2dfafeec4d2a5e8cee1980e4921b26ce5` | `54093d2626da2005265bc4a7edede89c4fc2bd93` | complete, review pass |
+| 2 | `run-747efe8c990d99d366c3ef5693bb3b0d` | `968eb4be416fc47a0c94d4be388a4e1212f56c94` | `24eb40b00c1ccaab55af5594818bd98b6ae8c460` | complete, review pass |
+| 3 | `run-dc2f40b21fdce735901a3cb5d63d7406` | `159e8d70c7e933327c9fd6658266ec7c6595750e` | `1bc21a23bdf4cec192b9e38be2debe0ae531f777` | complete, review pass |
+| 4 | `run-a009fb524cd0a96ee0b50cef2093fa9c` | `53d4bb2f3240c870514c059242916d494eb75f78` | `cc5395ad118aad180328b6ea8b14e601acf09844` | complete, review pass |
+| 5 | `run-ebc601ce911d8e609eeeff3199105499` | `5b3af7da4631d6925da3577f810b02a6ce5c754f` | `a7cb2783ede545248b1c44da9b2230c3b3775908` | complete, review pass |
+
+Every unit consumed exactly two provider attempts and eleven total process invocations, with zero malformed-report repairs and zero correction rounds. Each active checkout retained its exact original HEAD, porcelain status, task source, and artifact bytes. Each candidate retained the unchecked task source and the exact expected artifact; each separate completion commit was the candidate's direct child and changed the canonical sub-task marker. Each disposable repository ended with exactly its active worktree plus one retained local integration branch, an empty scratch root, and one terminal `release:succeeded` journal. A second process inspection found no qualification-owned CodingMage, Claude, or Codex process. The release binary SHA-256 was `a4d774eaf858d37043b29f15e42c880c8e7e2aeffaec790ba557d97033bc9425`.
+
+The disposable fixtures and content-minimized journals remain under the operator's private CodingMage qualification state for review. No fixture branch was pushed, merged, or published. This evidence qualifies five supervised bounded units; it does not authorize background execution or establish an unattended production-target claim.
+
 ## Preserved Limits
 
-The pilot branch was local only. It was not pushed, merged, or used to change the target's canonical task checkbox. The original durable run did not reach its checkpoint because the gate profile failed before execution; the subsequent gate and review evidence was supervised manually and is stated as such. This closes one live implementation-and-review unit, not the five-unit campaign, unattended workflow, automatic correction, service execution, sustained soak, external blocker, or publication gates.
+The original pilot branch was local only. It was not pushed, merged, or used to change the target's canonical task checkbox. The original durable run did not reach its checkpoint because the gate profile failed before execution; the subsequent gate and review evidence was supervised manually and is stated as such. The later disposable campaign closes the five-unit supervised requirement after the permission-rule correction, but not background enablement, an unattended workflow, service execution, sustained production-target soak, external blocker handling, or publication gates.
