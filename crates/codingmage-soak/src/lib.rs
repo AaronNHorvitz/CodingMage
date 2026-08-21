@@ -7,6 +7,206 @@ use std::{
     process::{Command, Stdio},
 };
 
+/// Exact number of accepted outcomes in the prescribed disposable qualification schedule.
+pub const PRESCRIBED_OUTCOME_COUNT: usize = 10;
+
+/// Durable classification consumed by one prescribed campaign outcome.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum PrescribedDisposition {
+    /// A reviewed task completion.
+    Completed,
+    /// A truthful external blocker.
+    Blocked,
+    /// A typed temporary deferral.
+    Deferred,
+}
+
+/// Deterministic fault or control boundary exercised by the prescribed schedule.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum PrescribedInjection {
+    /// Required gate fails before a passing correction.
+    GateCorrection,
+    /// Senior review requires a correction and fresh review.
+    ReviewCorrection,
+    /// One task records an unavailable external prerequisite.
+    ExternalBlocker,
+    /// One task records a typed temporary deferral.
+    TemporaryDeferral,
+    /// Provider output is malformed before bounded repair.
+    MalformedReportRepair,
+    /// Provider capacity pauses and resumes after revalidation.
+    CapacityPauseResume,
+    /// Coordinator interruption follows durable intent and recovers without replay.
+    InterruptedRecovery,
+    /// Stop-after-unit ends at the next clean checkpoint.
+    StopAfterUnit,
+    /// The recorded deferral trigger makes the exact task eligible again.
+    RecordedDeferralTrigger,
+    /// The exact accepted-outcome ceiling refuses further admission.
+    FinalCeiling,
+}
+
+/// One immutable accepted outcome in the prescribed disposable campaign.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PrescribedOutcome {
+    /// One-based stable outcome sequence.
+    pub sequence: u8,
+    /// Stable outcome identity independent of the task identity.
+    pub outcome_id: &'static str,
+    /// Canonical fixture task identity.
+    pub task_id: &'static str,
+    /// Durable accepted disposition.
+    pub disposition: PrescribedDisposition,
+    /// Ordered fault and control boundaries exercised by this outcome.
+    pub injections: &'static [PrescribedInjection],
+}
+
+/// Exact immutable ten-outcome fixture schedule.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PrescribedSchedule {
+    /// Maximum concurrent pod count.
+    pub max_parallel_pods: u8,
+    /// Closed publication mode for the disposable campaign.
+    pub publication: &'static str,
+    /// Exact accepted-outcome ceiling.
+    pub max_accepted_outcomes: u8,
+    /// Ordered accepted outcomes.
+    pub outcomes: Vec<PrescribedOutcome>,
+}
+
+impl PrescribedSchedule {
+    /// Verifies the exact prescribed identities, ordering, classifications, and injections.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SoakError::InvalidConfiguration`] for any schedule drift.
+    pub fn validate(&self) -> Result<(), SoakError> {
+        if self.max_parallel_pods != 1
+            || self.publication != "local_only"
+            || usize::from(self.max_accepted_outcomes) != PRESCRIBED_OUTCOME_COUNT
+            || self.outcomes != prescribed_outcomes()
+        {
+            return Err(SoakError::InvalidConfiguration);
+        }
+        Ok(())
+    }
+}
+
+const GATE_CORRECTION: &[PrescribedInjection] = &[PrescribedInjection::GateCorrection];
+const REVIEW_CORRECTION: &[PrescribedInjection] = &[PrescribedInjection::ReviewCorrection];
+const EXTERNAL_BLOCKER: &[PrescribedInjection] = &[PrescribedInjection::ExternalBlocker];
+const TEMPORARY_DEFERRAL: &[PrescribedInjection] = &[PrescribedInjection::TemporaryDeferral];
+const MALFORMED_REPORT: &[PrescribedInjection] = &[PrescribedInjection::MalformedReportRepair];
+const CAPACITY_PAUSE: &[PrescribedInjection] = &[PrescribedInjection::CapacityPauseResume];
+const INTERRUPTED_RECOVERY: &[PrescribedInjection] = &[PrescribedInjection::InterruptedRecovery];
+const STOP_AFTER_UNIT: &[PrescribedInjection] = &[PrescribedInjection::StopAfterUnit];
+const TRIGGER_AND_CEILING: &[PrescribedInjection] = &[
+    PrescribedInjection::RecordedDeferralTrigger,
+    PrescribedInjection::FinalCeiling,
+];
+
+fn prescribed_outcomes() -> Vec<PrescribedOutcome> {
+    vec![
+        prescribed_outcome(
+            1,
+            "outcome-01-clean",
+            "0.1.1.1",
+            PrescribedDisposition::Completed,
+            &[],
+        ),
+        prescribed_outcome(
+            2,
+            "outcome-02-gate-correction",
+            "0.1.1.2",
+            PrescribedDisposition::Completed,
+            GATE_CORRECTION,
+        ),
+        prescribed_outcome(
+            3,
+            "outcome-03-review-correction",
+            "0.1.1.3",
+            PrescribedDisposition::Completed,
+            REVIEW_CORRECTION,
+        ),
+        prescribed_outcome(
+            4,
+            "outcome-04-blocker",
+            "0.1.1.4",
+            PrescribedDisposition::Blocked,
+            EXTERNAL_BLOCKER,
+        ),
+        prescribed_outcome(
+            5,
+            "outcome-05-deferral",
+            "0.1.1.5",
+            PrescribedDisposition::Deferred,
+            TEMPORARY_DEFERRAL,
+        ),
+        prescribed_outcome(
+            6,
+            "outcome-06-malformed-repair",
+            "0.1.1.6",
+            PrescribedDisposition::Completed,
+            MALFORMED_REPORT,
+        ),
+        prescribed_outcome(
+            7,
+            "outcome-07-capacity-resume",
+            "0.1.1.7",
+            PrescribedDisposition::Completed,
+            CAPACITY_PAUSE,
+        ),
+        prescribed_outcome(
+            8,
+            "outcome-08-interruption-recovery",
+            "0.1.1.8",
+            PrescribedDisposition::Completed,
+            INTERRUPTED_RECOVERY,
+        ),
+        prescribed_outcome(
+            9,
+            "outcome-09-stop-after-unit",
+            "0.1.1.9",
+            PrescribedDisposition::Completed,
+            STOP_AFTER_UNIT,
+        ),
+        prescribed_outcome(
+            10,
+            "outcome-10-triggered-completion",
+            "0.1.1.5",
+            PrescribedDisposition::Completed,
+            TRIGGER_AND_CEILING,
+        ),
+    ]
+}
+
+const fn prescribed_outcome(
+    sequence: u8,
+    outcome_id: &'static str,
+    task_id: &'static str,
+    disposition: PrescribedDisposition,
+    injections: &'static [PrescribedInjection],
+) -> PrescribedOutcome {
+    PrescribedOutcome {
+        sequence,
+        outcome_id,
+        task_id,
+        disposition,
+        injections,
+    }
+}
+
+/// Returns the exact source-independent disposable qualification schedule.
+#[must_use]
+pub fn prescribed_ten_outcome_schedule() -> PrescribedSchedule {
+    PrescribedSchedule {
+        max_parallel_pods: 1,
+        publication: "local_only",
+        max_accepted_outcomes: 10,
+        outcomes: prescribed_outcomes(),
+    }
+}
+
 /// Disposable target shape exercised by a campaign.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum FixtureKind {
@@ -498,6 +698,82 @@ mod tests {
                 })
                 .collect(),
             max_retained_events: 128,
+        }
+    }
+
+    #[test]
+    fn prescribed_schedule_has_exact_stable_outcomes_and_boundary_identities() {
+        let schedule = prescribed_ten_outcome_schedule();
+        schedule.validate().unwrap();
+        assert_eq!(schedule.outcomes.len(), PRESCRIBED_OUTCOME_COUNT);
+        assert_eq!(schedule.max_accepted_outcomes, 10);
+        assert_eq!(schedule.max_parallel_pods, 1);
+        assert_eq!(schedule.publication, "local_only");
+        assert_eq!(
+            schedule
+                .outcomes
+                .iter()
+                .map(|outcome| outcome.sequence)
+                .collect::<Vec<_>>(),
+            (1..=10).collect::<Vec<_>>()
+        );
+        assert_eq!(
+            schedule
+                .outcomes
+                .iter()
+                .map(|outcome| outcome.outcome_id)
+                .collect::<BTreeSet<_>>()
+                .len(),
+            PRESCRIBED_OUTCOME_COUNT
+        );
+        assert_eq!(
+            schedule
+                .outcomes
+                .iter()
+                .filter(|outcome| outcome.disposition == PrescribedDisposition::Completed)
+                .count(),
+            8
+        );
+        assert_eq!(
+            schedule.outcomes[4].task_id, schedule.outcomes[9].task_id,
+            "only the deferred task returns after its recorded trigger"
+        );
+        assert_eq!(
+            schedule.outcomes[9].injections, TRIGGER_AND_CEILING,
+            "the final accepted completion consumes the deferred task and enforces the ceiling"
+        );
+        assert_eq!(prescribed_ten_outcome_schedule(), schedule);
+    }
+
+    #[test]
+    fn prescribed_schedule_rejects_every_identity_and_policy_drift() {
+        let baseline = prescribed_ten_outcome_schedule();
+        let mut mutations = Vec::new();
+
+        let mut changed = baseline.clone();
+        changed.max_parallel_pods = 2;
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.publication = "draft_pull_request";
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.max_accepted_outcomes = 11;
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.outcomes.pop();
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.outcomes.swap(0, 1);
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.outcomes[4].task_id = "0.1.1.50";
+        mutations.push(changed);
+        let mut changed = baseline;
+        changed.outcomes[9].injections = &[PrescribedInjection::FinalCeiling];
+        mutations.push(changed);
+
+        for mutation in mutations {
+            assert_eq!(mutation.validate(), Err(SoakError::InvalidConfiguration));
         }
     }
 
