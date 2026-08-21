@@ -492,6 +492,7 @@ profiles = ["configured-gates"]
         serde_json::from_slice(&interrupted_status.stdout).unwrap();
     assert_eq!(interrupted_status["state"], "integrating");
     assert_eq!(interrupted_status["current_task_id"], "0.1.1.2");
+    assert_eq!(interrupted_status["current_round"], 0);
     assert_eq!(interrupted_status["completed_units"], 0);
 
     let premature_observation = Fixture::command(&[
@@ -662,6 +663,7 @@ profiles = ["configured-gates"]
     assert_eq!(status["completed_units"], 2);
     assert_eq!(status["blocker_count"], 0);
     assert_eq!(status["current_task_id"], serde_json::Value::Null);
+    assert_eq!(status["current_round"], serde_json::Value::Null);
     assert_eq!(status["last_task_id"], "0.1.1.1");
 }
 
@@ -861,6 +863,19 @@ profiles = ["configured-gates"]
         .unwrap();
     }));
     assert!(interrupted.is_err());
+
+    let interrupted_status = Fixture::command(&[
+        "campaign-status",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(interrupted_status.status.success());
+    let interrupted_status: serde_json::Value =
+        serde_json::from_slice(&interrupted_status.stdout).unwrap();
+    assert_eq!(interrupted_status["current_task_id"], "0.1.1.1");
+    assert_eq!(interrupted_status["current_round"], 0);
 
     let run = Fixture::command(&[
         "campaign",
@@ -1455,6 +1470,7 @@ profiles = ["configured-gates"]
     let status: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
     assert_eq!(status["state"], "paused");
     assert_eq!(status["current_task_id"], serde_json::Value::Null);
+    assert_eq!(status["current_round"], serde_json::Value::Null);
     assert_eq!(status["last_task_id"], "0.1.1.1");
     assert_eq!(status["blocker_count"], 1);
     assert_eq!(

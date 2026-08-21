@@ -387,6 +387,8 @@ pub struct CampaignStatus {
     pub head: String,
     /// Current task only while a unit is active.
     pub current_task_id: Option<String>,
+    /// Current correction round for an active unit; zero before the first correction.
+    pub current_round: Option<u16>,
     /// Last selected task at a clean boundary.
     pub last_task_id: Option<String>,
     /// Number of accepted, reconciled campaign units.
@@ -463,6 +465,18 @@ pub fn campaign_status(
         &spec.initial_commit,
     )?;
     let elapsed_ms = checkpoint.elapsed_ms()?;
+    let current_round = match checkpoint.active_unit.as_ref() {
+        Some(active) => match active.run_id.as_ref() {
+            Some(run_id) => Some(
+                CorrectionCheckpoint::latest(
+                    &config.state_root.join("runs").join(run_id.as_str()),
+                )?
+                .map_or(0, |correction| correction.correction_round),
+            ),
+            None => None,
+        },
+        None => None,
+    };
     Ok(Some(CampaignStatus {
         schema_version: 1,
         campaign_id: checkpoint.campaign_id,
@@ -471,6 +485,7 @@ pub fn campaign_status(
         branch: checkpoint.branch,
         head: checkpoint.head,
         current_task_id: checkpoint.active_unit.map(|unit| unit.task_id),
+        current_round,
         last_task_id: checkpoint.last_task_id,
         completed_units: checkpoint.completed_units,
         blocker_count: u32::try_from(checkpoint.blocked_task_ids.len())
