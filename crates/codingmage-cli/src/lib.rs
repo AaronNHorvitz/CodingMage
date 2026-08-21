@@ -19,7 +19,7 @@ use codingmage_plan::TaskPlan;
 use codingmage_runtime::{
     RunProgress, RunSpec, RuntimeError, campaign_blocker_explanation, campaign_status,
     clear_campaign_blocker, observe_campaign_deferral_trigger, request_campaign_control,
-    run_one_with_progress, run_serial_campaign_with_progress,
+    run_one_with_progress, run_team_campaign_with_progress,
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -152,7 +152,7 @@ fn execute_campaign(arguments: &[String]) -> Result<String, CliError> {
         .map_err(|_| CliError::InvalidArgument)?;
     let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
     let started = Instant::now();
-    let outcome = run_serial_campaign_with_progress(&config, spec, &executable, |progress| {
+    let outcome = run_team_campaign_with_progress(&config, spec, &executable, |progress| {
         write_progress(started.elapsed(), progress);
     })
     .map_err(CliError::Runtime)?;

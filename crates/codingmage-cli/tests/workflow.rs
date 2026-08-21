@@ -10,9 +10,16 @@ use std::{
     time::{Duration, Instant},
 };
 
-use codingmage_campaign::CampaignSpec;
+use codingmage_campaign::{
+    CampaignAuthentication, CampaignConcurrency, CampaignExecutionMode, CampaignGateTier,
+    CampaignLimits, CampaignProvider, CampaignPublication, CampaignSpec,
+    DestinationPromotionPolicy, MultiAgentPolicy, TaskIntegrationPolicy, TaskMergeStrategy,
+    TaskPublicationMode, TeamResourcePolicy,
+};
 use codingmage_core::load_config;
-use codingmage_runtime::{ProgressStage, run_serial_campaign_with_progress};
+use codingmage_runtime::{
+    ProgressStage, run_serial_campaign_with_progress, run_team_campaign_with_progress,
+};
 
 struct Fixture {
     root: std::path::PathBuf,
@@ -967,6 +974,245 @@ profiles = ["configured-gates"]
     assert_eq!(status["current_task_id"], serde_json::Value::Null);
     assert_eq!(status["current_round"], serde_json::Value::Null);
     assert_eq!(status["last_task_id"], "0.1.1.1");
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn parallel_campaign_runs_two_pods_and_serializes_reviewed_integrations() {
+    let fixture = Fixture::new();
+    let target = fixture.root.join("target");
+    fs::create_dir(target.join("src")).unwrap();
+    fs::write(target.join("src/a.rs"), "pub fn a() -> u8 { 1 }\n").unwrap();
+    fs::write(target.join("src/b.rs"), "pub fn b() -> u8 { 1 }\n").unwrap();
+    let task_source = "# Tasks\n\n## Sprint 0 - Start\n\n**Sprint goal:** Start safely.\n\n### Story 0.1 - Parallel work\n\n- [ ] **Task 0.1.1 - Work**\n  - [ ] **Sub-task 0.1.1.1:** Complete source A independently.\n  - [ ] **Sub-task 0.1.1.2:** Complete source B independently.\n";
+    fs::write(target.join("TASKS.md"), task_source).unwrap();
+    git(&target, &["add", "TASKS.md", "src/a.rs", "src/b.rs"]);
+    git(&target, &["commit", "-m", "add parallel campaign fixture"]);
+    let original_head = git_output(&target, &["rev-parse", "HEAD"]);
+    let original_tasks = fs::read(target.join("TASKS.md")).unwrap();
+    let original_a = fs::read(target.join("src/a.rs")).unwrap();
+    let original_b = fs::read(target.join("src/b.rs")).unwrap();
+
+    let claude = fixture.executable(
+        "parallel-claude",
+        r#"#!/usr/bin/python3
+import json, re, sys, time
+from pathlib import Path
+if "--version" in sys.argv:
+    print("2.1.136 (Claude Code)")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
+    raise SystemExit(0)
+packet = sys.stdin.read()
+task = re.search(r"Task: ([0-9.]+)", packet).group(1)
+path = Path("src/a.rs" if task.endswith(".1") else "src/b.rs")
+log = Path(__file__).with_name("parallel-pods.log")
+with log.open("a", encoding="utf-8") as stream:
+    stream.write(f"{task} start {time.monotonic_ns()}\n")
+time.sleep(0.4)
+path.write_text(path.read_text(encoding="utf-8").replace("{ 1 }", "{ 2 }"), encoding="utf-8")
+with log.open("a", encoding="utf-8") as stream:
+    stream.write(f"{task} end {time.monotonic_ns()}\n")
+print(json.dumps({
+    "type": "result", "is_error": False,
+    "structured_output": {
+        "changed_paths": [str(path)], "tests": [], "commit": None,
+        "ready_for_commit": True, "limitations": [], "blocker_code": None
+    }
+}))
+"#,
+    );
+    let codex = fixture.executable(
+        "parallel-codex",
+        r#"#!/usr/bin/python3
+import json, re, sys
+if "--version" in sys.argv:
+    print("codex-cli 0.144.5")
+    raise SystemExit(0)
+if "--help" in sys.argv and "resume" in sys.argv:
+    print("SESSION_ID --json --output-schema --model --ignore-user-config")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print("Run Codex non-interactively --json --output-schema resume --model read-only --ignore-user-config")
+    raise SystemExit(0)
+packet = sys.stdin.read()
+if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
+    campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
+    head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
+    digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
+    tasks = re.findall(r"- id=([0-9.]+)", packet)
+    proposals = []
+    for task in tasks:
+        path = "src/a.rs" if task.endswith(".1") else "src/b.rs"
+        proposals.append({
+            "task_id": task, "dependencies": [], "owned_paths": [path],
+            "gate_tiers": ["focused"], "test_resources": [f"fixture-{task}"],
+            "expected_artifacts": [path], "risk": "routine",
+            "rationale_summary": "The task is dependency-ready and owns one exact file."
+        })
+    report = {
+        "campaign_id": campaign_id, "campaign_head": head,
+        "task_source_sha256": digest, "disposition": "propose",
+        "proposals": proposals, "blocked": None, "deferred": None,
+        "human_decision": None
+    }
+else:
+    base = re.search(r"Base commit: ([0-9a-f]{40,64})", packet).group(1)
+    target = re.search(r"Target commit: ([0-9a-f]{40,64})", packet).group(1)
+    report = {
+        "verdict": "pass", "base_commit": base, "target_commit": target,
+        "findings": [], "blocker_code": None
+    }
+print(json.dumps({"type": "thread.started", "thread_id": "123e4567-e89b-12d3-a456-426614174000"}))
+print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps(report)}}))
+print(json.dumps({"type": "turn.completed"}))
+"#,
+    );
+    let gate = fixture.executable("parallel-gate", "#!/bin/sh\nexit 0\n");
+    let config = fixture.root.join("config/parallel-campaign.toml");
+    let scratch = fixture.root.join("parallel-scratch");
+    let state = fixture.root.join("parallel-state");
+    assert!(
+        Fixture::command(&[
+            "init",
+            "--repo",
+            target.to_str().unwrap(),
+            "--config",
+            config.to_str().unwrap(),
+            "--scratch",
+            scratch.to_str().unwrap(),
+            "--state",
+            state.to_str().unwrap(),
+        ])
+        .status
+        .success()
+    );
+    let configured = fs::read_to_string(&config).unwrap();
+    fs::write(
+        &config,
+        configured.replace("/usr/bin/git", gate.to_str().unwrap()),
+    )
+    .unwrap();
+    let doctor = Fixture::command(&["doctor", "--config", config.to_str().unwrap()]);
+    let diagnosis: serde_json::Value = serde_json::from_slice(&doctor.stdout).unwrap();
+    let provider = |executable: &Path, model: &str| CampaignProvider {
+        executable: executable.to_path_buf(),
+        model: model.to_owned(),
+        effort: "high".to_owned(),
+    };
+    let spec = CampaignSpec {
+        version: 3,
+        campaign_id: "parallel-fixture".to_owned(),
+        repository_id: diagnosis["repository_id"].as_str().unwrap().to_owned(),
+        repository_path: target.clone(),
+        initial_commit: diagnosis["head"].as_str().unwrap().to_owned(),
+        task_source_sha256: diagnosis["task_source_sha256"].as_str().unwrap().to_owned(),
+        operator_authorization_sha256: "a".repeat(64),
+        max_parallel_pods: 2,
+        max_units: 2,
+        limits: CampaignLimits {
+            provider_attempts: 1_000,
+            malformed_report_repairs: 100,
+            correction_rounds: 100,
+            process_invocations: 10_000,
+            output_bytes: 1_073_741_824,
+            retained_state_bytes: 1_073_741_824,
+            execution_elapsed_ms: 86_400_000,
+        },
+        team_lead: provider(&codex, "fixture-lead"),
+        implementer: provider(&claude, "fixture-implementer"),
+        implementer_authentication: CampaignAuthentication::ExistingLogin,
+        reviewer: provider(&codex, "fixture-reviewer"),
+        gate_tiers: vec![CampaignGateTier {
+            name: "focused".to_owned(),
+            profiles: vec!["configured-gates".to_owned()],
+        }],
+        campaign_branch: "codingmage/parallel-fixture".to_owned(),
+        allowed_paths: vec![PathBuf::from("src")],
+        denied_paths: vec![],
+        protected_branches: vec!["main".to_owned()],
+        publication: CampaignPublication::LocalOnly,
+        multi_agent: Some(MultiAgentPolicy {
+            version: 1,
+            execution_mode: CampaignExecutionMode::Parallel,
+            publication_mode: TaskPublicationMode::LocalOnly,
+            task_integration_policy: TaskIntegrationPolicy::AutoToCampaignBranch,
+            destination_promotion_policy: DestinationPromotionPolicy::HumanRequired,
+            task_merge_strategy: TaskMergeStrategy::Squash,
+            concurrency: CampaignConcurrency {
+                claude_implementers: 2,
+                codex_team_leads: 1,
+                codex_reviewers: 2,
+                test_workers: 2,
+                github_writers: 1,
+                integration_workers: 1,
+            },
+            resources: TeamResourcePolicy::default(),
+            max_campaign_tokens: 1_000_000,
+            max_task_tokens: 500_000,
+            max_task_correction_cycles: 3,
+            max_follow_up_tasks: 0,
+        }),
+    };
+    spec.verify().unwrap();
+    let config_value = load_config(&config).unwrap();
+    let mut progress = Vec::new();
+    let outcome = run_team_campaign_with_progress(
+        &config_value,
+        spec,
+        Path::new(env!("CARGO_BIN_EXE_codingmage")),
+        |event| progress.push(event),
+    )
+    .unwrap();
+
+    assert_eq!(outcome.state, codingmage_runtime::CampaignState::Complete);
+    assert_eq!(outcome.completed_units, 2);
+    assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
+    assert_eq!(git_output(&target, &["status", "--porcelain=v1"]), "");
+    assert_eq!(fs::read(target.join("TASKS.md")).unwrap(), original_tasks);
+    assert_eq!(fs::read(target.join("src/a.rs")).unwrap(), original_a);
+    assert_eq!(fs::read(target.join("src/b.rs")).unwrap(), original_b);
+    let completed = git_output(&target, &["show", &format!("{}:TASKS.md", outcome.branch)]);
+    assert!(completed.contains("- [x] **Sub-task 0.1.1.1:**"));
+    assert!(completed.contains("- [x] **Sub-task 0.1.1.2:**"));
+    assert_eq!(
+        git_output(&target, &["show", &format!("{}:src/a.rs", outcome.branch)]),
+        "pub fn a() -> u8 { 2 }"
+    );
+    assert_eq!(
+        git_output(&target, &["show", &format!("{}:src/b.rs", outcome.branch)]),
+        "pub fn b() -> u8 { 2 }"
+    );
+    assert_eq!(
+        progress
+            .iter()
+            .filter(|event| event.stage == ProgressStage::Implementing)
+            .count(),
+        2
+    );
+    assert_eq!(
+        progress
+            .iter()
+            .filter(|event| event.stage == ProgressStage::Integrating)
+            .count(),
+        2
+    );
+    let timings = fs::read_to_string(fixture.root.join("parallel-pods.log")).unwrap();
+    let mut starts = BTreeMap::new();
+    let mut ends = BTreeMap::new();
+    for line in timings.lines() {
+        let fields = line.split_whitespace().collect::<Vec<_>>();
+        let timestamp = fields[2].parse::<u128>().unwrap();
+        if fields[1] == "start" {
+            starts.insert(fields[0], timestamp);
+        } else {
+            ends.insert(fields[0], timestamp);
+        }
+    }
+    assert_eq!(starts.len(), 2);
+    assert_eq!(ends.len(), 2);
+    assert!(starts.values().max().unwrap() < ends.values().min().unwrap());
 }
 
 #[test]
