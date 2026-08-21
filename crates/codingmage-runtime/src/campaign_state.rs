@@ -2353,4 +2353,34 @@ mod tests {
         );
         assert_eq!(CampaignControlAction::parse("unknown"), None);
     }
+
+    #[test]
+    fn stop_and_cancel_controls_map_to_exact_campaign_termination() {
+        let stop_root = root("stop-termination");
+        let mut stopped = checkpoint();
+        stopped.persist(&stop_root).unwrap();
+        stopped.stop_after_unit = true;
+        let termination = crate::campaign_control_termination(&mut stopped, &stop_root)
+            .unwrap()
+            .unwrap();
+        assert_eq!(termination.state, crate::CampaignState::Paused);
+        assert_eq!(termination.reason, crate::CampaignStopReason::StopAfterUnit);
+        assert_eq!(stopped.phase, CampaignPhase::Paused);
+
+        let cancel_root = root("cancel-termination");
+        let mut cancelled = checkpoint();
+        cancelled.persist(&cancel_root).unwrap();
+        cancelled.cancelled = true;
+        let termination = crate::campaign_control_termination(&mut cancelled, &cancel_root)
+            .unwrap()
+            .unwrap();
+        assert_eq!(termination.state, crate::CampaignState::Cancelled);
+        assert_eq!(
+            termination.reason,
+            crate::CampaignStopReason::OperatorCancellation
+        );
+        assert_eq!(cancelled.phase, CampaignPhase::Cancelled);
+        fs::remove_dir_all(stop_root).unwrap();
+        fs::remove_dir_all(cancel_root).unwrap();
+    }
 }
