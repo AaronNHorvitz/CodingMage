@@ -143,6 +143,13 @@ cancellation tokens to the exact guarded lead, provider, reviewer, probe, and de
 processes. Their owned process groups are terminated and reaped before the coordinator records the
 terminal cancellation. Unrelated processes are never selected by name or signalled.
 
+Resume creates a durable `pending` validation state. Before admission, the coordinator revalidates
+the active repository, exact campaign worktree and head, campaign authority, queue and deferred
+trigger projections, accepted-outcome and aggregate limits, and the capability surfaces of the
+configured implementer, lead, and reviewer executables. Capability probes use the same guarded
+process runtime and contribute their actual process, output, and elapsed observations. A failed or
+interrupted proof remains pending across restart and must pass in full before work can continue.
+
 `campaign-clear-blocker` is an explicit same-user mutation. The campaign state directory and
 checkpoint must remain owned by the invoking Linux user with no group or world access. The command
 binds a fresh request ID to one blocked task, its typed reason, current campaign head, current task
@@ -242,13 +249,12 @@ an unbounded provider-invocation loop.
   exists. Aggregate ceilings are enforced before campaign admission and delegated unit effects;
   pause, resume, stop-after-unit, and exact-descendant cancel projections are implemented. Missing
   request or applied journal observations are reconciled exactly once from integrity-bound intent
-  and checkpoint state. Exhaustive restart evidence and interrupted initial-implementation resume
-  remain open.
+  and checkpoint state. Resume revalidation is itself a durable admission prerequisite. Exhaustive
+  control-boundary restart evidence and interrupted initial-implementation resume remain open.
 - Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable.
   Binary evidence proves quota and authentication pauses preserve zero accepted work and the active
   checkout before a later authorized provider invocation succeeds; CodingMage does not inspect,
-  retain, or refresh credentials. Interrupted initial-implementation recovery and operator
-  stop-after-unit controls remain open.
+  retain, or refresh credentials. Interrupted initial-implementation recovery remains open.
 - Campaign execution is bounded by unit, attempt, correction, process, output, and resource limits;
   no monetary value is part of campaign or provider authority.
 - Blocked tasks and deferrals survive restart, remain unchecked, and suppress only their exact task.

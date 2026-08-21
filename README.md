@@ -284,9 +284,9 @@ The intended entry point is `codingmage monitor --config /absolute/codingmage.to
 attachable TUI is not implemented in the current release. The current stderr activity stream and the
 process-level `watch` command below are the available monitoring surfaces today.
 
-Planned controls include `status`, `pause`, `resume`, `stop-after-unit`, `cancel`, `open-diff`,
-`open-log`, and `explain-blocker`. Cancellation must terminate only CodingMage-owned descendants and
-leave the target repository recoverable.
+The CLI currently provides `campaign-status`, `pause`, `resume`, `stop-after-unit`, and `cancel`.
+The attachable monitor still plans `open-diff`, `open-log`, and `explain-blocker` views. Cancellation
+terminates only CodingMage-owned descendants and leaves the target repository recoverable.
 
 ## Background Operation
 
@@ -465,6 +465,12 @@ process guard terminates CodingMage-owned provider descendants, and durable stat
 for diagnosis. Because production re-observation and same-run resume are not complete yet, an
 interrupted unit must not be assumed successful or automatically resumed. Do not manually delete its
 state, worktree, or retained branch; inspect the repository and run `doctor` first.
+
+An authenticated campaign resume is a new admission boundary. Before another unit can start,
+CodingMage revalidates the active repository, isolated campaign worktree and head, campaign
+authority, queue and deferral projections, every aggregate limit, and the installed capability
+surface of each configured provider. A failed proof remains `pending` in the integrity-bound
+checkpoint and is retried after restart; it cannot be bypassed by rerunning the campaign.
 
 To start a new supervised unit with the installed live-progress feature:
 

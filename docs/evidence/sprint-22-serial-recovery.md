@@ -16,6 +16,8 @@
 - **Control-journal reconciliation commit:** `96a0e8b`
 - **Exact-descendant cancellation commit:** `f19c33e`
 - **Stop-after-unit evidence commit:** `800c215`
+- **Resume-revalidation implementation commit:** `d860194`
+- **Durable pending-resume commit:** `a6fe0a9`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -121,8 +123,9 @@ contradictory accepted counts or partial control projections.
 
 ## Operator Control Inbox
 
-Checkpoint schema 6 includes `operator_paused`, `stop_after_unit`, `cancelled`, and the ordered set
-of applied control request IDs. A same-user caller can submit only `pause`, `resume`,
+Checkpoint schema 7 includes `operator_paused`, `stop_after_unit`, `cancelled`, the closed
+`resume_validation` state, and the ordered set of applied control request IDs. A same-user caller
+can submit only `pause`, `resume`,
 `stop_after_unit`, or `cancel` through a create-once, integrity-bound request file beneath the
 campaign's private state root. The request binds the exact repository, campaign run, authority,
 action, request ID, and observed campaign head. Requests are consumed in a stable timestamp and ID
@@ -151,12 +154,22 @@ process and the active checkout remain untouched. The serial interruption fixtur
 stop-after-unit during implementation, proves the reviewed unit reconciles exactly once, admits no
 second unit, and continues only after a separately identified resume.
 
-This evidence closes `22.2.2.1` through `22.2.2.3`. The complete resume revalidation matrix and
-restart at every control-intent boundary remain open under `22.2.2.4` and `22.2.2.5`.
+Resume now creates a durable `pending` validation state before it clears an operator pause or stop.
+Before admission, the coordinator revalidates active-repository cleanliness and identity, the exact
+campaign worktree and head, campaign authority, task parsing, queue and deferred-trigger
+projections, accepted-outcome and aggregate limits, and all configured provider capability
+surfaces. Probe subprocesses are guarded and their actual process, output, and elapsed receipts are
+metered, including receipts collected before a later probe fails.
+
+The serial binary fixture deliberately removes required Claude capabilities after resume. The
+campaign refuses admission and persists `resume_validation = pending`; after restart and capability
+restoration, the same campaign must repeat and pass the complete proof before the lead can run.
+This evidence closes `22.2.2.1` through `22.2.2.4`. Restart at every control-intent boundary remains
+open under `22.2.2.5`.
 
 ## Fail-Closed Checkpoint Schema
 
-Campaign checkpoints now accept only the complete schema-2 projection. The production loader no
+Campaign checkpoints now accept only the complete schema-7 projection. The production loader no
 longer migrates an older shape by supplying empty collections for state that the stored digest did
 not authenticate. Five fixtures construct correctly hashed historical shapes that successively lack
 blocked tasks, typed blocker reasons, deferrals, human-decision holds, and rejected-proposal history;
@@ -199,13 +212,13 @@ closed.
 
 The binary workflow fixture injects one distinctively large malformed Claude completion response before any edit and
 then completes two bounded correction rounds. It verifies exactly six provider attempts, one
-metadata repair, ten provider-plus-gate processes, output exceeding the malformed response's byte
+metadata repair, fifteen capability-probe, provider, and gate processes, output exceeding the malformed response's byte
 count, and nonzero retained state while preserving the same reviewed completion result. Claude and
 Codex adapters retain the process receipt separately from provider-result interpretation, so quota,
 authentication, timeout, malformed-output, and other post-execution failures contribute their
 available output and elapsed observations without persisting provider content.
 
-Schema-5 campaign checkpoints aggregate successful and failed unit receipts plus lead attempts and
+Schema-7 campaign checkpoints aggregate successful and failed unit receipts plus lead attempts and
 all available lead-process observations. Each checkpoint records provider attempts, malformed-report
 repairs, correction rounds, process invocations, output bytes, retained campaign-state bytes, and
 observed execution milliseconds alongside each operator-authorized maximum; the hash-chained journal

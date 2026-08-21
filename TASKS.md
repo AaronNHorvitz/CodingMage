@@ -1018,7 +1018,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.2.2.1:** Wire same-user, exact-campaign `pause`, `resume`, `stop-after-unit`, and `cancel` controls into the production campaign loop. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.2.2:** Journal each control intent and observation with an idempotency key and reject stale, cross-run, duplicate-effect, or unauthorized requests. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.2.3:** Make pause prevent new admission, stop-after-unit finish the current bounded unit and checkpoint, and cancel terminate only exact owned descendants. See `docs/evidence/sprint-22-serial-recovery.md`.
-  - [ ] **Sub-task 22.2.2.4:** Revalidate repository, campaign authority, provider capability, deferred triggers, and limits before resume admits work.
+  - [x] **Sub-task 22.2.2.4:** Revalidate repository, campaign authority, provider capability, deferred triggers, and limits before resume admits work. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [ ] **Sub-task 22.2.2.5:** Prove repeated controls and restart at every control intent produce one terminal effect and preserve recoverable state.
 - [ ] **Task 22.2.3 - Enforce independent campaign limits**
   - [x] **Sub-task 22.2.3.1:** Make the campaign accepted-outcome ceiling count completed, blocked, and accepted deferred outcomes according to the documented contract without counting rejected proposals. See `docs/evidence/sprint-22-serial-recovery.md`.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.2.4`: revalidate repository, campaign authority, provider capability, deferral triggers, and every aggregate limit before resume admits work.
+- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.2.5`: prove restart and repeated delivery at every control-intent boundary produce one terminal effect and preserve recoverable state.
