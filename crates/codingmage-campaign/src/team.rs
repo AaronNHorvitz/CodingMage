@@ -1283,6 +1283,43 @@ impl CampaignTaskRecord {
         Ok(())
     }
 
+    /// Refreshes a dependency-ready unassigned task onto the current campaign head.
+    ///
+    /// Exact replay of the current base is observational. No task with an assigned runtime,
+    /// candidate, review, or remote publication identity may be rebased through this operation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for stale state, malformed head, or an already-assigned task.
+    pub fn refresh_ready_base(
+        &mut self,
+        campaign_head: String,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self.state != CampaignTaskState::Ready {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        if self.base_commit == campaign_head {
+            return Ok(());
+        }
+        if !valid_commit(&campaign_head)
+            || !valid_sha256(&evidence_sha256)
+            || self.pod_id.is_some()
+            || self.candidate_commit.is_some()
+            || self.issue_number.is_some()
+        {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let mut candidate = self.clone();
+        candidate.base_commit = campaign_head;
+        candidate.next_transition = candidate.next_transition.saturating_add(1);
+        candidate.last_evidence_sha256 = Some(evidence_sha256);
+        candidate.verify()?;
+        *self = candidate;
+        Ok(())
+    }
+
     /// Applies one ordered legal transition.
     ///
     /// # Errors
