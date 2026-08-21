@@ -341,7 +341,7 @@ pub struct CampaignStatus {
     pub last_task_id: Option<String>,
     /// Number of accepted, reconciled campaign units.
     pub completed_units: u32,
-    /// Number of durable blockers, currently zero or one.
+    /// Number of durable blocked tasks or one campaign-level blocker.
     pub blocker_count: u32,
     /// Content-free durable blocker code.
     pub blocker_code: Option<String>,
@@ -692,20 +692,19 @@ pub fn run_serial_campaign_with_progress(
                 .map_err(RuntimeError::Campaign)?;
             let proposals = match outcome {
                 TeamLeadOutcome::Proposals(proposals) => proposals,
-                TeamLeadOutcome::Blocked(_) => {
-                    let blocker_code = "codingmage.campaign.lead_blocked".to_owned();
-                    checkpoint.phase = CampaignPhase::Blocked;
+                TeamLeadOutcome::Blocked(blocker) => {
+                    let task_id = blocker.binding.task_id;
+                    if !checkpoint.blocked_task_ids.insert(task_id.clone()) {
+                        return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
+                    }
+                    checkpoint.blocked_reasons.insert(task_id, blocker.reason);
+                    let blocker_code =
+                        format!("codingmage.campaign.lead_blocked.{}", blocker.reason.code());
+                    checkpoint.phase = CampaignPhase::Ready;
+                    checkpoint.active_unit = None;
                     checkpoint.blocker_code = Some(blocker_code.clone());
                     checkpoint.persist(&campaign_root)?;
-                    return Ok(campaign_outcome(
-                        &spec,
-                        CampaignState::Blocked,
-                        &campaign,
-                        head,
-                        completed_units,
-                        last_task_id,
-                        Some(blocker_code),
-                    ));
+                    continue;
                 }
                 TeamLeadOutcome::Deferred(_) => {
                     let blocker_code = "codingmage.campaign.lead_deferred".to_owned();

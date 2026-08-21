@@ -46,6 +46,30 @@ pub enum LeadBlockedReason {
     ImplementationConditionOutsideAuthority,
 }
 
+impl LeadBlockedReason {
+    /// Stable content-free reason code for status and durable projections.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::UnavailableExternalDependency => "unavailable_external_dependency",
+            Self::UnavailableSupportedHardware => "unavailable_supported_hardware",
+            Self::MissingOperatorManagedAuthentication => "missing_operator_managed_authentication",
+            Self::UnavailableExternalService => "unavailable_external_service",
+            Self::UnsupportedPlatform => "unsupported_platform",
+            Self::BlockedPrerequisite => "blocked_prerequisite",
+            Self::ImplementationConditionOutsideAuthority => {
+                "implementation_condition_outside_authority"
+            }
+        }
+    }
+
+    /// Whether this reason can coherently apply to a task already proven dependency-ready.
+    #[must_use]
+    pub const fn valid_for_dependency_ready_task(self) -> bool {
+        !matches!(self, Self::BlockedPrerequisite)
+    }
+}
+
 /// Closed temporary deferral reasons.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]

@@ -790,6 +790,261 @@ profiles = ["configured-gates"]
 
 #[test]
 #[allow(clippy::too_many_lines)]
+fn serial_campaign_persists_blocker_and_continues_independent_work() {
+    let fixture = Fixture::new();
+    let target = fixture.root.join("target");
+    fs::create_dir(target.join("src")).unwrap();
+    fs::write(target.join("src/lib.rs"), "pub fn value() -> u8 { 1 }\n").unwrap();
+    let task_source = "# Tasks\n\n## Sprint 0 - Start\n\n**Sprint goal:** Start safely.\n\n### Story 0.1 - First\n\n- [ ] **Task 0.1.1 - Work**\n  - [ ] **Sub-task 0.1.1.1:** Wait for an external prerequisite.\n  - [ ] **Sub-task 0.1.1.2:** Complete independent local work.\n  - [ ] **Sub-task 0.1.1.3:** Complete work that depends on the blocker.\n<!-- depends-on: 0.1.1.1 -->\n";
+    fs::write(target.join("TASKS.md"), task_source).unwrap();
+    git(&target, &["add", "TASKS.md", "src/lib.rs"]);
+    git(
+        &target,
+        &["commit", "-m", "add blocker continuation fixture"],
+    );
+    let original_head = git_output(&target, &["rev-parse", "HEAD"]);
+
+    let claude = fixture.executable(
+        "blocker-claude",
+        r#"#!/usr/bin/python3
+import json, sys
+from pathlib import Path
+if "--version" in sys.argv:
+    print("2.1.136 (Claude Code)")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
+    raise SystemExit(0)
+root = Path(__file__).parent
+with (root / "blocker-claude.log").open("a", encoding="utf-8") as stream:
+    stream.write("implementation\n")
+Path("src/lib.rs").write_text("pub fn value() -> u8 { 2 }\n", encoding="utf-8")
+print(json.dumps({
+    "type": "result", "is_error": False,
+    "structured_output": {
+        "changed_paths": ["src/lib.rs"], "tests": [], "commit": None,
+        "ready_for_commit": True, "limitations": [], "blocker_code": None
+    }
+}))
+"#,
+    );
+    let codex = fixture.executable(
+        "blocker-codex",
+        r#"#!/usr/bin/python3
+import json, re, sys
+from pathlib import Path
+if "--version" in sys.argv:
+    print("codex-cli 0.144.5")
+    raise SystemExit(0)
+if "--help" in sys.argv and "resume" in sys.argv:
+    print("SESSION_ID --json --output-schema --model --ignore-user-config")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print("Run Codex non-interactively --json --output-schema resume --model read-only --ignore-user-config")
+    raise SystemExit(0)
+packet = sys.stdin.read()
+if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
+    root = Path(__file__).parent
+    with (root / "blocker-lead.log").open("a", encoding="utf-8") as stream:
+        stream.write("lead\n")
+    campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
+    head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
+    digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
+    tasks = re.findall(r"- id=([0-9.]+)", packet)
+    if "0.1.1.1" in tasks:
+        report = {
+            "campaign_id": campaign_id, "campaign_head": head,
+            "task_source_sha256": digest, "disposition": "blocked",
+            "proposals": [],
+            "blocked": {
+                "binding": {
+                    "campaign_id": campaign_id, "campaign_head": head,
+                    "task_source_sha256": digest, "task_id": "0.1.1.1",
+                    "dependencies": []
+                },
+                "reason": "unavailable_external_dependency"
+            },
+            "deferred": None, "human_decision": None
+        }
+    else:
+        report = {
+            "campaign_id": campaign_id, "campaign_head": head,
+            "task_source_sha256": digest, "disposition": "propose",
+            "proposals": [{
+                "task_id": "0.1.1.2", "dependencies": [], "owned_paths": ["src"],
+                "gate_tiers": ["focused"], "test_resources": ["rust-tests"],
+                "expected_artifacts": ["src/lib.rs"], "risk": "routine",
+                "rationale_summary": "The independent task is ready and bounded."
+            }],
+            "blocked": None, "deferred": None, "human_decision": None
+        }
+else:
+    base = re.search(r"Base commit: ([0-9a-f]{40,64})", packet).group(1)
+    target = re.search(r"Target commit: ([0-9a-f]{40,64})", packet).group(1)
+    report = {"verdict": "pass", "base_commit": base, "target_commit": target, "findings": [], "blocker_code": None}
+print(json.dumps({"type": "thread.started", "thread_id": "123e4567-e89b-12d3-a456-426614174000"}))
+print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps(report)}}))
+print(json.dumps({"type": "turn.completed"}))
+"#,
+    );
+    let config = fixture.root.join("config/blocker-campaign.toml");
+    let scratch = fixture.root.join("blocker-scratch");
+    let state = fixture.root.join("blocker-state");
+    assert!(
+        Fixture::command(&[
+            "init",
+            "--repo",
+            target.to_str().unwrap(),
+            "--config",
+            config.to_str().unwrap(),
+            "--scratch",
+            scratch.to_str().unwrap(),
+            "--state",
+            state.to_str().unwrap(),
+        ])
+        .status
+        .success()
+    );
+    let doctor = Fixture::command(&["doctor", "--config", config.to_str().unwrap()]);
+    let diagnosis: serde_json::Value = serde_json::from_slice(&doctor.stdout).unwrap();
+    let campaign = fixture.root.join("blocker-campaign.toml");
+    fs::write(
+        &campaign,
+        format!(
+            r#"version = 2
+campaign_id = "blocker-campaign"
+repository_id = "{}"
+repository_path = "{}"
+initial_commit = "{}"
+task_source_sha256 = "{}"
+operator_authorization_sha256 = "{}"
+max_parallel_pods = 1
+max_units = 10
+implementer_authentication = "existing_login"
+campaign_branch = "codingmage/blocker-campaign"
+allowed_paths = ["src"]
+denied_paths = []
+protected_branches = ["main"]
+publication = "local_only"
+
+[team_lead]
+executable = "{}"
+model = "fixture-lead"
+effort = "high"
+
+[implementer]
+executable = "{}"
+model = "fixture-implementer"
+effort = "high"
+
+[reviewer]
+executable = "{}"
+model = "fixture-reviewer"
+effort = "high"
+
+[[gate_tiers]]
+name = "focused"
+profiles = ["configured-gates"]
+"#,
+            diagnosis["repository_id"].as_str().unwrap(),
+            target.display(),
+            diagnosis["head"].as_str().unwrap(),
+            diagnosis["task_source_sha256"].as_str().unwrap(),
+            "a".repeat(64),
+            codex.display(),
+            claude.display(),
+            codex.display(),
+        ),
+    )
+    .unwrap();
+
+    let run = Fixture::command(&[
+        "campaign",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(
+        run.status.success(),
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&run.stderr),
+        String::from_utf8_lossy(&run.stdout)
+    );
+    let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
+    assert_eq!(outcome["state"], "blocked");
+    assert_eq!(outcome["completed_units"], 1);
+    assert_eq!(
+        outcome["blocker_code"],
+        "codingmage.campaign.no_unblocked_ready_work"
+    );
+
+    let status = Fixture::command(&[
+        "campaign-status",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(status.status.success());
+    let status: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
+    assert_eq!(status["state"], "blocked");
+    assert_eq!(status["blocker_count"], 1);
+    assert_eq!(
+        status["blocker_code"],
+        "codingmage.campaign.no_unblocked_ready_work"
+    );
+    assert_eq!(
+        fs::read_to_string(fixture.root.join("blocker-lead.log"))
+            .unwrap()
+            .lines()
+            .count(),
+        2
+    );
+    assert_eq!(
+        fs::read_to_string(fixture.root.join("blocker-claude.log"))
+            .unwrap()
+            .lines()
+            .count(),
+        1
+    );
+    let branch = outcome["branch"].as_str().unwrap();
+    let tasks = git_output(&target, &["show", &format!("{branch}:TASKS.md")]);
+    assert!(tasks.contains("- [ ] **Sub-task 0.1.1.1:**"));
+    assert!(tasks.contains("- [x] **Sub-task 0.1.1.2:**"));
+    assert!(tasks.contains("- [ ] **Sub-task 0.1.1.3:**"));
+    assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
+    assert_eq!(
+        fs::read_to_string(target.join("TASKS.md")).unwrap(),
+        task_source
+    );
+
+    let resumed = Fixture::command(&[
+        "campaign",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(resumed.status.success());
+    let resumed: serde_json::Value = serde_json::from_slice(&resumed.stdout).unwrap();
+    assert_eq!(resumed["state"], "blocked");
+    assert_eq!(resumed["completed_units"], 1);
+    assert_eq!(
+        resumed["blocker_code"],
+        "codingmage.campaign.no_unblocked_ready_work"
+    );
+    assert_eq!(
+        fs::read_to_string(fixture.root.join("blocker-lead.log"))
+            .unwrap()
+            .lines()
+            .count(),
+        2
+    );
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
 fn serial_campaign_pauses_cleanly_when_unit_correction_limit_is_reached() {
     let fixture = Fixture::new();
     let target = fixture.root.join("target");

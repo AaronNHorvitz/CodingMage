@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     collections::BTreeSet,
     fs::{self, File, OpenOptions},
     io::{Read, Write},
@@ -7,7 +8,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use codingmage_contracts::{RunId, WorktreeId};
+use codingmage_contracts::{LeadBlockedReason, RunId, WorktreeId};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -67,6 +68,8 @@ pub(crate) struct CampaignCheckpoint {
     pub blocker_code: Option<String>,
     #[serde(default)]
     pub blocked_task_ids: BTreeSet<String>,
+    #[serde(default)]
+    pub blocked_reasons: BTreeMap<String, LeadBlockedReason>,
     pub active_unit: Option<ActiveUnit>,
     pub pending_integration: Option<PendingIntegration>,
     pub started_at_ms: u64,
@@ -104,6 +107,36 @@ struct LegacyCampaignCheckpointV1 {
 
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
+struct LegacyCampaignCheckpointWithBlockedIds {
+    schema_version: u16,
+    authority_sha256: String,
+    campaign_id: String,
+    repository_id: String,
+    campaign_run_id: RunId,
+    worktree_id: WorktreeId,
+    branch: String,
+    initial_head: String,
+    head: String,
+    completed_units: u32,
+    last_task_id: Option<String>,
+    phase: CampaignPhase,
+    blocker_code: Option<String>,
+    blocked_task_ids: BTreeSet<String>,
+    active_unit: Option<ActiveUnit>,
+    pending_integration: Option<PendingIntegration>,
+    started_at_ms: u64,
+    updated_at_ms: u64,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct LegacyCheckpointEnvelopeWithBlockedIds {
+    checkpoint: LegacyCampaignCheckpointWithBlockedIds,
+    checkpoint_sha256: String,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 struct LegacyCheckpointEnvelopeV1 {
     checkpoint: LegacyCampaignCheckpointV1,
     checkpoint_sha256: String,
@@ -136,6 +169,7 @@ impl CampaignCheckpoint {
             phase: CampaignPhase::Ready,
             blocker_code: None,
             blocked_task_ids: BTreeSet::new(),
+            blocked_reasons: BTreeMap::new(),
             active_unit: None,
             pending_integration: None,
             started_at_ms: now,
@@ -168,7 +202,9 @@ impl CampaignCheckpoint {
             return Err(RuntimeError::State);
         }
         if sha256_hex(&canonical) != envelope.checkpoint_sha256 {
-            return load_legacy_v1(&bytes).map(Some);
+            return load_legacy_with_blocked_ids(&bytes)
+                .or_else(|_| load_legacy_v1(&bytes))
+                .map(Some);
         }
         Ok(Some(envelope.checkpoint))
     }
@@ -228,6 +264,39 @@ impl CampaignCheckpoint {
     }
 }
 
+fn load_legacy_with_blocked_ids(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
+    let envelope: LegacyCheckpointEnvelopeWithBlockedIds =
+        serde_json::from_slice(bytes).map_err(|_| RuntimeError::State)?;
+    let canonical = serde_json::to_vec(&envelope.checkpoint).map_err(|_| RuntimeError::State)?;
+    if envelope.checkpoint.schema_version != SCHEMA_VERSION
+        || sha256_hex(&canonical) != envelope.checkpoint_sha256
+    {
+        return Err(RuntimeError::State);
+    }
+    let legacy = envelope.checkpoint;
+    Ok(CampaignCheckpoint {
+        schema_version: legacy.schema_version,
+        authority_sha256: legacy.authority_sha256,
+        campaign_id: legacy.campaign_id,
+        repository_id: legacy.repository_id,
+        campaign_run_id: legacy.campaign_run_id,
+        worktree_id: legacy.worktree_id,
+        branch: legacy.branch,
+        initial_head: legacy.initial_head,
+        head: legacy.head,
+        completed_units: legacy.completed_units,
+        last_task_id: legacy.last_task_id,
+        phase: legacy.phase,
+        blocker_code: legacy.blocker_code,
+        blocked_task_ids: legacy.blocked_task_ids,
+        blocked_reasons: BTreeMap::new(),
+        active_unit: legacy.active_unit,
+        pending_integration: legacy.pending_integration,
+        started_at_ms: legacy.started_at_ms,
+        updated_at_ms: legacy.updated_at_ms,
+    })
+}
+
 fn load_legacy_v1(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
     let envelope: LegacyCheckpointEnvelopeV1 =
         serde_json::from_slice(bytes).map_err(|_| RuntimeError::State)?;
@@ -253,6 +322,7 @@ fn load_legacy_v1(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
         phase: legacy.phase,
         blocker_code: legacy.blocker_code,
         blocked_task_ids: BTreeSet::new(),
+        blocked_reasons: BTreeMap::new(),
         active_unit: legacy.active_unit,
         pending_integration: legacy.pending_integration,
         started_at_ms: legacy.started_at_ms,
@@ -355,6 +425,10 @@ mod tests {
         let mut checkpoint = checkpoint();
         checkpoint.phase = CampaignPhase::Integrating;
         checkpoint.blocked_task_ids.insert("1.1.1.2".to_owned());
+        checkpoint.blocked_reasons.insert(
+            "1.1.1.2".to_owned(),
+            LeadBlockedReason::UnavailableExternalDependency,
+        );
         checkpoint.pending_integration = Some(PendingIntegration {
             task_id: "1.1.1.1".to_owned(),
             expected_head: "b".repeat(40),
@@ -423,6 +497,52 @@ mod tests {
         let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
         assert_eq!(loaded.campaign_id, current.campaign_id);
         assert!(loaded.blocked_task_ids.is_empty());
+        assert!(loaded.blocked_reasons.is_empty());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn checkpoint_loads_integrity_verified_blocked_id_legacy_shape() {
+        let root = root("legacy-blocked-ids");
+        fs::create_dir_all(&root).unwrap();
+        let current = checkpoint();
+        let legacy = LegacyCampaignCheckpointWithBlockedIds {
+            schema_version: current.schema_version,
+            authority_sha256: current.authority_sha256.clone(),
+            campaign_id: current.campaign_id.clone(),
+            repository_id: current.repository_id.clone(),
+            campaign_run_id: current.campaign_run_id.clone(),
+            worktree_id: current.worktree_id.clone(),
+            branch: current.branch.clone(),
+            initial_head: current.initial_head.clone(),
+            head: current.head.clone(),
+            completed_units: current.completed_units,
+            last_task_id: current.last_task_id.clone(),
+            phase: current.phase,
+            blocker_code: current.blocker_code.clone(),
+            blocked_task_ids: BTreeSet::from(["1.1.1.2".to_owned()]),
+            active_unit: current.active_unit.clone(),
+            pending_integration: current.pending_integration.clone(),
+            started_at_ms: current.started_at_ms,
+            updated_at_ms: current.updated_at_ms,
+        };
+        let canonical = serde_json::to_vec(&legacy).unwrap();
+        let envelope = LegacyCheckpointEnvelopeWithBlockedIds {
+            checkpoint: legacy,
+            checkpoint_sha256: sha256_hex(&canonical),
+        };
+        fs::write(
+            root.join("checkpoint.json"),
+            serde_json::to_vec_pretty(&envelope).unwrap(),
+        )
+        .unwrap();
+
+        let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
+        assert_eq!(
+            loaded.blocked_task_ids,
+            BTreeSet::from(["1.1.1.2".to_owned()])
+        );
+        assert!(loaded.blocked_reasons.is_empty());
         fs::remove_dir_all(root).unwrap();
     }
 }

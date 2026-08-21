@@ -262,6 +262,7 @@ pub fn validate_team_lead_report(
                 || report.deferred.is_some()
                 || report.human_decision.is_some()
                 || !valid_lead_binding(&blocker.binding, &report, ready)
+                || !blocker.reason.valid_for_dependency_ready_task()
             {
                 return Err(CampaignError::InvalidProposal);
             }
@@ -983,6 +984,13 @@ mod tests {
                 .unwrap(),
             TeamLeadOutcome::Blocked(_)
         ));
+
+        let mut contradictory = blocked.clone();
+        contradictory.blocked.as_mut().unwrap().reason = LeadBlockedReason::BlockedPrerequisite;
+        assert_eq!(
+            validate_team_lead_report(contradictory, &authority, std::slice::from_ref(&selected)),
+            Err(CampaignError::InvalidProposal)
+        );
 
         let deferred = TeamLeadReport {
             disposition: LeadDispositionKind::Deferred,
