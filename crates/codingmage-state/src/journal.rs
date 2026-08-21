@@ -77,6 +77,39 @@ pub enum EventKind {
         /// Stable change category.
         change: String,
     },
+    /// A content-minimized campaign checkpoint projection became durable.
+    CampaignCheckpointed {
+        /// Stable campaign lifecycle phase.
+        phase: String,
+        /// Number of campaign units integrated and reconciled.
+        completed_units: u32,
+        /// Number of exact blocked tasks.
+        blocked_tasks: u32,
+        /// Number of tasks waiting on an unsatisfied reconsideration trigger.
+        deferred_tasks: u32,
+        /// Number of reconsideration triggers already observed and retained for replay defense.
+        satisfied_deferrals: u32,
+        /// Number of tasks waiting for an external human decision.
+        human_decisions: u32,
+        /// Number of rejected lead reports; these are not accepted outcomes.
+        rejected_proposals: u32,
+        /// Accepted outcomes consumed against the campaign ceiling.
+        accepted_outcomes: u32,
+        /// Operator-authorized accepted-outcome ceiling once projected by the campaign.
+        max_outcomes: Option<u32>,
+        /// Whether one exact unit is active.
+        active_unit: bool,
+        /// Provider attempts when the campaign owns an exact counter.
+        provider_attempts: Option<u32>,
+        /// Correction round when the campaign owns an exact counter.
+        correction_round: Option<u16>,
+        /// Authenticated pause state once campaign controls are wired.
+        operator_paused: Option<bool>,
+        /// Authenticated stop-after-unit state once campaign controls are wired.
+        stop_after_unit: Option<bool>,
+        /// Authenticated cancellation state once campaign controls are wired.
+        cancelled: Option<bool>,
+    },
 }
 
 /// Stable event result, never provider prose.
@@ -419,6 +452,28 @@ fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
         EventKind::ExternalBoundaryChanged { system, change } => {
             validate_label(system)?;
             validate_label(change)?;
+        }
+        EventKind::CampaignCheckpointed {
+            phase,
+            completed_units,
+            blocked_tasks,
+            deferred_tasks,
+            human_decisions,
+            accepted_outcomes,
+            max_outcomes,
+            ..
+        } => {
+            validate_label(phase)?;
+            let projected = completed_units
+                .checked_add(*blocked_tasks)
+                .and_then(|value| value.checked_add(*deferred_tasks))
+                .and_then(|value| value.checked_add(*human_decisions))
+                .ok_or(JournalError::InvalidField)?;
+            if *accepted_outcomes != projected
+                || max_outcomes.is_some_and(|limit| limit == 0 || *accepted_outcomes > limit)
+            {
+                return Err(JournalError::InvalidField);
+            }
         }
     }
     for redaction in &event.redactions {

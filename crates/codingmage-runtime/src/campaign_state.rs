@@ -9,8 +9,11 @@ use std::{
 };
 
 use codingmage_contracts::{
-    LeadBlockedReason, LeadDeferredReason, LeadHumanDecisionReason, LeadReconsiderationTrigger,
-    RunId, WorktreeId,
+    EvidenceId, LeadBlockedReason, LeadDeferredReason, LeadHumanDecisionReason,
+    LeadReconsiderationTrigger, RepositoryId, RunId, TaskId, WorktreeId,
+};
+use codingmage_state::{
+    DurableIdentities, EventKind, EventOutcome, Journal, JournalEvent, RedactedField,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -448,7 +451,91 @@ impl CampaignCheckpoint {
         fs::rename(&temporary, &current).map_err(|_| RuntimeError::State)?;
         File::open(root)
             .and_then(|directory| directory.sync_all())
-            .map_err(|_| RuntimeError::State)
+            .map_err(|_| RuntimeError::State)?;
+        self.append_journal_projection(root, &canonical)
+    }
+
+    fn append_journal_projection(&self, root: &Path, canonical: &[u8]) -> Result<(), RuntimeError> {
+        let completed_units = self.completed_units;
+        let blocked_tasks =
+            u32::try_from(self.blocked_task_ids.len()).map_err(|_| RuntimeError::State)?;
+        let deferred_tasks =
+            u32::try_from(self.deferred_tasks.len()).map_err(|_| RuntimeError::State)?;
+        let satisfied_deferrals =
+            u32::try_from(self.satisfied_deferrals.len()).map_err(|_| RuntimeError::State)?;
+        let human_decisions =
+            u32::try_from(self.human_decisions.len()).map_err(|_| RuntimeError::State)?;
+        let rejected_proposals =
+            u32::try_from(self.rejected_proposals.len()).map_err(|_| RuntimeError::State)?;
+        let accepted_outcomes = completed_units
+            .checked_add(blocked_tasks)
+            .and_then(|value| value.checked_add(deferred_tasks))
+            .and_then(|value| value.checked_add(human_decisions))
+            .ok_or(RuntimeError::State)?;
+        let task_id = self
+            .active_unit
+            .as_ref()
+            .map(|active| active.task_id.as_str())
+            .or_else(|| {
+                self.pending_integration
+                    .as_ref()
+                    .map(|pending| pending.task_id.as_str())
+            })
+            .or(self.last_task_id.as_deref())
+            .unwrap_or("campaign-root");
+        let evidence = EvidenceId::new(format!("checkpoint-{}", sha256_hex(canonical)))
+            .map_err(|_| RuntimeError::State)?;
+        let redactions = [
+            "provider_output",
+            "source_text",
+            "command_output",
+            "environment_values",
+            "credentials",
+        ]
+        .into_iter()
+        .map(RedactedField::new)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| RuntimeError::State)?;
+        let event = JournalEvent {
+            timestamp_ms: self.updated_at_ms,
+            run_id: self.campaign_run_id.clone(),
+            task_id: TaskId::new(task_id).map_err(|_| RuntimeError::State)?,
+            repository_id: RepositoryId::new(self.repository_id.clone())
+                .map_err(|_| RuntimeError::State)?,
+            identities: DurableIdentities {
+                worktree: Some(self.worktree_id.clone()),
+                branch: Some(self.branch.clone()),
+                commit: Some(self.head.clone()),
+                ..DurableIdentities::default()
+            },
+            kind: EventKind::CampaignCheckpointed {
+                phase: self.phase.label().to_owned(),
+                completed_units,
+                blocked_tasks,
+                deferred_tasks,
+                satisfied_deferrals,
+                human_decisions,
+                rejected_proposals,
+                accepted_outcomes,
+                max_outcomes: None,
+                active_unit: self.active_unit.is_some(),
+                provider_attempts: None,
+                correction_round: None,
+                operator_paused: None,
+                stop_after_unit: None,
+                cancelled: None,
+            },
+            outcome: EventOutcome::Succeeded,
+            evidence: vec![evidence],
+            redactions,
+        };
+        let mut journal = Journal::open(
+            root,
+            format!("{}-checkpoint", self.campaign_run_id.as_str()),
+        )
+        .map_err(|_| RuntimeError::State)?;
+        journal.append(event).map_err(|_| RuntimeError::State)?;
+        Ok(())
     }
 
     pub(crate) fn validate_authority(
@@ -985,6 +1072,47 @@ mod tests {
         });
         checkpoint.persist(&root).unwrap();
         assert_eq!(CampaignCheckpoint::load(&root).unwrap(), Some(checkpoint));
+
+        let journal = Journal::open(&root, "checkpoint-reader").unwrap();
+        assert_eq!(journal.records().len(), 1);
+        let record = &journal.records()[0];
+        assert_eq!(record.event.run_id.as_str(), "run-1");
+        assert_eq!(record.event.task_id.as_str(), "1.1.1.1");
+        assert_eq!(record.event.repository_id.as_str(), "repo-1");
+        assert_eq!(
+            record.event.identities.worktree.as_ref().unwrap().as_str(),
+            "wt-1"
+        );
+        assert_eq!(record.event.identities.commit, Some("b".repeat(40)));
+        assert!(matches!(
+            record.event.kind,
+            EventKind::CampaignCheckpointed {
+                ref phase,
+                completed_units: 0,
+                blocked_tasks: 1,
+                deferred_tasks: 1,
+                satisfied_deferrals: 0,
+                human_decisions: 1,
+                rejected_proposals: 1,
+                accepted_outcomes: 3,
+                max_outcomes: None,
+                active_unit: false,
+                provider_attempts: None,
+                correction_round: None,
+                operator_paused: None,
+                stop_after_unit: None,
+                cancelled: None,
+            } if phase == "integrating"
+        ));
+        assert_eq!(record.event.evidence.len(), 1);
+        assert_eq!(record.event.redactions.len(), 5);
+        let journal_bytes = fs::read(root.join("events.jsonl")).unwrap();
+        assert!(
+            !journal_bytes
+                .windows(b"provider prose".len())
+                .any(|window| window == b"provider prose")
+        );
+        drop(journal);
 
         let path = root.join("checkpoint.json");
         let mut bytes = fs::read(&path).unwrap();

@@ -60,6 +60,9 @@ impl Snapshot {
                 EventKind::ExternalBoundaryChanged { system, change } => {
                     format!("boundary.{system}.{change}")
                 }
+                EventKind::CampaignCheckpointed { phase, .. } => {
+                    format!("campaign.{phase}")
+                }
             };
             tasks.insert(
                 record.event.task_id.clone(),
