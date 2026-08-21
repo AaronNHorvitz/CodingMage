@@ -33,7 +33,7 @@ The values below are illustrative. Repository identity, commit, source digest, p
 models, unit limits, and branch policy must be selected from the intended target and local installation.
 
 ```toml
-version = 2
+version = 3
 campaign_id = "example-campaign"
 repository_id = "repo-example"
 repository_path = "/absolute/repository"
@@ -48,6 +48,15 @@ allowed_paths = ["crates", "docs", "tests"]
 denied_paths = ["private"]
 protected_branches = ["main"]
 publication = "local_only"
+
+[limits]
+provider_attempts = 1000
+malformed_report_repairs = 100
+correction_rounds = 100
+process_invocations = 10000
+output_bytes = 1073741824
+retained_state_bytes = 1073741824
+execution_elapsed_ms = 86400000
 
 [team_lead]
 executable = "/absolute/path/to/codex"

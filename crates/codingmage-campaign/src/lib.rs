@@ -16,11 +16,14 @@ use codingmage_plan::SelectedWork;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-const CAMPAIGN_VERSION: u16 = 2;
+const CAMPAIGN_VERSION: u16 = 3;
 const MAX_SPEC_BYTES: u64 = 1024 * 1024;
 const MAX_PATHS: usize = 256;
 const MAX_RESOURCES: usize = 256;
 const MAX_SUMMARY_BYTES: usize = 4 * 1024;
+const MAX_CAMPAIGN_COUNTER: u32 = 10_000_000;
+const MAX_CAMPAIGN_BYTES: u64 = 1 << 50;
+const MAX_CAMPAIGN_ELAPSED_MS: u64 = 365 * 24 * 60 * 60 * 1000;
 const ZERO_SHA256: &str = "0000000000000000000000000000000000000000000000000000000000000000";
 
 /// Exact operator-selected provider profile. Provider output never changes this authority.
@@ -65,6 +68,49 @@ pub enum CampaignPublication {
     DraftStoryPullRequests,
 }
 
+/// Independent operator-authorized aggregate ceilings for one campaign.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignLimits {
+    /// Maximum attempted provider invocations.
+    pub provider_attempts: u32,
+    /// Maximum metadata-only malformed-report repairs.
+    pub malformed_report_repairs: u32,
+    /// Maximum cumulative correction rounds.
+    pub correction_rounds: u32,
+    /// Maximum provider and deterministic-gate process invocations.
+    pub process_invocations: u32,
+    /// Maximum observed aggregate stdout and stderr bytes.
+    pub output_bytes: u64,
+    /// Maximum bytes retained beneath campaign-owned private state.
+    pub retained_state_bytes: u64,
+    /// Maximum observed provider and gate execution milliseconds.
+    pub execution_elapsed_ms: u64,
+}
+
+impl CampaignLimits {
+    fn verify(&self) -> Result<(), CampaignError> {
+        if self.provider_attempts == 0
+            || self.provider_attempts > MAX_CAMPAIGN_COUNTER
+            || self.malformed_report_repairs == 0
+            || self.malformed_report_repairs > self.provider_attempts
+            || self.correction_rounds == 0
+            || self.correction_rounds > MAX_CAMPAIGN_COUNTER
+            || self.process_invocations < self.provider_attempts
+            || self.process_invocations > MAX_CAMPAIGN_COUNTER
+            || self.output_bytes == 0
+            || self.output_bytes > MAX_CAMPAIGN_BYTES
+            || self.retained_state_bytes == 0
+            || self.retained_state_bytes > MAX_CAMPAIGN_BYTES
+            || self.execution_elapsed_ms == 0
+            || self.execution_elapsed_ms > MAX_CAMPAIGN_ELAPSED_MS
+        {
+            return Err(CampaignError::InvalidAuthority);
+        }
+        Ok(())
+    }
+}
+
 /// Versioned operator-approved authority for one campaign.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -88,6 +134,8 @@ pub struct CampaignSpec {
     pub max_parallel_pods: u16,
     /// Maximum accepted units before an operator-authored continuation is required.
     pub max_units: u32,
+    /// Independent aggregate resource and attempt ceilings.
+    pub limits: CampaignLimits,
     /// Read-only campaign planning profile.
     pub team_lead: CampaignProvider,
     /// Pod implementation profile.
@@ -150,6 +198,7 @@ impl CampaignSpec {
             || !(1..=16).contains(&self.max_parallel_pods)
             || self.max_units == 0
             || self.max_units > 100_000
+            || self.limits.verify().is_err()
             || !valid_provider(&self.team_lead)
             || !valid_provider(&self.implementer)
             || !valid_provider(&self.reviewer)
@@ -725,6 +774,15 @@ mod tests {
             operator_authorization_sha256: "c".repeat(64),
             max_parallel_pods,
             max_units: 100,
+            limits: CampaignLimits {
+                provider_attempts: 1_000,
+                malformed_report_repairs: 100,
+                correction_rounds: 100,
+                process_invocations: 10_000,
+                output_bytes: 1_073_741_824,
+                retained_state_bytes: 1_073_741_824,
+                execution_elapsed_ms: 86_400_000,
+            },
             team_lead: provider("gpt-lead", "high"),
             implementer: provider("claude-implementer", "high"),
             implementer_authentication: CampaignAuthentication::ExistingLogin,
@@ -1148,6 +1206,27 @@ mod tests {
         value.max_units = 101;
         mutations.push(("max_units", value));
         let mut value = baseline.clone();
+        value.limits.provider_attempts += 1;
+        mutations.push(("provider_attempts", value));
+        let mut value = baseline.clone();
+        value.limits.malformed_report_repairs += 1;
+        mutations.push(("malformed_report_repairs", value));
+        let mut value = baseline.clone();
+        value.limits.correction_rounds += 1;
+        mutations.push(("correction_rounds", value));
+        let mut value = baseline.clone();
+        value.limits.process_invocations += 1;
+        mutations.push(("process_invocations", value));
+        let mut value = baseline.clone();
+        value.limits.output_bytes += 1;
+        mutations.push(("output_bytes", value));
+        let mut value = baseline.clone();
+        value.limits.retained_state_bytes += 1;
+        mutations.push(("retained_state_bytes", value));
+        let mut value = baseline.clone();
+        value.limits.execution_elapsed_ms += 1;
+        mutations.push(("execution_elapsed_ms", value));
+        let mut value = baseline.clone();
         value.team_lead.model = "gpt-lead-2".to_owned();
         mutations.push(("team_lead", value));
         let mut value = baseline.clone();
@@ -1407,6 +1486,58 @@ mod tests {
                 validate_team_lead_report(report, &authority, std::slice::from_ref(&selected)),
                 Err(CampaignError::InvalidProposal)
             );
+        }
+    }
+
+    #[test]
+    fn campaign_limit_boundaries_fail_closed() {
+        let minimum = CampaignLimits {
+            provider_attempts: 1,
+            malformed_report_repairs: 1,
+            correction_rounds: 1,
+            process_invocations: 1,
+            output_bytes: 1,
+            retained_state_bytes: 1,
+            execution_elapsed_ms: 1,
+        };
+        minimum.verify().unwrap();
+        CampaignLimits {
+            provider_attempts: MAX_CAMPAIGN_COUNTER,
+            malformed_report_repairs: MAX_CAMPAIGN_COUNTER,
+            correction_rounds: MAX_CAMPAIGN_COUNTER,
+            process_invocations: MAX_CAMPAIGN_COUNTER,
+            output_bytes: MAX_CAMPAIGN_BYTES,
+            retained_state_bytes: MAX_CAMPAIGN_BYTES,
+            execution_elapsed_ms: MAX_CAMPAIGN_ELAPSED_MS,
+        }
+        .verify()
+        .unwrap();
+
+        let mut invalid = Vec::new();
+        let mut value = minimum.clone();
+        value.provider_attempts = 0;
+        invalid.push(value);
+        let mut value = minimum.clone();
+        value.malformed_report_repairs = 2;
+        invalid.push(value);
+        let mut value = minimum.clone();
+        value.correction_rounds = MAX_CAMPAIGN_COUNTER + 1;
+        invalid.push(value);
+        let mut value = minimum.clone();
+        value.process_invocations = 0;
+        invalid.push(value);
+        let mut value = minimum.clone();
+        value.output_bytes = MAX_CAMPAIGN_BYTES + 1;
+        invalid.push(value);
+        let mut value = minimum.clone();
+        value.retained_state_bytes = 0;
+        invalid.push(value);
+        let mut value = minimum;
+        value.execution_elapsed_ms = MAX_CAMPAIGN_ELAPSED_MS + 1;
+        invalid.push(value);
+
+        for limits in invalid {
+            assert_eq!(limits.verify(), Err(CampaignError::InvalidAuthority));
         }
     }
 }

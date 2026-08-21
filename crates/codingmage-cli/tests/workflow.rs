@@ -443,7 +443,7 @@ print(json.dumps({"type": "turn.completed"}))
     fs::write(
         &campaign,
         format!(
-            r#"version = 2
+            r#"version = 3
 campaign_id = "fixture-campaign"
 repository_id = "{}"
 repository_path = "{}"
@@ -458,6 +458,15 @@ allowed_paths = ["src"]
 denied_paths = []
 protected_branches = ["main"]
 publication = "local_only"
+
+[limits]
+provider_attempts = 1000
+malformed_report_repairs = 100
+correction_rounds = 100
+process_invocations = 10000
+output_bytes = 1073741824
+retained_state_bytes = 1073741824
+execution_elapsed_ms = 86400000
 
 [team_lead]
 executable = "{}"
@@ -857,7 +866,7 @@ if "{ 2 }" in Path("src/lib.rs").read_text(encoding="utf-8"):
     fs::write(
         &campaign,
         format!(
-            r#"version = 2
+            r#"version = 3
 campaign_id = "recovery-campaign"
 repository_id = "{}"
 repository_path = "{}"
@@ -872,6 +881,15 @@ allowed_paths = ["src"]
 denied_paths = []
 protected_branches = ["main"]
 publication = "local_only"
+
+[limits]
+provider_attempts = 1000
+malformed_report_repairs = 100
+correction_rounds = 100
+process_invocations = 10000
+output_bytes = 1073741824
+retained_state_bytes = 1073741824
+execution_elapsed_ms = 86400000
 
 [team_lead]
 executable = "{}"
@@ -1096,7 +1114,7 @@ print(json.dumps({"type": "turn.completed"}))
     fs::write(
         &campaign,
         format!(
-            r#"version = 2
+            r#"version = 3
 campaign_id = "blocker-campaign"
 repository_id = "{}"
 repository_path = "{}"
@@ -1111,6 +1129,15 @@ allowed_paths = ["src"]
 denied_paths = []
 protected_branches = ["main"]
 publication = "local_only"
+
+[limits]
+provider_attempts = 1000
+malformed_report_repairs = 100
+correction_rounds = 100
+process_invocations = 10000
+output_bytes = 1073741824
+retained_state_bytes = 1073741824
+execution_elapsed_ms = 86400000
 
 [team_lead]
 executable = "{}"
@@ -1442,7 +1469,7 @@ print(json.dumps({"type": "turn.completed"}))
     fs::write(
         &campaign,
         format!(
-            r#"version = 2
+            r#"version = 3
 campaign_id = "paused-fixture-campaign"
 repository_id = "{}"
 repository_path = "{}"
@@ -1457,6 +1484,15 @@ allowed_paths = ["src"]
 denied_paths = []
 protected_branches = ["main"]
 publication = "local_only"
+
+[limits]
+provider_attempts = 1000
+malformed_report_repairs = 100
+correction_rounds = 100
+process_invocations = 10000
+output_bytes = 1073741824
+retained_state_bytes = 1073741824
+execution_elapsed_ms = 86400000
 
 [team_lead]
 executable = "{}"
@@ -1680,7 +1716,7 @@ print(json.dumps({"type": "turn.completed"}))
     fs::write(
         &campaign,
         format!(
-            r#"version = 2
+            r#"version = 3
 campaign_id = "decision-campaign"
 repository_id = "{}"
 repository_path = "{}"
@@ -1695,6 +1731,15 @@ allowed_paths = ["src"]
 denied_paths = []
 protected_branches = ["main"]
 publication = "local_only"
+
+[limits]
+provider_attempts = 1000
+malformed_report_repairs = 100
+correction_rounds = 100
+process_invocations = 10000
+output_bytes = 1073741824
+retained_state_bytes = 1073741824
+execution_elapsed_ms = 86400000
 
 [team_lead]
 executable = "{}"
@@ -1894,7 +1939,7 @@ print(json.dumps({"type": "turn.completed"}))
     fs::write(
         &campaign,
         format!(
-            r#"version = 2
+            r#"version = 3
 campaign_id = "rejected-campaign"
 repository_id = "{}"
 repository_path = "{}"
@@ -1909,6 +1954,15 @@ allowed_paths = ["src"]
 denied_paths = []
 protected_branches = ["main"]
 publication = "local_only"
+
+[limits]
+provider_attempts = 1000
+malformed_report_repairs = 100
+correction_rounds = 100
+process_invocations = 10000
+output_bytes = 1073741824
+retained_state_bytes = 1073741824
+execution_elapsed_ms = 86400000
 
 [team_lead]
 executable = "{}"
