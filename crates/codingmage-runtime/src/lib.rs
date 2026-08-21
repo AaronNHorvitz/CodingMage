@@ -55,8 +55,9 @@ use sha2::{Digest, Sha256};
 const RUN_SPEC_VERSION: u16 = 2;
 
 use campaign_state::{
-    ActiveUnit, BlockerClearanceIntent, CampaignCheckpoint, CampaignPhase, CampaignReservation,
-    CampaignUnitBudget, DeferralTriggerIntent, DeferredTaskProjection, HumanDecisionProjection,
+    ActiveUnit, BlockerClearanceIntent, CampaignCheckpoint, CampaignControlAction,
+    CampaignControlIntent, CampaignPhase, CampaignReservation, CampaignUnitBudget,
+    DeferralTriggerIntent, DeferredTaskProjection, HumanDecisionProjection,
     HumanDecisionProjectionReason, LeadRejectionReason, PendingIntegration,
     RejectedProposalProjection, validate_private_campaign_state,
 };
@@ -337,6 +338,8 @@ pub enum CampaignState {
     Paused,
     /// No independently safe proposal could proceed without external authority.
     Blocked,
+    /// An authenticated operator cancelled the exact campaign.
+    Cancelled,
 }
 
 /// Closed reason why one campaign invocation stopped admitting work.
@@ -347,6 +350,10 @@ pub enum CampaignStopReason {
     Completion,
     /// An authenticated operator cancelled the exact campaign.
     OperatorCancellation,
+    /// An authenticated operator paused admission.
+    OperatorPause,
+    /// An authenticated operator requested a clean stop after the active unit.
+    StopAfterUnit,
     /// Provider or execution capacity is temporarily unavailable.
     CapacityPause,
     /// The accepted-outcome ceiling was reached.
@@ -501,6 +508,20 @@ pub struct DeferralTriggerOutcome {
     pub changed: bool,
 }
 
+/// Content-minimized result of one same-user campaign control request.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignControlOutcome {
+    /// Exact campaign identity.
+    pub campaign_id: String,
+    /// Caller-generated idempotency identity.
+    pub request_id: String,
+    /// Closed requested control action.
+    pub action: String,
+    /// True only when this invocation created the durable request.
+    pub created: bool,
+}
+
 /// Reads and validates the durable status for one exact campaign authority.
 ///
 /// # Errors
@@ -568,6 +589,109 @@ pub fn campaign_status(
         elapsed_ms,
         updated_at_ms: checkpoint.updated_at_ms,
     }))
+}
+
+/// Creates one same-user, exact-campaign lifecycle control request.
+///
+/// The request is written atomically to a private inbox. The campaign remains the sole checkpoint
+/// writer and observes the request at a safe boundary. Repeating the identical request is
+/// idempotent; reusing its identity for different authority or action fails closed.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] for invalid action, identity, repository, authority, state ownership,
+/// or conflicting idempotency evidence.
+#[allow(clippy::too_many_lines)]
+pub fn request_campaign_control(
+    config: &Config,
+    spec: &CampaignSpec,
+    codingmage_binary: &Path,
+    action: &str,
+    request_id: &str,
+) -> Result<CampaignControlOutcome, RuntimeError> {
+    let action = CampaignControlAction::parse(action).ok_or(RuntimeError::Spec)?;
+    let request_id = RunId::new(request_id).map_err(|_| RuntimeError::Spec)?;
+    spec.verify().map_err(RuntimeError::Campaign)?;
+    let authority_sha256 = spec.authority_sha256().map_err(RuntimeError::Campaign)?;
+    let binary = canonical_file(codingmage_binary)?;
+    let source_root = binary.parent().ok_or(RuntimeError::Authority)?;
+    let authorization = RepositoryAuthorization::authorize(config, source_root)
+        .map_err(|_| RuntimeError::Authority)?;
+    let inventory = inventory_repository(&authorization).map_err(|_| RuntimeError::Repository)?;
+    let configured_target =
+        fs::canonicalize(&config.target_path).map_err(|_| RuntimeError::Authority)?;
+    if !inventory.condition.is_clean()
+        || configured_target != spec.repository_path
+        || authorization.identity().repository_id.as_str() != spec.repository_id
+        || inventory.head != spec.initial_commit
+    {
+        return Err(RuntimeError::Authority);
+    }
+    let source =
+        fs::read(config.target_path.join(&config.task_source)).map_err(|_| RuntimeError::Plan)?;
+    let plan = TaskPlan::parse(&source).map_err(|_| RuntimeError::Plan)?;
+    if plan.source_sha256 != spec.task_source_sha256 {
+        return Err(RuntimeError::Plan);
+    }
+
+    let campaign_root = config.state_root.join("campaigns").join(&spec.campaign_id);
+    validate_private_campaign_state(&campaign_root)?;
+    let checkpoint = CampaignCheckpoint::load(&campaign_root)?.ok_or(RuntimeError::State)?;
+    checkpoint.validate_authority(
+        &authority_sha256,
+        &spec.campaign_id,
+        &spec.repository_id,
+        &spec.initial_commit,
+        spec.max_units,
+        &spec.limits,
+    )?;
+    if checkpoint.phase == CampaignPhase::Complete || checkpoint.cancelled {
+        return Err(RuntimeError::State);
+    }
+
+    let invocation_id = generated_run_id()?;
+    let _control_lock = CoordinatorLock::acquire(
+        &config
+            .state_root
+            .join("campaign-control-locks")
+            .join(&spec.campaign_id),
+        &authorization.identity().repository_id,
+        invocation_id.as_str(),
+    )
+    .map_err(|_| RuntimeError::Orchestration)?;
+    let intent = CampaignControlIntent::new(
+        request_id.as_str().to_owned(),
+        authority_sha256,
+        spec.campaign_id.clone(),
+        spec.repository_id.clone(),
+        checkpoint.campaign_run_id.clone(),
+        action,
+        checkpoint.head.clone(),
+        checkpoint.updated_at_ms,
+    )?;
+    if let Some(existing) = CampaignControlIntent::load(&campaign_root, request_id.as_str())? {
+        if existing.authority_sha256 != intent.authority_sha256
+            || existing.campaign_id != intent.campaign_id
+            || existing.repository_id != intent.repository_id
+            || existing.campaign_run_id != intent.campaign_run_id
+            || existing.action != intent.action
+        {
+            return Err(RuntimeError::Authority);
+        }
+        return Ok(CampaignControlOutcome {
+            campaign_id: spec.campaign_id.clone(),
+            request_id: request_id.as_str().to_owned(),
+            action: action.code().to_owned(),
+            created: false,
+        });
+    }
+    intent.persist_new(&campaign_root)?;
+    Ok(CampaignControlOutcome {
+        campaign_id: spec.campaign_id.clone(),
+        request_id: request_id.as_str().to_owned(),
+        action: action.code().to_owned(),
+        created: true,
+    })
 }
 
 /// Clears one exact durable blocker after same-user local authentication and full revalidation.
@@ -1050,6 +1174,17 @@ pub fn run_serial_campaign_with_progress(
             ),
         ));
     }
+    apply_pending_campaign_controls(&mut checkpoint, &campaign_root)?;
+    if let Some(termination) = campaign_control_termination(&mut checkpoint, &campaign_root)? {
+        return Ok(campaign_outcome(
+            &spec,
+            &campaign,
+            checkpoint.head,
+            checkpoint.completed_units,
+            checkpoint.last_task_id,
+            termination,
+        ));
+    }
     let mut interrupted_active = checkpoint.active_unit.clone();
     if interrupted_active
         .as_ref()
@@ -1081,6 +1216,17 @@ pub fn run_serial_campaign_with_progress(
     let mut completed_units = checkpoint.completed_units;
     let mut last_task_id = checkpoint.last_task_id.clone();
     loop {
+        apply_pending_campaign_controls(&mut checkpoint, &campaign_root)?;
+        if let Some(termination) = campaign_control_termination(&mut checkpoint, &campaign_root)? {
+            return Ok(campaign_outcome(
+                &spec,
+                &campaign,
+                head,
+                completed_units,
+                last_task_id,
+                termination,
+            ));
+        }
         let source = fs::read(campaign.manifest().path.join(&config.task_source))
             .map_err(|_| RuntimeError::Plan)?;
         let plan = TaskPlan::parse(&source).map_err(|_| RuntimeError::Plan)?;
@@ -2108,6 +2254,57 @@ fn lead_binding(
             .collect(),
         ready_tasks,
     }
+}
+
+fn apply_pending_campaign_controls(
+    checkpoint: &mut CampaignCheckpoint,
+    campaign_root: &Path,
+) -> Result<(), RuntimeError> {
+    for intent in CampaignControlIntent::pending(campaign_root)? {
+        if checkpoint.apply_control(&intent)? {
+            checkpoint.persist(campaign_root)?;
+            checkpoint.record_control_applied(campaign_root, &intent)?;
+        }
+    }
+    Ok(())
+}
+
+fn campaign_control_termination(
+    checkpoint: &mut CampaignCheckpoint,
+    campaign_root: &Path,
+) -> Result<Option<CampaignTermination>, RuntimeError> {
+    let (phase, state, reason, code) = if checkpoint.cancelled {
+        (
+            CampaignPhase::Cancelled,
+            CampaignState::Cancelled,
+            CampaignStopReason::OperatorCancellation,
+            "codingmage.campaign.control.cancelled",
+        )
+    } else if checkpoint.stop_after_unit {
+        (
+            CampaignPhase::Paused,
+            CampaignState::Paused,
+            CampaignStopReason::StopAfterUnit,
+            "codingmage.campaign.control.stop_after_unit",
+        )
+    } else if checkpoint.operator_paused {
+        (
+            CampaignPhase::Paused,
+            CampaignState::Paused,
+            CampaignStopReason::OperatorPause,
+            "codingmage.campaign.control.paused",
+        )
+    } else {
+        return Ok(None);
+    };
+    checkpoint.phase = phase;
+    checkpoint.blocker_code = Some(code.to_owned());
+    checkpoint.persist(campaign_root)?;
+    Ok(Some(CampaignTermination::new(
+        state,
+        reason,
+        Some(code.to_owned()),
+    )))
 }
 
 fn campaign_outcome(

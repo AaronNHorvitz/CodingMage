@@ -530,6 +530,57 @@ profiles = ["configured-gates"]
             fs::read_to_string(target.join("TASKS.md")).unwrap(),
             task_source
         );
+        if expected_code == "codingmage.provider.codex.quota" {
+            let pause_arguments = [
+                "campaign-control",
+                "--config",
+                config.to_str().unwrap(),
+                "--campaign",
+                campaign.to_str().unwrap(),
+                "--action",
+                "pause",
+                "--request",
+                "pause-1",
+            ];
+            let pause = Fixture::command(&pause_arguments);
+            assert!(pause.status.success());
+            let pause: serde_json::Value = serde_json::from_slice(&pause.stdout).unwrap();
+            assert_eq!(pause["created"], true);
+            let repeated = Fixture::command(&pause_arguments);
+            assert!(repeated.status.success());
+            let repeated: serde_json::Value = serde_json::from_slice(&repeated.stdout).unwrap();
+            assert_eq!(repeated["created"], false);
+
+            let operator_paused = Fixture::command(&[
+                "campaign",
+                "--config",
+                config.to_str().unwrap(),
+                "--campaign",
+                campaign.to_str().unwrap(),
+            ]);
+            assert!(operator_paused.status.success());
+            let operator_paused: serde_json::Value =
+                serde_json::from_slice(&operator_paused.stdout).unwrap();
+            assert_eq!(operator_paused["state"], "paused");
+            assert_eq!(operator_paused["stop_reason"], "operator_pause");
+            assert_eq!(
+                operator_paused["blocker_code"],
+                "codingmage.campaign.control.paused"
+            );
+
+            let resumed = Fixture::command(&[
+                "campaign-control",
+                "--config",
+                config.to_str().unwrap(),
+                "--campaign",
+                campaign.to_str().unwrap(),
+                "--action",
+                "resume",
+                "--request",
+                "resume-1",
+            ]);
+            assert!(resumed.status.success());
+        }
     }
 
     let config_value = load_config(&config).unwrap();

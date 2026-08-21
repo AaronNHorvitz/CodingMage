@@ -472,6 +472,12 @@ fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
         EventKind::ControlApplied { request_id, action } => {
             validate_label(request_id)?;
             validate_label(action)?;
+            if !matches!(
+                action.as_str(),
+                "pause" | "resume" | "stop_after_unit" | "cancel"
+            ) {
+                return Err(JournalError::InvalidField);
+            }
         }
         EventKind::ExternalBoundaryChanged { system, change } => {
             validate_label(system)?;
@@ -494,6 +500,9 @@ fn validate_campaign_checkpoint(kind: &EventKind) -> Result<(), JournalError> {
         human_decisions,
         accepted_outcomes,
         max_outcomes,
+        operator_paused,
+        stop_after_unit,
+        cancelled,
         ..
     } = kind
     else {
@@ -507,6 +516,19 @@ fn validate_campaign_checkpoint(kind: &EventKind) -> Result<(), JournalError> {
         .ok_or(JournalError::InvalidField)?;
     if *accepted_outcomes != projected
         || max_outcomes.is_some_and(|limit| limit == 0 || *accepted_outcomes > limit)
+    {
+        return Err(JournalError::InvalidField);
+    }
+    let controls = [
+        operator_paused.is_some(),
+        stop_after_unit.is_some(),
+        cancelled.is_some(),
+    ];
+    if controls.iter().any(|value| *value) && !controls.iter().all(|value| *value)
+        || matches!(
+            (operator_paused, stop_after_unit, cancelled),
+            (Some(true), _, Some(true)) | (_, Some(true), Some(true))
+        )
     {
         return Err(JournalError::InvalidField);
     }

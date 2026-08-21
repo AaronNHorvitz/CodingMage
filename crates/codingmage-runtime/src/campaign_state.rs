@@ -21,7 +21,7 @@ use sha2::{Digest, Sha256};
 
 use crate::{CampaignLimitKind, RunUtilization, RuntimeError};
 
-const SCHEMA_VERSION: u16 = 5;
+const SCHEMA_VERSION: u16 = 6;
 const MAX_CHECKPOINT_BYTES: usize = 1024 * 1024;
 const CLEARANCE_SCHEMA_VERSION: u16 = 1;
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
@@ -36,6 +36,7 @@ pub(crate) enum CampaignPhase {
     Paused,
     Blocked,
     Complete,
+    Cancelled,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -266,6 +267,10 @@ pub(crate) struct CampaignCheckpoint {
     pub outcomes: CampaignOutcomeProjection,
     pub utilization: CampaignUtilization,
     pub limits: CampaignLimits,
+    pub operator_paused: bool,
+    pub stop_after_unit: bool,
+    pub cancelled: bool,
+    pub applied_control_requests: BTreeSet<String>,
     pub active_unit: Option<ActiveUnit>,
     pub pending_integration: Option<PendingIntegration>,
     pub started_at_ms: u64,
@@ -319,6 +324,58 @@ struct BlockerClearanceEnvelope {
 #[serde(deny_unknown_fields)]
 struct DeferralTriggerEnvelope {
     intent: DeferralTriggerIntent,
+    intent_sha256: String,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum CampaignControlAction {
+    Pause,
+    Resume,
+    StopAfterUnit,
+    Cancel,
+}
+
+impl CampaignControlAction {
+    pub(crate) const fn parse(value: &str) -> Option<Self> {
+        match value.as_bytes() {
+            b"pause" => Some(Self::Pause),
+            b"resume" => Some(Self::Resume),
+            b"stop_after_unit" => Some(Self::StopAfterUnit),
+            b"cancel" => Some(Self::Cancel),
+            _ => None,
+        }
+    }
+
+    pub(crate) const fn code(self) -> &'static str {
+        match self {
+            Self::Pause => "pause",
+            Self::Resume => "resume",
+            Self::StopAfterUnit => "stop_after_unit",
+            Self::Cancel => "cancel",
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct CampaignControlIntent {
+    schema_version: u16,
+    pub request_id: String,
+    pub authority_sha256: String,
+    pub campaign_id: String,
+    pub repository_id: String,
+    pub campaign_run_id: RunId,
+    pub action: CampaignControlAction,
+    pub observed_head: String,
+    pub observed_updated_at_ms: u64,
+    pub created_at_ms: u64,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct CampaignControlEnvelope {
+    intent: CampaignControlIntent,
     intent_sha256: String,
 }
 
@@ -537,6 +594,10 @@ impl CampaignCheckpoint {
             },
             utilization: CampaignUtilization::default(),
             limits,
+            operator_paused: false,
+            stop_after_unit: false,
+            cancelled: false,
+            applied_control_requests: BTreeSet::new(),
             active_unit: None,
             pending_integration: None,
             started_at_ms: now,
@@ -681,9 +742,9 @@ impl CampaignCheckpoint {
                 max_retained_state_bytes: Some(self.limits.retained_state_bytes),
                 execution_elapsed_ms: Some(self.utilization.execution_elapsed_ms),
                 max_execution_elapsed_ms: Some(self.limits.execution_elapsed_ms),
-                operator_paused: None,
-                stop_after_unit: None,
-                cancelled: None,
+                operator_paused: Some(self.operator_paused),
+                stop_after_unit: Some(self.stop_after_unit),
+                cancelled: Some(self.cancelled),
             },
             outcome: EventOutcome::Succeeded,
             evidence: vec![evidence],
@@ -766,6 +827,81 @@ impl CampaignCheckpoint {
         }
     }
 
+    pub(crate) fn apply_control(
+        &mut self,
+        intent: &CampaignControlIntent,
+    ) -> Result<bool, RuntimeError> {
+        if self.applied_control_requests.contains(&intent.request_id) {
+            return Ok(false);
+        }
+        if intent.authority_sha256 != self.authority_sha256
+            || intent.campaign_id != self.campaign_id
+            || intent.repository_id != self.repository_id
+            || intent.campaign_run_id != self.campaign_run_id
+            || intent.observed_updated_at_ms > self.updated_at_ms
+            || self.applied_control_requests.len() >= 10_000
+        {
+            return Err(RuntimeError::Authority);
+        }
+        match intent.action {
+            CampaignControlAction::Pause if !self.cancelled && !self.operator_paused => {
+                self.operator_paused = true;
+            }
+            CampaignControlAction::Resume
+                if !self.cancelled && (self.operator_paused || self.stop_after_unit) =>
+            {
+                self.operator_paused = false;
+                self.stop_after_unit = false;
+            }
+            CampaignControlAction::StopAfterUnit if !self.cancelled && !self.stop_after_unit => {
+                self.stop_after_unit = true;
+            }
+            CampaignControlAction::Cancel if !self.cancelled => {
+                self.cancelled = true;
+                self.operator_paused = false;
+                self.stop_after_unit = false;
+            }
+            _ => return Err(RuntimeError::Authority),
+        }
+        self.applied_control_requests
+            .insert(intent.request_id.clone());
+        Ok(true)
+    }
+
+    pub(crate) fn record_control_applied(
+        &self,
+        root: &Path,
+        intent: &CampaignControlIntent,
+    ) -> Result<(), RuntimeError> {
+        let event = JournalEvent {
+            timestamp_ms: timestamp_ms()?,
+            run_id: self.campaign_run_id.clone(),
+            task_id: TaskId::new("campaign-control").map_err(|_| RuntimeError::State)?,
+            repository_id: RepositoryId::new(self.repository_id.clone())
+                .map_err(|_| RuntimeError::State)?,
+            identities: DurableIdentities {
+                worktree: Some(self.worktree_id.clone()),
+                branch: Some(self.branch.clone()),
+                commit: Some(self.head.clone()),
+                ..DurableIdentities::default()
+            },
+            kind: EventKind::ControlApplied {
+                request_id: intent.request_id.clone(),
+                action: intent.action.code().to_owned(),
+            },
+            outcome: EventOutcome::Succeeded,
+            evidence: vec![
+                EvidenceId::new(format!("control-{}", intent.request_id))
+                    .map_err(|_| RuntimeError::State)?,
+            ],
+            redactions: Vec::new(),
+        };
+        let mut journal = Journal::open(root, format!("{}-control", self.campaign_run_id.as_str()))
+            .map_err(|_| RuntimeError::State)?;
+        journal.append(event).map_err(|_| RuntimeError::State)?;
+        Ok(())
+    }
+
     fn refresh_outcomes(&mut self) -> Result<(), RuntimeError> {
         let projection = CampaignOutcomeProjection {
             completed: self.completed_units,
@@ -811,6 +947,8 @@ impl CampaignCheckpoint {
             || self.outcomes.accepted != expected
             || self.outcomes.max_accepted == 0
             || self.outcomes.accepted > self.outcomes.max_accepted
+            || self.applied_control_requests.len() > 10_000
+            || self.cancelled && (self.operator_paused || self.stop_after_unit)
         {
             return Err(RuntimeError::State);
         }
@@ -1048,6 +1186,134 @@ impl DeferralTriggerIntent {
     }
 }
 
+impl CampaignControlIntent {
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn new(
+        request_id: String,
+        authority_sha256: String,
+        campaign_id: String,
+        repository_id: String,
+        campaign_run_id: RunId,
+        action: CampaignControlAction,
+        observed_head: String,
+        observed_updated_at_ms: u64,
+    ) -> Result<Self, RuntimeError> {
+        Ok(Self {
+            schema_version: 1,
+            request_id,
+            authority_sha256,
+            campaign_id,
+            repository_id,
+            campaign_run_id,
+            action,
+            observed_head,
+            observed_updated_at_ms,
+            created_at_ms: timestamp_ms()?,
+        })
+    }
+
+    pub(crate) fn load(root: &Path, request_id: &str) -> Result<Option<Self>, RuntimeError> {
+        load_control_path(&control_path(root, request_id), Some(request_id))
+    }
+
+    pub(crate) fn pending(root: &Path) -> Result<Vec<Self>, RuntimeError> {
+        let directory = root.join("control-requests");
+        match fs::symlink_metadata(&directory) {
+            Ok(metadata) => validate_private_control_entry(&metadata, true)?,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(_) => return Err(RuntimeError::State),
+        }
+        let entries = match fs::read_dir(&directory) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(_) => return Err(RuntimeError::State),
+        };
+        let mut intents = Vec::new();
+        for entry in entries {
+            let entry = entry.map_err(|_| RuntimeError::State)?;
+            let path = entry.path();
+            if path.extension().and_then(|value| value.to_str()) != Some("json") {
+                return Err(RuntimeError::State);
+            }
+            intents.push(load_control_path(&path, None)?.ok_or(RuntimeError::State)?);
+            if intents.len() > 10_000 {
+                return Err(RuntimeError::State);
+            }
+        }
+        intents.sort_by(|left, right| {
+            (left.created_at_ms, left.request_id.as_str())
+                .cmp(&(right.created_at_ms, right.request_id.as_str()))
+        });
+        Ok(intents)
+    }
+
+    pub(crate) fn persist_new(&self, root: &Path) -> Result<(), RuntimeError> {
+        let directory = root.join("control-requests");
+        private_directory(&directory)?;
+        validate_private_control_entry(
+            &fs::symlink_metadata(&directory).map_err(|_| RuntimeError::State)?,
+            true,
+        )?;
+        let canonical = serde_json::to_vec(self).map_err(|_| RuntimeError::State)?;
+        let envelope = CampaignControlEnvelope {
+            intent: self.clone(),
+            intent_sha256: sha256_hex(&canonical),
+        };
+        let bytes = serde_json::to_vec_pretty(&envelope).map_err(|_| RuntimeError::State)?;
+        if bytes.len() > MAX_CHECKPOINT_BYTES {
+            return Err(RuntimeError::State);
+        }
+        let temporary = directory.join(format!(".{}.tmp", self.request_id));
+        let destination = control_path(root, &self.request_id);
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|_| RuntimeError::State)?;
+        set_file_private(&file)?;
+        file.write_all(&bytes)
+            .and_then(|()| file.sync_all())
+            .map_err(|_| RuntimeError::State)?;
+        if fs::hard_link(&temporary, &destination).is_err() {
+            let _ = fs::remove_file(&temporary);
+            return Err(RuntimeError::State);
+        }
+        fs::remove_file(&temporary).map_err(|_| RuntimeError::State)?;
+        File::open(&directory)
+            .and_then(|handle| handle.sync_all())
+            .map_err(|_| RuntimeError::State)
+    }
+}
+
+fn load_control_path(
+    path: &Path,
+    expected_request_id: Option<&str>,
+) -> Result<Option<CampaignControlIntent>, RuntimeError> {
+    let metadata = match fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(_) => return Err(RuntimeError::State),
+    };
+    if !metadata.is_file()
+        || metadata.file_type().is_symlink()
+        || metadata.len() > MAX_CHECKPOINT_BYTES as u64
+    {
+        return Err(RuntimeError::State);
+    }
+    validate_private_control_entry(&metadata, false)?;
+    let bytes = fs::read(path).map_err(|_| RuntimeError::State)?;
+    let envelope: CampaignControlEnvelope =
+        serde_json::from_slice(&bytes).map_err(|_| RuntimeError::State)?;
+    let canonical = serde_json::to_vec(&envelope.intent).map_err(|_| RuntimeError::State)?;
+    if envelope.intent.schema_version != 1
+        || expected_request_id.is_some_and(|value| envelope.intent.request_id != value)
+        || sha256_hex(&canonical) != envelope.intent_sha256
+    {
+        return Err(RuntimeError::State);
+    }
+    Ok(Some(envelope.intent))
+}
+
 fn clearance_path(root: &Path, request_id: &str) -> PathBuf {
     root.join("blocker-clearances")
         .join(format!("{request_id}.json"))
@@ -1055,6 +1321,11 @@ fn clearance_path(root: &Path, request_id: &str) -> PathBuf {
 
 fn trigger_path(root: &Path, request_id: &str) -> PathBuf {
     root.join("deferral-trigger-observations")
+        .join(format!("{request_id}.json"))
+}
+
+fn control_path(root: &Path, request_id: &str) -> PathBuf {
+    root.join("control-requests")
         .join(format!("{request_id}.json"))
 }
 
@@ -1098,6 +1369,7 @@ impl CampaignPhase {
             Self::Paused => "paused",
             Self::Blocked => "blocked",
             Self::Complete => "complete",
+            Self::Cancelled => "cancelled",
         }
     }
 
@@ -1106,7 +1378,9 @@ impl CampaignPhase {
             Self::Planning => "codex-lead",
             Self::RunningUnit => "pod",
             Self::Integrating => "integration",
-            Self::Ready | Self::Paused | Self::Blocked | Self::Complete => "coordinator",
+            Self::Ready | Self::Paused | Self::Blocked | Self::Complete | Self::Cancelled => {
+                "coordinator"
+            }
         }
     }
 }
@@ -1130,12 +1404,45 @@ fn sha256_hex(bytes: &[u8]) -> String {
 }
 
 fn private_directory(path: &Path) -> Result<(), RuntimeError> {
+    if let Ok(metadata) = fs::symlink_metadata(path)
+        && (!metadata.is_dir() || metadata.file_type().is_symlink())
+    {
+        return Err(RuntimeError::Authority);
+    }
     fs::create_dir_all(path).map_err(|_| RuntimeError::State)?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(path, fs::Permissions::from_mode(0o700))
             .map_err(|_| RuntimeError::State)?;
+    }
+    Ok(())
+}
+
+fn validate_private_control_entry(
+    metadata: &fs::Metadata,
+    directory: bool,
+) -> Result<(), RuntimeError> {
+    if metadata.file_type().is_symlink()
+        || directory != metadata.is_dir()
+        || !directory && !metadata.is_file()
+    {
+        return Err(RuntimeError::Authority);
+    }
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::unix::fs::{MetadataExt, PermissionsExt};
+
+        let effective = fs::read_to_string("/proc/self/status")
+            .map_err(|_| RuntimeError::Authority)?
+            .lines()
+            .find_map(|line| line.strip_prefix("Uid:"))
+            .and_then(|line| line.split_whitespace().nth(1))
+            .and_then(|value| value.parse::<u32>().ok())
+            .ok_or(RuntimeError::Authority)?;
+        if metadata.uid() != effective || metadata.permissions().mode() & 0o077 != 0 {
+            return Err(RuntimeError::Authority);
+        }
     }
     Ok(())
 }
@@ -1311,9 +1618,9 @@ mod tests {
                 max_retained_state_bytes: Some(1_073_741_824),
                 execution_elapsed_ms: Some(8),
                 max_execution_elapsed_ms: Some(86_400_000),
-                operator_paused: None,
-                stop_after_unit: None,
-                cancelled: None,
+                operator_paused: Some(false),
+                stop_after_unit: Some(false),
+                cancelled: Some(false),
             } if phase == "integrating"
         ));
         assert_eq!(record.event.evidence.len(), 1);
@@ -1933,5 +2240,117 @@ mod tests {
             Err(RuntimeError::State)
         );
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn control_requests_are_ordered_integrity_bound_and_idempotently_applied() {
+        let root = root("controls");
+        fs::create_dir_all(&root).unwrap();
+        let checkpoint = checkpoint();
+        let mut pause = CampaignControlIntent::new(
+            "control-2".to_owned(),
+            checkpoint.authority_sha256.clone(),
+            checkpoint.campaign_id.clone(),
+            checkpoint.repository_id.clone(),
+            checkpoint.campaign_run_id.clone(),
+            CampaignControlAction::Pause,
+            checkpoint.head.clone(),
+            checkpoint.updated_at_ms,
+        )
+        .unwrap();
+        pause.created_at_ms = 2;
+        let mut first = pause.clone();
+        first.request_id = "control-1".to_owned();
+        first.created_at_ms = 1;
+        pause.persist_new(&root).unwrap();
+        first.persist_new(&root).unwrap();
+
+        let pending = CampaignControlIntent::pending(&root).unwrap();
+        assert_eq!(
+            pending
+                .iter()
+                .map(|intent| intent.request_id.as_str())
+                .collect::<Vec<_>>(),
+            ["control-1", "control-2"]
+        );
+        let mut applied = checkpoint;
+        assert!(applied.apply_control(&pending[0]).unwrap());
+        assert!(!applied.apply_control(&pending[0]).unwrap());
+        assert_eq!(
+            applied.apply_control(&pending[1]),
+            Err(RuntimeError::Authority),
+            "a differently identified duplicate effect must fail closed"
+        );
+
+        let path = control_path(&root, "control-1");
+        let mut envelope: serde_json::Value =
+            serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        envelope["intent"]["action"] = serde_json::Value::String("cancel".to_owned());
+        fs::write(&path, serde_json::to_vec_pretty(&envelope).unwrap()).unwrap();
+        assert_eq!(
+            CampaignControlIntent::load(&root, "control-1"),
+            Err(RuntimeError::State)
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn control_state_machine_has_closed_pause_resume_stop_and_cancel_semantics() {
+        let mut checkpoint = checkpoint();
+        let authority_sha256 = checkpoint.authority_sha256.clone();
+        let campaign_id = checkpoint.campaign_id.clone();
+        let repository_id = checkpoint.repository_id.clone();
+        let campaign_run_id = checkpoint.campaign_run_id.clone();
+        let head = checkpoint.head.clone();
+        let updated_at_ms = checkpoint.updated_at_ms;
+        let control = |request: &str, action| {
+            CampaignControlIntent::new(
+                request.to_owned(),
+                authority_sha256.clone(),
+                campaign_id.clone(),
+                repository_id.clone(),
+                campaign_run_id.clone(),
+                action,
+                head.clone(),
+                updated_at_ms,
+            )
+            .unwrap()
+        };
+
+        assert!(
+            checkpoint
+                .apply_control(&control("pause-1", CampaignControlAction::Pause))
+                .unwrap()
+        );
+        assert!(checkpoint.operator_paused);
+        assert!(
+            checkpoint
+                .apply_control(&control("resume-1", CampaignControlAction::Resume))
+                .unwrap()
+        );
+        assert!(!checkpoint.operator_paused);
+        assert!(
+            checkpoint
+                .apply_control(&control("stop-1", CampaignControlAction::StopAfterUnit))
+                .unwrap()
+        );
+        assert!(checkpoint.stop_after_unit);
+        assert!(
+            checkpoint
+                .apply_control(&control("resume-2", CampaignControlAction::Resume))
+                .unwrap()
+        );
+        assert!(!checkpoint.stop_after_unit);
+        assert!(
+            checkpoint
+                .apply_control(&control("cancel-1", CampaignControlAction::Cancel))
+                .unwrap()
+        );
+        assert!(checkpoint.cancelled);
+        assert_eq!(
+            checkpoint.apply_control(&control("resume-3", CampaignControlAction::Resume)),
+            Err(RuntimeError::Authority)
+        );
+        assert_eq!(CampaignControlAction::parse("unknown"), None);
     }
 }
