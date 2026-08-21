@@ -7,7 +7,11 @@ use std::{
 };
 
 use codingmage_contracts::TaskId;
-pub use codingmage_contracts::{HumanDecisionBlocker, PodRisk, TeamLeadProposal, TeamLeadReport};
+pub use codingmage_contracts::{
+    HumanDecisionBlocker, LeadBlockedDisposition, LeadBlockedReason, LeadDeferredDisposition,
+    LeadDeferredReason, LeadDispositionKind, LeadHumanDecisionReason, LeadReconsiderationTrigger,
+    LeadTaskBinding, PodRisk, TeamLeadProposal, TeamLeadReport,
+};
 use codingmage_plan::SelectedWork;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -222,6 +226,10 @@ impl CampaignSpec {
 pub enum TeamLeadOutcome {
     /// Sealed proposals eligible for scheduler admission.
     Proposals(Vec<PodProposal>),
+    /// Typed prerequisite blocker with no implementation authority.
+    Blocked(LeadBlockedDisposition),
+    /// Typed temporary deferral with no implementation authority.
+    Deferred(LeadDeferredDisposition),
     /// Recorded question requiring external authority.
     HumanDecision(HumanDecisionBlocker),
 }
@@ -237,22 +245,67 @@ pub fn validate_team_lead_report(
     ready: &[SelectedWork],
 ) -> Result<TeamLeadOutcome, CampaignError> {
     spec.verify()?;
-    if report.campaign_head != spec.initial_commit
+    if report.campaign_id != spec.campaign_id
+        || report.campaign_head != spec.initial_commit
         || report.task_source_sha256 != spec.task_source_sha256
         || report.proposals.len() > usize::from(spec.max_parallel_pods)
-        || report.proposals.is_empty() == report.human_decision.is_none()
     {
         return Err(CampaignError::InvalidProposal);
     }
-    if let Some(blocker) = report.human_decision {
-        if !valid_component(&blocker.code)
-            || blocker.summary.is_empty()
-            || blocker.summary.len() > MAX_SUMMARY_BYTES
-            || blocker.summary.chars().any(char::is_control)
-        {
-            return Err(CampaignError::InvalidProposal);
+    match report.disposition {
+        LeadDispositionKind::Blocked => {
+            let blocker = report
+                .blocked
+                .clone()
+                .ok_or(CampaignError::InvalidProposal)?;
+            if !report.proposals.is_empty()
+                || report.deferred.is_some()
+                || report.human_decision.is_some()
+                || !valid_lead_binding(&blocker.binding, &report, ready)
+            {
+                return Err(CampaignError::InvalidProposal);
+            }
+            return Ok(TeamLeadOutcome::Blocked(blocker));
         }
-        return Ok(TeamLeadOutcome::HumanDecision(blocker));
+        LeadDispositionKind::Deferred => {
+            let deferral = report
+                .deferred
+                .clone()
+                .ok_or(CampaignError::InvalidProposal)?;
+            if !report.proposals.is_empty()
+                || report.blocked.is_some()
+                || report.human_decision.is_some()
+                || !valid_lead_binding(&deferral.binding, &report, ready)
+            {
+                return Err(CampaignError::InvalidProposal);
+            }
+            return Ok(TeamLeadOutcome::Deferred(deferral));
+        }
+        LeadDispositionKind::HumanDecisionRequired => {
+            let blocker = report
+                .human_decision
+                .clone()
+                .ok_or(CampaignError::InvalidProposal)?;
+            if !report.proposals.is_empty()
+                || report.blocked.is_some()
+                || report.deferred.is_some()
+                || !valid_lead_binding(&blocker.binding, &report, ready)
+                || blocker.summary.is_empty()
+                || blocker.summary.len() > MAX_SUMMARY_BYTES
+                || blocker.summary.chars().any(char::is_control)
+            {
+                return Err(CampaignError::InvalidProposal);
+            }
+            return Ok(TeamLeadOutcome::HumanDecision(blocker));
+        }
+        LeadDispositionKind::Propose => {}
+    }
+    if report.proposals.is_empty()
+        || report.blocked.is_some()
+        || report.deferred.is_some()
+        || report.human_decision.is_some()
+    {
+        return Err(CampaignError::InvalidProposal);
     }
 
     let ready_by_id = ready
@@ -289,6 +342,20 @@ pub fn validate_team_lead_report(
         )?);
     }
     Ok(TeamLeadOutcome::Proposals(sealed))
+}
+
+fn valid_lead_binding(
+    binding: &LeadTaskBinding,
+    report: &TeamLeadReport,
+    ready: &[SelectedWork],
+) -> bool {
+    binding.campaign_id == report.campaign_id
+        && binding.campaign_head == report.campaign_head
+        && binding.task_source_sha256 == report.task_source_sha256
+        && ready.iter().any(|selected| {
+            selected.item.id == binding.task_id
+                && selected.item.dependencies == binding.dependencies
+        })
 }
 
 /// Hash-bound, model-proposed pod packet with no authority until admission.
@@ -813,20 +880,34 @@ mod tests {
         );
     }
 
+    fn binding(authority: &CampaignSpec, selected: &SelectedWork) -> LeadTaskBinding {
+        LeadTaskBinding {
+            campaign_id: authority.campaign_id.clone(),
+            campaign_head: authority.initial_commit.clone(),
+            task_source_sha256: authority.task_source_sha256.clone(),
+            task_id: selected.item.id.clone(),
+            dependencies: selected.item.dependencies.clone(),
+        }
+    }
+
     #[test]
     fn team_lead_output_is_only_untrusted_bounded_input() {
         let authority = spec(2);
         let ready = plan()
             .select_ready(&BTreeSet::new(), &BTreeSet::new(), 3)
             .unwrap();
-        let report = TeamLeadReport {
-            campaign_head: authority.initial_commit.clone(),
-            task_source_sha256: ready[0].source_sha256.clone(),
-            proposals: vec![lead_proposal(&ready[0], "crates/engine")],
-            human_decision: None,
-        };
         let mut matching = authority.clone();
         matching.task_source_sha256 = ready[0].source_sha256.clone();
+        let report = TeamLeadReport {
+            campaign_id: matching.campaign_id.clone(),
+            campaign_head: authority.initial_commit.clone(),
+            task_source_sha256: ready[0].source_sha256.clone(),
+            disposition: LeadDispositionKind::Propose,
+            proposals: vec![lead_proposal(&ready[0], "crates/engine")],
+            blocked: None,
+            deferred: None,
+            human_decision: None,
+        };
         let TeamLeadOutcome::Proposals(sealed) =
             validate_team_lead_report(report, &matching, &ready).unwrap()
         else {
@@ -838,9 +919,13 @@ mod tests {
         let mut invented = lead_proposal(&ready[0], "crates/engine");
         invented.dependencies.push("9.9.9.9".to_owned());
         let hostile = TeamLeadReport {
+            campaign_id: matching.campaign_id.clone(),
             campaign_head: matching.initial_commit.clone(),
             task_source_sha256: matching.task_source_sha256.clone(),
+            disposition: LeadDispositionKind::Propose,
             proposals: vec![invented],
+            blocked: None,
+            deferred: None,
             human_decision: None,
         };
         assert_eq!(
@@ -852,18 +937,94 @@ mod tests {
     #[test]
     fn team_lead_human_decision_is_exclusive_and_bounded() {
         let authority = spec(1);
+        let selected = plan().select_exact("1.1.1.1").unwrap();
         let report = TeamLeadReport {
+            campaign_id: authority.campaign_id.clone(),
             campaign_head: authority.initial_commit.clone(),
             task_source_sha256: authority.task_source_sha256.clone(),
+            disposition: LeadDispositionKind::HumanDecisionRequired,
             proposals: Vec::new(),
+            blocked: None,
+            deferred: None,
             human_decision: Some(HumanDecisionBlocker {
-                code: "architecture-choice".to_owned(),
+                binding: binding(&authority, &selected),
+                reason: LeadHumanDecisionReason::MaterialArchitectureChoice,
                 summary: "Select the public compatibility boundary.".to_owned(),
             }),
         };
         assert!(matches!(
-            validate_team_lead_report(report, &authority, &[]).unwrap(),
+            validate_team_lead_report(report, &authority, &[selected]).unwrap(),
             TeamLeadOutcome::HumanDecision(_)
         ));
+    }
+
+    #[test]
+    fn closed_dispositions_are_exclusive_typed_and_snapshot_bound() {
+        let mut authority = spec(1);
+        let selected = plan().select_exact("1.1.1.1").unwrap();
+        authority.task_source_sha256 = selected.source_sha256.clone();
+        let bound = binding(&authority, &selected);
+
+        let blocked = TeamLeadReport {
+            campaign_id: authority.campaign_id.clone(),
+            campaign_head: authority.initial_commit.clone(),
+            task_source_sha256: authority.task_source_sha256.clone(),
+            disposition: LeadDispositionKind::Blocked,
+            proposals: Vec::new(),
+            blocked: Some(LeadBlockedDisposition {
+                binding: bound.clone(),
+                reason: LeadBlockedReason::UnavailableExternalDependency,
+            }),
+            deferred: None,
+            human_decision: None,
+        };
+        assert!(matches!(
+            validate_team_lead_report(blocked.clone(), &authority, std::slice::from_ref(&selected))
+                .unwrap(),
+            TeamLeadOutcome::Blocked(_)
+        ));
+
+        let deferred = TeamLeadReport {
+            disposition: LeadDispositionKind::Deferred,
+            blocked: None,
+            deferred: Some(LeadDeferredDisposition {
+                binding: bound.clone(),
+                reason: LeadDeferredReason::GateResourceContention,
+                reconsideration_trigger: LeadReconsiderationTrigger::GateResourceRelease,
+            }),
+            ..blocked.clone()
+        };
+        assert!(matches!(
+            validate_team_lead_report(deferred, &authority, std::slice::from_ref(&selected))
+                .unwrap(),
+            TeamLeadOutcome::Deferred(_)
+        ));
+
+        let mut mixed = blocked.clone();
+        mixed.proposals = vec![lead_proposal(&selected, "crates/engine")];
+        assert_eq!(
+            validate_team_lead_report(mixed, &authority, std::slice::from_ref(&selected)),
+            Err(CampaignError::InvalidProposal)
+        );
+
+        for field in 0..5 {
+            let mut stale = blocked.clone();
+            let binding = &mut stale.blocked.as_mut().unwrap().binding;
+            match field {
+                0 => binding.campaign_id.push_str("-other"),
+                1 => binding.campaign_head = "f".repeat(40),
+                2 => binding.task_source_sha256 = "f".repeat(64),
+                3 => binding.task_id.push_str(".9"),
+                _ => binding.dependencies.push("9.9.9.9".to_owned()),
+            }
+            assert_eq!(
+                validate_team_lead_report(stale, &authority, std::slice::from_ref(&selected)),
+                Err(CampaignError::InvalidProposal)
+            );
+        }
+
+        let mut unknown = serde_json::to_value(blocked).unwrap();
+        unknown["blocked"]["reason"] = serde_json::Value::String("invented_reason".to_owned());
+        assert!(serde_json::from_value::<TeamLeadReport>(unknown).is_err());
     }
 }

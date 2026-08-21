@@ -2,35 +2,77 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["campaign_head", "task_source_sha256", "proposals", "human_decision"],
+  "required": ["campaign_id", "campaign_head", "task_source_sha256", "disposition", "proposals", "blocked", "deferred", "human_decision"],
   "properties": {
+    "campaign_id": { "type": "string", "minLength": 1, "maxLength": 128 },
     "campaign_head": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "task_source_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-    "proposals": {
-      "type": "array",
-      "maxItems": 16,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["task_id", "dependencies", "owned_paths", "gate_tiers", "test_resources", "expected_artifacts", "risk", "rationale_summary"],
-        "properties": {
-          "task_id": { "type": "string", "minLength": 1, "maxLength": 128 },
-          "dependencies": { "description": "Exact dependency array from the selected ready task.", "type": "array", "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
-          "owned_paths": { "description": "Non-overlapping repository-relative paths within campaign authority.", "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 4096 } },
-          "gate_tiers": { "description": "Names selected only from the supplied available gate tiers.", "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
-          "test_resources": { "description": "Short resource identifiers, never paths or prose.", "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
-          "expected_artifacts": { "description": "Repository-relative artifact paths nested under an owned path; empty when unknown.", "type": "array", "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 4096 } },
-          "risk": { "enum": ["routine", "high"] },
-          "rationale_summary": { "type": "string", "minLength": 1, "maxLength": 4096 }
-        }
+    "disposition": { "enum": ["propose", "blocked", "deferred", "human_decision_required"] },
+    "proposals": { "type": "array", "maxItems": 16, "items": { "$ref": "#/$defs/proposal" } },
+    "blocked": { "oneOf": [{ "$ref": "#/$defs/blocked" }, { "type": "null" }] },
+    "deferred": { "oneOf": [{ "$ref": "#/$defs/deferred" }, { "type": "null" }] },
+    "human_decision": { "oneOf": [{ "$ref": "#/$defs/human_decision" }, { "type": "null" }] }
+  },
+  "oneOf": [
+    { "properties": { "disposition": { "const": "propose" }, "proposals": { "minItems": 1 }, "blocked": { "type": "null" }, "deferred": { "type": "null" }, "human_decision": { "type": "null" } } },
+    { "properties": { "disposition": { "const": "blocked" }, "proposals": { "maxItems": 0 }, "blocked": { "$ref": "#/$defs/blocked" }, "deferred": { "type": "null" }, "human_decision": { "type": "null" } } },
+    { "properties": { "disposition": { "const": "deferred" }, "proposals": { "maxItems": 0 }, "blocked": { "type": "null" }, "deferred": { "$ref": "#/$defs/deferred" }, "human_decision": { "type": "null" } } },
+    { "properties": { "disposition": { "const": "human_decision_required" }, "proposals": { "maxItems": 0 }, "blocked": { "type": "null" }, "deferred": { "type": "null" }, "human_decision": { "$ref": "#/$defs/human_decision" } } }
+  ],
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["campaign_id", "campaign_head", "task_source_sha256", "task_id", "dependencies"],
+      "properties": {
+        "campaign_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "campaign_head": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "task_source_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "task_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "dependencies": { "type": "array", "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } }
+      }
+    },
+    "proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "dependencies", "owned_paths", "gate_tiers", "test_resources", "expected_artifacts", "risk", "rationale_summary"],
+      "properties": {
+        "task_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "dependencies": { "type": "array", "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
+        "owned_paths": { "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 4096 } },
+        "gate_tiers": { "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
+        "test_resources": { "type": "array", "minItems": 1, "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
+        "expected_artifacts": { "type": "array", "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 4096 } },
+        "risk": { "enum": ["routine", "high"] },
+        "rationale_summary": { "type": "string", "minLength": 1, "maxLength": 4096 }
+      }
+    },
+    "blocked": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "reason"],
+      "properties": {
+        "binding": { "$ref": "#/$defs/binding" },
+        "reason": { "enum": ["unavailable_external_dependency", "unavailable_supported_hardware", "missing_operator_managed_authentication", "unavailable_external_service", "unsupported_platform", "blocked_prerequisite", "implementation_condition_outside_authority"] }
+      }
+    },
+    "deferred": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "reason", "reconsideration_trigger"],
+      "properties": {
+        "binding": { "$ref": "#/$defs/binding" },
+        "reason": { "enum": ["temporary_provider_capacity", "active_path_lease", "gate_resource_contention", "deterministic_dependency_order", "pending_stronger_review", "operator_pause"] },
+        "reconsideration_trigger": { "enum": ["campaign_head_advancement", "lease_release", "gate_resource_release", "provider_reset", "review_completion", "operator_resume"] }
       }
     },
     "human_decision": {
-      "type": ["object", "null"],
+      "type": "object",
       "additionalProperties": false,
-      "required": ["code", "summary"],
+      "required": ["binding", "reason", "summary"],
       "properties": {
-        "code": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "binding": { "$ref": "#/$defs/binding" },
+        "reason": { "enum": ["ambiguous_scope", "material_architecture_choice", "requested_authority_expansion", "protected_branch_consequence", "external_infrastructure_change", "release_decision"] },
         "summary": { "type": "string", "minLength": 1, "maxLength": 4096 }
       }
     }

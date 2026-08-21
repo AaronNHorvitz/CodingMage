@@ -978,9 +978,10 @@ fn render_lead_packet(binding: &CodexLeadBinding) -> Result<Vec<u8>, CodexError>
     packet.push_str(
         "Return only the required structured response. Prefer one independently implementable local\n\
          task from the supplied ready set; an unavailable external prerequisite on one task must not\n\
-         block a different ready task. If every supplied task requires a material architecture,\n\
-         external, or authority decision not resolved by existing policy, return no proposals and\n\
-         one human_decision.\n",
+         block a different ready task. Select exactly one disposition: propose, blocked, deferred,\n\
+         or human_decision_required. All payload fields for the other three dispositions must be\n\
+         null or empty exactly as required by the schema. Every nonproposal payload must repeat the\n\
+         exact campaign, head, task-source, task, and dependency binding supplied above.\n",
     );
     if packet.len() > MAX_PROMPT_BYTES {
         return Err(CodexError::InvalidPacket);
@@ -1073,7 +1074,8 @@ fn parse_lead_jsonl(
     let report: TeamLeadReport =
         serde_json::from_str(final_message.as_deref().ok_or(CodexError::InvalidOutput)?)
             .map_err(|_| CodexError::InvalidOutput)?;
-    if report.campaign_head != binding.campaign_head
+    if report.campaign_id != binding.campaign_id
+        || report.campaign_head != binding.campaign_head
         || report.task_source_sha256 != binding.task_source_sha256
     {
         return Err(CodexError::InvalidReport);
@@ -1303,10 +1305,10 @@ mod tests {
             Err(CodexError::UnsupportedVersion)
         );
         let schema: serde_json::Value = serde_json::from_str(team_lead_schema()).unwrap();
-        assert!(schema.to_string().find("oneOf").is_none());
+        assert_eq!(schema["oneOf"].as_array().unwrap().len(), 4);
         assert_eq!(
-            schema["properties"]["human_decision"]["type"],
-            serde_json::json!(["object", "null"])
+            schema["properties"]["disposition"]["enum"],
+            serde_json::json!(["propose", "blocked", "deferred", "human_decision_required"])
         );
     }
 
@@ -1494,11 +1496,22 @@ mod tests {
         let binding = fixture.lead_binding(&"c".repeat(64));
         let thread = "123e4567-e89b-12d3-a456-426614174000";
         let report = serde_json::json!({
+            "campaign_id": binding.campaign_id,
             "campaign_head": binding.campaign_head,
             "task_source_sha256": binding.task_source_sha256,
+            "disposition": "human_decision_required",
             "proposals": [],
+            "blocked": null,
+            "deferred": null,
             "human_decision": {
-                "code": "architecture-choice",
+                "binding": {
+                    "campaign_id": "campaign-1",
+                    "campaign_head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "task_source_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                    "task_id": "1.1.1.1",
+                    "dependencies": []
+                },
+                "reason": "material_architecture_choice",
                 "summary": "Choose the compatibility boundary."
             }
         });

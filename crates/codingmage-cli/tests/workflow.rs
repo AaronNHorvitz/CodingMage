@@ -342,19 +342,21 @@ if "--help" in sys.argv:
     raise SystemExit(0)
 packet = sys.stdin.read()
 if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
+    campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
     head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
     digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
     task = re.search(r"- id=([0-9.]+)", packet).group(1)
     dependencies = [] if task.endswith(".1") else ["0.1.1.1"]
     report = {
-        "campaign_head": head, "task_source_sha256": digest,
+        "campaign_id": campaign_id, "campaign_head": head, "task_source_sha256": digest,
+        "disposition": "propose",
         "proposals": [{
             "task_id": task, "dependencies": dependencies, "owned_paths": ["src"],
             "gate_tiers": ["focused"], "test_resources": ["rust-tests"],
             "expected_artifacts": ["src/lib.rs"], "risk": "routine",
             "rationale_summary": "The supplied task is dependency-ready and path-bounded."
         }],
-        "human_decision": None
+        "blocked": None, "deferred": None, "human_decision": None
     }
 else:
     base = re.search(r"Base commit: ([0-9a-f]{40,64})", packet).group(1)
@@ -621,18 +623,20 @@ if "--help" in sys.argv:
     raise SystemExit(0)
 packet = sys.stdin.read()
 if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
+    campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
     head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
     digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
     task = re.search(r"- id=([0-9.]+)", packet).group(1)
     report = {
-        "campaign_head": head, "task_source_sha256": digest,
+        "campaign_id": campaign_id, "campaign_head": head, "task_source_sha256": digest,
+        "disposition": "propose",
         "proposals": [{
             "task_id": task, "dependencies": [], "owned_paths": ["src"],
             "gate_tiers": ["focused"], "test_resources": ["rust-tests"],
             "expected_artifacts": ["src/lib.rs"], "risk": "routine",
             "rationale_summary": "The supplied task is dependency-ready and path-bounded."
         }],
-        "human_decision": None
+        "blocked": None, "deferred": None, "human_decision": None
     }
 else:
     base = re.search(r"Base commit: ([0-9a-f]{40,64})", packet).group(1)
@@ -836,18 +840,20 @@ if "--help" in sys.argv:
     raise SystemExit(0)
 packet = sys.stdin.read()
 if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
+    campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
     head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
     digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
     task = re.search(r"- id=([0-9.]+)", packet).group(1)
     report = {
-        "campaign_head": head, "task_source_sha256": digest,
+        "campaign_id": campaign_id, "campaign_head": head, "task_source_sha256": digest,
+        "disposition": "propose",
         "proposals": [{
             "task_id": task, "dependencies": [], "owned_paths": ["src"],
             "gate_tiers": ["focused"], "test_resources": ["rust-tests"],
             "expected_artifacts": ["src/lib.rs"], "risk": "routine",
             "rationale_summary": "The supplied task is dependency-ready and path-bounded."
         }],
-        "human_decision": None
+        "blocked": None, "deferred": None, "human_decision": None
     }
 else:
     base = re.search(r"Base commit: ([0-9a-f]{40,64})", packet).group(1)

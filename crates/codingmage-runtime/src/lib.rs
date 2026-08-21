@@ -692,9 +692,38 @@ pub fn run_serial_campaign_with_progress(
                 .map_err(RuntimeError::Campaign)?;
             let proposals = match outcome {
                 TeamLeadOutcome::Proposals(proposals) => proposals,
-                TeamLeadOutcome::HumanDecision(blocker) => {
-                    let blocker_code =
-                        format!("codingmage.campaign.human_decision.{}", blocker.code);
+                TeamLeadOutcome::Blocked(_) => {
+                    let blocker_code = "codingmage.campaign.lead_blocked".to_owned();
+                    checkpoint.phase = CampaignPhase::Blocked;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        CampaignState::Blocked,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        Some(blocker_code),
+                    ));
+                }
+                TeamLeadOutcome::Deferred(_) => {
+                    let blocker_code = "codingmage.campaign.lead_deferred".to_owned();
+                    checkpoint.phase = CampaignPhase::Paused;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        CampaignState::Paused,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        Some(blocker_code),
+                    ));
+                }
+                TeamLeadOutcome::HumanDecision(_) => {
+                    let blocker_code = "codingmage.campaign.human_decision".to_owned();
                     checkpoint.phase = CampaignPhase::Blocked;
                     checkpoint.blocker_code = Some(blocker_code.clone());
                     checkpoint.persist(&campaign_root)?;
