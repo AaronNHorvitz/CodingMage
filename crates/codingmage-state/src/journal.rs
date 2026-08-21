@@ -101,18 +101,32 @@ pub enum EventKind {
         active_unit: bool,
         /// Provider attempts when the campaign owns an exact counter.
         provider_attempts: Option<u32>,
+        /// Operator-authorized provider-attempt ceiling.
+        max_provider_attempts: Option<u32>,
         /// Metadata-only provider-report repairs when projected by the campaign.
         malformed_report_repairs: Option<u32>,
+        /// Operator-authorized malformed-report-repair ceiling.
+        max_malformed_report_repairs: Option<u32>,
         /// Correction round when the campaign owns an exact counter.
         correction_round: Option<u32>,
+        /// Operator-authorized correction-round ceiling.
+        max_correction_rounds: Option<u32>,
         /// Provider and deterministic-gate process invocations.
         process_invocations: Option<u32>,
+        /// Operator-authorized process-invocation ceiling.
+        max_process_invocations: Option<u32>,
         /// Full observed stdout and stderr bytes where process receipts exist.
         output_bytes: Option<u64>,
+        /// Operator-authorized aggregate output ceiling.
+        max_output_bytes: Option<u64>,
         /// Bytes retained beneath campaign-owned private state at observation.
         retained_state_bytes: Option<u64>,
+        /// Operator-authorized retained-state ceiling.
+        max_retained_state_bytes: Option<u64>,
         /// Sum of observed provider and gate execution milliseconds.
         execution_elapsed_ms: Option<u64>,
+        /// Operator-authorized observed-execution ceiling.
+        max_execution_elapsed_ms: Option<u64>,
         /// Authenticated pause state once campaign controls are wired.
         operator_paused: Option<bool>,
         /// Authenticated stop-after-unit state once campaign controls are wired.
@@ -463,60 +477,134 @@ fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
             validate_label(system)?;
             validate_label(change)?;
         }
-        EventKind::CampaignCheckpointed {
-            phase,
-            completed_units,
-            blocked_tasks,
-            deferred_tasks,
-            human_decisions,
-            accepted_outcomes,
-            max_outcomes,
-            provider_attempts,
-            malformed_report_repairs,
-            correction_round,
-            process_invocations,
-            output_bytes,
-            retained_state_bytes,
-            execution_elapsed_ms,
-            ..
-        } => {
-            validate_label(phase)?;
-            let projected = completed_units
-                .checked_add(*blocked_tasks)
-                .and_then(|value| value.checked_add(*deferred_tasks))
-                .and_then(|value| value.checked_add(*human_decisions))
-                .ok_or(JournalError::InvalidField)?;
-            if *accepted_outcomes != projected
-                || max_outcomes.is_some_and(|limit| limit == 0 || *accepted_outcomes > limit)
-            {
-                return Err(JournalError::InvalidField);
-            }
-            let utilization_present = [
-                provider_attempts.is_some(),
-                malformed_report_repairs.is_some(),
-                correction_round.is_some(),
-                process_invocations.is_some(),
-                output_bytes.is_some(),
-                retained_state_bytes.is_some(),
-                execution_elapsed_ms.is_some(),
-            ];
-            if utilization_present.iter().any(|present| *present)
-                && !utilization_present.iter().all(|present| *present)
-            {
-                return Err(JournalError::InvalidField);
-            }
-            if let (Some(provider), Some(repairs), Some(processes)) = (
-                provider_attempts,
-                malformed_report_repairs,
-                process_invocations,
-            ) && (repairs > provider || provider > processes)
-            {
-                return Err(JournalError::InvalidField);
-            }
-        }
+        kind @ EventKind::CampaignCheckpointed { .. } => validate_campaign_checkpoint(kind)?,
     }
     for redaction in &event.redactions {
         validate_label(&redaction.category)?;
+    }
+    Ok(())
+}
+
+fn validate_campaign_checkpoint(kind: &EventKind) -> Result<(), JournalError> {
+    let EventKind::CampaignCheckpointed {
+        phase,
+        completed_units,
+        blocked_tasks,
+        deferred_tasks,
+        human_decisions,
+        accepted_outcomes,
+        max_outcomes,
+        ..
+    } = kind
+    else {
+        return Err(JournalError::InvalidField);
+    };
+    validate_label(phase)?;
+    let projected = completed_units
+        .checked_add(*blocked_tasks)
+        .and_then(|value| value.checked_add(*deferred_tasks))
+        .and_then(|value| value.checked_add(*human_decisions))
+        .ok_or(JournalError::InvalidField)?;
+    if *accepted_outcomes != projected
+        || max_outcomes.is_some_and(|limit| limit == 0 || *accepted_outcomes > limit)
+    {
+        return Err(JournalError::InvalidField);
+    }
+    validate_campaign_utilization(kind)
+}
+
+fn validate_campaign_utilization(kind: &EventKind) -> Result<(), JournalError> {
+    let EventKind::CampaignCheckpointed {
+        provider_attempts,
+        max_provider_attempts,
+        malformed_report_repairs,
+        max_malformed_report_repairs,
+        correction_round,
+        max_correction_rounds,
+        process_invocations,
+        max_process_invocations,
+        output_bytes,
+        max_output_bytes,
+        retained_state_bytes,
+        max_retained_state_bytes,
+        execution_elapsed_ms,
+        max_execution_elapsed_ms,
+        ..
+    } = kind
+    else {
+        return Err(JournalError::InvalidField);
+    };
+    let present = [
+        provider_attempts.is_some(),
+        max_provider_attempts.is_some(),
+        malformed_report_repairs.is_some(),
+        max_malformed_report_repairs.is_some(),
+        correction_round.is_some(),
+        max_correction_rounds.is_some(),
+        process_invocations.is_some(),
+        max_process_invocations.is_some(),
+        output_bytes.is_some(),
+        max_output_bytes.is_some(),
+        retained_state_bytes.is_some(),
+        max_retained_state_bytes.is_some(),
+        execution_elapsed_ms.is_some(),
+        max_execution_elapsed_ms.is_some(),
+    ];
+    if present.iter().any(|value| *value) && !present.iter().all(|value| *value) {
+        return Err(JournalError::InvalidField);
+    }
+    let (
+        Some(provider),
+        Some(max_provider),
+        Some(repairs),
+        Some(max_repairs),
+        Some(corrections),
+        Some(max_corrections),
+        Some(processes),
+        Some(max_processes),
+        Some(output),
+        Some(max_output),
+        Some(retained),
+        Some(max_retained),
+        Some(elapsed),
+        Some(max_elapsed),
+    ) = (
+        provider_attempts,
+        max_provider_attempts,
+        malformed_report_repairs,
+        max_malformed_report_repairs,
+        correction_round,
+        max_correction_rounds,
+        process_invocations,
+        max_process_invocations,
+        output_bytes,
+        max_output_bytes,
+        retained_state_bytes,
+        max_retained_state_bytes,
+        execution_elapsed_ms,
+        max_execution_elapsed_ms,
+    )
+    else {
+        return Ok(());
+    };
+    if repairs > provider
+        || provider > processes
+        || *max_provider == 0
+        || provider > max_provider
+        || *max_repairs == 0
+        || repairs > max_repairs
+        || *max_corrections == 0
+        || corrections > max_corrections
+        || *max_processes == 0
+        || processes > max_processes
+        || *max_output == 0
+        || output > max_output
+        || *max_retained == 0
+        || retained > max_retained
+        || *max_elapsed == 0
+        || elapsed > max_elapsed
+    {
+        return Err(JournalError::InvalidField);
     }
     Ok(())
 }

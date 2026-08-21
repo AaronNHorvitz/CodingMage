@@ -485,6 +485,8 @@ pub fn campaign_status(
         &spec.campaign_id,
         &spec.repository_id,
         &spec.initial_commit,
+        spec.max_units,
+        &spec.limits,
     )?;
     let elapsed_ms = checkpoint.elapsed_ms()?;
     let current_round = match checkpoint.active_unit.as_ref() {
@@ -586,6 +588,8 @@ pub fn clear_campaign_blocker(
         &spec.campaign_id,
         &spec.repository_id,
         &spec.initial_commit,
+        spec.max_units,
+        &spec.limits,
     )?;
     if checkpoint.active_unit.is_some()
         || checkpoint.pending_integration.is_some()
@@ -752,6 +756,8 @@ pub fn observe_campaign_deferral_trigger(
         &spec.campaign_id,
         &spec.repository_id,
         &spec.initial_commit,
+        spec.max_units,
+        &spec.limits,
     )?;
     if checkpoint.active_unit.is_some()
         || checkpoint.pending_integration.is_some()
@@ -922,6 +928,8 @@ pub fn run_serial_campaign_with_progress(
                 &spec.campaign_id,
                 &spec.repository_id,
                 &spec.initial_commit,
+                spec.max_units,
+                &spec.limits,
             )?;
             let campaign = OwnedWorktree::load(&campaign_config, &checkpoint.worktree_id)
                 .map_err(|_| RuntimeError::Repository)?;
@@ -956,6 +964,7 @@ pub fn run_serial_campaign_with_progress(
                 campaign.manifest().branch.clone(),
                 inventory.head.clone(),
                 spec.max_units,
+                spec.limits.clone(),
             )?;
             checkpoint.persist(&campaign_root)?;
             (campaign, checkpoint)
@@ -3491,6 +3500,19 @@ impl std::error::Error for RuntimeError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use codingmage_campaign::CampaignLimits;
+
+    fn campaign_limits() -> CampaignLimits {
+        CampaignLimits {
+            provider_attempts: 1_000,
+            malformed_report_repairs: 100,
+            correction_rounds: 100,
+            process_invocations: 10_000,
+            output_bytes: 1_073_741_824,
+            retained_state_bytes: 1_073_741_824,
+            execution_elapsed_ms: 86_400_000,
+        }
+    }
 
     #[test]
     fn spec_rejects_credentials_relative_paths_and_unknown_fields() {
@@ -3549,6 +3571,7 @@ effort = "high"
             "codingmage/campaign-1".to_owned(),
             "b".repeat(40),
             10,
+            campaign_limits(),
         )
         .unwrap();
         let head_deferral = DeferredTaskProjection {
@@ -3633,6 +3656,7 @@ effort = "high"
             "codingmage/campaign-1".to_owned(),
             "b".repeat(40),
             10,
+            campaign_limits(),
         )
         .unwrap();
         record_human_decision(
@@ -3745,6 +3769,7 @@ effort = "high"
             "codingmage/campaign-1".to_owned(),
             "b".repeat(40),
             10,
+            campaign_limits(),
         )
         .unwrap();
         checkpoint.blocked_task_ids.insert("1.1.1.2".to_owned());
@@ -3814,6 +3839,7 @@ effort = "high"
             "codingmage/campaign-1".to_owned(),
             "b".repeat(40),
             10,
+            campaign_limits(),
         )
         .unwrap();
         checkpoint.blocked_task_ids.insert("1.1.1.1".to_owned());

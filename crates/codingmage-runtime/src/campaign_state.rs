@@ -8,6 +8,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use codingmage_campaign::CampaignLimits;
 use codingmage_contracts::{
     EvidenceId, LeadBlockedReason, LeadDeferredReason, LeadHumanDecisionReason,
     LeadReconsiderationTrigger, RepositoryId, RunId, TaskId, WorktreeId,
@@ -20,7 +21,7 @@ use sha2::{Digest, Sha256};
 
 use crate::{RunUtilization, RuntimeError};
 
-const SCHEMA_VERSION: u16 = 4;
+const SCHEMA_VERSION: u16 = 5;
 const MAX_CHECKPOINT_BYTES: usize = 1024 * 1024;
 const CLEARANCE_SCHEMA_VERSION: u16 = 1;
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
@@ -160,6 +161,7 @@ pub(crate) struct CampaignCheckpoint {
     pub rejected_proposals: Vec<RejectedProposalProjection>,
     pub outcomes: CampaignOutcomeProjection,
     pub utilization: CampaignUtilization,
+    pub limits: CampaignLimits,
     pub active_unit: Option<ActiveUnit>,
     pub pending_integration: Option<PendingIntegration>,
     pub started_at_ms: u64,
@@ -394,6 +396,7 @@ impl CampaignCheckpoint {
         branch: String,
         initial_head: String,
         max_accepted_outcomes: u32,
+        limits: CampaignLimits,
     ) -> Result<Self, RuntimeError> {
         if max_accepted_outcomes == 0 {
             return Err(RuntimeError::State);
@@ -429,6 +432,7 @@ impl CampaignCheckpoint {
                 max_accepted: max_accepted_outcomes,
             },
             utilization: CampaignUtilization::default(),
+            limits,
             active_unit: None,
             pending_integration: None,
             started_at_ms: now,
@@ -560,12 +564,19 @@ impl CampaignCheckpoint {
                 max_outcomes: Some(self.outcomes.max_accepted),
                 active_unit: self.active_unit.is_some(),
                 provider_attempts: Some(self.utilization.provider_attempts),
+                max_provider_attempts: Some(self.limits.provider_attempts),
                 malformed_report_repairs: Some(self.utilization.malformed_report_repairs),
+                max_malformed_report_repairs: Some(self.limits.malformed_report_repairs),
                 correction_round: Some(self.utilization.correction_rounds),
+                max_correction_rounds: Some(self.limits.correction_rounds),
                 process_invocations: Some(self.utilization.process_invocations),
+                max_process_invocations: Some(self.limits.process_invocations),
                 output_bytes: Some(self.utilization.output_bytes),
+                max_output_bytes: Some(self.limits.output_bytes),
                 retained_state_bytes: Some(self.utilization.retained_state_bytes),
+                max_retained_state_bytes: Some(self.limits.retained_state_bytes),
                 execution_elapsed_ms: Some(self.utilization.execution_elapsed_ms),
+                max_execution_elapsed_ms: Some(self.limits.execution_elapsed_ms),
                 operator_paused: None,
                 stop_after_unit: None,
                 cancelled: None,
@@ -589,11 +600,15 @@ impl CampaignCheckpoint {
         campaign_id: &str,
         repository_id: &str,
         initial_head: &str,
+        max_accepted_outcomes: u32,
+        limits: &CampaignLimits,
     ) -> Result<(), RuntimeError> {
         if self.authority_sha256 != authority_sha256
             || self.campaign_id != campaign_id
             || self.repository_id != repository_id
             || self.initial_head != initial_head
+            || self.outcomes.max_accepted != max_accepted_outcomes
+            || self.limits != *limits
         {
             return Err(RuntimeError::Authority);
         }
@@ -1018,6 +1033,18 @@ fn set_file_private(_file: &File) -> Result<(), RuntimeError> {
 mod tests {
     use super::*;
 
+    fn campaign_limits() -> CampaignLimits {
+        CampaignLimits {
+            provider_attempts: 1_000,
+            malformed_report_repairs: 100,
+            correction_rounds: 100,
+            process_invocations: 10_000,
+            output_bytes: 1_073_741_824,
+            retained_state_bytes: 1_073_741_824,
+            execution_elapsed_ms: 86_400_000,
+        }
+    }
+
     fn root(name: &str) -> PathBuf {
         std::env::temp_dir().join(format!(
             "codingmage-campaign-checkpoint-{name}-{}-{}",
@@ -1036,6 +1063,7 @@ mod tests {
             "codingmage/campaign-1/campaign-root".to_owned(),
             "b".repeat(40),
             10,
+            campaign_limits(),
         )
         .unwrap()
     }
@@ -1123,12 +1151,19 @@ mod tests {
                 max_outcomes: Some(10),
                 active_unit: false,
                 provider_attempts: Some(2),
+                max_provider_attempts: Some(1_000),
                 malformed_report_repairs: Some(1),
+                max_malformed_report_repairs: Some(100),
                 correction_round: Some(2),
+                max_correction_rounds: Some(100),
                 process_invocations: Some(4),
+                max_process_invocations: Some(10_000),
                 output_bytes: Some(12),
+                max_output_bytes: Some(1_073_741_824),
                 retained_state_bytes: Some(0),
+                max_retained_state_bytes: Some(1_073_741_824),
                 execution_elapsed_ms: Some(8),
+                max_execution_elapsed_ms: Some(86_400_000),
                 operator_paused: None,
                 stop_after_unit: None,
                 cancelled: None,
@@ -1234,10 +1269,48 @@ mod tests {
     fn checkpoint_binds_original_authority() {
         let checkpoint = checkpoint();
         checkpoint
-            .validate_authority(&"a".repeat(64), "campaign-1", "repo-1", &"b".repeat(40))
+            .validate_authority(
+                &"a".repeat(64),
+                "campaign-1",
+                "repo-1",
+                &"b".repeat(40),
+                10,
+                &campaign_limits(),
+            )
             .unwrap();
         assert_eq!(
-            checkpoint.validate_authority(&"c".repeat(64), "campaign-1", "repo-1", &"b".repeat(40)),
+            checkpoint.validate_authority(
+                &"c".repeat(64),
+                "campaign-1",
+                "repo-1",
+                &"b".repeat(40),
+                10,
+                &campaign_limits(),
+            ),
+            Err(RuntimeError::Authority)
+        );
+        assert_eq!(
+            checkpoint.validate_authority(
+                &"a".repeat(64),
+                "campaign-1",
+                "repo-1",
+                &"b".repeat(40),
+                9,
+                &campaign_limits(),
+            ),
+            Err(RuntimeError::Authority)
+        );
+        let mut changed_limits = campaign_limits();
+        changed_limits.output_bytes -= 1;
+        assert_eq!(
+            checkpoint.validate_authority(
+                &"a".repeat(64),
+                "campaign-1",
+                "repo-1",
+                &"b".repeat(40),
+                10,
+                &changed_limits,
+            ),
             Err(RuntimeError::Authority)
         );
     }
