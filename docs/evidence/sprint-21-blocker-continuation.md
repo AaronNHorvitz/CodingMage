@@ -67,8 +67,8 @@ git diff --check
 All commands passed. The full workspace run includes the focused blocker continuation fixture and
 all existing process, Git, gate, state, review, provider, orchestration, and campaign tests.
 
-## Open Scope
+## Reconciliation
 
-This evidence closes Task `21.2.2` and acceptance criterion `AC 21.3`. Deferral and
-reconsideration semantics, human-decision continuation, rejected-output effect proofs, Story
-`21.2`, and the Sprint 21 gates remain open.
+This evidence closes Task `21.2.2` and acceptance criterion `AC 21.3`. The later deferral,
+human-decision, rejection, and complete Sprint 21 matrix evidence is bound by
+`docs/evidence/sprint-21-gate.md`.

@@ -49,6 +49,6 @@ cargo fmt --all -- --check
 git diff --check
 ```
 
-All commands passed. This evidence closes Task `21.2.4`, `AC 21.2`, and `AC 21.6`. Story `21.2`
-remains open for the end-to-end human-decision continuation proof in `AC 21.5`; the Sprint 21 gates
-remain open for their complete disposition and reason matrices.
+All commands passed. This evidence closes Task `21.2.4`, `AC 21.2`, and `AC 21.6`. The later
+human-decision and complete disposition/reason matrices are reconciled in
+`docs/evidence/sprint-21-gate.md`.

@@ -935,12 +935,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 21.1 - Campaign Specification
 
-- [ ] **Task 21.1.1 - Define campaign authority**
+- [x] **Task 21.1.1 - Define campaign authority**
   - [x] **Sub-task 21.1.1.1:** Add a versioned campaign specification with campaign identity, allowed and denied roots, pod ceiling, unit ceiling, provider profiles, gate tiers, and publication ceiling.
   - [x] **Sub-task 21.1.1.2:** Reject linked files, relative authority roots, overlapping allowed/denied roots, unbounded concurrency, raw credentials, and protected-branch targets.
   - [x] **Sub-task 21.1.1.3:** Bind every campaign to repository identity, initial commit, task-source digest, and operator authorization digest.
   - [x] **Sub-task 21.1.1.4:** Make one-pod serial execution the default regardless of available hardware.
-- [ ] **Task 21.1.2 - Build the read-only campaign lead**
+- [x] **Task 21.1.2 - Build the read-only campaign lead**
   - [x] **Sub-task 21.1.2.1:** Define a strict team-lead proposal schema for task identity, exact paths, dependencies, risk, gates, expected artifacts, and rationale summary.
   - [x] **Sub-task 21.1.2.2:** Give the lead read-only repository and task-plan access with no Git, write, credential, publication, or state-transition authority.
   - [x] **Sub-task 21.1.2.3:** Deterministically reject stale, non-ready, escaping, overbroad, contradictory, duplicate, or undeclared proposals.
@@ -983,8 +983,8 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Sprint 21 Gate
 
-- [ ] **Gate 21.1:** Campaign-spec mutation, hostile-proposal, stale-source, authority-escape, and deterministic-repeatability corpora pass.
-- [ ] **Gate 21.2:** Every disposition, reason, reconsideration trigger, mixed outcome, repeated deferral, starvation, and no-progress fixture passes with zero pre-admission effects.
+- [x] **Gate 21.1:** Campaign-spec mutation, hostile-proposal, stale-source, authority-escape, and deterministic-repeatability corpora pass. See `docs/evidence/sprint-21-gate.md`.
+- [x] **Gate 21.2:** Every disposition, reason, reconsideration trigger, mixed outcome, repeated deferral, starvation, and no-progress fixture passes with zero pre-admission effects. See `docs/evidence/sprint-21-gate.md`.
 
 ---
 
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 21 Gates `21.1` and `21.2`: run exhaustive campaign-authority mutation and complete disposition/reason/trigger matrices, then bind the passing evidence before beginning the remaining Sprint 22 projections.
+- [ ] **Next 1:** Complete Sprint 22 sub-tasks `22.1.1.3` and `22.1.1.5`: preserve completed, blocked, deferred, human-decision, and rejected-proposal projections distinctly while enforcing the closed campaign stopping-condition contract.

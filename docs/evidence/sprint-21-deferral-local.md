@@ -61,9 +61,9 @@ git diff --check
 
 All commands passed.
 
-## Open Scope
+## Reconciliation
 
-This evidence closes Task `21.2.3` and acceptance criterion `AC 21.4`. Story `21.2` and the Sprint
-21 gates remain open for Task `21.2.4`, the broader human-decision lifecycle, and the complete
-hostile-output corpus. The trigger evidence digest proves operator attestation identity and
-idempotency; CodingMage does not inspect or assert the truth of external evidence content.
+This evidence closes Task `21.2.3` and acceptance criterion `AC 21.4`. The later rejection,
+human-decision, and complete Sprint 21 matrix evidence is bound by
+`docs/evidence/sprint-21-gate.md`. The trigger evidence digest proves operator attestation identity
+and idempotency; CodingMage does not inspect or assert the truth of external evidence content.

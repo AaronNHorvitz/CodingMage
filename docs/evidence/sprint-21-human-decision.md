@@ -1,6 +1,6 @@
 # Sprint 21 Human-Decision Continuation Evidence
 
-- **Status:** Story 21.2 acceptance criteria complete; Sprint 21 gates remain open
+- **Status:** Complete
 - **Implementation commit:** `3d4d5b37cdd65ae5ab6a9d411203f9e0536a4499`
 - **Executed:** 2026-08-21 on Fedora Linux with Rust 1.95.0
 
@@ -38,5 +38,5 @@ git diff --check
 
 All commands passed. This evidence closes `AC 21.5`. Every Story `21.2` task and acceptance
 criterion is complete; the story remains represented by its constituent checked items because its
-heading has no checkbox. Sprint 21 remains open until Gates `21.1` and `21.2` pass their exhaustive
-mutation matrices.
+heading has no checkbox. The complete matrices are reconciled in
+`docs/evidence/sprint-21-gate.md`.
