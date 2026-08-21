@@ -751,12 +751,43 @@ fn completion_schema() -> String {
                     "required": ["command", "exit_code"]
                 }
             },
-            "commit": {"description": "Must be null; commit creation is coordinator-owned.", "type": ["string", "null"]},
+            "commit": {"description": "Must be null for coordinator-owned work; committed reports require one exact 40- or 64-digit hexadecimal commit.", "type": ["string", "null"]},
             "ready_for_commit": {"description": "True only when edits are complete and blocker_code is null.", "type": "boolean"},
             "limitations": {"description": "Empty when ready. List only real unresolved limitations, never coordinator-owned test execution.", "type": "array", "maxItems": 256, "items": {"type": "string", "minLength": 1, "maxLength": 4096}},
             "blocker_code": {"description": "Null when ready; otherwise one short stable code.", "type": ["string", "null"]}
         },
-        "required": ["changed_paths", "tests", "commit", "ready_for_commit", "limitations", "blocker_code"]
+        "required": ["changed_paths", "tests", "commit", "ready_for_commit", "limitations", "blocker_code"],
+        "oneOf": [
+            {
+                "description": "Coordinator-owned edits are complete and ready for deterministic verification.",
+                "properties": {
+                    "commit": {"type": "null"},
+                    "ready_for_commit": {"const": true},
+                    "limitations": {"maxItems": 0},
+                    "blocker_code": {"type": "null"}
+                }
+            },
+            {
+                "description": "The bounded work is blocked and the blocker is stated truthfully.",
+                "properties": {
+                    "commit": {"type": "null"},
+                    "ready_for_commit": {"const": false},
+                    "blocker_code": {"type": "string", "minLength": 1, "maxLength": 256}
+                }
+            },
+            {
+                "description": "A non-coordinator caller reports one exact existing commit.",
+                "properties": {
+                    "commit": {
+                        "type": "string",
+                        "pattern": "^(?:[0-9A-Fa-f]{40}|[0-9A-Fa-f]{64})$"
+                    },
+                    "ready_for_commit": {"const": false},
+                    "limitations": {"maxItems": 0},
+                    "blocker_code": {"type": "null"}
+                }
+            }
+        ]
     })
     .to_string()
 }
@@ -1119,6 +1150,26 @@ mod tests {
         assert_eq!(
             improperly_limited.validate(),
             Err(ClaudeError::InvalidReport)
+        );
+    }
+
+    #[test]
+    fn completion_schema_enforces_the_three_exclusive_dispositions() {
+        let schema: serde_json::Value = serde_json::from_str(&completion_schema()).unwrap();
+        let dispositions = schema["oneOf"].as_array().unwrap();
+        assert_eq!(dispositions.len(), 3);
+        assert_eq!(
+            dispositions[0]["properties"]["ready_for_commit"]["const"],
+            true
+        );
+        assert_eq!(dispositions[0]["properties"]["limitations"]["maxItems"], 0);
+        assert_eq!(
+            dispositions[1]["properties"]["blocker_code"]["type"],
+            "string"
+        );
+        assert_eq!(
+            dispositions[2]["properties"]["commit"]["pattern"],
+            "^(?:[0-9A-Fa-f]{40}|[0-9A-Fa-f]{64})$"
         );
     }
 
