@@ -1176,6 +1176,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn every_campaign_authority_field_is_digest_bound_or_rejected() {
         let baseline = spec(1);
         let baseline_digest = baseline.authority_sha256().unwrap();
@@ -1227,20 +1228,41 @@ mod tests {
         value.limits.execution_elapsed_ms += 1;
         mutations.push(("execution_elapsed_ms", value));
         let mut value = baseline.clone();
+        value.team_lead.executable = PathBuf::from("/usr/bin/other-lead");
+        mutations.push(("team_lead_executable", value));
+        let mut value = baseline.clone();
         value.team_lead.model = "gpt-lead-2".to_owned();
-        mutations.push(("team_lead", value));
+        mutations.push(("team_lead_model", value));
+        let mut value = baseline.clone();
+        value.team_lead.effort = "medium".to_owned();
+        mutations.push(("team_lead_effort", value));
+        let mut value = baseline.clone();
+        value.implementer.executable = PathBuf::from("/usr/bin/other-implementer");
+        mutations.push(("implementer_executable", value));
         let mut value = baseline.clone();
         value.implementer.model = "claude-implementer-2".to_owned();
-        mutations.push(("implementer", value));
+        mutations.push(("implementer_model", value));
+        let mut value = baseline.clone();
+        value.implementer.effort = "medium".to_owned();
+        mutations.push(("implementer_effort", value));
         let mut value = baseline.clone();
         value.implementer_authentication = CampaignAuthentication::Bare;
         mutations.push(("implementer_authentication", value));
         let mut value = baseline.clone();
+        value.reviewer.executable = PathBuf::from("/usr/bin/other-reviewer");
+        mutations.push(("reviewer_executable", value));
+        let mut value = baseline.clone();
         value.reviewer.model = "gpt-reviewer-2".to_owned();
-        mutations.push(("reviewer", value));
+        mutations.push(("reviewer_model", value));
+        let mut value = baseline.clone();
+        value.reviewer.effort = "high".to_owned();
+        mutations.push(("reviewer_effort", value));
         let mut value = baseline.clone();
         value.gate_tiers[0].name = "rust-complete".to_owned();
-        mutations.push(("gate_tiers", value));
+        mutations.push(("gate_tier_name", value));
+        let mut value = baseline.clone();
+        value.gate_tiers[0].profiles[0] = "rust-full-test".to_owned();
+        mutations.push(("gate_tier_profiles", value));
         let mut value = baseline.clone();
         value.campaign_branch = "codingmage/campaign-2".to_owned();
         mutations.push(("campaign_branch", value));

@@ -1582,6 +1582,10 @@ fn set_file_private(_file: &File) -> Result<(), RuntimeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use codingmage_campaign::{
+        CampaignAuthentication, CampaignGateTier, CampaignProvider, CampaignPublication,
+        CampaignSpec,
+    };
 
     fn campaign_limits() -> CampaignLimits {
         CampaignLimits {
@@ -1616,6 +1620,39 @@ mod tests {
             campaign_limits(),
         )
         .unwrap()
+    }
+
+    fn campaign_policy_spec() -> CampaignSpec {
+        let provider = |name: &str, effort: &str| CampaignProvider {
+            executable: PathBuf::from(format!("/usr/bin/{name}")),
+            model: name.to_owned(),
+            effort: effort.to_owned(),
+        };
+        CampaignSpec {
+            version: 3,
+            campaign_id: "campaign-1".to_owned(),
+            repository_id: "repo-1".to_owned(),
+            repository_path: PathBuf::from("/tmp/codingmage-policy-target"),
+            initial_commit: "b".repeat(40),
+            task_source_sha256: "c".repeat(64),
+            operator_authorization_sha256: "d".repeat(64),
+            max_parallel_pods: 1,
+            max_units: 10,
+            limits: campaign_limits(),
+            team_lead: provider("lead-model", "high"),
+            implementer: provider("implementer-model", "high"),
+            implementer_authentication: CampaignAuthentication::ExistingLogin,
+            reviewer: provider("reviewer-model", "xhigh"),
+            gate_tiers: vec![CampaignGateTier {
+                name: "required".to_owned(),
+                profiles: vec!["test".to_owned(), "clippy".to_owned()],
+            }],
+            campaign_branch: "codingmage/campaign-1".to_owned(),
+            allowed_paths: vec![PathBuf::from("crates/public")],
+            denied_paths: vec![PathBuf::from("crates/private")],
+            protected_branches: vec!["main".to_owned()],
+            publication: CampaignPublication::LocalOnly,
+        }
     }
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
@@ -1667,6 +1704,64 @@ mod tests {
                     ResumeValidationState::NotRequired
                 );
             }
+        }
+    }
+
+    fn weakened_policy_mutations(baseline: &CampaignSpec) -> Vec<CampaignSpec> {
+        let mut mutations = Vec::new();
+        for provider in ["team_lead", "implementer", "reviewer"] {
+            let mut value = baseline.clone();
+            match provider {
+                "team_lead" => value.team_lead.effort = "low".to_owned(),
+                "implementer" => value.implementer.effort = "low".to_owned(),
+                "reviewer" => value.reviewer.effort = "low".to_owned(),
+                _ => unreachable!(),
+            }
+            mutations.push(value);
+        }
+        let mut value = baseline.clone();
+        value.gate_tiers[0].profiles = vec!["test".to_owned()];
+        mutations.push(value);
+        let mut value = baseline.clone();
+        value.allowed_paths = vec![PathBuf::from("src")];
+        value.denied_paths = vec![PathBuf::from("private")];
+        mutations.push(value);
+        let mut value = baseline.clone();
+        value.publication = CampaignPublication::DraftStoryPullRequests;
+        mutations.push(value);
+        mutations
+    }
+
+    fn assert_checkpoint_refuses_weakened_policy(
+        checkpoint: &CampaignCheckpoint,
+        baseline: &CampaignSpec,
+    ) {
+        let authority_sha256 = baseline.authority_sha256().unwrap();
+        checkpoint
+            .validate_authority(
+                &authority_sha256,
+                &baseline.campaign_id,
+                &baseline.repository_id,
+                &baseline.initial_commit,
+                baseline.max_units,
+                &baseline.limits,
+            )
+            .unwrap();
+        for mutation in weakened_policy_mutations(baseline) {
+            mutation.verify().unwrap();
+            let changed_authority = mutation.authority_sha256().unwrap();
+            assert_ne!(changed_authority, authority_sha256);
+            assert_eq!(
+                checkpoint.validate_authority(
+                    &changed_authority,
+                    &mutation.campaign_id,
+                    &mutation.repository_id,
+                    &mutation.initial_commit,
+                    mutation.max_units,
+                    &mutation.limits,
+                ),
+                Err(RuntimeError::Authority)
+            );
         }
     }
 
@@ -1959,6 +2054,104 @@ mod tests {
             checkpoint.exhausted_limit(),
             Some(CampaignLimitKind::ProviderAttempts)
         );
+    }
+
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    fn every_exhausted_campaign_limit_preserves_exact_policy_authority() {
+        let limits = [
+            CampaignLimitKind::ProviderAttempts,
+            CampaignLimitKind::MalformedReportRepairs,
+            CampaignLimitKind::CorrectionRounds,
+            CampaignLimitKind::ProcessInvocations,
+            CampaignLimitKind::OutputBytes,
+            CampaignLimitKind::RetainedStateBytes,
+            CampaignLimitKind::ExecutionElapsed,
+        ];
+
+        for exhausted in limits {
+            let root = root(&format!("policy-invariance-{exhausted:?}"));
+            let mut spec = campaign_policy_spec();
+            if exhausted == CampaignLimitKind::RetainedStateBytes {
+                spec.limits.retained_state_bytes = 1;
+                private_directory(&root).unwrap();
+                fs::write(root.join("retained-evidence"), b"x").unwrap();
+            }
+            spec.verify().unwrap();
+            let authority_sha256 = spec.authority_sha256().unwrap();
+            let mut checkpoint = CampaignCheckpoint::new(
+                authority_sha256.clone(),
+                spec.campaign_id.clone(),
+                spec.repository_id.clone(),
+                RunId::new("policy-run").unwrap(),
+                WorktreeId::new("policy-worktree").unwrap(),
+                spec.campaign_branch.clone(),
+                spec.initial_commit.clone(),
+                spec.max_units,
+                spec.limits.clone(),
+            )
+            .unwrap();
+            match exhausted {
+                CampaignLimitKind::ProviderAttempts => {
+                    checkpoint.utilization.provider_attempts = checkpoint.limits.provider_attempts;
+                    checkpoint.utilization.process_invocations =
+                        checkpoint.limits.provider_attempts;
+                }
+                CampaignLimitKind::MalformedReportRepairs => {
+                    checkpoint.utilization.malformed_report_repairs =
+                        checkpoint.limits.malformed_report_repairs;
+                    checkpoint.utilization.provider_attempts =
+                        checkpoint.limits.malformed_report_repairs;
+                    checkpoint.utilization.process_invocations =
+                        checkpoint.limits.malformed_report_repairs;
+                }
+                CampaignLimitKind::CorrectionRounds => {
+                    checkpoint.utilization.correction_rounds = checkpoint.limits.correction_rounds;
+                }
+                CampaignLimitKind::ProcessInvocations => {
+                    checkpoint.utilization.process_invocations =
+                        checkpoint.limits.process_invocations;
+                }
+                CampaignLimitKind::OutputBytes => {
+                    checkpoint.utilization.output_bytes = checkpoint.limits.output_bytes;
+                }
+                CampaignLimitKind::RetainedStateBytes => {}
+                CampaignLimitKind::ExecutionElapsed => {
+                    checkpoint.utilization.execution_elapsed_ms =
+                        checkpoint.limits.execution_elapsed_ms;
+                }
+            }
+            checkpoint
+                .persist(&root)
+                .unwrap_or_else(|error| panic!("{exhausted:?}: {error:?}"));
+
+            let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
+            assert_eq!(loaded.exhausted_limit(), Some(exhausted));
+            assert_eq!(loaded.authority_sha256, authority_sha256);
+            assert_checkpoint_refuses_weakened_policy(&loaded, &spec);
+            fs::remove_dir_all(root).unwrap();
+        }
+
+        let root = root("policy-invariance-accepted-outcomes");
+        let spec = campaign_policy_spec();
+        let mut checkpoint = CampaignCheckpoint::new(
+            spec.authority_sha256().unwrap(),
+            spec.campaign_id.clone(),
+            spec.repository_id.clone(),
+            RunId::new("policy-outcomes-run").unwrap(),
+            WorktreeId::new("policy-outcomes-worktree").unwrap(),
+            spec.campaign_branch.clone(),
+            spec.initial_commit.clone(),
+            spec.max_units,
+            spec.limits.clone(),
+        )
+        .unwrap();
+        checkpoint.completed_units = spec.max_units;
+        checkpoint.persist(&root).unwrap();
+        let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
+        assert_eq!(loaded.outcomes.accepted, loaded.outcomes.max_accepted);
+        assert_checkpoint_refuses_weakened_policy(&loaded, &spec);
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
