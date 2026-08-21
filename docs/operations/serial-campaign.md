@@ -105,17 +105,20 @@ reconciled heads, active task, pending integration, completed count, blocker, an
 | After campaign completion | Return the identical completed outcome without starting a provider or Git effect. |
 | During an active provider unit | Preserve the state and stop with `codingmage.campaign.interrupted_unit_requires_reconciliation`; automatic provider-session recovery remains open. |
 
-Quota and authentication failures are classified separately and become durable campaign pauses.
-A planning-time pause can be retried by invoking the same exact campaign after provider access is
-restored. A pause during an active unit remains blocked from automatic replay until exact provider
-session recovery is implemented.
+Content-free transient provider and session failures are retried as fresh isolated whole-unit
+attempts, with a fixed maximum of three attempts. Exhaustion becomes a durable
+`codingmage.campaign.provider_unavailable` pause. Quota and authentication failures are classified
+separately and pause without consuming the transient retry budget. These clean provider returns
+release the owned unit before pausing, so the same exact campaign can continue after access is
+restored. A process interruption that prevents the active unit from releasing remains blocked from
+automatic replay until exact provider-session recovery is implemented.
 
 ## Current Limits
 
 - Campaign checkpoints and accepted-head recovery are implemented; complete event journaling,
   attempt/correction projections, and active-provider-session resume remain open.
-- Provider quota/authentication pauses are durable; automatic revalidation and active-unit resume,
-  plus operator stop-after-unit controls, remain open.
+- Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable;
+  interrupted active-provider-session recovery and operator stop-after-unit controls remain open.
 - Aggregate observed provider cost is not yet reconciled; configured unit and per-invocation
   ceilings remain the enforceable bounds.
 - Parallel live pods remain disabled even if the authority ceiling is greater than one.

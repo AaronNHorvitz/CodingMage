@@ -327,8 +327,11 @@ inside a separate worktree, local gates and Codex review must pass, and only a f
 fast-forward may advance the isolated campaign branch. The active checkout remains unchanged. See
 [`Serial Campaign`](docs/operations/serial-campaign.md) for the authority file and current limits.
 The same campaign can be restarted from its exact reconciled head, and `campaign-status` exposes a
-content-minimized durable view. An interruption during an active provider turn currently blocks
-automatic replay and requires reconciliation; this limitation is enforced rather than hidden.
+content-minimized durable view. A content-free transient provider or session failure is retried as
+a fresh isolated whole-unit attempt at most three times; exhaustion, quota, and authentication
+become resumable campaign pauses after owned resources are released. An actual process interruption
+during an active provider turn still blocks automatic replay and requires reconciliation; this
+limitation is enforced rather than hidden.
 
 Run `codingmage` from a normal VS Code terminal and leave that terminal open until the final JSON
 appears. During `run`, a live activity stream is written to stderr while the machine-readable final
