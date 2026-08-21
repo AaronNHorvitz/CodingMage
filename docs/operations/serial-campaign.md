@@ -105,6 +105,9 @@ output, source text, repository paths, credentials, or diagnostics.
 The campaign checkpoint is atomically replaced under the private campaign state directory. It binds
 the original authority digest, repository identity, campaign worktree identity, branch, initial and
 reconciled heads, active task, pending integration, completed count, blocker, and timestamps.
+Checkpoints written before the blocked-task set was introduced are accepted only through an
+explicit v1 migration that verifies the legacy shape against its original digest before supplying
+an empty blocked-task set; a defaulted field never bypasses integrity verification.
 
 | Durable interruption point | Restart behavior |
 | --- | --- |
