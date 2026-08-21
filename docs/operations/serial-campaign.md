@@ -135,6 +135,10 @@ utilization and authorized ceilings, blocker count and code, and elapsed time. I
 for an ambiguous or terminal phase. It does not expose prompts, provider output, source text,
 repository paths, credentials, or diagnostics.
 
+Per-task status is limited to sorted canonical task IDs and closed reason codes. Deferrals add only
+their closed reconsideration-trigger code and `pending` or `satisfied` state. Human-decision holds
+use the same task/reason-only shape; model-authored summaries are never copied into status.
+
 `campaign-control` accepts only `pause`, `resume`, `stop_after_unit`, and `cancel`. Each request is
 bound to the exact campaign authority and a caller-generated idempotency ID, then written atomically
 to a private same-user inbox without replacing an existing request. The campaign consumes requests
@@ -169,8 +173,8 @@ operator-supplied evidence digest before returning that task to deterministic re
 Exact replay reports no second change, while conflicting request reuse fails closed. It starts no
 provider and changes no task checkbox or active-checkout byte.
 
-The remaining status work is a typed per-task blocker and deferral view, the prohibited-content
-mutation corpus, and attach/reconnect noninterference evidence.
+The remaining status work is the prohibited-content mutation corpus and attach/reconnect
+noninterference evidence.
 
 Malformed or unauthorized lead output pauses with either
 `codingmage.campaign.lead_rejected.malformed_output` or

@@ -22,6 +22,7 @@
 - **Limit-policy invariance commit:** `aaa1a87`
 - **Exhaustive limit-matrix commit:** `3c92e82`
 - **Complete status projection commit:** `87f2438`
+- **Typed task-status commit:** `3ad93a1`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -109,8 +110,16 @@ or a clean pause. A concurrent planning-phase status read proves the `codex-lead
 configured lead model, and nonzero attempt count; terminal status reports no model rather than
 guessing across an ambiguous phase. The same fixture verifies every outcome, utilization, and limit
 object is present and internally consistent. Status remains read-only and excludes prompts, source
-text, filenames, provider prose, command output, environment values, and credentials. Typed blocker
-and deferral detail plus monitor noninterference remain open under `22.2.4.2` through `22.2.4.4`.
+text, filenames, provider prose, command output, environment values, and credentials.
+
+Sorted blocker entries contain only canonical task identity and a closed blocker-reason code.
+Sorted deferral entries contain only canonical task identity, a closed reason and trigger code, and
+the closed `pending` or `satisfied` trigger state. Human-decision holds use the same task/reason-only
+shape. Checkpoint loading now refuses mismatched blocker IDs and reason maps, overlapping open
+dispositions, invalid task identities, pending/satisfied overlap, and reason/trigger mismatch before
+status can serialize them. Production CLI fixtures prove pending-to-satisfied deferral movement and
+exact blocker removal after authenticated clearance. The prohibited-content mutation corpus and
+monitor noninterference remain open under `22.2.4.3` and `22.2.4.4`.
 
 ## Campaign Journal Foundation
 
