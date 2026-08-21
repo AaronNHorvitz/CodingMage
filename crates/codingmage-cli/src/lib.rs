@@ -18,7 +18,7 @@ use codingmage_git::inventory_repository;
 use codingmage_plan::TaskPlan;
 use codingmage_runtime::{
     RunProgress, RunSpec, RuntimeError, campaign_status, clear_campaign_blocker,
-    run_one_with_progress, run_serial_campaign_with_progress,
+    observe_campaign_deferral_trigger, run_one_with_progress, run_serial_campaign_with_progress,
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -43,6 +43,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign" => execute_campaign(&arguments[1..]),
         "campaign-status" => inspect_campaign(&arguments[1..]),
         "campaign-clear-blocker" => clear_blocker(&arguments[1..]),
+        "campaign-observe-trigger" => observe_trigger(&arguments[1..]),
         _ => Err(CliError::Usage),
     }
 }
@@ -187,6 +188,35 @@ fn clear_blocker(arguments: &[String]) -> Result<String, CliError> {
         parsed.value("task")?,
         parsed.value("request")?,
         parsed.value("prerequisite-sha256")?,
+    )
+    .map_err(CliError::Runtime)?;
+    serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)
+}
+
+fn observe_trigger(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(
+        arguments,
+        &[
+            "config",
+            "campaign",
+            "task",
+            "trigger",
+            "request",
+            "evidence-sha256",
+        ],
+    )?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let outcome = observe_campaign_deferral_trigger(
+        &config,
+        &spec,
+        &executable,
+        parsed.value("task")?,
+        parsed.value("trigger")?,
+        parsed.value("request")?,
+        parsed.value("evidence-sha256")?,
     )
     .map_err(CliError::Runtime)?;
     serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)

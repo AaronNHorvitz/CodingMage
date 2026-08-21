@@ -106,6 +106,35 @@ pub enum LeadReconsiderationTrigger {
     OperatorResume,
 }
 
+impl LeadReconsiderationTrigger {
+    /// Stable content-free trigger code.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::CampaignHeadAdvancement => "campaign_head_advancement",
+            Self::LeaseRelease => "lease_release",
+            Self::GateResourceRelease => "gate_resource_release",
+            Self::ProviderReset => "provider_reset",
+            Self::ReviewCompletion => "review_completion",
+            Self::OperatorResume => "operator_resume",
+        }
+    }
+
+    /// Parses one exact stable trigger code.
+    #[must_use]
+    pub fn parse_code(value: &str) -> Option<Self> {
+        match value {
+            "campaign_head_advancement" => Some(Self::CampaignHeadAdvancement),
+            "lease_release" => Some(Self::LeaseRelease),
+            "gate_resource_release" => Some(Self::GateResourceRelease),
+            "provider_reset" => Some(Self::ProviderReset),
+            "review_completion" => Some(Self::ReviewCompletion),
+            "operator_resume" => Some(Self::OperatorResume),
+            _ => None,
+        }
+    }
+}
+
 impl LeadDeferredReason {
     /// The only trigger capable of reconsidering this temporary reason.
     #[must_use]

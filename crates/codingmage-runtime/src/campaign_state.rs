@@ -9,7 +9,8 @@ use std::{
 };
 
 use codingmage_contracts::{
-    LeadBlockedReason, LeadDeferredReason, LeadReconsiderationTrigger, RunId, WorktreeId,
+    LeadBlockedReason, LeadDeferredReason, LeadHumanDecisionReason, LeadReconsiderationTrigger,
+    RunId, WorktreeId,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -63,6 +64,21 @@ pub(crate) struct DeferredTaskProjection {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum HumanDecisionProjectionReason {
+    Lead(LeadHumanDecisionReason),
+    RepeatedSatisfiedDeferral,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct HumanDecisionProjection {
+    pub reason: HumanDecisionProjectionReason,
+    pub source_head: String,
+    pub task_source_sha256: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct CampaignCheckpoint {
     pub schema_version: u16,
@@ -86,6 +102,8 @@ pub(crate) struct CampaignCheckpoint {
     pub deferred_tasks: BTreeMap<String, DeferredTaskProjection>,
     #[serde(default)]
     pub satisfied_deferrals: BTreeMap<String, DeferredTaskProjection>,
+    #[serde(default)]
+    pub human_decisions: BTreeMap<String, HumanDecisionProjection>,
     pub active_unit: Option<ActiveUnit>,
     pub pending_integration: Option<PendingIntegration>,
     pub started_at_ms: u64,
@@ -113,10 +131,32 @@ pub(crate) struct BlockerClearanceIntent {
     pub prerequisite_sha256: String,
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct DeferralTriggerIntent {
+    pub schema_version: u16,
+    pub request_id: String,
+    pub campaign_id: String,
+    pub repository_id: String,
+    pub task_id: String,
+    pub reason: LeadDeferredReason,
+    pub trigger: LeadReconsiderationTrigger,
+    pub campaign_head: String,
+    pub task_source_sha256: String,
+    pub evidence_sha256: String,
+}
+
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct BlockerClearanceEnvelope {
     intent: BlockerClearanceIntent,
+    intent_sha256: String,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct DeferralTriggerEnvelope {
+    intent: DeferralTriggerIntent,
     intent_sha256: String,
 }
 
@@ -191,6 +231,39 @@ struct LegacyCampaignCheckpointWithBlockedReasons {
 
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
+struct LegacyCampaignCheckpointWithDeferrals {
+    schema_version: u16,
+    authority_sha256: String,
+    campaign_id: String,
+    repository_id: String,
+    campaign_run_id: RunId,
+    worktree_id: WorktreeId,
+    branch: String,
+    initial_head: String,
+    head: String,
+    completed_units: u32,
+    last_task_id: Option<String>,
+    phase: CampaignPhase,
+    blocker_code: Option<String>,
+    blocked_task_ids: BTreeSet<String>,
+    blocked_reasons: BTreeMap<String, LeadBlockedReason>,
+    deferred_tasks: BTreeMap<String, DeferredTaskProjection>,
+    satisfied_deferrals: BTreeMap<String, DeferredTaskProjection>,
+    active_unit: Option<ActiveUnit>,
+    pending_integration: Option<PendingIntegration>,
+    started_at_ms: u64,
+    updated_at_ms: u64,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct LegacyCheckpointEnvelopeWithDeferrals {
+    checkpoint: LegacyCampaignCheckpointWithDeferrals,
+    checkpoint_sha256: String,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 struct LegacyCheckpointEnvelopeWithBlockedReasons {
     checkpoint: LegacyCampaignCheckpointWithBlockedReasons,
     checkpoint_sha256: String,
@@ -240,6 +313,7 @@ impl CampaignCheckpoint {
             blocked_reasons: BTreeMap::new(),
             deferred_tasks: BTreeMap::new(),
             satisfied_deferrals: BTreeMap::new(),
+            human_decisions: BTreeMap::new(),
             active_unit: None,
             pending_integration: None,
             started_at_ms: now,
@@ -272,7 +346,8 @@ impl CampaignCheckpoint {
             return Err(RuntimeError::State);
         }
         if sha256_hex(&canonical) != envelope.checkpoint_sha256 {
-            return load_legacy_with_blocked_reasons(&bytes)
+            return load_legacy_with_deferrals(&bytes)
+                .or_else(|_| load_legacy_with_blocked_reasons(&bytes))
                 .or_else(|_| load_legacy_with_blocked_ids(&bytes))
                 .or_else(|_| load_legacy_v1(&bytes))
                 .map(Some);
@@ -335,6 +410,42 @@ impl CampaignCheckpoint {
     }
 }
 
+fn load_legacy_with_deferrals(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
+    let envelope: LegacyCheckpointEnvelopeWithDeferrals =
+        serde_json::from_slice(bytes).map_err(|_| RuntimeError::State)?;
+    let canonical = serde_json::to_vec(&envelope.checkpoint).map_err(|_| RuntimeError::State)?;
+    if envelope.checkpoint.schema_version != SCHEMA_VERSION
+        || sha256_hex(&canonical) != envelope.checkpoint_sha256
+    {
+        return Err(RuntimeError::State);
+    }
+    let legacy = envelope.checkpoint;
+    Ok(CampaignCheckpoint {
+        schema_version: legacy.schema_version,
+        authority_sha256: legacy.authority_sha256,
+        campaign_id: legacy.campaign_id,
+        repository_id: legacy.repository_id,
+        campaign_run_id: legacy.campaign_run_id,
+        worktree_id: legacy.worktree_id,
+        branch: legacy.branch,
+        initial_head: legacy.initial_head,
+        head: legacy.head,
+        completed_units: legacy.completed_units,
+        last_task_id: legacy.last_task_id,
+        phase: legacy.phase,
+        blocker_code: legacy.blocker_code,
+        blocked_task_ids: legacy.blocked_task_ids,
+        blocked_reasons: legacy.blocked_reasons,
+        deferred_tasks: legacy.deferred_tasks,
+        satisfied_deferrals: legacy.satisfied_deferrals,
+        human_decisions: BTreeMap::new(),
+        active_unit: legacy.active_unit,
+        pending_integration: legacy.pending_integration,
+        started_at_ms: legacy.started_at_ms,
+        updated_at_ms: legacy.updated_at_ms,
+    })
+}
+
 fn load_legacy_with_blocked_reasons(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
     let envelope: LegacyCheckpointEnvelopeWithBlockedReasons =
         serde_json::from_slice(bytes).map_err(|_| RuntimeError::State)?;
@@ -363,6 +474,7 @@ fn load_legacy_with_blocked_reasons(bytes: &[u8]) -> Result<CampaignCheckpoint, 
         blocked_reasons: legacy.blocked_reasons,
         deferred_tasks: BTreeMap::new(),
         satisfied_deferrals: BTreeMap::new(),
+        human_decisions: BTreeMap::new(),
         active_unit: legacy.active_unit,
         pending_integration: legacy.pending_integration,
         started_at_ms: legacy.started_at_ms,
@@ -448,8 +560,90 @@ impl BlockerClearanceIntent {
     }
 }
 
+impl DeferralTriggerIntent {
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn new(
+        request_id: String,
+        campaign_id: String,
+        repository_id: String,
+        task_id: String,
+        projection: &DeferredTaskProjection,
+        evidence_sha256: String,
+    ) -> Self {
+        Self {
+            schema_version: CLEARANCE_SCHEMA_VERSION,
+            request_id,
+            campaign_id,
+            repository_id,
+            task_id,
+            reason: projection.reason,
+            trigger: projection.trigger,
+            campaign_head: projection.source_head.clone(),
+            task_source_sha256: projection.task_source_sha256.clone(),
+            evidence_sha256,
+        }
+    }
+
+    pub(crate) fn load(root: &Path, request_id: &str) -> Result<Option<Self>, RuntimeError> {
+        let path = trigger_path(root, request_id);
+        let metadata = match fs::symlink_metadata(&path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(_) => return Err(RuntimeError::State),
+        };
+        if !metadata.is_file()
+            || metadata.file_type().is_symlink()
+            || metadata.len() > MAX_CHECKPOINT_BYTES as u64
+        {
+            return Err(RuntimeError::State);
+        }
+        let bytes = fs::read(path).map_err(|_| RuntimeError::State)?;
+        let envelope: DeferralTriggerEnvelope =
+            serde_json::from_slice(&bytes).map_err(|_| RuntimeError::State)?;
+        let canonical = serde_json::to_vec(&envelope.intent).map_err(|_| RuntimeError::State)?;
+        if envelope.intent.schema_version != CLEARANCE_SCHEMA_VERSION
+            || envelope.intent.request_id != request_id
+            || sha256_hex(&canonical) != envelope.intent_sha256
+        {
+            return Err(RuntimeError::State);
+        }
+        Ok(Some(envelope.intent))
+    }
+
+    pub(crate) fn persist_new(&self, root: &Path) -> Result<(), RuntimeError> {
+        let observations = root.join("deferral-trigger-observations");
+        private_directory(&observations)?;
+        let canonical = serde_json::to_vec(self).map_err(|_| RuntimeError::State)?;
+        let envelope = DeferralTriggerEnvelope {
+            intent: self.clone(),
+            intent_sha256: sha256_hex(&canonical),
+        };
+        let bytes = serde_json::to_vec_pretty(&envelope).map_err(|_| RuntimeError::State)?;
+        if bytes.len() > MAX_CHECKPOINT_BYTES {
+            return Err(RuntimeError::State);
+        }
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(trigger_path(root, &self.request_id))
+            .map_err(|_| RuntimeError::State)?;
+        set_file_private(&file)?;
+        file.write_all(&bytes)
+            .and_then(|()| file.sync_all())
+            .map_err(|_| RuntimeError::State)?;
+        File::open(&observations)
+            .and_then(|directory| directory.sync_all())
+            .map_err(|_| RuntimeError::State)
+    }
+}
+
 fn clearance_path(root: &Path, request_id: &str) -> PathBuf {
     root.join("blocker-clearances")
+        .join(format!("{request_id}.json"))
+}
+
+fn trigger_path(root: &Path, request_id: &str) -> PathBuf {
+    root.join("deferral-trigger-observations")
         .join(format!("{request_id}.json"))
 }
 
@@ -511,6 +705,7 @@ fn load_legacy_with_blocked_ids(bytes: &[u8]) -> Result<CampaignCheckpoint, Runt
         blocked_reasons: BTreeMap::new(),
         deferred_tasks: BTreeMap::new(),
         satisfied_deferrals: BTreeMap::new(),
+        human_decisions: BTreeMap::new(),
         active_unit: legacy.active_unit,
         pending_integration: legacy.pending_integration,
         started_at_ms: legacy.started_at_ms,
@@ -546,6 +741,7 @@ fn load_legacy_v1(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
         blocked_reasons: BTreeMap::new(),
         deferred_tasks: BTreeMap::new(),
         satisfied_deferrals: BTreeMap::new(),
+        human_decisions: BTreeMap::new(),
         active_unit: legacy.active_unit,
         pending_integration: legacy.pending_integration,
         started_at_ms: legacy.started_at_ms,
@@ -657,6 +853,14 @@ mod tests {
             DeferredTaskProjection {
                 reason: LeadDeferredReason::DeterministicDependencyOrder,
                 trigger: LeadReconsiderationTrigger::CampaignHeadAdvancement,
+                source_head: "b".repeat(40),
+                task_source_sha256: "c".repeat(64),
+            },
+        );
+        checkpoint.human_decisions.insert(
+            "1.1.1.4".to_owned(),
+            HumanDecisionProjection {
+                reason: HumanDecisionProjectionReason::RepeatedSatisfiedDeferral,
                 source_head: "b".repeat(40),
                 task_source_sha256: "c".repeat(64),
             },
@@ -832,6 +1036,60 @@ mod tests {
     }
 
     #[test]
+    fn checkpoint_loads_integrity_verified_deferral_legacy_shape() {
+        let root = root("legacy-deferrals");
+        fs::create_dir_all(&root).unwrap();
+        let current = checkpoint();
+        let projection = DeferredTaskProjection {
+            reason: LeadDeferredReason::OperatorPause,
+            trigger: LeadReconsiderationTrigger::OperatorResume,
+            source_head: current.head.clone(),
+            task_source_sha256: "c".repeat(64),
+        };
+        let legacy = LegacyCampaignCheckpointWithDeferrals {
+            schema_version: current.schema_version,
+            authority_sha256: current.authority_sha256.clone(),
+            campaign_id: current.campaign_id.clone(),
+            repository_id: current.repository_id.clone(),
+            campaign_run_id: current.campaign_run_id.clone(),
+            worktree_id: current.worktree_id.clone(),
+            branch: current.branch.clone(),
+            initial_head: current.initial_head.clone(),
+            head: current.head.clone(),
+            completed_units: current.completed_units,
+            last_task_id: current.last_task_id.clone(),
+            phase: current.phase,
+            blocker_code: current.blocker_code.clone(),
+            blocked_task_ids: BTreeSet::new(),
+            blocked_reasons: BTreeMap::new(),
+            deferred_tasks: BTreeMap::from([("1.1.1.2".to_owned(), projection.clone())]),
+            satisfied_deferrals: BTreeMap::new(),
+            active_unit: current.active_unit.clone(),
+            pending_integration: current.pending_integration.clone(),
+            started_at_ms: current.started_at_ms,
+            updated_at_ms: current.updated_at_ms,
+        };
+        let canonical = serde_json::to_vec(&legacy).unwrap();
+        let envelope = LegacyCheckpointEnvelopeWithDeferrals {
+            checkpoint: legacy,
+            checkpoint_sha256: sha256_hex(&canonical),
+        };
+        fs::write(
+            root.join("checkpoint.json"),
+            serde_json::to_vec_pretty(&envelope).unwrap(),
+        )
+        .unwrap();
+
+        let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
+        assert_eq!(
+            loaded.deferred_tasks,
+            BTreeMap::from([("1.1.1.2".to_owned(), projection)])
+        );
+        assert!(loaded.human_decisions.is_empty());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn blocker_clearance_intent_is_create_once_and_integrity_bound() {
         let root = root("clearance-intent");
         let intent = BlockerClearanceIntent::new(
@@ -858,6 +1116,42 @@ mod tests {
         fs::write(path, bytes).unwrap();
         assert_eq!(
             BlockerClearanceIntent::load(&root, "clear-1"),
+            Err(RuntimeError::State)
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn deferral_trigger_intent_is_create_once_and_integrity_bound() {
+        let root = root("trigger-intent");
+        let projection = DeferredTaskProjection {
+            reason: LeadDeferredReason::OperatorPause,
+            trigger: LeadReconsiderationTrigger::OperatorResume,
+            source_head: "b".repeat(40),
+            task_source_sha256: "c".repeat(64),
+        };
+        let intent = DeferralTriggerIntent::new(
+            "resume-1".to_owned(),
+            "campaign-1".to_owned(),
+            "repo-1".to_owned(),
+            "1.1.1.2".to_owned(),
+            &projection,
+            "d".repeat(64),
+        );
+        intent.persist_new(&root).unwrap();
+        assert_eq!(
+            DeferralTriggerIntent::load(&root, "resume-1").unwrap(),
+            Some(intent.clone())
+        );
+        assert_eq!(intent.persist_new(&root), Err(RuntimeError::State));
+
+        let path = trigger_path(&root, "resume-1");
+        let mut bytes = fs::read(&path).unwrap();
+        let index = bytes.iter().position(|byte| *byte == b'd').unwrap();
+        bytes[index] = b'e';
+        fs::write(path, bytes).unwrap();
+        assert_eq!(
+            DeferralTriggerIntent::load(&root, "resume-1"),
             Err(RuntimeError::State)
         );
         fs::remove_dir_all(root).unwrap();

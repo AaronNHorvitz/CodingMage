@@ -361,8 +361,8 @@ if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
                     "task_source_sha256": digest, "task_id": task,
                     "dependencies": []
                 },
-                "reason": "deterministic_dependency_order",
-                "reconsideration_trigger": "campaign_head_advancement"
+                "reason": "operator_pause",
+                "reconsideration_trigger": "operator_resume"
             },
             "human_decision": None
         }
@@ -422,7 +422,7 @@ initial_commit = "{}"
 task_source_sha256 = "{}"
 operator_authorization_sha256 = "{}"
 max_parallel_pods = 1
-max_units = 2
+max_units = 3
 implementer_authentication = "existing_login"
 campaign_branch = "codingmage/fixture-campaign"
 allowed_paths = ["src"]
@@ -494,6 +494,90 @@ profiles = ["configured-gates"]
     assert_eq!(interrupted_status["current_task_id"], "0.1.1.2");
     assert_eq!(interrupted_status["completed_units"], 0);
 
+    let premature_observation = Fixture::command(&[
+        "campaign-observe-trigger",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+        "--task",
+        "0.1.1.1",
+        "--trigger",
+        "operator_resume",
+        "--request",
+        "resume-deferral-1",
+        "--evidence-sha256",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    ]);
+    assert!(!premature_observation.status.success());
+
+    let paused = Fixture::command(&[
+        "campaign",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(
+        paused.status.success(),
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&paused.stderr),
+        String::from_utf8_lossy(&paused.stdout)
+    );
+    let paused: serde_json::Value = serde_json::from_slice(&paused.stdout).unwrap();
+    assert_eq!(paused["state"], "paused");
+    assert_eq!(paused["completed_units"], 1);
+    assert_eq!(
+        paused["blocker_code"],
+        "codingmage.campaign.no_deferred_trigger_observed"
+    );
+
+    let observation_arguments = [
+        "campaign-observe-trigger",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+        "--task",
+        "0.1.1.1",
+        "--trigger",
+        "operator_resume",
+        "--request",
+        "resume-deferral-1",
+        "--evidence-sha256",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    ];
+    let observed = Fixture::command(&observation_arguments);
+    assert!(
+        observed.status.success(),
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&observed.stderr),
+        String::from_utf8_lossy(&observed.stdout)
+    );
+    let observed: serde_json::Value = serde_json::from_slice(&observed.stdout).unwrap();
+    assert_eq!(observed["changed"], true);
+    assert_eq!(observed["trigger"], "operator_resume");
+    let repeated = Fixture::command(&observation_arguments);
+    assert!(repeated.status.success());
+    let repeated: serde_json::Value = serde_json::from_slice(&repeated.stdout).unwrap();
+    assert_eq!(repeated["changed"], false);
+    let conflicting_observation = Fixture::command(&[
+        "campaign-observe-trigger",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+        "--task",
+        "0.1.1.1",
+        "--trigger",
+        "operator_resume",
+        "--request",
+        "resume-deferral-1",
+        "--evidence-sha256",
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    ]);
+    assert!(!conflicting_observation.status.success());
+
     let run = Fixture::command(&[
         "campaign",
         "--config",
@@ -539,7 +623,7 @@ profiles = ["configured-gates"]
     );
     let progress = String::from_utf8(run.stderr).unwrap();
     assert_eq!(progress.matches("codex-lead  proposing").count(), 1);
-    assert_eq!(progress.matches("integration advancing").count(), 2);
+    assert_eq!(progress.matches("integration advancing").count(), 1);
 
     let resumed = Fixture::command(&[
         "campaign",
