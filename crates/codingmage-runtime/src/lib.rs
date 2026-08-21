@@ -180,6 +180,65 @@ pub struct RunProgress {
     pub stage: ProgressStage,
 }
 
+/// Content-minimized durable identity observation emitted by one production unit.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum UnitLifecycleEvent {
+    /// Coordinator created one exact worktree and branch.
+    WorktreeCreated {
+        /// Exact owned worktree identity.
+        worktree_id: String,
+        /// Exact task branch.
+        branch: String,
+    },
+    /// One Claude session lineage was bound before provider execution.
+    ImplementationSessionBound {
+        /// Exact provider session identity.
+        session_id: String,
+        /// Zero for initial implementation, otherwise the correction round.
+        correction_round: u16,
+    },
+    /// Coordinator created or reobserved one cumulative candidate commit.
+    CandidateCommitted {
+        /// Exact immutable candidate commit.
+        commit: String,
+        /// Zero for initial implementation, otherwise the correction round.
+        correction_round: u16,
+    },
+    /// Deterministic gates produced immutable evidence for one candidate.
+    GatesObserved {
+        /// Exact candidate commit.
+        commit: String,
+        /// Ordered gate evidence identities.
+        evidence: Vec<String>,
+        /// Whether every required gate passed.
+        passed: bool,
+    },
+    /// Fresh Codex review completed against one exact cumulative candidate.
+    ReviewObserved {
+        /// Exact fresh Codex thread identity.
+        session_id: String,
+        /// Exact reviewed candidate.
+        commit: String,
+        /// Closed review verdict.
+        verdict: String,
+        /// Digest-bound review evidence identity.
+        evidence: String,
+    },
+    /// Coordinator created the exact canonical task-completion commit.
+    CompletionCommitted {
+        /// Exact completion commit.
+        commit: String,
+    },
+    /// Coordinator removed the exact owned worktree.
+    WorktreeReleased {
+        /// Exact owned worktree identity.
+        worktree_id: String,
+    },
+}
+
+type LifecycleObserver =
+    Arc<dyn Fn(UnitLifecycleEvent) -> Result<(), RuntimeError> + Send + Sync + 'static>;
+
 impl RunProgress {
     const fn new(actor: ProgressActor, stage: ProgressStage) -> Self {
         Self { actor, stage }
@@ -1931,6 +1990,7 @@ pub fn run_serial_campaign_with_progress(
                 &mut observer,
                 Some(checkpoint.unit_budget(&campaign_root)),
                 Some(Arc::clone(&observed_usage)),
+                None,
                 unit_cancellation,
             );
             drop(unit_watcher);
@@ -2909,6 +2969,7 @@ fn run_one_with_progress_id(
         observer,
         None,
         None,
+        None,
         CancellationToken::default(),
     )
 }
@@ -2922,6 +2983,7 @@ fn run_one_with_progress_id_budget(
     observer: &mut impl FnMut(RunProgress),
     campaign_budget: Option<CampaignUnitBudget>,
     observed_usage: Option<SharedUnitUsage>,
+    lifecycle_observer: Option<LifecycleObserver>,
     cancellation: CancellationToken,
 ) -> Result<RunOutcome, RuntimeError> {
     observer(RunProgress::new(
@@ -2936,6 +2998,7 @@ fn run_one_with_progress_id_budget(
         observer,
         campaign_budget,
         observed_usage,
+        lifecycle_observer,
         cancellation,
     );
     observer(RunProgress::new(
@@ -2958,6 +3021,7 @@ fn run_one_observed_with_id(
     observer: &mut impl FnMut(RunProgress),
     campaign_budget: Option<CampaignUnitBudget>,
     observed_usage: Option<SharedUnitUsage>,
+    lifecycle_observer: Option<LifecycleObserver>,
     cancellation: CancellationToken,
 ) -> Result<RunOutcome, RuntimeError> {
     spec.validate()?;
@@ -3010,6 +3074,7 @@ fn run_one_observed_with_id(
         login_environment,
         campaign_budget,
         observed_usage,
+        lifecycle_observer,
         cancellation,
     };
     let port = match correction_recovery.as_ref() {
@@ -3160,6 +3225,7 @@ struct ProductionInputs<'a> {
     login_environment: BTreeMap<String, String>,
     campaign_budget: Option<CampaignUnitBudget>,
     observed_usage: Option<SharedUnitUsage>,
+    lifecycle_observer: Option<LifecycleObserver>,
     cancellation: CancellationToken,
 }
 
@@ -3178,6 +3244,7 @@ struct ProductionWorkflowPort<'a> {
     login_environment: BTreeMap<String, String>,
     campaign_budget: Option<CampaignUnitBudget>,
     observed_usage: Option<SharedUnitUsage>,
+    lifecycle_observer: Option<LifecycleObserver>,
     cancellation: CancellationToken,
     lock: Option<CoordinatorLock>,
     worktree: Option<OwnedWorktree>,
@@ -3212,6 +3279,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             login_environment: inputs.login_environment,
             campaign_budget: inputs.campaign_budget,
             observed_usage: inputs.observed_usage,
+            lifecycle_observer: inputs.lifecycle_observer,
             cancellation: inputs.cancellation,
             lock: None,
             worktree: None,
@@ -3228,6 +3296,17 @@ impl<'a> ProductionWorkflowPort<'a> {
             recovering_correction: false,
             failure: None,
         }
+    }
+
+    fn observe_lifecycle(&mut self, event: UnitLifecycleEvent) -> Result<(), OrchestrationError> {
+        let Some(observer) = self.lifecycle_observer.as_ref() else {
+            return Ok(());
+        };
+        if let Err(error) = observer(event) {
+            self.failure = Some(error);
+            return Err(OrchestrationError::DurableState);
+        }
+        Ok(())
     }
 
     fn recover_correction(
@@ -3561,6 +3640,15 @@ impl<'a> ProductionWorkflowPort<'a> {
         session: &ClaudeSession,
         resume_first: bool,
     ) -> Result<ClaudeCompletionReport, OrchestrationError> {
+        let correction_round = if session.source_commit == self.source_commit {
+            0
+        } else {
+            self.correction_round.saturating_add(1)
+        };
+        self.observe_lifecycle(UnitLifecycleEvent::ImplementationSessionBound {
+            session_id: session.session_id.as_str().to_owned(),
+            correction_round,
+        })?;
         let adapter = self.claude_adapter()?;
         let mut resume = resume_first;
         for attempt in 0..CLAUDE_REPORT_ATTEMPT_LIMIT {
@@ -3647,16 +3735,27 @@ impl<'a> ProductionWorkflowPort<'a> {
             return Err(OrchestrationError::Port);
         };
         self.record_gate_run(&result)?;
+        let lifecycle_evidence = result
+            .evidence
+            .iter()
+            .map(|evidence| evidence.integrity_sha256.clone())
+            .collect::<Vec<_>>();
         self.gate_evidence = result
             .evidence
             .iter()
             .map(|evidence| evidence_id(&evidence.integrity_sha256))
             .collect::<Result<Vec<_>, _>>()?;
+        let passed = !result.blocked;
         self.gate_diagnostics = result.diagnostics;
-        Ok(if result.blocked {
-            VerificationOutcome::RecoverableFailure
-        } else {
+        self.observe_lifecycle(UnitLifecycleEvent::GatesObserved {
+            commit,
+            evidence: lifecycle_evidence,
+            passed,
+        })?;
+        Ok(if passed {
             VerificationOutcome::Pass
+        } else {
+            VerificationOutcome::RecoverableFailure
         })
     }
 
@@ -3902,7 +4001,14 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             &self.source_commit,
         )
         .map_err(|_| OrchestrationError::Port)?;
+        let worktree_id = owned.manifest().worktree_id.as_str().to_owned();
+        let branch = owned.manifest().branch.clone();
         let worktree = owned.manifest().path.clone();
+        self.worktree = Some(owned);
+        self.observe_lifecycle(UnitLifecycleEvent::WorktreeCreated {
+            worktree_id,
+            branch,
+        })?;
         if self.gate_registry(&worktree).is_err() {
             self.failure = Some(RuntimeError::Verification);
             return Err(OrchestrationError::Port);
@@ -3929,7 +4035,6 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             self.failure = Some(RuntimeError::Reviewer(error));
             return Err(OrchestrationError::Port);
         }
-        self.worktree = Some(owned);
         evidence_id("implementation-started")
     }
 
@@ -3979,8 +4084,13 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             return Err(OrchestrationError::Port);
         }
         let evidence = evidence_id(&receipt.commit)?;
+        let commit = receipt.commit.clone();
         self.implementation = Some(report);
         self.candidate = Some(receipt);
+        self.observe_lifecycle(UnitLifecycleEvent::CandidateCommitted {
+            commit,
+            correction_round: 0,
+        })?;
         Ok((ImplementationOutcome::Ready, evidence))
     }
 
@@ -4031,6 +4141,18 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             "review-{}-{}",
             result.thread_id, result.report.target_commit
         ))?;
+        self.observe_lifecycle(UnitLifecycleEvent::ReviewObserved {
+            session_id: result.thread_id.as_str().to_owned(),
+            commit: result.report.target_commit.clone(),
+            verdict: verdict_name(result.report.verdict).to_owned(),
+            evidence: hex(&Sha256::digest(
+                format!(
+                    "{}\0{}\0{}",
+                    result.thread_id, result.report.target_commit, evidence
+                )
+                .as_bytes(),
+            )),
+        })?;
         let outcome = match result.report.verdict {
             ReviewVerdict::Pass => ReviewOutcome::Pass,
             ReviewVerdict::ChangesRequired => ReviewOutcome::ChangesRequired,
@@ -4136,12 +4258,17 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             return Err(OrchestrationError::Port);
         }
         let evidence = evidence_id(&receipt.commit)?;
+        let commit = receipt.commit.clone();
         self.implementation = Some(report);
         self.candidate = Some(receipt);
         self.gate_diagnostics.clear();
         self.review_report = None;
         self.review_verdict = None;
         self.correction_round = self.correction_round.saturating_add(1);
+        self.observe_lifecycle(UnitLifecycleEvent::CandidateCommitted {
+            commit,
+            correction_round: self.correction_round,
+        })?;
         self.sync_observed_usage()?;
         self.recovering_correction = false;
         Ok((ImplementationOutcome::Ready, evidence))
@@ -4200,15 +4327,19 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         if receipt.changed_paths != [self.config.task_source.clone()] {
             return Err(OrchestrationError::Port);
         }
+        let commit = receipt.commit.clone();
         self.completion = Some(receipt);
+        self.observe_lifecycle(UnitLifecycleEvent::CompletionCommitted { commit })?;
         Ok(completion_evidence)
     }
 
     fn release(&mut self) -> Result<EvidenceId, OrchestrationError> {
         if let Some(mut owned) = self.worktree.take() {
+            let worktree_id = owned.manifest().worktree_id.as_str().to_owned();
             remove_owned_worktree(&self.authorization, &mut owned)
                 .map_err(|_| OrchestrationError::Port)?;
             self.worktree = Some(owned);
+            self.observe_lifecycle(UnitLifecycleEvent::WorktreeReleased { worktree_id })?;
         }
         self.lock = None;
         evidence_id("released")

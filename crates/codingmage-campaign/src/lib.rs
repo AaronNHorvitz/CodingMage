@@ -7,8 +7,9 @@ pub use team::{
     CampaignTaskRecord, CampaignTaskState, CampaignTaskTransition, DestinationPromotionPolicy,
     DurablePodLease, DurablePodScheduler, DurableSchedulerSnapshot, MultiAgentPolicy,
     ProviderCircuit, ProviderCircuitStatus, TaskIntegrationPolicy, TaskMergeStrategy,
-    TaskPublicationMode, TaskResourceReservation, TaskUtilization, TeamCampaignSnapshot,
-    TeamResourceController, TeamResourcePolicy, TeamResourceSnapshot, TeamStateError,
+    TaskPublicationMode, TaskResourceReservation, TaskTerminalReason, TaskUtilization,
+    TeamCampaignSnapshot, TeamResourceController, TeamResourcePolicy, TeamResourceSnapshot,
+    TeamStateError,
 };
 
 use std::{

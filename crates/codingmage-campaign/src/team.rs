@@ -348,6 +348,99 @@ pub enum CampaignTaskState {
     Cancelled,
 }
 
+/// Closed content-free reason retained when a campaign task becomes terminal.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TaskTerminalReason {
+    /// Task was integrated into the authoritative campaign head.
+    Merged,
+    /// A required prerequisite is unavailable.
+    PrerequisiteBlocked,
+    /// Implementation provider reported a bounded blocker.
+    ProviderBlocked,
+    /// Independent reviewer reported a blocker.
+    ReviewBlocked,
+    /// Independent reviewer and implementation evidence require human judgment.
+    ReviewDisputed,
+    /// Required deterministic verification failed terminally.
+    GateFailed,
+    /// Provider failed beyond bounded retry policy.
+    ProviderFailed,
+    /// Exact owned provider process crashed.
+    ProcessCrashed,
+    /// Exact task deadline elapsed.
+    TimedOut,
+    /// A configured attempt, token, process, output, storage, or elapsed limit was reached.
+    LimitExceeded,
+    /// Deterministic integration detected a conflict.
+    IntegrationConflict,
+    /// Repository, branch, worktree, commit, issue, or pull-request identity became stale.
+    StaleIdentity,
+    /// Deny-first policy refused the requested effect.
+    PolicyDenied,
+    /// Authenticated operator cancelled the exact task or campaign.
+    OperatorCancelled,
+    /// Required commit-bound remote checks failed.
+    CiFailed,
+    /// An explicitly external prerequisite remains unavailable.
+    ExternalBlocked,
+}
+
+impl TaskTerminalReason {
+    /// Returns the stable persisted reason code.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::Merged => "merged",
+            Self::PrerequisiteBlocked => "prerequisite_blocked",
+            Self::ProviderBlocked => "provider_blocked",
+            Self::ReviewBlocked => "review_blocked",
+            Self::ReviewDisputed => "review_disputed",
+            Self::GateFailed => "gate_failed",
+            Self::ProviderFailed => "provider_failed",
+            Self::ProcessCrashed => "process_crashed",
+            Self::TimedOut => "timed_out",
+            Self::LimitExceeded => "limit_exceeded",
+            Self::IntegrationConflict => "integration_conflict",
+            Self::StaleIdentity => "stale_identity",
+            Self::PolicyDenied => "policy_denied",
+            Self::OperatorCancelled => "operator_cancelled",
+            Self::CiFailed => "ci_failed",
+            Self::ExternalBlocked => "external_blocked",
+        }
+    }
+
+    const fn valid_for(self, state: CampaignTaskState) -> bool {
+        match state {
+            CampaignTaskState::Merged => matches!(self, Self::Merged),
+            CampaignTaskState::Disputed => matches!(self, Self::ReviewDisputed),
+            CampaignTaskState::Cancelled => matches!(self, Self::OperatorCancelled),
+            CampaignTaskState::Blocked => matches!(
+                self,
+                Self::PrerequisiteBlocked
+                    | Self::ProviderBlocked
+                    | Self::ReviewBlocked
+                    | Self::IntegrationConflict
+                    | Self::StaleIdentity
+                    | Self::PolicyDenied
+                    | Self::ExternalBlocked
+            ),
+            CampaignTaskState::Failed => matches!(
+                self,
+                Self::GateFailed
+                    | Self::ProviderFailed
+                    | Self::ProcessCrashed
+                    | Self::TimedOut
+                    | Self::LimitExceeded
+                    | Self::CiFailed
+                    | Self::StaleIdentity
+                    | Self::PolicyDenied
+            ),
+            _ => false,
+        }
+    }
+}
+
 impl CampaignTaskState {
     /// Returns whether this state cannot advance without a new operator-authored campaign decision.
     #[must_use]
@@ -968,12 +1061,16 @@ pub struct CampaignTaskRecord {
     pub candidate_commit: Option<String>,
     /// Exact candidate accepted by independent review.
     pub reviewed_commit: Option<String>,
+    /// Exact mechanical canonical-task completion commit.
+    pub completion_commit: Option<String>,
     /// Optional task issue number.
     pub issue_number: Option<u64>,
     /// Optional task pull-request number.
     pub pull_request_number: Option<u64>,
     /// Claude implementation session lineage.
     pub implementation_session: Option<String>,
+    /// Ordered Claude correction session lineage.
+    pub correction_sessions: Vec<String>,
     /// Fresh Codex review session identities in order.
     pub review_sessions: Vec<String>,
     /// Deterministic gate evidence digests in order.
@@ -1025,9 +1122,11 @@ impl CampaignTaskRecord {
             base_commit,
             candidate_commit: None,
             reviewed_commit: None,
+            completion_commit: None,
             issue_number: None,
             pull_request_number: None,
             implementation_session: None,
+            correction_sessions: Vec::new(),
             review_sessions: Vec::new(),
             gate_evidence_sha256: Vec::new(),
             review_evidence_sha256: Vec::new(),
@@ -1065,10 +1164,23 @@ impl CampaignTaskRecord {
                 .as_ref()
                 .is_some_and(|v| !valid_commit(v))
             || self.reviewed_commit.is_some() && self.candidate_commit.is_none()
+            || self
+                .completion_commit
+                .as_ref()
+                .is_some_and(|v| !valid_commit(v))
+            || self.completion_commit.is_some() && self.reviewed_commit.is_none()
             || self.issue_number == Some(0)
             || self.pull_request_number == Some(0)
             || self.review_sessions.len() > MAX_SESSIONS
+            || self.correction_sessions.len() > MAX_SESSIONS
             || self.review_sessions.iter().any(|v| !valid_component(v))
+            || self.correction_sessions.iter().any(|v| !valid_component(v))
+            || self
+                .correction_sessions
+                .iter()
+                .collect::<BTreeSet<_>>()
+                .len()
+                != self.correction_sessions.len()
             || self.gate_evidence_sha256.len() > MAX_SESSIONS
             || self.review_evidence_sha256.len() > MAX_SESSIONS
             || self.ci_evidence_sha256.len() > MAX_SESSIONS
@@ -1150,6 +1262,38 @@ impl CampaignTaskRecord {
         &mut self,
         transition: &CampaignTaskTransition,
     ) -> Result<(), TeamStateError> {
+        let reason = match transition.to {
+            CampaignTaskState::Merged => Some(TaskTerminalReason::Merged),
+            CampaignTaskState::Blocked => Some(TaskTerminalReason::ExternalBlocked),
+            CampaignTaskState::Disputed => Some(TaskTerminalReason::ReviewDisputed),
+            CampaignTaskState::Failed => Some(TaskTerminalReason::ProviderFailed),
+            CampaignTaskState::Cancelled => Some(TaskTerminalReason::OperatorCancelled),
+            _ => None,
+        };
+        self.transition_inner(transition, reason)
+    }
+
+    /// Applies one ordered terminal transition with an exact closed reason.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] when the transition or reason does not match the target state.
+    pub fn transition_terminal(
+        &mut self,
+        transition: &CampaignTaskTransition,
+        reason: TaskTerminalReason,
+    ) -> Result<(), TeamStateError> {
+        if !transition.to.is_terminal() || !reason.valid_for(transition.to) {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        self.transition_inner(transition, Some(reason))
+    }
+
+    fn transition_inner(
+        &mut self,
+        transition: &CampaignTaskTransition,
+        terminal_reason: Option<TaskTerminalReason>,
+    ) -> Result<(), TeamStateError> {
         self.verify()?;
         if transition.campaign_id != self.campaign_id
             || transition.task_id != self.task_id
@@ -1162,23 +1306,22 @@ impl CampaignTaskRecord {
         {
             return Err(TeamStateError::InvalidTransition);
         }
-        self.state = transition.to;
-        self.next_transition = self.next_transition.saturating_add(1);
-        self.last_evidence_sha256 = Some(transition.evidence_sha256.clone());
+        let mut candidate = self.clone();
+        candidate.state = transition.to;
+        candidate.next_transition = candidate.next_transition.saturating_add(1);
+        candidate.last_evidence_sha256 = Some(transition.evidence_sha256.clone());
         if transition.to.is_terminal() {
-            self.terminal_reason = Some(
-                match transition.to {
-                    CampaignTaskState::Merged => "merged",
-                    CampaignTaskState::Blocked => "blocked",
-                    CampaignTaskState::Disputed => "disputed",
-                    CampaignTaskState::Failed => "failed",
-                    CampaignTaskState::Cancelled => "cancelled",
-                    _ => return Err(TeamStateError::InvalidTransition),
-                }
-                .to_owned(),
-            );
+            let reason = terminal_reason.ok_or(TeamStateError::InvalidTransition)?;
+            if !reason.valid_for(transition.to) {
+                return Err(TeamStateError::InvalidTransition);
+            }
+            candidate.terminal_reason = Some(reason.code().to_owned());
+        } else if terminal_reason.is_some() {
+            return Err(TeamStateError::InvalidTransition);
         }
-        self.verify()
+        candidate.verify()?;
+        *self = candidate;
+        Ok(())
     }
 
     /// Records a strictly increasing heartbeat observation.
@@ -1211,7 +1354,7 @@ impl CampaignTaskRecord {
         Ok(())
     }
 
-    /// Binds one exact scheduler lease to one coordinator-created worktree and branch.
+    /// Binds one exact scheduler lease before any Git worktree effect begins.
     ///
     /// # Errors
     ///
@@ -1219,8 +1362,6 @@ impl CampaignTaskRecord {
     pub fn bind_lease(
         &mut self,
         lease: &DurablePodLease,
-        worktree_id: String,
-        branch: String,
         evidence_sha256: String,
     ) -> Result<(), TeamStateError> {
         self.verify()?;
@@ -1229,8 +1370,6 @@ impl CampaignTaskRecord {
             || lease.task_id != self.task_id
             || lease.generation != self.generation
             || lease.source_head != self.base_commit
-            || !valid_component(&worktree_id)
-            || !valid_branch(&branch)
             || !valid_sha256(&evidence_sha256)
             || self.last_evidence_sha256.as_ref() == Some(&evidence_sha256)
         {
@@ -1239,11 +1378,40 @@ impl CampaignTaskRecord {
         let mut candidate = self.clone();
         candidate.pod_id = Some(lease.pod_id.clone());
         candidate.lease_id = Some(lease.lease_id.clone());
-        candidate.worktree_id = Some(worktree_id);
-        candidate.branch = Some(branch);
         candidate.owned_paths.clone_from(&lease.owned_paths);
         candidate.test_resources.clone_from(&lease.test_resources);
         candidate.state = CampaignTaskState::Leased;
+        candidate.next_transition = candidate.next_transition.saturating_add(1);
+        candidate.last_evidence_sha256 = Some(evidence_sha256);
+        candidate.verify()?;
+        *self = candidate;
+        Ok(())
+    }
+
+    /// Binds the coordinator-created worktree and branch and starts implementation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for missing lease authority, malformed identity, or replay.
+    pub fn bind_worktree(
+        &mut self,
+        worktree_id: String,
+        branch: String,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self.state != CampaignTaskState::Leased
+            || !valid_component(&worktree_id)
+            || !valid_branch(&branch)
+            || !valid_sha256(&evidence_sha256)
+            || self.last_evidence_sha256.as_ref() == Some(&evidence_sha256)
+        {
+            return Err(TeamStateError::InvalidLease);
+        }
+        let mut candidate = self.clone();
+        candidate.worktree_id = Some(worktree_id);
+        candidate.branch = Some(branch);
+        candidate.state = CampaignTaskState::Implementing;
         candidate.next_transition = candidate.next_transition.saturating_add(1);
         candidate.last_evidence_sha256 = Some(evidence_sha256);
         candidate.verify()?;
@@ -1854,14 +2022,20 @@ fn runtime_identity_shape(record: &CampaignTaskRecord) -> bool {
         && record.branch.is_none()
         && record.owned_paths.is_empty()
         && record.test_resources.is_empty();
+    let leased = record.pod_id.is_some()
+        && record.lease_id.is_some()
+        && record.worktree_id.is_none()
+        && record.branch.is_none()
+        && !record.owned_paths.is_empty();
     match record.state {
         CampaignTaskState::Planned | CampaignTaskState::Ready | CampaignTaskState::Proposed => {
             unassigned
         }
+        CampaignTaskState::Leased => leased,
         CampaignTaskState::Blocked
         | CampaignTaskState::Disputed
         | CampaignTaskState::Failed
-        | CampaignTaskState::Cancelled => assigned || unassigned,
+        | CampaignTaskState::Cancelled => assigned || leased || unassigned,
         _ => assigned,
     }
 }
@@ -1895,11 +2069,26 @@ fn insert_optional_unique<'a>(
 }
 
 fn valid_reason(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 128
-        && value.bytes().all(|byte| {
-            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'_' | b'.')
-        })
+    [
+        TaskTerminalReason::Merged,
+        TaskTerminalReason::PrerequisiteBlocked,
+        TaskTerminalReason::ProviderBlocked,
+        TaskTerminalReason::ReviewBlocked,
+        TaskTerminalReason::ReviewDisputed,
+        TaskTerminalReason::GateFailed,
+        TaskTerminalReason::ProviderFailed,
+        TaskTerminalReason::ProcessCrashed,
+        TaskTerminalReason::TimedOut,
+        TaskTerminalReason::LimitExceeded,
+        TaskTerminalReason::IntegrationConflict,
+        TaskTerminalReason::StaleIdentity,
+        TaskTerminalReason::PolicyDenied,
+        TaskTerminalReason::OperatorCancelled,
+        TaskTerminalReason::CiFailed,
+        TaskTerminalReason::ExternalBlocked,
+    ]
+    .into_iter()
+    .any(|reason| reason.code() == value)
 }
 
 fn leases_conflict(left: &DurablePodLease, right: &DurablePodLease) -> bool {
@@ -2299,16 +2488,16 @@ mod tests {
             })
             .unwrap();
         record.propose(generation, "2".repeat(64)).unwrap();
+        record.bind_lease(&lease, "3".repeat(64)).unwrap();
         record
-            .bind_lease(
-                &lease,
+            .bind_worktree(
                 "wt-23-2-2-1".to_owned(),
                 "codingmage/task-23-2-2-1".to_owned(),
-                "3".repeat(64),
+                "4".repeat(64),
             )
             .unwrap();
         record.issue_number = Some(17);
-        record.gate_evidence_sha256.push("4".repeat(64));
+        record.gate_evidence_sha256.push("5".repeat(64));
         let snapshot = TeamCampaignSnapshot {
             version: 1,
             campaign_id: spec.campaign_id.clone(),
