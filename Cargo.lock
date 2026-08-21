@@ -250,6 +250,7 @@ dependencies = [
  "codingmage-contracts",
  "codingmage-orchestrator",
  "codingmage-plan",
+ "sha2",
 ]
 
 [[package]]

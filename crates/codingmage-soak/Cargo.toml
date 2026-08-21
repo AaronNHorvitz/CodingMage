@@ -10,6 +10,9 @@ version.workspace = true
 [lints]
 workspace = true
 
+[dependencies]
+sha2.workspace = true
+
 [dev-dependencies]
 codingmage-contracts.workspace = true
 codingmage-orchestrator.workspace = true

@@ -1,5 +1,6 @@
 //! Deterministic, content-free soak schedules and invariant accounting.
 
+use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeSet,
     fmt, fs,
@@ -320,6 +321,52 @@ pub struct FakeInjectionObservation {
     pub phase: FakeInjectionPhase,
 }
 
+/// Exact content-free evidence for one accepted fake outcome.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FakeOutcomeEvidence {
+    /// Exact prescribed outcome identity.
+    pub outcome_id: &'static str,
+    /// Exact fixture task identity.
+    pub task_id: &'static str,
+    /// Deterministic fake candidate identity for a completed task only.
+    pub candidate_commit: Option<String>,
+    /// Number of required gate observations.
+    pub gate_observations: u8,
+    /// Number of independent review observations.
+    pub review_observations: u8,
+    /// SHA-256 binding the accepted fake checkpoint projection.
+    pub checkpoint_sha256: String,
+    /// Guarded processes started for this outcome.
+    pub processes_started: u8,
+    /// Guarded processes reaped for this outcome.
+    pub processes_reaped: u8,
+    /// Whether a task worktree was created.
+    pub worktree_created: bool,
+    /// Whether the exact created worktree was removed.
+    pub worktree_removed: bool,
+}
+
+/// Campaign-wide fake residue reconciliation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FakeResidueEvidence {
+    /// Active-checkout manifest before execution.
+    pub active_checkout_before_sha256: String,
+    /// Active-checkout manifest after execution.
+    pub active_checkout_after_sha256: String,
+    /// Total guarded processes started.
+    pub processes_started: u32,
+    /// Total guarded processes reaped.
+    pub processes_reaped: u32,
+    /// Worktrees created by completed outcomes.
+    pub worktrees_created: u8,
+    /// Exact owned worktrees removed.
+    pub worktrees_removed: u8,
+    /// Orphan process count.
+    pub orphan_processes: u8,
+    /// Leaked worktree count.
+    pub leaked_worktrees: u8,
+}
+
 /// Reconciled result of the complete prescribed fake-adapter execution.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FakeAdapterReport {
@@ -333,6 +380,10 @@ pub struct FakeAdapterReport {
     pub observations: Vec<FakeAdapterObservation>,
     /// Complete ordered behavioral injection observations.
     pub injections: Vec<FakeInjectionObservation>,
+    /// Exact evidence projection for every accepted outcome.
+    pub outcome_evidence: Vec<FakeOutcomeEvidence>,
+    /// Campaign-wide residue evidence.
+    pub residue: FakeResidueEvidence,
 }
 
 impl FakeAdapterReport {
@@ -358,6 +409,12 @@ impl FakeAdapterReport {
             return Err(SoakError::InvariantViolation);
         }
         if self.injections != expected_injection_observations(schedule)? {
+            return Err(SoakError::InvariantViolation);
+        }
+        let expected_evidence = expected_outcome_evidence(schedule, &self.observations)?;
+        if self.outcome_evidence != expected_evidence
+            || self.residue != expected_residue(&expected_evidence)?
+        {
             return Err(SoakError::InvariantViolation);
         }
         let coverage = self
@@ -473,15 +530,135 @@ pub fn execute_prescribed_fake_adapters(
     if active_pods != 0 {
         return Err(SoakError::InvariantViolation);
     }
+    let outcome_evidence = expected_outcome_evidence(schedule, &observations)?;
+    let residue = expected_residue(&outcome_evidence)?;
     let report = FakeAdapterReport {
         accepted_outcomes: schedule.max_accepted_outcomes,
         peak_active_pods,
         publication: schedule.publication,
         observations,
         injections: expected_injection_observations(schedule)?,
+        outcome_evidence,
+        residue,
     };
     report.verify(schedule)?;
     Ok(report)
+}
+
+fn expected_outcome_evidence(
+    schedule: &PrescribedSchedule,
+    observations: &[FakeAdapterObservation],
+) -> Result<Vec<FakeOutcomeEvidence>, SoakError> {
+    schedule
+        .outcomes
+        .iter()
+        .map(|outcome| {
+            let completed = outcome.disposition == PrescribedDisposition::Completed;
+            let processes = u8::try_from(
+                observations
+                    .iter()
+                    .filter(|observation| {
+                        observation.outcome_id == outcome.outcome_id
+                            && observation.adapter == FakeAdapterKind::Process
+                    })
+                    .count(),
+            )
+            .map_err(|_| SoakError::InvariantViolation)?;
+            let gate_observations = u8::from(completed)
+                + u8::from(
+                    outcome
+                        .injections
+                        .contains(&PrescribedInjection::GateCorrection),
+                )
+                + u8::from(
+                    outcome
+                        .injections
+                        .contains(&PrescribedInjection::ReviewCorrection),
+                );
+            let review_observations = u8::from(completed)
+                + u8::from(
+                    outcome
+                        .injections
+                        .contains(&PrescribedInjection::ReviewCorrection),
+                );
+            Ok(FakeOutcomeEvidence {
+                outcome_id: outcome.outcome_id,
+                task_id: outcome.task_id,
+                candidate_commit: completed
+                    .then(|| digest(&["candidate", outcome.outcome_id])[..40].to_owned()),
+                gate_observations,
+                review_observations,
+                checkpoint_sha256: digest(&[
+                    "checkpoint",
+                    outcome.outcome_id,
+                    outcome.task_id,
+                    match outcome.disposition {
+                        PrescribedDisposition::Completed => "completed",
+                        PrescribedDisposition::Blocked => "blocked",
+                        PrescribedDisposition::Deferred => "deferred",
+                    },
+                ]),
+                processes_started: processes,
+                processes_reaped: processes,
+                worktree_created: completed,
+                worktree_removed: completed,
+            })
+        })
+        .collect()
+}
+
+fn expected_residue(evidence: &[FakeOutcomeEvidence]) -> Result<FakeResidueEvidence, SoakError> {
+    let processes_started = evidence.iter().try_fold(0_u32, |total, outcome| {
+        total
+            .checked_add(u32::from(outcome.processes_started))
+            .ok_or(SoakError::InvariantViolation)
+    })?;
+    let processes_reaped = evidence.iter().try_fold(0_u32, |total, outcome| {
+        total
+            .checked_add(u32::from(outcome.processes_reaped))
+            .ok_or(SoakError::InvariantViolation)
+    })?;
+    let worktrees_created = u8::try_from(
+        evidence
+            .iter()
+            .filter(|outcome| outcome.worktree_created)
+            .count(),
+    )
+    .map_err(|_| SoakError::InvariantViolation)?;
+    let worktrees_removed = u8::try_from(
+        evidence
+            .iter()
+            .filter(|outcome| outcome.worktree_removed)
+            .count(),
+    )
+    .map_err(|_| SoakError::InvariantViolation)?;
+    let manifest = digest(&["prescribed-disposable-active-checkout"]);
+    Ok(FakeResidueEvidence {
+        active_checkout_before_sha256: manifest.clone(),
+        active_checkout_after_sha256: manifest,
+        processes_started,
+        processes_reaped,
+        worktrees_created,
+        worktrees_removed,
+        orphan_processes: 0,
+        leaked_worktrees: 0,
+    })
+}
+
+fn digest(parts: &[&str]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut hasher = Sha256::new();
+    for part in parts {
+        hasher.update(part.len().to_le_bytes());
+        hasher.update(part.as_bytes());
+    }
+    let digest = hasher.finalize();
+    let mut encoded = String::with_capacity(64);
+    for byte in digest {
+        encoded.push(char::from(HEX[usize::from(byte >> 4)]));
+        encoded.push(char::from(HEX[usize::from(byte & 0x0f)]));
+    }
+    encoded
 }
 
 fn expected_injection_observations(
@@ -1288,6 +1465,86 @@ mod tests {
         mutations.push(changed);
         let mut changed = baseline;
         changed.injections[0].phase = FakeInjectionPhase::ReviewFinding;
+        mutations.push(changed);
+
+        for mutation in mutations {
+            assert_eq!(
+                mutation.verify(&schedule),
+                Err(SoakError::InvariantViolation)
+            );
+        }
+    }
+
+    #[test]
+    fn every_prescribed_outcome_and_campaign_residue_reconciles_exactly() {
+        let schedule = prescribed_ten_outcome_schedule();
+        let report = execute_prescribed_fake_adapters(&schedule).unwrap();
+        assert_eq!(report.outcome_evidence.len(), 10);
+        assert_eq!(
+            report
+                .outcome_evidence
+                .iter()
+                .filter(|evidence| evidence.candidate_commit.is_some())
+                .count(),
+            8
+        );
+        assert_eq!(report.outcome_evidence[1].gate_observations, 2);
+        assert_eq!(report.outcome_evidence[2].gate_observations, 2);
+        assert_eq!(report.outcome_evidence[2].review_observations, 2);
+        assert_eq!(report.residue.processes_started, 18);
+        assert_eq!(report.residue.processes_reaped, 18);
+        assert_eq!(report.residue.worktrees_created, 8);
+        assert_eq!(report.residue.worktrees_removed, 8);
+        assert_eq!(report.residue.orphan_processes, 0);
+        assert_eq!(report.residue.leaked_worktrees, 0);
+        assert_eq!(
+            report.residue.active_checkout_before_sha256,
+            report.residue.active_checkout_after_sha256
+        );
+        assert!(report.outcome_evidence.iter().all(|evidence| {
+            evidence.checkpoint_sha256.len() == 64
+                && evidence
+                    .candidate_commit
+                    .as_ref()
+                    .is_none_or(|commit| commit.len() == 40)
+        }));
+    }
+
+    #[test]
+    fn outcome_and_residue_reconciliation_refuses_every_false_claim() {
+        let schedule = prescribed_ten_outcome_schedule();
+        let baseline = execute_prescribed_fake_adapters(&schedule).unwrap();
+        let mut mutations = Vec::new();
+
+        let mut changed = baseline.clone();
+        changed.outcome_evidence[0].candidate_commit = None;
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.outcome_evidence[1].gate_observations = 1;
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.outcome_evidence[2].review_observations = 1;
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.outcome_evidence[3].worktree_created = true;
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.outcome_evidence[4].checkpoint_sha256 = "0".repeat(64);
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.residue.active_checkout_after_sha256 = "1".repeat(64);
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.residue.processes_reaped -= 1;
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.residue.worktrees_removed -= 1;
+        mutations.push(changed);
+        let mut changed = baseline.clone();
+        changed.residue.orphan_processes = 1;
+        mutations.push(changed);
+        let mut changed = baseline;
+        changed.residue.leaked_worktrees = 1;
         mutations.push(changed);
 
         for mutation in mutations {
