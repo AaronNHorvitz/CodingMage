@@ -131,6 +131,110 @@ pub(crate) struct CampaignUtilization {
     pub execution_elapsed_ms: u64,
 }
 
+#[derive(Clone, Debug)]
+pub(crate) struct CampaignUnitBudget {
+    baseline: CampaignUtilization,
+    limits: CampaignLimits,
+    campaign_root: PathBuf,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct CampaignReservation {
+    pub provider_attempts: u32,
+    pub malformed_report_repairs: u32,
+    pub correction_rounds: u32,
+    pub process_invocations: u32,
+}
+
+impl CampaignUnitBudget {
+    pub(crate) fn authorize(
+        &self,
+        unit: &RunUtilization,
+        correction_rounds: u16,
+        reservation: CampaignReservation,
+    ) -> Result<(), RuntimeError> {
+        let exhausted = self.exhausted_with_reservation(unit, correction_rounds, reservation)?;
+        exhausted.map_or(Ok(()), |limit| Err(RuntimeError::CampaignLimit(limit)))
+    }
+
+    fn exhausted_with_reservation(
+        &self,
+        unit: &RunUtilization,
+        correction_rounds: u16,
+        reservation: CampaignReservation,
+    ) -> Result<Option<CampaignLimitKind>, RuntimeError> {
+        let provider_attempts = self
+            .baseline
+            .provider_attempts
+            .checked_add(unit.provider_attempts)
+            .and_then(|value| value.checked_add(reservation.provider_attempts))
+            .ok_or(RuntimeError::State)?;
+        let malformed_report_repairs = self
+            .baseline
+            .malformed_report_repairs
+            .checked_add(unit.malformed_report_repairs)
+            .and_then(|value| value.checked_add(reservation.malformed_report_repairs))
+            .ok_or(RuntimeError::State)?;
+        let corrections = self
+            .baseline
+            .correction_rounds
+            .checked_add(u32::from(correction_rounds))
+            .and_then(|value| value.checked_add(reservation.correction_rounds))
+            .ok_or(RuntimeError::State)?;
+        let processes = self
+            .baseline
+            .process_invocations
+            .checked_add(unit.process_invocations)
+            .and_then(|value| value.checked_add(reservation.process_invocations))
+            .ok_or(RuntimeError::State)?;
+        let output = self
+            .baseline
+            .output_bytes
+            .checked_add(unit.output_bytes)
+            .ok_or(RuntimeError::State)?;
+        let elapsed = self
+            .baseline
+            .execution_elapsed_ms
+            .checked_add(unit.execution_elapsed_ms)
+            .ok_or(RuntimeError::State)?;
+        let retained = retained_tree_bytes(&self.campaign_root)?;
+        Ok([
+            (
+                reservation.provider_attempts > 0
+                    && provider_attempts > self.limits.provider_attempts,
+                CampaignLimitKind::ProviderAttempts,
+            ),
+            (
+                reservation.malformed_report_repairs > 0
+                    && malformed_report_repairs > self.limits.malformed_report_repairs,
+                CampaignLimitKind::MalformedReportRepairs,
+            ),
+            (
+                reservation.correction_rounds > 0 && corrections > self.limits.correction_rounds,
+                CampaignLimitKind::CorrectionRounds,
+            ),
+            (
+                reservation.process_invocations > 0 && processes > self.limits.process_invocations,
+                CampaignLimitKind::ProcessInvocations,
+            ),
+            (
+                output >= self.limits.output_bytes,
+                CampaignLimitKind::OutputBytes,
+            ),
+            (
+                retained >= self.limits.retained_state_bytes,
+                CampaignLimitKind::RetainedStateBytes,
+            ),
+            (
+                elapsed >= self.limits.execution_elapsed_ms,
+                CampaignLimitKind::ExecutionElapsed,
+            ),
+        ]
+        .into_iter()
+        .find_map(|(exhausted, limit)| exhausted.then_some(limit)))
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct CampaignCheckpoint {
@@ -652,6 +756,14 @@ impl CampaignCheckpoint {
         ]
         .into_iter()
         .find_map(|(exhausted, limit)| exhausted.then_some(limit))
+    }
+
+    pub(crate) fn unit_budget(&self, campaign_root: &Path) -> CampaignUnitBudget {
+        CampaignUnitBudget {
+            baseline: self.utilization.clone(),
+            limits: self.limits.clone(),
+            campaign_root: campaign_root.to_path_buf(),
+        }
     }
 
     fn refresh_outcomes(&mut self) -> Result<(), RuntimeError> {
@@ -1391,6 +1503,123 @@ mod tests {
             checkpoint.exhausted_limit(),
             Some(CampaignLimitKind::ProviderAttempts)
         );
+    }
+
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    fn unit_budget_allows_exact_boundary_and_refuses_every_additional_effect() {
+        let root = root("unit-budget");
+        fs::create_dir_all(&root).unwrap();
+        let budget = CampaignUnitBudget {
+            baseline: CampaignUtilization::default(),
+            limits: CampaignLimits {
+                provider_attempts: 2,
+                malformed_report_repairs: 1,
+                correction_rounds: 1,
+                process_invocations: 4,
+                output_bytes: 10,
+                retained_state_bytes: 10,
+                execution_elapsed_ms: 10,
+            },
+            campaign_root: root.clone(),
+        };
+        let mut usage = RunUtilization::default();
+
+        assert_eq!(
+            budget.authorize(
+                &usage,
+                0,
+                CampaignReservation {
+                    provider_attempts: 2,
+                    process_invocations: 2,
+                    ..CampaignReservation::default()
+                },
+            ),
+            Ok(())
+        );
+        usage.provider_attempts = 2;
+        usage.process_invocations = 2;
+        assert_eq!(
+            budget.authorize(
+                &usage,
+                0,
+                CampaignReservation {
+                    provider_attempts: 1,
+                    process_invocations: 1,
+                    ..CampaignReservation::default()
+                },
+            ),
+            Err(RuntimeError::CampaignLimit(
+                CampaignLimitKind::ProviderAttempts
+            ))
+        );
+
+        usage.provider_attempts = 0;
+        usage.malformed_report_repairs = 1;
+        assert_eq!(
+            budget.authorize(
+                &usage,
+                0,
+                CampaignReservation {
+                    malformed_report_repairs: 1,
+                    ..CampaignReservation::default()
+                },
+            ),
+            Err(RuntimeError::CampaignLimit(
+                CampaignLimitKind::MalformedReportRepairs
+            ))
+        );
+        usage.malformed_report_repairs = 0;
+        assert_eq!(
+            budget.authorize(
+                &usage,
+                1,
+                CampaignReservation {
+                    correction_rounds: 1,
+                    ..CampaignReservation::default()
+                },
+            ),
+            Err(RuntimeError::CampaignLimit(
+                CampaignLimitKind::CorrectionRounds
+            ))
+        );
+        usage.process_invocations = 4;
+        assert_eq!(
+            budget.authorize(
+                &usage,
+                0,
+                CampaignReservation {
+                    process_invocations: 1,
+                    ..CampaignReservation::default()
+                },
+            ),
+            Err(RuntimeError::CampaignLimit(
+                CampaignLimitKind::ProcessInvocations
+            ))
+        );
+        usage.process_invocations = 0;
+        usage.output_bytes = 10;
+        assert_eq!(
+            budget.authorize(&usage, 0, CampaignReservation::default()),
+            Err(RuntimeError::CampaignLimit(CampaignLimitKind::OutputBytes))
+        );
+        usage.output_bytes = 0;
+        usage.execution_elapsed_ms = 10;
+        assert_eq!(
+            budget.authorize(&usage, 0, CampaignReservation::default()),
+            Err(RuntimeError::CampaignLimit(
+                CampaignLimitKind::ExecutionElapsed
+            ))
+        );
+        usage.execution_elapsed_ms = 0;
+        fs::write(root.join("ten-bytes"), b"0123456789").unwrap();
+        assert_eq!(
+            budget.authorize(&usage, 0, CampaignReservation::default()),
+            Err(RuntimeError::CampaignLimit(
+                CampaignLimitKind::RetainedStateBytes
+            ))
+        );
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

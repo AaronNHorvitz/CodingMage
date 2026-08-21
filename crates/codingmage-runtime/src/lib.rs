@@ -7,7 +7,10 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     fmt, fs,
     path::{Path, PathBuf},
-    sync::atomic::{AtomicU64, Ordering},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU64, Ordering},
+    },
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -52,10 +55,10 @@ use sha2::{Digest, Sha256};
 const RUN_SPEC_VERSION: u16 = 2;
 
 use campaign_state::{
-    ActiveUnit, BlockerClearanceIntent, CampaignCheckpoint, CampaignPhase, DeferralTriggerIntent,
-    DeferredTaskProjection, HumanDecisionProjection, HumanDecisionProjectionReason,
-    LeadRejectionReason, PendingIntegration, RejectedProposalProjection,
-    validate_private_campaign_state,
+    ActiveUnit, BlockerClearanceIntent, CampaignCheckpoint, CampaignPhase, CampaignReservation,
+    CampaignUnitBudget, DeferralTriggerIntent, DeferredTaskProjection, HumanDecisionProjection,
+    HumanDecisionProjectionReason, LeadRejectionReason, PendingIntegration,
+    RejectedProposalProjection, validate_private_campaign_state,
 };
 use correction_state::{CorrectionCheckpoint, CorrectionPhase};
 
@@ -316,6 +319,14 @@ pub struct RunUtilization {
     pub retained_state_bytes: u64,
 }
 
+#[derive(Clone, Debug, Default)]
+struct ObservedUnitUsage {
+    utilization: RunUtilization,
+    correction_rounds: u16,
+}
+
+type SharedUnitUsage = Arc<Mutex<ObservedUnitUsage>>;
+
 /// Terminal state of the initial one-pod campaign engine.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -350,13 +361,20 @@ pub enum CampaignStopReason {
 
 /// Exact aggregate campaign ceiling that exhausted admission authority.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum CampaignLimitKind {
+pub enum CampaignLimitKind {
+    /// Attempted provider invocations.
     ProviderAttempts,
+    /// Metadata-only malformed-report repair requests.
     MalformedReportRepairs,
+    /// Completed bounded correction rounds.
     CorrectionRounds,
+    /// Provider and deterministic-gate process invocations.
     ProcessInvocations,
+    /// Observed provider and gate output bytes.
     OutputBytes,
+    /// Bytes retained beneath campaign-owned private state.
     RetainedStateBytes,
+    /// Observed provider and gate execution time.
     ExecutionElapsed,
 }
 
@@ -1455,15 +1473,54 @@ pub fn run_serial_campaign_with_progress(
             reviewer: provider_spec(&spec.reviewer),
         };
         let mut provider_attempt = 1_u8;
-        let unit = loop {
-            match run_one_with_progress_id(
+        let (unit, accepted_usage) = loop {
+            let observed_usage = Arc::new(Mutex::new(ObservedUnitUsage::default()));
+            let result = run_one_with_progress_id_budget(
                 &pod_config,
                 unit_spec.clone(),
                 &binary,
                 unit_run_id.clone(),
                 &mut observer,
-            ) {
-                Ok(unit) => break unit,
+                Some(checkpoint.unit_budget(&campaign_root)),
+                Some(Arc::clone(&observed_usage)),
+            );
+            let usage_snapshot = observed_usage
+                .lock()
+                .map_err(|_| RuntimeError::State)?
+                .clone();
+            if result.is_err() {
+                checkpoint.record_unit_utilization(
+                    &usage_snapshot.utilization,
+                    usage_snapshot.correction_rounds,
+                )?;
+                checkpoint.persist(&campaign_root)?;
+            }
+            match result {
+                Ok(unit) => break (unit, usage_snapshot),
+                Err(RuntimeError::CampaignLimit(limit)) => {
+                    let blocker_code = limit.code().to_owned();
+                    checkpoint.phase = CampaignPhase::Paused;
+                    checkpoint.active_unit = None;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    if lease_registered {
+                        scheduler
+                            .release(&lease.pod_id)
+                            .map_err(RuntimeError::Campaign)?;
+                    }
+                    return Ok(campaign_outcome(
+                        &spec,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        CampaignTermination::new(
+                            CampaignState::Paused,
+                            CampaignStopReason::AttemptLimit,
+                            Some(blocker_code),
+                        ),
+                    ));
+                }
                 Err(error)
                     if retryable_campaign_provider_failure(error)
                         && provider_attempt < CAMPAIGN_PROVIDER_ATTEMPT_LIMIT =>
@@ -1564,7 +1621,10 @@ pub fn run_serial_campaign_with_progress(
                 }
             }
         };
-        checkpoint.record_unit_utilization(&unit.utilization, unit.correction_rounds)?;
+        checkpoint.record_unit_utilization(
+            &accepted_usage.utilization,
+            accepted_usage.correction_rounds,
+        )?;
         if unit.state == TaskState::Blocked {
             checkpoint.blocked_task_ids.insert(lease.task_id.clone());
             checkpoint.phase = CampaignPhase::Ready;
@@ -1754,6 +1814,12 @@ const fn campaign_unit_error(
     &'static str,
 ) {
     match error {
+        RuntimeError::CampaignLimit(_) => (
+            CampaignState::Paused,
+            CampaignPhase::Paused,
+            CampaignStopReason::AttemptLimit,
+            "codingmage.campaign.unit_limit",
+        ),
         RuntimeError::Verification => (
             CampaignState::Paused,
             CampaignPhase::Paused,
@@ -2112,11 +2178,40 @@ fn run_one_with_progress_id(
     run_id: RunId,
     observer: &mut impl FnMut(RunProgress),
 ) -> Result<RunOutcome, RuntimeError> {
+    run_one_with_progress_id_budget(
+        config,
+        spec,
+        codingmage_binary,
+        run_id,
+        observer,
+        None,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_one_with_progress_id_budget(
+    config: &Config,
+    spec: RunSpec,
+    codingmage_binary: &Path,
+    run_id: RunId,
+    observer: &mut impl FnMut(RunProgress),
+    campaign_budget: Option<CampaignUnitBudget>,
+    observed_usage: Option<SharedUnitUsage>,
+) -> Result<RunOutcome, RuntimeError> {
     observer(RunProgress::new(
         ProgressActor::Coordinator,
         ProgressStage::Preparing,
     ));
-    let result = run_one_observed_with_id(config, spec, codingmage_binary, run_id, observer);
+    let result = run_one_observed_with_id(
+        config,
+        spec,
+        codingmage_binary,
+        run_id,
+        observer,
+        campaign_budget,
+        observed_usage,
+    );
     observer(RunProgress::new(
         ProgressActor::Coordinator,
         if result.is_ok() {
@@ -2134,6 +2229,8 @@ fn run_one_observed_with_id(
     codingmage_binary: &Path,
     run_id: RunId,
     observer: &mut impl FnMut(RunProgress),
+    campaign_budget: Option<CampaignUnitBudget>,
+    observed_usage: Option<SharedUnitUsage>,
 ) -> Result<RunOutcome, RuntimeError> {
     spec.validate()?;
     let codingmage_binary = canonical_file(codingmage_binary)?;
@@ -2183,6 +2280,8 @@ fn run_one_observed_with_id(
         schema_path,
         run_root,
         login_environment,
+        campaign_budget,
+        observed_usage,
     };
     let port = match correction_recovery.as_ref() {
         Some(checkpoint) => ProductionWorkflowPort::recover_correction(inputs, checkpoint)?,
@@ -2330,6 +2429,8 @@ struct ProductionInputs<'a> {
     schema_path: PathBuf,
     run_root: PathBuf,
     login_environment: BTreeMap<String, String>,
+    campaign_budget: Option<CampaignUnitBudget>,
+    observed_usage: Option<SharedUnitUsage>,
 }
 
 struct ProductionWorkflowPort<'a> {
@@ -2345,6 +2446,8 @@ struct ProductionWorkflowPort<'a> {
     schema_path: PathBuf,
     run_root: PathBuf,
     login_environment: BTreeMap<String, String>,
+    campaign_budget: Option<CampaignUnitBudget>,
+    observed_usage: Option<SharedUnitUsage>,
     lock: Option<CoordinatorLock>,
     worktree: Option<OwnedWorktree>,
     implementation: Option<ClaudeCompletionReport>,
@@ -2355,6 +2458,7 @@ struct ProductionWorkflowPort<'a> {
     review_verdict: Option<ReviewVerdict>,
     review_report: Option<CodexReviewReport>,
     correction_round: u16,
+    observed_correction_baseline: u16,
     utilization: RunUtilization,
     recovering_correction: bool,
     failure: Option<RuntimeError>,
@@ -2375,6 +2479,8 @@ impl<'a> ProductionWorkflowPort<'a> {
             schema_path: inputs.schema_path,
             run_root: inputs.run_root,
             login_environment: inputs.login_environment,
+            campaign_budget: inputs.campaign_budget,
+            observed_usage: inputs.observed_usage,
             lock: None,
             worktree: None,
             implementation: None,
@@ -2385,6 +2491,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             review_verdict: None,
             review_report: None,
             correction_round: 0,
+            observed_correction_baseline: 0,
             utilization: RunUtilization::default(),
             recovering_correction: false,
             failure: None,
@@ -2432,6 +2539,7 @@ impl<'a> ProductionWorkflowPort<'a> {
         port.worktree = Some(worktree);
         port.candidate = Some(candidate);
         port.correction_round = checkpoint.correction_round.saturating_sub(1);
+        port.observed_correction_baseline = port.correction_round;
         port.recovering_correction = true;
         Ok(port)
     }
@@ -2444,6 +2552,11 @@ impl<'a> ProductionWorkflowPort<'a> {
     ) -> Result<RunOutcome, RuntimeError> {
         let mut utilization = self.utilization.clone();
         utilization.retained_state_bytes = retained_tree_bytes(&self.run_root)?;
+        if let Some(observed) = self.observed_usage.as_ref() {
+            let mut observed = observed.lock().map_err(|_| RuntimeError::State)?;
+            observed.utilization.clone_from(&utilization);
+            observed.correction_rounds = self.observed_correction_rounds();
+        }
         Ok(RunOutcome {
             run_id,
             task_id,
@@ -2466,7 +2579,45 @@ impl<'a> ProductionWorkflowPort<'a> {
         })
     }
 
+    fn authorize_campaign_effect(
+        &mut self,
+        reservation: CampaignReservation,
+    ) -> Result<(), OrchestrationError> {
+        let result = self.campaign_budget.as_ref().map_or(Ok(()), |budget| {
+            budget.authorize(
+                &self.utilization,
+                self.observed_correction_rounds(),
+                reservation,
+            )
+        });
+        if let Err(error) = result {
+            self.failure = Some(error);
+            return Err(OrchestrationError::Port);
+        }
+        Ok(())
+    }
+
+    fn sync_observed_usage(&self) -> Result<(), OrchestrationError> {
+        let Some(observed) = self.observed_usage.as_ref() else {
+            return Ok(());
+        };
+        let mut observed = observed.lock().map_err(|_| OrchestrationError::Port)?;
+        observed.utilization.clone_from(&self.utilization);
+        observed.correction_rounds = self.observed_correction_rounds();
+        Ok(())
+    }
+
+    const fn observed_correction_rounds(&self) -> u16 {
+        self.correction_round
+            .saturating_sub(self.observed_correction_baseline)
+    }
+
     fn record_provider_attempt(&mut self) -> Result<(), OrchestrationError> {
+        self.authorize_campaign_effect(CampaignReservation {
+            provider_attempts: 1,
+            process_invocations: 1,
+            ..CampaignReservation::default()
+        })?;
         self.utilization.provider_attempts = self
             .utilization
             .provider_attempts
@@ -2477,7 +2628,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             .process_invocations
             .checked_add(1)
             .ok_or(OrchestrationError::Port)?;
-        Ok(())
+        self.sync_observed_usage()
     }
 
     fn record_process_result(&mut self, result: &ProcessResult) -> Result<(), OrchestrationError> {
@@ -2498,7 +2649,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             .execution_elapsed_ms
             .checked_add(elapsed)
             .ok_or(OrchestrationError::Port)?;
-        Ok(())
+        self.sync_observed_usage()
     }
 
     fn record_gate_run(
@@ -2533,7 +2684,7 @@ impl<'a> ProductionWorkflowPort<'a> {
                 )
                 .ok_or(OrchestrationError::Port)?;
         }
-        Ok(())
+        self.sync_observed_usage()
     }
 
     fn worktree(&self) -> Result<&OwnedWorktree, OrchestrationError> {
@@ -2696,11 +2847,16 @@ impl<'a> ProductionWorkflowPort<'a> {
                     if retryable_claude_report_failure(error)
                         && attempt + 1 < CLAUDE_REPORT_ATTEMPT_LIMIT =>
                 {
+                    self.authorize_campaign_effect(CampaignReservation {
+                        malformed_report_repairs: 1,
+                        ..CampaignReservation::default()
+                    })?;
                     self.utilization.malformed_report_repairs = self
                         .utilization
                         .malformed_report_repairs
                         .checked_add(1)
                         .ok_or(OrchestrationError::Port)?;
+                    self.sync_observed_usage()?;
                     resume = true;
                     packet.task_text.push_str(
                         "\n\nCOMPLETION REPORT RETRY\nThe prior completion metadata was malformed or contradictory. Do not broaden scope, run commands, or change files merely to answer this retry. Reinspect only the authorized worktree files if needed, then return exactly one disposition: (1) ready_for_commit=true with commit=null, blocker_code=null, and limitations=[]; or (2) ready_for_commit=false with commit=null and one non-null blocker_code. Keep tests=[].",
@@ -2725,6 +2881,18 @@ impl<'a> ProductionWorkflowPort<'a> {
                 return Err(error);
             }
         };
+        let process_invocations = u32::try_from(
+            registry
+                .entries()
+                .iter()
+                .filter(|entry| matches!(entry, GateEntry::Available(_)))
+                .count(),
+        )
+        .map_err(|_| OrchestrationError::Port)?;
+        self.authorize_campaign_effect(CampaignReservation {
+            process_invocations,
+            ..CampaignReservation::default()
+        })?;
         let Ok(result) =
             GateRunner::new(self.executor.clone()).run(&registry, &commit, &BTreeSet::new())
         else {
@@ -3121,6 +3289,10 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
     }
 
     fn prepare_correction(&mut self) -> Result<(), OrchestrationError> {
+        self.authorize_campaign_effect(CampaignReservation {
+            correction_rounds: 1,
+            ..CampaignReservation::default()
+        })?;
         let parent_commit = self.candidate()?.commit.clone();
         let owned = self.worktree()?;
         let next_round = self.correction_round.saturating_add(1);
@@ -3219,6 +3391,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         self.review_report = None;
         self.review_verdict = None;
         self.correction_round = self.correction_round.saturating_add(1);
+        self.sync_observed_usage()?;
         self.recovering_correction = false;
         Ok((ImplementationOutcome::Ready, evidence))
     }
@@ -3552,6 +3725,8 @@ pub enum RuntimeError {
     Reviewer(CodexError),
     /// A deterministic gate profile or execution failed before trustworthy evidence existed.
     Verification,
+    /// An exact aggregate campaign limit stopped admission before the next delegated effect.
+    CampaignLimit(CampaignLimitKind),
 }
 
 impl RuntimeError {
@@ -3580,6 +3755,7 @@ impl RuntimeError {
             Self::Implementer(error) => error.code(),
             Self::Reviewer(error) => error.code(),
             Self::Verification => "codingmage.runtime.verification",
+            Self::CampaignLimit(limit) => limit.code(),
         }
     }
 }
