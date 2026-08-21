@@ -3,11 +3,12 @@
 mod team;
 
 pub use team::{
-    AdmissionDecision, AdmissionReason, CampaignConcurrency, CampaignExecutionMode,
+    ActorClass, AdmissionDecision, AdmissionReason, CampaignConcurrency, CampaignExecutionMode,
     CampaignTaskRecord, CampaignTaskState, CampaignTaskTransition, DestinationPromotionPolicy,
     DurablePodLease, DurablePodScheduler, DurableSchedulerSnapshot, MultiAgentPolicy,
-    TaskIntegrationPolicy, TaskMergeStrategy, TaskPublicationMode, TaskUtilization,
-    TeamCampaignSnapshot, TeamStateError,
+    ProviderCircuit, ProviderCircuitStatus, TaskIntegrationPolicy, TaskMergeStrategy,
+    TaskPublicationMode, TaskResourceReservation, TaskUtilization, TeamCampaignSnapshot,
+    TeamResourceController, TeamResourcePolicy, TeamResourceSnapshot, TeamStateError,
 };
 
 use std::{

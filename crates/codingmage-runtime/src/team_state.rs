@@ -253,7 +253,10 @@ fn digest_evidence(digest: &str) -> EvidenceId {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codingmage_campaign::{DurableSchedulerSnapshot, TeamCampaignSnapshot};
+    use codingmage_campaign::{
+        CampaignConcurrency, DurableSchedulerSnapshot, TaskUtilization, TeamCampaignSnapshot,
+        TeamResourcePolicy, TeamResourceSnapshot,
+    };
     use std::{
         collections::{BTreeMap, BTreeSet},
         time::{SystemTime, UNIX_EPOCH},
@@ -286,6 +289,18 @@ mod tests {
                 active: BTreeMap::new(),
                 released: BTreeSet::new(),
                 ready_age: BTreeMap::new(),
+            },
+            resources: TeamResourceSnapshot {
+                version: 1,
+                concurrency: CampaignConcurrency::default(),
+                policy: TeamResourcePolicy::default(),
+                max_campaign_tokens: 1_000_000,
+                max_task_tokens: 100_000,
+                active: BTreeMap::new(),
+                released: BTreeSet::new(),
+                consumed: TaskUtilization::default(),
+                provider_circuits: BTreeMap::new(),
+                next_sequence: 0,
             },
             tasks: BTreeMap::new(),
             integration_queue: Vec::new(),

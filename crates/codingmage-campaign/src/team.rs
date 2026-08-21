@@ -19,6 +19,8 @@ const TEAM_STATE_VERSION: u16 = 1;
 const MAX_PROVIDER_TOKENS: u64 = 1_000_000_000_000;
 const MAX_TASK_RECORDS: usize = 1_000_000;
 const MAX_SESSIONS: usize = 1_024;
+const MAX_RESOURCE_BYTES: u64 = 1 << 50;
+const MAX_ELAPSED_MS: u64 = 365 * 24 * 60 * 60 * 1_000;
 
 /// Campaign execution shape. Serial mode remains the compatibility default.
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -99,6 +101,102 @@ pub struct CampaignConcurrency {
     pub integration_workers: u16,
 }
 
+/// Coordinator-owned resource and liveness policy for concurrent campaign work.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TeamResourcePolicy {
+    /// Total abstract CPU units available to active task effects.
+    pub total_cpu_units: u16,
+    /// CPU units reserved for one implementation pod.
+    pub implementation_cpu_units: u16,
+    /// Total memory bytes available to active task effects.
+    pub total_memory_bytes: u64,
+    /// Memory bytes reserved for one implementation pod.
+    pub implementation_memory_bytes: u64,
+    /// Total temporary disk bytes available to active task effects.
+    pub total_disk_bytes: u64,
+    /// Temporary disk bytes reserved for one implementation pod.
+    pub implementation_disk_bytes: u64,
+    /// Total process slots across active task effects.
+    pub total_processes: u32,
+    /// Process slots reserved for one implementation pod.
+    pub implementation_processes: u32,
+    /// Hard elapsed ceiling for one implementation pod.
+    pub pod_timeout_ms: u64,
+    /// Expected interval between coordinator observations of an active pod.
+    pub heartbeat_interval_ms: u64,
+    /// Elapsed time after which an unobserved pod is stale.
+    pub stale_after_ms: u64,
+    /// Maximum retry attempts for one retryable provider effect.
+    pub provider_retry_limit: u16,
+    /// Consecutive retryable failures that open the provider circuit.
+    pub provider_failure_threshold: u16,
+    /// Minimum elapsed time before an open provider circuit permits one probe.
+    pub provider_cooldown_ms: u64,
+}
+
+impl Default for TeamResourcePolicy {
+    fn default() -> Self {
+        Self {
+            total_cpu_units: 5,
+            implementation_cpu_units: 1,
+            total_memory_bytes: 20 * 1024 * 1024 * 1024,
+            implementation_memory_bytes: 4 * 1024 * 1024 * 1024,
+            total_disk_bytes: 50 * 1024 * 1024 * 1024,
+            implementation_disk_bytes: 10 * 1024 * 1024 * 1024,
+            total_processes: 320,
+            implementation_processes: 64,
+            pod_timeout_ms: 60 * 60 * 1_000,
+            heartbeat_interval_ms: 5_000,
+            stale_after_ms: 30_000,
+            provider_retry_limit: 3,
+            provider_failure_threshold: 3,
+            provider_cooldown_ms: 60_000,
+        }
+    }
+}
+
+impl TeamResourcePolicy {
+    fn verify(&self, concurrency: &CampaignConcurrency) -> Result<(), CampaignError> {
+        let implementers = u64::from(concurrency.claude_implementers);
+        if self.total_cpu_units == 0
+            || self.implementation_cpu_units == 0
+            || self.implementation_cpu_units > self.total_cpu_units
+            || u64::from(self.implementation_cpu_units).saturating_mul(implementers)
+                > u64::from(self.total_cpu_units)
+            || self.total_memory_bytes == 0
+            || self.total_memory_bytes > MAX_RESOURCE_BYTES
+            || self.implementation_memory_bytes == 0
+            || self
+                .implementation_memory_bytes
+                .saturating_mul(implementers)
+                > self.total_memory_bytes
+            || self.total_disk_bytes == 0
+            || self.total_disk_bytes > MAX_RESOURCE_BYTES
+            || self.implementation_disk_bytes == 0
+            || self.implementation_disk_bytes.saturating_mul(implementers) > self.total_disk_bytes
+            || self.total_processes == 0
+            || self.implementation_processes == 0
+            || u64::from(self.implementation_processes).saturating_mul(implementers)
+                > u64::from(self.total_processes)
+            || self.pod_timeout_ms == 0
+            || self.pod_timeout_ms > MAX_ELAPSED_MS
+            || self.heartbeat_interval_ms == 0
+            || self.heartbeat_interval_ms >= self.stale_after_ms
+            || self.stale_after_ms > self.pod_timeout_ms
+            || self.provider_retry_limit == 0
+            || self.provider_retry_limit > 100
+            || self.provider_failure_threshold == 0
+            || self.provider_failure_threshold > 100
+            || self.provider_cooldown_ms == 0
+            || self.provider_cooldown_ms > MAX_ELAPSED_MS
+        {
+            return Err(CampaignError::InvalidAuthority);
+        }
+        Ok(())
+    }
+}
+
 impl Default for CampaignConcurrency {
     fn default() -> Self {
         Self {
@@ -130,6 +228,24 @@ impl CampaignConcurrency {
     }
 }
 
+/// Independently bounded coordinator actor class.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ActorClass {
+    /// Read-only campaign planning.
+    TeamLead,
+    /// Claude implementation or correction.
+    Implementer,
+    /// Deterministic gate execution.
+    Gate,
+    /// Fresh read-only Codex review.
+    Reviewer,
+    /// Idempotent GitHub synchronization.
+    GitHub,
+    /// Serialized campaign-head integration.
+    Integration,
+}
+
 /// Multi-agent authority added to a campaign without changing legacy serial authority bytes.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -148,6 +264,8 @@ pub struct MultiAgentPolicy {
     pub task_merge_strategy: TaskMergeStrategy,
     /// Independent actor and worker ceilings.
     pub concurrency: CampaignConcurrency,
+    /// Coordinator-owned concurrent resource and liveness ceilings.
+    pub resources: TeamResourcePolicy,
     /// Maximum provider tokens observed for the whole campaign.
     pub max_campaign_tokens: u64,
     /// Maximum provider tokens observed for one task.
@@ -166,6 +284,7 @@ impl MultiAgentPolicy {
     /// Returns [`CampaignError::InvalidAuthority`] for contradictory or unbounded policy.
     pub fn verify(&self, spec: &CampaignSpec) -> Result<(), CampaignError> {
         self.concurrency.verify(spec)?;
+        self.resources.verify(&self.concurrency)?;
         if self.version != TEAM_POLICY_VERSION
             || self.max_campaign_tokens == 0
             || self.max_campaign_tokens > MAX_PROVIDER_TOKENS
@@ -256,6 +375,551 @@ pub struct TaskUtilization {
     pub retained_state_bytes: u64,
     /// Observed execution milliseconds.
     pub execution_elapsed_ms: u64,
+}
+
+impl TaskUtilization {
+    fn checked_add(&self, other: &Self) -> Option<Self> {
+        Some(Self {
+            provider_attempts: self
+                .provider_attempts
+                .checked_add(other.provider_attempts)?,
+            provider_tokens: self.provider_tokens.checked_add(other.provider_tokens)?,
+            process_invocations: self
+                .process_invocations
+                .checked_add(other.process_invocations)?,
+            output_bytes: self.output_bytes.checked_add(other.output_bytes)?,
+            retained_state_bytes: self
+                .retained_state_bytes
+                .checked_add(other.retained_state_bytes)?,
+            execution_elapsed_ms: self
+                .execution_elapsed_ms
+                .checked_add(other.execution_elapsed_ms)?,
+        })
+    }
+
+    fn dominates(&self, prior: &Self) -> bool {
+        self.provider_attempts >= prior.provider_attempts
+            && self.provider_tokens >= prior.provider_tokens
+            && self.process_invocations >= prior.process_invocations
+            && self.output_bytes >= prior.output_bytes
+            && self.retained_state_bytes >= prior.retained_state_bytes
+            && self.execution_elapsed_ms >= prior.execution_elapsed_ms
+    }
+}
+
+/// One exact active resource reservation owned by a task effect.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TaskResourceReservation {
+    /// Deterministic reservation identity.
+    pub reservation_id: String,
+    /// Canonical task identity.
+    pub task_id: String,
+    /// Exact active pod lease.
+    pub lease_id: String,
+    /// Independently limited actor class.
+    pub actor: ActorClass,
+    /// Reserved abstract CPU units.
+    pub cpu_units: u16,
+    /// Reserved memory bytes.
+    pub memory_bytes: u64,
+    /// Reserved temporary disk bytes.
+    pub disk_bytes: u64,
+    /// Reserved process slots.
+    pub process_slots: u32,
+    /// Exclusive named resources held for this effect.
+    pub exclusive_resources: Vec<String>,
+    /// Effect start observation.
+    pub started_at_ms: u64,
+    /// Hard effect deadline.
+    pub deadline_ms: u64,
+    /// Latest monotonic heartbeat sequence.
+    pub heartbeat_sequence: u64,
+    /// Latest heartbeat observation.
+    pub heartbeat_timestamp_ms: u64,
+    /// Monotonic utilization observed for this active effect.
+    pub observed: TaskUtilization,
+}
+
+impl TaskResourceReservation {
+    fn verify(&self, policy: &TeamResourcePolicy) -> Result<(), TeamStateError> {
+        if !valid_component(&self.reservation_id)
+            || codingmage_contracts::TaskId::new(self.task_id.clone()).is_err()
+            || !valid_component(&self.lease_id)
+            || self.cpu_units == 0
+            || self.cpu_units > policy.total_cpu_units
+            || self.memory_bytes == 0
+            || self.memory_bytes > policy.total_memory_bytes
+            || self.disk_bytes > policy.total_disk_bytes
+            || self.process_slots == 0
+            || self.process_slots > policy.total_processes
+            || self.exclusive_resources.len() > 1_024
+            || self
+                .exclusive_resources
+                .iter()
+                .any(|resource| !valid_component(resource))
+            || self
+                .exclusive_resources
+                .iter()
+                .collect::<BTreeSet<_>>()
+                .len()
+                != self.exclusive_resources.len()
+            || self.started_at_ms > self.heartbeat_timestamp_ms
+            || self.deadline_ms <= self.started_at_ms
+            || self.deadline_ms.saturating_sub(self.started_at_ms) > policy.pod_timeout_ms
+            || self.observed.provider_tokens > MAX_PROVIDER_TOKENS
+        {
+            return Err(TeamStateError::InvalidResource);
+        }
+        Ok(())
+    }
+}
+
+/// Closed provider circuit state.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProviderCircuitStatus {
+    /// Ordinary calls may begin.
+    Closed,
+    /// Calls are denied until the configured cooldown elapses.
+    Open,
+    /// Exactly one recovery probe may be in flight.
+    HalfOpen,
+}
+
+/// Durable retry-storm prevention for one provider role.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProviderCircuit {
+    /// Closed circuit lifecycle.
+    pub status: ProviderCircuitStatus,
+    /// Consecutive retryable failures since the last success.
+    pub consecutive_failures: u16,
+    /// Last failure observation.
+    pub last_failure_ms: Option<u64>,
+    /// Number of attempts consumed by the current bounded operation.
+    pub operation_attempts: u16,
+}
+
+impl Default for ProviderCircuit {
+    fn default() -> Self {
+        Self {
+            status: ProviderCircuitStatus::Closed,
+            consecutive_failures: 0,
+            last_failure_ms: None,
+            operation_attempts: 0,
+        }
+    }
+}
+
+impl ProviderCircuit {
+    fn verify(&self, policy: &TeamResourcePolicy) -> Result<(), TeamStateError> {
+        if self.consecutive_failures > policy.provider_failure_threshold
+            || self.operation_attempts > policy.provider_retry_limit
+            || (self.status == ProviderCircuitStatus::Closed
+                && self.consecutive_failures >= policy.provider_failure_threshold)
+            || (self.status != ProviderCircuitStatus::Closed && self.last_failure_ms.is_none())
+        {
+            return Err(TeamStateError::InvalidCircuit);
+        }
+        Ok(())
+    }
+}
+
+/// Complete persistent concurrent-resource projection.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TeamResourceSnapshot {
+    /// Closed snapshot schema version.
+    pub version: u16,
+    /// Actor concurrency ceilings.
+    pub concurrency: CampaignConcurrency,
+    /// Physical, liveness, and retry ceilings.
+    pub policy: TeamResourcePolicy,
+    /// Campaign provider-token ceiling.
+    pub max_campaign_tokens: u64,
+    /// Per-task provider-token ceiling.
+    pub max_task_tokens: u64,
+    /// Active reservations indexed by exact identity.
+    pub active: BTreeMap<String, TaskResourceReservation>,
+    /// Released reservation identities that cannot be reused.
+    pub released: BTreeSet<String>,
+    /// Utilization already released into the campaign total.
+    pub consumed: TaskUtilization,
+    /// Provider circuits indexed by operator-owned role identity.
+    pub provider_circuits: BTreeMap<String, ProviderCircuit>,
+    /// Next monotonic reservation sequence.
+    pub next_sequence: u64,
+}
+
+impl TeamResourceSnapshot {
+    /// Revalidates all active reservations, actor limits, resource sums, and provider circuits.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for malformed identity, overlap, overcommit, or budget drift.
+    pub fn verify(&self) -> Result<(), TeamStateError> {
+        if self.version != TEAM_STATE_VERSION
+            || self.max_campaign_tokens == 0
+            || self.max_campaign_tokens > MAX_PROVIDER_TOKENS
+            || self.max_task_tokens == 0
+            || self.max_task_tokens > self.max_campaign_tokens
+            || self.active.keys().any(|id| !valid_component(id))
+            || self.released.iter().any(|id| !valid_component(id))
+            || self.active.keys().any(|id| self.released.contains(id))
+            || self
+                .provider_circuits
+                .keys()
+                .any(|provider| !valid_component(provider))
+        {
+            return Err(TeamStateError::InvalidResource);
+        }
+        self.policy
+            .verify(&self.concurrency)
+            .map_err(|_| TeamStateError::InvalidResource)?;
+        let mut cpu = 0_u64;
+        let mut memory = 0_u64;
+        let mut disk = 0_u64;
+        let mut processes = 0_u64;
+        let mut actors = BTreeMap::<ActorClass, usize>::new();
+        let mut resources = BTreeSet::new();
+        let mut active_usage = TaskUtilization::default();
+        for (reservation_id, reservation) in &self.active {
+            reservation.verify(&self.policy)?;
+            if reservation_id != &reservation.reservation_id
+                || reservation
+                    .exclusive_resources
+                    .iter()
+                    .any(|resource| !resources.insert(resource))
+                || reservation.observed.provider_tokens > self.max_task_tokens
+            {
+                return Err(TeamStateError::InvalidResource);
+            }
+            cpu = cpu.saturating_add(u64::from(reservation.cpu_units));
+            memory = memory.saturating_add(reservation.memory_bytes);
+            disk = disk.saturating_add(reservation.disk_bytes);
+            processes = processes.saturating_add(u64::from(reservation.process_slots));
+            *actors.entry(reservation.actor).or_default() += 1;
+            active_usage = active_usage
+                .checked_add(&reservation.observed)
+                .ok_or(TeamStateError::InvalidResource)?;
+        }
+        let total_usage = self
+            .consumed
+            .checked_add(&active_usage)
+            .ok_or(TeamStateError::InvalidResource)?;
+        if cpu > u64::from(self.policy.total_cpu_units)
+            || memory > self.policy.total_memory_bytes
+            || disk > self.policy.total_disk_bytes
+            || processes > u64::from(self.policy.total_processes)
+            || total_usage.provider_tokens > self.max_campaign_tokens
+            || actor_count(&actors, ActorClass::Implementer)
+                > usize::from(self.concurrency.claude_implementers)
+            || actor_count(&actors, ActorClass::TeamLead)
+                > usize::from(self.concurrency.codex_team_leads)
+            || actor_count(&actors, ActorClass::Reviewer)
+                > usize::from(self.concurrency.codex_reviewers)
+            || actor_count(&actors, ActorClass::Gate) > usize::from(self.concurrency.test_workers)
+            || actor_count(&actors, ActorClass::GitHub)
+                > usize::from(self.concurrency.github_writers)
+            || actor_count(&actors, ActorClass::Integration)
+                > usize::from(self.concurrency.integration_workers)
+        {
+            return Err(TeamStateError::InvalidResource);
+        }
+        for circuit in self.provider_circuits.values() {
+            circuit.verify(&self.policy)?;
+        }
+        Ok(())
+    }
+}
+
+/// Persistent campaign-wide resource admission and provider circuit controller.
+#[derive(Clone, Debug)]
+pub struct TeamResourceController {
+    snapshot: TeamResourceSnapshot,
+}
+
+impl TeamResourceController {
+    /// Creates an empty resource controller from verified multi-agent authority.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] when the policy is absent or invalid.
+    pub fn new(spec: &CampaignSpec) -> Result<Self, TeamStateError> {
+        spec.verify().map_err(|_| TeamStateError::Authority)?;
+        let policy = spec.multi_agent.as_ref().ok_or(TeamStateError::Authority)?;
+        let snapshot = TeamResourceSnapshot {
+            version: TEAM_STATE_VERSION,
+            concurrency: policy.concurrency.clone(),
+            policy: policy.resources.clone(),
+            max_campaign_tokens: policy.max_campaign_tokens,
+            max_task_tokens: policy.max_task_tokens,
+            active: BTreeMap::new(),
+            released: BTreeSet::new(),
+            consumed: TaskUtilization::default(),
+            provider_circuits: BTreeMap::new(),
+            next_sequence: 0,
+        };
+        snapshot.verify()?;
+        Ok(Self { snapshot })
+    }
+
+    /// Reconstructs the controller from a complete verified snapshot and exact authority.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] if the snapshot or configured authority differs.
+    pub fn from_snapshot(
+        spec: &CampaignSpec,
+        snapshot: TeamResourceSnapshot,
+    ) -> Result<Self, TeamStateError> {
+        let expected = Self::new(spec)?;
+        snapshot.verify()?;
+        if snapshot.concurrency != expected.snapshot.concurrency
+            || snapshot.policy != expected.snapshot.policy
+            || snapshot.max_campaign_tokens != expected.snapshot.max_campaign_tokens
+            || snapshot.max_task_tokens != expected.snapshot.max_task_tokens
+        {
+            return Err(TeamStateError::Authority);
+        }
+        Ok(Self { snapshot })
+    }
+
+    /// Returns the complete persistent projection.
+    #[must_use]
+    pub const fn snapshot(&self) -> &TeamResourceSnapshot {
+        &self.snapshot
+    }
+
+    /// Creates the configured implementation reservation shape for one active lease.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for invalid lease identity or time overflow.
+    pub fn implementation_request(
+        &self,
+        lease: &DurablePodLease,
+        started_at_ms: u64,
+    ) -> Result<TaskResourceReservation, TeamStateError> {
+        lease.verify()?;
+        let sequence = self.snapshot.next_sequence;
+        let reservation_id =
+            bounded_identity("resource", &lease.lease_id, &lease.task_id, sequence);
+        Ok(TaskResourceReservation {
+            reservation_id,
+            task_id: lease.task_id.clone(),
+            lease_id: lease.lease_id.clone(),
+            actor: ActorClass::Implementer,
+            cpu_units: self.snapshot.policy.implementation_cpu_units,
+            memory_bytes: self.snapshot.policy.implementation_memory_bytes,
+            disk_bytes: self.snapshot.policy.implementation_disk_bytes,
+            process_slots: self.snapshot.policy.implementation_processes,
+            exclusive_resources: lease.test_resources.clone(),
+            started_at_ms,
+            deadline_ms: started_at_ms
+                .checked_add(self.snapshot.policy.pod_timeout_ms)
+                .ok_or(TeamStateError::InvalidResource)?,
+            heartbeat_sequence: 0,
+            heartbeat_timestamp_ms: started_at_ms,
+            observed: TaskUtilization::default(),
+        })
+    }
+
+    /// Reserves one exact actor effect after all actor, physical, and exclusive-resource checks.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] without mutation when any ceiling or identity would conflict.
+    pub fn reserve(&mut self, reservation: TaskResourceReservation) -> Result<(), TeamStateError> {
+        reservation.verify(&self.snapshot.policy)?;
+        if self
+            .snapshot
+            .active
+            .contains_key(&reservation.reservation_id)
+            || self.snapshot.released.contains(&reservation.reservation_id)
+            || self.snapshot.active.values().any(|active| {
+                active.lease_id == reservation.lease_id && active.actor == reservation.actor
+            })
+            || self.snapshot.active.values().any(|active| {
+                active.exclusive_resources.iter().any(|left| {
+                    reservation
+                        .exclusive_resources
+                        .iter()
+                        .any(|right| left == right)
+                })
+            })
+        {
+            return Err(TeamStateError::ResourceConflict);
+        }
+        let mut candidate = self.snapshot.clone();
+        candidate.next_sequence = candidate.next_sequence.saturating_add(1);
+        candidate
+            .active
+            .insert(reservation.reservation_id.clone(), reservation);
+        candidate.verify().map_err(|error| match error {
+            TeamStateError::InvalidResource => TeamStateError::ResourceCapacity,
+            other => other,
+        })?;
+        self.snapshot = candidate;
+        Ok(())
+    }
+
+    /// Records monotonic utilization and heartbeat for one exact active reservation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for unknown identity, regression, timeout, or budget exhaustion.
+    pub fn observe(
+        &mut self,
+        reservation_id: &str,
+        heartbeat_sequence: u64,
+        timestamp_ms: u64,
+        utilization: TaskUtilization,
+    ) -> Result<(), TeamStateError> {
+        let mut candidate = self.snapshot.clone();
+        let reservation = candidate
+            .active
+            .get_mut(reservation_id)
+            .ok_or(TeamStateError::UnknownResource)?;
+        if utilization.provider_tokens > candidate.max_task_tokens {
+            return Err(TeamStateError::ResourceCapacity);
+        }
+        if heartbeat_sequence <= reservation.heartbeat_sequence
+            || timestamp_ms < reservation.heartbeat_timestamp_ms
+            || timestamp_ms > reservation.deadline_ms
+            || !utilization.dominates(&reservation.observed)
+        {
+            return Err(TeamStateError::InvalidHeartbeat);
+        }
+        reservation.heartbeat_sequence = heartbeat_sequence;
+        reservation.heartbeat_timestamp_ms = timestamp_ms;
+        reservation.observed = utilization;
+        candidate.verify().map_err(|error| match error {
+            TeamStateError::InvalidResource => TeamStateError::ResourceCapacity,
+            other => other,
+        })?;
+        self.snapshot = candidate;
+        Ok(())
+    }
+
+    /// Returns active reservations whose heartbeat exceeded the configured stale interval.
+    #[must_use]
+    pub fn stale_at(&self, timestamp_ms: u64) -> Vec<String> {
+        self.snapshot
+            .active
+            .iter()
+            .filter(|(_, reservation)| {
+                timestamp_ms.saturating_sub(reservation.heartbeat_timestamp_ms)
+                    >= self.snapshot.policy.stale_after_ms
+            })
+            .map(|(id, _)| id.clone())
+            .collect()
+    }
+
+    /// Releases one exact reservation and permanently accounts its observed utilization.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for unknown/reused identity or arithmetic contradiction.
+    pub fn release(
+        &mut self,
+        reservation_id: &str,
+    ) -> Result<TaskResourceReservation, TeamStateError> {
+        let mut candidate = self.snapshot.clone();
+        let reservation = candidate
+            .active
+            .remove(reservation_id)
+            .ok_or(TeamStateError::UnknownResource)?;
+        candidate.consumed = candidate
+            .consumed
+            .checked_add(&reservation.observed)
+            .ok_or(TeamStateError::InvalidResource)?;
+        if !candidate.released.insert(reservation_id.to_owned()) {
+            return Err(TeamStateError::UnknownResource);
+        }
+        candidate.verify()?;
+        self.snapshot = candidate;
+        Ok(reservation)
+    }
+
+    /// Begins one provider operation only when retry and circuit policy permit it.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for malformed provider identity or an open/exhausted circuit.
+    pub fn begin_provider_attempt(
+        &mut self,
+        provider: &str,
+        timestamp_ms: u64,
+    ) -> Result<(), TeamStateError> {
+        if !valid_component(provider) {
+            return Err(TeamStateError::InvalidCircuit);
+        }
+        let circuit = self
+            .snapshot
+            .provider_circuits
+            .entry(provider.to_owned())
+            .or_default();
+        match circuit.status {
+            ProviderCircuitStatus::Closed => {}
+            ProviderCircuitStatus::Open
+                if timestamp_ms.saturating_sub(
+                    circuit
+                        .last_failure_ms
+                        .ok_or(TeamStateError::InvalidCircuit)?,
+                ) >= self.snapshot.policy.provider_cooldown_ms =>
+            {
+                circuit.status = ProviderCircuitStatus::HalfOpen;
+                circuit.operation_attempts = 0;
+            }
+            ProviderCircuitStatus::Open | ProviderCircuitStatus::HalfOpen => {
+                return Err(TeamStateError::CircuitOpen);
+            }
+        }
+        if circuit.operation_attempts >= self.snapshot.policy.provider_retry_limit {
+            return Err(TeamStateError::CircuitOpen);
+        }
+        circuit.operation_attempts = circuit.operation_attempts.saturating_add(1);
+        self.snapshot.verify()
+    }
+
+    /// Records one provider result and deterministically closes or opens its circuit.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] when no matching attempt exists or the circuit is malformed.
+    pub fn finish_provider_attempt(
+        &mut self,
+        provider: &str,
+        timestamp_ms: u64,
+        succeeded: bool,
+        retryable_failure: bool,
+    ) -> Result<(), TeamStateError> {
+        let circuit = self
+            .snapshot
+            .provider_circuits
+            .get_mut(provider)
+            .ok_or(TeamStateError::InvalidCircuit)?;
+        if circuit.operation_attempts == 0 || succeeded == retryable_failure {
+            return Err(TeamStateError::InvalidCircuit);
+        }
+        if succeeded {
+            *circuit = ProviderCircuit::default();
+        } else if retryable_failure {
+            circuit.consecutive_failures = circuit.consecutive_failures.saturating_add(1);
+            circuit.last_failure_ms = Some(timestamp_ms);
+            if circuit.consecutive_failures >= self.snapshot.policy.provider_failure_threshold {
+                circuit.status = ProviderCircuitStatus::Open;
+                circuit.consecutive_failures = self.snapshot.policy.provider_failure_threshold;
+            } else {
+                circuit.status = ProviderCircuitStatus::Closed;
+            }
+        } else {
+            circuit.operation_attempts = self.snapshot.policy.provider_retry_limit;
+        }
+        self.snapshot.verify()
+    }
 }
 
 /// One validated state transition for a durable task record.
@@ -604,6 +1268,8 @@ pub struct TeamCampaignSnapshot {
     pub task_source_sha256: String,
     /// Reconstructible scheduler state.
     pub scheduler: DurableSchedulerSnapshot,
+    /// Reconstructible resource, budget, and provider-circuit state.
+    pub resources: TeamResourceSnapshot,
     /// Complete task records indexed by canonical task identity.
     pub tasks: BTreeMap<String, CampaignTaskRecord>,
     /// Stable serialized integration queue of task identities.
@@ -631,6 +1297,7 @@ impl TeamCampaignSnapshot {
             return Err(TeamStateError::InvalidRecord);
         }
         self.scheduler.verify()?;
+        self.resources.verify()?;
         let mut pod_ids = BTreeSet::new();
         let mut lease_ids = BTreeSet::new();
         let mut worktree_ids = BTreeSet::new();
@@ -667,6 +1334,14 @@ impl TeamCampaignSnapshot {
             {
                 return Err(TeamStateError::InvalidRecord);
             }
+        }
+        if self.resources.active.values().any(|reservation| {
+            self.scheduler
+                .active
+                .get(&reservation.lease_id)
+                .is_none_or(|lease| lease.task_id != reservation.task_id)
+        }) {
+            return Err(TeamStateError::InvalidResource);
         }
         if self.integration_queue.iter().any(|task_id| {
             self.tasks
@@ -1090,6 +1765,18 @@ pub enum TeamStateError {
     InvalidHeartbeat,
     /// Exact active lease does not exist.
     UnknownLease,
+    /// Concurrent resource projection is malformed or contradictory.
+    InvalidResource,
+    /// Exact CPU, memory, disk, process, actor, token, or exclusive-resource capacity is exhausted.
+    ResourceCapacity,
+    /// A duplicate actor or exclusive-resource reservation conflicts with active work.
+    ResourceConflict,
+    /// Exact active resource reservation does not exist.
+    UnknownResource,
+    /// Provider retry circuit is malformed.
+    InvalidCircuit,
+    /// Provider circuit or bounded operation-attempt limit denies another attempt.
+    CircuitOpen,
 }
 
 impl fmt::Display for TeamStateError {
@@ -1103,6 +1790,12 @@ impl fmt::Display for TeamStateError {
             Self::StaleGeneration => "codingmage.team.generation",
             Self::InvalidHeartbeat => "codingmage.team.heartbeat",
             Self::UnknownLease => "codingmage.team.unknown_lease",
+            Self::InvalidResource => "codingmage.team.resource",
+            Self::ResourceCapacity => "codingmage.team.resource_capacity",
+            Self::ResourceConflict => "codingmage.team.resource_conflict",
+            Self::UnknownResource => "codingmage.team.unknown_resource",
+            Self::InvalidCircuit => "codingmage.team.provider_circuit",
+            Self::CircuitOpen => "codingmage.team.provider_circuit_open",
         })
     }
 }
@@ -1223,6 +1916,10 @@ fn leases_conflict(left: &DurablePodLease, right: &DurablePodLease) -> bool {
     })
 }
 
+fn actor_count(counts: &BTreeMap<ActorClass, usize>, actor: ActorClass) -> usize {
+    counts.get(&actor).copied().unwrap_or_default()
+}
+
 fn bounded_identity(prefix: &str, campaign_id: &str, task_id: &str, sequence: u64) -> String {
     let material = format!("{prefix}\0{campaign_id}\0{task_id}\0{sequence}");
     let digest = sha2::Sha256::digest(material.as_bytes());
@@ -1289,6 +1986,17 @@ mod tests {
                     test_workers: capacity,
                     github_writers: 1,
                     integration_workers: 1,
+                },
+                resources: TeamResourcePolicy {
+                    total_cpu_units: capacity.saturating_mul(2),
+                    implementation_cpu_units: 1,
+                    total_memory_bytes: u64::from(capacity) * 8 * 1024 * 1024,
+                    implementation_memory_bytes: 4 * 1024 * 1024,
+                    total_disk_bytes: u64::from(capacity) * 8 * 1024 * 1024,
+                    implementation_disk_bytes: 4 * 1024 * 1024,
+                    total_processes: u32::from(capacity) * 128,
+                    implementation_processes: 64,
+                    ..TeamResourcePolicy::default()
                 },
                 max_campaign_tokens: 1_000_000,
                 max_task_tokens: 100_000,
@@ -1407,6 +2115,153 @@ mod tests {
     }
 
     #[test]
+    fn five_resource_reservations_enforce_actor_physical_and_exclusive_limits() {
+        let spec = spec(CampaignExecutionMode::Parallel, 5);
+        let mut scheduler = DurablePodScheduler::new(&spec).unwrap();
+        let tasks = (1..=5)
+            .map(|index| format!("23.3.2.{index}"))
+            .collect::<Vec<_>>();
+        let generation = scheduler.begin_generation(&tasks).unwrap();
+        let mut leases = Vec::new();
+        for (index, task) in tasks.iter().enumerate() {
+            let AdmissionDecision::Admitted(lease) = scheduler
+                .admit(
+                    &spec,
+                    generation,
+                    &spec.initial_commit,
+                    &proposal(
+                        &spec,
+                        task,
+                        &format!("crates/resource-{index}"),
+                        &format!("fixture-{index}"),
+                    ),
+                )
+                .unwrap()
+            else {
+                panic!("independent lease must be admitted");
+            };
+            leases.push(lease);
+        }
+        let mut resources = TeamResourceController::new(&spec).unwrap();
+        let mut reservation_ids = Vec::new();
+        for (index, lease) in leases.iter().enumerate() {
+            let reservation = resources.implementation_request(lease, 1_000).unwrap();
+            reservation_ids.push(reservation.reservation_id.clone());
+            resources.reserve(reservation).unwrap();
+            resources
+                .observe(
+                    &reservation_ids[index],
+                    1,
+                    2_000,
+                    TaskUtilization {
+                        provider_attempts: 1,
+                        provider_tokens: 1_000,
+                        process_invocations: 1,
+                        output_bytes: 10,
+                        retained_state_bytes: 10,
+                        execution_elapsed_ms: 1_000,
+                    },
+                )
+                .unwrap();
+        }
+        assert_eq!(resources.snapshot().active.len(), 5);
+        assert!(resources.stale_at(31_999).is_empty());
+        assert_eq!(resources.stale_at(32_000).len(), 5);
+
+        let mut conflict = resources.implementation_request(&leases[0], 3_000).unwrap();
+        conflict.reservation_id = "resource-review-conflict".to_owned();
+        conflict.actor = ActorClass::Reviewer;
+        assert_eq!(
+            resources.reserve(conflict),
+            Err(TeamStateError::ResourceConflict)
+        );
+
+        for id in &reservation_ids {
+            resources.release(id).unwrap();
+        }
+        assert!(resources.snapshot().active.is_empty());
+        assert_eq!(resources.snapshot().consumed.provider_tokens, 5_000);
+        let restored =
+            TeamResourceController::from_snapshot(&spec, resources.snapshot().clone()).unwrap();
+        assert_eq!(restored.snapshot(), resources.snapshot());
+    }
+
+    #[test]
+    fn token_boundaries_and_provider_circuit_are_closed_and_recoverable() {
+        let spec = spec(CampaignExecutionMode::Parallel, 1);
+        let task = "23.3.2.5".to_owned();
+        let mut scheduler = DurablePodScheduler::new(&spec).unwrap();
+        let generation = scheduler
+            .begin_generation(std::slice::from_ref(&task))
+            .unwrap();
+        let AdmissionDecision::Admitted(lease) = scheduler
+            .admit(
+                &spec,
+                generation,
+                &spec.initial_commit,
+                &proposal(&spec, &task, "crates/token", "token-fixture"),
+            )
+            .unwrap()
+        else {
+            panic!("lease must be admitted");
+        };
+        let mut resources = TeamResourceController::new(&spec).unwrap();
+        let reservation = resources.implementation_request(&lease, 1_000).unwrap();
+        let reservation_id = reservation.reservation_id.clone();
+        resources.reserve(reservation).unwrap();
+        assert_eq!(
+            resources.observe(
+                &reservation_id,
+                1,
+                2_000,
+                TaskUtilization {
+                    provider_tokens: 100_001,
+                    ..TaskUtilization::default()
+                },
+            ),
+            Err(TeamStateError::ResourceCapacity)
+        );
+        resources
+            .observe(
+                &reservation_id,
+                1,
+                2_000,
+                TaskUtilization {
+                    provider_tokens: 100_000,
+                    ..TaskUtilization::default()
+                },
+            )
+            .unwrap();
+
+        for timestamp in [3_000, 4_000, 5_000] {
+            resources
+                .begin_provider_attempt("claude-implementer", timestamp)
+                .unwrap();
+            resources
+                .finish_provider_attempt("claude-implementer", timestamp, false, true)
+                .unwrap();
+        }
+        assert_eq!(
+            resources.begin_provider_attempt("claude-implementer", 6_000),
+            Err(TeamStateError::CircuitOpen)
+        );
+        resources
+            .begin_provider_attempt("claude-implementer", 65_000)
+            .unwrap();
+        assert_eq!(
+            resources.snapshot().provider_circuits["claude-implementer"].status,
+            ProviderCircuitStatus::HalfOpen
+        );
+        resources
+            .finish_provider_attempt("claude-implementer", 65_001, true, false)
+            .unwrap();
+        assert_eq!(
+            resources.snapshot().provider_circuits["claude-implementer"],
+            ProviderCircuit::default()
+        );
+    }
+
+    #[test]
     fn complete_task_mapping_binds_one_lease_and_rejects_duplicate_remote_identity() {
         let spec = spec(CampaignExecutionMode::Parallel, 2);
         let task_id = "23.2.2.1".to_owned();
@@ -1461,6 +2316,10 @@ mod tests {
             campaign_head: spec.initial_commit.clone(),
             task_source_sha256: spec.task_source_sha256.clone(),
             scheduler: scheduler.snapshot().clone(),
+            resources: TeamResourceController::new(&spec)
+                .unwrap()
+                .snapshot()
+                .clone(),
             tasks: BTreeMap::from([(task_id, record)]),
             integration_queue: Vec::new(),
         };
