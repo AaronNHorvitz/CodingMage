@@ -7,6 +7,7 @@
 - **Queue-projection implementation commit:** `4745357`
 - **Stopping-contract implementation commit:** `9816043`
 - **Status-round implementation commit:** `442eb27`
+- **Campaign-journal foundation commit:** `e3465f1`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -82,6 +83,23 @@ immediately before the first correction checkpoint becomes durable, plus `null` 
 or a clean pause. Status remains read-only and excludes prompts, source text, filenames, provider
 prose, command output, environment values, and credentials. Model identity, independent attempt and
 limit utilization, and monitor noninterference remain open under Story `22.2`.
+
+## Campaign Journal Foundation
+
+Every successful private campaign-checkpoint replacement now appends a typed projection to the
+existing integrity-checked, append-only SHA-256 journal. Each record binds the campaign run,
+repository, worktree, branch, reconciled head, exact active or last task, phase, completed count,
+blocked/deferred/satisfied-trigger/human-decision/rejected counts, accepted-outcome count, and a
+digest of the canonical checkpoint bytes. The record carries explicit redaction markers for
+provider output, source text, command output, environment values, and credentials; those values are
+not accepted into the event schema.
+
+The journal schema uses optional fields for configured limits, provider attempts, correction round,
+and authenticated pause/stop/cancel state. They remain `null` in this foundation because their
+campaign-owned counters and control authority are not implemented yet. This commit therefore does
+not close `22.1.2.1`; it supplies the typed append path that the remaining Sprint 22 safeguard tasks
+will populate and reconcile. Focused tests verify exact identities and counts, checkpoint-digest
+evidence, redaction markers, journal-chain validity, and rejection of contradictory accepted counts.
 
 ## Verification
 

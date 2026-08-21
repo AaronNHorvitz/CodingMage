@@ -210,8 +210,9 @@ an unbounded provider-invocation loop.
 ## Current Limits
 
 - Campaign checkpoints, accepted-head recovery, and exact correction-session recovery are
-  implemented; complete campaign event journaling, attempt projections, and interrupted initial
-  implementation-session resume remain open.
+  implemented. Typed hash-chained checkpoint projection events now preserve campaign head, queue
+  counts, active identity, dispositions, and accepted outcomes; exact attempt, correction, control,
+  and configured-limit projections plus interrupted initial-implementation resume remain open.
 - Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable;
   interrupted initial-implementation recovery and operator stop-after-unit controls remain open.
 - Campaign execution is bounded by unit, attempt, correction, process, output, and resource limits;
