@@ -1024,7 +1024,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.2.3.1:** Make the campaign accepted-outcome ceiling count completed, blocked, and accepted deferred outcomes according to the documented contract without counting rejected proposals. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.3.2:** Stop provider admission exactly when the configured outcome, attempt, malformed-report, correction, process, output, storage, or elapsed-execution limit is reached. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.3.3:** Emit one typed terminal or resumable reason for the exact exhausted limit and preserve the latest verified candidate where applicable. See `docs/evidence/sprint-22-serial-recovery.md`.
-  - [ ] **Sub-task 22.2.3.4:** Prohibit limit exhaustion from changing provider strength, skipping a gate, truncating required evidence, broadening paths, or changing publication policy.
+  - [x] **Sub-task 22.2.3.4:** Prohibit limit exhaustion from changing provider strength, skipping a gate, truncating required evidence, broadening paths, or changing publication policy. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [ ] **Sub-task 22.2.3.5:** Test minimum, maximum, one-below, exact-boundary, one-above, overflow, restart, and concurrent-observation cases for every limit.
 - [ ] **Task 22.2.4 - Complete privacy-safe campaign status**
   - [ ] **Sub-task 22.2.4.1:** Expose phase, actor, task, model identity when available, attempt, correction, outcome counts, current limit utilization, and content-free reason codes.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.3.4`: prove campaign-limit exhaustion cannot weaken provider, gate, evidence, path, or publication policy.
+- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.3.5`: execute the exhaustive boundary, overflow, restart, and concurrent-observation matrix for every independent campaign limit.

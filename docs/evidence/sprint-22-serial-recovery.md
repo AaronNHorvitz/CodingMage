@@ -19,6 +19,7 @@
 - **Resume-revalidation implementation commit:** `d860194`
 - **Durable pending-resume commit:** `a6fe0a9`
 - **Control-boundary restart matrix commit:** `4511b54`
+- **Limit-policy invariance commit:** `aaa1a87`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -244,6 +245,14 @@ Provider exhaustion cannot skip an already-authorized gate; a gate set that woul
 ceiling does not start partially. Output, retained-state, and elapsed observations stop the next
 effect after the atomic process that established the observation.
 
+Every nested provider executable, model, and effort selector; implementation-authentication mode;
+gate-tier name and complete profile membership; allowed and denied path set; protected branch; and
+publication mode is part of the canonical authority digest. A focused matrix exhausts each of the
+seven aggregate ceilings plus the accepted-outcome cap, persists and reloads the checkpoint, and
+proves that weaker provider effort, reduced gate membership, changed paths, or broader publication
+cannot validate against the retained authority. Required gates continue to require
+`OutputNotTruncated`, so an output ceiling cannot convert partial diagnostics into passing evidence.
+
 Focused boundary tests permit the exact authorized count and reject the next effect for all seven
 limit classes. A production binary fixture reaches one aggregate correction round, refuses the
 second correction before writing its intent, returns
@@ -253,7 +262,7 @@ overflow, restart, and concurrent-observation matrix remains open under sub-task
 
 ## Verification
 
-The complete workspace test suite passed across all targets, including 36 runtime unit tests and
+The complete workspace test suite passed across all targets, including 38 runtime unit tests and
 nine CLI workflow tests. Strict workspace Clippy with warnings denied, workspace formatting,
 workspace documentation generation, architecture checks, documentation policy, 12 Python policy
 tests, and `git diff --check` also passed after aggregate-limit enforcement and evidence
@@ -268,7 +277,7 @@ without replay, durable status, and active-checkout preservation.
 ## Preserved Limits
 
 This evidence does not close initial-implementation-session recovery, complete campaign event
-journaling, exhaustive operator-control restart evidence, parallel pods,
+journaling, the exhaustive numeric limit matrix, parallel pods,
 GitHub publication, native macOS or Windows evidence,
 manual fuzzing, or the sustained 24-hour or 48-hour soak gate. It authorizes only preparation of the
 explicitly requested bounded one-pod controlled-target pilot; it does not assert general
