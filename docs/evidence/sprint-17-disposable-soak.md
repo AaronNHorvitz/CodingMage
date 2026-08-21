@@ -4,6 +4,7 @@
   reconciliation remain open
 - **Schedule implementation commit:** `8f79bfa`
 - **Fake-adapter execution commit:** `1eb59a3`
+- **Behavioral injection commit:** `1c6f689`
 - **Executed:** 2026-08-21 on Fedora Linux with Rust 1.95.0
 
 ## Exact Schedule
@@ -52,6 +53,20 @@ ten accepted outcomes, a peak of one active pod, and `local_only` publication. M
 duplicate, and reorder observations; raise the pod count; broaden publication; and inject Git
 integration into the blocked outcome. Every mutation fails reconciliation.
 
-This closes `17.1.2.1` and `17.1.2.2`. It does not yet claim behavioral fault injection, complete
-artifact reconciliation, repeated soak stability, production coordinator qualification,
-controlled-target execution, or installed-package evidence.
+## Behavioral Injections
+
+Every named scenario now emits a second closed, contiguous event stream at its exact fake-adapter
+boundary. Gate and review cases record fail/finding followed by corrected pass; blockers and
+deferrals are classified at the lead; malformed output is rejected before bounded repair; provider
+capacity pauses at the process boundary and resumes only after service revalidation; interruption
+occurs after durable intent and restarts through no-replay recovery; stop-after-unit is accepted at
+the monitor and ends at a service checkpoint; and the final task records its exact deferral trigger
+before the service refuses further admission at the ceiling.
+
+The ten scenario identities produce seventeen ordered behavioral observations. Tests require all
+ten scenario families and exact final trigger/ceiling ordering. Removing, reordering, duplicating,
+changing the adapter boundary, or replacing a behavioral phase causes reconciliation failure.
+
+This closes `17.1.2.1` through `17.1.2.3`. It does not yet claim complete artifact reconciliation,
+repeated soak stability, production coordinator qualification, controlled-target execution, or
+installed-package evidence.
