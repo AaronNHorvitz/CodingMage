@@ -127,18 +127,34 @@ pub struct ProcessRequest {
     pub expected_exit_codes: BTreeSet<i32>,
 }
 
+#[derive(Debug, Default)]
+struct CancellationState {
+    cancelled: AtomicBool,
+    parent: Option<CancellationToken>,
+}
+
 /// Shared cancellation signal observed without model or process authority.
 #[derive(Clone, Debug, Default)]
-pub struct CancellationToken(Arc<AtomicBool>);
+pub struct CancellationToken(Arc<CancellationState>);
 
 impl CancellationToken {
     /// Requests cancellation of the exact invocation using this token.
     pub fn cancel(&self) {
-        self.0.store(true, Ordering::Release);
+        self.0.cancelled.store(true, Ordering::Release);
+    }
+
+    /// Creates a child signal that observes this token without propagating cancellation upward.
+    #[must_use]
+    pub fn child(&self) -> Self {
+        Self(Arc::new(CancellationState {
+            cancelled: AtomicBool::new(false),
+            parent: Some(self.clone()),
+        }))
     }
 
     fn is_cancelled(&self) -> bool {
-        self.0.load(Ordering::Acquire)
+        self.0.cancelled.load(Ordering::Acquire)
+            || self.0.parent.as_ref().is_some_and(Self::is_cancelled)
     }
 }
 
@@ -880,5 +896,19 @@ mod tests {
         let first = process_start_time(std::process::id()).unwrap();
         let second = process_start_time(std::process::id()).unwrap();
         assert_eq!(first, second);
+    }
+
+    #[test]
+    fn child_cancellation_inherits_downward_without_propagating_upward() {
+        let parent = CancellationToken::default();
+        let child = parent.child();
+        child.cancel();
+        assert!(child.is_cancelled());
+        assert!(!parent.is_cancelled());
+
+        let inherited = parent.child();
+        parent.cancel();
+        assert!(parent.is_cancelled());
+        assert!(inherited.is_cancelled());
     }
 }

@@ -9,9 +9,10 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex,
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
-    time::{SystemTime, UNIX_EPOCH},
+    thread::{self, JoinHandle},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use codingmage_campaign::{
@@ -1380,12 +1381,33 @@ pub fn run_serial_campaign_with_progress(
                 ProgressStage::PlanningCampaign,
             ));
             let invocation = lead.plan(&binding).map_err(RuntimeError::Reviewer)?;
-            let lead_execution = match lead.execute_observed(
-                &executor,
-                &invocation,
-                &binding,
-                &CancellationToken::default(),
-            ) {
+            let lead_cancellation = CancellationToken::default();
+            let lead_watcher = CampaignCancellationWatcher::start(
+                campaign_root.clone(),
+                &checkpoint,
+                lead_cancellation.clone(),
+            );
+            let lead_execution =
+                lead.execute_observed(&executor, &invocation, &binding, &lead_cancellation);
+            drop(lead_watcher);
+            if let Ok(execution) = &lead_execution {
+                checkpoint.record_process_result(&execution.process)?;
+                checkpoint.persist(&campaign_root)?;
+            }
+            apply_pending_campaign_controls(&mut checkpoint, &campaign_root)?;
+            if let Some(termination) =
+                campaign_control_termination(&mut checkpoint, &campaign_root)?
+            {
+                return Ok(campaign_outcome(
+                    &spec,
+                    &campaign,
+                    head,
+                    completed_units,
+                    last_task_id,
+                    termination,
+                ));
+            }
+            let lead_execution = match lead_execution {
                 Ok(value) => value,
                 Err(error @ (CodexError::Quota | CodexError::Authentication)) => {
                     let blocker_code = error.code().to_owned();
@@ -1420,8 +1442,6 @@ pub fn run_serial_campaign_with_progress(
                 }
                 Err(error) => return Err(RuntimeError::Reviewer(error)),
             };
-            checkpoint.record_process_result(&lead_execution.process)?;
-            checkpoint.persist(&campaign_root)?;
             let lead_result = match lead_execution.report {
                 Ok(value) => value,
                 Err(error @ (CodexError::Quota | CodexError::Authentication)) => {
@@ -1623,6 +1643,12 @@ pub fn run_serial_campaign_with_progress(
         let mut provider_attempt = 1_u8;
         let (unit, accepted_usage) = loop {
             let observed_usage = Arc::new(Mutex::new(ObservedUnitUsage::default()));
+            let unit_cancellation = CancellationToken::default();
+            let unit_watcher = CampaignCancellationWatcher::start(
+                campaign_root.clone(),
+                &checkpoint,
+                unit_cancellation.clone(),
+            );
             let result = run_one_with_progress_id_budget(
                 &pod_config,
                 unit_spec.clone(),
@@ -1631,7 +1657,9 @@ pub fn run_serial_campaign_with_progress(
                 &mut observer,
                 Some(checkpoint.unit_budget(&campaign_root)),
                 Some(Arc::clone(&observed_usage)),
+                unit_cancellation,
             );
+            drop(unit_watcher);
             let usage_snapshot = observed_usage
                 .lock()
                 .map_err(|_| RuntimeError::State)?
@@ -1642,6 +1670,25 @@ pub fn run_serial_campaign_with_progress(
                     usage_snapshot.correction_rounds,
                 )?;
                 checkpoint.persist(&campaign_root)?;
+            }
+            apply_pending_campaign_controls(&mut checkpoint, &campaign_root)?;
+            if checkpoint.cancelled {
+                checkpoint.active_unit = None;
+                if lease_registered {
+                    scheduler
+                        .release(&lease.pod_id)
+                        .map_err(RuntimeError::Campaign)?;
+                }
+                let termination = campaign_control_termination(&mut checkpoint, &campaign_root)?
+                    .ok_or(RuntimeError::State)?;
+                return Ok(campaign_outcome(
+                    &spec,
+                    &campaign,
+                    head,
+                    completed_units,
+                    last_task_id,
+                    termination,
+                ));
             }
             match result {
                 Ok(unit) => break (unit, usage_snapshot),
@@ -2272,6 +2319,59 @@ fn apply_pending_campaign_controls(
     Ok(())
 }
 
+struct CampaignCancellationWatcher {
+    stop: Arc<AtomicBool>,
+    handle: Option<JoinHandle<()>>,
+}
+
+impl CampaignCancellationWatcher {
+    fn start(
+        campaign_root: PathBuf,
+        checkpoint: &CampaignCheckpoint,
+        cancellation: CancellationToken,
+    ) -> Self {
+        let stop = Arc::new(AtomicBool::new(false));
+        let watcher_stop = Arc::clone(&stop);
+        let authority_sha256 = checkpoint.authority_sha256.clone();
+        let campaign_id = checkpoint.campaign_id.clone();
+        let repository_id = checkpoint.repository_id.clone();
+        let campaign_run_id = checkpoint.campaign_run_id.clone();
+        let handle = thread::spawn(move || {
+            while !watcher_stop.load(Ordering::Acquire) {
+                let cancel_requested = CampaignControlIntent::pending(&campaign_root)
+                    .ok()
+                    .is_some_and(|intents| {
+                        intents.iter().any(|intent| {
+                            intent.action == CampaignControlAction::Cancel
+                                && intent.authority_sha256 == authority_sha256
+                                && intent.campaign_id == campaign_id
+                                && intent.repository_id == repository_id
+                                && intent.campaign_run_id == campaign_run_id
+                        })
+                    });
+                if cancel_requested {
+                    cancellation.cancel();
+                    break;
+                }
+                thread::sleep(Duration::from_millis(10));
+            }
+        });
+        Self {
+            stop,
+            handle: Some(handle),
+        }
+    }
+}
+
+impl Drop for CampaignCancellationWatcher {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Release);
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join();
+        }
+    }
+}
+
 fn campaign_control_termination(
     checkpoint: &mut CampaignCheckpoint,
     campaign_root: &Path,
@@ -2386,6 +2486,7 @@ fn run_one_with_progress_id(
         observer,
         None,
         None,
+        CancellationToken::default(),
     )
 }
 
@@ -2398,6 +2499,7 @@ fn run_one_with_progress_id_budget(
     observer: &mut impl FnMut(RunProgress),
     campaign_budget: Option<CampaignUnitBudget>,
     observed_usage: Option<SharedUnitUsage>,
+    cancellation: CancellationToken,
 ) -> Result<RunOutcome, RuntimeError> {
     observer(RunProgress::new(
         ProgressActor::Coordinator,
@@ -2411,6 +2513,7 @@ fn run_one_with_progress_id_budget(
         observer,
         campaign_budget,
         observed_usage,
+        cancellation,
     );
     observer(RunProgress::new(
         ProgressActor::Coordinator,
@@ -2423,6 +2526,7 @@ fn run_one_with_progress_id_budget(
     result
 }
 
+#[allow(clippy::too_many_arguments)]
 fn run_one_observed_with_id(
     config: &Config,
     spec: RunSpec,
@@ -2431,6 +2535,7 @@ fn run_one_observed_with_id(
     observer: &mut impl FnMut(RunProgress),
     campaign_budget: Option<CampaignUnitBudget>,
     observed_usage: Option<SharedUnitUsage>,
+    cancellation: CancellationToken,
 ) -> Result<RunOutcome, RuntimeError> {
     spec.validate()?;
     let codingmage_binary = canonical_file(codingmage_binary)?;
@@ -2482,6 +2587,7 @@ fn run_one_observed_with_id(
         login_environment,
         campaign_budget,
         observed_usage,
+        cancellation,
     };
     let port = match correction_recovery.as_ref() {
         Some(checkpoint) => ProductionWorkflowPort::recover_correction(inputs, checkpoint)?,
@@ -2631,6 +2737,7 @@ struct ProductionInputs<'a> {
     login_environment: BTreeMap<String, String>,
     campaign_budget: Option<CampaignUnitBudget>,
     observed_usage: Option<SharedUnitUsage>,
+    cancellation: CancellationToken,
 }
 
 struct ProductionWorkflowPort<'a> {
@@ -2648,6 +2755,7 @@ struct ProductionWorkflowPort<'a> {
     login_environment: BTreeMap<String, String>,
     campaign_budget: Option<CampaignUnitBudget>,
     observed_usage: Option<SharedUnitUsage>,
+    cancellation: CancellationToken,
     lock: Option<CoordinatorLock>,
     worktree: Option<OwnedWorktree>,
     implementation: Option<ClaudeCompletionReport>,
@@ -2681,6 +2789,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             login_environment: inputs.login_environment,
             campaign_budget: inputs.campaign_budget,
             observed_usage: inputs.observed_usage,
+            cancellation: inputs.cancellation,
             lock: None,
             worktree: None,
             implementation: None,
@@ -3024,17 +3133,14 @@ impl<'a> ProductionWorkflowPort<'a> {
             }
             .map_err(|_| OrchestrationError::Port)?;
             self.record_provider_attempt()?;
-            let execution = match adapter.execute_observed(
-                &self.executor,
-                &plan,
-                &CancellationToken::default(),
-            ) {
-                Ok(execution) => execution,
-                Err(error) => {
-                    self.failure = Some(RuntimeError::Implementer(error));
-                    return Err(OrchestrationError::Port);
-                }
-            };
+            let execution =
+                match adapter.execute_observed(&self.executor, &plan, &self.cancellation) {
+                    Ok(execution) => execution,
+                    Err(error) => {
+                        self.failure = Some(RuntimeError::Implementer(error));
+                        return Err(OrchestrationError::Port);
+                    }
+                };
             self.record_process_result(&execution.process)?;
             match execution.report {
                 Ok(report) => return Ok(report),
@@ -3093,9 +3199,12 @@ impl<'a> ProductionWorkflowPort<'a> {
             process_invocations,
             ..CampaignReservation::default()
         })?;
-        let Ok(result) =
-            GateRunner::new(self.executor.clone()).run(&registry, &commit, &BTreeSet::new())
-        else {
+        let Ok(result) = GateRunner::new(self.executor.clone()).run_with_cancellation(
+            &registry,
+            &commit,
+            &BTreeSet::new(),
+            &self.cancellation,
+        ) else {
             self.failure = Some(RuntimeError::Verification);
             return Err(OrchestrationError::Port);
         };
@@ -3361,16 +3470,12 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             return Err(OrchestrationError::Port);
         }
         let claude = self.claude_adapter()?;
-        if let Err(error) = claude.probe(
-            &self.executor,
-            worktree.clone(),
-            &CancellationToken::default(),
-        ) {
+        if let Err(error) = claude.probe(&self.executor, worktree.clone(), &self.cancellation) {
             self.failure = Some(RuntimeError::Implementer(error));
             return Err(OrchestrationError::Port);
         }
         let codex = self.codex_adapter()?;
-        if let Err(error) = codex.probe(&self.executor, worktree, &CancellationToken::default()) {
+        if let Err(error) = codex.probe(&self.executor, worktree, &self.cancellation) {
             self.failure = Some(RuntimeError::Reviewer(error));
             return Err(OrchestrationError::Port);
         }
@@ -3453,12 +3558,8 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             .plan_start(&binding, &self.selected.item.title)
             .map_err(|_| OrchestrationError::Port)?;
         self.record_provider_attempt()?;
-        let execution = adapter.execute_observed(
-            &self.executor,
-            &plan,
-            &binding,
-            &CancellationToken::default(),
-        );
+        let execution =
+            adapter.execute_observed(&self.executor, &plan, &binding, &self.cancellation);
         let execution = match execution {
             Ok(value) => value,
             Err(error) => {

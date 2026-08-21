@@ -5,13 +5,15 @@ use std::{
     fs,
     path::PathBuf,
     sync::atomic::{AtomicU64, Ordering},
+    thread,
+    time::Duration,
 };
 
 use codingmage_gate::{
     GateAssertion, GateEntry, GateError, GateOutcome, GateProgressKind, GateRegistry,
     GateRequirement, GateRunner, GateTier, GateTrigger, TrustedGateDefinition, UnavailableGate,
 };
-use codingmage_process::{ProcessExecutor, ProcessProfile, ProcessRequest};
+use codingmage_process::{CancellationToken, ProcessExecutor, ProcessProfile, ProcessRequest};
 
 static NEXT: AtomicU64 = AtomicU64::new(1);
 
@@ -128,6 +130,28 @@ fn required_failure_cancels_other_live_gate_and_blocks() {
     assert_eq!(
         run.evidence[2].reason_code.as_deref(),
         Some("prior-required-failure")
+    );
+}
+
+#[test]
+fn external_cancellation_reaches_only_the_running_gate_batch() {
+    let fixture = Fixture::new();
+    let mut sleeping = fixture.gate("sleeping", "sleep", true);
+    sleeping.request.deadline_millis = 5_000;
+    let registry = GateRegistry::new(vec![GateEntry::Available(Box::new(sleeping))]).unwrap();
+    let cancellation = CancellationToken::default();
+    let signal = cancellation.clone();
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(50));
+        signal.cancel();
+    });
+    let run = GateRunner::new(fixture.executor.clone())
+        .run_with_cancellation(&registry, &"c".repeat(40), &BTreeSet::new(), &cancellation)
+        .unwrap();
+    assert!(run.blocked);
+    assert_eq!(
+        run.evidence[0].process.as_ref().unwrap().process_outcome,
+        "cancelled"
     );
 }
 

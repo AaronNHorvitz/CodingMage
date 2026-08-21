@@ -398,7 +398,33 @@ impl GateRunner {
         source_commit: &str,
         optional_skips: &BTreeSet<String>,
     ) -> Result<GateRun, GateError> {
-        self.run_with_progress(registry, source_commit, optional_skips, |_| {})
+        self.run_with_cancellation(
+            registry,
+            source_commit,
+            optional_skips,
+            &CancellationToken::default(),
+        )
+    }
+
+    /// Runs gates with an external cancellation signal inherited by every gate batch.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same failures as [`Self::run`].
+    pub fn run_with_cancellation(
+        &self,
+        registry: &GateRegistry,
+        source_commit: &str,
+        optional_skips: &BTreeSet<String>,
+        cancellation: &CancellationToken,
+    ) -> Result<GateRun, GateError> {
+        self.run_with_progress_and_cancellation(
+            registry,
+            source_commit,
+            optional_skips,
+            cancellation,
+            |_| {},
+        )
     }
 
     /// Runs gates while emitting content-free, rate-bounded progress notifications.
@@ -413,6 +439,29 @@ impl GateRunner {
         registry: &GateRegistry,
         source_commit: &str,
         optional_skips: &BTreeSet<String>,
+        observe: impl FnMut(&GateProgress),
+    ) -> Result<GateRun, GateError> {
+        self.run_with_progress_and_cancellation(
+            registry,
+            source_commit,
+            optional_skips,
+            &CancellationToken::default(),
+            observe,
+        )
+    }
+
+    /// Runs gates with both progress observations and inherited external cancellation.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same failures as [`Self::run`].
+    #[allow(clippy::too_many_lines)]
+    pub fn run_with_progress_and_cancellation(
+        &self,
+        registry: &GateRegistry,
+        source_commit: &str,
+        optional_skips: &BTreeSet<String>,
+        cancellation: &CancellationToken,
         mut observe: impl FnMut(&GateProgress),
     ) -> Result<GateRun, GateError> {
         if !valid_commit(source_commit) {
@@ -484,7 +533,7 @@ impl GateRunner {
                 }
                 continue;
             }
-            let cancellation = CancellationToken::default();
+            let cancellation = cancellation.child();
             let (sender, receiver) = mpsc::channel();
             thread::scope(|scope| {
                 for (index, definition) in batch {

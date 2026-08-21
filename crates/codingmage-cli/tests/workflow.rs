@@ -5,6 +5,8 @@ use std::{
     panic::{AssertUnwindSafe, catch_unwind},
     path::Path,
     process::Command,
+    thread,
+    time::{Duration, Instant},
 };
 
 use codingmage_campaign::CampaignSpec;
@@ -787,6 +789,191 @@ profiles = ["configured-gates"]
     assert_eq!(status["current_task_id"], serde_json::Value::Null);
     assert_eq!(status["current_round"], serde_json::Value::Null);
     assert_eq!(status["last_task_id"], "0.1.1.1");
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn campaign_cancel_terminates_owned_provider_without_signalling_unrelated_process() {
+    let fixture = Fixture::new();
+    let target = fixture.root.join("target");
+    fs::create_dir(target.join("src")).unwrap();
+    fs::write(target.join("src/lib.rs"), "pub fn value() -> u8 { 1 }\n").unwrap();
+    fs::write(
+        target.join("TASKS.md"),
+        "# Tasks\n\n## Sprint 0 - Start\n\n**Sprint goal:** Start safely.\n\n### Story 0.1 - First\n\n- [ ] **Task 0.1.1 - Work**\n  - [ ] **Sub-task 0.1.1.1:** Complete the exact fixture operation.\n",
+    )
+    .unwrap();
+    git(&target, &["add", "TASKS.md", "src/lib.rs"]);
+    git(&target, &["commit", "-m", "add cancellation fixture"]);
+    let original_head = git_output(&target, &["rev-parse", "HEAD"]);
+
+    let claude = fixture.executable(
+        "cancel-claude",
+        r#"#!/usr/bin/python3
+import sys
+if "--version" in sys.argv:
+    print("2.1.136 (Claude Code)")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
+    raise SystemExit(0)
+raise SystemExit(1)
+"#,
+    );
+    let codex = fixture.executable(
+        "cancel-codex",
+        r#"#!/usr/bin/python3
+import sys, time
+from pathlib import Path
+if "--version" in sys.argv:
+    print("codex-cli 0.144.5")
+    raise SystemExit(0)
+if "--help" in sys.argv and "resume" in sys.argv:
+    print("SESSION_ID --json --output-schema --model --ignore-user-config")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print("Run Codex non-interactively --json --output-schema resume --model read-only --ignore-user-config")
+    raise SystemExit(0)
+Path(__file__).with_name("lead-started").write_text("started\n", encoding="utf-8")
+time.sleep(30)
+raise SystemExit(1)
+"#,
+    );
+    let config = fixture.root.join("config/cancel.toml");
+    let scratch = fixture.root.join("cancel-scratch");
+    let state = fixture.root.join("cancel-state");
+    assert!(
+        Fixture::command(&[
+            "init",
+            "--repo",
+            target.to_str().unwrap(),
+            "--config",
+            config.to_str().unwrap(),
+            "--scratch",
+            scratch.to_str().unwrap(),
+            "--state",
+            state.to_str().unwrap(),
+        ])
+        .status
+        .success()
+    );
+    let doctor = Fixture::command(&["doctor", "--config", config.to_str().unwrap()]);
+    let diagnosis: serde_json::Value = serde_json::from_slice(&doctor.stdout).unwrap();
+    let campaign = fixture.root.join("cancel-campaign.toml");
+    fs::write(
+        &campaign,
+        format!(
+            r#"version = 3
+campaign_id = "cancel-campaign"
+repository_id = "{}"
+repository_path = "{}"
+initial_commit = "{}"
+task_source_sha256 = "{}"
+operator_authorization_sha256 = "{}"
+max_parallel_pods = 1
+max_units = 1
+implementer_authentication = "existing_login"
+campaign_branch = "codingmage/cancel-campaign"
+allowed_paths = ["src"]
+denied_paths = []
+protected_branches = ["main"]
+publication = "local_only"
+
+[limits]
+provider_attempts = 100
+malformed_report_repairs = 10
+correction_rounds = 10
+process_invocations = 100
+output_bytes = 10485760
+retained_state_bytes = 10485760
+execution_elapsed_ms = 60000
+
+[team_lead]
+executable = "{}"
+model = "fixture-lead"
+effort = "high"
+
+[implementer]
+executable = "{}"
+model = "fixture-implementer"
+effort = "high"
+
+[reviewer]
+executable = "{}"
+model = "fixture-reviewer"
+effort = "high"
+
+[[gate_tiers]]
+name = "focused"
+profiles = ["configured-gates"]
+"#,
+            diagnosis["repository_id"].as_str().unwrap(),
+            target.display(),
+            diagnosis["head"].as_str().unwrap(),
+            diagnosis["task_source_sha256"].as_str().unwrap(),
+            "a".repeat(64),
+            codex.display(),
+            claude.display(),
+            codex.display(),
+        ),
+    )
+    .unwrap();
+
+    let mut unrelated = Command::new("/usr/bin/sleep").arg("30").spawn().unwrap();
+    let mut running = Command::new(env!("CARGO_BIN_EXE_codingmage"))
+        .args([
+            "campaign",
+            "--config",
+            config.to_str().unwrap(),
+            "--campaign",
+            campaign.to_str().unwrap(),
+        ])
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    let marker = fixture.root.join("lead-started");
+    let wait_started = Instant::now();
+    while !marker.exists() && wait_started.elapsed() < Duration::from_secs(5) {
+        thread::sleep(Duration::from_millis(10));
+    }
+    assert!(marker.exists(), "campaign lead did not start");
+
+    let cancel_started = Instant::now();
+    let cancel = Fixture::command(&[
+        "campaign-control",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+        "--action",
+        "cancel",
+        "--request",
+        "cancel-live-1",
+    ]);
+    assert!(cancel.status.success());
+    while running.try_wait().unwrap().is_none() && cancel_started.elapsed() < Duration::from_secs(5)
+    {
+        thread::sleep(Duration::from_millis(10));
+    }
+    if running.try_wait().unwrap().is_none() {
+        let _ = running.kill();
+        panic!("campaign did not terminate promptly after cancel");
+    }
+    let output = running.wait_with_output().unwrap();
+    assert!(output.status.success());
+    let outcome: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(outcome["state"], "cancelled");
+    assert_eq!(outcome["stop_reason"], "operator_cancellation");
+    assert_eq!(
+        outcome["blocker_code"],
+        "codingmage.campaign.control.cancelled"
+    );
+    assert!(cancel_started.elapsed() < Duration::from_secs(5));
+    assert!(unrelated.try_wait().unwrap().is_none());
+    assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
+    let _ = unrelated.kill();
+    let _ = unrelated.wait();
 }
 
 #[test]
