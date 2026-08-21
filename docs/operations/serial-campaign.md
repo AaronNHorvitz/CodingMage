@@ -137,10 +137,11 @@ credentials, or diagnostics.
 bound to the exact campaign authority and a caller-generated idempotency ID, then written atomically
 to a private same-user inbox without replacing an existing request. The campaign consumes requests
 in a stable order and journals each applied observation once. Pause prevents a new unit from being
-admitted, resume clears the operator pause or pending stop, and stop-after-unit exits at the next
-clean unit boundary. Cancel makes the campaign terminal at the next safe boundary. It does not yet
-interrupt an already running provider or deterministic gate; live exact-descendant cancellation is
-still required before cancel can be described as immediate termination.
+admitted, resume clears the operator pause or pending stop, and stop-after-unit exits after the
+current bounded unit is checkpointed. A campaign-scoped watcher propagates cancel through inherited
+cancellation tokens to the exact guarded lead, provider, reviewer, probe, and deterministic-gate
+processes. Their owned process groups are terminated and reaped before the coordinator records the
+terminal cancellation. Unrelated processes are never selected by name or signalled.
 
 `campaign-clear-blocker` is an explicit same-user mutation. The campaign state directory and
 checkpoint must remain owned by the invoking Linux user with no group or world access. The command
@@ -239,9 +240,10 @@ an unbounded provider-invocation loop.
   and failed lead and unit attempts project provider attempts, malformed-report repairs, corrections,
   processes, output, retained state, and execution time whenever a trustworthy process receipt
   exists. Aggregate ceilings are enforced before campaign admission and delegated unit effects;
-  safe-boundary pause, resume, stop-after-unit, and cancel projections are implemented. Exact live
-  descendant cancellation, crash-gap reconciliation for control observations, exhaustive restart
-  evidence, and interrupted initial-implementation resume remain open.
+  pause, resume, stop-after-unit, and exact-descendant cancel projections are implemented. Missing
+  request or applied journal observations are reconciled exactly once from integrity-bound intent
+  and checkpoint state. Exhaustive restart evidence and interrupted initial-implementation resume
+  remain open.
 - Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable.
   Binary evidence proves quota and authentication pauses preserve zero accepted work and the active
   checkout before a later authorized provider invocation succeeds; CodingMage does not inspect,

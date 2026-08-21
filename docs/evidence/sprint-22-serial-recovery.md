@@ -13,6 +13,9 @@
 - **Outcome-projection implementation commit:** `b28a358`
 - **Unit-utilization implementation commit:** `a8b9c62`
 - **Campaign-utilization aggregation commit:** `2d72917`
+- **Control-journal reconciliation commit:** `96a0e8b`
+- **Exact-descendant cancellation commit:** `f19c33e`
+- **Stop-after-unit evidence commit:** `800c215`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -80,9 +83,9 @@ stop-after-unit, authenticated cancellation, the accepted-unit ceiling,
 provider quota or authentication capacity, exhausted provider/correction/report attempts, absence
 of independent ready work, and repository, authority, integrity, or policy refusal. CLI fixtures
 verify serialized reasons for completed, blocked, deferred, correction-limit, and rejected-report
-runs. Focused runtime tests verify the distinct stop and cancellation states. Cancellation is
-currently observed only at coordinator safe boundaries; exact live descendant termination remains
-open under sub-task `22.2.2.3` and is not claimed by this evidence.
+runs. Focused runtime tests verify the distinct stop and cancellation states. A production campaign
+fixture cancels a sleeping lead, verifies prompt exact-group cleanup, preserves a concurrent
+unrelated process, and returns the authenticated terminal cancellation code.
 
 ## Privacy-Safe Round Status
 
@@ -132,11 +135,24 @@ resume, stop-after-unit, and cancel transitions and their distinct serialized te
 The production binary campaign fixture submits the same pause twice, proves no provider advances
 while paused, then applies a separate resume before campaign work continues.
 
-This evidence closes only the safe-boundary control wiring in `22.2.2.1`. A crash between checkpoint
-replacement and the corresponding journal observation can still leave an applied request without
-its event, and cancel does not yet interrupt an in-flight provider or gate. Exhaustive restart,
-duplicate-delivery, and exact-descendant termination evidence remain open under `22.2.2.2` through
-`22.2.2.5`.
+The durable request file is the control intent and the checkpoint is the applied effect. A distinct
+`ControlRequested` event records the former and `ControlApplied` records the latter. On every
+request replay and campaign boundary, reconciliation validates the complete journal chain against
+the exact inbox and checkpoint. It appends only a missing request or applied observation and never
+reapplies the state transition. Duplicate observations, applied-without-request evidence, unknown
+requests, cross-run records, conflicting actions, and authority mismatches fail closed.
+
+A campaign-scoped watcher reads only integrity-valid requests for its exact authority and propagates
+cancel through inherited process tokens. Lead, implementer, reviewer, capability probe, and gate
+process groups are terminated and reaped by their existing exact guards. Gate-local required-failure
+cancellation remains a child token and cannot propagate upward as an operator cancellation. A live
+binary fixture proves a sleeping lead terminates promptly while a concurrently running unrelated
+process and the active checkout remain untouched. The serial interruption fixture also submits
+stop-after-unit during implementation, proves the reviewed unit reconciles exactly once, admits no
+second unit, and continues only after a separately identified resume.
+
+This evidence closes `22.2.2.1` through `22.2.2.3`. The complete resume revalidation matrix and
+restart at every control-intent boundary remain open under `22.2.2.4` and `22.2.2.5`.
 
 ## Fail-Closed Checkpoint Schema
 
@@ -216,8 +232,8 @@ overflow, restart, and concurrent-observation matrix remains open under sub-task
 
 ## Verification
 
-The complete workspace test suite passed across all targets, including 34 runtime unit tests and
-eight CLI workflow tests. Strict workspace Clippy with warnings denied, workspace formatting,
+The complete workspace test suite passed across all targets, including 36 runtime unit tests and
+nine CLI workflow tests. Strict workspace Clippy with warnings denied, workspace formatting,
 workspace documentation generation, architecture checks, documentation policy, 12 Python policy
 tests, and `git diff --check` also passed after aggregate-limit enforcement and evidence
 reconciliation.
@@ -231,7 +247,7 @@ without replay, durable status, and active-checkout preservation.
 ## Preserved Limits
 
 This evidence does not close initial-implementation-session recovery, complete campaign event
-journaling, live process cancellation, exhaustive operator-control restart evidence, parallel pods,
+journaling, exhaustive operator-control restart evidence, parallel pods,
 GitHub publication, native macOS or Windows evidence,
 manual fuzzing, or the sustained 24-hour or 48-hour soak gate. It authorizes only preparation of the
 explicitly requested bounded one-pod controlled-target pilot; it does not assert general

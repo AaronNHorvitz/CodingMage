@@ -393,10 +393,11 @@ independent work continues. Human-decision resolution remains roadmap work. The 
 `campaign-control` command accepts only `pause`, `resume`, `stop_after_unit`, or `cancel`, binds a
 caller-generated request ID to the exact campaign authority, and records the request in an atomic,
 private, integrity-checked inbox. Exact replay is idempotent and conflicting reuse fails closed.
-Pause prevents the next admission, resume clears the operator hold, and stop or cancel terminates
-at the next coordinator safe boundary. Live interruption of an already running provider or gate is
-not implemented yet, so `cancel` must not be treated as immediate process termination. A lead never
-completes a task; completion remains a coordinator transition
+Pause prevents the next admission, resume clears the operator hold, and stop terminates after the
+current bounded unit is checkpointed. Cancel is observed by a campaign-scoped watcher and inherited
+by the exact guarded lead, provider, reviewer, probe, and gate processes. Their owned process groups
+are terminated and reaped before the coordinator records the terminal cancellation; unrelated
+processes receive no signal. A lead never completes a task; completion remains a coordinator transition
 after code, tests, gates, independent review, checkpointing, and exact task-source reconciliation.
 
 Malformed, stale, mixed, duplicate, or authority-expanding lead output is not a disposition. It is
