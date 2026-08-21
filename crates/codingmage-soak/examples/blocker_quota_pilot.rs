@@ -65,6 +65,13 @@ impl CaseKind {
             ),
         }
     }
+
+    const fn expected_last_task(self) -> Option<&'static str> {
+        match self {
+            Self::Blocker(_) | Self::LeadQuota => None,
+            Self::ImplementerQuota | Self::ReviewerQuota => Some("0.1.1.1"),
+        }
+    }
 }
 
 fn main() {
@@ -191,7 +198,7 @@ fn run_case(
         || outcome["stop_reason"] != expected_stop_reason
         || outcome["blocker_code"] != expected_blocker_code
         || outcome["completed_units"] != 0
-        || !outcome["last_task_id"].is_null()
+        || outcome["last_task_id"].as_str() != case.expected_last_task()
     {
         return Err(format!("unexpected terminal outcome for {case_id}: {outcome}").into());
     }
