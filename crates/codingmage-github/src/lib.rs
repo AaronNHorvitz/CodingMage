@@ -3,6 +3,7 @@
 use std::{
     collections::BTreeSet,
     fmt::{self, Write as _},
+    path::{Path, PathBuf},
 };
 
 use codingmage_contracts::{EvidenceId, RepositoryId, RunId, TaskId};
@@ -25,6 +26,8 @@ pub struct GitHubIdentity {
     pub repository: String,
     /// Exact publication branch.
     pub branch: String,
+    /// Isolated campaign integration branch targeted by task pull requests.
+    pub campaign_branch: String,
     /// Default or protected branch that publication must not target.
     pub protected_branch: String,
 }
@@ -41,8 +44,11 @@ impl GitHubIdentity {
             || !valid_component(&self.owner)
             || !valid_component(&self.repository)
             || !valid_branch(&self.branch)
+            || !valid_branch(&self.campaign_branch)
             || !valid_branch(&self.protected_branch)
             || self.branch == self.protected_branch
+            || self.branch == self.campaign_branch
+            || self.campaign_branch == self.protected_branch
         {
             return Err(GitHubError::InvalidIdentity);
         }
@@ -72,6 +78,12 @@ pub struct GitHubPermissions {
     pub comments: bool,
     /// Push the exact configured feature branch.
     pub branch_push: bool,
+    /// Read commit-bound check status.
+    pub checks_read: bool,
+    /// Merge an exact reviewed task branch into the campaign branch.
+    pub task_merge: bool,
+    /// Promote the exact completed campaign branch to the protected destination.
+    pub destination_merge: bool,
 }
 
 /// Operations exposed by the adapter. Destructive administration is intentionally absent.
@@ -89,6 +101,12 @@ pub enum GitHubOperation {
     Comment,
     /// Push the exact feature branch.
     PushBranch,
+    /// Read checks for an exact commit.
+    ReadChecks,
+    /// Merge an exact task pull request to the campaign branch.
+    MergeTaskPullRequest,
+    /// Merge an exact final pull request to the protected destination.
+    MergeDestinationPullRequest,
 }
 
 impl GitHubPermissions {
@@ -102,6 +120,9 @@ impl GitHubPermissions {
             GitHubOperation::WriteDraftPullRequest => self.pull_request_write,
             GitHubOperation::Comment => self.comments,
             GitHubOperation::PushBranch => self.branch_push,
+            GitHubOperation::ReadChecks => self.checks_read,
+            GitHubOperation::MergeTaskPullRequest => self.task_merge,
+            GitHubOperation::MergeDestinationPullRequest => self.destination_merge,
         }
     }
 }
@@ -232,6 +253,240 @@ impl StoryIssue {
     }
 }
 
+/// Complete coordinator-owned section for one campaign task issue.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TaskIssue {
+    /// Immutable campaign identity.
+    pub campaign_id: String,
+    /// Canonical task identity.
+    pub task_id: TaskId,
+    /// Optional parent story or task.
+    pub parent: Option<TaskId>,
+    /// Ordered dependency identities.
+    pub dependencies: Vec<TaskId>,
+    /// Exact assigned pod identity.
+    pub pod_id: String,
+    /// Exact repository-relative write authority.
+    pub authorized_paths: Vec<PathBuf>,
+    /// Ordered required gate profile identifiers.
+    pub required_gates: Vec<String>,
+    /// Current closed task-state identifier.
+    pub state: String,
+    /// Exact task branch.
+    pub branch: String,
+    /// Bound task pull request, when created.
+    pub pull_request: Option<u64>,
+    /// Latest immutable candidate commit, when present.
+    pub candidate_commit: Option<String>,
+    /// Latest structured automated-review result.
+    pub review_result: Option<String>,
+    /// Stable content-free blocker code.
+    pub blocker: Option<String>,
+    /// Ordered immutable completion evidence.
+    pub evidence: Vec<EvidenceId>,
+}
+
+impl TaskIssue {
+    /// Renders the complete marker-owned task section.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GitHubError::InvalidContent`] when any authority field is unsafe or unbounded.
+    pub fn render_owned_section(&self) -> Result<String, GitHubError> {
+        self.validate()?;
+        let key = self.marker_key();
+        let dependencies = join_task_ids(&self.dependencies);
+        let parent = self.parent.as_ref().map_or("none", TaskId::as_str);
+        let paths = self
+            .authorized_paths
+            .iter()
+            .map(|path| format!("`{}`", path.display()))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let mut body = format!(
+            "<!-- codingmage:task:start {key} -->\nAutomated task record; human-authored text outside this section is preserved.\n\nCampaign: `{}`\nTask: `{}`\nParent: `{parent}`\nDependencies: {dependencies}\nAssigned pod: `{}`\nAuthorized paths: {paths}\nRequired gates: {}\nState: `{}`\nBranch: `{}`\nPull request: {}\nCandidate: {}\nAutomated review: {}\nBlocker: {}\nEvidence: {}\n<!-- codingmage:task:end {key} -->",
+            self.campaign_id,
+            self.task_id,
+            self.pod_id,
+            join_or_none(&self.required_gates),
+            self.state,
+            self.branch,
+            self.pull_request
+                .map_or_else(|| "none".to_owned(), |value| format!("#{value}")),
+            self.candidate_commit.as_deref().unwrap_or("none"),
+            self.review_result.as_deref().unwrap_or("none"),
+            self.blocker.as_deref().unwrap_or("none"),
+            join_evidence(&self.evidence),
+        );
+        if self.evidence.is_empty() {
+            body = body.replace("Evidence: \n", "Evidence: none\n");
+        }
+        if body.len() > MAX_BODY_BYTES {
+            return Err(GitHubError::InvalidContent);
+        }
+        Ok(body)
+    }
+
+    /// Replaces only this task's exact owned section and preserves all surrounding bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for malformed, duplicated, or crossing ownership markers.
+    pub fn merge_into(&self, existing: &str) -> Result<String, GitHubError> {
+        let replacement = self.render_owned_section()?;
+        replace_owned_section(
+            existing,
+            &format!("<!-- codingmage:task:start {} -->", self.marker_key()),
+            &format!("<!-- codingmage:task:end {} -->", self.marker_key()),
+            &replacement,
+        )
+    }
+
+    fn marker_key(&self) -> String {
+        format!("{}:{}", self.campaign_id, self.task_id)
+    }
+
+    fn validate(&self) -> Result<(), GitHubError> {
+        if !valid_component(&self.campaign_id)
+            || !valid_component(&self.pod_id)
+            || self.dependencies.len() > 1_000
+            || self.authorized_paths.is_empty()
+            || self.authorized_paths.len() > 1_000
+            || self
+                .authorized_paths
+                .iter()
+                .any(|path| !safe_relative(path))
+            || self.required_gates.is_empty()
+            || self.required_gates.len() > 256
+            || self
+                .required_gates
+                .iter()
+                .any(|value| !valid_component(value))
+            || !valid_component(&self.state)
+            || !valid_branch(&self.branch)
+            || self.pull_request == Some(0)
+            || self
+                .candidate_commit
+                .as_ref()
+                .is_some_and(|commit| !valid_commit(commit))
+            || self
+                .review_result
+                .as_ref()
+                .is_some_and(|value| !valid_component(value))
+            || self
+                .blocker
+                .as_ref()
+                .is_some_and(|value| !valid_component(value))
+            || self.evidence.len() > 1_024
+        {
+            return Err(GitHubError::InvalidContent);
+        }
+        Ok(())
+    }
+}
+
+/// Draft task pull-request content bound to one campaign branch and immutable reviewed commit.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TaskPullRequest {
+    /// Immutable campaign identity.
+    pub campaign_id: String,
+    /// Canonical task identity.
+    pub task_id: TaskId,
+    /// Linked task issue.
+    pub issue_number: u64,
+    /// Exact campaign integration branch.
+    pub base_branch: String,
+    /// Exact task branch.
+    pub head_branch: String,
+    /// Immutable cumulative reviewed candidate.
+    pub reviewed_commit: String,
+    /// Stable task requirement identifiers.
+    pub requirements: Vec<String>,
+    /// Immutable deterministic test evidence.
+    pub tests: Vec<EvidenceId>,
+    /// Structured automated-review result.
+    pub review_result: String,
+    /// Ordered correction-session identities.
+    pub correction_history: Vec<String>,
+    /// Current integration-state identifier.
+    pub integration_status: String,
+    /// Stable risk identifiers.
+    pub risk_notes: Vec<String>,
+}
+
+impl TaskPullRequest {
+    /// Renders a marker-owned draft body that never represents human approval.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GitHubError::InvalidContent`] for an unsafe identity or unbound evidence.
+    pub fn render_owned_section(&self, identity: &GitHubIdentity) -> Result<String, GitHubError> {
+        if !valid_component(&self.campaign_id)
+            || self.issue_number == 0
+            || self.base_branch != identity.campaign_branch
+            || self.head_branch != identity.branch
+            || self.head_branch == identity.protected_branch
+            || !valid_commit(&self.reviewed_commit)
+            || self.requirements.is_empty()
+            || self.tests.is_empty()
+            || self.requirements.len() > 1_000
+            || self.tests.len() > 1_024
+            || self.correction_history.len() > 1_024
+            || self.risk_notes.len() > 1_024
+            || self
+                .requirements
+                .iter()
+                .chain(&self.correction_history)
+                .chain(&self.risk_notes)
+                .any(|value| !valid_component(value))
+            || !valid_component(&self.review_result)
+            || !valid_component(&self.integration_status)
+        {
+            return Err(GitHubError::InvalidContent);
+        }
+        let key = format!("{}:{}", self.campaign_id, self.task_id);
+        let body = format!(
+            "<!-- codingmage:pr:start {key} -->\nAutomated development record; this is not human approval.\n\nCampaign: `{}`\nTask: `{}`\nLinked issue: #{}\nBase: `{}`\nHead: `{}`\nReviewed commit: `{}`\nRequirements: {}\nTests: {}\nAutomated review: `{}`\nCorrection history: {}\nIntegration status: `{}`\nRisk notes: {}\n<!-- codingmage:pr:end {key} -->",
+            self.campaign_id,
+            self.task_id,
+            self.issue_number,
+            self.base_branch,
+            self.head_branch,
+            self.reviewed_commit,
+            self.requirements.join(", "),
+            join_evidence(&self.tests),
+            self.review_result,
+            join_or_none(&self.correction_history),
+            self.integration_status,
+            join_or_none(&self.risk_notes),
+        );
+        if body.len() > MAX_BODY_BYTES {
+            return Err(GitHubError::InvalidContent);
+        }
+        Ok(body)
+    }
+
+    /// Replaces only this task PR's exact owned section.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for malformed ownership markers or invalid content.
+    pub fn merge_into(
+        &self,
+        identity: &GitHubIdentity,
+        existing: &str,
+    ) -> Result<String, GitHubError> {
+        let replacement = self.render_owned_section(identity)?;
+        let key = format!("{}:{}", self.campaign_id, self.task_id);
+        replace_owned_section(
+            existing,
+            &format!("<!-- codingmage:pr:start {key} -->"),
+            &format!("<!-- codingmage:pr:end {key} -->"),
+            &replacement,
+        )
+    }
+}
+
 /// Draft pull-request content tied to exact local evidence.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DraftPullRequest {
@@ -260,7 +515,7 @@ impl DraftPullRequest {
     ///
     /// Returns an identity or content error when scope is not exact and locally evidenced.
     pub fn render(&self, identity: &GitHubIdentity) -> Result<String, GitHubError> {
-        if self.base_branch != identity.protected_branch
+        if self.base_branch != identity.campaign_branch
             || self.head_branch != identity.branch
             || self.commits.is_empty()
             || self.commits.iter().any(|commit| !valid_commit(commit))
@@ -388,7 +643,9 @@ impl WriteRequest {
         if body.len() > MAX_BODY_BYTES
             || matches!(
                 operation,
-                GitHubOperation::ReadIssue | GitHubOperation::ReadPullRequest
+                GitHubOperation::ReadIssue
+                    | GitHubOperation::ReadPullRequest
+                    | GitHubOperation::ReadChecks
             )
         {
             return Err(GitHubError::InvalidContent);
@@ -425,6 +682,58 @@ pub enum TransportResult {
     Applied(RemoteRecord),
     /// Response was lost and completion must be reconciled.
     TimedOut,
+}
+
+/// Exact destination class for one coordinator-authorized merge.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MergeTarget {
+    /// Task branch into the isolated campaign branch.
+    CampaignBranch,
+    /// Completed campaign branch into the protected destination.
+    ProtectedDestination,
+}
+
+/// Closed coordinator policy used to authorize one exact merge effect.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MergeMode {
+    /// No merge effect is permitted.
+    Never,
+    /// Exact operator approval is required in addition to all automated evidence.
+    HumanRequired,
+    /// Automated merge is permitted after every deterministic prerequisite passes.
+    Automatic,
+}
+
+/// Complete commit-bound evidence required before one merge effect may be attempted.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[allow(clippy::struct_excessive_bools)]
+pub struct MergeAuthorization {
+    /// Destination class.
+    pub target: MergeTarget,
+    /// Exact pull-request number.
+    pub pull_request_number: u64,
+    /// Exact base branch observed remotely.
+    pub base_branch: String,
+    /// Exact head branch observed remotely.
+    pub head_branch: String,
+    /// Commit accepted by deterministic gates and independent review.
+    pub reviewed_commit: String,
+    /// Current remote head observed immediately before authorization.
+    pub observed_head: String,
+    /// Every required deterministic gate passed for `reviewed_commit`.
+    pub deterministic_gates_passed: bool,
+    /// Required CI checks passed for `reviewed_commit`.
+    pub ci_passed: bool,
+    /// Fresh automated review returned PASS for `reviewed_commit`.
+    pub automated_review_passed: bool,
+    /// Branch-protection preconditions were observed satisfied.
+    pub branch_protection_satisfied: bool,
+    /// Every authorized plan task is terminally complete.
+    pub campaign_complete: bool,
+    /// No blocked or disputed task remains.
+    pub no_blocking_findings: bool,
+    /// Exact operator decision for a human-required destination promotion.
+    pub human_approval: bool,
 }
 
 /// Narrow transport used by production `gh` and deterministic fake servers.
@@ -541,6 +850,57 @@ impl<T: GitHubTransport> GitHubSynchronizer<T> {
         Ok(())
     }
 
+    /// Authorizes one exact commit-bound merge without performing the remote effect.
+    ///
+    /// Task merges may target only the campaign branch. Destination promotion additionally
+    /// requires complete-plan and no-blocker evidence. Human-required policy cannot be satisfied
+    /// by automated-review output alone.
+    ///
+    /// # Errors
+    ///
+    /// Returns denied or identity errors before any transport write can occur.
+    pub fn authorize_merge(
+        &self,
+        request: &MergeAuthorization,
+        mode: MergeMode,
+    ) -> Result<GitHubOperation, GitHubError> {
+        if mode == MergeMode::Never
+            || request.pull_request_number == 0
+            || !valid_commit(&request.reviewed_commit)
+            || request.reviewed_commit != request.observed_head
+            || !request.deterministic_gates_passed
+            || !request.ci_passed
+            || !request.automated_review_passed
+            || !request.branch_protection_satisfied
+            || (mode == MergeMode::HumanRequired && !request.human_approval)
+        {
+            return Err(GitHubError::Denied);
+        }
+        let operation = match request.target {
+            MergeTarget::CampaignBranch => {
+                if !self.permissions.task_merge
+                    || request.base_branch != self.identity.campaign_branch
+                    || request.head_branch != self.identity.branch
+                {
+                    return Err(GitHubError::IdentityChanged);
+                }
+                GitHubOperation::MergeTaskPullRequest
+            }
+            MergeTarget::ProtectedDestination => {
+                if !self.permissions.destination_merge
+                    || request.base_branch != self.identity.protected_branch
+                    || request.head_branch != self.identity.campaign_branch
+                    || !request.campaign_complete
+                    || !request.no_blocking_findings
+                {
+                    return Err(GitHubError::Denied);
+                }
+                GitHubOperation::MergeDestinationPullRequest
+            }
+        };
+        Ok(operation)
+    }
+
     /// Consumes the synchronizer and returns its transport for test inspection.
     #[must_use]
     pub fn into_transport(self) -> T {
@@ -617,6 +977,18 @@ fn valid_branch(value: &str) -> bool {
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'/'))
 }
 
+fn safe_relative(path: &Path) -> bool {
+    !path.as_os_str().is_empty()
+        && !path.is_absolute()
+        && path.components().all(|component| {
+            matches!(component, std::path::Component::Normal(_))
+                && !component
+                    .as_os_str()
+                    .to_string_lossy()
+                    .contains(['\0', '\n', '\r'])
+        })
+}
+
 fn valid_anchor(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 256
@@ -638,6 +1010,18 @@ fn join_evidence(values: &[EvidenceId]) -> String {
         .join(", ")
 }
 
+fn join_task_ids(values: &[TaskId]) -> String {
+    if values.is_empty() {
+        "none".to_owned()
+    } else {
+        values
+            .iter()
+            .map(|value| format!("`{value}`"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+}
+
 fn join_or_none(values: &[String]) -> String {
     if values.is_empty() {
         "none".to_owned()
@@ -655,6 +1039,32 @@ fn sha256_hex(bytes: &[u8]) -> String {
         encoded.push(char::from(HEX[usize::from(byte & 0x0f)]));
     }
     encoded
+}
+
+fn replace_owned_section(
+    existing: &str,
+    start: &str,
+    end: &str,
+    replacement: &str,
+) -> Result<String, GitHubError> {
+    let starts = existing.match_indices(start).collect::<Vec<_>>();
+    let ends = existing.match_indices(end).collect::<Vec<_>>();
+    match (starts.as_slice(), ends.as_slice()) {
+        ([], []) => {
+            let separator = if existing.is_empty() { "" } else { "\n\n" };
+            Ok(format!("{existing}{separator}{replacement}"))
+        }
+        ([(start_at, _)], [(end_at, _)]) if start_at < end_at => {
+            let after = end_at.saturating_add(end.len());
+            Ok(format!(
+                "{}{}{}",
+                &existing[..*start_at],
+                replacement,
+                &existing[after..]
+            ))
+        }
+        _ => Err(GitHubError::OwnershipMarkers),
+    }
 }
 
 #[cfg(test)]
@@ -770,6 +1180,7 @@ mod tests {
             owner: "AaronNHorvitz".to_owned(),
             repository: "CodingMage".to_owned(),
             branch: "codingmage/story-15".to_owned(),
+            campaign_branch: "codingmage/campaign-15".to_owned(),
             protected_branch: "main".to_owned(),
         }
     }
@@ -782,6 +1193,9 @@ mod tests {
             pull_request_write: true,
             comments: true,
             branch_push: true,
+            checks_read: true,
+            task_merge: true,
+            destination_merge: true,
         }
     }
 
@@ -916,7 +1330,7 @@ mod tests {
         let identity = identity();
         let draft = DraftPullRequest {
             story_id: TaskId::new("15.2").unwrap(),
-            base_branch: "main".to_owned(),
+            base_branch: "codingmage/campaign-15".to_owned(),
             head_branch: "codingmage/story-15".to_owned(),
             commits: vec!["a".repeat(40)],
             tests: vec![EvidenceId::new("evidence-15").unwrap()],
@@ -943,6 +1357,116 @@ mod tests {
             sync.authorize_push("codingmage/story-15", false)
                 .unwrap_err(),
             GitHubError::Denied
+        );
+    }
+
+    #[test]
+    fn task_issue_and_pr_preserve_human_content_and_bind_campaign_base() {
+        let issue = TaskIssue {
+            campaign_id: "campaign-15".to_owned(),
+            task_id: TaskId::new("15.2.1").unwrap(),
+            parent: Some(TaskId::new("15.2").unwrap()),
+            dependencies: vec![TaskId::new("15.1.1").unwrap()],
+            pod_id: "pod-15".to_owned(),
+            authorized_paths: vec![PathBuf::from("crates/codingmage-github")],
+            required_gates: vec!["github-tests".to_owned()],
+            state: "publication_ready".to_owned(),
+            branch: "codingmage/story-15".to_owned(),
+            pull_request: Some(23),
+            candidate_commit: Some("a".repeat(40)),
+            review_result: Some("pass".to_owned()),
+            blocker: None,
+            evidence: vec![EvidenceId::new("github-evidence-15").unwrap()],
+        };
+        let existing = "Human issue context.\n\nHuman checklist.";
+        let merged = issue.merge_into(existing).unwrap();
+        assert!(merged.starts_with(existing));
+        assert!(merged.contains("Assigned pod: `pod-15`"));
+        assert!(merged.contains("Pull request: #23"));
+
+        let task_pr = TaskPullRequest {
+            campaign_id: "campaign-15".to_owned(),
+            task_id: TaskId::new("15.2.1").unwrap(),
+            issue_number: 19,
+            base_branch: "codingmage/campaign-15".to_owned(),
+            head_branch: "codingmage/story-15".to_owned(),
+            reviewed_commit: "a".repeat(40),
+            requirements: vec!["requirement-15".to_owned()],
+            tests: vec![EvidenceId::new("github-evidence-15").unwrap()],
+            review_result: "pass".to_owned(),
+            correction_history: vec!["correction-1".to_owned()],
+            integration_status: "queued".to_owned(),
+            risk_notes: vec!["bounded".to_owned()],
+        };
+        let pr_body = task_pr
+            .merge_into(&identity(), "Human PR context.")
+            .unwrap();
+        assert!(pr_body.starts_with("Human PR context."));
+        assert!(pr_body.contains("Base: `codingmage/campaign-15`"));
+        assert!(pr_body.contains("this is not human approval"));
+
+        let mut wrong_base = task_pr;
+        wrong_base.base_branch = "main".to_owned();
+        assert_eq!(
+            wrong_base.render_owned_section(&identity()).unwrap_err(),
+            GitHubError::InvalidContent
+        );
+    }
+
+    #[test]
+    fn merge_authority_enforces_exact_sha_policy_and_safe_destination_default() {
+        let sync =
+            GitHubSynchronizer::new(identity(), permissions(), FakeGitHub::default()).unwrap();
+        let task = MergeAuthorization {
+            target: MergeTarget::CampaignBranch,
+            pull_request_number: 23,
+            base_branch: "codingmage/campaign-15".to_owned(),
+            head_branch: "codingmage/story-15".to_owned(),
+            reviewed_commit: "a".repeat(40),
+            observed_head: "a".repeat(40),
+            deterministic_gates_passed: true,
+            ci_passed: true,
+            automated_review_passed: true,
+            branch_protection_satisfied: true,
+            campaign_complete: false,
+            no_blocking_findings: true,
+            human_approval: false,
+        };
+        assert_eq!(
+            sync.authorize_merge(&task, MergeMode::Automatic).unwrap(),
+            GitHubOperation::MergeTaskPullRequest
+        );
+        assert_eq!(
+            sync.authorize_merge(&task, MergeMode::HumanRequired)
+                .unwrap_err(),
+            GitHubError::Denied
+        );
+        let stale = MergeAuthorization {
+            observed_head: "b".repeat(40),
+            ..task.clone()
+        };
+        assert_eq!(
+            sync.authorize_merge(&stale, MergeMode::Automatic)
+                .unwrap_err(),
+            GitHubError::Denied
+        );
+
+        let destination = MergeAuthorization {
+            target: MergeTarget::ProtectedDestination,
+            base_branch: "main".to_owned(),
+            head_branch: "codingmage/campaign-15".to_owned(),
+            campaign_complete: true,
+            ..task
+        };
+        assert_eq!(
+            sync.authorize_merge(&destination, MergeMode::HumanRequired)
+                .unwrap_err(),
+            GitHubError::Denied
+        );
+        assert_eq!(
+            sync.authorize_merge(&destination, MergeMode::Automatic)
+                .unwrap(),
+            GitHubOperation::MergeDestinationPullRequest
         );
     }
 
