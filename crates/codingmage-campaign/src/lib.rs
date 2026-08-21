@@ -1116,4 +1116,297 @@ mod tests {
         unknown["blocked"]["reason"] = serde_json::Value::String("invented_reason".to_owned());
         assert!(serde_json::from_value::<TeamLeadReport>(unknown).is_err());
     }
+
+    #[test]
+    fn every_campaign_authority_field_is_digest_bound_or_rejected() {
+        let baseline = spec(1);
+        let baseline_digest = baseline.authority_sha256().unwrap();
+        let mut mutations = Vec::new();
+
+        let mut value = baseline.clone();
+        value.campaign_id = "campaign-2".to_owned();
+        mutations.push(("campaign_id", value));
+        let mut value = baseline.clone();
+        value.repository_id = "repo-2".to_owned();
+        mutations.push(("repository_id", value));
+        let mut value = baseline.clone();
+        value.repository_path = PathBuf::from("/tmp/codingmage-other-target");
+        mutations.push(("repository_path", value));
+        let mut value = baseline.clone();
+        value.initial_commit = "d".repeat(40);
+        mutations.push(("initial_commit", value));
+        let mut value = baseline.clone();
+        value.task_source_sha256 = "d".repeat(64);
+        mutations.push(("task_source_sha256", value));
+        let mut value = baseline.clone();
+        value.operator_authorization_sha256 = "d".repeat(64);
+        mutations.push(("operator_authorization_sha256", value));
+        let mut value = baseline.clone();
+        value.max_parallel_pods = 2;
+        mutations.push(("max_parallel_pods", value));
+        let mut value = baseline.clone();
+        value.max_units = 101;
+        mutations.push(("max_units", value));
+        let mut value = baseline.clone();
+        value.team_lead.model = "gpt-lead-2".to_owned();
+        mutations.push(("team_lead", value));
+        let mut value = baseline.clone();
+        value.implementer.model = "claude-implementer-2".to_owned();
+        mutations.push(("implementer", value));
+        let mut value = baseline.clone();
+        value.implementer_authentication = CampaignAuthentication::Bare;
+        mutations.push(("implementer_authentication", value));
+        let mut value = baseline.clone();
+        value.reviewer.model = "gpt-reviewer-2".to_owned();
+        mutations.push(("reviewer", value));
+        let mut value = baseline.clone();
+        value.gate_tiers[0].name = "rust-complete".to_owned();
+        mutations.push(("gate_tiers", value));
+        let mut value = baseline.clone();
+        value.campaign_branch = "codingmage/campaign-2".to_owned();
+        mutations.push(("campaign_branch", value));
+        let mut value = baseline.clone();
+        value.allowed_paths = vec![PathBuf::from("src")];
+        mutations.push(("allowed_paths", value));
+        let mut value = baseline.clone();
+        value.denied_paths = vec![PathBuf::from("secrets")];
+        mutations.push(("denied_paths", value));
+        let mut value = baseline.clone();
+        value.protected_branches = vec!["trunk".to_owned()];
+        mutations.push(("protected_branches", value));
+        let mut value = baseline.clone();
+        value.publication = CampaignPublication::DraftStoryPullRequests;
+        mutations.push(("publication", value));
+
+        for (field, mutation) in mutations {
+            mutation
+                .verify()
+                .unwrap_or_else(|error| panic!("{field}: {error}"));
+            assert_ne!(
+                mutation.authority_sha256().unwrap(),
+                baseline_digest,
+                "field {field}"
+            );
+        }
+
+        let mut invalid_version = baseline.clone();
+        invalid_version.version += 1;
+        assert_eq!(
+            invalid_version.verify(),
+            Err(CampaignError::InvalidAuthority)
+        );
+        let mut unknown = serde_json::to_value(baseline).unwrap();
+        unknown["publication"] = serde_json::Value::String("publish_release".to_owned());
+        assert!(serde_json::from_value::<CampaignSpec>(unknown).is_err());
+    }
+
+    #[test]
+    fn every_closed_lead_reason_and_trigger_has_one_result() {
+        let mut authority = spec(1);
+        let selected = plan().select_exact("1.1.1.1").unwrap();
+        authority.task_source_sha256 = selected.source_sha256.clone();
+        let bound = binding(&authority, &selected);
+        let ready = std::slice::from_ref(&selected);
+
+        for reason in [
+            LeadBlockedReason::UnavailableExternalDependency,
+            LeadBlockedReason::UnavailableSupportedHardware,
+            LeadBlockedReason::MissingOperatorManagedAuthentication,
+            LeadBlockedReason::UnavailableExternalService,
+            LeadBlockedReason::UnsupportedPlatform,
+            LeadBlockedReason::BlockedPrerequisite,
+            LeadBlockedReason::ImplementationConditionOutsideAuthority,
+        ] {
+            let report = TeamLeadReport {
+                campaign_id: authority.campaign_id.clone(),
+                campaign_head: authority.initial_commit.clone(),
+                task_source_sha256: authority.task_source_sha256.clone(),
+                disposition: LeadDispositionKind::Blocked,
+                proposals: Vec::new(),
+                blocked: Some(LeadBlockedDisposition {
+                    binding: bound.clone(),
+                    reason,
+                }),
+                deferred: None,
+                human_decision: None,
+            };
+            let result = validate_team_lead_report(report, &authority, ready);
+            assert_eq!(result.is_ok(), reason.valid_for_dependency_ready_task());
+        }
+
+        let triggers = [
+            LeadReconsiderationTrigger::CampaignHeadAdvancement,
+            LeadReconsiderationTrigger::LeaseRelease,
+            LeadReconsiderationTrigger::GateResourceRelease,
+            LeadReconsiderationTrigger::ProviderReset,
+            LeadReconsiderationTrigger::ReviewCompletion,
+            LeadReconsiderationTrigger::OperatorResume,
+        ];
+        for reason in [
+            LeadDeferredReason::TemporaryProviderCapacity,
+            LeadDeferredReason::ActivePathLease,
+            LeadDeferredReason::GateResourceContention,
+            LeadDeferredReason::DeterministicDependencyOrder,
+            LeadDeferredReason::PendingStrongerReview,
+            LeadDeferredReason::OperatorPause,
+        ] {
+            for trigger in triggers {
+                let report = TeamLeadReport {
+                    campaign_id: authority.campaign_id.clone(),
+                    campaign_head: authority.initial_commit.clone(),
+                    task_source_sha256: authority.task_source_sha256.clone(),
+                    disposition: LeadDispositionKind::Deferred,
+                    proposals: Vec::new(),
+                    blocked: None,
+                    deferred: Some(LeadDeferredDisposition {
+                        binding: bound.clone(),
+                        reason,
+                        reconsideration_trigger: trigger,
+                    }),
+                    human_decision: None,
+                };
+                let result = validate_team_lead_report(report, &authority, ready);
+                assert_eq!(result.is_ok(), trigger == reason.required_trigger());
+            }
+        }
+
+        for reason in [
+            LeadHumanDecisionReason::AmbiguousScope,
+            LeadHumanDecisionReason::MaterialArchitectureChoice,
+            LeadHumanDecisionReason::RequestedAuthorityExpansion,
+            LeadHumanDecisionReason::ProtectedBranchConsequence,
+            LeadHumanDecisionReason::ExternalInfrastructureChange,
+            LeadHumanDecisionReason::ReleaseDecision,
+        ] {
+            let report = TeamLeadReport {
+                campaign_id: authority.campaign_id.clone(),
+                campaign_head: authority.initial_commit.clone(),
+                task_source_sha256: authority.task_source_sha256.clone(),
+                disposition: LeadDispositionKind::HumanDecisionRequired,
+                proposals: Vec::new(),
+                blocked: None,
+                deferred: None,
+                human_decision: Some(HumanDecisionBlocker {
+                    binding: bound.clone(),
+                    reason,
+                    summary: "Resolve the bounded external decision.".to_owned(),
+                }),
+            };
+            assert!(matches!(
+                validate_team_lead_report(report, &authority, ready).unwrap(),
+                TeamLeadOutcome::HumanDecision(decision) if decision.reason == reason
+            ));
+        }
+    }
+
+    #[test]
+    fn valid_lead_proposal_sealing_is_repeatable() {
+        let mut authority = spec(1);
+        let selected = plan().select_exact("1.1.1.1").unwrap();
+        authority.task_source_sha256 = selected.source_sha256.clone();
+        let report = TeamLeadReport {
+            campaign_id: authority.campaign_id.clone(),
+            campaign_head: authority.initial_commit.clone(),
+            task_source_sha256: authority.task_source_sha256.clone(),
+            disposition: LeadDispositionKind::Propose,
+            proposals: vec![lead_proposal(&selected, "crates/engine")],
+            blocked: None,
+            deferred: None,
+            human_decision: None,
+        };
+        let expected =
+            validate_team_lead_report(report.clone(), &authority, std::slice::from_ref(&selected))
+                .unwrap();
+        for _ in 0..32 {
+            assert_eq!(
+                validate_team_lead_report(
+                    report.clone(),
+                    &authority,
+                    std::slice::from_ref(&selected),
+                )
+                .unwrap(),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn every_mixed_disposition_payload_is_rejected() {
+        let mut authority = spec(1);
+        let selected = plan().select_exact("1.1.1.1").unwrap();
+        authority.task_source_sha256 = selected.source_sha256.clone();
+        let bound = binding(&authority, &selected);
+        let proposal = lead_proposal(&selected, "crates/engine");
+        let blocked = LeadBlockedDisposition {
+            binding: bound.clone(),
+            reason: LeadBlockedReason::UnavailableExternalDependency,
+        };
+        let deferred = LeadDeferredDisposition {
+            binding: bound.clone(),
+            reason: LeadDeferredReason::OperatorPause,
+            reconsideration_trigger: LeadReconsiderationTrigger::OperatorResume,
+        };
+        let decision = HumanDecisionBlocker {
+            binding: bound,
+            reason: LeadHumanDecisionReason::AmbiguousScope,
+            summary: "Resolve the exact bounded scope.".to_owned(),
+        };
+        let report = |disposition| TeamLeadReport {
+            campaign_id: authority.campaign_id.clone(),
+            campaign_head: authority.initial_commit.clone(),
+            task_source_sha256: authority.task_source_sha256.clone(),
+            disposition,
+            proposals: Vec::new(),
+            blocked: None,
+            deferred: None,
+            human_decision: None,
+        };
+        let mut mixed = Vec::new();
+        for extra in 0..3 {
+            let mut value = report(LeadDispositionKind::Propose);
+            value.proposals.push(proposal.clone());
+            match extra {
+                0 => value.blocked = Some(blocked.clone()),
+                1 => value.deferred = Some(deferred.clone()),
+                _ => value.human_decision = Some(decision.clone()),
+            }
+            mixed.push(value);
+        }
+        for extra in 0..3 {
+            let mut value = report(LeadDispositionKind::Blocked);
+            value.blocked = Some(blocked.clone());
+            match extra {
+                0 => value.proposals.push(proposal.clone()),
+                1 => value.deferred = Some(deferred.clone()),
+                _ => value.human_decision = Some(decision.clone()),
+            }
+            mixed.push(value);
+        }
+        for extra in 0..3 {
+            let mut value = report(LeadDispositionKind::Deferred);
+            value.deferred = Some(deferred.clone());
+            match extra {
+                0 => value.proposals.push(proposal.clone()),
+                1 => value.blocked = Some(blocked.clone()),
+                _ => value.human_decision = Some(decision.clone()),
+            }
+            mixed.push(value);
+        }
+        for extra in 0..3 {
+            let mut value = report(LeadDispositionKind::HumanDecisionRequired);
+            value.human_decision = Some(decision.clone());
+            match extra {
+                0 => value.proposals.push(proposal.clone()),
+                1 => value.blocked = Some(blocked.clone()),
+                _ => value.deferred = Some(deferred.clone()),
+            }
+            mixed.push(value);
+        }
+        for report in mixed {
+            assert_eq!(
+                validate_team_lead_report(report, &authority, std::slice::from_ref(&selected)),
+                Err(CampaignError::InvalidProposal)
+            );
+        }
+    }
 }
