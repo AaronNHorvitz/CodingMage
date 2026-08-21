@@ -164,11 +164,20 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         &git_output(&fixture.root, &["status", "--porcelain=v2", "--branch"])?,
         "active status",
     )?;
-    require_equal(
-        &worktrees_before,
-        &git_output(&fixture.root, &["worktree", "list", "--porcelain"])?,
-        "worktree inventory",
-    )?;
+    let worktrees_after = git_output(&fixture.root, &["worktree", "list", "--porcelain"])?;
+    if worktrees_before
+        .split(|byte| *byte == b'\n')
+        .filter(|line| line.starts_with(b"worktree "))
+        .count()
+        != 1
+        || worktrees_after
+            .split(|byte| *byte == b'\n')
+            .filter(|line| line.starts_with(b"worktree "))
+            .count()
+            != 2
+    {
+        return Err("unexpected campaign worktree inventory".into());
+    }
     require_equal(
         &task_before,
         &fs::read(fixture.root.join("TASKS.md"))?,
@@ -179,8 +188,18 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         &fs::read(fixture.root.join("artifact.txt"))?,
         "active artifact",
     )?;
-    if fs::read_dir(&scratch)?.next().is_some() {
-        return Err("scratch residue remained after unattended campaign".into());
+    let retained = fs::read_dir(&scratch)?.collect::<Result<Vec<_>, _>>()?;
+    if retained.len() != 1 || !retained[0].file_type()?.is_dir() {
+        return Err("campaign root worktree retention was not exact".into());
+    }
+    let retained_path = fs::canonicalize(retained[0].path())?;
+    let retained_marker = format!("worktree {}\n", retained_path.display());
+    if !String::from_utf8(worktrees_after)?.contains(&retained_marker) {
+        return Err("retained campaign worktree was not Git-bound".into());
+    }
+    let pod_scratch = state.join("campaigns/unattended-pilot/scratch");
+    if fs::read_dir(&pod_scratch)?.next().is_some() {
+        return Err("pod worktree residue remained after unattended campaign".into());
     }
     require_equal(
         b"phase: complete\nreviewed: yes\n",
@@ -225,8 +244,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             "provider_attempts": status["utilization"]["provider_attempts"],
             "process_invocations": status["utilization"]["process_invocations"],
             "active_checkout_preserved": true,
-            "owned_worktrees_released": true,
-            "scratch_empty": true,
+            "pod_worktrees_released": true,
+            "campaign_worktree_retained_for_resume": true,
             "checkpoint_reconciled": true,
             "fixtures_retained": true
         }))?
