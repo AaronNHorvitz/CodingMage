@@ -789,11 +789,11 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 17.2.1.1:** Review the target's instructions, branch policy, task structure, commands, blockers, and current clean checkpoint.
   - [x] **Sub-task 17.2.1.2:** Create a minimal disposable CodingMage target configuration with network, GitHub mutation, and publication disabled.
   - [x] **Sub-task 17.2.1.3:** Select a low-risk read-only patch-transfer preview fixture without modifying an active checkout.
-- [ ] **Task 17.2.2 - Run supervised pilot units**
+- [x] **Task 17.2.2 - Run supervised pilot units**
   - [x] **Sub-task 17.2.2.1:** Complete one dry run using fake agents against a source-free controlled-target fixture; exact lifecycle order and zero repository mutation are asserted in `codingmage-soak`.
   - [x] **Sub-task 17.2.2.2:** Complete one live Claude implementation and Codex review on a disposable target branch. The local-only candidate, deterministic gates, exact-SHA read-only review, fail-closed defects, and manual correction limitation are recorded in `docs/evidence/sprint-17-controlled-pilot.md`.
   - [x] **Sub-task 17.2.2.3:** Complete five supervised bounded units with no authority or recovery defect. Five independent local-only units passed after the last permission-rule reliability correction; exact commits, repository preservation, resource cleanup, and retained limits are recorded in `docs/evidence/sprint-17-controlled-pilot.md`.
-  - [ ] **Sub-task 17.2.2.4:** Enable background execution only after explicit owner approval of retained evidence.
+  - [x] **Sub-task 17.2.2.4:** Enable background execution only after explicit owner approval of retained evidence. The owner approved the retained five-unit evidence and authorized the next bounded unattended pilot on 2026-08-21.
 - [ ] **Task 17.2.3 - Run unattended pilot**
   - [ ] **Sub-task 17.2.3.1:** Run one story through implementation, review, correction, and checkpoint without operator intervention.
   - [ ] **Sub-task 17.2.3.2:** Pause correctly on every external blocker and quota event.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 17 sub-task `17.2.2.4`: obtain explicit owner approval of the retained five-unit evidence before enabling background execution.
+- [ ] **Next 1:** Complete Sprint 17 sub-task `17.2.3.1`: run one disposable story through implementation, review, correction, and checkpoint without operator intervention.

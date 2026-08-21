@@ -1,6 +1,6 @@
 # Sprint 17 Controlled Target Pilot Evidence
 
-- **Status:** Preparation, fake-agent dry run, first live unit, and five-unit supervised qualification complete; background enablement and unattended pilots remain open
+- **Status:** Preparation, fake-agent dry run, first live unit, five-unit supervised qualification, and owner-approved background enablement complete; unattended pilot execution remains open
 - **Initial CodingMage pilot build:** commit `c3b3103`
 - **Five-unit qualification build:** commit `2631265`
 - **Executed:** 2026-08-19 and 2026-08-21 on Fedora Linux with Rust 1.95.0
@@ -52,7 +52,9 @@ The post-correction qualification completed five of five units:
 
 Every unit consumed exactly two provider attempts and eleven total process invocations, with zero malformed-report repairs and zero correction rounds. Each active checkout retained its exact original HEAD, porcelain status, task source, and artifact bytes. Each candidate retained the unchecked task source and the exact expected artifact; each separate completion commit was the candidate's direct child and changed the canonical sub-task marker. Each disposable repository ended with exactly its active worktree plus one retained local integration branch, an empty scratch root, and one terminal `release:succeeded` journal. A second process inspection found no qualification-owned CodingMage, Claude, or Codex process. The release binary SHA-256 was `a4d774eaf858d37043b29f15e42c880c8e7e2aeffaec790ba557d97033bc9425`.
 
-The disposable fixtures and content-minimized journals remain under the operator's private CodingMage qualification state for review. No fixture branch was pushed, merged, or published. This evidence qualifies five supervised bounded units; it does not authorize background execution or establish an unattended production-target claim.
+The disposable fixtures and content-minimized journals remain under the operator's private CodingMage qualification state for review. No fixture branch was pushed, merged, or published. The five-unit evidence qualifies supervised bounded operation; by itself, it neither authorized background execution nor established an unattended production-target claim.
+
+On 2026-08-21, after receiving the five-unit results and retained limitations, the product owner explicitly approved the retained evidence and authorized background execution for the next bounded unattended pilot. That authorization is limited to the disposable pilot and does not grant target-repository publication, merge, release, network, or external-infrastructure authority.
 
 ## Preserved Limits
 
