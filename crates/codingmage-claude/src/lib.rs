@@ -540,6 +540,22 @@ impl ClaudeAdapter {
         plan: &ClaudeInvocationPlan,
         cancellation: &CancellationToken,
     ) -> Result<(ClaudeCompletionReport, ProcessResult), ClaudeError> {
+        let execution = self.execute_observed(executor, plan, cancellation)?;
+        execution.report.map(|report| (report, execution.process))
+    }
+
+    /// Executes one invocation while retaining its process receipt when provider interpretation
+    /// fails after the process has completed.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ClaudeError::Process`] only when no trustworthy process receipt exists.
+    pub fn execute_observed(
+        &self,
+        executor: &ProcessExecutor,
+        plan: &ClaudeInvocationPlan,
+        cancellation: &CancellationToken,
+    ) -> Result<ClaudeExecution, ClaudeError> {
         let profile = ProcessProfile::new(
             &self.executable,
             [plan.arguments.clone()],
@@ -560,10 +576,22 @@ impl ClaudeAdapter {
         let result = executor
             .execute(&profile, &request, cancellation)
             .map_err(|_| ClaudeError::Process)?;
-        map_process_outcome(&result)?;
-        let report = parse_result(&result.stdout.retained)?;
-        Ok((report, result))
+        let report =
+            map_process_outcome(&result).and_then(|()| parse_result(&result.stdout.retained));
+        Ok(ClaudeExecution {
+            report,
+            process: result,
+        })
     }
+}
+
+/// One observed Claude process and its independently interpreted provider result.
+#[derive(Debug)]
+pub struct ClaudeExecution {
+    /// Parsed report or content-free provider failure.
+    pub report: Result<ClaudeCompletionReport, ClaudeError>,
+    /// Exact process receipt retained even when provider interpretation fails.
+    pub process: ProcessResult,
 }
 
 /// Content-free Claude adapter failure.

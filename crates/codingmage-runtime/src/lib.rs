@@ -1214,7 +1214,7 @@ pub fn run_serial_campaign_with_progress(
                 ProgressStage::PlanningCampaign,
             ));
             let invocation = lead.plan(&binding).map_err(RuntimeError::Reviewer)?;
-            let (lead_result, lead_process) = match lead.execute(
+            let lead_execution = match lead.execute_observed(
                 &executor,
                 &invocation,
                 &binding,
@@ -1254,8 +1254,43 @@ pub fn run_serial_campaign_with_progress(
                 }
                 Err(error) => return Err(RuntimeError::Reviewer(error)),
             };
-            checkpoint.record_process_result(&lead_process)?;
+            checkpoint.record_process_result(&lead_execution.process)?;
             checkpoint.persist(&campaign_root)?;
+            let lead_result = match lead_execution.report {
+                Ok(value) => value,
+                Err(error @ (CodexError::Quota | CodexError::Authentication)) => {
+                    let blocker_code = error.code().to_owned();
+                    checkpoint.phase = CampaignPhase::Paused;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        CampaignTermination::new(
+                            CampaignState::Paused,
+                            CampaignStopReason::CapacityPause,
+                            Some(blocker_code),
+                        ),
+                    ));
+                }
+                Err(CodexError::InvalidOutput | CodexError::InvalidReport) => {
+                    return record_lead_rejection(
+                        &spec,
+                        &campaign,
+                        &mut checkpoint,
+                        &campaign_root,
+                        &head,
+                        &plan.source_sha256,
+                        completed_units,
+                        last_task_id,
+                        LeadRejectionReason::MalformedOutput,
+                    );
+                }
+                Err(error) => return Err(RuntimeError::Reviewer(error)),
+            };
             let outcome = match validate_team_lead_report(lead_result.report, &spec, &ready) {
                 Ok(outcome) => outcome,
                 Err(CampaignError::InvalidProposal | CampaignError::InvalidAuthority) => {
@@ -2638,11 +2673,20 @@ impl<'a> ProductionWorkflowPort<'a> {
             }
             .map_err(|_| OrchestrationError::Port)?;
             self.record_provider_attempt()?;
-            match adapter.execute(&self.executor, &plan, &CancellationToken::default()) {
-                Ok((report, process)) => {
-                    self.record_process_result(&process)?;
-                    return Ok(report);
+            let execution = match adapter.execute_observed(
+                &self.executor,
+                &plan,
+                &CancellationToken::default(),
+            ) {
+                Ok(execution) => execution,
+                Err(error) => {
+                    self.failure = Some(RuntimeError::Implementer(error));
+                    return Err(OrchestrationError::Port);
                 }
+            };
+            self.record_process_result(&execution.process)?;
+            match execution.report {
+                Ok(report) => return Ok(report),
                 Err(ClaudeError::Session)
                     if resume && attempt + 1 < CLAUDE_REPORT_ATTEMPT_LIMIT =>
                 {
@@ -3041,20 +3085,27 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             .plan_start(&binding, &self.selected.item.title)
             .map_err(|_| OrchestrationError::Port)?;
         self.record_provider_attempt()?;
-        let execution = adapter.execute(
+        let execution = adapter.execute_observed(
             &self.executor,
             &plan,
             &binding,
             &CancellationToken::default(),
         );
-        let (result, process) = match execution {
+        let execution = match execution {
             Ok(value) => value,
             Err(error) => {
                 self.failure = Some(RuntimeError::Reviewer(error));
                 return Err(OrchestrationError::Port);
             }
         };
-        self.record_process_result(&process)?;
+        self.record_process_result(&execution.process)?;
+        let result = match execution.report {
+            Ok(value) => value,
+            Err(error) => {
+                self.failure = Some(RuntimeError::Reviewer(error));
+                return Err(OrchestrationError::Port);
+            }
+        };
         self.review_verdict = Some(result.report.verdict);
         self.review_report = Some(result.report.clone());
         let evidence = evidence_id(&format!(

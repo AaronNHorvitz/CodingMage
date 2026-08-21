@@ -463,6 +463,23 @@ impl CodexLeadAdapter {
         binding: &CodexLeadBinding,
         cancellation: &CancellationToken,
     ) -> Result<(CodexLeadResult, ProcessResult), CodexError> {
+        let execution = self.execute_observed(executor, plan, binding, cancellation)?;
+        execution.report.map(|report| (report, execution.process))
+    }
+
+    /// Executes one lead invocation while retaining its process receipt when interpretation fails.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error only when no trustworthy process receipt exists or pre-execution authority
+    /// validation fails.
+    pub fn execute_observed(
+        &self,
+        executor: &ProcessExecutor,
+        plan: &CodexInvocationPlan,
+        binding: &CodexLeadBinding,
+        cancellation: &CancellationToken,
+    ) -> Result<CodexExecution<CodexLeadResult>, CodexError> {
         if fs::read(&self.output_schema).ok().as_deref() != Some(team_lead_schema().as_bytes()) {
             return Err(CodexError::InvalidProfile);
         }
@@ -489,12 +506,18 @@ impl CodexLeadAdapter {
         let result = executor
             .execute(&profile, &request, cancellation)
             .map_err(|_| CodexError::Process)?;
-        map_process_outcome(&result)?;
-        let parsed = parse_lead_jsonl(&result.stdout.retained, binding)?;
-        scope
-            .revalidate(&binding.worktree)
-            .map_err(|_| CodexError::StaleScope)?;
-        Ok((parsed, result))
+        let report = (|| {
+            map_process_outcome(&result)?;
+            let parsed = parse_lead_jsonl(&result.stdout.retained, binding)?;
+            scope
+                .revalidate(&binding.worktree)
+                .map_err(|_| CodexError::StaleScope)?;
+            Ok(parsed)
+        })();
+        Ok(CodexExecution {
+            report,
+            process: result,
+        })
     }
 }
 
@@ -720,6 +743,23 @@ impl CodexAdapter {
         binding: &CodexReviewBinding,
         cancellation: &CancellationToken,
     ) -> Result<(CodexResult, ProcessResult), CodexError> {
+        let execution = self.execute_observed(executor, plan, binding, cancellation)?;
+        execution.report.map(|report| (report, execution.process))
+    }
+
+    /// Executes one review while retaining its process receipt when interpretation fails.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error only when no trustworthy process receipt exists or pre-execution authority
+    /// validation fails.
+    pub fn execute_observed(
+        &self,
+        executor: &ProcessExecutor,
+        plan: &CodexInvocationPlan,
+        binding: &CodexReviewBinding,
+        cancellation: &CancellationToken,
+    ) -> Result<CodexExecution<CodexResult>, CodexError> {
         if fs::read(&self.output_schema).ok().as_deref() != Some(codex_review_schema().as_bytes()) {
             return Err(CodexError::InvalidProfile);
         }
@@ -749,36 +789,51 @@ impl CodexAdapter {
         let result = executor
             .execute(&profile, &request, cancellation)
             .map_err(|_| CodexError::Process)?;
-        map_process_outcome(&result)?;
-        let parsed = parse_jsonl(&result.stdout.retained, binding)?;
-        scope
-            .revalidate(&binding.worktree)
-            .map_err(|_| CodexError::StaleScope)?;
-        let locations = parsed
-            .report
-            .findings
-            .iter()
-            .filter_map(|finding| {
-                Some(ReviewLocation {
-                    path: finding.file.as_ref()?.to_str()?.to_owned(),
-                    line: finding.line?,
+        let report = (|| {
+            map_process_outcome(&result)?;
+            let parsed = parse_jsonl(&result.stdout.retained, binding)?;
+            scope
+                .revalidate(&binding.worktree)
+                .map_err(|_| CodexError::StaleScope)?;
+            let locations = parsed
+                .report
+                .findings
+                .iter()
+                .filter_map(|finding| {
+                    Some(ReviewLocation {
+                        path: finding.file.as_ref()?.to_str()?.to_owned(),
+                        line: finding.line?,
+                    })
                 })
-            })
-            .collect::<Vec<_>>();
-        let expected = parsed
-            .report
-            .findings
-            .iter()
-            .filter(|finding| finding.file.is_some() || finding.line.is_some())
-            .count();
-        if locations.len() != expected {
-            return Err(CodexError::InvalidReport);
-        }
-        scope
-            .verify_locations(&binding.worktree, &locations)
-            .map_err(|_| CodexError::InvalidReport)?;
-        Ok((parsed, result))
+                .collect::<Vec<_>>();
+            let expected = parsed
+                .report
+                .findings
+                .iter()
+                .filter(|finding| finding.file.is_some() || finding.line.is_some())
+                .count();
+            if locations.len() != expected {
+                return Err(CodexError::InvalidReport);
+            }
+            scope
+                .verify_locations(&binding.worktree, &locations)
+                .map_err(|_| CodexError::InvalidReport)?;
+            Ok(parsed)
+        })();
+        Ok(CodexExecution {
+            report,
+            process: result,
+        })
     }
+}
+
+/// One observed Codex process and its independently interpreted provider result.
+#[derive(Debug)]
+pub struct CodexExecution<T> {
+    /// Parsed report or content-free provider failure.
+    pub report: Result<T, CodexError>,
+    /// Exact process receipt retained even when provider interpretation fails.
+    pub process: ProcessResult,
 }
 
 /// Returns the exact JSON Schema required by the Codex final response contract.
