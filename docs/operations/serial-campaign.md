@@ -20,10 +20,11 @@ Each accepted unit follows this sequence:
    cleanliness still match.
 7. Repeat from the new exact head until completion, the unit ceiling, or a truthful blocker.
 
-The approved expanded contract will distinguish lead-side `blocked`, `deferred`, and
-`human_decision_required` outcomes. Those outcomes, reconsideration triggers, operator controls,
-and the exact ten-outcome soak remain unchecked roadmap work and must not be inferred from the
-currently implemented blocked-task behavior.
+The lead contract distinguishes `blocked`, `deferred`, and `human_decision_required` outcomes.
+Typed blockers, authenticated blocker clearance, exact reconsideration triggers, authenticated
+external-trigger observations, repeated-deferral escalation, and independent-work continuation are
+implemented. Human-decision resolution, the complete hostile-output corpus, and the exact
+ten-outcome soak remain unchecked roadmap work.
 
 ## Campaign Spec
 
@@ -98,6 +99,13 @@ cargo build --locked --release -p codingmage-cli
   --task 21.2.2.5 \
   --request clear-21-2-2-5-1 \
   --prerequisite-sha256 "${PREREQUISITE_SHA256}"
+./target/release/codingmage campaign-observe-trigger \
+  --config /absolute/codingmage.toml \
+  --campaign /absolute/campaign.toml \
+  --task 21.2.3.3 \
+  --trigger operator_resume \
+  --request resume-21-2-3-3-1 \
+  --evidence-sha256 "${TRIGGER_EVIDENCE_SHA256}"
 ```
 
 The final JSON reports campaign identity, terminal state, retained local branch, exact head,
@@ -117,6 +125,15 @@ removing the blocker, revalidates the repository and isolated worktree before ea
 idempotent when repeated with the same fields. Conflicting reuse fails closed. No provider starts,
 no task is completed, and no active-checkout byte changes during clearance.
 
+`campaign-observe-trigger` applies the same local ownership, campaign-lock, repository, worktree,
+head, task-source, and task-opening checks to one externally observed deferral trigger. Only
+`provider_reset`, `review_completion`, and `operator_resume` are accepted through this command;
+campaign-head advancement, lease release, and gate-resource release derive solely from coordinator
+state. The command persists a create-once request bound to the exact typed deferral and an
+operator-supplied evidence digest before returning that task to deterministic ready-set evaluation.
+Exact replay reports no second change, while conflicting request reuse fails closed. It starts no
+provider and changes no task checkbox or active-checkout byte.
+
 The target status contract additionally exposes distinct completed, blocked, deferred,
 human-decision, and rejected-proposal counts, exact trigger state, and independent limit
 utilization. It remains incomplete until Story 22.2 passes.
@@ -125,10 +142,11 @@ utilization. It remains incomplete until Story 22.2 passes.
 
 The campaign checkpoint is atomically replaced under the private campaign state directory. It binds
 the original authority digest, repository identity, campaign worktree identity, branch, initial and
-reconciled heads, active task, pending integration, completed count, blocker, and timestamps.
-Checkpoints written before the blocked-task set was introduced are accepted only through an
-explicit v1 migration that verifies the legacy shape against its original digest before supplying
-an empty blocked-task set; a defaulted field never bypasses integrity verification.
+reconciled heads, active task, pending integration, completed count, typed blockers, deferrals,
+satisfied-trigger guards, human-decision holds, and timestamps. Every prior checkpoint shape is
+accepted only through an explicit migration that verifies the legacy bytes against their original
+digest before supplying newer empty projections; a defaulted field never bypasses integrity
+verification.
 
 | Durable interruption point | Restart behavior |
 | --- | --- |
@@ -190,9 +208,9 @@ an unbounded provider-invocation loop.
   interrupted initial-implementation recovery and operator stop-after-unit controls remain open.
 - Campaign execution is bounded by unit, attempt, correction, process, output, and resource limits;
   no monetary value is part of campaign or provider authority.
-- Blocked task IDs survive restart and are skipped, but operator-driven blocker clearance and a
-  dedicated blocker-detail projection remain open. Lead-side deferral, reconsideration, and
-  human-decision projections are not yet implemented.
+- Blocked tasks and deferrals survive restart, remain unchecked, and suppress only their exact task.
+  Same-user blocker clearance and external-trigger observation are create-once and integrity-bound.
+  A dedicated blocker-detail view and authenticated human-decision resolution remain open.
 - Parallel live pods remain disabled even if the authority ceiling is greater than one.
 - Story-level draft PR publication and authenticated GitHub campaign evidence remain open.
 - A retained campaign branch requires human inspection; protected/default-branch promotion remains

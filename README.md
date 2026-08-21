@@ -332,6 +332,9 @@ codingmage campaign-status --config /absolute/codingmage.toml --campaign /absolu
 codingmage campaign-clear-blocker --config /absolute/codingmage.toml \
   --campaign /absolute/campaign.toml --task 21.2.2.5 --request clear-example-1 \
   --prerequisite-sha256 "${PREREQUISITE_SHA256}"
+codingmage campaign-observe-trigger --config /absolute/codingmage.toml \
+  --campaign /absolute/campaign.toml --task 21.2.3.3 --trigger operator_resume \
+  --request resume-example-1 --evidence-sha256 "${TRIGGER_EVIDENCE_SHA256}"
 ```
 
 `campaign` intentionally starts with one pod regardless of available hardware. For each iteration,
@@ -376,11 +379,15 @@ task openness, and dependency readiness, and then clears only that blocker. Repe
 request has no second effect; changing its task or digest is refused. The control starts no model,
 changes no checkbox, and normal campaign validation still runs before new work is admitted.
 
-The current lead contract also defines distinct `deferred` and `human_decision_required` outcomes
-with closed reason codes and deterministic reconsideration triggers. Their full lifecycle behavior
-remains incomplete until the corresponding unchecked Story 21.2 and Story 22.2 items pass. A lead
-never completes a task; completion remains a coordinator transition after code, tests, gates,
-independent review, checkpointing, and exact task-source reconciliation.
+The lead contract also defines distinct `deferred` and `human_decision_required` outcomes with
+closed reason codes. Local triggers are observed only from coordinator-owned state transitions;
+provider reset, review completion, and operator resume require the same-user
+`campaign-observe-trigger` control. That control binds one exact trigger to a create-once request
+and evidence digest, revalidates campaign authority, and is idempotent under exact replay. A repeated
+same-head deferral after its trigger was satisfied becomes a durable typed human-decision hold while
+independent work continues. Human-decision resolution and the broader Story 22.2 status controls
+remain roadmap work. A lead never completes a task; completion remains a coordinator transition
+after code, tests, gates, independent review, checkpointing, and exact task-source reconciliation.
 
 Run `codingmage` from a normal VS Code terminal and leave that terminal open until the final JSON
 appears. During `run`, a live activity stream is written to stderr while the machine-readable final

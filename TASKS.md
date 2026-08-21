@@ -960,12 +960,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 21.2.2.3:** Suppress repeated selection of that exact blocked task without treating its dependency descendants as independently ready.
   - [x] **Sub-task 21.2.2.4:** Continue every independent ready task and stop with `no_unblocked_ready_work` only when no independent path remains. See `docs/evidence/sprint-21-blocker-continuation.md`.
   - [x] **Sub-task 21.2.2.5:** Permit blocker clearance only through an authenticated operator action that records the changed prerequisite and forces full campaign revalidation. See `docs/evidence/sprint-21-blocker-continuation.md`.
-- [ ] **Task 21.2.3 - Validate deferral and reconsideration semantics**
+- [x] **Task 21.2.3 - Validate deferral and reconsideration semantics**
   - [x] **Sub-task 21.2.3.1:** Accept deferral only for temporary provider capacity, active path lease, gate-resource contention, deterministic dependency order, pending stronger review, or operator pause.
   - [x] **Sub-task 21.2.3.2:** Bind deferral to campaign-head advancement, lease release, gate-resource release, provider reset, review completion, or operator resume. See `docs/evidence/sprint-21-deferral-local.md`.
-  - [ ] **Sub-task 21.2.3.3:** Exclude a deferred task until its exact trigger is positively observed, then return it to deterministic ready-set evaluation.
-  - [ ] **Sub-task 21.2.3.4:** Reject a repeated same-head deferral whose trigger is already satisfied and route the no-progress condition to a typed human decision.
-  - [ ] **Sub-task 21.2.3.5:** Prove deterministic task order and starvation resistance across blocker, deferral, completion, and trigger permutations.
+  - [x] **Sub-task 21.2.3.3:** Exclude a deferred task until its exact trigger is positively observed, then return it to deterministic ready-set evaluation.
+  - [x] **Sub-task 21.2.3.4:** Reject a repeated same-head deferral whose trigger is already satisfied and route the no-progress condition to a typed human decision.
+  - [x] **Sub-task 21.2.3.5:** Prove deterministic task order and starvation resistance across blocker, deferral, completion, and trigger permutations. See `docs/evidence/sprint-21-deferral-local.md`.
 - [ ] **Task 21.2.4 - Reject ambiguous or unauthorized lead output**
   - [ ] **Sub-task 21.2.4.1:** Reject mixed dispositions, unknown reasons, duplicate task identities, stale snapshots, contradictory dependencies, and undeclared fields.
   - [ ] **Sub-task 21.2.4.2:** Reject escaping paths, unsupported artifacts, broadened gates, provider changes, publication changes, and authority expansion before leasing.
@@ -977,7 +977,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [x] **AC 21.1:** Given hostile roadmap and repository text, when the campaign lead proposes work, then only dependency-ready tasks inside preapproved authority can become pod leases.
 - [ ] **AC 21.2:** Given a stale campaign head or task-source digest, when a proposal is admitted, then no worktree or provider starts.
 - [x] **AC 21.3:** Given a valid external blocker and independent ready work, when the lead reports `blocked`, then the task remains unchecked, its descendants remain unavailable, and independent work continues. See `docs/evidence/sprint-21-blocker-continuation.md`.
-- [ ] **AC 21.4:** Given a valid temporary condition, when the lead reports `deferred`, then the task becomes eligible only after its exact recorded trigger and cannot be deferred forever against unchanged state.
+- [x] **AC 21.4:** Given a valid temporary condition, when the lead reports `deferred`, then the task becomes eligible only after its exact recorded trigger and cannot be deferred forever against unchanged state. See `docs/evidence/sprint-21-deferral-local.md`.
 - [ ] **AC 21.5:** Given ambiguous scope or requested authority expansion, when the lead reports `human_decision_required`, then no model or repository effect starts and independent work may continue.
 - [ ] **AC 21.6:** Given mixed, stale, unknown, duplicate, or unauthorized output, when validation runs, then the proposal is rejected without any accepted campaign outcome or external effect.
 
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete sub-tasks `21.2.3.3` through `21.2.3.5`: add authenticated observations for provider reset, review completion, and operator resume; project repeated satisfied deferral as a typed human decision; and pass the full blocker, deferral, completion, trigger, restart, and starvation permutation suite.
+- [ ] **Next 1:** Complete Task `21.2.4`: reject ambiguous, stale, mixed, unknown, duplicate, and authority-expanding lead output before any worktree, provider, Git, task, or accepted-outcome effect.

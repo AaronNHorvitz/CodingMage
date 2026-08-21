@@ -64,6 +64,23 @@ The command works only for the same local user and exact campaign, records a cre
 integrity-bound intent, revalidates the isolated campaign snapshot, and clears no other task. It
 does not invoke a model or alter the active checkout.
 
+After independently verifying an external deferral trigger, return only that exact task to ready-set
+evaluation with a fresh request ID and evidence digest:
+
+```bash
+codingmage campaign-observe-trigger \
+  --config /absolute/config/codingmage.toml \
+  --campaign /absolute/config/campaign.toml \
+  --task 21.2.3.3 \
+  --trigger operator_resume \
+  --request resume-21-2-3-3-1 \
+  --evidence-sha256 "${TRIGGER_EVIDENCE_SHA256}"
+```
+
+Only `provider_reset`, `review_completion`, and `operator_resume` are external controls. Campaign-head
+advancement, lease release, and gate-resource release are observed automatically from
+coordinator-owned state. Exact request replay is idempotent; conflicting request reuse fails closed.
+
 Use one pod and `local_only` publication. The current campaign path is pre-release: interrupted
 initial-implementation resume, expanded lead dispositions, production lifecycle controls, the prescribed
 ten-outcome soak, and the controlled-target qualification gate remain incomplete. See
