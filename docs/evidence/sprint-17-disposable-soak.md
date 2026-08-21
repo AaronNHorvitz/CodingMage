@@ -3,6 +3,7 @@
 - **Status:** Exact schedule materialization passes; fake-adapter execution and complete soak
   reconciliation remain open
 - **Schedule implementation commit:** `8f79bfa`
+- **Fake-adapter execution commit:** `1eb59a3`
 - **Executed:** 2026-08-21 on Fedora Linux with Rust 1.95.0
 
 ## Exact Schedule
@@ -37,5 +38,20 @@ cargo fmt --all -- --check
 git diff --check
 ```
 
-This closes only `17.1.2.1`. It does not claim fake-adapter execution, repeated soak stability,
-production coordinator qualification, controlled-target execution, or installed-package evidence.
+## Fake-Adapter Execution
+
+The source-independent schedule now executes through typed fake lead, implementer, reviewer, gate,
+Git, process, monitor, and service boundaries. Every accepted outcome begins with a durable service
+load, crosses a lead selection and guarded process observation, emits privacy-safe monitor status,
+and ends with a service checkpoint. Completed outcomes alone may cross implementation, gate,
+review, and Git integration. Blocked and deferred outcomes are explicitly prohibited from those
+mutation-capable boundaries.
+
+The execution report requires a contiguous observation stream, all eight adapter families, exactly
+ten accepted outcomes, a peak of one active pod, and `local_only` publication. Mutation tests remove,
+duplicate, and reorder observations; raise the pod count; broaden publication; and inject Git
+integration into the blocked outcome. Every mutation fails reconciliation.
+
+This closes `17.1.2.1` and `17.1.2.2`. It does not yet claim behavioral fault injection, complete
+artifact reconciliation, repeated soak stability, production coordinator qualification,
+controlled-target execution, or installed-package evidence.
