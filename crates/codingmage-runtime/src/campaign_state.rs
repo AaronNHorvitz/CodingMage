@@ -78,6 +78,31 @@ pub(crate) struct HumanDecisionProjection {
     pub task_source_sha256: String,
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum LeadRejectionReason {
+    MalformedOutput,
+    InvalidProposal,
+}
+
+impl LeadRejectionReason {
+    pub(crate) const fn code(self) -> &'static str {
+        match self {
+            Self::MalformedOutput => "malformed_output",
+            Self::InvalidProposal => "invalid_proposal",
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct RejectedProposalProjection {
+    pub sequence: u32,
+    pub reason: LeadRejectionReason,
+    pub source_head: String,
+    pub task_source_sha256: String,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct CampaignCheckpoint {
@@ -104,6 +129,8 @@ pub(crate) struct CampaignCheckpoint {
     pub satisfied_deferrals: BTreeMap<String, DeferredTaskProjection>,
     #[serde(default)]
     pub human_decisions: BTreeMap<String, HumanDecisionProjection>,
+    #[serde(default)]
+    pub rejected_proposals: Vec<RejectedProposalProjection>,
     pub active_unit: Option<ActiveUnit>,
     pub pending_integration: Option<PendingIntegration>,
     pub started_at_ms: u64,
@@ -257,6 +284,40 @@ struct LegacyCampaignCheckpointWithDeferrals {
 
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
+struct LegacyCampaignCheckpointWithHumanDecisions {
+    schema_version: u16,
+    authority_sha256: String,
+    campaign_id: String,
+    repository_id: String,
+    campaign_run_id: RunId,
+    worktree_id: WorktreeId,
+    branch: String,
+    initial_head: String,
+    head: String,
+    completed_units: u32,
+    last_task_id: Option<String>,
+    phase: CampaignPhase,
+    blocker_code: Option<String>,
+    blocked_task_ids: BTreeSet<String>,
+    blocked_reasons: BTreeMap<String, LeadBlockedReason>,
+    deferred_tasks: BTreeMap<String, DeferredTaskProjection>,
+    satisfied_deferrals: BTreeMap<String, DeferredTaskProjection>,
+    human_decisions: BTreeMap<String, HumanDecisionProjection>,
+    active_unit: Option<ActiveUnit>,
+    pending_integration: Option<PendingIntegration>,
+    started_at_ms: u64,
+    updated_at_ms: u64,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct LegacyCheckpointEnvelopeWithHumanDecisions {
+    checkpoint: LegacyCampaignCheckpointWithHumanDecisions,
+    checkpoint_sha256: String,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 struct LegacyCheckpointEnvelopeWithDeferrals {
     checkpoint: LegacyCampaignCheckpointWithDeferrals,
     checkpoint_sha256: String,
@@ -314,6 +375,7 @@ impl CampaignCheckpoint {
             deferred_tasks: BTreeMap::new(),
             satisfied_deferrals: BTreeMap::new(),
             human_decisions: BTreeMap::new(),
+            rejected_proposals: Vec::new(),
             active_unit: None,
             pending_integration: None,
             started_at_ms: now,
@@ -346,7 +408,8 @@ impl CampaignCheckpoint {
             return Err(RuntimeError::State);
         }
         if sha256_hex(&canonical) != envelope.checkpoint_sha256 {
-            return load_legacy_with_deferrals(&bytes)
+            return load_legacy_with_human_decisions(&bytes)
+                .or_else(|_| load_legacy_with_deferrals(&bytes))
                 .or_else(|_| load_legacy_with_blocked_reasons(&bytes))
                 .or_else(|_| load_legacy_with_blocked_ids(&bytes))
                 .or_else(|_| load_legacy_v1(&bytes))
@@ -410,6 +473,43 @@ impl CampaignCheckpoint {
     }
 }
 
+fn load_legacy_with_human_decisions(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
+    let envelope: LegacyCheckpointEnvelopeWithHumanDecisions =
+        serde_json::from_slice(bytes).map_err(|_| RuntimeError::State)?;
+    let canonical = serde_json::to_vec(&envelope.checkpoint).map_err(|_| RuntimeError::State)?;
+    if envelope.checkpoint.schema_version != SCHEMA_VERSION
+        || sha256_hex(&canonical) != envelope.checkpoint_sha256
+    {
+        return Err(RuntimeError::State);
+    }
+    let legacy = envelope.checkpoint;
+    Ok(CampaignCheckpoint {
+        schema_version: legacy.schema_version,
+        authority_sha256: legacy.authority_sha256,
+        campaign_id: legacy.campaign_id,
+        repository_id: legacy.repository_id,
+        campaign_run_id: legacy.campaign_run_id,
+        worktree_id: legacy.worktree_id,
+        branch: legacy.branch,
+        initial_head: legacy.initial_head,
+        head: legacy.head,
+        completed_units: legacy.completed_units,
+        last_task_id: legacy.last_task_id,
+        phase: legacy.phase,
+        blocker_code: legacy.blocker_code,
+        blocked_task_ids: legacy.blocked_task_ids,
+        blocked_reasons: legacy.blocked_reasons,
+        deferred_tasks: legacy.deferred_tasks,
+        satisfied_deferrals: legacy.satisfied_deferrals,
+        human_decisions: legacy.human_decisions,
+        rejected_proposals: Vec::new(),
+        active_unit: legacy.active_unit,
+        pending_integration: legacy.pending_integration,
+        started_at_ms: legacy.started_at_ms,
+        updated_at_ms: legacy.updated_at_ms,
+    })
+}
+
 fn load_legacy_with_deferrals(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
     let envelope: LegacyCheckpointEnvelopeWithDeferrals =
         serde_json::from_slice(bytes).map_err(|_| RuntimeError::State)?;
@@ -439,6 +539,7 @@ fn load_legacy_with_deferrals(bytes: &[u8]) -> Result<CampaignCheckpoint, Runtim
         deferred_tasks: legacy.deferred_tasks,
         satisfied_deferrals: legacy.satisfied_deferrals,
         human_decisions: BTreeMap::new(),
+        rejected_proposals: Vec::new(),
         active_unit: legacy.active_unit,
         pending_integration: legacy.pending_integration,
         started_at_ms: legacy.started_at_ms,
@@ -475,6 +576,7 @@ fn load_legacy_with_blocked_reasons(bytes: &[u8]) -> Result<CampaignCheckpoint, 
         deferred_tasks: BTreeMap::new(),
         satisfied_deferrals: BTreeMap::new(),
         human_decisions: BTreeMap::new(),
+        rejected_proposals: Vec::new(),
         active_unit: legacy.active_unit,
         pending_integration: legacy.pending_integration,
         started_at_ms: legacy.started_at_ms,
@@ -706,6 +808,7 @@ fn load_legacy_with_blocked_ids(bytes: &[u8]) -> Result<CampaignCheckpoint, Runt
         deferred_tasks: BTreeMap::new(),
         satisfied_deferrals: BTreeMap::new(),
         human_decisions: BTreeMap::new(),
+        rejected_proposals: Vec::new(),
         active_unit: legacy.active_unit,
         pending_integration: legacy.pending_integration,
         started_at_ms: legacy.started_at_ms,
@@ -742,6 +845,7 @@ fn load_legacy_v1(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
         deferred_tasks: BTreeMap::new(),
         satisfied_deferrals: BTreeMap::new(),
         human_decisions: BTreeMap::new(),
+        rejected_proposals: Vec::new(),
         active_unit: legacy.active_unit,
         pending_integration: legacy.pending_integration,
         started_at_ms: legacy.started_at_ms,
@@ -865,6 +969,14 @@ mod tests {
                 task_source_sha256: "c".repeat(64),
             },
         );
+        checkpoint
+            .rejected_proposals
+            .push(RejectedProposalProjection {
+                sequence: 1,
+                reason: LeadRejectionReason::InvalidProposal,
+                source_head: "b".repeat(40),
+                task_source_sha256: "c".repeat(64),
+            });
         checkpoint.pending_integration = Some(PendingIntegration {
             task_id: "1.1.1.1".to_owned(),
             expected_head: "b".repeat(40),
@@ -1086,6 +1198,60 @@ mod tests {
             BTreeMap::from([("1.1.1.2".to_owned(), projection)])
         );
         assert!(loaded.human_decisions.is_empty());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn checkpoint_loads_integrity_verified_human_decision_legacy_shape() {
+        let root = root("legacy-human-decisions");
+        fs::create_dir_all(&root).unwrap();
+        let current = checkpoint();
+        let decision = HumanDecisionProjection {
+            reason: HumanDecisionProjectionReason::RepeatedSatisfiedDeferral,
+            source_head: current.head.clone(),
+            task_source_sha256: "c".repeat(64),
+        };
+        let legacy = LegacyCampaignCheckpointWithHumanDecisions {
+            schema_version: current.schema_version,
+            authority_sha256: current.authority_sha256.clone(),
+            campaign_id: current.campaign_id.clone(),
+            repository_id: current.repository_id.clone(),
+            campaign_run_id: current.campaign_run_id.clone(),
+            worktree_id: current.worktree_id.clone(),
+            branch: current.branch.clone(),
+            initial_head: current.initial_head.clone(),
+            head: current.head.clone(),
+            completed_units: current.completed_units,
+            last_task_id: current.last_task_id.clone(),
+            phase: current.phase,
+            blocker_code: current.blocker_code.clone(),
+            blocked_task_ids: BTreeSet::new(),
+            blocked_reasons: BTreeMap::new(),
+            deferred_tasks: BTreeMap::new(),
+            satisfied_deferrals: BTreeMap::new(),
+            human_decisions: BTreeMap::from([("1.1.1.4".to_owned(), decision.clone())]),
+            active_unit: current.active_unit.clone(),
+            pending_integration: current.pending_integration.clone(),
+            started_at_ms: current.started_at_ms,
+            updated_at_ms: current.updated_at_ms,
+        };
+        let canonical = serde_json::to_vec(&legacy).unwrap();
+        let envelope = LegacyCheckpointEnvelopeWithHumanDecisions {
+            checkpoint: legacy,
+            checkpoint_sha256: sha256_hex(&canonical),
+        };
+        fs::write(
+            root.join("checkpoint.json"),
+            serde_json::to_vec_pretty(&envelope).unwrap(),
+        )
+        .unwrap();
+
+        let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
+        assert_eq!(
+            loaded.human_decisions,
+            BTreeMap::from([("1.1.1.4".to_owned(), decision)])
+        );
+        assert!(loaded.rejected_proposals.is_empty());
         fs::remove_dir_all(root).unwrap();
     }
 

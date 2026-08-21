@@ -1475,6 +1475,207 @@ profiles = ["configured-gates"]
     assert!(!candidates.stdout.is_empty());
 }
 
+#[test]
+#[allow(clippy::too_many_lines)]
+fn rejected_lead_output_has_no_downstream_effect_and_consumes_no_unit() {
+    let fixture = Fixture::new();
+    let target = fixture.root.join("target");
+    fs::create_dir(target.join("src")).unwrap();
+    fs::write(target.join("src/lib.rs"), "pub fn value() -> u8 { 1 }\n").unwrap();
+    git(&target, &["add", "src/lib.rs"]);
+    git(&target, &["commit", "-m", "add rejection fixture"]);
+    let original_head = git_output(&target, &["rev-parse", "HEAD"]);
+    let original_tasks = fs::read(target.join("TASKS.md")).unwrap();
+    let original_source = fs::read(target.join("src/lib.rs")).unwrap();
+
+    let claude = fixture.executable(
+        "rejected-claude",
+        r#"#!/usr/bin/python3
+from pathlib import Path
+Path(__file__).with_name("rejected-claude-called").write_text("called\n", encoding="utf-8")
+raise SystemExit(9)
+"#,
+    );
+    let codex = fixture.executable(
+        "rejected-codex",
+        r#"#!/usr/bin/python3
+import json, re, sys
+from pathlib import Path
+if "--version" in sys.argv:
+    print("codex-cli 0.144.5")
+    raise SystemExit(0)
+if "--help" in sys.argv and "resume" in sys.argv:
+    print("SESSION_ID --json --output-schema --model --ignore-user-config")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print("Run Codex non-interactively --json --output-schema resume --model read-only --ignore-user-config")
+    raise SystemExit(0)
+packet = sys.stdin.read()
+root = Path(__file__).parent
+log = root / "rejected-lead.log"
+prior_calls = len(log.read_text(encoding="utf-8").splitlines()) if log.exists() else 0
+with log.open("a", encoding="utf-8") as stream:
+    stream.write("lead\n")
+campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
+head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
+digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
+task = re.search(r"- id=([0-9.]+)", packet).group(1)
+report = {
+    "campaign_id": campaign_id, "campaign_head": head, "task_source_sha256": digest,
+    "disposition": "propose",
+    "proposals": [{
+        "task_id": task, "dependencies": [], "owned_paths": ["../escape"],
+        "gate_tiers": ["focused"], "test_resources": ["rust-tests"],
+        "expected_artifacts": ["../escape/result"], "risk": "routine",
+        "rationale_summary": "HOSTILE_PROVIDER_PROSE_MUST_NOT_PERSIST"
+    }],
+    "blocked": None, "deferred": None, "human_decision": None
+}
+if prior_calls == 1:
+    report["undeclared_authority"] = "HOSTILE_UNKNOWN_FIELD_MUST_NOT_PERSIST"
+elif prior_calls == 2:
+    report["campaign_head"] = "f" * 40
+print(json.dumps({"type": "thread.started", "thread_id": "123e4567-e89b-12d3-a456-426614174000"}))
+print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps(report)}}))
+print(json.dumps({"type": "turn.completed"}))
+"#,
+    );
+    let config = fixture.root.join("config/rejected-campaign.toml");
+    let scratch = fixture.root.join("rejected-scratch");
+    let state = fixture.root.join("rejected-state");
+    assert!(
+        Fixture::command(&[
+            "init",
+            "--repo",
+            target.to_str().unwrap(),
+            "--config",
+            config.to_str().unwrap(),
+            "--scratch",
+            scratch.to_str().unwrap(),
+            "--state",
+            state.to_str().unwrap(),
+        ])
+        .status
+        .success()
+    );
+    let doctor = Fixture::command(&["doctor", "--config", config.to_str().unwrap()]);
+    let diagnosis: serde_json::Value = serde_json::from_slice(&doctor.stdout).unwrap();
+    let campaign = fixture.root.join("rejected-campaign.toml");
+    fs::write(
+        &campaign,
+        format!(
+            r#"version = 2
+campaign_id = "rejected-campaign"
+repository_id = "{}"
+repository_path = "{}"
+initial_commit = "{}"
+task_source_sha256 = "{}"
+operator_authorization_sha256 = "{}"
+max_parallel_pods = 1
+max_units = 1
+implementer_authentication = "existing_login"
+campaign_branch = "codingmage/rejected-campaign"
+allowed_paths = ["src"]
+denied_paths = []
+protected_branches = ["main"]
+publication = "local_only"
+
+[team_lead]
+executable = "{}"
+model = "fixture-lead"
+effort = "high"
+
+[implementer]
+executable = "{}"
+model = "fixture-implementer"
+effort = "high"
+
+[reviewer]
+executable = "{}"
+model = "fixture-reviewer"
+effort = "high"
+
+[[gate_tiers]]
+name = "focused"
+profiles = ["configured-gates"]
+"#,
+            diagnosis["repository_id"].as_str().unwrap(),
+            target.display(),
+            diagnosis["head"].as_str().unwrap(),
+            diagnosis["task_source_sha256"].as_str().unwrap(),
+            "a".repeat(64),
+            codex.display(),
+            claude.display(),
+            codex.display(),
+        ),
+    )
+    .unwrap();
+
+    for (expected_rejections, expected_code) in [
+        (1, "codingmage.campaign.lead_rejected.invalid_proposal"),
+        (2, "codingmage.campaign.lead_rejected.malformed_output"),
+        (3, "codingmage.campaign.lead_rejected.malformed_output"),
+    ] {
+        let run = Fixture::command(&[
+            "campaign",
+            "--config",
+            config.to_str().unwrap(),
+            "--campaign",
+            campaign.to_str().unwrap(),
+        ]);
+        assert!(
+            run.status.success(),
+            "stderr={} stdout={}",
+            String::from_utf8_lossy(&run.stderr),
+            String::from_utf8_lossy(&run.stdout)
+        );
+        let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
+        assert_eq!(outcome["state"], "paused");
+        assert_eq!(outcome["completed_units"], 0);
+        assert_eq!(outcome["blocker_code"], expected_code);
+
+        let checkpoint =
+            fs::read_to_string(state.join("campaigns/rejected-campaign/checkpoint.json")).unwrap();
+        assert!(!checkpoint.contains("HOSTILE_PROVIDER_PROSE_MUST_NOT_PERSIST"));
+        assert!(!checkpoint.contains("HOSTILE_UNKNOWN_FIELD_MUST_NOT_PERSIST"));
+        let checkpoint: serde_json::Value = serde_json::from_str(&checkpoint).unwrap();
+        assert_eq!(
+            checkpoint["checkpoint"]["rejected_proposals"]
+                .as_array()
+                .unwrap()
+                .len(),
+            expected_rejections
+        );
+    }
+
+    assert!(!fixture.root.join("rejected-claude-called").exists());
+    assert_eq!(
+        fs::read_to_string(fixture.root.join("rejected-lead.log"))
+            .unwrap()
+            .lines()
+            .count(),
+        3
+    );
+    assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
+    assert_eq!(fs::read(target.join("TASKS.md")).unwrap(), original_tasks);
+    assert_eq!(
+        fs::read(target.join("src/lib.rs")).unwrap(),
+        original_source
+    );
+    assert_eq!(
+        git_output(&target, &["worktree", "list", "--porcelain"])
+            .lines()
+            .filter(|line| line.starts_with("worktree "))
+            .count(),
+        2
+    );
+    assert!(
+        !git_output(&target, &["branch", "--format=%(refname:short)"])
+            .lines()
+            .any(|branch| branch.contains("/pod/"))
+    );
+}
+
 fn git(root: &Path, arguments: &[&str]) {
     let status = Command::new("/usr/bin/git")
         .current_dir(root)

@@ -52,7 +52,8 @@ const RUN_SPEC_VERSION: u16 = 2;
 use campaign_state::{
     ActiveUnit, BlockerClearanceIntent, CampaignCheckpoint, CampaignPhase, DeferralTriggerIntent,
     DeferredTaskProjection, HumanDecisionProjection, HumanDecisionProjectionReason,
-    PendingIntegration, validate_private_campaign_state,
+    LeadRejectionReason, PendingIntegration, RejectedProposalProjection,
+    validate_private_campaign_state,
 };
 use correction_state::{CorrectionCheckpoint, CorrectionPhase};
 
@@ -1092,10 +1093,38 @@ pub fn run_serial_campaign_with_progress(
                         Some(blocker_code),
                     ));
                 }
+                Err(CodexError::InvalidOutput | CodexError::InvalidReport) => {
+                    return record_lead_rejection(
+                        &spec,
+                        &campaign,
+                        &mut checkpoint,
+                        &campaign_root,
+                        &head,
+                        &plan.source_sha256,
+                        completed_units,
+                        last_task_id,
+                        LeadRejectionReason::MalformedOutput,
+                    );
+                }
                 Err(error) => return Err(RuntimeError::Reviewer(error)),
             };
-            let outcome = validate_team_lead_report(lead_result.report, &spec, &ready)
-                .map_err(RuntimeError::Campaign)?;
+            let outcome = match validate_team_lead_report(lead_result.report, &spec, &ready) {
+                Ok(outcome) => outcome,
+                Err(CampaignError::InvalidProposal | CampaignError::InvalidAuthority) => {
+                    return record_lead_rejection(
+                        &spec,
+                        &campaign,
+                        &mut checkpoint,
+                        &campaign_root,
+                        &head,
+                        &plan.source_sha256,
+                        completed_units,
+                        last_task_id,
+                        LeadRejectionReason::InvalidProposal,
+                    );
+                }
+                Err(error) => return Err(RuntimeError::Campaign(error)),
+            };
             let proposals = match outcome {
                 TeamLeadOutcome::Proposals(proposals) => proposals,
                 TeamLeadOutcome::Blocked(blocker) => {
@@ -1631,6 +1660,46 @@ fn record_human_decision(
         return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
     }
     Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn record_lead_rejection(
+    spec: &CampaignSpec,
+    campaign: &OwnedWorktree,
+    checkpoint: &mut CampaignCheckpoint,
+    campaign_root: &Path,
+    head: &str,
+    task_source_sha256: &str,
+    completed_units: u32,
+    last_task_id: Option<String>,
+    reason: LeadRejectionReason,
+) -> Result<CampaignOutcome, RuntimeError> {
+    let sequence = u32::try_from(checkpoint.rejected_proposals.len())
+        .map_err(|_| RuntimeError::State)?
+        .checked_add(1)
+        .ok_or(RuntimeError::State)?;
+    checkpoint
+        .rejected_proposals
+        .push(RejectedProposalProjection {
+            sequence,
+            reason,
+            source_head: head.to_owned(),
+            task_source_sha256: task_source_sha256.to_owned(),
+        });
+    let blocker_code = format!("codingmage.campaign.lead_rejected.{}", reason.code());
+    checkpoint.phase = CampaignPhase::Paused;
+    checkpoint.active_unit = None;
+    checkpoint.blocker_code = Some(blocker_code.clone());
+    checkpoint.persist(campaign_root)?;
+    Ok(campaign_outcome(
+        spec,
+        CampaignState::Paused,
+        campaign,
+        head.to_owned(),
+        completed_units,
+        last_task_id,
+        Some(blocker_code),
+    ))
 }
 
 fn provider_spec(provider: &codingmage_campaign::CampaignProvider) -> ProviderSpec {

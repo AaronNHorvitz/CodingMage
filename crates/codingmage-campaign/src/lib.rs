@@ -937,6 +937,65 @@ mod tests {
     }
 
     #[test]
+    fn hostile_lead_authority_expansion_corpus_fails_before_admission() {
+        let mut authority = spec(2);
+        let ready = plan()
+            .select_ready(&BTreeSet::new(), &BTreeSet::new(), 2)
+            .unwrap();
+        authority.task_source_sha256 = ready[0].source_sha256.clone();
+        let valid = TeamLeadReport {
+            campaign_id: authority.campaign_id.clone(),
+            campaign_head: authority.initial_commit.clone(),
+            task_source_sha256: authority.task_source_sha256.clone(),
+            disposition: LeadDispositionKind::Propose,
+            proposals: vec![lead_proposal(&ready[0], "crates/engine")],
+            blocked: None,
+            deferred: None,
+            human_decision: None,
+        };
+
+        let mut duplicate = valid.clone();
+        duplicate.proposals.push(duplicate.proposals[0].clone());
+        assert_eq!(
+            validate_team_lead_report(duplicate, &authority, &ready),
+            Err(CampaignError::InvalidProposal)
+        );
+
+        for path in ["../escape", "outside-authority", "docs/private/secret"] {
+            let mut escaping = valid.clone();
+            escaping.proposals[0].owned_paths = vec![PathBuf::from(path)];
+            assert_eq!(
+                validate_team_lead_report(escaping, &authority, &ready),
+                Err(CampaignError::InvalidProposal),
+                "path {path}"
+            );
+        }
+
+        let mut artifact = valid.clone();
+        artifact.proposals[0].expected_artifacts = vec![PathBuf::from("docs/public/report.md")];
+        assert_eq!(
+            validate_team_lead_report(artifact, &authority, &ready),
+            Err(CampaignError::InvalidProposal)
+        );
+
+        let mut gate = valid.clone();
+        gate.proposals[0].gate_tiers = vec!["unapproved-gate".to_owned()];
+        assert_eq!(
+            validate_team_lead_report(gate, &authority, &ready),
+            Err(CampaignError::InvalidProposal)
+        );
+
+        for field in ["provider", "publication", "command", "credential"] {
+            let mut unknown = serde_json::to_value(&valid).unwrap();
+            unknown[field] = serde_json::Value::String("model-requested-authority".to_owned());
+            assert!(
+                serde_json::from_value::<TeamLeadReport>(unknown).is_err(),
+                "field {field}"
+            );
+        }
+    }
+
+    #[test]
     fn team_lead_human_decision_is_exclusive_and_bounded() {
         let authority = spec(1);
         let selected = plan().select_exact("1.1.1.1").unwrap();
