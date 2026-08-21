@@ -103,6 +103,9 @@ cargo build --locked --release -p codingmage-cli
 ./target/release/codingmage campaign-status \
   --config /absolute/codingmage.toml \
   --campaign /absolute/campaign.toml
+./target/release/codingmage campaign-explain-blocker \
+  --config /absolute/codingmage.toml \
+  --campaign /absolute/campaign.toml
 ./target/release/codingmage campaign-control \
   --config /absolute/codingmage.toml \
   --campaign /absolute/campaign.toml \
@@ -144,6 +147,13 @@ filenames, provider prose, command output, unrestricted environment values, cred
 reasoning. Exact paths and hashes required for recovery remain private checkpoint state and are not
 copied into either operator surface.
 
+`campaign-explain-blocker` uses the same authority and checkpoint-integrity validation, then narrows
+the result to campaign identity, phase, typed blocker and deferral projections, and human-decision
+holds. It has no mutation handle. Repeated status and explanation invocations are safe process-level
+attach, disconnect, and reconnect operations: they do not write campaign or scratch state, change
+the checkout or refs, start a provider, or consume an attempt. The planned TUI remains a later
+presentation layer over these observational reads.
+
 `campaign-control` accepts only `pause`, `resume`, `stop_after_unit`, and `cancel`. Each request is
 bound to the exact campaign authority and a caller-generated idempotency ID, then written atomically
 to a private same-user inbox without replacing an existing request. The campaign consumes requests
@@ -177,8 +187,6 @@ state. The command persists a create-once request bound to the exact typed defer
 operator-supplied evidence digest before returning that task to deterministic ready-set evaluation.
 Exact replay reports no second change, while conflicting request reuse fails closed. It starts no
 provider and changes no task checkbox or active-checkout byte.
-
-The remaining status work is attach/reconnect and polling noninterference evidence.
 
 Malformed or unauthorized lead output pauses with either
 `codingmage.campaign.lead_rejected.malformed_output` or

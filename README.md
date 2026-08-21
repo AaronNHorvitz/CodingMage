@@ -284,9 +284,10 @@ The intended entry point is `codingmage monitor --config /absolute/codingmage.to
 attachable TUI is not implemented in the current release. The current stderr activity stream and the
 process-level `watch` command below are the available monitoring surfaces today.
 
-The CLI currently provides `campaign-status`, `pause`, `resume`, `stop-after-unit`, and `cancel`.
-The attachable monitor still plans `open-diff`, `open-log`, and `explain-blocker` views. Cancellation
-terminates only CodingMage-owned descendants and leaves the target repository recoverable.
+The CLI currently provides `campaign-status`, `campaign-explain-blocker`, `pause`, `resume`,
+`stop-after-unit`, and `cancel`. The attachable monitor still plans `open-diff` and `open-log` views.
+Cancellation terminates only CodingMage-owned descendants and leaves the target repository
+recoverable.
 
 ## Background Operation
 
@@ -329,6 +330,8 @@ codingmage status --config /absolute/codingmage.toml
 codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml
 codingmage campaign --config /absolute/codingmage.toml --campaign /absolute/campaign.toml
 codingmage campaign-status --config /absolute/codingmage.toml --campaign /absolute/campaign.toml
+codingmage campaign-explain-blocker --config /absolute/codingmage.toml \
+  --campaign /absolute/campaign.toml
 codingmage campaign-control --config /absolute/codingmage.toml \
   --campaign /absolute/campaign.toml --action pause --request pause-example-1
 codingmage campaign-control --config /absolute/codingmage.toml \
@@ -350,8 +353,11 @@ Every lead-proposed ownership root is interpreted from the repository root and m
 existing regular file or directory. New files are authorized by leasing their exact existing parent
 directory. Claude can read the worktree but receives Edit/Write permission only for those validated
 roots; the coordinator independently inventories the resulting commit and rejects any path escape.
-The same campaign can be restarted from its exact reconciled head, and `campaign-status` exposes a
-content-minimized durable view. A content-free transient provider or session failure is retried as
+The same campaign can be restarted from its exact reconciled head, `campaign-status` exposes a
+content-minimized durable view, and `campaign-explain-blocker` narrows that view to closed reason
+codes and authorized task identities. Both reads are observational: repeated process-level attach
+and reconnect cannot change campaign state, Git state, or provider-attempt accounting. A
+content-free transient provider or session failure is retried as
 a fresh isolated whole-unit attempt at most three times; exhaustion, quota, and authentication
 become resumable campaign pauses after owned resources are released. An actual process interruption
 during an active provider turn still blocks automatic replay and requires reconciliation; this

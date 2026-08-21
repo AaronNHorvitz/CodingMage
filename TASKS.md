@@ -1026,11 +1026,11 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.2.3.3:** Emit one typed terminal or resumable reason for the exact exhausted limit and preserve the latest verified candidate where applicable. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.3.4:** Prohibit limit exhaustion from changing provider strength, skipping a gate, truncating required evidence, broadening paths, or changing publication policy. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.3.5:** Test minimum, maximum, one-below, exact-boundary, one-above, overflow, restart, and concurrent-observation cases for every limit. See `docs/evidence/sprint-22-serial-recovery.md`.
-- [ ] **Task 22.2.4 - Complete privacy-safe campaign status**
+- [x] **Task 22.2.4 - Complete privacy-safe campaign status**
   - [x] **Sub-task 22.2.4.1:** Expose phase, actor, task, model identity when available, attempt, correction, outcome counts, current limit utilization, and content-free reason codes. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.4.2:** Expose blocker and deferral details only as typed codes, trigger state, and task identity authorized for the local operator. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.4.3:** Exclude prompts, source text, filenames, provider prose, command output, unrestricted environment values, credentials, and hidden reasoning from status and durable logs. See `docs/evidence/sprint-22-serial-recovery.md`.
-  - [ ] **Sub-task 22.2.4.4:** Prove monitor attach, disconnect, reconnect, status polling, and blocker explanation cannot mutate campaign state or consume a provider attempt.
+  - [x] **Sub-task 22.2.4.4:** Prove monitor attach, disconnect, reconnect, status polling, and blocker explanation cannot mutate campaign state or consume a provider attempt. See `docs/evidence/sprint-22-serial-recovery.md`.
 
 ### Story 22.3 - Serial Unattended Qualification
 
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.4.4`: prove attach, disconnect, reconnect, polling, and blocker explanation are read-only and consume no provider attempt.
+- [ ] **Next 1:** Complete Sprint 22 sub-task `22.1.2.1`: journal every remaining campaign recovery projection and prove exact restart reconstruction.

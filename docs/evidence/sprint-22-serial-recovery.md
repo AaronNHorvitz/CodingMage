@@ -24,6 +24,7 @@
 - **Complete status projection commit:** `87f2438`
 - **Typed task-status commit:** `3ad93a1`
 - **Status privacy-schema commit:** `e72a5bb`
+- **Observational monitor implementation commit:** `b1aaba7`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -129,6 +130,20 @@ schema denies unknown fields at its top level and in every nested projection; mu
 each prohibited class plus a nested command-output field and require deserialization refusal.
 Recovery checkpoints may retain exact authorized paths and hashes needed for safe reconciliation,
 but public status and durable journal records do not copy them.
+
+`campaign-explain-blocker` is now a separate privacy-safe projection of the same validated campaign
+status read. It returns only campaign identity, phase, the campaign-level blocker code, canonical
+task identities, closed blocker or deferral reason codes, closed reconsideration triggers and their
+state, and human-decision holds. It has no checkpoint writer, provider adapter, process runner, Git
+mutation, or lifecycle-control handle.
+
+The production blocked-campaign fixture treats separate CLI processes as attach, disconnect, and
+reconnect boundaries. Across sixteen status polls and sixteen blocker-explanation reconnects, it
+requires byte-identical campaign state and scratch trees, exact active-checkout head and porcelain
+state, identical complete ref inventory, unchanged lead and implementer logs, stable typed blocker
+output, and an unchanged provider-attempt count. The monitor crate separately proves reconnectable
+event cursors and all read commands are observational. Together these close `22.2.4.4` and the
+complete privacy-safe campaign-status task without claiming that the later attachable TUI exists.
 
 ## Campaign Journal Foundation
 

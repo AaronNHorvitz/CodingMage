@@ -46,6 +46,8 @@ codingmage campaign --config /absolute/config/codingmage.toml \
   --campaign /absolute/config/campaign.toml
 codingmage campaign-status --config /absolute/config/codingmage.toml \
   --campaign /absolute/config/campaign.toml
+codingmage campaign-explain-blocker --config /absolute/config/codingmage.toml \
+  --campaign /absolute/config/campaign.toml
 ```
 
 After independently verifying that an external prerequisite changed, clear only its exact blocker
