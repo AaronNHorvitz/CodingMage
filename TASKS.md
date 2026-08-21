@@ -1020,12 +1020,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.2.2.3:** Make pause prevent new admission, stop-after-unit finish the current bounded unit and checkpoint, and cancel terminate only exact owned descendants. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.2.4:** Revalidate repository, campaign authority, provider capability, deferred triggers, and limits before resume admits work. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.2.5:** Prove repeated controls and restart at every control intent produce one terminal effect and preserve recoverable state. See `docs/evidence/sprint-22-serial-recovery.md`.
-- [ ] **Task 22.2.3 - Enforce independent campaign limits**
+- [x] **Task 22.2.3 - Enforce independent campaign limits**
   - [x] **Sub-task 22.2.3.1:** Make the campaign accepted-outcome ceiling count completed, blocked, and accepted deferred outcomes according to the documented contract without counting rejected proposals. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.3.2:** Stop provider admission exactly when the configured outcome, attempt, malformed-report, correction, process, output, storage, or elapsed-execution limit is reached. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.3.3:** Emit one typed terminal or resumable reason for the exact exhausted limit and preserve the latest verified candidate where applicable. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.3.4:** Prohibit limit exhaustion from changing provider strength, skipping a gate, truncating required evidence, broadening paths, or changing publication policy. See `docs/evidence/sprint-22-serial-recovery.md`.
-  - [ ] **Sub-task 22.2.3.5:** Test minimum, maximum, one-below, exact-boundary, one-above, overflow, restart, and concurrent-observation cases for every limit.
+  - [x] **Sub-task 22.2.3.5:** Test minimum, maximum, one-below, exact-boundary, one-above, overflow, restart, and concurrent-observation cases for every limit. See `docs/evidence/sprint-22-serial-recovery.md`.
 - [ ] **Task 22.2.4 - Complete privacy-safe campaign status**
   - [ ] **Sub-task 22.2.4.1:** Expose phase, actor, task, model identity when available, attempt, correction, outcome counts, current limit utilization, and content-free reason codes.
   - [ ] **Sub-task 22.2.4.2:** Expose blocker and deferral details only as typed codes, trigger state, and task identity authorized for the local operator.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.3.5`: execute the exhaustive boundary, overflow, restart, and concurrent-observation matrix for every independent campaign limit.
+- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.4.1`: expose complete privacy-safe campaign phase, actor, task, model, attempt, correction, outcome, utilization, and reason-code status.

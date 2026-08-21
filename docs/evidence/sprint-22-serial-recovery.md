@@ -20,6 +20,7 @@
 - **Durable pending-resume commit:** `a6fe0a9`
 - **Control-boundary restart matrix commit:** `4511b54`
 - **Limit-policy invariance commit:** `aaa1a87`
+- **Exhaustive limit-matrix commit:** `3c92e82`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -254,15 +255,22 @@ cannot validate against the retained authority. Required gates continue to requi
 `OutputNotTruncated`, so an output ceiling cannot convert partial diagnostics into passing evidence.
 
 Focused boundary tests permit the exact authorized count and reject the next effect for all seven
-limit classes. A production binary fixture reaches one aggregate correction round, refuses the
+limit classes. The complete matrix verifies the minimum and maximum accepted authority, one-below,
+exact-boundary, one-above, checked arithmetic overflow, integrity-checked restart reconstruction,
+and four simultaneous read-only observations for every aggregate ceiling. Retained-state maximum
+and overflow use the same extracted checked accumulator as the production filesystem walk, without
+requiring an artificial enormous file. The accepted-outcome ceiling independently covers the same
+configuration, persistence, overflow, restart, and concurrent-read properties.
+
+A production binary fixture reaches one aggregate correction round, refuses the
 second correction before writing its intent, returns
 `codingmage.campaign.limit.correction_rounds`, preserves the active checkout, and retains the latest
-reviewed candidate branch for inspection. The exhaustive minimum, maximum, one-below, one-above,
-overflow, restart, and concurrent-observation matrix remains open under sub-task `22.2.3.5`.
+reviewed candidate branch for inspection. This closes `22.2.3.1` through `22.2.3.5` and the parent
+independent-limit task.
 
 ## Verification
 
-The complete workspace test suite passed across all targets, including 38 runtime unit tests and
+The complete workspace test suite passed across all targets, including 40 runtime unit tests and
 nine CLI workflow tests. Strict workspace Clippy with warnings denied, workspace formatting,
 workspace documentation generation, architecture checks, documentation policy, 12 Python policy
 tests, and `git diff --check` also passed after aggregate-limit enforcement and evidence
@@ -277,7 +285,7 @@ without replay, durable status, and active-checkout preservation.
 ## Preserved Limits
 
 This evidence does not close initial-implementation-session recovery, complete campaign event
-journaling, the exhaustive numeric limit matrix, parallel pods,
+journaling, privacy-safe status completion, parallel pods,
 GitHub publication, native macOS or Windows evidence,
 manual fuzzing, or the sustained 24-hour or 48-hour soak gate. It authorizes only preparation of the
 explicitly requested bounded one-pod controlled-target pilot; it does not assert general

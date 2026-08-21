@@ -257,7 +257,9 @@ an unbounded provider-invocation loop.
   checkout before a later authorized provider invocation succeeds; CodingMage does not inspect,
   retain, or refresh credentials. Interrupted initial-implementation recovery remains open.
 - Campaign execution is bounded by unit, attempt, correction, process, output, and resource limits;
-  no monetary value is part of campaign or provider authority.
+  no monetary value is part of campaign or provider authority. Every aggregate ceiling and the
+  accepted-outcome cap have minimum, maximum, adjacent-boundary, overflow, restart, and concurrent
+  observation coverage.
 - Blocked tasks and deferrals survive restart, remain unchecked, and suppress only their exact task.
   Same-user blocker clearance and external-trigger observation are create-once and integrity-bound.
   A dedicated blocker-detail view and authenticated human-decision resolution remain open.
