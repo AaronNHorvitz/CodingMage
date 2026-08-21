@@ -1008,11 +1008,11 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 22.2 - Durable Safeguard Enforcement
 
-- [ ] **Task 22.2.1 - Persist exact campaign projections**
+- [x] **Task 22.2.1 - Persist exact campaign projections**
   - [x] **Sub-task 22.2.1.1:** Add integrity-protected completed, blocked, deferred, pending-human-decision, and rejected-proposal projections with independent counters. See `docs/evidence/sprint-22-serial-recovery.md`.
-  - [ ] **Sub-task 22.2.1.2:** Record provider attempt, malformed-report repair, correction, process, output, retained-state, elapsed-execution, and accepted-outcome limit utilization independently.
+  - [x] **Sub-task 22.2.1.2:** Record provider attempt, malformed-report repair, correction, process, output, retained-state, elapsed-execution, and accepted-outcome limit utilization independently. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.1.3:** Bind every deferred task to its reason, trigger, source head, and trigger-observation state without storing unrestricted lead prose. See `docs/evidence/sprint-22-serial-recovery.md`.
-  - [ ] **Sub-task 22.2.1.4:** Include every new projection in canonical checkpoint hashing, migration refusal, mutation tests, and restart reconstruction.
+  - [x] **Sub-task 22.2.1.4:** Include every new projection in canonical checkpoint hashing, migration refusal, mutation tests, and restart reconstruction. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.1.5:** Refuse a legacy or partial checkpoint whenever missing fields could broaden authority or erase a blocker, deferral, limit, or accepted outcome. See `docs/evidence/sprint-22-serial-recovery.md`.
 - [ ] **Task 22.2.2 - Compose campaign operator controls**
   - [ ] **Sub-task 22.2.2.1:** Wire same-user, exact-campaign `pause`, `resume`, `stop-after-unit`, and `cancel` controls into the production campaign loop.
@@ -1022,8 +1022,8 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 22.2.2.5:** Prove repeated controls and restart at every control intent produce one terminal effect and preserve recoverable state.
 - [ ] **Task 22.2.3 - Enforce independent campaign limits**
   - [x] **Sub-task 22.2.3.1:** Make the campaign accepted-outcome ceiling count completed, blocked, and accepted deferred outcomes according to the documented contract without counting rejected proposals. See `docs/evidence/sprint-22-serial-recovery.md`.
-  - [ ] **Sub-task 22.2.3.2:** Stop provider admission exactly when the configured outcome, attempt, malformed-report, correction, process, output, storage, or elapsed-execution limit is reached.
-  - [ ] **Sub-task 22.2.3.3:** Emit one typed terminal or resumable reason for the exact exhausted limit and preserve the latest verified candidate where applicable.
+  - [x] **Sub-task 22.2.3.2:** Stop provider admission exactly when the configured outcome, attempt, malformed-report, correction, process, output, storage, or elapsed-execution limit is reached. See `docs/evidence/sprint-22-serial-recovery.md`.
+  - [x] **Sub-task 22.2.3.3:** Emit one typed terminal or resumable reason for the exact exhausted limit and preserve the latest verified candidate where applicable. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [ ] **Sub-task 22.2.3.4:** Prohibit limit exhaustion from changing provider strength, skipping a gate, truncating required evidence, broadening paths, or changing publication policy.
   - [ ] **Sub-task 22.2.3.5:** Test minimum, maximum, one-below, exact-boundary, one-above, overflow, restart, and concurrent-observation cases for every limit.
 - [ ] **Task 22.2.4 - Complete privacy-safe campaign status**
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.1.2`: persist independent campaign utilization for provider attempts, malformed-report repairs, corrections, processes, output, retained state, elapsed execution, and accepted outcomes so `22.1.2.1` can journal those exact values.
+- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.2.1`: add same-user, exact-campaign pause, resume, stop-after-unit, and cancel control requests without granting publication or unrelated process authority.

@@ -149,36 +149,53 @@ already observed.
 
 ## Utilization Ledger Progress
 
-Each successful supervised unit now returns a content-free utilization record containing attempted
+Each supervised unit now returns a content-free utilization record containing attempted
 provider invocations, metadata-report repairs, provider and gate process invocations, full observed
 output-byte totals where receipts exist, observed execution milliseconds, and exact terminal bytes
 beneath its private run-state root. Provider attempts are incremented before invocation. Arithmetic
 overflow, unreadable state, a symbolic link, or a non-file entry beneath the run-state root fails
 closed.
 
-The binary workflow fixture injects one malformed Claude completion response before any edit and
+The binary workflow fixture injects one distinctively large malformed Claude completion response before any edit and
 then completes two bounded correction rounds. It verifies exactly six provider attempts, one
-metadata repair, ten provider-plus-gate processes, nonzero observed output, and nonzero retained
-state while preserving the same reviewed completion result.
+metadata repair, ten provider-plus-gate processes, output exceeding the malformed response's byte
+count, and nonzero retained state while preserving the same reviewed completion result. Claude and
+Codex adapters retain the process receipt separately from provider-result interpretation, so quota,
+authentication, timeout, malformed-output, and other post-execution failures contribute their
+available output and elapsed observations without persisting provider content.
 
-Schema-4 campaign checkpoints aggregate those successful unit receipts plus lead attempts and
-successful lead-process observations. Each checkpoint records provider attempts, malformed-report
+Schema-5 campaign checkpoints aggregate successful and failed unit receipts plus lead attempts and
+all available lead-process observations. Each checkpoint records provider attempts, malformed-report
 repairs, correction rounds, process invocations, output bytes, retained campaign-state bytes, and
-observed execution milliseconds; the hash-chained journal projects the same complete tuple and
-rejects a partially present utilization record.
+observed execution milliseconds alongside each operator-authorized maximum; the hash-chained journal
+projects the same complete tuple and rejects partial records or count consumption beyond a reserved
+count ceiling. Atomic output, elapsed, or retained-state observations may truthfully exceed their
+ceiling and remain durable so the next effect is refused with the exact reason.
+The copied limits and accepted-outcome ceiling must also match the current integrity-verified
+campaign authority on status, control, and resume operations.
 
-Sub-task `22.2.1.2` remains open. A failed provider adapter currently returns a typed error without
-its process receipt, so failed-attempt output and elapsed totals cannot yet be aggregated. Aggregate
-provider, repair, correction, process, output, retained-state, and elapsed ceilings also remain to be
-added to campaign authority and enforced before admission.
+Campaign-spec schema 3 independently authorizes provider-attempt, malformed-report-repair,
+correction, process, output, retained-state, and elapsed-execution ceilings. The campaign checks
+exhaustion before selecting another unit. Inside a unit, the same authority reserves each provider
+process, metadata repair, correction, and complete deterministic gate set before that effect starts.
+Provider exhaustion cannot skip an already-authorized gate; a gate set that would exceed the process
+ceiling does not start partially. Output, retained-state, and elapsed observations stop the next
+effect after the atomic process that established the observation.
+
+Focused boundary tests permit the exact authorized count and reject the next effect for all seven
+limit classes. A production binary fixture reaches one aggregate correction round, refuses the
+second correction before writing its intent, returns
+`codingmage.campaign.limit.correction_rounds`, preserves the active checkout, and retains the latest
+reviewed candidate branch for inspection. The exhaustive minimum, maximum, one-below, one-above,
+overflow, restart, and concurrent-observation matrix remains open under sub-task `22.2.3.5`.
 
 ## Verification
 
-The complete workspace test suite passed across all targets, including 27 runtime unit tests and
+The complete workspace test suite passed across all targets, including 31 runtime unit tests and
 eight CLI workflow tests. Strict workspace Clippy with warnings denied, workspace formatting,
-workspace documentation generation, and `git diff --check` also passed after the provider-capacity
-recovery fixture was added. Architecture and documentation policy are rerun after this evidence
-update.
+workspace documentation generation, architecture checks, documentation policy, 12 Python policy
+tests, and `git diff --check` also passed after aggregate-limit enforcement and evidence
+reconciliation.
 
 A preliminary disposable one-pod soak ran the binary interruption-and-recovery campaign five times
 from fresh fixture repositories. All five cycles passed. The post-soak check found no fixture
@@ -189,7 +206,7 @@ without replay, durable status, and active-checkout preservation.
 ## Preserved Limits
 
 This evidence does not close initial-implementation-session recovery, complete campaign event
-journaling, exact limit projection, production operator
+journaling, production operator
 controls, parallel pods, GitHub publication, native macOS or Windows evidence,
 manual fuzzing, or the sustained 24-hour or 48-hour soak gate. It authorizes only preparation of the
 explicitly requested bounded one-pod controlled-target pilot; it does not assert general
