@@ -1,7 +1,7 @@
 # Sprint 21 Blocker Continuation Evidence
 
-- **Status:** Local blocker validation, persistence, and continuation complete; authenticated clearance remains open
-- **Implementation commit:** `16071fb902941474d50359271bed6e64f3d571a9`
+- **Status:** Local blocker validation, persistence, continuation, and authenticated clearance complete
+- **Implementation commits:** `16071fb902941474d50359271bed6e64f3d571a9`, `377a51df28e9ecf2120154872f26697e73c1cdfe`
 - **Executed:** 2026-08-21 on Fedora Linux with Rust 1.95.0
 
 ## Contract
@@ -30,8 +30,28 @@ checkbox completion. The final campaign branch leaves the blocker and descendant
 one durable blocker, and stops only after no independent work remains. The active checkout stays at
 its original head and retains its original task and source bytes.
 
-Restarting the same campaign returns the same durable terminal state without another lead or
-implementer call, proving the accepted blocker and completed unit are not replayed.
+Before clearance, restarting the same campaign returns the same durable terminal state without
+another lead or implementer call, proving the accepted blocker and completed unit are not replayed.
+
+## Authenticated Clearance
+
+The local `campaign-clear-blocker` command authenticates through the invoking Linux user and refuses
+campaign state or checkpoint files that are linked, owned by another user, or accessible to group or
+world. It acquires the exact repository campaign lock and revalidates the clean active checkout,
+repository identity, original authority, isolated worktree identity, campaign head, task-source
+digest, open task, and completed dependencies before changing state.
+
+The operator supplies one validated task ID, one validated idempotency ID, and a lowercase SHA-256
+digest binding the changed external prerequisite without storing its content. CodingMage writes a
+private, create-once, integrity-bound clearance intent before removing only the matching typed
+blocker. Repeating identical input returns `changed: false`; changing the task or digest under the
+same request ID fails closed. The command starts no provider and changes no checkbox.
+
+The vertical slice makes its external prerequisite observable, clears the blocker, and resumes the
+campaign. The formerly blocked task completes first, its descendant then becomes ready and
+completes, all three canonical campaign-branch checkboxes are checked, and the active checkout still
+has its original head and task bytes. Clearance-intent mutation, widened state permissions, and
+conflicting idempotency reuse are independently rejected.
 
 ## Verification
 
@@ -49,7 +69,6 @@ all existing process, Git, gate, state, review, provider, orchestration, and cam
 
 ## Open Scope
 
-This evidence closes sub-tasks `21.2.2.1` through `21.2.2.4` and acceptance criterion `AC 21.3`.
-Sub-task `21.2.2.5` remains open: no authenticated operator action can yet clear a blocker, record
-the changed prerequisite, invalidate stale planning state, and force full campaign revalidation.
-Task `21.2.2`, Story `21.2`, and Sprint 21 gates therefore remain open.
+This evidence closes Task `21.2.2` and acceptance criterion `AC 21.3`. Deferral and
+reconsideration semantics, human-decision continuation, rejected-output effect proofs, Story
+`21.2`, and the Sprint 21 gates remain open.

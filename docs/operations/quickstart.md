@@ -48,6 +48,22 @@ codingmage campaign-status --config /absolute/config/codingmage.toml \
   --campaign /absolute/config/campaign.toml
 ```
 
+After independently verifying that an external prerequisite changed, clear only its exact blocker
+with a fresh idempotency ID and a lowercase SHA-256 evidence digest:
+
+```bash
+codingmage campaign-clear-blocker \
+  --config /absolute/config/codingmage.toml \
+  --campaign /absolute/config/campaign.toml \
+  --task 21.2.2.5 \
+  --request clear-21-2-2-5-1 \
+  --prerequisite-sha256 "${PREREQUISITE_SHA256}"
+```
+
+The command works only for the same local user and exact campaign, records a create-once
+integrity-bound intent, revalidates the isolated campaign snapshot, and clears no other task. It
+does not invoke a model or alter the active checkout.
+
 Use one pod and `local_only` publication. The current campaign path is pre-release: interrupted
 initial-implementation resume, expanded lead dispositions, production lifecycle controls, the prescribed
 ten-outcome soak, and the controlled-target qualification gate remain incomplete. See

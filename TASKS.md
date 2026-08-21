@@ -954,12 +954,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 21.2.1.3:** Require every nonproposal disposition to bind the campaign identity, exact head, task-source digest, task identity, dependencies, and one content-free reason code.
   - [x] **Sub-task 21.2.1.4:** Require every deferral to name one supported reconsideration trigger and reject arbitrary dates, prose conditions, or executable instructions.
   - [x] **Sub-task 21.2.1.5:** Keep task completion outside lead authority; only the coordinator may complete a task after implementation, tests, gates, review, checkpoint, and reconciliation. See `docs/evidence/sprint-21-lead-contract.md`.
-- [ ] **Task 21.2.2 - Validate blocker semantics**
+- [x] **Task 21.2.2 - Validate blocker semantics**
   - [x] **Sub-task 21.2.2.1:** Accept a blocker only for a dependency-ready task and a reason that cannot be resolved inside current task and path authority.
   - [x] **Sub-task 21.2.2.2:** Persist the exact blocked task and reason code while leaving its canonical checkbox unchanged.
   - [x] **Sub-task 21.2.2.3:** Suppress repeated selection of that exact blocked task without treating its dependency descendants as independently ready.
   - [x] **Sub-task 21.2.2.4:** Continue every independent ready task and stop with `no_unblocked_ready_work` only when no independent path remains. See `docs/evidence/sprint-21-blocker-continuation.md`.
-  - [ ] **Sub-task 21.2.2.5:** Permit blocker clearance only through an authenticated operator action that records the changed prerequisite and forces full campaign revalidation.
+  - [x] **Sub-task 21.2.2.5:** Permit blocker clearance only through an authenticated operator action that records the changed prerequisite and forces full campaign revalidation. See `docs/evidence/sprint-21-blocker-continuation.md`.
 - [ ] **Task 21.2.3 - Validate deferral and reconsideration semantics**
   - [ ] **Sub-task 21.2.3.1:** Accept deferral only for temporary provider capacity, active path lease, gate-resource contention, deterministic dependency order, pending stronger review, or operator pause.
   - [ ] **Sub-task 21.2.3.2:** Bind deferral to campaign-head advancement, lease release, gate-resource release, provider reset, review completion, or operator resume.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Implement sub-task `21.2.2.5`: add an authenticated, idempotent operator control that records the changed prerequisite, clears only the exact blocker, invalidates stale planning state, and forces full campaign revalidation before the task can re-enter deterministic ready-set evaluation.
+- [ ] **Next 1:** Implement sub-tasks `21.2.3.1` through `21.2.3.5`: persist typed deferrals and exact reconsideration triggers, observe each trigger deterministically, reject satisfied same-state repeats, and prove stable ordering and starvation resistance across disposition permutations.

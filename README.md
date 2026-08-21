@@ -329,6 +329,9 @@ codingmage status --config /absolute/codingmage.toml
 codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml
 codingmage campaign --config /absolute/codingmage.toml --campaign /absolute/campaign.toml
 codingmage campaign-status --config /absolute/codingmage.toml --campaign /absolute/campaign.toml
+codingmage campaign-clear-blocker --config /absolute/codingmage.toml \
+  --campaign /absolute/campaign.toml --task 21.2.2.5 --request clear-example-1 \
+  --prerequisite-sha256 "${PREREQUISITE_SHA256}"
 ```
 
 `campaign` intentionally starts with one pod regardless of available hardware. For each iteration,
@@ -365,11 +368,19 @@ its task box. Independent dependency-ready work may continue until the configure
 ceiling is reached. If every remaining path depends on blocked work, the campaign stops with
 `codingmage.campaign.no_unblocked_ready_work` instead of retrying, inventing completion, or looping.
 
-The approved next campaign contract adds distinct lead-side `blocked`, `deferred`, and
-`human_decision_required` outcomes with closed reason codes and deterministic reconsideration
-triggers. That contract is not complete until the corresponding unchecked Story 21.2 and Story 22.2
-items pass. A lead never completes a task; completion remains a coordinator transition after code,
-tests, gates, independent review, checkpointing, and exact task-source reconciliation.
+`campaign-clear-blocker` is a same-user local control for one exact typed lead blocker. It requires
+a caller-generated idempotency ID and the SHA-256 digest of operator-controlled evidence that the
+external prerequisite changed. CodingMage records only the digest, acquires the exact campaign
+lock, revalidates repository ownership, campaign authority, worktree identity, head, task source,
+task openness, and dependency readiness, and then clears only that blocker. Repeating the same
+request has no second effect; changing its task or digest is refused. The control starts no model,
+changes no checkbox, and normal campaign validation still runs before new work is admitted.
+
+The current lead contract also defines distinct `deferred` and `human_decision_required` outcomes
+with closed reason codes and deterministic reconsideration triggers. Their full lifecycle behavior
+remains incomplete until the corresponding unchecked Story 21.2 and Story 22.2 items pass. A lead
+never completes a task; completion remains a coordinator transition after code, tests, gates,
+independent review, checkpointing, and exact task-source reconciliation.
 
 Run `codingmage` from a normal VS Code terminal and leave that terminal open until the final JSON
 appears. During `run`, a live activity stream is written to stderr while the machine-readable final

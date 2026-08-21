@@ -92,6 +92,12 @@ cargo build --locked --release -p codingmage-cli
 ./target/release/codingmage campaign-status \
   --config /absolute/codingmage.toml \
   --campaign /absolute/campaign.toml
+./target/release/codingmage campaign-clear-blocker \
+  --config /absolute/codingmage.toml \
+  --campaign /absolute/campaign.toml \
+  --task 21.2.2.5 \
+  --request clear-21-2-2-5-1 \
+  --prerequisite-sha256 "${PREREQUISITE_SHA256}"
 ```
 
 The final JSON reports campaign identity, terminal state, retained local branch, exact head,
@@ -102,6 +108,14 @@ completed-unit count, last task, and a content-free blocker code when applicable
 only the durable phase, actor category, local branch, reconciled head, current and last task IDs,
 completed count, blocker count and code, and elapsed time. It does not expose prompts, provider
 output, source text, repository paths, credentials, or diagnostics.
+
+`campaign-clear-blocker` is an explicit same-user mutation. The campaign state directory and
+checkpoint must remain owned by the invoking Linux user with no group or world access. The command
+binds a fresh request ID to one blocked task, its typed reason, current campaign head, current task
+source, and an operator-supplied digest of the changed prerequisite. It persists that intent before
+removing the blocker, revalidates the repository and isolated worktree before each effect, and is
+idempotent when repeated with the same fields. Conflicting reuse fails closed. No provider starts,
+no task is completed, and no active-checkout byte changes during clearance.
 
 The target status contract additionally exposes distinct completed, blocked, deferred,
 human-decision, and rejected-proposal counts, exact trigger state, and independent limit
