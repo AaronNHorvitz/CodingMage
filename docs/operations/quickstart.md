@@ -49,7 +49,7 @@ codingmage campaign-status --config /absolute/config/codingmage.toml \
 ```
 
 Use one pod and `local_only` publication. The current campaign path is pre-release: interrupted
-active-provider resume, expanded lead dispositions, production lifecycle controls, the prescribed
+initial-implementation resume, expanded lead dispositions, production lifecycle controls, the prescribed
 ten-outcome soak, and the controlled-target qualification gate remain incomplete. See
 [`Serial Campaign`](serial-campaign.md) and
 [`Unattended Safeguards`](../architecture/unattended-safeguards.md) before using valuable target

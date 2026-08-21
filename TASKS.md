@@ -901,30 +901,30 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 20.1 - Gate and Review Correction
 
-- [ ] **Task 20.1.1 - Return deterministic gate failures to the implementer**
+- [x] **Task 20.1.1 - Return deterministic gate failures to the implementer**
   - [x] **Sub-task 20.1.1.1:** Retain bounded failed-gate stdout and stderr ephemerally while keeping durable evidence content-minimized.
   - [x] **Sub-task 20.1.1.2:** Convert recoverable local and final gate failures into correction transitions.
   - [x] **Sub-task 20.1.1.3:** Commit every correction as a child of the exact failed candidate and revalidate packet-owned paths.
   - [x] **Sub-task 20.1.1.4:** Rerun deterministic gates before invoking the reviewer.
-- [ ] **Task 20.1.2 - Complete independent review correction**
+- [x] **Task 20.1.2 - Complete independent review correction**
   - [x] **Sub-task 20.1.2.1:** Map `changes_required` to correction instead of blocker state.
   - [x] **Sub-task 20.1.2.2:** Send only structured findings, evidence, requested corrections, and acceptance tests to the implementer.
   - [x] **Sub-task 20.1.2.3:** Review the complete cumulative task diff after every correction.
   - [x] **Sub-task 20.1.2.4:** Add a process-backed fixture in which Codex requests a correction, Claude corrects it, and a fresh Codex review passes.
-- [ ] **Task 20.1.3 - Close bounded-loop behavior**
+- [x] **Task 20.1.3 - Close bounded-loop behavior**
   - [x] **Sub-task 20.1.3.1:** Apply one shared configurable correction limit across gate and review failures.
   - [x] **Sub-task 20.1.3.2:** End in a truthful recoverable state when the limit is exhausted.
   - [x] **Sub-task 20.1.3.3:** Retain correction-round identities and outcomes in checkpoint and status surfaces.
-  - [ ] **Sub-task 20.1.3.4:** Reobserve and resume an interrupted correction without replaying a provider or Git effect.
+  - [x] **Sub-task 20.1.3.4:** Reobserve and resume an interrupted correction without replaying a provider or Git effect. See `docs/evidence/sprint-20-correction-recovery.md`.
 
 **Story acceptance criteria**
 
-- [ ] **AC 20.1:** Given a compile failure followed by a valid correction, when the pod runs unattended, then the corrected child commit passes gates and receives independent review without operator action.
-- [ ] **AC 20.2:** Given repeated gate or review failure, when the configured correction limit is reached, then no additional provider call starts and the exact candidate remains recoverable.
+- [x] **AC 20.1:** Given a compile failure followed by a valid correction, when the pod runs unattended, then the corrected child commit passes gates and receives independent review without operator action.
+- [x] **AC 20.2:** Given repeated gate or review failure, when the configured correction limit is reached, then no additional provider call starts and the exact candidate remains recoverable.
 
 ### Sprint 20 Gate
 
-- [ ] **Gate 20.1:** Gate-failure, review-finding, correction-limit, malformed-diagnostic, interruption, and cumulative-review fixtures pass.
+- [x] **Gate 20.1:** Gate-failure, review-finding, correction-limit, malformed-diagnostic, interruption, and cumulative-review fixtures pass. See `docs/evidence/sprint-20-correction-recovery.md`.
 - [ ] **Gate 20.2:** One authorized live correction unit passes without manual repair or broadened authority.
 
 ---
@@ -1309,7 +1309,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 Sprint numbers remain stable identifiers for historical evidence. Complete the remaining work in
 this dependency order; do not skip forward merely because a later sprint number appears ready:
 
-1. Complete `20.1.3.4`, then close the remaining Sprint 20 acceptance criteria and gates with exact interrupted-correction evidence.
+1. Obtain the authorized live-provider evidence required by `Gate 20.2`; this does not block local implementation of dependency-ready work.
 2. Implement all of Story 21.2 and pass `Gate 21.2` before expanding serial campaign progression.
 3. Complete Stories 22.1 and 22.2, including durable dispositions, controls, status, recovery, and independent limits.
 4. Complete the Sprint 17 prescribed fake-adapter soak and remaining supervised pilot units before production unattended qualification.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Implement only sub-task `20.1.3.4`: reobserve and resume an interrupted correction without replaying a provider or Git effect, add focused crash-point and mutation tests, bind current evidence, and leave every downstream checkbox open until its own criteria pass.
+- [ ] **Next 1:** Implement only sub-task `21.2.1.1`: add mutually exclusive `propose`, `blocked`, `deferred`, and `human_decision_required` dispositions to the versioned lead schema, with focused strict-schema and mixed-disposition rejection tests; leave later Story 21.2 items open.

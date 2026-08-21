@@ -1,7 +1,7 @@
 # Sprint 22 Serial Recovery Evidence
 
-- **Status:** Reconciled-head and interrupted-integration recovery pass; active-provider recovery
-  and the complete Sprint 22 gate remain open
+- **Status:** Reconciled-head, interrupted-integration, and correction-session recovery pass;
+  initial-implementation recovery and the complete Sprint 22 gate remain open
 - **Implementation commit:** `f05f033`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
@@ -30,8 +30,9 @@ reporting only phase, actor category, branch, reconciled head, current and last 
 completed count, blocker count and code, elapsed time, and update time.
 
 Automatic resume of a planning-time provider pause is available through the same exact campaign
-invocation after access is restored. An interruption or capacity failure during an active provider
-unit remains blocked from automatic replay pending exact provider-session recovery.
+invocation after access is restored. Correction-session interruption now resumes through the exact
+integrity-bound run, worktree, candidate, round, and provider session. Initial implementation
+interruption remains blocked from automatic replay.
 
 ## Verification
 
@@ -47,8 +48,8 @@ without replay, durable status, and active-checkout preservation.
 
 ## Preserved Limits
 
-This evidence does not close active-provider-session recovery, correction-session recovery, complete
-campaign event journaling, exact limit projection, automatic authentication
+This evidence does not close initial-implementation-session recovery, complete campaign event
+journaling, exact limit projection, automatic authentication
 revalidation, cancellation, parallel pods, GitHub publication, native macOS or Windows evidence,
 manual fuzzing, or the sustained 24-hour or 48-hour soak gate. It authorizes only preparation of the
 explicitly requested bounded one-pod AgentMage pilot; it does not assert general unattended-release

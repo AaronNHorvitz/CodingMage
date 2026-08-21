@@ -65,7 +65,11 @@ The terminal JSON identifies the run, task, terminal state, retained branch, can
 
 - One live existing-login Claude implementation and exact-SHA Codex review are admitted as supervised local evidence; the five-unit and unattended campaigns remain open.
 - `bare` Claude authentication has no production credential-helper composition yet.
-- Production restart re-observation cannot yet resume an interrupted correction in place.
+- Production restart re-observation resumes an interrupted correction from its exact private,
+  integrity-bound session and candidate identities. Initial implementation-session interruption
+  remains unsupported.
 - The background service generator does not yet bind a run-spec queue to `codingmage run`.
 - No branch is pushed or merged automatically.
-- Crash recovery records state-changing uncertainty correctly, but production re-observation and resume of this concrete port remain open.
+- Crash recovery records state-changing uncertainty and reobserves correction provider and Git
+  effects. Other concrete provider and completion-phase recovery paths remain governed by their
+  explicit campaign limits and open gates.

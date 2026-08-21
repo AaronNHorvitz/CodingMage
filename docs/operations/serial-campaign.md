@@ -122,15 +122,17 @@ an empty blocked-task set; a defaulted field never bypasses integrity verificati
 | After a unit is reviewed and before campaign integration | Reobserve the expected and target heads, apply or recognize the exact reviewed fast-forward once, then continue. |
 | After a reconciled unit | Adopt the recorded head and do not replay the accepted unit. |
 | After campaign completion | Return the identical completed outcome without starting a provider or Git effect. |
-| During an active provider unit | Preserve the state and stop with `codingmage.campaign.interrupted_unit_requires_reconciliation`; automatic provider-session recovery remains open. |
+| During a correction provider session | Reload the exact run, worktree, candidate, correction round, and Claude session; reobserve any coordinator commit before resuming the same session. |
+| During the initial implementation provider session | Preserve the state and stop; automatic initial-session recovery remains open. |
 
 Content-free transient provider and session failures are retried as fresh isolated whole-unit
 attempts, with a fixed maximum of three attempts. Exhaustion becomes a durable
 `codingmage.campaign.provider_unavailable` pause. Quota and authentication failures are classified
 separately and pause without consuming a transient retry attempt. These clean provider returns
 release the owned unit before pausing, so the same exact campaign can continue after access is
-restored. A process interruption that prevents the active unit from releasing remains blocked from
-automatic replay until exact provider-session recovery is implemented.
+restored. A process interruption during a correction keeps the active unit and resumes through
+exact-session reobservation. An interruption during the initial implementation session remains
+blocked from automatic replay.
 
 Claude completion reports must select exactly one ready, blocked, or committed disposition. An
 invalid or malformed report receives one resume of the same exact provider session with a
@@ -167,10 +169,11 @@ an unbounded provider-invocation loop.
 
 ## Current Limits
 
-- Campaign checkpoints and accepted-head recovery are implemented; complete event journaling,
-  attempt/correction projections, and active-provider-session resume remain open.
+- Campaign checkpoints, accepted-head recovery, and exact correction-session recovery are
+  implemented; complete campaign event journaling, attempt projections, and interrupted initial
+  implementation-session resume remain open.
 - Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable;
-  interrupted active-provider-session recovery and operator stop-after-unit controls remain open.
+  interrupted initial-implementation recovery and operator stop-after-unit controls remain open.
 - Campaign execution is bounded by unit, attempt, correction, process, output, and resource limits;
   no monetary value is part of campaign or provider authority.
 - Blocked task IDs survive restart and are skipped, but operator-driven blocker clearance and a
