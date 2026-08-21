@@ -132,8 +132,9 @@ If deterministic gates or independent review still reject a unit after the confi
 budget is exhausted, the one-unit coordinator returns a recoverable terminal state. The campaign
 then clears its active-unit marker, releases the pod lease, retains the candidate branch for
 inspection, and durably pauses with `codingmage.campaign.unit_recoverable_failure`. A terminal or
-explicitly blocked one-unit outcome instead records `codingmage.campaign.unit_blocked`. Neither
-path advances the campaign head or changes the active checkout.
+explicitly blocked one-unit outcome instead records `codingmage.campaign.unit_blocked`. A terminal
+failure stops the campaign; an implementer-blocked task is durably excluded so independent work can
+continue. No such path advances the campaign head or changes the active checkout.
 
 Invalid or ambiguous lead ownership roots pause before implementation with
 `codingmage.campaign.lead_invalid_owned_paths`. Once a unit starts, a repository inventory or
@@ -144,6 +145,16 @@ unexpected internal failures block with `codingmage.campaign.unit_internal_failu
 clears the durable active-unit marker, releases the pod lease, preserves any candidate branch or
 scratch state needed for inspection, and never advances the campaign or active checkout.
 
+A valid implementer-blocked disposition is a task result, not an internal provider failure. The
+coordinator transitions that unit to `Blocked`, journals generic evidence without retaining the
+provider's prose or blocker text, releases all owned resources, and adds the exact task ID to the
+integrity-protected campaign checkpoint. Subsequent planning excludes that task while retaining it
+as unchecked in the canonical roadmap. Independent ready work can continue; dependency descendants
+remain unavailable through their normal unchecked dependency. When no unblocked ready task remains,
+the campaign stops with `codingmage.campaign.no_unblocked_ready_work`. The configured `max_units`
+ceiling counts both integrated units and durably blocked units so repeated blockers cannot produce
+an unbounded provider-spend loop.
+
 ## Current Limits
 
 - Campaign checkpoints and accepted-head recovery are implemented; complete event journaling,
@@ -152,6 +163,8 @@ scratch state needed for inspection, and never advances the campaign or active c
   interrupted active-provider-session recovery and operator stop-after-unit controls remain open.
 - Aggregate observed provider cost is not yet reconciled; configured unit and per-invocation
   ceilings remain the enforceable bounds.
+- Blocked task IDs survive restart and are skipped, but operator-driven blocker clearance and a
+  dedicated blocker-detail projection remain open.
 - Parallel live pods remain disabled even if the authority ceiling is greater than one.
 - Story-level draft PR publication and authenticated GitHub campaign evidence remain open.
 - A retained campaign branch requires human inspection; protected/default-branch promotion remains

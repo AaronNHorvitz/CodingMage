@@ -9,8 +9,8 @@ use std::{
 
 use codingmage_contracts::{EvidenceId, RunId, TaskId};
 use codingmage_orchestrator::{
-    OneUnitCoordinator, OrchestrationError, ReviewOutcome, TaskState, VerificationOutcome,
-    WorkflowPort,
+    ImplementationOutcome, OneUnitCoordinator, OrchestrationError, ReviewOutcome, TaskState,
+    VerificationOutcome, WorkflowPort,
 };
 use codingmage_plan::TaskPlan;
 use codingmage_soak::materialize_controlled_target_pilot_fixture;
@@ -35,8 +35,13 @@ impl WorkflowPort for FakeAgents {
         self.evidence("start")
     }
 
-    fn finish_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
-        self.evidence("implementation")
+    fn finish_implementation(
+        &mut self,
+    ) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
+        Ok((
+            ImplementationOutcome::Ready,
+            self.evidence("implementation")?,
+        ))
     }
 
     fn verify_local(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError> {
@@ -47,8 +52,8 @@ impl WorkflowPort for FakeAgents {
         Ok((ReviewOutcome::Pass, self.evidence("review")?))
     }
 
-    fn correct(&mut self) -> Result<EvidenceId, OrchestrationError> {
-        self.evidence("correction")
+    fn correct(&mut self) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
+        Ok((ImplementationOutcome::Ready, self.evidence("correction")?))
     }
 
     fn verify_final(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError> {

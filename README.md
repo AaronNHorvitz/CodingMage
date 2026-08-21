@@ -348,6 +348,13 @@ with `codingmage.campaign.unit_repository_boundary`; provider and deterministic-
 failures pause under their own content-free codes. All these paths clear the active-unit marker and
 leave the active checkout unchanged.
 
+A valid Claude implementation or correction report may also declare that its exact task is
+blocked. The coordinator journals that typed disposition, releases the unit, records the task ID in
+the integrity-protected campaign checkpoint, and excludes it from later selection without checking
+its task box. Independent dependency-ready work may continue until the configured campaign-unit
+ceiling is reached. If every remaining path depends on blocked work, the campaign stops with
+`codingmage.campaign.no_unblocked_ready_work` instead of retrying, inventing completion, or looping.
+
 Run `codingmage` from a normal VS Code terminal and leave that terminal open until the final JSON
 appears. During `run`, a live activity stream is written to stderr while the machine-readable final
 result remains isolated on stdout:

@@ -33,10 +33,10 @@ use codingmage_git::{
     integrate_reviewed_descendant, inventory_repository, remove_owned_worktree,
 };
 use codingmage_orchestrator::{
-    DurableWorkflowPort, OneUnitCoordinator, OrchestrationError, ReviewOutcome, TaskState,
-    VerificationOutcome, WorkflowPort, reconcile_and_select_next,
+    DurableWorkflowPort, ImplementationOutcome, OneUnitCoordinator, OrchestrationError,
+    ReviewOutcome, TaskState, VerificationOutcome, WorkflowPort, reconcile_and_select_next,
 };
-use codingmage_plan::{PlanItemKind, SelectedWork, TaskPlan};
+use codingmage_plan::{PlanError, PlanItemKind, SelectedWork, TaskPlan};
 use codingmage_process::{CancellationToken, ProcessExecutor, ProcessProfile, ProcessRequest};
 use codingmage_service::CoordinatorLock;
 use codingmage_state::Journal;
@@ -389,7 +389,11 @@ pub fn campaign_status(
         current_task_id: checkpoint.active_unit.map(|unit| unit.task_id),
         last_task_id: checkpoint.last_task_id,
         completed_units: checkpoint.completed_units,
-        blocker_count: u32::from(checkpoint.blocker_code.is_some()),
+        blocker_count: u32::try_from(checkpoint.blocked_task_ids.len())
+            .unwrap_or(u32::MAX)
+            .saturating_add(u32::from(
+                checkpoint.blocker_code.is_some() && checkpoint.blocked_task_ids.is_empty(),
+            )),
         blocker_code: checkpoint.blocker_code,
         elapsed_ms,
         updated_at_ms: checkpoint.updated_at_ms,
@@ -574,7 +578,10 @@ pub fn run_serial_campaign_with_progress(
                 None,
             ));
         }
-        if completed_units >= spec.max_units {
+        if completed_units
+            .saturating_add(u32::try_from(checkpoint.blocked_task_ids.len()).unwrap_or(u32::MAX))
+            >= spec.max_units
+        {
             checkpoint.phase = CampaignPhase::Paused;
             checkpoint.blocker_code = Some("codingmage.campaign.unit_ceiling".to_owned());
             checkpoint.persist(&campaign_root)?;
@@ -588,9 +595,26 @@ pub fn run_serial_campaign_with_progress(
                 Some("codingmage.campaign.unit_ceiling".to_owned()),
             ));
         }
-        let ready = plan
-            .select_ready(&BTreeSet::new(), &BTreeSet::new(), 64)
-            .map_err(|_| RuntimeError::Plan)?;
+        let ready = match plan.select_ready(&checkpoint.blocked_task_ids, &BTreeSet::new(), 64) {
+            Ok(ready) => ready,
+            Err(PlanError::NoReadyWork) if !checkpoint.blocked_task_ids.is_empty() => {
+                let blocker_code = "codingmage.campaign.no_unblocked_ready_work".to_owned();
+                checkpoint.phase = CampaignPhase::Blocked;
+                checkpoint.active_unit = None;
+                checkpoint.blocker_code = Some(blocker_code.clone());
+                checkpoint.persist(&campaign_root)?;
+                return Ok(campaign_outcome(
+                    &spec,
+                    CampaignState::Blocked,
+                    &campaign,
+                    head,
+                    completed_units,
+                    last_task_id,
+                    Some(blocker_code),
+                ));
+            }
+            Err(_) => return Err(RuntimeError::Plan),
+        };
         spec.initial_commit.clone_from(&head);
         spec.task_source_sha256.clone_from(&plan.source_sha256);
         let binding = lead_binding(&spec, &campaign, &ready);
@@ -792,6 +816,17 @@ pub fn run_serial_campaign_with_progress(
                 }
             }
         };
+        if unit.state == TaskState::Blocked {
+            checkpoint.blocked_task_ids.insert(lease.task_id.clone());
+            checkpoint.phase = CampaignPhase::Ready;
+            checkpoint.active_unit = None;
+            checkpoint.blocker_code = Some("codingmage.campaign.unit_blocked".to_owned());
+            checkpoint.persist(&campaign_root)?;
+            scheduler
+                .release(&lease.pod_id)
+                .map_err(RuntimeError::Campaign)?;
+            continue;
+        }
         if let Some((campaign_state, phase, blocker_code)) = campaign_unit_pause(&unit) {
             checkpoint.phase = phase;
             checkpoint.active_unit = None;
@@ -855,7 +890,7 @@ const fn campaign_unit_pause(
     unit: &RunOutcome,
 ) -> Option<(CampaignState, CampaignPhase, &'static str)> {
     match unit.state {
-        TaskState::Blocked | TaskState::TerminalFailure => Some((
+        TaskState::TerminalFailure => Some((
             CampaignState::Blocked,
             CampaignPhase::Blocked,
             "codingmage.campaign.unit_blocked",
@@ -865,7 +900,8 @@ const fn campaign_unit_pause(
             CampaignPhase::Paused,
             "codingmage.campaign.unit_recoverable_failure",
         )),
-        TaskState::Discovered
+        TaskState::Blocked
+        | TaskState::Discovered
         | TaskState::Ready
         | TaskState::Claimed
         | TaskState::Implementing
@@ -1215,7 +1251,9 @@ where
         self.inner.start_implementation()
     }
 
-    fn finish_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
+    fn finish_implementation(
+        &mut self,
+    ) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
         self.report(ProgressActor::Claude, ProgressStage::Implementing);
         self.inner.finish_implementation()
     }
@@ -1237,7 +1275,7 @@ where
         self.inner.review()
     }
 
-    fn correct(&mut self) -> Result<EvidenceId, OrchestrationError> {
+    fn correct(&mut self) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
         self.report(ProgressActor::Claude, ProgressStage::Correcting);
         self.inner.correct()
     }
@@ -1583,12 +1621,13 @@ impl<'a> ProductionWorkflowPort<'a> {
         let source_commit = self.candidate()?.commit.clone();
         let packet = self.claude_packet(Some(self.correction_context()?));
         let report = self.execute_claude_packet(packet, source_commit)?;
-        if !report.ready_for_commit
-            || report.blocker_code.is_some()
-            || report.commit.is_some()
-            || self.spec.completion_policy == CompletionPolicy::CloseTask
-                && !report.limitations.is_empty()
+        if report.blocker_code.is_none()
+            && (!report.ready_for_commit
+                || report.commit.is_some()
+                || self.spec.completion_policy == CompletionPolicy::CloseTask
+                    && !report.limitations.is_empty())
         {
+            self.failure = Some(RuntimeError::Implementer(ClaudeError::InvalidReport));
             return Err(OrchestrationError::Port);
         }
         Ok(report)
@@ -1678,10 +1717,20 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         evidence_id("implementation-started")
     }
 
-    fn finish_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
+    fn finish_implementation(
+        &mut self,
+    ) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
         let report =
             self.execute_claude_packet(self.claude_packet(None), self.source_commit.clone())?;
-        if !report.ready_for_commit || report.blocker_code.is_some() || report.commit.is_some() {
+        if report.blocker_code.is_some() {
+            self.implementation = Some(report);
+            return Ok((
+                ImplementationOutcome::Blocked,
+                evidence_id("implementation-blocked")?,
+            ));
+        }
+        if !report.ready_for_commit || report.commit.is_some() {
+            self.failure = Some(RuntimeError::Implementer(ClaudeError::InvalidReport));
             return Err(OrchestrationError::Port);
         }
         if self.spec.completion_policy == CompletionPolicy::CloseTask
@@ -1716,7 +1765,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         let evidence = evidence_id(&receipt.commit)?;
         self.implementation = Some(report);
         self.candidate = Some(receipt);
-        Ok(evidence)
+        Ok((ImplementationOutcome::Ready, evidence))
     }
 
     fn verify_local(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError> {
@@ -1769,9 +1818,16 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         Ok((outcome, evidence))
     }
 
-    fn correct(&mut self) -> Result<EvidenceId, OrchestrationError> {
+    fn correct(&mut self) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
         let expected_parent = self.candidate()?.commit.clone();
         let report = self.execute_claude_correction()?;
+        if report.blocker_code.is_some() {
+            self.implementation = Some(report);
+            return Ok((
+                ImplementationOutcome::Blocked,
+                evidence_id("correction-blocked")?,
+            ));
+        }
         let receipt = commit_owned_changes(
             &self.authorization,
             self.worktree()?,
@@ -1803,7 +1859,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         self.review_report = None;
         self.review_verdict = None;
         self.correction_round = self.correction_round.saturating_add(1);
-        Ok(evidence)
+        Ok((ImplementationOutcome::Ready, evidence))
     }
 
     fn verify_final(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError> {
@@ -2309,6 +2365,7 @@ effort = "high"
                 "codingmage.campaign.unit_blocked"
             ))
         );
+        assert_eq!(campaign_unit_pause(&outcome(TaskState::Blocked)), None);
         assert_eq!(campaign_unit_pause(&outcome(TaskState::Complete)), None);
     }
 

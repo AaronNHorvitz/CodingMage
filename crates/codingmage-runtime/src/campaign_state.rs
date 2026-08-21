@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeSet,
     fs::{self, File, OpenOptions},
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -62,6 +63,8 @@ pub(crate) struct CampaignCheckpoint {
     pub last_task_id: Option<String>,
     pub phase: CampaignPhase,
     pub blocker_code: Option<String>,
+    #[serde(default)]
+    pub blocked_task_ids: BTreeSet<String>,
     pub active_unit: Option<ActiveUnit>,
     pub pending_integration: Option<PendingIntegration>,
     pub started_at_ms: u64,
@@ -101,6 +104,7 @@ impl CampaignCheckpoint {
             last_task_id: None,
             phase: CampaignPhase::Ready,
             blocker_code: None,
+            blocked_task_ids: BTreeSet::new(),
             active_unit: None,
             pending_integration: None,
             started_at_ms: now,
@@ -286,6 +290,7 @@ mod tests {
         let root = root("round-trip");
         let mut checkpoint = checkpoint();
         checkpoint.phase = CampaignPhase::Integrating;
+        checkpoint.blocked_task_ids.insert("1.1.1.2".to_owned());
         checkpoint.pending_integration = Some(PendingIntegration {
             task_id: "1.1.1.1".to_owned(),
             expected_head: "b".repeat(40),

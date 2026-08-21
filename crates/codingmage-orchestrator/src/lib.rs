@@ -186,6 +186,15 @@ pub enum VerificationOutcome {
     TerminalFailure,
 }
 
+/// Structured implementation or correction disposition consumed by the coordinator.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ImplementationOutcome {
+    /// The bounded edits are ready for coordinator-owned commit and verification.
+    Ready,
+    /// The implementer reported a precise blocker and produced no accepted candidate.
+    Blocked,
+}
+
 /// Narrow effect ports composed by the one-unit coordinator.
 #[allow(clippy::missing_errors_doc)]
 pub trait WorkflowPort {
@@ -194,13 +203,15 @@ pub trait WorkflowPort {
     /// Creates one owned worktree and implementation session.
     fn start_implementation(&mut self) -> Result<EvidenceId, OrchestrationError>;
     /// Waits for one structured implementation result.
-    fn finish_implementation(&mut self) -> Result<EvidenceId, OrchestrationError>;
+    fn finish_implementation(
+        &mut self,
+    ) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError>;
     /// Runs deterministic local gates.
     fn verify_local(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError>;
     /// Runs read-only senior review.
     fn review(&mut self) -> Result<(ReviewOutcome, EvidenceId), OrchestrationError>;
     /// Applies one bounded correction packet.
-    fn correct(&mut self) -> Result<EvidenceId, OrchestrationError>;
+    fn correct(&mut self) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError>;
     /// Runs final verification after pass or correction.
     fn verify_final(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError>;
     /// Writes a durable success checkpoint.
@@ -372,10 +383,14 @@ impl<P: WorkflowPort> WorkflowPort for DurableWorkflowPort<'_, P> {
         self.record_observation(WorkflowOperation::StartImplementation, value)
     }
 
-    fn finish_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
+    fn finish_implementation(
+        &mut self,
+    ) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
         self.record_intent(WorkflowOperation::FinishImplementation)?;
-        let value = self.inner.finish_implementation()?;
-        self.record_observation(WorkflowOperation::FinishImplementation, value)
+        let (outcome, evidence) = self.inner.finish_implementation()?;
+        let evidence =
+            self.record_observation(WorkflowOperation::FinishImplementation, evidence)?;
+        Ok((outcome, evidence))
     }
 
     fn verify_local(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError> {
@@ -392,10 +407,11 @@ impl<P: WorkflowPort> WorkflowPort for DurableWorkflowPort<'_, P> {
         Ok((outcome, evidence))
     }
 
-    fn correct(&mut self) -> Result<EvidenceId, OrchestrationError> {
+    fn correct(&mut self) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
         self.record_intent(WorkflowOperation::Correct)?;
-        let value = self.inner.correct()?;
-        self.record_observation(WorkflowOperation::Correct, value)
+        let (outcome, evidence) = self.inner.correct()?;
+        let evidence = self.record_observation(WorkflowOperation::Correct, evidence)?;
+        Ok((outcome, evidence))
     }
 
     fn verify_final(&mut self) -> Result<(VerificationOutcome, EvidenceId), OrchestrationError> {
@@ -522,7 +538,15 @@ impl OneUnitCoordinator {
             SideEffectIntent::CreateImplementation,
             started,
         )?;
-        let implemented = port.finish_implementation()?;
+        let (implementation, implemented) = port.finish_implementation()?;
+        if implementation == ImplementationOutcome::Blocked {
+            self.transition(
+                TaskState::Blocked,
+                SideEffectIntent::ReleaseOwnedResources,
+                implemented,
+            )?;
+            return Ok(self.state());
+        }
         self.transition(
             TaskState::LocalVerification,
             SideEffectIntent::RunLocalGates,
@@ -534,7 +558,9 @@ impl OneUnitCoordinator {
                 if local == VerificationOutcome::TerminalFailure || !self.correction_available() {
                     return self.finish_failure(local, local_evidence);
                 }
-                self.apply_correction(port, local_evidence)?;
+                if self.apply_correction(port, local_evidence)? {
+                    return Ok(self.state());
+                }
                 continue;
             }
             self.transition(
@@ -561,7 +587,9 @@ impl OneUnitCoordinator {
                         )?;
                         return Ok(self.state());
                     }
-                    self.apply_correction(port, review_evidence)?;
+                    if self.apply_correction(port, review_evidence)? {
+                        return Ok(self.state());
+                    }
                     continue;
                 }
                 ReviewOutcome::Pass => {}
@@ -584,7 +612,9 @@ impl OneUnitCoordinator {
             {
                 return self.finish_failure(final_outcome, final_evidence);
             }
-            self.apply_correction(port, final_evidence)?;
+            if self.apply_correction(port, final_evidence)? {
+                return Ok(self.state());
+            }
         }
         let checkpoint = port.checkpoint()?;
         if !reconcile {
@@ -607,19 +637,28 @@ impl OneUnitCoordinator {
         &mut self,
         port: &mut impl WorkflowPort,
         evidence: EvidenceId,
-    ) -> Result<(), OrchestrationError> {
+    ) -> Result<bool, OrchestrationError> {
         self.transition(
             TaskState::Correcting,
             SideEffectIntent::StartCorrection,
             evidence,
         )?;
-        let correction = port.correct()?;
+        let (outcome, correction) = port.correct()?;
         self.correction_count = self.correction_count.saturating_add(1);
+        if outcome == ImplementationOutcome::Blocked {
+            self.transition(
+                TaskState::Blocked,
+                SideEffectIntent::ReleaseOwnedResources,
+                correction,
+            )?;
+            return Ok(true);
+        }
         self.transition(
             TaskState::LocalVerification,
             SideEffectIntent::RunLocalGates,
             correction,
-        )
+        )?;
+        Ok(false)
     }
 
     fn finish_failure(
@@ -847,6 +886,8 @@ mod tests {
     #[derive(Default)]
     struct FakePort {
         calls: Vec<&'static str>,
+        implementation: Option<ImplementationOutcome>,
+        correction: Option<ImplementationOutcome>,
         review: Option<ReviewOutcome>,
         review_calls: usize,
         local: Option<VerificationOutcome>,
@@ -872,8 +913,14 @@ mod tests {
         fn start_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
             self.call("start")
         }
-        fn finish_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
-            self.call("implemented")
+        fn finish_implementation(
+            &mut self,
+        ) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
+            let evidence = self.call("implemented")?;
+            Ok((
+                self.implementation.unwrap_or(ImplementationOutcome::Ready),
+                evidence,
+            ))
         }
         fn verify_local(
             &mut self,
@@ -890,8 +937,12 @@ mod tests {
             };
             Ok((outcome, evidence))
         }
-        fn correct(&mut self) -> Result<EvidenceId, OrchestrationError> {
-            self.call("correct")
+        fn correct(&mut self) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
+            let evidence = self.call("correct")?;
+            Ok((
+                self.correction.unwrap_or(ImplementationOutcome::Ready),
+                evidence,
+            ))
         }
         fn verify_final(
             &mut self,
@@ -1032,6 +1083,14 @@ mod tests {
     fn correction_and_block_paths_are_bounded() {
         let mut coordinator = new_coordinator();
         let mut port = FakePort {
+            implementation: Some(ImplementationOutcome::Blocked),
+            ..FakePort::default()
+        };
+        assert_eq!(coordinator.run(&mut port), Ok(TaskState::Blocked));
+        assert_eq!(port.calls, ["claim", "start", "implemented", "release"]);
+
+        let mut coordinator = new_coordinator();
+        let mut port = FakePort {
             review: Some(ReviewOutcome::ChangesRequired),
             ..FakePort::default()
         };
@@ -1047,6 +1106,15 @@ mod tests {
         let mut coordinator = new_coordinator();
         let mut port = FakePort {
             review: Some(ReviewOutcome::Blocked),
+            ..FakePort::default()
+        };
+        assert_eq!(coordinator.run(&mut port), Ok(TaskState::Blocked));
+        assert_eq!(port.calls.last(), Some(&"release"));
+
+        let mut coordinator = new_coordinator();
+        let mut port = FakePort {
+            review: Some(ReviewOutcome::ChangesRequired),
+            correction: Some(ImplementationOutcome::Blocked),
             ..FakePort::default()
         };
         assert_eq!(coordinator.run(&mut port), Ok(TaskState::Blocked));
