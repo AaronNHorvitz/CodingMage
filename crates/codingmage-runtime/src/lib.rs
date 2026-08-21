@@ -306,6 +306,26 @@ pub enum CampaignState {
     Blocked,
 }
 
+/// Closed reason why one campaign invocation stopped admitting work.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CampaignStopReason {
+    /// Every canonical sub-task is complete.
+    Completion,
+    /// An authenticated operator cancelled the exact campaign.
+    OperatorCancellation,
+    /// Provider or execution capacity is temporarily unavailable.
+    CapacityPause,
+    /// The accepted-outcome ceiling was reached.
+    UnitLimit,
+    /// A bounded provider, correction, or malformed-report attempt limit was reached.
+    AttemptLimit,
+    /// No independently safe dependency-ready work remains.
+    NoIndependentReadyWork,
+    /// A policy, authority, repository, or integrity boundary stopped execution.
+    TerminalPolicyFailure,
+}
+
 /// Content-minimized result of one serial campaign invocation.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -320,10 +340,33 @@ pub struct CampaignOutcome {
     pub head: String,
     /// Number of units integrated by this invocation.
     pub completed_units: u32,
+    /// Closed stopping condition for this invocation.
+    pub stop_reason: CampaignStopReason,
     /// Last selected task, absent when no unit started.
     pub last_task_id: Option<String>,
     /// Content-free blocker code when blocked.
     pub blocker_code: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct CampaignTermination {
+    state: CampaignState,
+    reason: CampaignStopReason,
+    blocker_code: Option<String>,
+}
+
+impl CampaignTermination {
+    const fn new(
+        state: CampaignState,
+        reason: CampaignStopReason,
+        blocker_code: Option<String>,
+    ) -> Self {
+        Self {
+            state,
+            reason,
+            blocker_code,
+        }
+    }
 }
 
 /// Privacy-safe durable campaign status without provider or repository content.
@@ -905,12 +948,15 @@ pub fn run_serial_campaign_with_progress(
     if checkpoint.phase == CampaignPhase::Complete {
         return Ok(campaign_outcome(
             &spec,
-            CampaignState::Complete,
             &campaign,
             checkpoint.head,
             checkpoint.completed_units,
             checkpoint.last_task_id,
-            None,
+            CampaignTermination::new(
+                CampaignState::Complete,
+                CampaignStopReason::Completion,
+                None,
+            ),
         ));
     }
     let mut interrupted_active = checkpoint.active_unit.clone();
@@ -924,12 +970,15 @@ pub fn run_serial_campaign_with_progress(
         checkpoint.persist(&campaign_root)?;
         return Ok(campaign_outcome(
             &spec,
-            CampaignState::Blocked,
             &campaign,
             checkpoint.head,
             checkpoint.completed_units,
             checkpoint.last_task_id,
-            checkpoint.blocker_code,
+            CampaignTermination::new(
+                CampaignState::Blocked,
+                CampaignStopReason::TerminalPolicyFailure,
+                checkpoint.blocker_code,
+            ),
         ));
     }
     if interrupted_active.is_none() {
@@ -958,12 +1007,15 @@ pub fn run_serial_campaign_with_progress(
             checkpoint.persist(&campaign_root)?;
             return Ok(campaign_outcome(
                 &spec,
-                CampaignState::Complete,
                 &campaign,
                 head,
                 completed_units,
                 last_task_id,
-                None,
+                CampaignTermination::new(
+                    CampaignState::Complete,
+                    CampaignStopReason::Completion,
+                    None,
+                ),
             ));
         }
         if completed_units
@@ -977,12 +1029,15 @@ pub fn run_serial_campaign_with_progress(
             checkpoint.persist(&campaign_root)?;
             return Ok(campaign_outcome(
                 &spec,
-                CampaignState::Paused,
                 &campaign,
                 head,
                 completed_units,
                 last_task_id,
-                Some("codingmage.campaign.unit_ceiling".to_owned()),
+                CampaignTermination::new(
+                    CampaignState::Paused,
+                    CampaignStopReason::UnitLimit,
+                    Some("codingmage.campaign.unit_ceiling".to_owned()),
+                ),
             ));
         }
         let mut scheduler = PodScheduler::new(&spec).map_err(RuntimeError::Campaign)?;
@@ -1048,12 +1103,15 @@ pub fn run_serial_campaign_with_progress(
                     checkpoint.persist(&campaign_root)?;
                     return Ok(campaign_outcome(
                         &spec,
-                        state,
                         &campaign,
                         head,
                         completed_units,
                         last_task_id,
-                        Some(blocker_code),
+                        CampaignTermination::new(
+                            state,
+                            CampaignStopReason::NoIndependentReadyWork,
+                            Some(blocker_code),
+                        ),
                     ));
                 }
                 Err(_) => return Err(RuntimeError::Plan),
@@ -1083,12 +1141,15 @@ pub fn run_serial_campaign_with_progress(
                     checkpoint.persist(&campaign_root)?;
                     return Ok(campaign_outcome(
                         &spec,
-                        CampaignState::Paused,
                         &campaign,
                         head,
                         completed_units,
                         last_task_id,
-                        Some(blocker_code),
+                        CampaignTermination::new(
+                            CampaignState::Paused,
+                            CampaignStopReason::CapacityPause,
+                            Some(blocker_code),
+                        ),
                     ));
                 }
                 Err(CodexError::InvalidOutput | CodexError::InvalidReport) => {
@@ -1207,12 +1268,15 @@ pub fn run_serial_campaign_with_progress(
                 checkpoint.persist(&campaign_root)?;
                 return Ok(campaign_outcome(
                     &spec,
-                    CampaignState::Paused,
                     &campaign,
                     head,
                     completed_units,
                     last_task_id,
-                    Some(blocker_code),
+                    CampaignTermination::new(
+                        CampaignState::Paused,
+                        CampaignStopReason::TerminalPolicyFailure,
+                        Some(blocker_code),
+                    ),
                 ));
             }
             if proposal.owned_paths.iter().any(|path| {
@@ -1298,6 +1362,8 @@ pub fn run_serial_campaign_with_progress(
                     ));
                 }
                 Err(error) if provider_pause_code(error).is_some() => {
+                    let stop_reason =
+                        provider_pause_stop_reason(error).ok_or(RuntimeError::Orchestration)?;
                     let blocker_code = provider_pause_code(error)
                         .ok_or(RuntimeError::Orchestration)?
                         .to_owned();
@@ -1312,12 +1378,15 @@ pub fn run_serial_campaign_with_progress(
                     }
                     return Ok(campaign_outcome(
                         &spec,
-                        CampaignState::Paused,
                         &campaign,
                         head,
                         completed_units,
                         last_task_id,
-                        Some(blocker_code),
+                        CampaignTermination::new(
+                            CampaignState::Paused,
+                            stop_reason,
+                            Some(blocker_code),
+                        ),
                     ));
                 }
                 Err(error) if retryable_campaign_provider_failure(error) => {
@@ -1333,16 +1402,20 @@ pub fn run_serial_campaign_with_progress(
                     }
                     return Ok(campaign_outcome(
                         &spec,
-                        CampaignState::Paused,
                         &campaign,
                         head,
                         completed_units,
                         last_task_id,
-                        Some(blocker_code),
+                        CampaignTermination::new(
+                            CampaignState::Paused,
+                            CampaignStopReason::AttemptLimit,
+                            Some(blocker_code),
+                        ),
                     ));
                 }
                 Err(error) => {
-                    let (campaign_state, phase, blocker_code) = campaign_unit_error(error);
+                    let (campaign_state, phase, stop_reason, blocker_code) =
+                        campaign_unit_error(error);
                     checkpoint.phase = phase;
                     checkpoint.active_unit = None;
                     checkpoint.blocker_code = Some(blocker_code.to_owned());
@@ -1354,12 +1427,15 @@ pub fn run_serial_campaign_with_progress(
                     }
                     return Ok(campaign_outcome(
                         &spec,
-                        campaign_state,
                         &campaign,
                         head,
                         completed_units,
                         last_task_id,
-                        Some(blocker_code.to_owned()),
+                        CampaignTermination::new(
+                            campaign_state,
+                            stop_reason,
+                            Some(blocker_code.to_owned()),
+                        ),
                     ));
                 }
             }
@@ -1377,7 +1453,8 @@ pub fn run_serial_campaign_with_progress(
             }
             continue;
         }
-        if let Some((campaign_state, phase, blocker_code)) = campaign_unit_pause(&unit) {
+        if let Some((campaign_state, phase, stop_reason, blocker_code)) = campaign_unit_pause(&unit)
+        {
             checkpoint.phase = phase;
             checkpoint.active_unit = None;
             checkpoint.blocker_code = Some(blocker_code.to_owned());
@@ -1389,12 +1466,15 @@ pub fn run_serial_campaign_with_progress(
             }
             return Ok(campaign_outcome(
                 &spec,
-                campaign_state,
                 &campaign,
                 head,
                 completed_units,
                 last_task_id,
-                Some(blocker_code.to_owned()),
+                CampaignTermination::new(
+                    campaign_state,
+                    stop_reason,
+                    Some(blocker_code.to_owned()),
+                ),
             ));
         }
         if unit.state != TaskState::Complete || unit.review_verdict.as_deref() != Some("pass") {
@@ -1507,16 +1587,23 @@ fn campaign_queue_projection(
 
 const fn campaign_unit_pause(
     unit: &RunOutcome,
-) -> Option<(CampaignState, CampaignPhase, &'static str)> {
+) -> Option<(
+    CampaignState,
+    CampaignPhase,
+    CampaignStopReason,
+    &'static str,
+)> {
     match unit.state {
         TaskState::TerminalFailure => Some((
             CampaignState::Blocked,
             CampaignPhase::Blocked,
+            CampaignStopReason::TerminalPolicyFailure,
             "codingmage.campaign.unit_blocked",
         )),
         TaskState::Paused | TaskState::RecoverableFailure | TaskState::Cancelled => Some((
             CampaignState::Paused,
             CampaignPhase::Paused,
+            CampaignStopReason::AttemptLimit,
             "codingmage.campaign.unit_recoverable_failure",
         )),
         TaskState::Blocked
@@ -1533,21 +1620,31 @@ const fn campaign_unit_pause(
     }
 }
 
-const fn campaign_unit_error(error: RuntimeError) -> (CampaignState, CampaignPhase, &'static str) {
+const fn campaign_unit_error(
+    error: RuntimeError,
+) -> (
+    CampaignState,
+    CampaignPhase,
+    CampaignStopReason,
+    &'static str,
+) {
     match error {
         RuntimeError::Verification => (
             CampaignState::Paused,
             CampaignPhase::Paused,
+            CampaignStopReason::AttemptLimit,
             "codingmage.campaign.unit_verification_failure",
         ),
         RuntimeError::Implementer(_) | RuntimeError::Reviewer(_) => (
             CampaignState::Paused,
             CampaignPhase::Paused,
+            CampaignStopReason::AttemptLimit,
             "codingmage.campaign.unit_provider_failure",
         ),
         RuntimeError::Repository => (
             CampaignState::Blocked,
             CampaignPhase::Blocked,
+            CampaignStopReason::TerminalPolicyFailure,
             "codingmage.campaign.unit_repository_boundary",
         ),
         RuntimeError::Spec
@@ -1560,6 +1657,7 @@ const fn campaign_unit_error(error: RuntimeError) -> (CampaignState, CampaignPha
         | RuntimeError::Integration => (
             CampaignState::Blocked,
             CampaignPhase::Blocked,
+            CampaignStopReason::TerminalPolicyFailure,
             "codingmage.campaign.unit_internal_failure",
         ),
     }
@@ -1585,6 +1683,20 @@ const fn provider_pause_code(error: RuntimeError) -> Option<&'static str> {
         RuntimeError::Implementer(ClaudeError::InvalidReport | ClaudeError::InvalidOutput)
         | RuntimeError::Reviewer(CodexError::InvalidReport | CodexError::InvalidOutput) => {
             Some("codingmage.campaign.provider_invalid_output")
+        }
+        _ => None,
+    }
+}
+
+const fn provider_pause_stop_reason(error: RuntimeError) -> Option<CampaignStopReason> {
+    match error {
+        RuntimeError::Implementer(ClaudeError::Quota | ClaudeError::Authentication)
+        | RuntimeError::Reviewer(CodexError::Quota | CodexError::Authentication) => {
+            Some(CampaignStopReason::CapacityPause)
+        }
+        RuntimeError::Implementer(ClaudeError::InvalidReport | ClaudeError::InvalidOutput)
+        | RuntimeError::Reviewer(CodexError::InvalidReport | CodexError::InvalidOutput) => {
+            Some(CampaignStopReason::AttemptLimit)
         }
         _ => None,
     }
@@ -1756,12 +1868,15 @@ fn record_lead_rejection(
     checkpoint.persist(campaign_root)?;
     Ok(campaign_outcome(
         spec,
-        CampaignState::Paused,
         campaign,
         head.to_owned(),
         completed_units,
         last_task_id,
-        Some(blocker_code),
+        CampaignTermination::new(
+            CampaignState::Paused,
+            CampaignStopReason::AttemptLimit,
+            Some(blocker_code),
+        ),
     ))
 }
 
@@ -1806,21 +1921,21 @@ fn lead_binding(
 
 fn campaign_outcome(
     spec: &CampaignSpec,
-    state: CampaignState,
     campaign: &OwnedWorktree,
     head: String,
     completed_units: u32,
     last_task_id: Option<String>,
-    blocker_code: Option<String>,
+    termination: CampaignTermination,
 ) -> CampaignOutcome {
     CampaignOutcome {
         campaign_id: spec.campaign_id.clone(),
-        state,
+        state: termination.state,
         branch: campaign.manifest().branch.clone(),
         head,
         completed_units,
+        stop_reason: termination.reason,
         last_task_id,
-        blocker_code,
+        blocker_code: termination.blocker_code,
     }
 }
 
@@ -3597,18 +3712,63 @@ effort = "high"
             Some("codingmage.campaign.provider_quota")
         );
         assert_eq!(
+            provider_pause_stop_reason(RuntimeError::Implementer(ClaudeError::Quota)),
+            Some(CampaignStopReason::CapacityPause)
+        );
+        assert_eq!(
             provider_pause_code(RuntimeError::Reviewer(CodexError::Authentication)),
             Some("codingmage.campaign.provider_authentication")
+        );
+        assert_eq!(
+            provider_pause_stop_reason(RuntimeError::Reviewer(CodexError::Authentication)),
+            Some(CampaignStopReason::CapacityPause)
         );
         assert_eq!(
             provider_pause_code(RuntimeError::Implementer(ClaudeError::InvalidReport)),
             Some("codingmage.campaign.provider_invalid_output")
         );
         assert_eq!(
+            provider_pause_stop_reason(RuntimeError::Implementer(ClaudeError::InvalidReport)),
+            Some(CampaignStopReason::AttemptLimit)
+        );
+        assert_eq!(
             provider_pause_code(RuntimeError::Reviewer(CodexError::InvalidOutput)),
             Some("codingmage.campaign.provider_invalid_output")
         );
+        assert_eq!(
+            provider_pause_stop_reason(RuntimeError::Reviewer(CodexError::InvalidOutput)),
+            Some(CampaignStopReason::AttemptLimit)
+        );
         assert_eq!(provider_pause_code(RuntimeError::Verification), None);
+        assert_eq!(provider_pause_stop_reason(RuntimeError::Verification), None);
+    }
+
+    #[test]
+    fn campaign_stop_reasons_are_closed_and_content_free() {
+        let reasons = [
+            (CampaignStopReason::Completion, "completion"),
+            (
+                CampaignStopReason::OperatorCancellation,
+                "operator_cancellation",
+            ),
+            (CampaignStopReason::CapacityPause, "capacity_pause"),
+            (CampaignStopReason::UnitLimit, "unit_limit"),
+            (CampaignStopReason::AttemptLimit, "attempt_limit"),
+            (
+                CampaignStopReason::NoIndependentReadyWork,
+                "no_independent_ready_work",
+            ),
+            (
+                CampaignStopReason::TerminalPolicyFailure,
+                "terminal_policy_failure",
+            ),
+        ];
+        for (reason, expected) in reasons {
+            assert_eq!(
+                serde_json::to_string(&reason).unwrap(),
+                format!("\"{expected}\"")
+            );
+        }
     }
 
     #[test]
@@ -3667,6 +3827,7 @@ effort = "high"
             Some((
                 CampaignState::Paused,
                 CampaignPhase::Paused,
+                CampaignStopReason::AttemptLimit,
                 "codingmage.campaign.unit_recoverable_failure"
             ))
         );
@@ -3675,6 +3836,7 @@ effort = "high"
             Some((
                 CampaignState::Blocked,
                 CampaignPhase::Blocked,
+                CampaignStopReason::TerminalPolicyFailure,
                 "codingmage.campaign.unit_blocked"
             ))
         );
@@ -3689,6 +3851,7 @@ effort = "high"
             (
                 CampaignState::Blocked,
                 CampaignPhase::Blocked,
+                CampaignStopReason::TerminalPolicyFailure,
                 "codingmage.campaign.unit_repository_boundary"
             )
         );
@@ -3697,6 +3860,7 @@ effort = "high"
             (
                 CampaignState::Paused,
                 CampaignPhase::Paused,
+                CampaignStopReason::AttemptLimit,
                 "codingmage.campaign.unit_verification_failure"
             )
         );
@@ -3705,6 +3869,7 @@ effort = "high"
             (
                 CampaignState::Blocked,
                 CampaignPhase::Blocked,
+                CampaignStopReason::TerminalPolicyFailure,
                 "codingmage.campaign.unit_internal_failure"
             )
         );

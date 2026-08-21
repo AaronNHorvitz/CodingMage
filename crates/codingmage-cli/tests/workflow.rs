@@ -526,6 +526,7 @@ profiles = ["configured-gates"]
     );
     let paused: serde_json::Value = serde_json::from_slice(&paused.stdout).unwrap();
     assert_eq!(paused["state"], "paused");
+    assert_eq!(paused["stop_reason"], "no_independent_ready_work");
     assert_eq!(paused["completed_units"], 1);
     assert_eq!(
         paused["blocker_code"],
@@ -593,6 +594,7 @@ profiles = ["configured-gates"]
     );
     let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
     assert_eq!(outcome["state"], "complete");
+    assert_eq!(outcome["stop_reason"], "completion");
     assert_eq!(outcome["completed_units"], 2);
     assert_eq!(outcome["last_task_id"], "0.1.1.1");
     assert_eq!(
@@ -1082,6 +1084,7 @@ profiles = ["configured-gates"]
     );
     let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
     assert_eq!(outcome["state"], "blocked", "outcome={outcome}");
+    assert_eq!(outcome["stop_reason"], "no_independent_ready_work");
     assert_eq!(outcome["completed_units"], 1);
     assert_eq!(
         outcome["blocker_code"],
@@ -1427,6 +1430,7 @@ profiles = ["configured-gates"]
     );
     let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
     assert_eq!(outcome["state"], "paused");
+    assert_eq!(outcome["stop_reason"], "attempt_limit");
     assert_eq!(outcome["completed_units"], 0);
     assert_eq!(outcome["last_task_id"], "0.1.1.1");
     assert_eq!(
@@ -1664,6 +1668,7 @@ profiles = ["configured-gates"]
     );
     let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
     assert_eq!(outcome["state"], "blocked");
+    assert_eq!(outcome["stop_reason"], "no_independent_ready_work");
     assert_eq!(outcome["completed_units"], 1);
     assert_eq!(
         outcome["blocker_code"],
@@ -1881,6 +1886,7 @@ profiles = ["configured-gates"]
         );
         let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
         assert_eq!(outcome["state"], "paused");
+        assert_eq!(outcome["stop_reason"], "attempt_limit");
         assert_eq!(outcome["completed_units"], 0);
         assert_eq!(outcome["blocker_code"], expected_code);
 
