@@ -682,7 +682,10 @@ fn parse_result(bytes: &[u8]) -> Result<ClaudeCompletionReport, ClaudeError> {
             .get("subtype")
             .and_then(serde_json::Value::as_str)
             .unwrap_or_default();
-        return Err(classify_provider_error(subtype));
+        let api_status = envelope
+            .get("api_error_status")
+            .and_then(serde_json::Value::as_u64);
+        return Err(classify_provider_error(subtype, api_status));
     }
     let structured = envelope
         .get("structured_output")
@@ -705,10 +708,11 @@ fn map_process_outcome(result: &ProcessResult) -> Result<(), ClaudeError> {
     }
 }
 
-fn classify_provider_error(subtype: &str) -> ClaudeError {
-    if subtype.contains("rate") || subtype.contains("quota") {
+fn classify_provider_error(subtype: &str, api_status: Option<u64>) -> ClaudeError {
+    if api_status == Some(429) || subtype.contains("rate") || subtype.contains("quota") {
         ClaudeError::Quota
-    } else if subtype.contains("auth")
+    } else if matches!(api_status, Some(401 | 403))
+        || subtype.contains("auth")
         || subtype.contains("unauthorized")
         || subtype.contains("login")
     {
@@ -1145,6 +1149,20 @@ mod tests {
         assert_eq!(
             parse_result(authentication.to_string().as_bytes()),
             Err(ClaudeError::Authentication)
+        );
+        let forbidden = serde_json::json!({
+            "type": "result", "is_error": true, "subtype": "success", "api_error_status": 403
+        });
+        assert_eq!(
+            parse_result(forbidden.to_string().as_bytes()),
+            Err(ClaudeError::Authentication)
+        );
+        let throttled = serde_json::json!({
+            "type": "result", "is_error": true, "subtype": "success", "api_error_status": 429
+        });
+        assert_eq!(
+            parse_result(throttled.to_string().as_bytes()),
+            Err(ClaudeError::Quota)
         );
         let context =
             serde_json::json!({"type": "result", "is_error": true, "subtype": "context_exhausted"});
