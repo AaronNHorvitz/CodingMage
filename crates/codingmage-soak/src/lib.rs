@@ -1128,10 +1128,18 @@ pub struct CampaignReport {
     pub skipped_gates: u64,
     /// False completion observations.
     pub false_completions: u64,
+    /// Candidate commits integrated without exact passing review.
+    pub unreviewed_commits: u64,
     /// Orphan process observations.
     pub orphan_processes: u64,
+    /// Owned worktrees left after a reconciled terminal boundary.
+    pub leaked_worktrees: u64,
     /// Unowned mutation observations.
     pub unowned_mutations: u64,
+    /// Required model profile weakened without explicit policy authority.
+    pub silent_model_downgrades: u64,
+    /// Retained-state observations above the configured bound.
+    pub unbounded_retained_state: u64,
 }
 
 impl CampaignReport {
@@ -1144,8 +1152,12 @@ impl CampaignReport {
         if self.duplicate_tasks != 0
             || self.skipped_gates != 0
             || self.false_completions != 0
+            || self.unreviewed_commits != 0
             || self.orphan_processes != 0
+            || self.leaked_worktrees != 0
             || self.unowned_mutations != 0
+            || self.silent_model_downgrades != 0
+            || self.unbounded_retained_state != 0
         {
             return Err(SoakError::InvariantViolation);
         }
@@ -1192,8 +1204,12 @@ pub fn run_accelerated(config: &CampaignConfig) -> Result<CampaignReport, SoakEr
         duplicate_tasks: 0,
         skipped_gates: 0,
         false_completions: 0,
+        unreviewed_commits: 0,
         orphan_processes: 0,
+        leaked_worktrees: 0,
         unowned_mutations: 0,
+        silent_model_downgrades: 0,
+        unbounded_retained_state: 0,
     };
     report.verify()?;
     Ok(report)
@@ -1717,14 +1733,18 @@ mod tests {
 
     #[test]
     fn every_prohibited_observation_blocks_the_campaign() {
-        for index in 0..5 {
+        for index in 0..9 {
             let mut report = run_accelerated(&complete_config(20)).unwrap();
             match index {
                 0 => report.duplicate_tasks = 1,
                 1 => report.skipped_gates = 1,
                 2 => report.false_completions = 1,
-                3 => report.orphan_processes = 1,
-                _ => report.unowned_mutations = 1,
+                3 => report.unreviewed_commits = 1,
+                4 => report.orphan_processes = 1,
+                5 => report.leaked_worktrees = 1,
+                6 => report.unowned_mutations = 1,
+                7 => report.silent_model_downgrades = 1,
+                _ => report.unbounded_retained_state = 1,
             }
             assert_eq!(report.verify(), Err(SoakError::InvariantViolation));
         }
