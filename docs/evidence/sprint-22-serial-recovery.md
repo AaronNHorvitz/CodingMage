@@ -25,6 +25,7 @@
 - **Typed task-status commit:** `3ad93a1`
 - **Status privacy-schema commit:** `e72a5bb`
 - **Observational monitor implementation commit:** `b1aaba7`
+- **Complete campaign-journal projection commit:** `43fb289`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -151,17 +152,29 @@ Every successful private campaign-checkpoint replacement now appends a typed pro
 existing integrity-checked, append-only SHA-256 journal. Each record binds the campaign run,
 repository, worktree, branch, reconciled head, exact active or last task, phase, completed count,
 blocked/deferred/satisfied-trigger/human-decision/rejected counts, accepted-outcome count, and a
-digest of the canonical checkpoint bytes. The record carries explicit redaction markers for
-provider output, source text, command output, environment values, and credentials; those values are
-not accepted into the event schema.
+digest of the canonical checkpoint bytes. It also carries the exact active pod run identity and
+content-free SHA-256 bindings for queue reconstruction inputs, the complete active pod, pending
+integration, blocker reasons, pending deferrals, satisfied reconsideration triggers, authenticated
+controls, and reconciled completion evidence. The typed projection is boxed so unrelated journal
+events do not inherit its memory footprint.
+
+The record carries explicit redaction markers for provider output, source text, command output,
+environment values, and credentials; those values are not accepted into the event schema. The
+round-trip fixture derives the expected journal projection again from the exact persisted
+checkpoint and requires equality across every field. It exercises an active pod, pending
+integration, provider attempts, correction rounds, all aggregate limits, one blocker, one pending
+deferral, one satisfied trigger, one human-decision hold, one rejected proposal, controls, and
+completion state. Distinct prohibited-content markers placed in owned paths remain absent from the
+journal bytes.
 
 The journal schema uses optional fields for configured limits, provider attempts, correction round,
-and authenticated pause/stop/cancel state. The current checkpoint writer populates the complete
-limit and utilization tuple and projects applied pause, stop, and cancellation state. This does not
-yet close `22.1.2.1`: exact control intent/observation crash reconciliation and the remaining actor
-and terminal-state coverage must still be completed. Focused tests verify exact identities and
+and authenticated pause/stop/cancel state, but requires those fields as a complete tuple whenever
+the campaign writer supplies them. The checkpoint writer always populates that tuple and projects
+applied pause, stop, cancellation, and pending-resume state. Separate intent and observation events
+provide exact crash reconciliation for every control. Focused tests verify exact identities and
 counts, checkpoint-digest evidence, redaction markers, journal-chain validity, and rejection of
-contradictory accepted counts or partial control projections.
+contradictory accepted counts, malformed projection digests, inconsistent active-pod or integration
+state, and partial controls. This closes `22.1.2.1` and the complete campaign-recovery task.
 
 ## Operator Control Inbox
 

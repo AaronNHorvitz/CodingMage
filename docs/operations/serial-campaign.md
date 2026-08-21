@@ -205,6 +205,13 @@ refused because a missing projection cannot prove that the corresponding blocker
 outcome, limit, or control state was empty. Recovery from a prior schema requires explicit operator
 inspection and a new campaign authority rooted at a verified repository state.
 
+Each replacement also appends one boxed, typed, content-free recovery projection to the chained
+journal. The event records counters and exact active-run identity directly, and binds queue inputs,
+active-pod state, pending integration, blockers, deferrals, satisfied triggers, controls, and
+completion evidence through canonical SHA-256 projections. The canonical checkpoint digest remains
+the immutable evidence reference. Source paths, prompts, provider output, command output,
+environment values, credentials, and hidden reasoning are not copied into the journal.
+
 | Durable interruption point | Restart behavior |
 | --- | --- |
 | Before a unit starts | Revalidate the exact owned campaign worktree and continue planning. |
