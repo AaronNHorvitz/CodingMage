@@ -302,6 +302,7 @@ fn serial_campaign_advances_two_reviewed_tasks_without_touching_active_checkout(
     fs::write(target.join("TASKS.md"), task_source).unwrap();
     git(&target, &["add", "TASKS.md", "src/lib.rs"]);
     git(&target, &["commit", "-m", "add campaign fixture"]);
+    let original_head = git_output(&target, &["rev-parse", "HEAD"]);
 
     let claude = fixture.executable(
         "campaign-claude",
@@ -344,6 +345,13 @@ if "--help" in sys.argv:
 packet = sys.stdin.read()
 if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
     root = Path(__file__).parent
+    capacity = root / "campaign-capacity-count"
+    capacity_count = int(capacity.read_text(encoding="utf-8")) if capacity.exists() else 0
+    if capacity_count < 2:
+        capacity.write_text(str(capacity_count + 1), encoding="utf-8")
+        message = "quota exhausted" if capacity_count == 0 else "authentication expired"
+        print(json.dumps({"type": "error", "message": message}))
+        raise SystemExit(0)
     campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
     head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
     digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
@@ -460,6 +468,36 @@ profiles = ["configured-gates"]
         ),
     )
     .unwrap();
+
+    for (expected_code, expected_reason) in [
+        ("codingmage.provider.codex.quota", "capacity_pause"),
+        ("codingmage.provider.codex.authentication", "capacity_pause"),
+    ] {
+        let paused = Fixture::command(&[
+            "campaign",
+            "--config",
+            config.to_str().unwrap(),
+            "--campaign",
+            campaign.to_str().unwrap(),
+        ]);
+        assert!(
+            paused.status.success(),
+            "stderr={} stdout={}",
+            String::from_utf8_lossy(&paused.stderr),
+            String::from_utf8_lossy(&paused.stdout)
+        );
+        let paused: serde_json::Value = serde_json::from_slice(&paused.stdout).unwrap();
+        assert_eq!(paused["state"], "paused");
+        assert_eq!(paused["stop_reason"], expected_reason);
+        assert_eq!(paused["completed_units"], 0);
+        assert_eq!(paused["last_task_id"], serde_json::Value::Null);
+        assert_eq!(paused["blocker_code"], expected_code);
+        assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
+        assert_eq!(
+            fs::read_to_string(target.join("TASKS.md")).unwrap(),
+            task_source
+        );
+    }
 
     let config_value = load_config(&config).unwrap();
     let campaign_value = CampaignSpec::load(&campaign).unwrap();
