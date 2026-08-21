@@ -997,7 +997,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [ ] **Task 22.1.1 - Execute dependency-ordered units**
   - [x] **Sub-task 22.1.1.1:** Add a `codingmage campaign` command that acquires one campaign lease and loads one campaign specification.
   - [x] **Sub-task 22.1.1.2:** Reparse the task source from the exact campaign head after every accepted unit.
-  - [ ] **Sub-task 22.1.1.3:** Select the next ready unit while preserving completed, blocked, deferred, human-decision, and rejected-proposal evidence as distinct projections.
+  - [x] **Sub-task 22.1.1.3:** Select the next ready unit while preserving completed, blocked, deferred, human-decision, and rejected-proposal evidence as distinct projections. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.1.1.4:** Use each accepted completion commit as the exact base of the next unit.
   - [ ] **Sub-task 22.1.1.5:** Stop only on completion, operator cancellation, capacity pause, an exhausted unit or attempt limit, no independently safe ready work, or terminal policy failure.
 - [ ] **Task 22.1.2 - Persist campaign recovery**

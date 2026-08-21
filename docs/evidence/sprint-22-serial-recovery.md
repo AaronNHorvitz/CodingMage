@@ -1,8 +1,10 @@
 # Sprint 22 Serial Recovery Evidence
 
-- **Status:** Reconciled-head, interrupted-integration, and correction-session recovery pass;
-  initial-implementation recovery and the complete Sprint 22 gate remain open
-- **Implementation commit:** `f05f033`
+- **Status:** Reconciled-head, interrupted-integration, correction-session recovery, and distinct
+  serial queue projection pass; initial-implementation recovery, stopping conditions, and the
+  complete Sprint 22 gate remain open
+- **Recovery implementation commit:** `f05f033`
+- **Queue-projection implementation commit:** `4745357`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -34,11 +36,28 @@ invocation after access is restored. Correction-session interruption now resumes
 integrity-bound run, worktree, candidate, round, and provider session. Initial implementation
 interruption remains blocked from automatic replay.
 
+## Distinct Queue Projection
+
+Before each lead selection, the coordinator now derives the completed sub-task set from the exact
+canonical task source at the reconciled campaign head and independently projects durable blocked,
+deferred, and pending-human-decision task sets. Rejected lead proposals remain a separate ordered
+historical projection and do not suppress otherwise ready work. Only the union of the three open,
+unavailable task sets is passed to dependency-ready selection.
+
+The coordinator fails closed if an unavailable projection names a missing or checked sub-task, if
+blocked, deferred, and pending-human-decision sets overlap, or if a typed blocker reason lacks its
+corresponding blocked-task identity. Focused restart coverage persists an integrity-bound checkpoint
+containing one blocked, one deferred, one pending-human-decision, and one rejected-proposal outcome;
+after reload, the checked task and all four durable outcomes remain distinct and the same fifth task
+is selected. Separate hostile cases prove that checked-task suppression and overlapping projections
+are refused rather than normalized.
+
 ## Verification
 
-The complete workspace test suite passed across all targets. Strict workspace Clippy with warnings
-denied, workspace formatting, architecture policy, documentation policy, and `git diff --check`
-also passed.
+The complete workspace test suite passed across all targets, including 26 runtime unit tests and
+eight CLI workflow tests. Strict workspace Clippy with warnings denied, workspace formatting,
+workspace documentation generation, and `git diff --check` also passed for the queue-projection
+implementation. Architecture and documentation policy are rerun after this evidence update.
 
 A preliminary disposable one-pod soak ran the binary interruption-and-recovery campaign five times
 from fresh fixture repositories. All five cycles passed. The post-soak check found no fixture
