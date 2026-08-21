@@ -1551,13 +1551,186 @@ impl TeamCampaignSnapshot {
         }) {
             return Err(TeamStateError::InvalidResource);
         }
-        if self.integration_queue.iter().any(|task_id| {
-            self.tasks
-                .get(task_id)
-                .is_none_or(|record| record.state != CampaignTaskState::IntegrationQueued)
-        }) {
+        if self
+            .integration_queue
+            .iter()
+            .enumerate()
+            .any(|(index, task_id)| {
+                self.tasks.get(task_id).is_none_or(|record| {
+                    if index == 0 {
+                        !matches!(
+                            record.state,
+                            CampaignTaskState::IntegrationQueued
+                                | CampaignTaskState::MergeReady
+                                | CampaignTaskState::Integrating
+                        )
+                    } else {
+                        record.state != CampaignTaskState::IntegrationQueued
+                    }
+                })
+            })
+        {
             return Err(TeamStateError::InvalidRecord);
         }
+        Ok(())
+    }
+
+    /// Enqueues one publication-ready task in canonical task order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for an unknown, duplicate, ineligible, or invalid task.
+    pub fn enqueue_integration(
+        &mut self,
+        task_id: &str,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self
+            .integration_queue
+            .iter()
+            .any(|queued| queued == task_id)
+        {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let mut candidate = self.clone();
+        let record = candidate
+            .tasks
+            .get_mut(task_id)
+            .ok_or(TeamStateError::InvalidRecord)?;
+        if !matches!(
+            record.state,
+            CampaignTaskState::PublicationReady
+                | CampaignTaskState::PullRequestOpen
+                | CampaignTaskState::CiWaiting
+        ) {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let request = task_transition(
+            record,
+            CampaignTaskState::IntegrationQueued,
+            evidence_sha256,
+        );
+        record.transition(&request)?;
+        candidate.integration_queue.push(task_id.to_owned());
+        let fixed_prefix = usize::from(candidate.integration_queue.first().is_some_and(|first| {
+            candidate.tasks.get(first).is_some_and(|record| {
+                matches!(
+                    record.state,
+                    CampaignTaskState::MergeReady | CampaignTaskState::Integrating
+                )
+            })
+        }));
+        candidate.integration_queue[fixed_prefix..].sort();
+        candidate.verify()?;
+        *self = candidate;
+        Ok(())
+    }
+
+    /// Marks the exact queue head eligible for a serialized integration attempt.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] when `task_id` is not the integration queue head.
+    pub fn mark_merge_ready(
+        &mut self,
+        task_id: &str,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.transition_queue_head(
+            task_id,
+            CampaignTaskState::IntegrationQueued,
+            CampaignTaskState::MergeReady,
+            evidence_sha256,
+        )
+    }
+
+    /// Records the durable intent to mutate the campaign head for the exact queue head.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] when the task is stale, reordered, or not merge-ready.
+    pub fn begin_integration(
+        &mut self,
+        task_id: &str,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.transition_queue_head(
+            task_id,
+            CampaignTaskState::MergeReady,
+            CampaignTaskState::Integrating,
+            evidence_sha256,
+        )
+    }
+
+    /// Completes one observed integration and releases its exact scheduler lease.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for stale head identity, queue reordering, or invalid commit.
+    pub fn complete_integration(
+        &mut self,
+        task_id: &str,
+        expected_head: &str,
+        integrated_head: String,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self.integration_queue.first().map(String::as_str) != Some(task_id)
+            || self.campaign_head != expected_head
+            || integrated_head == expected_head
+            || !valid_commit(&integrated_head)
+        {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let mut candidate = self.clone();
+        let record = candidate
+            .tasks
+            .get_mut(task_id)
+            .ok_or(TeamStateError::InvalidRecord)?;
+        if record.state != CampaignTaskState::Integrating {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        record.completion_commit = Some(integrated_head.clone());
+        let request = task_transition(record, CampaignTaskState::Merged, evidence_sha256);
+        record.transition_terminal(&request, TaskTerminalReason::Merged)?;
+        let lease_id = record
+            .lease_id
+            .clone()
+            .ok_or(TeamStateError::InvalidLease)?;
+        let mut scheduler = DurablePodScheduler::from_snapshot(candidate.scheduler.clone())?;
+        scheduler.release(&lease_id)?;
+        candidate.scheduler = scheduler.snapshot().clone();
+        candidate.campaign_head = integrated_head;
+        candidate.integration_queue.remove(0);
+        candidate.verify()?;
+        *self = candidate;
+        Ok(())
+    }
+
+    fn transition_queue_head(
+        &mut self,
+        task_id: &str,
+        from: CampaignTaskState,
+        to: CampaignTaskState,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self.integration_queue.first().map(String::as_str) != Some(task_id) {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let mut candidate = self.clone();
+        let record = candidate
+            .tasks
+            .get_mut(task_id)
+            .ok_or(TeamStateError::InvalidRecord)?;
+        if record.state != from {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let request = task_transition(record, to, evidence_sha256);
+        record.transition(&request)?;
+        candidate.verify()?;
+        *self = candidate;
         Ok(())
     }
 
@@ -2136,6 +2309,22 @@ fn valid_reason(value: &str) -> bool {
     .any(|reason| reason.code() == value)
 }
 
+fn task_transition(
+    record: &CampaignTaskRecord,
+    to: CampaignTaskState,
+    evidence_sha256: String,
+) -> CampaignTaskTransition {
+    CampaignTaskTransition {
+        sequence: record.next_transition,
+        campaign_id: record.campaign_id.clone(),
+        task_id: record.task_id.clone(),
+        generation: record.generation,
+        from: record.state,
+        to,
+        evidence_sha256,
+    }
+}
+
 fn leases_conflict(left: &DurablePodLease, right: &DurablePodLease) -> bool {
     left.owned_paths.iter().any(|left_path| {
         right
@@ -2266,6 +2455,91 @@ mod tests {
             spec,
         )
         .unwrap()
+    }
+
+    fn publication_ready_snapshot(task_ids: &[&str]) -> TeamCampaignSnapshot {
+        let spec = spec(
+            CampaignExecutionMode::Parallel,
+            u16::try_from(task_ids.len()).unwrap(),
+        );
+        let tasks = task_ids
+            .iter()
+            .map(|task_id| (*task_id).to_owned())
+            .collect::<Vec<_>>();
+        let mut scheduler = DurablePodScheduler::new(&spec).unwrap();
+        let generation = scheduler.begin_generation(&tasks).unwrap();
+        let mut records = BTreeMap::new();
+        for (index, task_id) in tasks.into_iter().enumerate() {
+            let AdmissionDecision::Admitted(lease) = scheduler
+                .admit(
+                    &spec,
+                    generation,
+                    &spec.initial_commit,
+                    &proposal(
+                        &spec,
+                        &task_id,
+                        &format!("crates/queue-{index}"),
+                        &format!("queue-{index}"),
+                    ),
+                )
+                .unwrap()
+            else {
+                panic!("queue fixture must be admitted");
+            };
+            let mut record = CampaignTaskRecord::planned(
+                spec.campaign_id.clone(),
+                task_id.clone(),
+                spec.initial_commit.clone(),
+            )
+            .unwrap();
+            record
+                .transition(&task_transition(
+                    &record,
+                    CampaignTaskState::Ready,
+                    "1".repeat(64),
+                ))
+                .unwrap();
+            record.propose(generation, "2".repeat(64)).unwrap();
+            record.bind_lease(&lease, "3".repeat(64)).unwrap();
+            record
+                .bind_run(format!("run-queue-{index}"), "4".repeat(64))
+                .unwrap();
+            record
+                .bind_worktree(
+                    format!("worktree-queue-{index}"),
+                    format!("codingmage/queue-{index}"),
+                    "5".repeat(64),
+                )
+                .unwrap();
+            record.candidate_commit = Some(format!("{:040x}", index.saturating_add(1)));
+            record.reviewed_commit = record.candidate_commit.clone();
+            for (state, evidence) in [
+                (CampaignTaskState::LocalGates, "6".repeat(64)),
+                (CampaignTaskState::Reviewing, "7".repeat(64)),
+                (CampaignTaskState::PublicationReady, "8".repeat(64)),
+            ] {
+                record
+                    .transition(&task_transition(&record, state, evidence))
+                    .unwrap();
+            }
+            records.insert(task_id, record);
+        }
+        let snapshot = TeamCampaignSnapshot {
+            version: TEAM_STATE_SCHEMA_VERSION,
+            campaign_id: spec.campaign_id.clone(),
+            generation,
+            campaign_head: spec.initial_commit.clone(),
+            task_source_sha256: spec.task_source_sha256.clone(),
+            scheduler: scheduler.snapshot().clone(),
+            resources: TeamResourceController::new(&spec)
+                .unwrap()
+                .snapshot()
+                .clone(),
+            tasks: records,
+            integration_queue: Vec::new(),
+        };
+        snapshot.verify().unwrap();
+        snapshot
     }
 
     #[test]
@@ -2573,6 +2847,76 @@ mod tests {
         let mut mutated = snapshot;
         mutated.tasks.insert(duplicate.task_id.clone(), duplicate);
         assert_eq!(mutated.verify(), Err(TeamStateError::InvalidRecord));
+    }
+
+    #[test]
+    fn integration_queue_is_canonical_serial_and_head_bound() {
+        let first = "23.4.4.1";
+        let second = "23.4.4.2";
+        let mut snapshot = publication_ready_snapshot(&[first, second]);
+        snapshot
+            .enqueue_integration(second, "9".repeat(64))
+            .unwrap();
+        snapshot.enqueue_integration(first, "a".repeat(64)).unwrap();
+        assert_eq!(snapshot.integration_queue, [first, second]);
+
+        let before = snapshot.clone();
+        assert_eq!(
+            snapshot.mark_merge_ready(second, "b".repeat(64)),
+            Err(TeamStateError::InvalidTransition)
+        );
+        assert_eq!(snapshot, before);
+        snapshot.mark_merge_ready(first, "c".repeat(64)).unwrap();
+        snapshot.begin_integration(first, "d".repeat(64)).unwrap();
+        let integrating = snapshot.clone();
+        assert_eq!(
+            snapshot.complete_integration(first, &"f".repeat(40), "e".repeat(40), "e".repeat(64),),
+            Err(TeamStateError::InvalidTransition)
+        );
+        assert_eq!(snapshot, integrating);
+
+        let previous = snapshot.campaign_head.clone();
+        snapshot
+            .complete_integration(first, &previous, "e".repeat(40), "f".repeat(64))
+            .unwrap();
+        assert_eq!(snapshot.campaign_head, "e".repeat(40));
+        assert_eq!(snapshot.integration_queue, [second]);
+        assert_eq!(snapshot.tasks[first].state, CampaignTaskState::Merged);
+        assert_eq!(
+            snapshot.tasks[first].terminal_reason.as_deref(),
+            Some("merged")
+        );
+        assert_eq!(
+            snapshot.tasks[first].completion_commit,
+            Some("e".repeat(40))
+        );
+        assert!(
+            snapshot
+                .scheduler
+                .active
+                .values()
+                .all(|lease| lease.task_id != first)
+        );
+        snapshot.verify().unwrap();
+    }
+
+    #[test]
+    fn integration_enqueue_order_ignores_completion_permutation() {
+        let tasks = ["23.4.4.1", "23.4.4.2", "23.4.4.3"];
+        let mut forward = publication_ready_snapshot(&tasks);
+        let mut reverse = forward.clone();
+        for (index, task) in tasks.iter().enumerate() {
+            forward
+                .enqueue_integration(task, format!("{:064x}", index.saturating_add(20)))
+                .unwrap();
+        }
+        for (index, task) in tasks.iter().rev().enumerate() {
+            reverse
+                .enqueue_integration(task, format!("{:064x}", index.saturating_add(30)))
+                .unwrap();
+        }
+        assert_eq!(forward.integration_queue, reverse.integration_queue);
+        assert_eq!(forward.integration_queue, tasks);
     }
 
     #[test]
