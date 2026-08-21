@@ -1,10 +1,11 @@
 # Sprint 22 Serial Recovery Evidence
 
-- **Status:** Reconciled-head, interrupted-integration, correction-session recovery, and distinct
-  serial queue projection pass; initial-implementation recovery, stopping conditions, and the
-  complete Sprint 22 gate remain open
+- **Status:** Reconciled-head, interrupted-integration, correction-session recovery, distinct
+  serial queue projection, and closed stopping-condition contract pass; initial-implementation
+  recovery and the complete Sprint 22 gate remain open
 - **Recovery implementation commit:** `f05f033`
 - **Queue-projection implementation commit:** `4745357`
+- **Stopping-contract implementation commit:** `9816043`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -52,9 +53,24 @@ after reload, the checked task and all four durable outcomes remain distinct and
 is selected. Separate hostile cases prove that checked-task suppression and overlapping projections
 are refused rather than normalized.
 
+## Closed Stopping Contract
+
+Every successful campaign invocation now emits one typed `stop_reason` from a closed set:
+completion, authenticated operator cancellation, capacity pause, accepted-outcome limit,
+bounded-attempt limit, no independently safe ready work, or terminal policy failure. Campaign
+state, stop reason, and content-free diagnostic are constructed as one internal termination value,
+so a call site cannot omit the reason or accidentally shift it into another argument.
+
+Current production exits explicitly classify canonical completion, the accepted-unit ceiling,
+provider quota or authentication capacity, exhausted provider/correction/report attempts, absence
+of independent ready work, and repository, authority, integrity, or policy refusal. CLI fixtures
+verify serialized reasons for completed, blocked, deferred, correction-limit, and rejected-report
+runs. Authenticated cancellation is reserved in the closed contract; its state-changing control
+path remains truthfully open under sub-task `22.2.2.1` and is not claimed by this evidence.
+
 ## Verification
 
-The complete workspace test suite passed across all targets, including 26 runtime unit tests and
+The complete workspace test suite passed across all targets, including 27 runtime unit tests and
 eight CLI workflow tests. Strict workspace Clippy with warnings denied, workspace formatting,
 workspace documentation generation, and `git diff --check` also passed for the queue-projection
 implementation. Architecture and documentation policy are rerun after this evidence update.
@@ -68,8 +84,8 @@ without replay, durable status, and active-checkout preservation.
 ## Preserved Limits
 
 This evidence does not close initial-implementation-session recovery, complete campaign event
-journaling, exact limit projection, automatic authentication
-revalidation, cancellation, parallel pods, GitHub publication, native macOS or Windows evidence,
+journaling, exact limit projection, automatic authentication revalidation, production operator
+controls, parallel pods, GitHub publication, native macOS or Windows evidence,
 manual fuzzing, or the sustained 24-hour or 48-hour soak gate. It authorizes only preparation of the
-explicitly requested bounded one-pod AgentMage pilot; it does not assert general unattended-release
-readiness.
+explicitly requested bounded one-pod controlled-target pilot; it does not assert general
+unattended-release readiness.

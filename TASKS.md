@@ -994,12 +994,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 22.1 - Campaign Head and Queue
 
-- [ ] **Task 22.1.1 - Execute dependency-ordered units**
+- [x] **Task 22.1.1 - Execute dependency-ordered units**
   - [x] **Sub-task 22.1.1.1:** Add a `codingmage campaign` command that acquires one campaign lease and loads one campaign specification.
   - [x] **Sub-task 22.1.1.2:** Reparse the task source from the exact campaign head after every accepted unit.
   - [x] **Sub-task 22.1.1.3:** Select the next ready unit while preserving completed, blocked, deferred, human-decision, and rejected-proposal evidence as distinct projections. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.1.1.4:** Use each accepted completion commit as the exact base of the next unit.
-  - [ ] **Sub-task 22.1.1.5:** Stop only on completion, operator cancellation, capacity pause, an exhausted unit or attempt limit, no independently safe ready work, or terminal policy failure.
+  - [x] **Sub-task 22.1.1.5:** Stop only on completion, operator cancellation, capacity pause, an exhausted unit or attempt limit, no independently safe ready work, or terminal policy failure. See `docs/evidence/sprint-22-serial-recovery.md`.
 - [ ] **Task 22.1.2 - Persist campaign recovery**
   - [ ] **Sub-task 22.1.2.1:** Journal campaign head, queue, active pod, attempts, corrections, blockers, deferrals, reconsideration triggers, limits, operator controls, and completion evidence.
   - [x] **Sub-task 22.1.2.2:** Resume from the last reconciled campaign head after restart without replaying accepted commits.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 22 sub-tasks `22.1.1.3` and `22.1.1.5`: preserve completed, blocked, deferred, human-decision, and rejected-proposal projections distinctly while enforcing the closed campaign stopping-condition contract.
+- [ ] **Next 1:** Complete Sprint 22 sub-task `22.1.2.1`: journal the full campaign queue, active execution, safeguard utilization, operator-control state, and accepted completion evidence without retaining unrestricted provider or repository content.
