@@ -1195,6 +1195,8 @@ impl CampaignTaskRecord {
                 && (self.integration_commit.is_none() || self.completion_commit.is_none())
             || self.issue_number == Some(0)
             || self.pull_request_number == Some(0)
+            || self.pull_request_number.is_some() && self.issue_number.is_none()
+            || !self.ci_evidence_sha256.is_empty() && self.pull_request_number.is_none()
             || self.review_sessions.len() > MAX_SESSIONS
             || self.correction_sessions.len() > MAX_SESSIONS
             || self.review_sessions.iter().any(|v| !valid_component(v))
@@ -1471,6 +1473,162 @@ impl CampaignTaskRecord {
         candidate.run_id = Some(run_id);
         candidate.next_transition = candidate.next_transition.saturating_add(1);
         candidate.last_evidence_sha256 = Some(evidence_sha256);
+        candidate.verify()?;
+        *self = candidate;
+        Ok(())
+    }
+
+    /// Binds the one task issue returned by an idempotent publication operation.
+    ///
+    /// Exact replay of the already-bound number is observational and succeeds without advancing
+    /// the transition sequence. A different number is an identity conflict.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for a zero number, ineligible state, or conflicting identity.
+    pub fn bind_issue_number(
+        &mut self,
+        issue_number: u64,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self.issue_number == Some(issue_number) {
+            return Ok(());
+        }
+        if issue_number == 0
+            || self.issue_number.is_some()
+            || !publication_identity_state(self.state)
+            || !valid_sha256(&evidence_sha256)
+            || self.last_evidence_sha256.as_ref() == Some(&evidence_sha256)
+        {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let mut candidate = self.clone();
+        candidate.issue_number = Some(issue_number);
+        candidate.next_transition = candidate.next_transition.saturating_add(1);
+        candidate.last_evidence_sha256 = Some(evidence_sha256);
+        candidate.verify()?;
+        *self = candidate;
+        Ok(())
+    }
+
+    /// Binds one draft task pull request and enters the remote-publication lifecycle.
+    ///
+    /// Exact replay of the already-bound number is observational. The issue must already be bound
+    /// so recovery can always reconstruct the one-to-one remote mapping.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for stale state, missing issue identity, or conflicting replay.
+    pub fn bind_pull_request_number(
+        &mut self,
+        pull_request_number: u64,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self.pull_request_number == Some(pull_request_number) {
+            return Ok(());
+        }
+        if pull_request_number == 0
+            || self.pull_request_number.is_some()
+            || self.issue_number.is_none()
+            || self.state != CampaignTaskState::PublicationReady
+            || !valid_sha256(&evidence_sha256)
+        {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let mut candidate = self.clone();
+        candidate.pull_request_number = Some(pull_request_number);
+        let request = task_transition(
+            &candidate,
+            CampaignTaskState::PullRequestOpen,
+            evidence_sha256,
+        );
+        candidate.transition(&request)?;
+        *self = candidate;
+        Ok(())
+    }
+
+    /// Starts commit-bound remote CI observation for the exact task pull request.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] unless the task owns one open pull request.
+    pub fn begin_ci_waiting(&mut self, evidence_sha256: String) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self.state == CampaignTaskState::CiWaiting {
+            return Ok(());
+        }
+        if self.state != CampaignTaskState::PullRequestOpen
+            || self.pull_request_number.is_none()
+            || !valid_sha256(&evidence_sha256)
+        {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let request = task_transition(self, CampaignTaskState::CiWaiting, evidence_sha256);
+        self.transition(&request)
+    }
+
+    /// Records passing CI evidence for the immutable reviewed commit.
+    ///
+    /// Exact replay of an evidence digest is observational. A passing observation does not enqueue
+    /// integration by itself; queue mutation remains a separate coordinator decision.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for stale commit identity, state, or malformed evidence.
+    pub fn record_ci_pass(
+        &mut self,
+        reviewed_commit: &str,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self
+            .ci_evidence_sha256
+            .iter()
+            .any(|value| value == &evidence_sha256)
+        {
+            return Ok(());
+        }
+        if self.state != CampaignTaskState::CiWaiting
+            || self.reviewed_commit.as_deref() != Some(reviewed_commit)
+            || !valid_sha256(&evidence_sha256)
+        {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let mut candidate = self.clone();
+        candidate.ci_evidence_sha256.push(evidence_sha256.clone());
+        candidate.next_transition = candidate.next_transition.saturating_add(1);
+        candidate.last_evidence_sha256 = Some(evidence_sha256);
+        candidate.verify()?;
+        *self = candidate;
+        Ok(())
+    }
+
+    /// Records failing CI evidence and returns the task to its bounded correction lineage.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for stale commit identity, state, or malformed evidence.
+    pub fn record_ci_failure(
+        &mut self,
+        reviewed_commit: &str,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self.state != CampaignTaskState::CiWaiting
+            || self.reviewed_commit.as_deref() != Some(reviewed_commit)
+            || !valid_sha256(&evidence_sha256)
+        {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let mut candidate = self.clone();
+        candidate.ci_evidence_sha256.push(evidence_sha256.clone());
+        let request = task_transition(&candidate, CampaignTaskState::Correcting, evidence_sha256);
+        candidate.transition(&request)?;
+        candidate.reviewed_commit = None;
+        candidate.integration_commit = None;
+        candidate.completion_commit = None;
         candidate.verify()?;
         *self = candidate;
         Ok(())
@@ -2319,6 +2477,28 @@ fn runtime_identity_shape(record: &CampaignTaskRecord) -> bool {
     }
 }
 
+const fn publication_identity_state(state: CampaignTaskState) -> bool {
+    matches!(
+        state,
+        CampaignTaskState::Leased
+            | CampaignTaskState::Implementing
+            | CampaignTaskState::LocalGates
+            | CampaignTaskState::Reviewing
+            | CampaignTaskState::Correcting
+            | CampaignTaskState::PublicationReady
+            | CampaignTaskState::PullRequestOpen
+            | CampaignTaskState::CiWaiting
+            | CampaignTaskState::IntegrationQueued
+            | CampaignTaskState::MergeReady
+            | CampaignTaskState::Integrating
+            | CampaignTaskState::Merged
+            | CampaignTaskState::Blocked
+            | CampaignTaskState::Disputed
+            | CampaignTaskState::Failed
+            | CampaignTaskState::Cancelled
+    )
+}
+
 const fn state_requires_active_lease(state: CampaignTaskState) -> bool {
     matches!(
         state,
@@ -2977,6 +3157,72 @@ mod tests {
                 .values()
                 .all(|lease| lease.task_id != first)
         );
+        snapshot.verify().unwrap();
+    }
+
+    #[test]
+    fn remote_mapping_and_ci_lifecycle_are_exact_idempotent_and_commit_bound() {
+        let task_id = "23.4.3.1";
+        let mut snapshot = publication_ready_snapshot(&[task_id]);
+        let record = snapshot.tasks.get_mut(task_id).unwrap();
+
+        record.bind_issue_number(41, "9".repeat(64)).unwrap();
+        let after_issue = record.clone();
+        record.bind_issue_number(41, "a".repeat(64)).unwrap();
+        assert_eq!(record, &after_issue);
+        assert_eq!(
+            record.bind_issue_number(42, "a".repeat(64)),
+            Err(TeamStateError::InvalidTransition)
+        );
+
+        record.bind_pull_request_number(57, "b".repeat(64)).unwrap();
+        assert_eq!(record.state, CampaignTaskState::PullRequestOpen);
+        let after_pull_request = record.clone();
+        record.bind_pull_request_number(57, "c".repeat(64)).unwrap();
+        assert_eq!(record, &after_pull_request);
+
+        record.begin_ci_waiting("c".repeat(64)).unwrap();
+        let reviewed = record.reviewed_commit.clone().unwrap();
+        record.record_ci_pass(&reviewed, "d".repeat(64)).unwrap();
+        let after_pass = record.clone();
+        record.record_ci_pass(&reviewed, "d".repeat(64)).unwrap();
+        assert_eq!(record, &after_pass);
+        assert_eq!(
+            record.record_ci_pass(&"f".repeat(40), "e".repeat(64)),
+            Err(TeamStateError::InvalidTransition)
+        );
+        snapshot.verify().unwrap();
+    }
+
+    #[test]
+    fn failing_ci_returns_only_the_matching_task_to_correction() {
+        let first = "23.4.3.2";
+        let second = "23.4.3.3";
+        let mut snapshot = publication_ready_snapshot(&[first, second]);
+        for (index, task_id) in [first, second].into_iter().enumerate() {
+            let record = snapshot.tasks.get_mut(task_id).unwrap();
+            record
+                .bind_issue_number(100 + index as u64, format!("{:064x}", 20 + index))
+                .unwrap();
+            record
+                .bind_pull_request_number(200 + index as u64, format!("{:064x}", 30 + index))
+                .unwrap();
+            record
+                .begin_ci_waiting(format!("{:064x}", 40 + index))
+                .unwrap();
+        }
+        let second_before = snapshot.tasks[second].clone();
+        let reviewed = snapshot.tasks[first].reviewed_commit.clone().unwrap();
+        snapshot
+            .tasks
+            .get_mut(first)
+            .unwrap()
+            .record_ci_failure(&reviewed, "f".repeat(64))
+            .unwrap();
+
+        assert_eq!(snapshot.tasks[first].state, CampaignTaskState::Correcting);
+        assert!(snapshot.tasks[first].reviewed_commit.is_none());
+        assert_eq!(snapshot.tasks[second], second_before);
         snapshot.verify().unwrap();
     }
 
