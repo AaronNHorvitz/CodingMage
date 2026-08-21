@@ -44,6 +44,9 @@ CodingMage will use a hierarchical campaign model:
 9. Initial rollout uses one pod. Concurrency increases only after serial correction, continuation,
    recovery, and integration soak evidence passes.
 
+Decision 0008 defines the closed blocker and deferral outcomes, exact one-pod soak sequence,
+complete verification matrix, and human-authorized release boundary that govern this rollout.
+
 ## Alternatives Considered
 
 - **One autonomous agent:** rejected because implementation and approval would share one failure

@@ -103,7 +103,9 @@ CodingMage is not intended to replace human product ownership. Scope changes, de
 The initial campaign mode adds a read-only campaign lead and one deterministic integration lead.
 Multiple concurrent implementation/review pods remain staged behind serial-campaign evidence. See
 [`Hierarchical Campaign Architecture`](docs/architecture/hierarchical-campaigns.md) and
-[`Decision 0007`](docs/decisions/0007-hierarchical-campaign-pods.md).
+[`Decision 0007`](docs/decisions/0007-hierarchical-campaign-pods.md). The approved unattended and
+release boundary is defined by [`Unattended Safeguards`](docs/architecture/unattended-safeguards.md)
+and [`Decision 0008`](docs/decisions/0008-unattended-safeguard-and-release-boundary.md).
 
 The role names describe authority within the workflow, not a permanent judgment about either model. Agent providers and models will be configurable behind typed adapter contracts.
 
@@ -196,6 +198,8 @@ Terminal or interrupting states include:
 ```text
 blocked_external
 blocked_disputed
+deferred_temporary
+human_decision_required
 paused_quota
 paused_operator
 failed_recoverable
@@ -301,7 +305,13 @@ The service must:
 
 CodingMage begins with a controlled pilot against an independently authorized target repository. CodingMage remains a separate repository and process so it cannot rewrite its own authority logic while coordinating target work.
 
-The pilot begins with disposable fixtures, then a CodingMage-owned test branch, and only later an explicitly authorized development branch. It must prove clean interruption, exact commit review, concurrent user-work preservation, quota pause/resume, malformed-output handling, and bounded disagreement before unattended operation is allowed.
+The pilot begins with the prescribed disposable ten-outcome campaign, then supervised units on a
+CodingMage-owned test branch, and only later an explicitly authorized ten-task campaign on a
+dedicated development branch. The first unattended boundary is one pod and local-only publication.
+It must prove clean interruption, exact commit review, concurrent user-work preservation, provider
+pause and resume, malformed-output handling, blocker and deferral semantics, operator controls,
+bounded disagreement, exact ceiling enforcement, and complete residue reconciliation before
+parallel pods or remote visibility are enabled.
 
 ## Local CLI
 
@@ -354,6 +364,12 @@ the integrity-protected campaign checkpoint, and excludes it from later selectio
 its task box. Independent dependency-ready work may continue until the configured campaign-unit
 ceiling is reached. If every remaining path depends on blocked work, the campaign stops with
 `codingmage.campaign.no_unblocked_ready_work` instead of retrying, inventing completion, or looping.
+
+The approved next campaign contract adds distinct lead-side `blocked`, `deferred`, and
+`human_decision_required` outcomes with closed reason codes and deterministic reconsideration
+triggers. That contract is not complete until the corresponding unchecked Story 21.2 and Story 22.2
+items pass. A lead never completes a task; completion remains a coordinator transition after code,
+tests, gates, independent review, checkpointing, and exact task-source reconciliation.
 
 Run `codingmage` from a normal VS Code terminal and leave that terminal open until the final JSON
 appears. During `run`, a live activity stream is written to stderr while the machine-readable final

@@ -26,6 +26,11 @@ sign-off or equivalent provenance process.
 6. Push only the authorized feature branch. Do not force-push or rewrite published history.
 7. Leave merge, release, and external-infrastructure decisions to the repository owner.
 
+Changes to unattended execution, provider authority, Git effects, recovery, operator controls,
+soak evidence, or release behavior must preserve
+[`Unattended Safeguards`](docs/architecture/unattended-safeguards.md) and record a superseding
+architecture decision before intentionally changing that contract.
+
 ## Evidence
 
 A checked task must point to implementation and reproducible tests. Evidence must identify the

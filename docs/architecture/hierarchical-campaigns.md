@@ -24,9 +24,12 @@ while the coordinator alone owns state, Git mutation, verification, and configur
 ```mermaid
 flowchart TD
     A[Canonical roadmap and campaign head] --> B[Deterministic ready-set calculation]
-    B --> C[Read-only campaign lead proposes pod packets]
-    C --> D{Authority, dependency, path, resource, and limit validation}
-    D -- Refused --> E[Record precise blocker]
+    B --> C[Read-only campaign lead returns one typed disposition]
+    C --> D{Proposal, blocker, deferral, or human decision validates?}
+    D -- Refused --> E[Record rejection with no admitted effect]
+    D -- Blocked --> Q[Persist blocker and continue independent work]
+    D -- Deferred --> R[Wait for exact reconsideration trigger]
+    D -- Human decision --> S[Record decision request]
     D -- Admitted --> F[Lease nonoverlapping pod worktrees]
 
     F --> P1[Pod 1: implement, gate, review, correct]
@@ -62,7 +65,9 @@ The campaign lead itself is a process-backed Codex profile in a read-only sandbo
 response is untrusted data, not an allocation decision. Before a pod lease exists, the coordinator
 rechecks the exact campaign head, task-source digest, dependency-ready set, paths, dependencies,
 gate tiers, shared resources, expected artifacts, and risk. The lead can instead return one bounded
-human-decision blocker, but it cannot combine that blocker with executable proposals.
+blocked, deferred, or human-decision disposition, but it cannot combine dispositions or attach
+executable instructions. These expanded dispositions are approved target behavior and remain
+unchecked implementation work in Story 21.2.
 
 ## Correction Loop
 
@@ -104,9 +109,15 @@ GitHub is a visibility and collaboration surface, not execution authority.
 
 ## Rollout Gates
 
-1. One pod: gate correction, review correction, checkpoint, and resume.
-2. Serial campaign: evolving campaign head and multiple dependency-ordered tasks.
-3. Two pods: disjoint path leases and serialized integration.
-4. Three or four pods: resource scheduling, quota pressure, and completion-order permutations.
-5. Story-level draft PR publication against an authorized disposable repository.
-6. Sustained soak before unattended use on a valuable target.
+1. One pod: gate correction, review correction, checkpoint, and exact interrupted-session resume.
+2. Typed lead outcomes: blocker, deferral, reconsideration, human decision, and invalid-output refusal.
+3. Serial campaign: prescribed disposable ten-outcome schedule with local-only publication.
+4. Controlled target: one-pod ten-task campaign with complete human reconciliation.
+5. Two pods: disjoint path leases and serialized integration.
+6. Three or four pods: resource scheduling, provider pressure, and completion-order permutations.
+7. Story-level draft PR publication against an authorized disposable repository.
+8. Complete adversarial, package, manual fuzz, independent-review, and release-candidate gates.
+9. Human-authorized merge, signed tag, release publication, and independent artifact verification.
+
+See [`Unattended Safeguards`](unattended-safeguards.md) for the exact disposition, soak, test, and
+publication contract.

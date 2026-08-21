@@ -18,6 +18,10 @@ CodingMage is under active implementation. A checked item means its complete imp
 10. Do not merge, release, alter external infrastructure, or weaken policy without explicit product-owner authority.
 11. Stop a correction loop after its configured bound and record a dispute instead of looping forever.
 12. Keep runtime logs, credentials, target source copies, and local state out of this source repository.
+13. Apply the invariants in `docs/architecture/unattended-safeguards.md` to every unattended path.
+14. Treat `blocked`, `deferred`, `human_decision_required`, and invalid proposals as distinct states.
+15. Require the prescribed ten-outcome disposable soak before any ten-task controlled-target soak.
+16. Keep one-pod, local-only operation as the initial unattended boundary until its evidence passes.
 
 ## Universal Definition of Done
 
@@ -764,18 +768,20 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ## Sprint 17 - Soak Testing and Controlled Target Pilot
 
-**Sprint goal:** Demonstrate sustained reliable operation before CodingMage receives unattended access to any real target-repository development work.
+**Sprint goal:** Build the disposable soak harness and supervised evidence required before production campaign hardening.
 
 ### Story 17.1 - Disposable Soak Campaign
 
 - [x] **Task 17.1.1 - Build disposable target fixtures**
   - [x] **Sub-task 17.1.1.1:** Create small Rust, Python, JavaScript, documentation-only, dirty, conflicted, and malformed-plan repositories.
   - [x] **Sub-task 17.1.1.2:** Create fake Claude, Codex, GitHub, quota, network, sleep, crash, and restart schedules.
-- [ ] **Task 17.1.2 - Run sustained operation**
-  - [ ] **Sub-task 17.1.2.1:** Execute repeated implementation-review-correction cycles for at least 24 continuous hours.
-  - [ ] **Sub-task 17.1.2.2:** Extend to 48 hours after correcting every blocking reliability defect.
-  - [ ] **Sub-task 17.1.2.3:** Inject provider limits, network loss, process crashes, service restarts, malformed output, stale commits, concurrent user changes, and operator controls.
-  - [ ] **Sub-task 17.1.2.4:** Verify zero duplicate tasks, skipped gates, false completions, orphan processes, unowned mutations, and unbounded storage growth.
+- [ ] **Task 17.1.2 - Execute the prescribed disposable campaign**
+  - [ ] **Sub-task 17.1.2.1:** Materialize the exact ten-outcome fixture schedule from `docs/architecture/unattended-safeguards.md` with deterministic task and fault identities.
+  - [ ] **Sub-task 17.1.2.2:** Execute the schedule through fake lead, implementer, reviewer, gate, Git, process, monitor, and service adapters with one pod and local-only publication.
+  - [ ] **Sub-task 17.1.2.3:** Inject provider capacity, malformed output, gate correction, review correction, blocker, deferral, interruption, restart, stop-after-unit, and final-ceiling cases at their recorded boundaries.
+  - [ ] **Sub-task 17.1.2.4:** Reconcile all ten outcomes against the expected tasks, commits, gates, reviews, checkpoints, processes, worktrees, and active-checkout manifest.
+  - [ ] **Sub-task 17.1.2.5:** Run the complete schedule repeatedly and prove identical terminal classifications and no cross-run state adoption.
+  - [ ] **Sub-task 17.1.2.6:** Fail the gate on any duplicate task, skipped gate, false completion, unreviewed commit, orphan process, leaked worktree, unowned mutation, silent model downgrade, or unbounded retained state.
 
 ### Story 17.2 - Controlled Target Pilot
 
@@ -795,13 +801,13 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 **Story acceptance criteria**
 
-- [ ] **AC 17.1:** Given the 48-hour disposable campaign, when evidence is reviewed, then every injected interruption is recovered or blocked exactly and no uncontrolled residue exists.
+- [ ] **AC 17.1:** Given the prescribed ten-outcome disposable campaign, when evidence is reviewed, then every expected outcome and injected interruption is exact and no uncontrolled residue exists.
 - [ ] **AC 17.2:** Given the controlled target pilot, when human review compares repository state and CodingMage claims, then every commit, test, finding, limitation, and blocker is accurate.
 
 ### Sprint 17 Gate
 
 - [ ] **Gate 17.1:** Disposable soak campaign passes after the last reliability correction.
-- [ ] **Gate 17.2:** Unattended target-repository operation requires explicit product-owner approval and remains disabled until granted.
+- [ ] **Gate 17.2:** Product-owner approval is recorded as `External 6`, but unattended target operation remains disabled until the supervised evidence and all serial safeguard and qualification gates pass.
 
 ---
 
@@ -940,14 +946,45 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 21.1.2.3:** Deterministically reject stale, non-ready, escaping, overbroad, contradictory, duplicate, or undeclared proposals.
   - [x] **Sub-task 21.1.2.4:** Route ambiguous architecture or authority decisions to a recorded human-decision blocker.
 
+### Story 21.2 - Lead Dispositions and No-Progress Safety
+
+- [ ] **Task 21.2.1 - Define the closed lead disposition contract**
+  - [ ] **Sub-task 21.2.1.1:** Add mutually exclusive `propose`, `blocked`, `deferred`, and `human_decision_required` dispositions to the versioned lead schema.
+  - [ ] **Sub-task 21.2.1.2:** Define closed typed reason enums for blocked, deferred, and human-decision outcomes exactly as approved in the unattended safeguard contract.
+  - [ ] **Sub-task 21.2.1.3:** Require every nonproposal disposition to bind the campaign identity, exact head, task-source digest, task identity, dependencies, and one content-free reason code.
+  - [ ] **Sub-task 21.2.1.4:** Require every deferral to name one supported reconsideration trigger and reject arbitrary dates, prose conditions, or executable instructions.
+  - [ ] **Sub-task 21.2.1.5:** Keep task completion outside lead authority; only the coordinator may complete a task after implementation, tests, gates, review, checkpoint, and reconciliation.
+- [ ] **Task 21.2.2 - Validate blocker semantics**
+  - [ ] **Sub-task 21.2.2.1:** Accept a blocker only for a dependency-ready task and a reason that cannot be resolved inside current task and path authority.
+  - [ ] **Sub-task 21.2.2.2:** Persist the exact blocked task and reason code while leaving its canonical checkbox unchanged.
+  - [ ] **Sub-task 21.2.2.3:** Suppress repeated selection of that exact blocked task without treating its dependency descendants as independently ready.
+  - [ ] **Sub-task 21.2.2.4:** Continue every independent ready task and stop with `no_unblocked_ready_work` only when no independent path remains.
+  - [ ] **Sub-task 21.2.2.5:** Permit blocker clearance only through an authenticated operator action that records the changed prerequisite and forces full campaign revalidation.
+- [ ] **Task 21.2.3 - Validate deferral and reconsideration semantics**
+  - [ ] **Sub-task 21.2.3.1:** Accept deferral only for temporary provider capacity, active path lease, gate-resource contention, deterministic dependency order, pending stronger review, or operator pause.
+  - [ ] **Sub-task 21.2.3.2:** Bind deferral to campaign-head advancement, lease release, gate-resource release, provider reset, review completion, or operator resume.
+  - [ ] **Sub-task 21.2.3.3:** Exclude a deferred task until its exact trigger is positively observed, then return it to deterministic ready-set evaluation.
+  - [ ] **Sub-task 21.2.3.4:** Reject a repeated same-head deferral whose trigger is already satisfied and route the no-progress condition to a typed human decision.
+  - [ ] **Sub-task 21.2.3.5:** Prove deterministic task order and starvation resistance across blocker, deferral, completion, and trigger permutations.
+- [ ] **Task 21.2.4 - Reject ambiguous or unauthorized lead output**
+  - [ ] **Sub-task 21.2.4.1:** Reject mixed dispositions, unknown reasons, duplicate task identities, stale snapshots, contradictory dependencies, and undeclared fields.
+  - [ ] **Sub-task 21.2.4.2:** Reject escaping paths, unsupported artifacts, broadened gates, provider changes, publication changes, and authority expansion before leasing.
+  - [ ] **Sub-task 21.2.4.3:** Record a content-free rejection reason without adopting provider prose into durable state.
+  - [ ] **Sub-task 21.2.4.4:** Prove rejected output creates no worktree, process, provider implementation call, Git effect, task transition, or accepted-outcome count.
+
 **Story acceptance criteria**
 
 - [x] **AC 21.1:** Given hostile roadmap and repository text, when the campaign lead proposes work, then only dependency-ready tasks inside preapproved authority can become pod leases.
 - [ ] **AC 21.2:** Given a stale campaign head or task-source digest, when a proposal is admitted, then no worktree or provider starts.
+- [ ] **AC 21.3:** Given a valid external blocker and independent ready work, when the lead reports `blocked`, then the task remains unchecked, its descendants remain unavailable, and independent work continues.
+- [ ] **AC 21.4:** Given a valid temporary condition, when the lead reports `deferred`, then the task becomes eligible only after its exact recorded trigger and cannot be deferred forever against unchanged state.
+- [ ] **AC 21.5:** Given ambiguous scope or requested authority expansion, when the lead reports `human_decision_required`, then no model or repository effect starts and independent work may continue.
+- [ ] **AC 21.6:** Given mixed, stale, unknown, duplicate, or unauthorized output, when validation runs, then the proposal is rejected without any accepted campaign outcome or external effect.
 
 ### Sprint 21 Gate
 
 - [ ] **Gate 21.1:** Campaign-spec mutation, hostile-proposal, stale-source, authority-escape, and deterministic-repeatability corpora pass.
+- [ ] **Gate 21.2:** Every disposition, reason, reconsideration trigger, mixed outcome, repeated deferral, starvation, and no-progress fixture passes with zero pre-admission effects.
 
 ---
 
@@ -960,29 +997,84 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [ ] **Task 22.1.1 - Execute dependency-ordered units**
   - [x] **Sub-task 22.1.1.1:** Add a `codingmage campaign` command that acquires one campaign lease and loads one campaign specification.
   - [x] **Sub-task 22.1.1.2:** Reparse the task source from the exact campaign head after every accepted unit.
-  - [ ] **Sub-task 22.1.1.3:** Select the next ready unit while preserving precise blockers and completed evidence.
+  - [ ] **Sub-task 22.1.1.3:** Select the next ready unit while preserving completed, blocked, deferred, human-decision, and rejected-proposal evidence as distinct projections.
   - [x] **Sub-task 22.1.1.4:** Use each accepted completion commit as the exact base of the next unit.
   - [ ] **Sub-task 22.1.1.5:** Stop only on completion, operator cancellation, capacity pause, an exhausted unit or attempt limit, no independently safe ready work, or terminal policy failure.
 - [ ] **Task 22.1.2 - Persist campaign recovery**
-  - [ ] **Sub-task 22.1.2.1:** Journal campaign head, queue, active pod, attempts, corrections, blockers, limits, and completion evidence.
+  - [ ] **Sub-task 22.1.2.1:** Journal campaign head, queue, active pod, attempts, corrections, blockers, deferrals, reconsideration triggers, limits, operator controls, and completion evidence.
   - [x] **Sub-task 22.1.2.2:** Resume from the last reconciled campaign head after restart without replaying accepted commits.
   - [ ] **Sub-task 22.1.2.3:** Pause on provider quota or authentication expiration and resume after revalidation.
   - [ ] **Sub-task 22.1.2.4:** Expose privacy-safe campaign status, current task, actor, round, completed count, blocker count, and elapsed time.
+
+### Story 22.2 - Durable Safeguard Enforcement
+
+- [ ] **Task 22.2.1 - Persist exact campaign projections**
+  - [ ] **Sub-task 22.2.1.1:** Add integrity-protected completed, blocked, deferred, pending-human-decision, and rejected-proposal projections with independent counters.
+  - [ ] **Sub-task 22.2.1.2:** Record provider attempt, malformed-report repair, correction, process, output, retained-state, elapsed-execution, and accepted-outcome limit utilization independently.
+  - [ ] **Sub-task 22.2.1.3:** Bind every deferred task to its reason, trigger, source head, and trigger-observation state without storing unrestricted lead prose.
+  - [ ] **Sub-task 22.2.1.4:** Include every new projection in canonical checkpoint hashing, migration refusal, mutation tests, and restart reconstruction.
+  - [ ] **Sub-task 22.2.1.5:** Refuse a legacy or partial checkpoint whenever missing fields could broaden authority or erase a blocker, deferral, limit, or accepted outcome.
+- [ ] **Task 22.2.2 - Compose campaign operator controls**
+  - [ ] **Sub-task 22.2.2.1:** Wire same-user, exact-campaign `pause`, `resume`, `stop-after-unit`, and `cancel` controls into the production campaign loop.
+  - [ ] **Sub-task 22.2.2.2:** Journal each control intent and observation with an idempotency key and reject stale, cross-run, duplicate-effect, or unauthorized requests.
+  - [ ] **Sub-task 22.2.2.3:** Make pause prevent new admission, stop-after-unit finish the current bounded unit and checkpoint, and cancel terminate only exact owned descendants.
+  - [ ] **Sub-task 22.2.2.4:** Revalidate repository, campaign authority, provider capability, deferred triggers, and limits before resume admits work.
+  - [ ] **Sub-task 22.2.2.5:** Prove repeated controls and restart at every control intent produce one terminal effect and preserve recoverable state.
+- [ ] **Task 22.2.3 - Enforce independent campaign limits**
+  - [ ] **Sub-task 22.2.3.1:** Make the campaign accepted-outcome ceiling count completed, blocked, and accepted deferred outcomes according to the documented contract without counting rejected proposals.
+  - [ ] **Sub-task 22.2.3.2:** Stop provider admission exactly when the configured outcome, attempt, malformed-report, correction, process, output, storage, or elapsed-execution limit is reached.
+  - [ ] **Sub-task 22.2.3.3:** Emit one typed terminal or resumable reason for the exact exhausted limit and preserve the latest verified candidate where applicable.
+  - [ ] **Sub-task 22.2.3.4:** Prohibit limit exhaustion from changing provider strength, skipping a gate, truncating required evidence, broadening paths, or changing publication policy.
+  - [ ] **Sub-task 22.2.3.5:** Test minimum, maximum, one-below, exact-boundary, one-above, overflow, restart, and concurrent-observation cases for every limit.
+- [ ] **Task 22.2.4 - Complete privacy-safe campaign status**
+  - [ ] **Sub-task 22.2.4.1:** Expose phase, actor, task, model identity when available, attempt, correction, outcome counts, current limit utilization, and content-free reason codes.
+  - [ ] **Sub-task 22.2.4.2:** Expose blocker and deferral details only as typed codes, trigger state, and task identity authorized for the local operator.
+  - [ ] **Sub-task 22.2.4.3:** Exclude prompts, source text, filenames, provider prose, command output, unrestricted environment values, credentials, and hidden reasoning from status and durable logs.
+  - [ ] **Sub-task 22.2.4.4:** Prove monitor attach, disconnect, reconnect, status polling, and blocker explanation cannot mutate campaign state or consume a provider attempt.
+
+### Story 22.3 - Serial Unattended Qualification
+
+- [ ] **Task 22.3.1 - Qualify the production path on the disposable ten-outcome schedule**
+  - [ ] **Sub-task 22.3.1.1:** Run the production campaign coordinator against the same prescribed ten-outcome schedule proven by the Sprint 17 fake-adapter harness.
+  - [ ] **Sub-task 22.3.1.2:** Use one pod, local-only publication, fixed provider profiles, exact gate registry, a clean disposable repository, and isolated private state and scratch roots.
+  - [ ] **Sub-task 22.3.1.3:** Capture preflight repository, task-source, configuration, provider-capability, process, worktree, and storage baselines without recording sensitive content.
+  - [ ] **Sub-task 22.3.1.4:** Verify each prescribed completion, correction, blocker, deferral, malformed report, pause, interruption, control, and ceiling outcome against immutable evidence.
+  - [ ] **Sub-task 22.3.1.5:** Repeat the production schedule after every reliability correction and invalidate evidence from any earlier implementation commit.
+- [ ] **Task 22.3.2 - Prepare the ten-task controlled-target campaign**
+  - [ ] **Sub-task 22.3.2.1:** Require an explicitly authorized target, dedicated clean branch, exact starting commit, canonical task-source digest, and no unrelated working-tree state.
+  - [ ] **Sub-task 22.3.2.2:** Generate a versioned campaign authority with one pod, an exact ten-outcome ceiling, local-only publication, protected default branch, and the minimum necessary allowed paths.
+  - [ ] **Sub-task 22.3.2.3:** Verify provider executable identities, capability surfaces, existing-login boundaries, model profiles, deterministic gates, process guard, free storage, and operator controls.
+  - [ ] **Sub-task 22.3.2.4:** Produce and manually inspect a source-free preflight report before the first provider invocation.
+- [ ] **Task 22.3.3 - Execute and reconcile the ten-task controlled-target campaign**
+  - [ ] **Sub-task 22.3.3.1:** Run unattended until ten accepted task outcomes, plan completion, an exact safety stop, or an authenticated operator control occurs.
+  - [ ] **Sub-task 22.3.3.2:** Keep all work on the isolated local campaign branch with push, issues, pull requests, merge, release, and external-infrastructure capabilities denied.
+  - [ ] **Sub-task 22.3.3.3:** Record completed, blocked, deferred, human-decision, and rejected outcomes distinctly and never describe ten outcomes as ten completions unless ten tasks pass every completion gate.
+  - [ ] **Sub-task 22.3.3.4:** Reconcile every selected task, commit, correction, gate, review, checkpoint, control, process, worktree, branch, checkbox, blocker, deferral, and limit counter.
+  - [ ] **Sub-task 22.3.3.5:** Compare the active checkout and all unrelated Git state with their preflight manifests and require exact preservation.
+  - [ ] **Sub-task 22.3.3.6:** Have a human inspect the cumulative diff and evidence report before any branch push, pull request, merge, concurrency increase, or publication grant.
 
 **Story acceptance criteria**
 
 - [ ] **AC 22.1:** Given a disposable five-unit dependency graph with recoverable failures and one external blocker, when campaign mode runs, then all independently safe units complete in dependency order and the blocker remains truthful.
 - [ ] **AC 22.2:** Given interruption after every durable intent, when campaign mode restarts, then it resumes or reobserves without duplicate provider, commit, or completion effects.
+- [ ] **AC 22.3:** Given blocked, deferred, human-decision, rejected, and completed outcomes, when the campaign restarts, then every projection, trigger, counter, and canonical checkbox remains exact.
+- [ ] **AC 22.4:** Given authenticated repeated pause, resume, stop-after-unit, and cancel requests, when controls race with provider and Git transitions, then one exact effect occurs and only owned descendants are terminated.
+- [ ] **AC 22.5:** Given every configured limit boundary, when execution reaches that boundary, then no additional effect starts and no other safeguard is weakened.
+- [ ] **AC 22.6:** Given the production disposable schedule and a separately authorized ten-task target campaign, when each local-only one-pod run ends, then every outcome and residue check reconciles exactly before broader authority is considered.
 
 ### Sprint 22 Gate
 
 - [ ] **Gate 22.1:** Multi-unit, evolving-head, blocker-skip, quota-pause, cancellation, crash-recovery, and active-checkout preservation campaigns pass.
+- [ ] **Gate 22.2:** Checkpoint mutation, disposition projection, trigger reobservation, operator-control race, limit-boundary, privacy, and monitor noninterference suites pass.
+- [ ] **Gate 22.3:** Production ten-outcome disposable evidence and human-reviewed ten-task controlled-target evidence pass after the last serial-campaign reliability correction.
 
 ---
 
 ## Sprint 23 - Bounded Parallel Coding Pods
 
 **Sprint goal:** Run dependency-independent pods concurrently without overlapping repository or verification authority.
+
+**Entry dependency:** Do not enable a second live pod until `Gate 22.3` passes with one-pod, local-only authority.
 
 ### Story 23.1 - Pod Leases and Scheduling
 
@@ -1049,6 +1141,8 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 **Sprint goal:** Establish evidence for cautiously increasing campaign duration and pod concurrency.
 
+**Entry dependency:** `Gate 22.3`, `Gate 23.1`, and `Gate 24.1` must pass before multi-pod or remotely visible soak execution.
+
 ### Story 25.1 - Adversarial and Soak Evidence
 
 - [ ] **Task 25.1.1 - Expand fault campaigns**
@@ -1062,17 +1156,171 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 25.1.2.3:** Pass a sustained disposable multi-pod campaign after the last concurrency correction.
   - [x] **Sub-task 25.1.2.4:** Require product-owner approval before pointing unattended campaign mode at a valuable repository.
 
+### Story 25.2 - Complete Verification Matrix
+
+- [ ] **Task 25.2.1 - Complete crate-level unit and schema coverage**
+  - [ ] **Sub-task 25.2.1.1:** Inventory every public contract, enum, parser, validator, serializer, transition, limit, error code, and platform branch across all workspace crates.
+  - [ ] **Sub-task 25.2.1.2:** Map each inventory item to a positive, negative, exact-boundary, malformed-input, unknown-field, and deterministic-repeatability unit test where applicable.
+  - [ ] **Sub-task 25.2.1.3:** Add missing tests for campaign dispositions, reason codes, reconsideration triggers, starvation prevention, outcome counting, limit exhaustion, and operator controls.
+  - [ ] **Sub-task 25.2.1.4:** Add missing tests for provider capability and model identity, credential-environment rejection, process ownership, Git identity, path leases, evidence integrity, and publication grants.
+  - [ ] **Sub-task 25.2.1.5:** Run every crate test with all targets and no ignored required test; record justified platform or external skips separately rather than treating them as passes.
+- [ ] **Task 25.2.2 - Complete cross-crate workflow testing**
+  - [ ] **Sub-task 25.2.2.1:** Exercise complete fake workflows for clean pass, gate correction, review correction, blocker, deferral, human decision, malformed response, quota pause, authentication pause, cancellation, and restart.
+  - [ ] **Sub-task 25.2.2.2:** Exercise controlled real-process workflows for provider invocation, process containment, coordinator commits, exact review, final gates, checkpointing, cleanup, and resume.
+  - [ ] **Sub-task 25.2.2.3:** Exercise GitHub fake and approved authenticated workflows for exact push, draft-PR idempotency, concurrent human edits, permission loss, timeout reconciliation, and prohibited operations.
+  - [ ] **Sub-task 25.2.2.4:** Exercise package install, service start, campaign execution, monitor controls, stop, upgrade, rollback, removal, and retained-data policy as one installed-artifact workflow.
+  - [ ] **Sub-task 25.2.2.5:** Run unrelated target repositories sequentially and concurrently and prove configuration, state, worktrees, sessions, models, evidence, and controls never cross ownership.
+- [ ] **Task 25.2.3 - Complete security, recovery, and mutation testing**
+  - [ ] **Sub-task 25.2.3.1:** Mutate every authority, lead report, provider report, review, lease, journal, checkpoint, evidence, integration, publication, and package-manifest field and require fail-closed behavior.
+  - [ ] **Sub-task 25.2.3.2:** Interrupt every provider, process, gate, commit, integration, publication, control, snapshot, and cleanup intent before and after its effect.
+  - [ ] **Sub-task 25.2.3.3:** Exercise hostile Git configuration, aliases, hooks, filters, signers, credential helpers, replacement refs, alternates, submodules, large-file metadata, symlinks, case collisions, and Unicode collisions.
+  - [ ] **Sub-task 25.2.3.4:** Exercise process escape, descendant survival, executable replacement, response-file injection, output pressure, process pressure, storage pressure, sleep, logout, shutdown, and concurrent unrelated processes.
+  - [ ] **Sub-task 25.2.3.5:** Prove sensitive values, prompts, provider prose, source text, hidden reasoning, unrestricted environment data, and unnecessary target copies never enter durable state, logs, status, evidence, packages, or publication payloads.
+- [ ] **Task 25.2.4 - Bind verification evidence and traceability**
+  - [ ] **Sub-task 25.2.4.1:** Create a machine-checkable test matrix linking every approved safeguard and release claim to implementation, focused tests, integration tests, and evidence records.
+  - [ ] **Sub-task 25.2.4.2:** Record exact source commit, command, exit status, test counts, skipped prerequisites, artifact digests, and limitations for each required gate.
+  - [ ] **Sub-task 25.2.4.3:** Make stale evidence fail when its bound implementation, test command, schema, fixture, package, or platform claim changes.
+  - [ ] **Sub-task 25.2.4.4:** Run formatting, strict Clippy, all-target workspace tests, documentation, architecture, traceability, supply-chain, packaging, and diff-integrity checks from a clean clone.
+  - [ ] **Sub-task 25.2.4.5:** Require zero unexplained skips, warnings promoted by policy, dirty files, untracked release inputs, secret findings, broken links, invalid diagrams, or unsupported claims.
+
 **Story acceptance criteria**
 
 - [ ] **AC 25.1:** Given the complete fault corpus and sustained disposable campaign, when evidence is reconciled, then every effect is exact, recoverable, or truthfully blocked with no uncontrolled residue.
 - [ ] **AC 25.2:** Given provider and machine capacity changes, when concurrency adapts, then required model strength and verification depth never silently decrease.
+- [ ] **AC 25.3:** Given the complete contract inventory, when unit and schema suites run, then every applicable positive, negative, boundary, malformed, mutation, and repeatability case has a passing test or a truthful external blocker.
+- [ ] **AC 25.4:** Given a clean clone and packaged candidate, when the full workflow matrix runs, then all local gates and traceability checks pass without undocumented skips or authority expansion.
 
 ### Sprint 25 Gate
 
 - [ ] **Gate 25.1:** Deterministic adversarial campaigns pass after the final correction.
 - [ ] **Gate 25.2:** Sustained one-pod and multi-pod soak evidence passes before unattended valuable-target use.
+- [ ] **Gate 25.3:** Complete crate-level unit, schema, integration, workflow, mutation, recovery, security, privacy, and package tests pass from a clean clone.
+- [ ] **Gate 25.4:** Every safeguard and supported release claim maps to current immutable evidence; unsupported and external claims remain explicitly open.
 
 ---
+
+## Sprint 26 - Linux Release Candidate
+
+**Sprint goal:** Produce a reproducible, installable, independently reviewable Linux release candidate without publishing it.
+
+**Entry dependency:** All locally implementable work through `Gate 25.4` must pass before release-candidate construction.
+
+### Story 26.1 - Release Scope and Source Freeze
+
+- [ ] **Task 26.1.1 - Reconcile the release scope**
+  - [ ] **Sub-task 26.1.1.1:** Enumerate supported Linux platforms, provider adapters, task sources, project profiles, campaign modes, operator controls, GitHub capabilities, and package lifecycle behavior.
+  - [ ] **Sub-task 26.1.1.2:** Enumerate unsupported platforms, adapters, authority, external services, and evidence without implying future work is present.
+  - [ ] **Sub-task 26.1.1.3:** Resolve or explicitly accept every open defect, risk, security finding, documentation discrepancy, and release-blocking task.
+  - [ ] **Sub-task 26.1.1.4:** Freeze the release commit, dependency lockfile, toolchain, schemas, command help, configuration examples, and evidence index.
+  - [ ] **Sub-task 26.1.1.5:** Reject release construction if the source tree is dirty, the release commit is not reviewed, or required evidence binds another commit.
+- [ ] **Task 26.1.2 - Complete public documentation**
+  - [ ] **Sub-task 26.1.2.1:** Reconcile README, quickstart, configuration, safeguards, monitoring, recovery, GitHub, installation, troubleshooting, unsupported behavior, security, and contribution guides with actual behavior.
+  - [ ] **Sub-task 26.1.2.2:** Add a versioned support policy, compatibility matrix, migration notes, known limitations, and end-of-support expectations.
+  - [ ] **Sub-task 26.1.2.3:** Add a complete first-run walkthrough from clean clone through local campaign, stop, resume, evidence inspection, and removal using synthetic data.
+  - [ ] **Sub-task 26.1.2.4:** Verify every command, flag, configuration key, output example, link, Mermaid diagram, platform claim, and security statement against the release candidate.
+  - [ ] **Sub-task 26.1.2.5:** Verify provenance, copyright, Apache-2.0 license, third-party notices, contribution policy, and private vulnerability-reporting instructions.
+
+### Story 26.2 - Reproducible Candidate and Installed Evidence
+
+- [ ] **Task 26.2.1 - Build the release candidate**
+  - [ ] **Sub-task 26.2.1.1:** Build twice from separate clean clones using the pinned toolchain and locked dependencies and compare reproducible artifact identities.
+  - [ ] **Sub-task 26.2.1.2:** Generate the binary archive, source archive, checksums, SPDX SBOM, dependency and license inventory, build manifest, provenance statement, and release notes.
+  - [ ] **Sub-task 26.2.1.3:** Scan source and artifacts for credentials, private paths, runtime state, logs, target source, debug authority, unexpected executables, and undeclared files.
+  - [ ] **Sub-task 26.2.1.4:** Sign the release-candidate manifest and artifacts through an operator-controlled signing process without exposing signing material to CodingMage or a model.
+- [ ] **Task 26.2.2 - Test the installed candidate**
+  - [ ] **Sub-task 26.2.2.1:** Install the packaged artifact into a clean unprivileged user environment without using the source-tree binary.
+  - [ ] **Sub-task 26.2.2.2:** Verify version, help, configuration validation, doctor, planning, supervised run, serial campaign, monitoring, controls, recovery, and content-minimized output.
+  - [ ] **Sub-task 26.2.2.3:** Run the prescribed disposable ten-outcome campaign through the installed candidate and bind the evidence to the package digest.
+  - [ ] **Sub-task 26.2.2.4:** Test service install, verify, start, stop, upgrade, rollback, removal, and explicit data-retention behavior.
+  - [ ] **Sub-task 26.2.2.5:** Reinstall from the same artifact and prove deterministic configuration, state initialization, and package verification.
+- [ ] **Task 26.2.3 - Complete final external review gates**
+  - [ ] **Sub-task 26.2.3.1:** Execute the deferred manual fuzz campaign against the frozen release candidate and reconcile every finding.
+  - [ ] **Sub-task 26.2.3.2:** Obtain independent human security, architecture, Git-safety, process-isolation, recovery, and release-boundary review.
+  - [ ] **Sub-task 26.2.3.3:** Correct every blocking finding, rebuild the candidate, and invalidate all evidence affected by the correction.
+  - [ ] **Sub-task 26.2.3.4:** Record accepted residual risks, reviewer scope, reviewed commit, commands, artifacts, limitations, and final disposition without overstating certification.
+
+**Story acceptance criteria**
+
+- [ ] **AC 26.1:** Given the frozen source and evidence index, when release scope is reviewed, then every supported claim is implemented and tested and every unsupported claim is explicit.
+- [ ] **AC 26.2:** Given two clean builds and one installed artifact, when reproducibility and lifecycle tests run, then identities match and install, execution, upgrade, rollback, and removal behave exactly as documented.
+- [ ] **AC 26.3:** Given manual fuzzing and independent review, when findings are reconciled, then no blocking finding remains and every accepted residual risk is explicit.
+
+### Sprint 26 Gate
+
+- [ ] **Gate 26.1:** Clean-clone source, complete test matrix, documentation, supply-chain, reproducibility, provenance, signing, and installed-artifact gates pass.
+- [ ] **Gate 26.2:** The installed candidate passes the ten-outcome disposable campaign with evidence bound to its exact package digest.
+- [ ] **Gate 26.3:** Manual fuzz and independent human review are complete after the final release-candidate change.
+- [ ] **Gate 26.4:** No publication effect has occurred; the signed candidate remains locally reviewable.
+
+---
+
+## Sprint 27 - Human-Authorized Publication and Verification
+
+**Sprint goal:** Publish the approved release through explicit human actions and independently verify every public artifact and claim.
+
+**Entry dependency:** Every Sprint 26 gate and `External 7` must pass before any tag or release publication.
+
+### Story 27.1 - Final Repository Review
+
+- [ ] **Task 27.1.1 - Prepare the final review surface**
+  - [ ] **Sub-task 27.1.1.1:** Push only the exact verified release-candidate branch after authenticating the expected account, host, and repository.
+  - [ ] **Sub-task 27.1.1.2:** Create or update one draft release pull request with source commit, evidence index, artifact digests, supported scope, limitations, and residual risks.
+  - [ ] **Sub-task 27.1.1.3:** Reconcile remote CI and review results with local evidence without letting remote metadata alter canonical task state.
+  - [ ] **Sub-task 27.1.1.4:** Preserve concurrent human text and require explicit repository-owner approval for default-branch merge.
+  - [ ] **Sub-task 27.1.1.5:** Revalidate the merged default-branch commit and rerun every gate affected by merge resolution or remote-only behavior.
+- [ ] **Task 27.1.2 - Authorize the release explicitly**
+  - [ ] **Sub-task 27.1.2.1:** Present the final commit, test matrix, soak evidence, external reviews, artifacts, signatures, limitations, and residual risks to the repository owner.
+  - [ ] **Sub-task 27.1.2.2:** Record separate owner decisions for merge, signed tag creation, and public release publication.
+  - [ ] **Sub-task 27.1.2.3:** Refuse publication when authorization is missing, stale, ambiguous, broader than the candidate, or bound to another commit or artifact.
+
+### Story 27.2 - Publish and Reverify
+
+- [ ] **Task 27.2.1 - Create the public release**
+  - [ ] **Sub-task 27.2.1.1:** Create the operator-signed version tag on the exact approved default-branch commit.
+  - [ ] **Sub-task 27.2.1.2:** Publish the approved release notes, binary archive, source archive, checksums, signatures, SBOM, provenance, and supported-platform statement.
+  - [ ] **Sub-task 27.2.1.3:** Verify no unapproved artifact, draft file, private evidence, runtime state, credential, or target material is attached.
+- [ ] **Task 27.2.2 - Verify the public release independently**
+  - [ ] **Sub-task 27.2.2.1:** Download every public artifact through a clean independent path and verify tag, commit, checksums, signatures, SBOM, provenance, archive contents, and version output.
+  - [ ] **Sub-task 27.2.2.2:** Install the downloaded artifact in a clean unprivileged environment and repeat smoke, doctor, disposable run, recovery, and removal checks.
+  - [ ] **Sub-task 27.2.2.3:** Verify public README, release notes, installation commands, supported scope, unsupported behavior, security reporting, and license links.
+  - [ ] **Sub-task 27.2.2.4:** Record immutable publication evidence containing public identities and digests but no credentials, private paths, or hidden provider content.
+- [ ] **Task 27.2.3 - Establish post-publication response**
+  - [ ] **Sub-task 27.2.3.1:** Document emergency disablement, vulnerable-version marking, replacement release, and support-ending procedures without rewriting published history.
+  - [ ] **Sub-task 27.2.3.2:** Verify private vulnerability reporting and maintainer contact paths from an unauthenticated public view.
+  - [ ] **Sub-task 27.2.3.3:** Define the first patch-release workflow with the same source, test, review, signing, publication, and reverification gates.
+  - [ ] **Sub-task 27.2.3.4:** Open external contributions only after contributor provenance and conduct requirements are complete.
+
+**Story acceptance criteria**
+
+- [ ] **AC 27.1:** Given an approved release candidate, when repository review and authorization occur, then merge, tag, and publication remain separate explicit human decisions bound to exact identities.
+- [ ] **AC 27.2:** Given the public release, when artifacts are independently downloaded and installed, then every identity, signature, checksum, claim, command, and lifecycle result matches the approved candidate.
+- [ ] **AC 27.3:** Given a post-publication security or reliability defect, when response procedures are followed, then users can identify affected versions and obtain a reviewed replacement without history rewriting.
+
+### Sprint 27 Gate
+
+- [ ] **Gate 27.1:** Default-branch, signed-tag, release-asset, public-documentation, clean-install, and post-publication verification evidence passes.
+- [ ] **Gate 27.2:** Public vulnerability reporting, disablement, patch, support, and contribution workflows are documented and verified.
+- [ ] **Gate 27.3:** The repository owner confirms the release is complete only after independent public-artifact verification succeeds.
+
+---
+
+## Remaining Dependency Order
+
+Sprint numbers remain stable identifiers for historical evidence. Complete the remaining work in
+this dependency order; do not skip forward merely because a later sprint number appears ready:
+
+1. Complete `20.1.3.4`, then close the remaining Sprint 20 acceptance criteria and gates with exact interrupted-correction evidence.
+2. Implement all of Story 21.2 and pass `Gate 21.2` before expanding serial campaign progression.
+3. Complete Stories 22.1 and 22.2, including durable dispositions, controls, status, recovery, and independent limits.
+4. Complete the Sprint 17 prescribed fake-adapter soak and remaining supervised pilot units before production unattended qualification.
+5. Complete Story 22.3 in order: production disposable ten-outcome schedule, controlled-target preflight, ten-task local-only campaign, and human reconciliation.
+6. Begin Sprint 23 only after `Gate 22.3`; enable one additional pod at a time and rerun the complete collision, recovery, and soak evidence after each increase.
+7. Complete Sprint 24 deterministic integration before enabling authenticated branch push or draft pull requests; remote effects remain draft-only and human-reviewed.
+8. Complete Sprint 25 adversarial, multi-pod, complete unit, integration, mutation, recovery, privacy, package, and traceability matrices from a clean clone.
+9. Complete the remaining Sprint 18 package-service lifecycle and Sprint 19 release-review work before freezing a candidate.
+10. Complete Sprint 26 source freeze, documentation reconciliation, reproducible artifacts, installed-package testing, deferred manual fuzzing, and independent human review.
+11. Obtain the explicit release authorization in `External 7`; no provider or coordinator may infer it from prior approvals.
+12. Complete Sprint 27 repository review, owner-authorized merge, signed tag, publication, independent download and installation verification, and post-publication response validation.
 
 ## External and Deferred Evidence Register
 
@@ -1085,9 +1333,14 @@ These items must remain open until their prerequisites actually exist:
 - [ ] **External 5:** Manual fuzzing campaign after the deterministic attack corpus is stable.
 - [x] **External 6:** Explicit product-owner approval before unattended target-repository operation.
 - [ ] **External 7:** Explicit product-owner approval before any public release or package publication.
+- [ ] **External 8:** Operator-controlled signing identity and protected signing material for the frozen release candidate.
+
+Native macOS and Windows evidence does not block a truthfully scoped Linux-only release. Authenticated
+GitHub adapter evidence blocks only a release that claims those remote capabilities as supported.
+Independent review, manual fuzzing, signing, and explicit release authorization are release gates.
 
 ## Immediate Next Unit
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete exact active-provider and correction-session reobservation under sub-task `20.1.3.4`, then finish campaign attempt, correction, blocker, limit, and evidence projection under `22.1.2.1` before claiming automatic quota/authentication resume or the full Sprint 22 gate.
+- [ ] **Next 1:** Implement only sub-task `20.1.3.4`: reobserve and resume an interrupted correction without replaying a provider or Git effect, add focused crash-point and mutation tests, bind current evidence, and leave every downstream checkbox open until its own criteria pass.

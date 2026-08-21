@@ -38,3 +38,16 @@ and avoid deleting target worktrees or evidence automatically.
 
 Security fixes must be delivered as reviewable commits. CodingMage must never self-patch,
 self-merge, or weaken a gate in response to a report.
+
+## Unattended and Release Boundary
+
+Unattended execution remains constrained by the approved
+[`Unattended Safeguards`](docs/architecture/unattended-safeguards.md). Models cannot expand campaign
+authority, clear blockers, satisfy deferrals, approve their own work, merge protected branches,
+receive signing material, or publish a release.
+
+A public release requires the complete local verification matrix, prescribed disposable and
+controlled-target soak evidence, manual fuzzing, independent human review, reproducible packaging,
+operator-controlled signing, explicit owner authorization, and independent verification of the
+downloaded public artifact. Security or reliability corrections invalidate affected evidence and
+require a rebuilt candidate.

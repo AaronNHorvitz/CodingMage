@@ -20,6 +20,11 @@ Each accepted unit follows this sequence:
    cleanliness still match.
 7. Repeat from the new exact head until completion, the unit ceiling, or a truthful blocker.
 
+The approved expanded contract will distinguish lead-side `blocked`, `deferred`, and
+`human_decision_required` outcomes. Those outcomes, reconsideration triggers, operator controls,
+and the exact ten-outcome soak remain unchecked roadmap work and must not be inferred from the
+currently implemented blocked-task behavior.
+
 ## Campaign Spec
 
 The values below are illustrative. Repository identity, commit, source digest, paths, executables,
@@ -98,6 +103,10 @@ only the durable phase, actor category, local branch, reconciled head, current a
 completed count, blocker count and code, and elapsed time. It does not expose prompts, provider
 output, source text, repository paths, credentials, or diagnostics.
 
+The target status contract additionally exposes distinct completed, blocked, deferred,
+human-decision, and rejected-proposal counts, exact trigger state, and independent limit
+utilization. It remains incomplete until Story 22.2 passes.
+
 ## Restart Behavior
 
 The campaign checkpoint is atomically replaced under the private campaign state directory. It binds
@@ -165,8 +174,11 @@ an unbounded provider-invocation loop.
 - Campaign execution is bounded by unit, attempt, correction, process, output, and resource limits;
   no monetary value is part of campaign or provider authority.
 - Blocked task IDs survive restart and are skipped, but operator-driven blocker clearance and a
-  dedicated blocker-detail projection remain open.
+  dedicated blocker-detail projection remain open. Lead-side deferral, reconsideration, and
+  human-decision projections are not yet implemented.
 - Parallel live pods remain disabled even if the authority ceiling is greater than one.
 - Story-level draft PR publication and authenticated GitHub campaign evidence remain open.
 - A retained campaign branch requires human inspection; protected/default-branch promotion remains
   outside campaign authority.
+- The prescribed ten-outcome disposable and ten-task controlled-target qualification gates remain
+  open. Parallel pods and remote visibility cannot be enabled on the strength of the earlier pilots.

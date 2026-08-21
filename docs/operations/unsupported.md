@@ -2,10 +2,12 @@
 
 The current build does not claim:
 
-- Live authenticated Claude implementation or Codex review evidence.
+- Release-qualified authenticated Claude implementation or Codex review evidence across the final test matrix.
 - Authenticated GitHub issue, comment, branch-push, or draft-pull-request evidence.
-- A completed 24-hour or 48-hour soak campaign.
-- An unattended target-repository pilot.
+- A passing prescribed ten-outcome production soak campaign.
+- A passing one-pod, local-only ten-task controlled-target campaign with complete reconciliation.
+- Lead-side deferred and human-decision outcomes with deterministic reconsideration.
+- Parallel live coding pods.
 - Native macOS execution, lifecycle, packaging, Keychain, or provider evidence.
 - Native Windows execution, job-object, NTFS, service/task, credential, console, or packaging evidence.
 - Independent human security or architecture approval.

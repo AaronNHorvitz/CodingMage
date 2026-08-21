@@ -3,6 +3,7 @@
 ## Guides
 
 - [Installation](installation.md)
+- [Release](release.md)
 - [Quickstart](quickstart.md)
 - [Configuration](configuration.md)
 - [Recovery](recovery.md)
@@ -10,6 +11,7 @@
 - [GitHub](github.md)
 - [Model routing](model-routing.md)
 - [Project adapters](project-adapters.md)
+- [Unattended safeguards](../architecture/unattended-safeguards.md)
 - [Troubleshooting](troubleshooting.md)
 - [Unsupported behavior](unsupported.md)
 
