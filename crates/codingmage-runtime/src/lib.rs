@@ -40,7 +40,7 @@ use codingmage_orchestrator::{
     DurableWorkflowPort, ImplementationOutcome, OneUnitCoordinator, OrchestrationError,
     ReviewOutcome, TaskState, VerificationOutcome, WorkflowPort, reconcile_and_select_next,
 };
-use codingmage_plan::{PlanError, PlanItemKind, SelectedWork, TaskPlan};
+use codingmage_plan::{CheckState, PlanError, PlanItemKind, SelectedWork, TaskPlan};
 use codingmage_process::{CancellationToken, ProcessExecutor, ProcessProfile, ProcessRequest};
 use codingmage_service::CoordinatorLock;
 use codingmage_state::Journal;
@@ -1014,10 +1014,8 @@ pub fn run_serial_campaign_with_progress(
                 false,
             )
         } else {
-            let mut unavailable = checkpoint.blocked_task_ids.clone();
-            unavailable.extend(checkpoint.deferred_tasks.keys().cloned());
-            unavailable.extend(checkpoint.human_decisions.keys().cloned());
-            let ready = match plan.select_ready(&unavailable, &BTreeSet::new(), 64) {
+            let queue = campaign_queue_projection(&plan, &checkpoint)?;
+            let ready = match plan.select_ready(&queue.unavailable, &BTreeSet::new(), 64) {
                 Ok(ready) => ready,
                 Err(PlanError::NoReadyWork)
                     if !checkpoint.blocked_task_ids.is_empty()
@@ -1440,6 +1438,71 @@ pub fn run_serial_campaign_with_progress(
                 .map_err(RuntimeError::Campaign)?;
         }
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct CampaignQueueProjection {
+    completed: BTreeSet<String>,
+    blocked: BTreeSet<String>,
+    deferred: BTreeSet<String>,
+    human_decision: BTreeSet<String>,
+    rejected_proposal_count: usize,
+    unavailable: BTreeSet<String>,
+}
+
+fn campaign_queue_projection(
+    plan: &TaskPlan,
+    checkpoint: &CampaignCheckpoint,
+) -> Result<CampaignQueueProjection, RuntimeError> {
+    let task_states = plan
+        .items
+        .iter()
+        .filter(|item| item.kind == PlanItemKind::SubTask)
+        .map(|item| (item.id.clone(), item.state))
+        .collect::<BTreeMap<_, _>>();
+    let completed = task_states
+        .iter()
+        .filter_map(|(task_id, state)| (*state == CheckState::Checked).then_some(task_id.clone()))
+        .collect::<BTreeSet<_>>();
+    let blocked = checkpoint.blocked_task_ids.clone();
+    let deferred = checkpoint
+        .deferred_tasks
+        .keys()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let human_decision = checkpoint
+        .human_decisions
+        .keys()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+
+    let projected_open = [&blocked, &deferred, &human_decision];
+    if projected_open.iter().any(|projection| {
+        projection.iter().any(|task_id| {
+            task_states.get(task_id) != Some(&CheckState::Open) || completed.contains(task_id)
+        })
+    }) || !blocked.is_disjoint(&deferred)
+        || !blocked.is_disjoint(&human_decision)
+        || !deferred.is_disjoint(&human_decision)
+        || checkpoint
+            .blocked_reasons
+            .keys()
+            .any(|task_id| !blocked.contains(task_id))
+    {
+        return Err(RuntimeError::State);
+    }
+
+    let mut unavailable = blocked.clone();
+    unavailable.extend(deferred.iter().cloned());
+    unavailable.extend(human_decision.iter().cloned());
+    Ok(CampaignQueueProjection {
+        completed,
+        blocked,
+        deferred,
+        human_decision,
+        rejected_proposal_count: checkpoint.rejected_proposals.len(),
+        unavailable,
+    })
 }
 
 const fn campaign_unit_pause(
@@ -3382,6 +3445,118 @@ effort = "high"
                 ),
             }
         }
+    }
+
+    #[test]
+    fn queue_projection_preserves_distinct_dispositions_across_restart() {
+        let plan = TaskPlan::parse(
+            b"# Tasks\n\n## Sprint 1 - Build\n\n**Sprint goal:** Build.\n\n### Story 1.1 - Work\n\n- [ ] **Task 1.1.1 - Units**\n  - [x] **Sub-task 1.1.1.1:** Completed unit.\n  - [ ] **Sub-task 1.1.1.2:** Blocked unit.\n  - [ ] **Sub-task 1.1.1.3:** Deferred unit.\n  - [ ] **Sub-task 1.1.1.4:** Human decision unit.\n  - [ ] **Sub-task 1.1.1.5:** Ready unit.\n",
+        )
+        .unwrap();
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-queue-projection-{}-{}",
+            std::process::id(),
+            NEXT_ID.fetch_add(1, Ordering::Relaxed)
+        ));
+        let mut checkpoint = CampaignCheckpoint::new(
+            "a".repeat(64),
+            "campaign-1".to_owned(),
+            "repo-1".to_owned(),
+            RunId::new("run-1").unwrap(),
+            codingmage_contracts::WorktreeId::new("worktree-1").unwrap(),
+            "codingmage/campaign-1".to_owned(),
+            "b".repeat(40),
+        )
+        .unwrap();
+        checkpoint.blocked_task_ids.insert("1.1.1.2".to_owned());
+        checkpoint.blocked_reasons.insert(
+            "1.1.1.2".to_owned(),
+            codingmage_contracts::LeadBlockedReason::UnavailableExternalDependency,
+        );
+        checkpoint.deferred_tasks.insert(
+            "1.1.1.3".to_owned(),
+            DeferredTaskProjection {
+                reason: codingmage_contracts::LeadDeferredReason::OperatorPause,
+                trigger: LeadReconsiderationTrigger::OperatorResume,
+                source_head: checkpoint.head.clone(),
+                task_source_sha256: plan.source_sha256.clone(),
+            },
+        );
+        checkpoint.human_decisions.insert(
+            "1.1.1.4".to_owned(),
+            HumanDecisionProjection {
+                reason: HumanDecisionProjectionReason::Lead(
+                    codingmage_contracts::LeadHumanDecisionReason::AmbiguousScope,
+                ),
+                source_head: checkpoint.head.clone(),
+                task_source_sha256: plan.source_sha256.clone(),
+            },
+        );
+        checkpoint
+            .rejected_proposals
+            .push(RejectedProposalProjection {
+                sequence: 1,
+                reason: LeadRejectionReason::InvalidProposal,
+                source_head: checkpoint.head.clone(),
+                task_source_sha256: plan.source_sha256.clone(),
+            });
+        checkpoint.persist(&root).unwrap();
+
+        let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
+        let projection = campaign_queue_projection(&plan, &loaded).unwrap();
+        assert_eq!(projection.completed, BTreeSet::from(["1.1.1.1".to_owned()]));
+        assert_eq!(projection.blocked, BTreeSet::from(["1.1.1.2".to_owned()]));
+        assert_eq!(projection.deferred, BTreeSet::from(["1.1.1.3".to_owned()]));
+        assert_eq!(
+            projection.human_decision,
+            BTreeSet::from(["1.1.1.4".to_owned()])
+        );
+        assert_eq!(projection.rejected_proposal_count, 1);
+        let ready = plan
+            .select_ready(&projection.unavailable, &BTreeSet::new(), 64)
+            .unwrap();
+        assert_eq!(ready[0].item.id, "1.1.1.5");
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn queue_projection_rejects_overlapping_or_checked_dispositions() {
+        let plan = TaskPlan::parse(
+            b"# Tasks\n\n## Sprint 1 - Build\n\n**Sprint goal:** Build.\n\n### Story 1.1 - Work\n\n- [ ] **Task 1.1.1 - Units**\n  - [x] **Sub-task 1.1.1.1:** Completed unit.\n  - [ ] **Sub-task 1.1.1.2:** Open unit.\n",
+        )
+        .unwrap();
+        let mut checkpoint = CampaignCheckpoint::new(
+            "a".repeat(64),
+            "campaign-1".to_owned(),
+            "repo-1".to_owned(),
+            RunId::new("run-1").unwrap(),
+            codingmage_contracts::WorktreeId::new("worktree-1").unwrap(),
+            "codingmage/campaign-1".to_owned(),
+            "b".repeat(40),
+        )
+        .unwrap();
+        checkpoint.blocked_task_ids.insert("1.1.1.1".to_owned());
+        assert_eq!(
+            campaign_queue_projection(&plan, &checkpoint),
+            Err(RuntimeError::State)
+        );
+
+        checkpoint.blocked_task_ids.clear();
+        checkpoint.blocked_task_ids.insert("1.1.1.2".to_owned());
+        checkpoint.deferred_tasks.insert(
+            "1.1.1.2".to_owned(),
+            DeferredTaskProjection {
+                reason: codingmage_contracts::LeadDeferredReason::OperatorPause,
+                trigger: LeadReconsiderationTrigger::OperatorResume,
+                source_head: checkpoint.head.clone(),
+                task_source_sha256: plan.source_sha256.clone(),
+            },
+        );
+        assert_eq!(
+            campaign_queue_projection(&plan, &checkpoint),
+            Err(RuntimeError::State)
+        );
     }
 
     #[test]
