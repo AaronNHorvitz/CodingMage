@@ -1506,6 +1506,30 @@ mod tests {
     }
 
     #[test]
+    fn checkpoint_preserves_atomic_observation_overages_for_next_admission_stop() {
+        let root = root("observed-overage");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("retained-evidence"), b"retained").unwrap();
+        let mut checkpoint = checkpoint();
+        checkpoint.limits.output_bytes = 1;
+        checkpoint.limits.retained_state_bytes = 1;
+        checkpoint.limits.execution_elapsed_ms = 1;
+        checkpoint.utilization.output_bytes = 2;
+        checkpoint.utilization.execution_elapsed_ms = 2;
+        checkpoint.persist(&root).unwrap();
+
+        let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
+        assert!(loaded.utilization.output_bytes > loaded.limits.output_bytes);
+        assert!(loaded.utilization.retained_state_bytes > loaded.limits.retained_state_bytes);
+        assert!(loaded.utilization.execution_elapsed_ms > loaded.limits.execution_elapsed_ms);
+        assert_eq!(
+            loaded.exhausted_limit(),
+            Some(CampaignLimitKind::OutputBytes)
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     #[allow(clippy::too_many_lines)]
     fn unit_budget_allows_exact_boundary_and_refuses_every_additional_effect() {
         let root = root("unit-budget");

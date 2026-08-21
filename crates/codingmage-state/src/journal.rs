@@ -562,11 +562,11 @@ fn validate_campaign_utilization(kind: &EventKind) -> Result<(), JournalError> {
         Some(max_corrections),
         Some(processes),
         Some(max_processes),
-        Some(output),
+        Some(_output),
         Some(max_output),
-        Some(retained),
+        Some(_retained),
         Some(max_retained),
-        Some(elapsed),
+        Some(_elapsed),
         Some(max_elapsed),
     ) = (
         provider_attempts,
@@ -598,11 +598,8 @@ fn validate_campaign_utilization(kind: &EventKind) -> Result<(), JournalError> {
         || *max_processes == 0
         || processes > max_processes
         || *max_output == 0
-        || output > max_output
         || *max_retained == 0
-        || retained > max_retained
         || *max_elapsed == 0
-        || elapsed > max_elapsed
     {
         return Err(JournalError::InvalidField);
     }
