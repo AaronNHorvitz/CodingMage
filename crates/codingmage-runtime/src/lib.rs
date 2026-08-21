@@ -678,6 +678,7 @@ pub fn request_campaign_control(
         {
             return Err(RuntimeError::Authority);
         }
+        checkpoint.reconcile_control_journal(&campaign_root)?;
         return Ok(CampaignControlOutcome {
             campaign_id: spec.campaign_id.clone(),
             request_id: request_id.as_str().to_owned(),
@@ -686,6 +687,7 @@ pub fn request_campaign_control(
         });
     }
     intent.persist_new(&campaign_root)?;
+    checkpoint.reconcile_control_journal(&campaign_root)?;
     Ok(CampaignControlOutcome {
         campaign_id: spec.campaign_id.clone(),
         request_id: request_id.as_str().to_owned(),
@@ -2260,10 +2262,11 @@ fn apply_pending_campaign_controls(
     checkpoint: &mut CampaignCheckpoint,
     campaign_root: &Path,
 ) -> Result<(), RuntimeError> {
+    checkpoint.reconcile_control_journal(campaign_root)?;
     for intent in CampaignControlIntent::pending(campaign_root)? {
         if checkpoint.apply_control(&intent)? {
             checkpoint.persist(campaign_root)?;
-            checkpoint.record_control_applied(campaign_root, &intent)?;
+            checkpoint.reconcile_control_journal(campaign_root)?;
         }
     }
     Ok(())

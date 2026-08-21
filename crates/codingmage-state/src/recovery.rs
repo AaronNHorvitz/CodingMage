@@ -126,6 +126,7 @@ pub fn reconcile_after_restart(
         }
         EventKind::Transition { .. }
         | EventKind::GateObserved { .. }
+        | EventKind::ControlRequested { .. }
         | EventKind::ControlApplied { .. }
         | EventKind::RetryScheduled { .. }
         | EventKind::ExternalBoundaryChanged { .. }

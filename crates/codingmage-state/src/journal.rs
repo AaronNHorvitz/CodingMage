@@ -54,6 +54,13 @@ pub enum EventKind {
         /// Stable machine-readable reason.
         reason: String,
     },
+    /// An authenticated local lifecycle control intent became durable.
+    ControlRequested {
+        /// Idempotency identity of the request.
+        request_id: String,
+        /// Stable lifecycle action.
+        action: String,
+    },
     /// An authenticated local lifecycle control was durably accepted.
     ControlApplied {
         /// Idempotency identity of the request.
@@ -469,7 +476,8 @@ fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
         EventKind::RecoveryBlocked { reason } | EventKind::RetryScheduled { reason, .. } => {
             validate_label(reason)?;
         }
-        EventKind::ControlApplied { request_id, action } => {
+        EventKind::ControlRequested { request_id, action }
+        | EventKind::ControlApplied { request_id, action } => {
             validate_label(request_id)?;
             validate_label(action)?;
             if !matches!(

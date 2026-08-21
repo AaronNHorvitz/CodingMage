@@ -868,13 +868,86 @@ impl CampaignCheckpoint {
         Ok(true)
     }
 
-    pub(crate) fn record_control_applied(
+    pub(crate) fn reconcile_control_journal(&self, root: &Path) -> Result<(), RuntimeError> {
+        let intents = CampaignControlIntent::pending(root)?;
+        let by_id = intents
+            .iter()
+            .map(|intent| (intent.request_id.as_str(), intent))
+            .collect::<BTreeMap<_, _>>();
+        for intent in &intents {
+            if intent.authority_sha256 != self.authority_sha256
+                || intent.campaign_id != self.campaign_id
+                || intent.repository_id != self.repository_id
+                || intent.campaign_run_id != self.campaign_run_id
+                || intent.observed_updated_at_ms > self.updated_at_ms
+            {
+                return Err(RuntimeError::Authority);
+            }
+        }
+
+        let mut journal = Journal::open(root, format!("{}-control", self.campaign_run_id.as_str()))
+            .map_err(|_| RuntimeError::State)?;
+        let mut requested = BTreeSet::new();
+        let mut applied = BTreeSet::new();
+        for record in journal.records() {
+            let (request_id, action, set) = match &record.event.kind {
+                EventKind::ControlRequested { request_id, action } => {
+                    (request_id, action, &mut requested)
+                }
+                EventKind::ControlApplied { request_id, action } => {
+                    (request_id, action, &mut applied)
+                }
+                _ => continue,
+            };
+            if record.event.task_id.as_str() != "campaign-control" {
+                continue;
+            }
+            let intent = by_id.get(request_id.as_str()).ok_or(RuntimeError::State)?;
+            if record.event.run_id != self.campaign_run_id
+                || record.event.repository_id.as_str() != self.repository_id
+                || action != intent.action.code()
+                || !set.insert(request_id.clone())
+            {
+                return Err(RuntimeError::State);
+            }
+        }
+        if !applied.is_subset(&requested)
+            || applied
+                .iter()
+                .any(|request_id| !self.applied_control_requests.contains(request_id))
+        {
+            return Err(RuntimeError::State);
+        }
+
+        for intent in &intents {
+            if !requested.contains(&intent.request_id) {
+                journal
+                    .append(self.control_event(intent, false)?)
+                    .map_err(|_| RuntimeError::State)?;
+            }
+        }
+        for request_id in &self.applied_control_requests {
+            let intent = by_id.get(request_id.as_str()).ok_or(RuntimeError::State)?;
+            if !applied.contains(request_id) {
+                journal
+                    .append(self.control_event(intent, true)?)
+                    .map_err(|_| RuntimeError::State)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn control_event(
         &self,
-        root: &Path,
         intent: &CampaignControlIntent,
-    ) -> Result<(), RuntimeError> {
-        let event = JournalEvent {
-            timestamp_ms: timestamp_ms()?,
+        applied: bool,
+    ) -> Result<JournalEvent, RuntimeError> {
+        Ok(JournalEvent {
+            timestamp_ms: if applied {
+                self.updated_at_ms
+            } else {
+                intent.created_at_ms
+            },
             run_id: self.campaign_run_id.clone(),
             task_id: TaskId::new("campaign-control").map_err(|_| RuntimeError::State)?,
             repository_id: RepositoryId::new(self.repository_id.clone())
@@ -882,12 +955,23 @@ impl CampaignCheckpoint {
             identities: DurableIdentities {
                 worktree: Some(self.worktree_id.clone()),
                 branch: Some(self.branch.clone()),
-                commit: Some(self.head.clone()),
+                commit: Some(if applied {
+                    self.head.clone()
+                } else {
+                    intent.observed_head.clone()
+                }),
                 ..DurableIdentities::default()
             },
-            kind: EventKind::ControlApplied {
-                request_id: intent.request_id.clone(),
-                action: intent.action.code().to_owned(),
+            kind: if applied {
+                EventKind::ControlApplied {
+                    request_id: intent.request_id.clone(),
+                    action: intent.action.code().to_owned(),
+                }
+            } else {
+                EventKind::ControlRequested {
+                    request_id: intent.request_id.clone(),
+                    action: intent.action.code().to_owned(),
+                }
             },
             outcome: EventOutcome::Succeeded,
             evidence: vec![
@@ -895,11 +979,7 @@ impl CampaignCheckpoint {
                     .map_err(|_| RuntimeError::State)?,
             ],
             redactions: Vec::new(),
-        };
-        let mut journal = Journal::open(root, format!("{}-control", self.campaign_run_id.as_str()))
-            .map_err(|_| RuntimeError::State)?;
-        journal.append(event).map_err(|_| RuntimeError::State)?;
-        Ok(())
+        })
     }
 
     fn refresh_outcomes(&mut self) -> Result<(), RuntimeError> {
@@ -2352,6 +2432,93 @@ mod tests {
             Err(RuntimeError::Authority)
         );
         assert_eq!(CampaignControlAction::parse("unknown"), None);
+    }
+
+    #[test]
+    fn control_journal_reconciles_intent_and_applied_observation_exactly_once() {
+        let root = root("control-journal-recovery");
+        let mut checkpoint = checkpoint();
+        checkpoint.persist(&root).unwrap();
+        let intent = CampaignControlIntent::new(
+            "pause-recovery-1".to_owned(),
+            checkpoint.authority_sha256.clone(),
+            checkpoint.campaign_id.clone(),
+            checkpoint.repository_id.clone(),
+            checkpoint.campaign_run_id.clone(),
+            CampaignControlAction::Pause,
+            checkpoint.head.clone(),
+            checkpoint.updated_at_ms,
+        )
+        .unwrap();
+        intent.persist_new(&root).unwrap();
+
+        checkpoint.reconcile_control_journal(&root).unwrap();
+        assert!(checkpoint.apply_control(&intent).unwrap());
+        checkpoint.persist(&root).unwrap();
+        checkpoint.reconcile_control_journal(&root).unwrap();
+        checkpoint.reconcile_control_journal(&root).unwrap();
+
+        let journal = Journal::open(&root, "control-recovery-reader").unwrap();
+        let requested = journal
+            .records()
+            .iter()
+            .filter(|record| {
+                matches!(
+                    &record.event.kind,
+                    EventKind::ControlRequested { request_id, .. }
+                        if request_id == "pause-recovery-1"
+                )
+            })
+            .count();
+        let applied = journal
+            .records()
+            .iter()
+            .filter(|record| {
+                matches!(
+                    &record.event.kind,
+                    EventKind::ControlApplied { request_id, .. }
+                        if request_id == "pause-recovery-1"
+                )
+            })
+            .count();
+        assert_eq!((requested, applied), (1, 1));
+        drop(journal);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn control_journal_refuses_duplicate_or_cross_run_observations() {
+        for (name, cross_run) in [("duplicate-request", false), ("cross-run-request", true)] {
+            let root = root(name);
+            let mut checkpoint = checkpoint();
+            checkpoint.persist(&root).unwrap();
+            let intent = CampaignControlIntent::new(
+                format!("{name}-1"),
+                checkpoint.authority_sha256.clone(),
+                checkpoint.campaign_id.clone(),
+                checkpoint.repository_id.clone(),
+                checkpoint.campaign_run_id.clone(),
+                CampaignControlAction::Pause,
+                checkpoint.head.clone(),
+                checkpoint.updated_at_ms,
+            )
+            .unwrap();
+            intent.persist_new(&root).unwrap();
+            checkpoint.reconcile_control_journal(&root).unwrap();
+
+            let mut event = checkpoint.control_event(&intent, false).unwrap();
+            if cross_run {
+                event.run_id = RunId::new("wrong-run").unwrap();
+            }
+            let mut journal = Journal::open(&root, format!("{name}-writer")).unwrap();
+            journal.append(event).unwrap();
+            drop(journal);
+            assert_eq!(
+                checkpoint.reconcile_control_journal(&root),
+                Err(RuntimeError::State)
+            );
+            fs::remove_dir_all(root).unwrap();
+        }
     }
 
     #[test]
