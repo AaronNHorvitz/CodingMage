@@ -41,7 +41,9 @@ use codingmage_orchestrator::{
     ReviewOutcome, TaskState, VerificationOutcome, WorkflowPort, reconcile_and_select_next,
 };
 use codingmage_plan::{CheckState, PlanError, PlanItemKind, SelectedWork, TaskPlan};
-use codingmage_process::{CancellationToken, ProcessExecutor, ProcessProfile, ProcessRequest};
+use codingmage_process::{
+    CancellationToken, ProcessExecutor, ProcessProfile, ProcessRequest, ProcessResult,
+};
 use codingmage_service::CoordinatorLock;
 use codingmage_state::Journal;
 use serde::{Deserialize, Serialize};
@@ -292,6 +294,26 @@ pub struct RunOutcome {
     pub review_verdict: Option<String>,
     /// Number of gate or review correction rounds consumed.
     pub correction_rounds: u16,
+    /// Content-free, coordinator-observed utilization for this exact unit.
+    pub utilization: RunUtilization,
+}
+
+/// Exact unit utilization observed at coordinator-owned boundaries.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RunUtilization {
+    /// Attempted Claude or Codex process invocations, including failed attempts.
+    pub provider_attempts: u32,
+    /// Metadata-only Claude completion-report repairs requested.
+    pub malformed_report_repairs: u32,
+    /// Provider and deterministic-gate process invocations.
+    pub process_invocations: u32,
+    /// Full observed provider and gate stdout plus stderr bytes when a receipt exists.
+    pub output_bytes: u64,
+    /// Sum of observed provider and gate execution milliseconds.
+    pub execution_elapsed_ms: u64,
+    /// Exact bytes retained beneath the private run-state root at terminal observation.
+    pub retained_state_bytes: u64,
 }
 
 /// Terminal state of the initial one-pod campaign engine.
@@ -2109,7 +2131,7 @@ fn run_one_observed_with_id(
             }
         }
     };
-    let outcome = port.inner.outcome(run_id, task_id, coordinator.state());
+    let outcome = port.inner.outcome(run_id, task_id, coordinator.state())?;
     if result.is_err() {
         return Err(port.inner.failure.unwrap_or(RuntimeError::Orchestration));
     }
@@ -2241,6 +2263,7 @@ struct ProductionWorkflowPort<'a> {
     review_verdict: Option<ReviewVerdict>,
     review_report: Option<CodexReviewReport>,
     correction_round: u16,
+    utilization: RunUtilization,
     recovering_correction: bool,
     failure: Option<RuntimeError>,
 }
@@ -2270,6 +2293,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             review_verdict: None,
             review_report: None,
             correction_round: 0,
+            utilization: RunUtilization::default(),
             recovering_correction: false,
             failure: None,
         }
@@ -2320,8 +2344,15 @@ impl<'a> ProductionWorkflowPort<'a> {
         Ok(port)
     }
 
-    fn outcome(&self, run_id: RunId, task_id: TaskId, state: TaskState) -> RunOutcome {
-        RunOutcome {
+    fn outcome(
+        &self,
+        run_id: RunId,
+        task_id: TaskId,
+        state: TaskState,
+    ) -> Result<RunOutcome, RuntimeError> {
+        let mut utilization = self.utilization.clone();
+        utilization.retained_state_bytes = retained_tree_bytes(&self.run_root)?;
+        Ok(RunOutcome {
             run_id,
             task_id,
             state,
@@ -2339,7 +2370,78 @@ impl<'a> ProductionWorkflowPort<'a> {
                 .map(|receipt| receipt.commit.clone()),
             review_verdict: self.review_verdict.map(verdict_name).map(str::to_owned),
             correction_rounds: self.correction_round,
+            utilization,
+        })
+    }
+
+    fn record_provider_attempt(&mut self) -> Result<(), OrchestrationError> {
+        self.utilization.provider_attempts = self
+            .utilization
+            .provider_attempts
+            .checked_add(1)
+            .ok_or(OrchestrationError::Port)?;
+        self.utilization.process_invocations = self
+            .utilization
+            .process_invocations
+            .checked_add(1)
+            .ok_or(OrchestrationError::Port)?;
+        Ok(())
+    }
+
+    fn record_process_result(&mut self, result: &ProcessResult) -> Result<(), OrchestrationError> {
+        let output = result
+            .stdout
+            .total_bytes
+            .checked_add(result.stderr.total_bytes)
+            .ok_or(OrchestrationError::Port)?;
+        self.utilization.output_bytes = self
+            .utilization
+            .output_bytes
+            .checked_add(output)
+            .ok_or(OrchestrationError::Port)?;
+        let elapsed =
+            u64::try_from(result.elapsed.as_millis()).map_err(|_| OrchestrationError::Port)?;
+        self.utilization.execution_elapsed_ms = self
+            .utilization
+            .execution_elapsed_ms
+            .checked_add(elapsed)
+            .ok_or(OrchestrationError::Port)?;
+        Ok(())
+    }
+
+    fn record_gate_run(
+        &mut self,
+        run: &codingmage_gate::GateRun,
+    ) -> Result<(), OrchestrationError> {
+        for evidence in &run.evidence {
+            let Some(process) = evidence.process.as_ref() else {
+                continue;
+            };
+            self.utilization.process_invocations = self
+                .utilization
+                .process_invocations
+                .checked_add(1)
+                .ok_or(OrchestrationError::Port)?;
+            let output = process
+                .stdout_bytes
+                .checked_add(process.stderr_bytes)
+                .ok_or(OrchestrationError::Port)?;
+            self.utilization.output_bytes = self
+                .utilization
+                .output_bytes
+                .checked_add(output)
+                .ok_or(OrchestrationError::Port)?;
+            self.utilization.execution_elapsed_ms = self
+                .utilization
+                .execution_elapsed_ms
+                .checked_add(
+                    evidence
+                        .ended_unix_ms
+                        .saturating_sub(evidence.started_unix_ms),
+                )
+                .ok_or(OrchestrationError::Port)?;
         }
+        Ok(())
     }
 
     fn worktree(&self) -> Result<&OwnedWorktree, OrchestrationError> {
@@ -2478,8 +2580,12 @@ impl<'a> ProductionWorkflowPort<'a> {
                 adapter.plan_start(session, &packet)
             }
             .map_err(|_| OrchestrationError::Port)?;
+            self.record_provider_attempt()?;
             match adapter.execute(&self.executor, &plan, &CancellationToken::default()) {
-                Ok((report, _)) => return Ok(report),
+                Ok((report, process)) => {
+                    self.record_process_result(&process)?;
+                    return Ok(report);
+                }
                 Err(ClaudeError::Session)
                     if resume && attempt + 1 < CLAUDE_REPORT_ATTEMPT_LIMIT =>
                 {
@@ -2489,6 +2595,11 @@ impl<'a> ProductionWorkflowPort<'a> {
                     if retryable_claude_report_failure(error)
                         && attempt + 1 < CLAUDE_REPORT_ATTEMPT_LIMIT =>
                 {
+                    self.utilization.malformed_report_repairs = self
+                        .utilization
+                        .malformed_report_repairs
+                        .checked_add(1)
+                        .ok_or(OrchestrationError::Port)?;
                     resume = true;
                     packet.task_text.push_str(
                         "\n\nCOMPLETION REPORT RETRY\nThe prior completion metadata was malformed or contradictory. Do not broaden scope, run commands, or change files merely to answer this retry. Reinspect only the authorized worktree files if needed, then return exactly one disposition: (1) ready_for_commit=true with commit=null, blocker_code=null, and limitations=[]; or (2) ready_for_commit=false with commit=null and one non-null blocker_code. Keep tests=[].",
@@ -2519,6 +2630,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             self.failure = Some(RuntimeError::Verification);
             return Err(OrchestrationError::Port);
         };
+        self.record_gate_run(&result)?;
         self.gate_evidence = result
             .evidence
             .iter()
@@ -2871,19 +2983,21 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         let plan = adapter
             .plan_start(&binding, &self.selected.item.title)
             .map_err(|_| OrchestrationError::Port)?;
+        self.record_provider_attempt()?;
         let execution = adapter.execute(
             &self.executor,
             &plan,
             &binding,
             &CancellationToken::default(),
         );
-        let (result, _) = match execution {
+        let (result, process) = match execution {
             Ok(value) => value,
             Err(error) => {
                 self.failure = Some(RuntimeError::Reviewer(error));
                 return Err(OrchestrationError::Port);
             }
         };
+        self.record_process_result(&process)?;
         self.review_verdict = Some(result.report.verdict);
         self.review_report = Some(result.report.clone());
         let evidence = evidence_id(&format!(
@@ -3091,6 +3205,38 @@ fn check_exact_line(source: &[u8], line_number: usize) -> Result<Vec<u8>, Orches
 
 fn generated_run_id() -> Result<RunId, RuntimeError> {
     RunId::new(format!("run-{}", unique_hex())).map_err(|_| RuntimeError::State)
+}
+
+fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
+    let metadata = fs::symlink_metadata(root).map_err(|_| RuntimeError::State)?;
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err(RuntimeError::State);
+    }
+    let mut total = 0_u64;
+    let mut pending = vec![root.to_path_buf()];
+    while let Some(directory) = pending.pop() {
+        for entry in fs::read_dir(directory).map_err(|_| RuntimeError::State)? {
+            let entry = entry.map_err(|_| RuntimeError::State)?;
+            let metadata = entry.metadata().map_err(|_| RuntimeError::State)?;
+            if entry
+                .file_type()
+                .map_err(|_| RuntimeError::State)?
+                .is_symlink()
+            {
+                return Err(RuntimeError::State);
+            }
+            if metadata.is_dir() {
+                pending.push(entry.path());
+            } else if metadata.is_file() {
+                total = total
+                    .checked_add(metadata.len())
+                    .ok_or(RuntimeError::State)?;
+            } else {
+                return Err(RuntimeError::State);
+            }
+        }
+    }
+    Ok(total)
 }
 
 fn generated_attempt_id() -> Result<AttemptId, RuntimeError> {
@@ -3835,6 +3981,7 @@ effort = "high"
             completion_commit: None,
             review_verdict: Some("changes_required".to_owned()),
             correction_rounds: 3,
+            utilization: RunUtilization::default(),
         };
 
         assert_eq!(

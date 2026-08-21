@@ -92,6 +92,12 @@ if "--version" in sys.argv:
 if "--help" in sys.argv:
     print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
     raise SystemExit(0)
+counter = Path(__file__).with_suffix(".count")
+attempt = int(counter.read_text(encoding="utf-8")) if counter.exists() else 0
+counter.write_text(str(attempt + 1), encoding="utf-8")
+if attempt == 0:
+    print("malformed completion metadata")
+    raise SystemExit(0)
 path = Path("src/lib.rs")
 prior = path.read_text(encoding="utf-8")
 value = 2 if "{ 1 }" in prior else 3 if "{ 2 }" in prior else 4
@@ -227,6 +233,21 @@ effort = "high"
     assert_eq!(outcome["state"], "complete");
     assert_eq!(outcome["review_verdict"], "pass");
     assert_eq!(outcome["correction_rounds"], 2);
+    assert_eq!(outcome["utilization"]["provider_attempts"], 6);
+    assert_eq!(outcome["utilization"]["malformed_report_repairs"], 1);
+    assert_eq!(outcome["utilization"]["process_invocations"], 10);
+    assert!(outcome["utilization"]["output_bytes"].as_u64().unwrap() > 0);
+    assert!(
+        outcome["utilization"]["retained_state_bytes"]
+            .as_u64()
+            .unwrap()
+            > 0
+    );
+    assert!(
+        outcome["utilization"]["execution_elapsed_ms"]
+            .as_u64()
+            .is_some()
+    );
     assert!(outcome["candidate_commit"].as_str().is_some());
     assert!(outcome["completion_commit"].as_str().is_some());
     let progress = String::from_utf8(run.stderr).unwrap();
