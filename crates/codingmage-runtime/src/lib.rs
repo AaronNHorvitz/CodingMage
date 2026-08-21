@@ -3,6 +3,7 @@
 mod campaign_state;
 mod correction_state;
 mod team_campaign;
+mod team_control;
 mod team_integration;
 mod team_planning;
 mod team_runtime;
@@ -36,8 +37,8 @@ use std::{
 };
 
 use codingmage_campaign::{
-    CampaignAuthentication, CampaignError, CampaignLimits, CampaignSpec, PodLease, PodScheduler,
-    TeamLeadOutcome, validate_team_lead_report,
+    CampaignAuthentication, CampaignError, CampaignExecutionMode, CampaignLimits, CampaignSpec,
+    PodLease, PodScheduler, TeamLeadOutcome, validate_team_lead_report,
 };
 use codingmage_claude::{
     ClaudeAdapter, ClaudeAuthentication, ClaudeCompletionReport, ClaudeError, ClaudeSession,
@@ -712,6 +713,13 @@ pub fn campaign_status(
     spec: &CampaignSpec,
     codingmage_binary: &Path,
 ) -> Result<Option<CampaignStatus>, RuntimeError> {
+    if spec
+        .multi_agent
+        .as_ref()
+        .is_some_and(|policy| policy.execution_mode == CampaignExecutionMode::Parallel)
+    {
+        return team_control::team_campaign_status(config, spec, codingmage_binary);
+    }
     spec.verify().map_err(RuntimeError::Campaign)?;
     let authority_sha256 = spec.authority_sha256().map_err(RuntimeError::Campaign)?;
     let binary = canonical_file(codingmage_binary)?;
@@ -918,6 +926,19 @@ pub fn request_campaign_control(
     action: &str,
     request_id: &str,
 ) -> Result<CampaignControlOutcome, RuntimeError> {
+    if spec
+        .multi_agent
+        .as_ref()
+        .is_some_and(|policy| policy.execution_mode == CampaignExecutionMode::Parallel)
+    {
+        return team_control::request_team_campaign_control(
+            config,
+            spec,
+            codingmage_binary,
+            action,
+            request_id,
+        );
+    }
     let action = CampaignControlAction::parse(action).ok_or(RuntimeError::Spec)?;
     let request_id = RunId::new(request_id).map_err(|_| RuntimeError::Spec)?;
     spec.verify().map_err(RuntimeError::Campaign)?;

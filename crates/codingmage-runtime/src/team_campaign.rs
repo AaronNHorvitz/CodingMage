@@ -21,27 +21,29 @@ use crate::{
     TeamPlanningOutcome, TeamStateStore, admit_team_lead_report, build_team_lead_binding,
     enqueue_team_integration, execute_team_batch, generated_run_id, initialize_team_campaign,
     integrate_team_queue_head, login_discovery_environment, private_directory,
-    refresh_team_readiness, write_private_idempotent,
+    refresh_team_readiness,
+    team_control::{TeamCancellationWatcher, observe_team_control},
+    write_private_idempotent,
 };
 
-const MANIFEST_NAME: &str = "team-campaign-manifest.json";
+pub(crate) const MANIFEST_NAME: &str = "team-campaign-manifest.json";
 const MANIFEST_VERSION: u16 = 1;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
-struct TeamCampaignManifest {
-    version: u16,
-    campaign_id: String,
-    repository_id: String,
-    authority_sha256: String,
-    initial_commit: String,
-    campaign_run_id: String,
-    worktree_id: String,
-    branch: String,
+pub(crate) struct TeamCampaignManifest {
+    pub(crate) version: u16,
+    pub(crate) campaign_id: String,
+    pub(crate) repository_id: String,
+    pub(crate) authority_sha256: String,
+    pub(crate) initial_commit: String,
+    pub(crate) campaign_run_id: String,
+    pub(crate) worktree_id: String,
+    pub(crate) branch: String,
 }
 
 impl TeamCampaignManifest {
-    fn verify(&self, spec: &CampaignSpec, authority_sha256: &str) -> bool {
+    pub(crate) fn verify(&self, spec: &CampaignSpec, authority_sha256: &str) -> bool {
         self.version == MANIFEST_VERSION
             && self.campaign_id == spec.campaign_id
             && self.repository_id == spec.repository_id
@@ -172,6 +174,13 @@ pub fn run_team_campaign_with_progress(
     .and_then(|adapter| adapter.with_login_environment(login_environment))
     .map_err(RuntimeError::Reviewer)?;
     let cancellation = CancellationToken::default();
+    let _cancellation_watcher = TeamCancellationWatcher::start(
+        &campaign_root,
+        &spec,
+        &manifest,
+        &authority_sha256,
+        cancellation.child(),
+    );
     let runner = Arc::new(ProductionTeamUnitRunner::new(
         config.clone(),
         spec.clone(),
@@ -190,6 +199,43 @@ pub fn run_team_campaign_with_progress(
     let mut last_task_id = None;
 
     loop {
+        let control = observe_team_control(&campaign_root, &spec, &manifest, &authority_sha256)?;
+        if control.cancelled {
+            cancellation.cancel();
+            return Ok(controlled_outcome(
+                &spec,
+                &campaign,
+                &snapshot,
+                integrated_this_invocation,
+                last_task_id,
+                CampaignState::Cancelled,
+                CampaignStopReason::OperatorCancellation,
+                "codingmage.team.cancelled",
+            ));
+        }
+        if control.paused || control.stop_after_unit {
+            let (reason, code) = if control.paused {
+                (
+                    CampaignStopReason::OperatorPause,
+                    "codingmage.team.operator_paused",
+                )
+            } else {
+                (
+                    CampaignStopReason::StopAfterUnit,
+                    "codingmage.team.stop_after_unit",
+                )
+            };
+            return Ok(controlled_outcome(
+                &spec,
+                &campaign,
+                &snapshot,
+                integrated_this_invocation,
+                last_task_id,
+                CampaignState::Paused,
+                reason,
+                code,
+            ));
+        }
         let plan_source = fs::read(campaign.manifest().path.join(&config.task_source))
             .map_err(|_| RuntimeError::Plan)?;
         let plan = TaskPlan::parse(&plan_source).map_err(|_| RuntimeError::Plan)?;
@@ -439,6 +485,29 @@ fn blocked_outcome(
         head: snapshot.campaign_head.clone(),
         completed_units,
         stop_reason: CampaignStopReason::NoIndependentReadyWork,
+        last_task_id,
+        blocker_code: Some(blocker_code.to_owned()),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn controlled_outcome(
+    spec: &CampaignSpec,
+    campaign: &OwnedWorktree,
+    snapshot: &codingmage_campaign::TeamCampaignSnapshot,
+    completed_units: u32,
+    last_task_id: Option<String>,
+    state: CampaignState,
+    stop_reason: CampaignStopReason,
+    blocker_code: &str,
+) -> CampaignOutcome {
+    CampaignOutcome {
+        campaign_id: spec.campaign_id.clone(),
+        state,
+        branch: campaign.manifest().branch.clone(),
+        head: snapshot.campaign_head.clone(),
+        completed_units,
+        stop_reason,
         last_task_id,
         blocker_code: Some(blocker_code.to_owned()),
     }

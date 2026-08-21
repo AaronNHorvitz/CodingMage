@@ -18,7 +18,8 @@ use codingmage_campaign::{
 };
 use codingmage_core::load_config;
 use codingmage_runtime::{
-    ProgressStage, run_serial_campaign_with_progress, run_team_campaign_with_progress,
+    CampaignState, ProgressStage, campaign_status, request_campaign_control,
+    run_serial_campaign_with_progress, run_team_campaign_with_progress,
 };
 
 struct Fixture {
@@ -1158,15 +1159,69 @@ print(json.dumps({"type": "turn.completed"}))
     spec.verify().unwrap();
     let config_value = load_config(&config).unwrap();
     let mut progress = Vec::new();
+    let mut pause_requested = false;
+    let paused = run_team_campaign_with_progress(
+        &config_value,
+        spec.clone(),
+        Path::new(env!("CARGO_BIN_EXE_codingmage")),
+        |event| {
+            if event.stage == ProgressStage::Implementing && !pause_requested {
+                let control = request_campaign_control(
+                    &config_value,
+                    &spec,
+                    Path::new(env!("CARGO_BIN_EXE_codingmage")),
+                    "pause",
+                    "parallel-pause-1",
+                )
+                .unwrap();
+                assert!(control.created);
+                pause_requested = true;
+            }
+            progress.push(event);
+        },
+    )
+    .unwrap();
+    assert_eq!(paused.state, CampaignState::Paused);
+    assert_eq!(paused.completed_units, 0);
+    assert!(pause_requested);
+    let status = campaign_status(
+        &config_value,
+        &spec,
+        Path::new(env!("CARGO_BIN_EXE_codingmage")),
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(status.state, "paused");
+    assert_eq!(status.outcomes.accepted, 2);
+    assert_eq!(status.outcomes.completed, 0);
+    let repeated = request_campaign_control(
+        &config_value,
+        &spec,
+        Path::new(env!("CARGO_BIN_EXE_codingmage")),
+        "pause",
+        "parallel-pause-1",
+    )
+    .unwrap();
+    assert!(!repeated.created);
+    assert!(
+        request_campaign_control(
+            &config_value,
+            &spec,
+            Path::new(env!("CARGO_BIN_EXE_codingmage")),
+            "resume",
+            "parallel-resume-1",
+        )
+        .unwrap()
+        .created
+    );
     let outcome = run_team_campaign_with_progress(
         &config_value,
-        spec,
+        spec.clone(),
         Path::new(env!("CARGO_BIN_EXE_codingmage")),
         |event| progress.push(event),
     )
     .unwrap();
-
-    assert_eq!(outcome.state, codingmage_runtime::CampaignState::Complete);
+    assert_eq!(outcome.state, CampaignState::Complete);
     assert_eq!(outcome.completed_units, 2);
     assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
     assert_eq!(git_output(&target, &["status", "--porcelain=v1"]), "");
@@ -1213,6 +1268,15 @@ print(json.dumps({"type": "turn.completed"}))
     assert_eq!(starts.len(), 2);
     assert_eq!(ends.len(), 2);
     assert!(starts.values().max().unwrap() < ends.values().min().unwrap());
+    let complete_status = campaign_status(
+        &config_value,
+        &spec,
+        Path::new(env!("CARGO_BIN_EXE_codingmage")),
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(complete_status.state, "complete");
+    assert_eq!(complete_status.outcomes.completed, 2);
 }
 
 #[test]
