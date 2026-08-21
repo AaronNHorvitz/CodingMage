@@ -2,9 +2,14 @@
 
 mod campaign_state;
 mod correction_state;
+mod team_integration;
 mod team_runtime;
 mod team_state;
 
+pub use team_integration::{
+    IntegrationVerification, TeamIntegrationOutcome, TeamIntegrationVerifier,
+    enqueue_team_integration, integrate_team_queue_head,
+};
 pub use team_runtime::{
     ProductionTeamUnitRunner, TeamBatchJob, TeamBatchObservation, TeamBatchOutcome, TeamEventSink,
     TeamTaskOutcome, TeamUnitRunner, execute_team_batch,

@@ -1888,6 +1888,7 @@ impl TeamCampaignSnapshot {
         expected_head: &str,
         observed_integration_commit: &str,
         completion_commit: String,
+        task_source_sha256: String,
         evidence_sha256: String,
     ) -> Result<(), TeamStateError> {
         self.verify()?;
@@ -1896,6 +1897,8 @@ impl TeamCampaignSnapshot {
             || completion_commit == expected_head
             || !valid_commit(observed_integration_commit)
             || !valid_commit(&completion_commit)
+            || !valid_sha256(&task_source_sha256)
+            || task_source_sha256 == self.task_source_sha256
         {
             return Err(TeamStateError::InvalidTransition);
         }
@@ -1921,6 +1924,7 @@ impl TeamCampaignSnapshot {
         scheduler.release(&lease_id)?;
         candidate.scheduler = scheduler.snapshot().clone();
         candidate.campaign_head = completion_commit;
+        candidate.task_source_sha256 = task_source_sha256;
         candidate.integration_queue.remove(0);
         candidate.verify()?;
         *self = candidate;
@@ -3119,6 +3123,7 @@ mod tests {
                 &"f".repeat(40),
                 &"d".repeat(40),
                 "e".repeat(40),
+                "0".repeat(64),
                 "f".repeat(64),
             ),
             Err(TeamStateError::InvalidTransition)
@@ -3132,6 +3137,7 @@ mod tests {
                 &previous,
                 &"d".repeat(40),
                 "e".repeat(40),
+                "c".repeat(64),
                 "0".repeat(64),
             )
             .unwrap();

@@ -17,8 +17,8 @@ pub use commit::{
 };
 pub use integration::{
     IntegrationError, IntegrationReceipt, IntegrationTransferReceipt, PreparedIntegration,
-    install_prepared_integration, integrate_reviewed_delta, integrate_reviewed_descendant,
-    prepare_reviewed_delta,
+    PreparedIntegrationReceipt, install_prepared_integration, integrate_reviewed_delta,
+    integrate_reviewed_descendant, prepare_reviewed_delta, release_prepared_integration,
 };
 pub use inventory::{
     Inventory, InventoryError, OperationState, RepositoryCondition, inventory_repository,

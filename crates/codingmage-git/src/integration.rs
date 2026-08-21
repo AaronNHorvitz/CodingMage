@@ -57,6 +57,25 @@ pub struct PreparedIntegration {
     allowed_paths: Vec<PathBuf>,
 }
 
+/// Revalidated prepared delta after its temporary worktree has been safely released.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PreparedIntegrationReceipt {
+    /// Campaign head on which the delta was prepared.
+    pub previous_head: String,
+    /// Original task base used to derive the reviewed delta.
+    pub candidate_base: String,
+    /// Original independently reviewed candidate.
+    pub reviewed_head: String,
+    /// Exact coordinator-created commit ready for serialized installation.
+    pub prepared_head: String,
+    /// Number of changed paths in the reviewed delta.
+    pub changed_path_count: usize,
+    /// SHA-256 of the exact binary patch bytes.
+    pub patch_sha256: String,
+    /// Exact path authority retained for restart-safe installation.
+    pub allowed_paths: Vec<PathBuf>,
+}
+
 impl PreparedIntegration {
     /// Returns the immutable prepared worktree for deterministic gates and read-only review.
     #[must_use]
@@ -304,20 +323,9 @@ pub fn prepare_reviewed_delta(
 pub fn install_prepared_integration(
     authorization: &RepositoryAuthorization,
     campaign: &OwnedWorktree,
-    mut prepared: PreparedIntegration,
+    prepared: PreparedIntegration,
 ) -> Result<IntegrationTransferReceipt, IntegrationError> {
-    let observed = reobserve_owned_commit(
-        authorization,
-        &prepared.worktree,
-        &prepared.previous_head,
-        &prepared.allowed_paths,
-    )
-    .map_err(|_| IntegrationError::Identity)?;
-    if observed.commit != prepared.prepared_head {
-        return Err(IntegrationError::Identity);
-    }
-    remove_owned_worktree(authorization, &mut prepared.worktree)
-        .map_err(|_| IntegrationError::Uncertain)?;
+    let prepared = release_prepared_integration(authorization, prepared)?;
     let installed = integrate_reviewed_descendant(
         authorization,
         campaign,
@@ -332,6 +340,42 @@ pub fn install_prepared_integration(
         integrated_head: installed.integrated_head,
         changed_path_count: prepared.changed_path_count,
         patch_sha256: prepared.patch_sha256,
+    })
+}
+
+/// Revalidates one prepared commit and releases its temporary worktree before external mutation.
+///
+/// The prepared branch and immutable commit remain reachable for a later exact installation. This
+/// split lets callers persist the commit identity after all gates pass and before changing the
+/// campaign head, eliminating an unrecoverable worktree dependency at the mutation boundary.
+///
+/// # Errors
+///
+/// Returns [`IntegrationError`] for changed preparation identity or uncertain worktree cleanup.
+pub fn release_prepared_integration(
+    authorization: &RepositoryAuthorization,
+    mut prepared: PreparedIntegration,
+) -> Result<PreparedIntegrationReceipt, IntegrationError> {
+    let observed = reobserve_owned_commit(
+        authorization,
+        &prepared.worktree,
+        &prepared.previous_head,
+        &prepared.allowed_paths,
+    )
+    .map_err(|_| IntegrationError::Identity)?;
+    if observed.commit != prepared.prepared_head {
+        return Err(IntegrationError::Identity);
+    }
+    remove_owned_worktree(authorization, &mut prepared.worktree)
+        .map_err(|_| IntegrationError::Uncertain)?;
+    Ok(PreparedIntegrationReceipt {
+        previous_head: prepared.previous_head,
+        candidate_base: prepared.candidate_base,
+        reviewed_head: prepared.reviewed_head,
+        prepared_head: prepared.prepared_head,
+        changed_path_count: prepared.changed_path_count,
+        patch_sha256: prepared.patch_sha256,
+        allowed_paths: prepared.allowed_paths,
     })
 }
 

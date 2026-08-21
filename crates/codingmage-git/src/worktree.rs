@@ -118,6 +118,26 @@ impl OwnedWorktree {
     ) -> Result<(), WorktreeError> {
         revalidate_active_worktree(authorization, self, expected_head)
     }
+
+    /// Observes and revalidates the exact current head without mutating the owned worktree.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`WorktreeError`] if Git output or any repository, registration, filesystem, branch,
+    /// cleanliness, or authorization identity changes during observation.
+    pub fn observe_head(
+        &self,
+        authorization: &RepositoryAuthorization,
+    ) -> Result<String, WorktreeError> {
+        let output =
+            run_git(&self.manifest.path, GitCommand::Head).map_err(|_| WorktreeError::Identity)?;
+        let head = text(&output)
+            .map_err(|_| WorktreeError::Identity)?
+            .trim()
+            .to_owned();
+        revalidate_active_worktree(authorization, self, &head)?;
+        Ok(head)
+    }
 }
 
 pub(crate) fn revalidate_active_worktree(
