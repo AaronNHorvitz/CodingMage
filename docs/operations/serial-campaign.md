@@ -213,8 +213,11 @@ an unbounded provider-invocation loop.
   implemented. Typed hash-chained checkpoint projection events now preserve campaign head, queue
   counts, active identity, dispositions, and accepted outcomes; exact attempt, correction, control,
   and configured-limit projections plus interrupted initial-implementation resume remain open.
-- Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable;
-  interrupted initial-implementation recovery and operator stop-after-unit controls remain open.
+- Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable.
+  Binary evidence proves quota and authentication pauses preserve zero accepted work and the active
+  checkout before a later authorized provider invocation succeeds; CodingMage does not inspect,
+  retain, or refresh credentials. Interrupted initial-implementation recovery and operator
+  stop-after-unit controls remain open.
 - Campaign execution is bounded by unit, attempt, correction, process, output, and resource limits;
   no monetary value is part of campaign or provider authority.
 - Blocked tasks and deferrals survive restart, remain unchecked, and suppress only their exact task.

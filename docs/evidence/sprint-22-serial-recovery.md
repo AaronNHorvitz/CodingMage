@@ -8,6 +8,7 @@
 - **Stopping-contract implementation commit:** `9816043`
 - **Status-round implementation commit:** `442eb27`
 - **Campaign-journal foundation commit:** `e3465f1`
+- **Provider-capacity recovery test commit:** `c8efa11`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -34,10 +35,17 @@ The read-only `campaign-status` command validates campaign authority and checkpo
 reporting only phase, actor category, branch, reconciled head, current and last task identifiers,
 completed count, blocker count and code, elapsed time, and update time.
 
-Automatic resume of a planning-time provider pause is available through the same exact campaign
-invocation after access is restored. Correction-session interruption now resumes through the exact
-integrity-bound run, worktree, candidate, round, and provider session. Initial implementation
-interruption remains blocked from automatic replay.
+Resume of a planning-time provider pause is available through the same exact campaign invocation
+after access is restored. The binary fixture makes the Codex lead return a quota error on the first
+invocation and an authentication-expiration error on the second. Each invocation ends in `paused`
+with `capacity_pause`, zero accepted units, no current task, the exact content-free provider code,
+and an unchanged active-checkout head and task source. A later invocation revalidates access by
+successfully starting the provider, resumes the same campaign authority, and completes the existing
+interruption-and-recovery workflow. CodingMage does not inspect, retain, or refresh credentials.
+
+Correction-session interruption now resumes through the exact integrity-bound run, worktree,
+candidate, round, and provider session. Initial implementation interruption remains blocked from
+automatic replay.
 
 ## Distinct Queue Projection
 
@@ -105,8 +113,9 @@ evidence, redaction markers, journal-chain validity, and rejection of contradict
 
 The complete workspace test suite passed across all targets, including 27 runtime unit tests and
 eight CLI workflow tests. Strict workspace Clippy with warnings denied, workspace formatting,
-workspace documentation generation, and `git diff --check` also passed for the queue-projection
-implementation. Architecture and documentation policy are rerun after this evidence update.
+workspace documentation generation, and `git diff --check` also passed after the provider-capacity
+recovery fixture was added. Architecture and documentation policy are rerun after this evidence
+update.
 
 A preliminary disposable one-pod soak ran the binary interruption-and-recovery campaign five times
 from fresh fixture repositories. All five cycles passed. The post-soak check found no fixture
@@ -117,7 +126,7 @@ without replay, durable status, and active-checkout preservation.
 ## Preserved Limits
 
 This evidence does not close initial-implementation-session recovery, complete campaign event
-journaling, exact limit projection, automatic authentication revalidation, production operator
+journaling, exact limit projection, production operator
 controls, parallel pods, GitHub publication, native macOS or Windows evidence,
 manual fuzzing, or the sustained 24-hour or 48-hour soak gate. It authorizes only preparation of the
 explicitly requested bounded one-pod controlled-target pilot; it does not assert general
