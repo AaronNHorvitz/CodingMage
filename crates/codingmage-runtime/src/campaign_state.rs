@@ -20,7 +20,7 @@ use sha2::{Digest, Sha256};
 
 use crate::RuntimeError;
 
-const SCHEMA_VERSION: u16 = 1;
+const SCHEMA_VERSION: u16 = 2;
 const MAX_CHECKPOINT_BYTES: usize = 1024 * 1024;
 const CLEARANCE_SCHEMA_VERSION: u16 = 1;
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
@@ -190,6 +190,7 @@ struct DeferralTriggerEnvelope {
     intent_sha256: String,
 }
 
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LegacyCampaignCheckpointV1 {
@@ -212,6 +213,7 @@ struct LegacyCampaignCheckpointV1 {
     updated_at_ms: u64,
 }
 
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LegacyCampaignCheckpointWithBlockedIds {
@@ -235,6 +237,7 @@ struct LegacyCampaignCheckpointWithBlockedIds {
     updated_at_ms: u64,
 }
 
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LegacyCampaignCheckpointWithBlockedReasons {
@@ -259,6 +262,7 @@ struct LegacyCampaignCheckpointWithBlockedReasons {
     updated_at_ms: u64,
 }
 
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LegacyCampaignCheckpointWithDeferrals {
@@ -285,6 +289,7 @@ struct LegacyCampaignCheckpointWithDeferrals {
     updated_at_ms: u64,
 }
 
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LegacyCampaignCheckpointWithHumanDecisions {
@@ -312,6 +317,7 @@ struct LegacyCampaignCheckpointWithHumanDecisions {
     updated_at_ms: u64,
 }
 
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LegacyCheckpointEnvelopeWithHumanDecisions {
@@ -319,6 +325,7 @@ struct LegacyCheckpointEnvelopeWithHumanDecisions {
     checkpoint_sha256: String,
 }
 
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LegacyCheckpointEnvelopeWithDeferrals {
@@ -326,6 +333,7 @@ struct LegacyCheckpointEnvelopeWithDeferrals {
     checkpoint_sha256: String,
 }
 
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LegacyCheckpointEnvelopeWithBlockedReasons {
@@ -333,6 +341,7 @@ struct LegacyCheckpointEnvelopeWithBlockedReasons {
     checkpoint_sha256: String,
 }
 
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LegacyCheckpointEnvelopeWithBlockedIds {
@@ -340,6 +349,7 @@ struct LegacyCheckpointEnvelopeWithBlockedIds {
     checkpoint_sha256: String,
 }
 
+#[cfg(test)]
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LegacyCheckpointEnvelopeV1 {
@@ -411,12 +421,7 @@ impl CampaignCheckpoint {
             return Err(RuntimeError::State);
         }
         if sha256_hex(&canonical) != envelope.checkpoint_sha256 {
-            return load_legacy_with_human_decisions(&bytes)
-                .or_else(|_| load_legacy_with_deferrals(&bytes))
-                .or_else(|_| load_legacy_with_blocked_reasons(&bytes))
-                .or_else(|_| load_legacy_with_blocked_ids(&bytes))
-                .or_else(|_| load_legacy_v1(&bytes))
-                .map(Some);
+            return Err(RuntimeError::State);
         }
         Ok(Some(envelope.checkpoint))
     }
@@ -558,117 +563,6 @@ impl CampaignCheckpoint {
     pub(crate) fn elapsed_ms(&self) -> Result<u64, RuntimeError> {
         Ok(timestamp_ms()?.saturating_sub(self.started_at_ms))
     }
-}
-
-fn load_legacy_with_human_decisions(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
-    let envelope: LegacyCheckpointEnvelopeWithHumanDecisions =
-        serde_json::from_slice(bytes).map_err(|_| RuntimeError::State)?;
-    let canonical = serde_json::to_vec(&envelope.checkpoint).map_err(|_| RuntimeError::State)?;
-    if envelope.checkpoint.schema_version != SCHEMA_VERSION
-        || sha256_hex(&canonical) != envelope.checkpoint_sha256
-    {
-        return Err(RuntimeError::State);
-    }
-    let legacy = envelope.checkpoint;
-    Ok(CampaignCheckpoint {
-        schema_version: legacy.schema_version,
-        authority_sha256: legacy.authority_sha256,
-        campaign_id: legacy.campaign_id,
-        repository_id: legacy.repository_id,
-        campaign_run_id: legacy.campaign_run_id,
-        worktree_id: legacy.worktree_id,
-        branch: legacy.branch,
-        initial_head: legacy.initial_head,
-        head: legacy.head,
-        completed_units: legacy.completed_units,
-        last_task_id: legacy.last_task_id,
-        phase: legacy.phase,
-        blocker_code: legacy.blocker_code,
-        blocked_task_ids: legacy.blocked_task_ids,
-        blocked_reasons: legacy.blocked_reasons,
-        deferred_tasks: legacy.deferred_tasks,
-        satisfied_deferrals: legacy.satisfied_deferrals,
-        human_decisions: legacy.human_decisions,
-        rejected_proposals: Vec::new(),
-        active_unit: legacy.active_unit,
-        pending_integration: legacy.pending_integration,
-        started_at_ms: legacy.started_at_ms,
-        updated_at_ms: legacy.updated_at_ms,
-    })
-}
-
-fn load_legacy_with_deferrals(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
-    let envelope: LegacyCheckpointEnvelopeWithDeferrals =
-        serde_json::from_slice(bytes).map_err(|_| RuntimeError::State)?;
-    let canonical = serde_json::to_vec(&envelope.checkpoint).map_err(|_| RuntimeError::State)?;
-    if envelope.checkpoint.schema_version != SCHEMA_VERSION
-        || sha256_hex(&canonical) != envelope.checkpoint_sha256
-    {
-        return Err(RuntimeError::State);
-    }
-    let legacy = envelope.checkpoint;
-    Ok(CampaignCheckpoint {
-        schema_version: legacy.schema_version,
-        authority_sha256: legacy.authority_sha256,
-        campaign_id: legacy.campaign_id,
-        repository_id: legacy.repository_id,
-        campaign_run_id: legacy.campaign_run_id,
-        worktree_id: legacy.worktree_id,
-        branch: legacy.branch,
-        initial_head: legacy.initial_head,
-        head: legacy.head,
-        completed_units: legacy.completed_units,
-        last_task_id: legacy.last_task_id,
-        phase: legacy.phase,
-        blocker_code: legacy.blocker_code,
-        blocked_task_ids: legacy.blocked_task_ids,
-        blocked_reasons: legacy.blocked_reasons,
-        deferred_tasks: legacy.deferred_tasks,
-        satisfied_deferrals: legacy.satisfied_deferrals,
-        human_decisions: BTreeMap::new(),
-        rejected_proposals: Vec::new(),
-        active_unit: legacy.active_unit,
-        pending_integration: legacy.pending_integration,
-        started_at_ms: legacy.started_at_ms,
-        updated_at_ms: legacy.updated_at_ms,
-    })
-}
-
-fn load_legacy_with_blocked_reasons(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
-    let envelope: LegacyCheckpointEnvelopeWithBlockedReasons =
-        serde_json::from_slice(bytes).map_err(|_| RuntimeError::State)?;
-    let canonical = serde_json::to_vec(&envelope.checkpoint).map_err(|_| RuntimeError::State)?;
-    if envelope.checkpoint.schema_version != SCHEMA_VERSION
-        || sha256_hex(&canonical) != envelope.checkpoint_sha256
-    {
-        return Err(RuntimeError::State);
-    }
-    let legacy = envelope.checkpoint;
-    Ok(CampaignCheckpoint {
-        schema_version: legacy.schema_version,
-        authority_sha256: legacy.authority_sha256,
-        campaign_id: legacy.campaign_id,
-        repository_id: legacy.repository_id,
-        campaign_run_id: legacy.campaign_run_id,
-        worktree_id: legacy.worktree_id,
-        branch: legacy.branch,
-        initial_head: legacy.initial_head,
-        head: legacy.head,
-        completed_units: legacy.completed_units,
-        last_task_id: legacy.last_task_id,
-        phase: legacy.phase,
-        blocker_code: legacy.blocker_code,
-        blocked_task_ids: legacy.blocked_task_ids,
-        blocked_reasons: legacy.blocked_reasons,
-        deferred_tasks: BTreeMap::new(),
-        satisfied_deferrals: BTreeMap::new(),
-        human_decisions: BTreeMap::new(),
-        rejected_proposals: Vec::new(),
-        active_unit: legacy.active_unit,
-        pending_integration: legacy.pending_integration,
-        started_at_ms: legacy.started_at_ms,
-        updated_at_ms: legacy.updated_at_ms,
-    })
 }
 
 impl BlockerClearanceIntent {
@@ -864,80 +758,6 @@ pub(crate) fn validate_private_campaign_state(root: &Path) -> Result<(), Runtime
         let _ = root;
         Err(RuntimeError::Authority)
     }
-}
-
-fn load_legacy_with_blocked_ids(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
-    let envelope: LegacyCheckpointEnvelopeWithBlockedIds =
-        serde_json::from_slice(bytes).map_err(|_| RuntimeError::State)?;
-    let canonical = serde_json::to_vec(&envelope.checkpoint).map_err(|_| RuntimeError::State)?;
-    if envelope.checkpoint.schema_version != SCHEMA_VERSION
-        || sha256_hex(&canonical) != envelope.checkpoint_sha256
-    {
-        return Err(RuntimeError::State);
-    }
-    let legacy = envelope.checkpoint;
-    Ok(CampaignCheckpoint {
-        schema_version: legacy.schema_version,
-        authority_sha256: legacy.authority_sha256,
-        campaign_id: legacy.campaign_id,
-        repository_id: legacy.repository_id,
-        campaign_run_id: legacy.campaign_run_id,
-        worktree_id: legacy.worktree_id,
-        branch: legacy.branch,
-        initial_head: legacy.initial_head,
-        head: legacy.head,
-        completed_units: legacy.completed_units,
-        last_task_id: legacy.last_task_id,
-        phase: legacy.phase,
-        blocker_code: legacy.blocker_code,
-        blocked_task_ids: legacy.blocked_task_ids,
-        blocked_reasons: BTreeMap::new(),
-        deferred_tasks: BTreeMap::new(),
-        satisfied_deferrals: BTreeMap::new(),
-        human_decisions: BTreeMap::new(),
-        rejected_proposals: Vec::new(),
-        active_unit: legacy.active_unit,
-        pending_integration: legacy.pending_integration,
-        started_at_ms: legacy.started_at_ms,
-        updated_at_ms: legacy.updated_at_ms,
-    })
-}
-
-fn load_legacy_v1(bytes: &[u8]) -> Result<CampaignCheckpoint, RuntimeError> {
-    let envelope: LegacyCheckpointEnvelopeV1 =
-        serde_json::from_slice(bytes).map_err(|_| RuntimeError::State)?;
-    let canonical = serde_json::to_vec(&envelope.checkpoint).map_err(|_| RuntimeError::State)?;
-    if envelope.checkpoint.schema_version != SCHEMA_VERSION
-        || sha256_hex(&canonical) != envelope.checkpoint_sha256
-    {
-        return Err(RuntimeError::State);
-    }
-    let legacy = envelope.checkpoint;
-    Ok(CampaignCheckpoint {
-        schema_version: legacy.schema_version,
-        authority_sha256: legacy.authority_sha256,
-        campaign_id: legacy.campaign_id,
-        repository_id: legacy.repository_id,
-        campaign_run_id: legacy.campaign_run_id,
-        worktree_id: legacy.worktree_id,
-        branch: legacy.branch,
-        initial_head: legacy.initial_head,
-        head: legacy.head,
-        completed_units: legacy.completed_units,
-        last_task_id: legacy.last_task_id,
-        phase: legacy.phase,
-        blocker_code: legacy.blocker_code,
-        blocked_task_ids: BTreeSet::new(),
-        blocked_reasons: BTreeMap::new(),
-        deferred_tasks: BTreeMap::new(),
-        satisfied_deferrals: BTreeMap::new(),
-        human_decisions: BTreeMap::new(),
-        rejected_proposals: Vec::new(),
-        active_unit: legacy.active_unit,
-        pending_integration: legacy.pending_integration,
-        started_at_ms: legacy.started_at_ms,
-        updated_at_ms: legacy.updated_at_ms,
-    })
 }
 
 impl CampaignPhase {
@@ -1136,12 +956,12 @@ mod tests {
     }
 
     #[test]
-    fn checkpoint_loads_integrity_verified_legacy_v1_without_blocked_tasks() {
+    fn checkpoint_refuses_integrity_verified_legacy_v1_without_blocked_tasks() {
         let root = root("legacy-v1");
         fs::create_dir_all(&root).unwrap();
         let current = checkpoint();
         let legacy = LegacyCampaignCheckpointV1 {
-            schema_version: current.schema_version,
+            schema_version: 1,
             authority_sha256: current.authority_sha256.clone(),
             campaign_id: current.campaign_id.clone(),
             repository_id: current.repository_id.clone(),
@@ -1170,20 +990,17 @@ mod tests {
         )
         .unwrap();
 
-        let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
-        assert_eq!(loaded.campaign_id, current.campaign_id);
-        assert!(loaded.blocked_task_ids.is_empty());
-        assert!(loaded.blocked_reasons.is_empty());
+        assert_eq!(CampaignCheckpoint::load(&root), Err(RuntimeError::State));
         fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn checkpoint_loads_integrity_verified_blocked_id_legacy_shape() {
+    fn checkpoint_refuses_integrity_verified_blocked_id_legacy_shape() {
         let root = root("legacy-blocked-ids");
         fs::create_dir_all(&root).unwrap();
         let current = checkpoint();
         let legacy = LegacyCampaignCheckpointWithBlockedIds {
-            schema_version: current.schema_version,
+            schema_version: 1,
             authority_sha256: current.authority_sha256.clone(),
             campaign_id: current.campaign_id.clone(),
             repository_id: current.repository_id.clone(),
@@ -1213,22 +1030,17 @@ mod tests {
         )
         .unwrap();
 
-        let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
-        assert_eq!(
-            loaded.blocked_task_ids,
-            BTreeSet::from(["1.1.1.2".to_owned()])
-        );
-        assert!(loaded.blocked_reasons.is_empty());
+        assert_eq!(CampaignCheckpoint::load(&root), Err(RuntimeError::State));
         fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn checkpoint_loads_integrity_verified_blocked_reason_legacy_shape() {
+    fn checkpoint_refuses_integrity_verified_blocked_reason_legacy_shape() {
         let root = root("legacy-blocked-reasons");
         fs::create_dir_all(&root).unwrap();
         let current = checkpoint();
         let legacy = LegacyCampaignCheckpointWithBlockedReasons {
-            schema_version: current.schema_version,
+            schema_version: 1,
             authority_sha256: current.authority_sha256.clone(),
             campaign_id: current.campaign_id.clone(),
             repository_id: current.repository_id.clone(),
@@ -1262,21 +1074,12 @@ mod tests {
         )
         .unwrap();
 
-        let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
-        assert_eq!(
-            loaded.blocked_reasons,
-            BTreeMap::from([(
-                "1.1.1.2".to_owned(),
-                LeadBlockedReason::UnavailableExternalDependency,
-            )])
-        );
-        assert!(loaded.deferred_tasks.is_empty());
-        assert!(loaded.satisfied_deferrals.is_empty());
+        assert_eq!(CampaignCheckpoint::load(&root), Err(RuntimeError::State));
         fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn checkpoint_loads_integrity_verified_deferral_legacy_shape() {
+    fn checkpoint_refuses_integrity_verified_deferral_legacy_shape() {
         let root = root("legacy-deferrals");
         fs::create_dir_all(&root).unwrap();
         let current = checkpoint();
@@ -1287,7 +1090,7 @@ mod tests {
             task_source_sha256: "c".repeat(64),
         };
         let legacy = LegacyCampaignCheckpointWithDeferrals {
-            schema_version: current.schema_version,
+            schema_version: 1,
             authority_sha256: current.authority_sha256.clone(),
             campaign_id: current.campaign_id.clone(),
             repository_id: current.repository_id.clone(),
@@ -1320,17 +1123,12 @@ mod tests {
         )
         .unwrap();
 
-        let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
-        assert_eq!(
-            loaded.deferred_tasks,
-            BTreeMap::from([("1.1.1.2".to_owned(), projection)])
-        );
-        assert!(loaded.human_decisions.is_empty());
+        assert_eq!(CampaignCheckpoint::load(&root), Err(RuntimeError::State));
         fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn checkpoint_loads_integrity_verified_human_decision_legacy_shape() {
+    fn checkpoint_refuses_integrity_verified_human_decision_legacy_shape() {
         let root = root("legacy-human-decisions");
         fs::create_dir_all(&root).unwrap();
         let current = checkpoint();
@@ -1340,7 +1138,7 @@ mod tests {
             task_source_sha256: "c".repeat(64),
         };
         let legacy = LegacyCampaignCheckpointWithHumanDecisions {
-            schema_version: current.schema_version,
+            schema_version: 1,
             authority_sha256: current.authority_sha256.clone(),
             campaign_id: current.campaign_id.clone(),
             repository_id: current.repository_id.clone(),
@@ -1374,12 +1172,7 @@ mod tests {
         )
         .unwrap();
 
-        let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
-        assert_eq!(
-            loaded.human_decisions,
-            BTreeMap::from([("1.1.1.4".to_owned(), decision)])
-        );
-        assert!(loaded.rejected_proposals.is_empty());
+        assert_eq!(CampaignCheckpoint::load(&root), Err(RuntimeError::State));
         fs::remove_dir_all(root).unwrap();
     }
 
