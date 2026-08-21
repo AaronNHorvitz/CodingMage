@@ -1357,7 +1357,7 @@ profiles = ["configured-gates"]
 
 #[test]
 #[allow(clippy::too_many_lines)]
-fn serial_campaign_pauses_cleanly_when_unit_correction_limit_is_reached() {
+fn serial_campaign_pauses_cleanly_when_aggregate_correction_limit_is_reached() {
     let fixture = Fixture::new();
     let target = fixture.root.join("target");
     fs::create_dir(target.join("src")).unwrap();
@@ -1460,12 +1460,6 @@ print(json.dumps({"type": "turn.completed"}))
         .status
         .success()
     );
-    let configured = fs::read_to_string(&config).unwrap();
-    fs::write(
-        &config,
-        configured.replace("correction_limit = 3", "correction_limit = 1"),
-    )
-    .unwrap();
     let doctor = Fixture::command(&["doctor", "--config", config.to_str().unwrap()]);
     let diagnosis: serde_json::Value = serde_json::from_slice(&doctor.stdout).unwrap();
     let campaign = fixture.root.join("paused-campaign.toml");
@@ -1491,7 +1485,7 @@ publication = "local_only"
 [limits]
 provider_attempts = 1000
 malformed_report_repairs = 100
-correction_rounds = 100
+correction_rounds = 1
 process_invocations = 10000
 output_bytes = 1073741824
 retained_state_bytes = 1073741824
@@ -1548,7 +1542,7 @@ profiles = ["configured-gates"]
     assert_eq!(outcome["last_task_id"], "0.1.1.1");
     assert_eq!(
         outcome["blocker_code"],
-        "codingmage.campaign.unit_recoverable_failure"
+        "codingmage.campaign.limit.correction_rounds"
     );
     assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
     assert_eq!(fs::read(target.join("TASKS.md")).unwrap(), original_tasks);
@@ -1573,7 +1567,7 @@ profiles = ["configured-gates"]
     assert_eq!(status["blocker_count"], 1);
     assert_eq!(
         status["blocker_code"],
-        "codingmage.campaign.unit_recoverable_failure"
+        "codingmage.campaign.limit.correction_rounds"
     );
     let candidates = Command::new("/usr/bin/git")
         .current_dir(&target)
