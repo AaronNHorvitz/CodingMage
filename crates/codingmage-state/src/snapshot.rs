@@ -63,8 +63,8 @@ impl Snapshot {
                 EventKind::ExternalBoundaryChanged { system, change } => {
                     format!("boundary.{system}.{change}")
                 }
-                EventKind::CampaignCheckpointed { phase, .. } => {
-                    format!("campaign.{phase}")
+                EventKind::CampaignCheckpointed { projection } => {
+                    format!("campaign.{}", projection.phase)
                 }
             };
             tasks.insert(

@@ -86,63 +86,89 @@ pub enum EventKind {
     },
     /// A content-minimized campaign checkpoint projection became durable.
     CampaignCheckpointed {
-        /// Stable campaign lifecycle phase.
-        phase: String,
-        /// Number of campaign units integrated and reconciled.
-        completed_units: u32,
-        /// Number of exact blocked tasks.
-        blocked_tasks: u32,
-        /// Number of tasks waiting on an unsatisfied reconsideration trigger.
-        deferred_tasks: u32,
-        /// Number of reconsideration triggers already observed and retained for replay defense.
-        satisfied_deferrals: u32,
-        /// Number of tasks waiting for an external human decision.
-        human_decisions: u32,
-        /// Number of rejected lead reports; these are not accepted outcomes.
-        rejected_proposals: u32,
-        /// Accepted outcomes consumed against the campaign ceiling.
-        accepted_outcomes: u32,
-        /// Operator-authorized accepted-outcome ceiling once projected by the campaign.
-        max_outcomes: Option<u32>,
-        /// Whether one exact unit is active.
-        active_unit: bool,
-        /// Provider attempts when the campaign owns an exact counter.
-        provider_attempts: Option<u32>,
-        /// Operator-authorized provider-attempt ceiling.
-        max_provider_attempts: Option<u32>,
-        /// Metadata-only provider-report repairs when projected by the campaign.
-        malformed_report_repairs: Option<u32>,
-        /// Operator-authorized malformed-report-repair ceiling.
-        max_malformed_report_repairs: Option<u32>,
-        /// Correction round when the campaign owns an exact counter.
-        correction_round: Option<u32>,
-        /// Operator-authorized correction-round ceiling.
-        max_correction_rounds: Option<u32>,
-        /// Provider and deterministic-gate process invocations.
-        process_invocations: Option<u32>,
-        /// Operator-authorized process-invocation ceiling.
-        max_process_invocations: Option<u32>,
-        /// Full observed stdout and stderr bytes where process receipts exist.
-        output_bytes: Option<u64>,
-        /// Operator-authorized aggregate output ceiling.
-        max_output_bytes: Option<u64>,
-        /// Bytes retained beneath campaign-owned private state at observation.
-        retained_state_bytes: Option<u64>,
-        /// Operator-authorized retained-state ceiling.
-        max_retained_state_bytes: Option<u64>,
-        /// Sum of observed provider and gate execution milliseconds.
-        execution_elapsed_ms: Option<u64>,
-        /// Operator-authorized observed-execution ceiling.
-        max_execution_elapsed_ms: Option<u64>,
-        /// Authenticated pause state once campaign controls are wired.
-        operator_paused: Option<bool>,
-        /// Authenticated stop-after-unit state once campaign controls are wired.
-        stop_after_unit: Option<bool>,
-        /// Authenticated cancellation state once campaign controls are wired.
-        cancelled: Option<bool>,
-        /// Whether resume revalidation must finish before admission.
-        resume_validation: Option<String>,
+        /// Complete typed campaign recovery projection.
+        projection: Box<CampaignCheckpointProjection>,
     },
+}
+
+/// Content-free campaign recovery projection bound to one checkpoint journal record.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignCheckpointProjection {
+    /// Stable campaign lifecycle phase.
+    pub phase: String,
+    /// Digest of the exact head and durable task-disposition inputs to queue reconstruction.
+    pub queue_sha256: String,
+    /// Number of campaign units integrated and reconciled.
+    pub completed_units: u32,
+    /// Number of exact blocked tasks.
+    pub blocked_tasks: u32,
+    /// Number of tasks waiting on an unsatisfied reconsideration trigger.
+    pub deferred_tasks: u32,
+    /// Number of reconsideration triggers already observed and retained for replay defense.
+    pub satisfied_deferrals: u32,
+    /// Number of tasks waiting for an external human decision.
+    pub human_decisions: u32,
+    /// Number of rejected lead reports; these are not accepted outcomes.
+    pub rejected_proposals: u32,
+    /// Accepted outcomes consumed against the campaign ceiling.
+    pub accepted_outcomes: u32,
+    /// Operator-authorized accepted-outcome ceiling.
+    pub max_outcomes: Option<u32>,
+    /// Whether one exact unit is active.
+    pub active_unit: bool,
+    /// Exact active run identity when one was assigned to the active pod.
+    pub active_pod_run_id: Option<String>,
+    /// Digest of the complete active-pod projection when a unit is active.
+    pub active_pod_sha256: Option<String>,
+    /// Digest of the pending integration projection when integration is active.
+    pub pending_integration_sha256: Option<String>,
+    /// Digest of every exact blocked task, reason, and campaign blocker code.
+    pub blocker_projection_sha256: String,
+    /// Digest of every pending deferral and its typed provenance.
+    pub deferral_projection_sha256: String,
+    /// Digest of every satisfied reconsideration trigger retained for replay defense.
+    pub trigger_projection_sha256: String,
+    /// Digest of every authenticated control state and applied request identity.
+    pub control_projection_sha256: String,
+    /// Digest of the reconciled head, completion count, last task, and integration evidence.
+    pub completion_projection_sha256: String,
+    /// Provider attempts when the campaign owns an exact counter.
+    pub provider_attempts: Option<u32>,
+    /// Operator-authorized provider-attempt ceiling.
+    pub max_provider_attempts: Option<u32>,
+    /// Metadata-only provider-report repairs when projected by the campaign.
+    pub malformed_report_repairs: Option<u32>,
+    /// Operator-authorized malformed-report-repair ceiling.
+    pub max_malformed_report_repairs: Option<u32>,
+    /// Correction round when the campaign owns an exact counter.
+    pub correction_round: Option<u32>,
+    /// Operator-authorized correction-round ceiling.
+    pub max_correction_rounds: Option<u32>,
+    /// Provider and deterministic-gate process invocations.
+    pub process_invocations: Option<u32>,
+    /// Operator-authorized process-invocation ceiling.
+    pub max_process_invocations: Option<u32>,
+    /// Full observed stdout and stderr bytes where process receipts exist.
+    pub output_bytes: Option<u64>,
+    /// Operator-authorized aggregate output ceiling.
+    pub max_output_bytes: Option<u64>,
+    /// Bytes retained beneath campaign-owned private state at observation.
+    pub retained_state_bytes: Option<u64>,
+    /// Operator-authorized retained-state ceiling.
+    pub max_retained_state_bytes: Option<u64>,
+    /// Sum of observed provider and gate execution milliseconds.
+    pub execution_elapsed_ms: Option<u64>,
+    /// Operator-authorized observed-execution ceiling.
+    pub max_execution_elapsed_ms: Option<u64>,
+    /// Authenticated pause state.
+    pub operator_paused: Option<bool>,
+    /// Authenticated stop-after-unit state.
+    pub stop_after_unit: Option<bool>,
+    /// Authenticated cancellation state.
+    pub cancelled: Option<bool>,
+    /// Whether resume revalidation must finish before admission.
+    pub resume_validation: Option<String>,
 }
 
 /// Stable event result, never provider prose.
@@ -502,24 +528,59 @@ fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
 }
 
 fn validate_campaign_checkpoint(kind: &EventKind) -> Result<(), JournalError> {
-    let EventKind::CampaignCheckpointed {
+    let EventKind::CampaignCheckpointed { projection } = kind else {
+        return Err(JournalError::InvalidField);
+    };
+    let CampaignCheckpointProjection {
         phase,
+        queue_sha256,
         completed_units,
         blocked_tasks,
         deferred_tasks,
         human_decisions,
         accepted_outcomes,
         max_outcomes,
+        active_unit,
+        active_pod_run_id,
+        active_pod_sha256,
+        pending_integration_sha256,
+        blocker_projection_sha256,
+        deferral_projection_sha256,
+        trigger_projection_sha256,
+        control_projection_sha256,
+        completion_projection_sha256,
         operator_paused,
         stop_after_unit,
         cancelled,
         resume_validation,
         ..
-    } = kind
-    else {
-        return Err(JournalError::InvalidField);
-    };
+    } = projection.as_ref();
     validate_label(phase)?;
+    for digest in [
+        queue_sha256,
+        blocker_projection_sha256,
+        deferral_projection_sha256,
+        trigger_projection_sha256,
+        control_projection_sha256,
+        completion_projection_sha256,
+    ] {
+        validate_sha256(digest)?;
+    }
+    if let Some(digest) = active_pod_sha256 {
+        validate_sha256(digest)?;
+    }
+    if let Some(digest) = pending_integration_sha256 {
+        validate_sha256(digest)?;
+    }
+    if active_pod_run_id
+        .as_deref()
+        .is_some_and(|run_id| validate_label(run_id).is_err())
+        || *active_unit != active_pod_sha256.is_some()
+        || (!*active_unit && active_pod_run_id.is_some())
+        || (phase == "integrating") != pending_integration_sha256.is_some()
+    {
+        return Err(JournalError::InvalidField);
+    }
     let projected = completed_units
         .checked_add(*blocked_tasks)
         .and_then(|value| value.checked_add(*deferred_tasks))
@@ -552,7 +613,10 @@ fn validate_campaign_checkpoint(kind: &EventKind) -> Result<(), JournalError> {
 }
 
 fn validate_campaign_utilization(kind: &EventKind) -> Result<(), JournalError> {
-    let EventKind::CampaignCheckpointed {
+    let EventKind::CampaignCheckpointed { projection } = kind else {
+        return Err(JournalError::InvalidField);
+    };
+    let CampaignCheckpointProjection {
         provider_attempts,
         max_provider_attempts,
         malformed_report_repairs,
@@ -568,10 +632,7 @@ fn validate_campaign_utilization(kind: &EventKind) -> Result<(), JournalError> {
         execution_elapsed_ms,
         max_execution_elapsed_ms,
         ..
-    } = kind
-    else {
-        return Err(JournalError::InvalidField);
-    };
+    } = projection.as_ref();
     let present = [
         provider_attempts.is_some(),
         max_provider_attempts.is_some(),
@@ -652,6 +713,17 @@ fn valid_reference(value: &str) -> bool {
         && value
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'/'))
+}
+
+fn validate_sha256(value: &str) -> Result<(), JournalError> {
+    if value.len() != 64
+        || !value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    {
+        return Err(JournalError::InvalidField);
+    }
+    Ok(())
 }
 
 fn validate_label(value: &str) -> Result<(), JournalError> {

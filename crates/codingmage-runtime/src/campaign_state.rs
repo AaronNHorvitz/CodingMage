@@ -14,7 +14,8 @@ use codingmage_contracts::{
     LeadReconsiderationTrigger, RepositoryId, RunId, TaskId, WorktreeId,
 };
 use codingmage_state::{
-    DurableIdentities, EventKind, EventOutcome, Journal, JournalEvent, RedactedField,
+    CampaignCheckpointProjection, DurableIdentities, EventKind, EventOutcome, Journal,
+    JournalEvent, RedactedField,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -701,14 +702,7 @@ impl CampaignCheckpoint {
     }
 
     fn append_journal_projection(&self, root: &Path, canonical: &[u8]) -> Result<(), RuntimeError> {
-        let completed_units = self.outcomes.completed;
-        let blocked_tasks = self.outcomes.blocked;
-        let deferred_tasks = self.outcomes.deferred;
-        let satisfied_deferrals =
-            u32::try_from(self.satisfied_deferrals.len()).map_err(|_| RuntimeError::State)?;
-        let human_decisions = self.outcomes.pending_human_decision;
-        let rejected_proposals = self.outcomes.rejected_proposals;
-        let accepted_outcomes = self.outcomes.accepted;
+        let projection = self.journal_projection()?;
         let task_id = self
             .active_unit
             .as_ref()
@@ -746,37 +740,7 @@ impl CampaignCheckpoint {
                 ..DurableIdentities::default()
             },
             kind: EventKind::CampaignCheckpointed {
-                phase: self.phase.label().to_owned(),
-                completed_units,
-                blocked_tasks,
-                deferred_tasks,
-                satisfied_deferrals,
-                human_decisions,
-                rejected_proposals,
-                accepted_outcomes,
-                max_outcomes: Some(self.outcomes.max_accepted),
-                active_unit: self.active_unit.is_some(),
-                provider_attempts: Some(self.utilization.provider_attempts),
-                max_provider_attempts: Some(self.limits.provider_attempts),
-                malformed_report_repairs: Some(self.utilization.malformed_report_repairs),
-                max_malformed_report_repairs: Some(self.limits.malformed_report_repairs),
-                correction_round: Some(self.utilization.correction_rounds),
-                max_correction_rounds: Some(self.limits.correction_rounds),
-                process_invocations: Some(self.utilization.process_invocations),
-                max_process_invocations: Some(self.limits.process_invocations),
-                output_bytes: Some(self.utilization.output_bytes),
-                max_output_bytes: Some(self.limits.output_bytes),
-                retained_state_bytes: Some(self.utilization.retained_state_bytes),
-                max_retained_state_bytes: Some(self.limits.retained_state_bytes),
-                execution_elapsed_ms: Some(self.utilization.execution_elapsed_ms),
-                max_execution_elapsed_ms: Some(self.limits.execution_elapsed_ms),
-                operator_paused: Some(self.operator_paused),
-                stop_after_unit: Some(self.stop_after_unit),
-                cancelled: Some(self.cancelled),
-                resume_validation: Some(match self.resume_validation {
-                    ResumeValidationState::NotRequired => "not_required".to_owned(),
-                    ResumeValidationState::Pending => "pending".to_owned(),
-                }),
+                projection: Box::new(projection),
             },
             outcome: EventOutcome::Succeeded,
             evidence: vec![evidence],
@@ -789,6 +753,86 @@ impl CampaignCheckpoint {
         .map_err(|_| RuntimeError::State)?;
         journal.append(event).map_err(|_| RuntimeError::State)?;
         Ok(())
+    }
+
+    fn journal_projection(&self) -> Result<CampaignCheckpointProjection, RuntimeError> {
+        let queue_sha256 = projection_sha256(&(
+            &self.head,
+            self.completed_units,
+            &self.blocked_task_ids,
+            self.deferred_tasks.keys().collect::<Vec<_>>(),
+            self.human_decisions.keys().collect::<Vec<_>>(),
+        ))?;
+        Ok(CampaignCheckpointProjection {
+            phase: self.phase.label().to_owned(),
+            queue_sha256,
+            completed_units: self.outcomes.completed,
+            blocked_tasks: self.outcomes.blocked,
+            deferred_tasks: self.outcomes.deferred,
+            satisfied_deferrals: u32::try_from(self.satisfied_deferrals.len())
+                .map_err(|_| RuntimeError::State)?,
+            human_decisions: self.outcomes.pending_human_decision,
+            rejected_proposals: self.outcomes.rejected_proposals,
+            accepted_outcomes: self.outcomes.accepted,
+            max_outcomes: Some(self.outcomes.max_accepted),
+            active_unit: self.active_unit.is_some(),
+            active_pod_run_id: self
+                .active_unit
+                .as_ref()
+                .and_then(|active| active.run_id.as_ref())
+                .map(|run_id| run_id.as_str().to_owned()),
+            active_pod_sha256: self
+                .active_unit
+                .as_ref()
+                .map(projection_sha256)
+                .transpose()?,
+            pending_integration_sha256: self
+                .pending_integration
+                .as_ref()
+                .map(projection_sha256)
+                .transpose()?,
+            blocker_projection_sha256: projection_sha256(&(
+                &self.blocker_code,
+                &self.blocked_task_ids,
+                &self.blocked_reasons,
+            ))?,
+            deferral_projection_sha256: projection_sha256(&self.deferred_tasks)?,
+            trigger_projection_sha256: projection_sha256(&self.satisfied_deferrals)?,
+            control_projection_sha256: projection_sha256(&(
+                self.operator_paused,
+                self.stop_after_unit,
+                self.cancelled,
+                self.resume_validation,
+                &self.applied_control_requests,
+            ))?,
+            completion_projection_sha256: projection_sha256(&(
+                self.completed_units,
+                &self.last_task_id,
+                &self.head,
+                &self.pending_integration,
+            ))?,
+            provider_attempts: Some(self.utilization.provider_attempts),
+            max_provider_attempts: Some(self.limits.provider_attempts),
+            malformed_report_repairs: Some(self.utilization.malformed_report_repairs),
+            max_malformed_report_repairs: Some(self.limits.malformed_report_repairs),
+            correction_round: Some(self.utilization.correction_rounds),
+            max_correction_rounds: Some(self.limits.correction_rounds),
+            process_invocations: Some(self.utilization.process_invocations),
+            max_process_invocations: Some(self.limits.process_invocations),
+            output_bytes: Some(self.utilization.output_bytes),
+            max_output_bytes: Some(self.limits.output_bytes),
+            retained_state_bytes: Some(self.utilization.retained_state_bytes),
+            max_retained_state_bytes: Some(self.limits.retained_state_bytes),
+            execution_elapsed_ms: Some(self.utilization.execution_elapsed_ms),
+            max_execution_elapsed_ms: Some(self.limits.execution_elapsed_ms),
+            operator_paused: Some(self.operator_paused),
+            stop_after_unit: Some(self.stop_after_unit),
+            cancelled: Some(self.cancelled),
+            resume_validation: Some(match self.resume_validation {
+                ResumeValidationState::NotRequired => "not_required".to_owned(),
+                ResumeValidationState::Pending => "pending".to_owned(),
+            }),
+        })
     }
 
     pub(crate) fn validate_authority(
@@ -1165,6 +1209,12 @@ impl CampaignCheckpoint {
             .ok_or(RuntimeError::State)?;
         Ok(())
     }
+}
+
+fn projection_sha256<T: Serialize>(projection: &T) -> Result<String, RuntimeError> {
+    serde_json::to_vec(projection)
+        .map(|bytes| sha256_hex(&bytes))
+        .map_err(|_| RuntimeError::State)
 }
 
 impl BlockerClearanceIntent {
@@ -1924,6 +1974,15 @@ mod tests {
                 task_source_sha256: "c".repeat(64),
             },
         );
+        checkpoint.satisfied_deferrals.insert(
+            "1.1.1.5".to_owned(),
+            DeferredTaskProjection {
+                reason: LeadDeferredReason::DeterministicDependencyOrder,
+                trigger: LeadReconsiderationTrigger::CampaignHeadAdvancement,
+                source_head: "b".repeat(40),
+                task_source_sha256: "c".repeat(64),
+            },
+        );
         checkpoint.human_decisions.insert(
             "1.1.1.4".to_owned(),
             HumanDecisionProjection {
@@ -1953,6 +2012,13 @@ mod tests {
                 2,
             )
             .unwrap();
+        checkpoint.active_unit = Some(ActiveUnit {
+            task_id: "1.1.1.1".to_owned(),
+            source_head: "b".repeat(40),
+            task_source_sha256: "c".repeat(64),
+            owned_paths: prohibited_log_content.iter().map(PathBuf::from).collect(),
+            run_id: Some(RunId::new("run-pod-1").unwrap()),
+        });
         checkpoint.pending_integration = Some(PendingIntegration {
             task_id: "1.1.1.1".to_owned(),
             expected_head: "b".repeat(40),
@@ -1960,7 +2026,10 @@ mod tests {
             owned_paths: prohibited_log_content.iter().map(PathBuf::from).collect(),
         });
         checkpoint.persist(&root).unwrap();
-        assert_eq!(CampaignCheckpoint::load(&root).unwrap(), Some(checkpoint));
+        assert_eq!(
+            CampaignCheckpoint::load(&root).unwrap(),
+            Some(checkpoint.clone())
+        );
 
         let journal = Journal::open(&root, "checkpoint-reader").unwrap();
         assert_eq!(journal.records().len(), 1);
@@ -1973,38 +2042,68 @@ mod tests {
             "wt-1"
         );
         assert_eq!(record.event.identities.commit, Some("b".repeat(40)));
+        let EventKind::CampaignCheckpointed { projection } = &record.event.kind else {
+            panic!("expected a campaign checkpoint event");
+        };
+        assert_eq!(
+            projection.as_ref(),
+            &checkpoint.journal_projection().unwrap()
+        );
         assert!(matches!(
-            record.event.kind,
-            EventKind::CampaignCheckpointed {
-                ref phase,
-                completed_units: 0,
-                blocked_tasks: 1,
-                deferred_tasks: 1,
-                satisfied_deferrals: 0,
-                human_decisions: 1,
-                rejected_proposals: 1,
-                accepted_outcomes: 3,
-                max_outcomes: Some(10),
-                active_unit: false,
-                provider_attempts: Some(2),
-                max_provider_attempts: Some(1_000),
-                malformed_report_repairs: Some(1),
-                max_malformed_report_repairs: Some(100),
-                correction_round: Some(2),
-                max_correction_rounds: Some(100),
-                process_invocations: Some(4),
-                max_process_invocations: Some(10_000),
-                output_bytes: Some(12),
-                max_output_bytes: Some(1_073_741_824),
-                retained_state_bytes: Some(0),
-                max_retained_state_bytes: Some(1_073_741_824),
-                execution_elapsed_ms: Some(8),
-                max_execution_elapsed_ms: Some(86_400_000),
-                operator_paused: Some(false),
-                stop_after_unit: Some(false),
-                cancelled: Some(false),
-                resume_validation: Some(ref resume),
-            } if phase == "integrating" && resume == "not_required"
+            projection.as_ref(),
+            CampaignCheckpointProjection {
+                    phase,
+                    queue_sha256,
+                    completed_units: 0,
+                    blocked_tasks: 1,
+                    deferred_tasks: 1,
+                    satisfied_deferrals: 1,
+                    human_decisions: 1,
+                    rejected_proposals: 1,
+                    accepted_outcomes: 3,
+                    max_outcomes: Some(10),
+                    active_unit: true,
+                    active_pod_run_id: Some(active_run),
+                    active_pod_sha256: Some(active_pod_sha256),
+                    pending_integration_sha256: Some(pending_integration_sha256),
+                    blocker_projection_sha256,
+                    deferral_projection_sha256,
+                    trigger_projection_sha256,
+                    control_projection_sha256,
+                    completion_projection_sha256,
+                    provider_attempts: Some(2),
+                    max_provider_attempts: Some(1_000),
+                    malformed_report_repairs: Some(1),
+                    max_malformed_report_repairs: Some(100),
+                    correction_round: Some(2),
+                    max_correction_rounds: Some(100),
+                    process_invocations: Some(4),
+                    max_process_invocations: Some(10_000),
+                    output_bytes: Some(12),
+                    max_output_bytes: Some(1_073_741_824),
+                    retained_state_bytes: Some(0),
+                    max_retained_state_bytes: Some(1_073_741_824),
+                    execution_elapsed_ms: Some(8),
+                    max_execution_elapsed_ms: Some(86_400_000),
+                    operator_paused: Some(false),
+                    stop_after_unit: Some(false),
+                    cancelled: Some(false),
+                    resume_validation: Some(resume),
+            } if phase == "integrating"
+                && resume == "not_required"
+                && active_run == "run-pod-1"
+                && [
+                    queue_sha256,
+                    active_pod_sha256,
+                    pending_integration_sha256,
+                    blocker_projection_sha256,
+                    deferral_projection_sha256,
+                    trigger_projection_sha256,
+                    control_projection_sha256,
+                    completion_projection_sha256,
+                ]
+                .iter()
+                .all(|digest| digest.len() == 64)
         ));
         assert_eq!(record.event.evidence.len(), 1);
         assert_eq!(record.event.redactions.len(), 5);
