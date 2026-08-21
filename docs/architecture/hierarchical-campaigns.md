@@ -10,8 +10,8 @@ while the coordinator alone owns state, Git mutation, verification, and configur
 
 | Role | Authority | Prohibited authority |
 | --- | --- | --- |
-| Product owner | Campaign scope, cost ceiling, allowed roots, final promotion policy | None within explicit local ownership |
-| Campaign coordinator | Task selection, leases, state, budgets, recovery, stopping | Inventing scope or bypassing evidence |
+| Product owner | Campaign scope, allowed roots, final promotion policy | None within explicit local ownership |
+| Campaign coordinator | Task selection, leases, state, limits, recovery, stopping | Inventing scope or bypassing evidence |
 | Campaign lead | Read-only planning, decomposition, risk and dependency analysis | Writes, Git mutation, publication, approval |
 | Pod implementer | File edits inside one leased worktree and path set | Git, credentials, network, task state, publication |
 | Pod reviewer | Read-only review of an immutable cumulative diff | Writes, self-approval, task state, publication |
@@ -25,7 +25,7 @@ while the coordinator alone owns state, Git mutation, verification, and configur
 flowchart TD
     A[Canonical roadmap and campaign head] --> B[Deterministic ready-set calculation]
     B --> C[Read-only campaign lead proposes pod packets]
-    C --> D{Authority, dependency, path, resource, and budget validation}
+    C --> D{Authority, dependency, path, resource, and limit validation}
     D -- Refused --> E[Record precise blocker]
     D -- Admitted --> F[Lease nonoverlapping pod worktrees]
 
@@ -55,7 +55,7 @@ A pod starts only when all of the following are true:
 - Its path lease does not overlap another active pod.
 - Its declared test resources do not conflict with concurrently running gates.
 - Its base commit and task-source digest match the current campaign snapshot.
-- Required provider profiles, local capacity, and configured budget remain available.
+- Required provider profiles, local capacity, and configured limits remain available.
 - No unresolved architecture decision requires product-owner authority.
 
 The campaign lead itself is a process-backed Codex profile in a read-only sandbox. Its strict

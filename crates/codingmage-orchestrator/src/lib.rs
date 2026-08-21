@@ -466,7 +466,7 @@ impl OneUnitCoordinator {
         }
     }
 
-    /// Sets the total gate-and-review correction budget for this unit.
+    /// Sets the total gate-and-review correction limit for this unit.
     ///
     /// # Errors
     ///
@@ -1161,7 +1161,7 @@ mod tests {
     }
 
     #[test]
-    fn repeated_gate_failure_consumes_the_exact_correction_budget() {
+    fn repeated_gate_failure_consumes_the_exact_correction_limit() {
         let mut coordinator = new_coordinator().with_correction_limit(2).unwrap();
         let mut port = FakePort {
             local: Some(VerificationOutcome::RecoverableFailure),

@@ -23,10 +23,10 @@ Each accepted unit follows this sequence:
 ## Campaign Spec
 
 The values below are illustrative. Repository identity, commit, source digest, paths, executables,
-models, budgets, and branch policy must be selected from the intended target and local installation.
+models, unit limits, and branch policy must be selected from the intended target and local installation.
 
 ```toml
-version = 1
+version = 2
 campaign_id = "example-campaign"
 repository_id = "repo-example"
 repository_path = "/absolute/repository"
@@ -35,9 +35,7 @@ task_source_sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789
 operator_authorization_sha256 = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
 max_parallel_pods = 1
 max_units = 10
-maximum_budget_usd = "50.00"
 implementer_authentication = "existing_login"
-maximum_invocation_budget_usd = "5.00"
 campaign_branch = "codingmage/example-campaign"
 allowed_paths = ["crates", "docs", "tests"]
 denied_paths = ["private"]
@@ -120,7 +118,7 @@ an empty blocked-task set; a defaulted field never bypasses integrity verificati
 Content-free transient provider and session failures are retried as fresh isolated whole-unit
 attempts, with a fixed maximum of three attempts. Exhaustion becomes a durable
 `codingmage.campaign.provider_unavailable` pause. Quota and authentication failures are classified
-separately and pause without consuming the transient retry budget. These clean provider returns
+separately and pause without consuming a transient retry attempt. These clean provider returns
 release the owned unit before pausing, so the same exact campaign can continue after access is
 restored. A process interruption that prevents the active unit from releasing remains blocked from
 automatic replay until exact provider-session recovery is implemented.
@@ -132,7 +130,7 @@ the campaign pauses with `codingmage.campaign.provider_invalid_output`; CodingMa
 whole unit or integrate its unaccepted candidate.
 
 If deterministic gates or independent review still reject a unit after the configured correction
-budget is exhausted, the one-unit coordinator returns a recoverable terminal state. The campaign
+limit is reached, the one-unit coordinator returns a recoverable terminal state. The campaign
 then clears its active-unit marker, releases the pod lease, retains the candidate branch for
 inspection, and durably pauses with `codingmage.campaign.unit_recoverable_failure`. A terminal or
 explicitly blocked one-unit outcome instead records `codingmage.campaign.unit_blocked`. A terminal
@@ -156,7 +154,7 @@ as unchecked in the canonical roadmap. Independent ready work can continue; depe
 remain unavailable through their normal unchecked dependency. When no unblocked ready task remains,
 the campaign stops with `codingmage.campaign.no_unblocked_ready_work`. The configured `max_units`
 ceiling counts both integrated units and durably blocked units so repeated blockers cannot produce
-an unbounded provider-spend loop.
+an unbounded provider-invocation loop.
 
 ## Current Limits
 
@@ -164,8 +162,8 @@ an unbounded provider-spend loop.
   attempt/correction projections, and active-provider-session resume remain open.
 - Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable;
   interrupted active-provider-session recovery and operator stop-after-unit controls remain open.
-- Aggregate observed provider cost is not yet reconciled; configured unit and per-invocation
-  ceilings remain the enforceable bounds.
+- Campaign execution is bounded by unit, attempt, correction, process, output, and resource limits;
+  no monetary value is part of campaign or provider authority.
 - Blocked task IDs survive restart and are skipped, but operator-driven blocker clearance and a
   dedicated blocker-detail projection remain open.
 - Parallel live pods remain disabled even if the authority ceiling is greater than one.

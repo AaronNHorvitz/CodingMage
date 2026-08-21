@@ -43,6 +43,8 @@ use codingmage_state::Journal;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+const RUN_SPEC_VERSION: u16 = 2;
+
 use campaign_state::{ActiveUnit, CampaignCheckpoint, CampaignPhase, PendingIntegration};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
@@ -95,7 +97,7 @@ pub enum ProgressStage {
     ProbingProviders,
     /// The implementation model is editing only packet-owned files.
     Implementing,
-    /// A transient provider failure is being retried within a fixed attempt budget.
+    /// A transient provider failure is being retried within a fixed attempt limit.
     RetryingProvider,
     /// The implementation model is correcting a failed gate or accepted review finding.
     Correcting,
@@ -195,8 +197,6 @@ pub struct ImplementerSpec {
     pub provider: ProviderSpec,
     /// Credential-discovery boundary.
     pub authentication: AuthenticationMode,
-    /// Literal provider-side cost ceiling for one invocation.
-    pub maximum_budget_usd: String,
 }
 
 /// Explicit authority for one supervised unit.
@@ -249,13 +249,12 @@ impl RunSpec {
     }
 
     fn validate(&self) -> Result<(), RuntimeError> {
-        if self.version != 1
+        if self.version != RUN_SPEC_VERSION
             || TaskId::new(self.task_id.clone()).is_err()
             || self.owned_paths.is_empty()
             || self.owned_paths.iter().any(|path| !safe_relative(path))
             || !valid_provider(&self.implementer.provider)
             || !valid_provider(&self.reviewer)
-            || !valid_budget(&self.implementer.maximum_budget_usd)
         {
             return Err(RuntimeError::Spec);
         }
@@ -725,7 +724,7 @@ pub fn run_serial_campaign_with_progress(
         pod_config.scratch_root.clone_from(&pod_scratch);
         pod_config.state_root.clone_from(&pod_state);
         let unit_spec = RunSpec {
-            version: 1,
+            version: RUN_SPEC_VERSION,
             task_id: lease.task_id.clone(),
             owned_paths: lease.owned_paths.clone(),
             completion_policy: CompletionPolicy::CloseTask,
@@ -735,7 +734,6 @@ pub fn run_serial_campaign_with_progress(
                     CampaignAuthentication::Bare => AuthenticationMode::Bare,
                     CampaignAuthentication::ExistingLogin => AuthenticationMode::ExistingLogin,
                 },
-                maximum_budget_usd: spec.maximum_invocation_budget_usd.clone(),
             },
             reviewer: provider_spec(&spec.reviewer),
         };
@@ -1432,7 +1430,6 @@ impl<'a> ProductionWorkflowPort<'a> {
             self.spec.implementer.provider.executable.clone(),
             &self.spec.implementer.provider.model,
             &self.spec.implementer.provider.effort,
-            &self.spec.implementer.maximum_budget_usd,
         )
         .map(|adapter| adapter.with_authentication(authentication))
         .map_err(|_| OrchestrationError::Port)?;
@@ -2010,13 +2007,6 @@ fn valid_provider(spec: &ProviderSpec) -> bool {
         )
 }
 
-fn valid_budget(value: &str) -> bool {
-    value.len() <= 16
-        && value
-            .parse::<f64>()
-            .is_ok_and(|number| number > 0.0 && number <= 100.0)
-}
-
 fn safe_relative(path: &Path) -> bool {
     !path.as_os_str().is_empty()
         && !path.is_absolute()
@@ -2206,7 +2196,7 @@ mod tests {
     #[test]
     fn spec_rejects_credentials_relative_paths_and_unknown_fields() {
         let source = r#"
-version = 1
+version = 2
 task_id = "1.2.3.4"
 owned_paths = ["src"]
 completion_policy = "close_task"
@@ -2217,7 +2207,6 @@ executable = "/bin/true"
 model = "opus"
 effort = "high"
 authentication = "existing_login"
-maximum_budget_usd = "5.00"
 
 [reviewer]
 executable = "/bin/true"

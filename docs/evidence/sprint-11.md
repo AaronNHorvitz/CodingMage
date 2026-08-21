@@ -21,7 +21,7 @@ five review tests for a current total of 93.
 - Correction packets contain only accepted defects, exact reviewed and correction-base commits,
   sorted finding IDs, literal requested tests, and the unchanged canonical scope hash. External
   blockers and optional suggestions cannot silently become mandatory correction scope.
-- The default and maximum autonomous budget is three failed rounds. The second failure requires
+- The default and maximum autonomous correction limit is three failed rounds. The second failure requires
   model escalation, the third records dispute, and a fourth call fails closed.
 - Material architecture disputes require explicit human resolution.
 - An author cannot be the sole final reviewer. A Codex emergency correction requires an independent

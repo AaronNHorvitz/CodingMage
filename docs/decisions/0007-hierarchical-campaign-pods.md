@@ -31,7 +31,7 @@ CodingMage will use a hierarchical campaign model:
 3. Each pod receives one exact task, one isolated worktree, nonoverlapping path authority, an
    implementation agent, deterministic gates, and an independent review agent.
 4. Gate failures and accepted review findings return to the pod implementer through one shared,
-   bounded correction budget. Every correction creates a new coordinator-owned commit, reruns local
+   bounded correction limit. Every correction creates a new coordinator-owned commit, reruns local
    gates, and receives a fresh review of the complete cumulative task diff.
 5. A deterministic integration lead serializes Git mutations, verifies exact ancestry and path
    ownership, composes accepted pod commits into a campaign branch, and runs batch-level gates.
@@ -58,12 +58,12 @@ CodingMage will use a hierarchical campaign model:
 
 ## Consequences
 
-- Campaign execution requires explicit campaign-level path and cost authority in addition to the
+- Campaign execution requires explicit campaign-level path and resource authority in addition to the
   existing per-unit authority.
 - The repository-wide lock must evolve into one campaign lease plus exact task/path leases and a
   serialized Git mutation queue.
 - Model usage rises with pod count, but deterministic pre-review gates and risk-based routing remain
-  available to contain cost.
+  available to bound provider activity.
 - The scheduler must detect dependency, path, test-resource, and integration conflicts before
   starting pods.
 - Story-level PRs provide human visibility without becoming the canonical source of completion.

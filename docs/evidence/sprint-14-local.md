@@ -15,7 +15,7 @@ One OS file lock is scoped to each repository identity. Duplicate owners fail im
 ## Capacity and Retry
 
 - Structured authentication, quota, rate-limit, overload, network, malformed-output, and terminal classifications take precedence over HTTP fallback status.
-- Usage, cost, remaining capacity, and reset fields remain optional rather than becoming zero.
+- Usage, remaining capacity, and reset fields remain optional rather than becoming zero.
 - A known reset produces one deadline plus bounded deterministic jitter.
 - An unknown reset uses nonzero capped exponential backoff.
 - Retry attempt and next deadline are journaled and reconstructed after restart.

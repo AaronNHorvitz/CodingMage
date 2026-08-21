@@ -48,7 +48,7 @@ without replay, durable status, and active-checkout preservation.
 ## Preserved Limits
 
 This evidence does not close active-provider-session recovery, correction-session recovery, complete
-campaign event journaling, observed aggregate cost reconciliation, automatic authentication
+campaign event journaling, exact limit projection, automatic authentication
 revalidation, cancellation, parallel pods, GitHub publication, native macOS or Windows evidence,
 manual fuzzing, or the sustained 24-hour or 48-hour soak gate. It authorizes only preparation of the
 explicitly requested bounded one-pod AgentMage pilot; it does not assert general unattended-release

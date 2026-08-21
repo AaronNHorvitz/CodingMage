@@ -15,7 +15,7 @@ CodingMage is under active implementation. A checked item means its complete imp
 7. Run the required deterministic checks before senior model review.
 8. Record exact commits, commands, outcomes, limitations, and blockers.
 9. Preserve unsupported platform, provider, credential, hardware, and independent-review claims as open.
-10. Do not merge, release, incur costs, alter external infrastructure, or weaken policy without explicit product-owner authority.
+10. Do not merge, release, alter external infrastructure, or weaken policy without explicit product-owner authority.
 11. Stop a correction loop after its configured bound and record a dispute instead of looping forever.
 12. Keep runtime logs, credentials, target source copies, and local state out of this source repository.
 
@@ -49,7 +49,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 0.1.1.4:** State that the repository is planning-only and proposed commands are not implemented.
 - [x] **Task 0.1.2 - Define initial authority boundaries**
   - [x] **Sub-task 0.1.2.1:** Enumerate initially permitted local operations.
-  - [x] **Sub-task 0.1.2.2:** Enumerate prohibited destructive, external, credential, merge, release, and cost-bearing operations.
+  - [x] **Sub-task 0.1.2.2:** Enumerate prohibited destructive, external, credential, merge, release, and infrastructure-changing operations.
   - [x] **Sub-task 0.1.2.3:** Define human product-owner authority and bounded agent authority.
 
 **Story acceptance criteria**
@@ -404,7 +404,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ## Sprint 8 - Deterministic Gate Runner
 
-**Sprint goal:** Reject mechanically invalid work before spending senior-review capacity.
+**Sprint goal:** Reject mechanically invalid work before invoking senior-review capacity.
 
 ### Story 8.1 - Gate Registry and Execution
 
@@ -537,7 +537,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 11.2 - Bounded Review Loop
 
-- [x] **Task 11.2.1 - Enforce correction budget**
+- [x] **Task 11.2.1 - Enforce correction limit**
   - [x] **Sub-task 11.2.1.1:** Set a configurable default maximum of three review/correction rounds.
   - [x] **Sub-task 11.2.1.2:** Escalate implementation model or review model according to policy before the final round.
   - [x] **Sub-task 11.2.1.3:** Record a dispute or blocker when the bound is reached.
@@ -654,7 +654,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 ### Story 14.2 - Provider Capacity and Backoff
 
 - [x] **Task 14.2.1 - Normalize capacity signals**
-  - [x] **Sub-task 14.2.1.1:** Parse exposed token usage, cost, rate-limit, remaining-capacity, and reset data without relying on message text alone where structured fields exist.
+  - [x] **Sub-task 14.2.1.1:** Parse exposed token usage, rate-limit, remaining-capacity, and reset data without relying on message text alone where structured fields exist.
   - [x] **Sub-task 14.2.1.2:** Represent unavailable metrics explicitly.
   - [x] **Sub-task 14.2.1.3:** Detect authentication expiry separately from quota exhaustion.
 - [x] **Task 14.2.2 - Implement pause and retry**
@@ -899,7 +899,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 20.1.1.1:** Retain bounded failed-gate stdout and stderr ephemerally while keeping durable evidence content-minimized.
   - [x] **Sub-task 20.1.1.2:** Convert recoverable local and final gate failures into correction transitions.
   - [x] **Sub-task 20.1.1.3:** Commit every correction as a child of the exact failed candidate and revalidate packet-owned paths.
-  - [x] **Sub-task 20.1.1.4:** Rerun deterministic gates before spending reviewer tokens.
+  - [x] **Sub-task 20.1.1.4:** Rerun deterministic gates before invoking the reviewer.
 - [ ] **Task 20.1.2 - Complete independent review correction**
   - [x] **Sub-task 20.1.2.1:** Map `changes_required` to correction instead of blocker state.
   - [x] **Sub-task 20.1.2.2:** Send only structured findings, evidence, requested corrections, and acceptance tests to the implementer.
@@ -930,7 +930,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 ### Story 21.1 - Campaign Specification
 
 - [ ] **Task 21.1.1 - Define campaign authority**
-  - [x] **Sub-task 21.1.1.1:** Add a versioned campaign specification with campaign identity, allowed and denied roots, pod ceiling, unit ceiling, budget ceiling, provider profiles, gate tiers, and publication ceiling.
+  - [x] **Sub-task 21.1.1.1:** Add a versioned campaign specification with campaign identity, allowed and denied roots, pod ceiling, unit ceiling, provider profiles, gate tiers, and publication ceiling.
   - [x] **Sub-task 21.1.1.2:** Reject linked files, relative authority roots, overlapping allowed/denied roots, unbounded concurrency, raw credentials, and protected-branch targets.
   - [x] **Sub-task 21.1.1.3:** Bind every campaign to repository identity, initial commit, task-source digest, and operator authorization digest.
   - [x] **Sub-task 21.1.1.4:** Make one-pod serial execution the default regardless of available hardware.
@@ -962,9 +962,9 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.1.1.2:** Reparse the task source from the exact campaign head after every accepted unit.
   - [ ] **Sub-task 22.1.1.3:** Select the next ready unit while preserving precise blockers and completed evidence.
   - [x] **Sub-task 22.1.1.4:** Use each accepted completion commit as the exact base of the next unit.
-  - [ ] **Sub-task 22.1.1.5:** Stop only on completion, operator cancellation, capacity pause, exhausted budget, no independently safe ready work, or terminal policy failure.
+  - [ ] **Sub-task 22.1.1.5:** Stop only on completion, operator cancellation, capacity pause, an exhausted unit or attempt limit, no independently safe ready work, or terminal policy failure.
 - [ ] **Task 22.1.2 - Persist campaign recovery**
-  - [ ] **Sub-task 22.1.2.1:** Journal campaign head, queue, active pod, attempts, corrections, blockers, budgets, and completion evidence.
+  - [ ] **Sub-task 22.1.2.1:** Journal campaign head, queue, active pod, attempts, corrections, blockers, limits, and completion evidence.
   - [x] **Sub-task 22.1.2.2:** Resume from the last reconciled campaign head after restart without replaying accepted commits.
   - [ ] **Sub-task 22.1.2.3:** Pause on provider quota or authentication expiration and resume after revalidation.
   - [ ] **Sub-task 22.1.2.4:** Expose privacy-safe campaign status, current task, actor, round, completed count, blocker count, and elapsed time.
@@ -993,7 +993,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 23.1.1.4:** Release leases exactly on pass, block, failure, cancellation, crash recovery, and integration refusal.
 - [ ] **Task 23.1.2 - Schedule bounded parallel work**
   - [ ] **Sub-task 23.1.2.1:** Compute a stable ready set and deterministic priority order.
-  - [ ] **Sub-task 23.1.2.2:** Admit at most the configured pod count after CPU, memory, process, provider, budget, path, and gate-resource checks.
+  - [ ] **Sub-task 23.1.2.2:** Admit at most the configured pod count after CPU, memory, process, provider-capacity, path, and gate-resource checks.
   - [ ] **Sub-task 23.1.2.3:** Prevent shared provider quotas from creating retry storms.
   - [ ] **Sub-task 23.1.2.4:** Begin rollout at one pod, then require evidence before enabling two, three, or four.
 
@@ -1055,7 +1055,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 25.1.1.1:** Inject malformed lead plans, provider output, reviews, diagnostics, Git state, task-source changes, and checkpoint records.
   - [ ] **Sub-task 25.1.1.2:** Interrupt every provider, gate, commit, integration, publication, and cleanup intent.
   - [ ] **Sub-task 25.1.1.3:** Exercise sleep, restart, logout, quota exhaustion, authentication expiration, network loss, disk pressure, and process loss.
-  - [ ] **Sub-task 25.1.1.4:** Prove bounded storage, output, process, retry, token, and cost growth.
+  - [ ] **Sub-task 25.1.1.4:** Prove bounded storage, output, process, retry, token, and provider-invocation growth.
 - [ ] **Task 25.1.2 - Stage unattended rollout**
   - [ ] **Sub-task 25.1.2.1:** Pass accelerated deterministic campaigns with one through four pods.
   - [ ] **Sub-task 25.1.2.2:** Pass a sustained disposable one-pod campaign after the last reliability correction.
@@ -1090,4 +1090,4 @@ These items must remain open until their prerequisites actually exist:
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete exact active-provider and correction-session reobservation under sub-task `20.1.3.4`, then finish campaign attempt, correction, blocker, budget, and evidence projection under `22.1.2.1` before claiming automatic quota/authentication resume or the full Sprint 22 gate.
+- [ ] **Next 1:** Complete exact active-provider and correction-session reobservation under sub-task `20.1.3.4`, then finish campaign attempt, correction, blocker, limit, and evidence projection under `22.1.2.1` before claiming automatic quota/authentication resume or the full Sprint 22 gate.

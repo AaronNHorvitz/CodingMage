@@ -2,9 +2,9 @@
 
 CodingMage is a local multi-agent engineering coordinator designed to move through large development roadmaps with better verified results per token. It assigns bounded tasks to isolated coding pods, routes work according to complexity and risk, and gives every candidate to deterministic checks and an independent senior-review model before integration.
 
-Instead of paying frontier-model prices for every mechanical step, or trusting a cheaper model with every architectural decision, CodingMage combines both where they are strongest:
+Instead of assigning every mechanical step to the strongest model, or trusting a lighter model with every architectural decision, CodingMage combines both where they are strongest:
 
-- **Spend fewer model tokens:** reject formatting, test, schema, and scope failures locally before invoking an expensive reviewer.
+- **Use model capacity deliberately:** reject formatting, test, schema, and scope failures locally before invoking the senior reviewer.
 - **Protect coding quality:** escalate security-sensitive, architectural, disputed, or repeatedly failing work to stronger profiles.
 - **Separate writing from judgment:** one agent implements; another reviews the exact immutable commit and evidence.
 - **Keep long builds moving:** durable checkpoints preserve task state across context limits, quotas, crashes, and restarts.
@@ -34,7 +34,7 @@ flowchart TD
     F --> G[Local gates: scope, format, lint, tests, schemas]
 
     G -- Fail: zero review tokens --> H[Return focused failures]
-    H --> I{Correction budget remains?}
+    H --> I{Correction limit remains?}
     I -- Yes --> B
     I -- No --> X
 
@@ -94,7 +94,7 @@ CodingMage is not intended to replace human product ownership. Scope changes, de
 
 | Role | Initial implementation | Responsibility |
 | --- | --- | --- |
-| Product owner | Human | Owns scope, architecture exceptions, releases, costs, and external consequences. |
+| Product owner | Human | Owns scope, architecture exceptions, releases, and external consequences. |
 | Coordinator | CodingMage | Selects work, enforces state transitions, controls authority, records evidence, and stops safely. |
 | Implementation agent | Claude Code | Edits only packet-owned files and returns a structured candidate or truthful blocker. |
 | Senior review agent | Codex | Reviews exact commits, validates claims and architecture, identifies defects, and verifies corrections. |
@@ -121,7 +121,7 @@ flowchart TD
     G -- Fail --> H[Return bounded failures to Claude Code]
     H --> F
     G -- Pass --> I[Codex reviews exact commit]
-    I -- Changes required --> J{Correction budget remains?}
+    I -- Changes required --> J{Correction limit remains?}
     J -- Yes --> K[Return structured findings to Claude Code]
     K --> F
     J -- No --> L[Record disputed or blocked task]
@@ -235,7 +235,7 @@ CodingMage will avoid both under-testing and needlessly rerunning every expensiv
 | Tier 3 | Every story candidate | Documentation, traceability, integration tests, evidence mutation tests, product CI. |
 | Tier 4 | Sprint or release candidate | Complete workspace, platform, packaging, recovery, performance, accessibility, and release gates. |
 
-A failed lower tier prevents higher-cost model review. A passed lower tier does not substitute for a required higher tier.
+A failed lower tier prevents unnecessary senior-model review. A passed lower tier does not substitute for a required higher tier.
 
 ## Durable State and Privacy
 
@@ -308,7 +308,7 @@ The pilot begins with disposable fixtures, then a CodingMage-owned test branch, 
 The current binary supports deny-first initialization, repository diagnosis, task selection, local
 status, one explicitly scoped supervised run, and a bounded serial campaign. A campaign uses a
 separate absolute authority file that binds repository identity, initial commit, task-source digest,
-providers, paths, gates, unit and budget ceilings, protected branches, and publication policy.
+providers, paths, gates, unit ceilings, protected branches, and publication policy.
 
 ```bash
 codingmage init --repo /absolute/repository --config /absolute/codingmage.toml \
@@ -339,7 +339,7 @@ limitation is enforced rather than hidden. Claude completion metadata is constra
 exclusive ready, blocked, or committed dispositions. Malformed or contradictory metadata receives
 one same-session report retry; a second failure pauses with
 `codingmage.campaign.provider_invalid_output` and cannot reach commit or integration. When a unit
-still fails deterministic verification or senior review after its configured correction budget,
+still fails deterministic verification or senior review after its configured correction limit,
 the campaign clears the active-unit marker, retains the candidate branch, and pauses with
 `codingmage.campaign.unit_recoverable_failure`; it does not misreport a generic orchestration crash
 or integrate the unaccepted candidate. An invalid lead ownership root pauses before Claude starts

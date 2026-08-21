@@ -321,7 +321,6 @@ pub struct ClaudeAdapter {
     executable: PathBuf,
     model: String,
     effort: String,
-    maximum_budget_usd: String,
     authentication: ClaudeAuthentication,
     environment: BTreeMap<String, String>,
 }
@@ -338,24 +337,18 @@ pub enum ClaudeAuthentication {
 }
 
 impl ClaudeAdapter {
-    /// Creates a model profile with a literal per-call budget ceiling.
+    /// Creates a model profile.
     ///
     /// # Errors
     ///
-    /// Returns [`ClaudeError`] for noncanonical model, effort, or budget values.
-    pub fn new(
-        executable: PathBuf,
-        model: &str,
-        effort: &str,
-        maximum_budget_usd: &str,
-    ) -> Result<Self, ClaudeError> {
+    /// Returns [`ClaudeError`] for noncanonical model or effort values.
+    pub fn new(executable: PathBuf, model: &str, effort: &str) -> Result<Self, ClaudeError> {
         if !executable.is_absolute()
             || model.is_empty()
             || !model
                 .bytes()
                 .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
             || !matches!(effort, "low" | "medium" | "high" | "xhigh" | "max")
-            || !valid_budget(maximum_budget_usd)
         {
             return Err(ClaudeError::InvalidProfile);
         }
@@ -363,7 +356,6 @@ impl ClaudeAdapter {
             executable,
             model: model.to_owned(),
             effort: effort.to_owned(),
-            maximum_budget_usd: maximum_budget_usd.to_owned(),
             authentication: ClaudeAuthentication::Bare,
             environment: BTreeMap::new(),
         })
@@ -519,8 +511,6 @@ impl ClaudeAdapter {
             String::new(),
             "--settings".to_owned(),
             settings,
-            "--max-budget-usd".to_owned(),
-            self.maximum_budget_usd.clone(),
         ];
         if self.authentication == ClaudeAuthentication::Bare {
             arguments.insert(0, "--bare".to_owned());
@@ -868,23 +858,6 @@ fn valid_commit(value: &str) -> bool {
     matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
-fn valid_budget(value: &str) -> bool {
-    let mut dot = false;
-    !value.is_empty()
-        && value.len() <= 16
-        && value.bytes().all(|byte| {
-            if byte == b'.' && !dot {
-                dot = true;
-                true
-            } else {
-                byte.is_ascii_digit()
-            }
-        })
-        && value
-            .parse::<f64>()
-            .is_ok_and(|number| number > 0.0 && number <= 100.0)
-}
-
 fn validate_login_environment(environment: &BTreeMap<String, String>) -> Result<(), ClaudeError> {
     const ALLOWED: [&str; 5] = [
         "HOME",
@@ -1011,8 +984,7 @@ mod tests {
     #[test]
     fn start_and_resume_plans_bind_only_the_exact_session() {
         let fixture = Fixture::new();
-        let adapter =
-            ClaudeAdapter::new(PathBuf::from("/bin/true"), "sonnet", "high", "1.00").unwrap();
+        let adapter = ClaudeAdapter::new(PathBuf::from("/bin/true"), "sonnet", "high").unwrap();
         let start = adapter.plan_start(&fixture.session(), &packet()).unwrap();
         let resume = adapter.plan_resume(&fixture.session(), &packet()).unwrap();
         assert!(
@@ -1085,12 +1057,11 @@ mod tests {
                         && permission.ends_with("/.git)"))))
         );
 
-        let existing_login =
-            ClaudeAdapter::new(PathBuf::from("/bin/true"), "sonnet", "high", "1.00")
-                .unwrap()
-                .with_authentication(ClaudeAuthentication::ExistingLogin)
-                .plan_start(&fixture.session(), &packet())
-                .unwrap();
+        let existing_login = ClaudeAdapter::new(PathBuf::from("/bin/true"), "sonnet", "high")
+            .unwrap()
+            .with_authentication(ClaudeAuthentication::ExistingLogin)
+            .plan_start(&fixture.session(), &packet())
+            .unwrap();
         assert!(
             !existing_login
                 .arguments
@@ -1249,8 +1220,7 @@ mod tests {
 
     #[test]
     fn login_environment_is_an_explicit_non_secret_allowlist() {
-        let adapter =
-            ClaudeAdapter::new(PathBuf::from("/bin/true"), "sonnet", "high", "1.00").unwrap();
+        let adapter = ClaudeAdapter::new(PathBuf::from("/bin/true"), "sonnet", "high").unwrap();
         let allowed = BTreeMap::from([
             ("HOME".to_owned(), "/home/tester".to_owned()),
             ("PATH".to_owned(), "/usr/bin:/bin".to_owned()),

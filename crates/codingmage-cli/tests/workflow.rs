@@ -189,7 +189,7 @@ if "{ 3 }" not in source and "{ 4 }" not in source:
     fs::write(
         &spec,
         format!(
-            r#"version = 1
+            r#"version = 2
 task_id = "0.1.1.1"
 owned_paths = ["src"]
 completion_policy = "close_task"
@@ -199,7 +199,6 @@ executable = "{}"
 model = "fixture-implementer"
 effort = "high"
 authentication = "existing_login"
-maximum_budget_usd = "1.00"
 
 [reviewer]
 executable = "{}"
@@ -393,7 +392,7 @@ print(json.dumps({"type": "turn.completed"}))
     fs::write(
         &campaign,
         format!(
-            r#"version = 1
+            r#"version = 2
 campaign_id = "fixture-campaign"
 repository_id = "{}"
 repository_path = "{}"
@@ -402,9 +401,7 @@ task_source_sha256 = "{}"
 operator_authorization_sha256 = "{}"
 max_parallel_pods = 1
 max_units = 2
-maximum_budget_usd = "10.00"
 implementer_authentication = "existing_login"
-maximum_invocation_budget_usd = "1.00"
 campaign_branch = "codingmage/fixture-campaign"
 allowed_paths = ["src"]
 denied_paths = []
@@ -562,7 +559,7 @@ profiles = ["configured-gates"]
 
 #[test]
 #[allow(clippy::too_many_lines)]
-fn serial_campaign_pauses_cleanly_when_unit_correction_budget_is_exhausted() {
+fn serial_campaign_pauses_cleanly_when_unit_correction_limit_is_reached() {
     let fixture = Fixture::new();
     let target = fixture.root.join("target");
     fs::create_dir(target.join("src")).unwrap();
@@ -675,7 +672,7 @@ print(json.dumps({"type": "turn.completed"}))
     fs::write(
         &campaign,
         format!(
-            r#"version = 1
+            r#"version = 2
 campaign_id = "paused-fixture-campaign"
 repository_id = "{}"
 repository_path = "{}"
@@ -684,9 +681,7 @@ task_source_sha256 = "{}"
 operator_authorization_sha256 = "{}"
 max_parallel_pods = 1
 max_units = 1
-maximum_budget_usd = "10.00"
 implementer_authentication = "existing_login"
-maximum_invocation_budget_usd = "1.00"
 campaign_branch = "codingmage/paused-fixture-campaign"
 allowed_paths = ["src"]
 denied_paths = []

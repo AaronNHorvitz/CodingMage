@@ -12,7 +12,7 @@ use codingmage_plan::SelectedWork;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-const CAMPAIGN_VERSION: u16 = 1;
+const CAMPAIGN_VERSION: u16 = 2;
 const MAX_SPEC_BYTES: u64 = 1024 * 1024;
 const MAX_PATHS: usize = 256;
 const MAX_RESOURCES: usize = 256;
@@ -84,16 +84,12 @@ pub struct CampaignSpec {
     pub max_parallel_pods: u16,
     /// Maximum accepted units before an operator-authored continuation is required.
     pub max_units: u32,
-    /// Maximum aggregate provider spend represented as a decimal string.
-    pub maximum_budget_usd: String,
     /// Read-only campaign planning profile.
     pub team_lead: CampaignProvider,
     /// Pod implementation profile.
     pub implementer: CampaignProvider,
     /// Implementation-provider login boundary.
     pub implementer_authentication: CampaignAuthentication,
-    /// Literal provider-side ceiling for each implementation or correction invocation.
-    pub maximum_invocation_budget_usd: String,
     /// Independent pod review profile.
     pub reviewer: CampaignProvider,
     /// Closed deterministic gate tiers proposals may request.
@@ -150,16 +146,8 @@ impl CampaignSpec {
             || !(1..=16).contains(&self.max_parallel_pods)
             || self.max_units == 0
             || self.max_units > 100_000
-            || !valid_budget(&self.maximum_budget_usd)
             || !valid_provider(&self.team_lead)
             || !valid_provider(&self.implementer)
-            || !valid_budget(&self.maximum_invocation_budget_usd)
-            || self
-                .maximum_invocation_budget_usd
-                .parse::<f64>()
-                .ok()
-                .zip(self.maximum_budget_usd.parse::<f64>().ok())
-                .is_none_or(|(invocation, campaign)| invocation > campaign)
             || !valid_provider(&self.reviewer)
             || self.gate_tiers.is_empty()
             || self.gate_tiers.len() > MAX_RESOURCES
@@ -579,13 +567,6 @@ fn valid_branch(value: &str) -> bool {
             .any(|character| character.is_control() || " ~^:?*[\\".contains(character))
 }
 
-fn valid_budget(value: &str) -> bool {
-    value.len() <= 16
-        && value
-            .parse::<f64>()
-            .is_ok_and(|budget| budget > 0.0 && budget <= 1_000_000.0)
-}
-
 fn valid_provider(provider: &CampaignProvider) -> bool {
     provider.executable.is_absolute()
         && valid_component(&provider.model)
@@ -666,7 +647,7 @@ mod tests {
 
     fn spec(max_parallel_pods: u16) -> CampaignSpec {
         CampaignSpec {
-            version: 1,
+            version: CAMPAIGN_VERSION,
             campaign_id: "campaign-1".to_owned(),
             repository_id: "repo-1".to_owned(),
             repository_path: PathBuf::from("/tmp/codingmage-campaign-target"),
@@ -675,11 +656,9 @@ mod tests {
             operator_authorization_sha256: "c".repeat(64),
             max_parallel_pods,
             max_units: 100,
-            maximum_budget_usd: "50.00".to_owned(),
             team_lead: provider("gpt-lead", "high"),
             implementer: provider("claude-implementer", "high"),
             implementer_authentication: CampaignAuthentication::ExistingLogin,
-            maximum_invocation_budget_usd: "5.00".to_owned(),
             reviewer: provider("gpt-reviewer", "xhigh"),
             gate_tiers: vec![CampaignGateTier {
                 name: "rust-focused".to_owned(),

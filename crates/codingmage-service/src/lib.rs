@@ -223,14 +223,12 @@ mod tests {
     }
 
     #[test]
-    fn structured_capacity_metrics_preserve_unknown_and_reject_extra_fields() {
-        let metrics = CapacityMetrics::decode(
-            br#"{"used_units":0,"remaining_units":17,"cost_micros":25,"reset_at_ms":9000}"#,
-        )
-        .unwrap();
+    fn structured_capacity_metrics_preserve_unavailable_and_reject_extra_fields() {
+        let metrics =
+            CapacityMetrics::decode(br#"{"used_units":0,"remaining_units":17,"reset_at_ms":9000}"#)
+                .unwrap();
         assert_eq!(metrics.used_units, Some(0));
         assert_eq!(metrics.remaining_units, Some(17));
-        assert_eq!(metrics.cost_micros, Some(25));
         assert_eq!(metrics.reset_at_ms, Some(9_000));
         let unknown = CapacityMetrics::decode(br"{}").unwrap();
         assert_eq!(unknown, CapacityMetrics::default());

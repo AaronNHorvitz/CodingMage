@@ -76,8 +76,6 @@ pub struct CapacityMetrics {
     pub used_units: Option<u64>,
     /// Remaining provider units.
     pub remaining_units: Option<u64>,
-    /// Cost in provider-reported micros.
-    pub cost_micros: Option<u64>,
     /// Reset as Unix milliseconds.
     pub reset_at_ms: Option<u64>,
 }

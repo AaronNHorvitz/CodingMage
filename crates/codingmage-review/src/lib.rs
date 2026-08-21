@@ -210,14 +210,14 @@ pub enum RoundDecision {
     Dispute,
 }
 
-/// Correction-loop budget with a default maximum of three rounds.
+/// Correction-loop limit with a default maximum of three rounds.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CorrectionBudget {
+pub struct CorrectionLimit {
     maximum_rounds: u8,
     used_rounds: u8,
 }
 
-impl Default for CorrectionBudget {
+impl Default for CorrectionLimit {
     fn default() -> Self {
         Self {
             maximum_rounds: 3,
@@ -226,7 +226,7 @@ impl Default for CorrectionBudget {
     }
 }
 
-impl CorrectionBudget {
+impl CorrectionLimit {
     /// Creates an explicitly bounded policy.
     ///
     /// # Errors
@@ -234,7 +234,7 @@ impl CorrectionBudget {
     /// Returns [`ReviewError`] unless the bound is between one and three.
     pub fn new(maximum_rounds: u8) -> Result<Self, ReviewError> {
         if !(1..=3).contains(&maximum_rounds) {
-            return Err(ReviewError::InvalidBudget);
+            return Err(ReviewError::InvalidCorrectionLimit);
         }
         Ok(Self {
             maximum_rounds,
@@ -246,10 +246,10 @@ impl CorrectionBudget {
     ///
     /// # Errors
     ///
-    /// Returns [`ReviewError::BudgetExhausted`] if called after the dispute boundary.
+    /// Returns [`ReviewError::CorrectionLimitReached`] after the dispute boundary.
     pub fn consume_failed_round(&mut self) -> Result<RoundDecision, ReviewError> {
         if self.used_rounds >= self.maximum_rounds {
-            return Err(ReviewError::BudgetExhausted);
+            return Err(ReviewError::CorrectionLimitReached);
         }
         self.used_rounds += 1;
         Ok(if self.used_rounds >= self.maximum_rounds {
@@ -328,9 +328,9 @@ pub enum ReviewError {
     /// Verification lacks a relevant change or valid explanation.
     UnprovenVerification,
     /// Correction-round configuration is invalid.
-    InvalidBudget,
-    /// Correction budget already ended in dispute.
-    BudgetExhausted,
+    InvalidCorrectionLimit,
+    /// Correction limit already ended in dispute.
+    CorrectionLimitReached,
     /// Author would be the sole final reviewer.
     SelfReview,
     /// Material architecture dispute lacks human resolution.
@@ -346,8 +346,8 @@ impl fmt::Display for ReviewError {
             Self::InvalidTransition => "codingmage.review.invalid_transition",
             Self::InvalidCorrection => "codingmage.review.invalid_correction",
             Self::UnprovenVerification => "codingmage.review.unproven_verification",
-            Self::InvalidBudget => "codingmage.review.invalid_budget",
-            Self::BudgetExhausted => "codingmage.review.budget_exhausted",
+            Self::InvalidCorrectionLimit => "codingmage.review.invalid_correction_limit",
+            Self::CorrectionLimitReached => "codingmage.review.correction_limit_reached",
             Self::SelfReview => "codingmage.review.self_review",
             Self::HumanResolutionRequired => "codingmage.review.human_resolution_required",
         })
@@ -550,14 +550,14 @@ mod tests {
     }
 
     #[test]
-    fn default_budget_escalates_then_stops_after_three() {
-        let mut budget = CorrectionBudget::default();
-        assert_eq!(budget.consume_failed_round(), Ok(RoundDecision::Continue));
-        assert_eq!(budget.consume_failed_round(), Ok(RoundDecision::Escalate));
-        assert_eq!(budget.consume_failed_round(), Ok(RoundDecision::Dispute));
+    fn default_limit_escalates_then_stops_after_three() {
+        let mut limit = CorrectionLimit::default();
+        assert_eq!(limit.consume_failed_round(), Ok(RoundDecision::Continue));
+        assert_eq!(limit.consume_failed_round(), Ok(RoundDecision::Escalate));
+        assert_eq!(limit.consume_failed_round(), Ok(RoundDecision::Dispute));
         assert_eq!(
-            budget.consume_failed_round(),
-            Err(ReviewError::BudgetExhausted)
+            limit.consume_failed_round(),
+            Err(ReviewError::CorrectionLimitReached)
         );
     }
 

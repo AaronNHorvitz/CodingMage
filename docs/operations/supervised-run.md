@@ -23,12 +23,12 @@ The first production composition performs these operations in order:
 15. Change exactly the selected Markdown checkbox, validate that no other plan structure changed, and create a separate coordinator-owned completion commit.
 16. Remove the clean owned worktree, release the repository lock, and retain the local feature branch.
 
-`disputed` and `blocked` reviews stop as blocked. Gate and `changes_required` outcomes use the one configured correction budget; exhaustion stops in a recoverable state with the latest candidate retained.
+`disputed` and `blocked` reviews stop as blocked. Gate and `changes_required` outcomes use the configured correction limit; reaching it stops in a recoverable state with the latest candidate retained.
 
 ## Run Spec
 
 ```toml
-version = 1
+version = 2
 task_id = "42.1.3.2"
 owned_paths = ["kernel", "tests", "docs", "artifacts"]
 completion_policy = "candidate_only"
@@ -38,7 +38,6 @@ executable = "/absolute/path/to/claude"
 model = "opus"
 effort = "high"
 authentication = "existing_login"
-maximum_budget_usd = "5.00"
 
 [reviewer]
 executable = "/absolute/path/to/codex"

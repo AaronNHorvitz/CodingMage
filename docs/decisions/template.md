@@ -20,7 +20,7 @@ Describe credible alternatives and why they were not selected.
 
 ## Consequences
 
-Record benefits, costs, risks, migration work, and verification obligations.
+Record benefits, tradeoffs, risks, migration work, and verification obligations.
 
 ## Verification
 

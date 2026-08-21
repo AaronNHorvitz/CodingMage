@@ -43,7 +43,7 @@ pub enum FaultKind {
     AgentCrash,
     /// Coordinator restarts from durable state.
     ServiceRestart,
-    /// Campaign pauses without consuming work or retry budget.
+    /// Campaign pauses without consuming work or a retry attempt.
     Sleep,
     /// Provider emits invalid structured output.
     MalformedOutput,

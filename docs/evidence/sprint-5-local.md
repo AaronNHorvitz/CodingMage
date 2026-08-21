@@ -22,7 +22,7 @@ authentication state.
 - Work packets include dependencies, owned relative paths, acceptance criteria, display-only test
   vectors, and prohibited actions. They label repository and tool content as untrusted data.
 - Invocation uses bare mode, literal arguments, an empty ambient environment, an exact working
-  directory, structured JSON output, a strict empty MCP configuration, a per-call budget ceiling,
+  directory, structured JSON output, a strict empty MCP configuration,
   and the shared timeout, cancellation, process-count, file-descriptor, and output controls.
 - Claude receives only scoped `Read`, `Edit`, and `Write` tools. Git metadata is denied explicitly;
   Bash, web access, subagents, skills, notebooks, MCP servers, unsandboxed command fallback, and
