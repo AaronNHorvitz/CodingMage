@@ -587,6 +587,7 @@ profiles = ["configured-gates"]
 
     let config_value = load_config(&config).unwrap();
     let campaign_value = CampaignSpec::load(&campaign).unwrap();
+    let mut stop_requested = false;
     let interrupted = catch_unwind(AssertUnwindSafe(|| {
         run_serial_campaign_with_progress(
             &config_value,
@@ -594,6 +595,21 @@ profiles = ["configured-gates"]
             Path::new(env!("CARGO_BIN_EXE_codingmage")),
             |progress| {
                 assert_ne!(progress.stage, ProgressStage::Failed);
+                if progress.stage == ProgressStage::Implementing && !stop_requested {
+                    let stop = Fixture::command(&[
+                        "campaign-control",
+                        "--config",
+                        config.to_str().unwrap(),
+                        "--campaign",
+                        campaign.to_str().unwrap(),
+                        "--action",
+                        "stop_after_unit",
+                        "--request",
+                        "stop-after-first-unit-1",
+                    ]);
+                    assert!(stop.status.success());
+                    stop_requested = true;
+                }
                 assert_ne!(
                     progress.stage,
                     ProgressStage::Integrating,
@@ -635,6 +651,41 @@ profiles = ["configured-gates"]
         "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
     ]);
     assert!(!premature_observation.status.success());
+
+    let paused = Fixture::command(&[
+        "campaign",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(
+        paused.status.success(),
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&paused.stderr),
+        String::from_utf8_lossy(&paused.stdout)
+    );
+    let paused: serde_json::Value = serde_json::from_slice(&paused.stdout).unwrap();
+    assert_eq!(paused["state"], "paused");
+    assert_eq!(paused["stop_reason"], "stop_after_unit");
+    assert_eq!(paused["completed_units"], 1);
+    assert_eq!(
+        paused["blocker_code"],
+        "codingmage.campaign.control.stop_after_unit"
+    );
+
+    let resumed_after_stop = Fixture::command(&[
+        "campaign-control",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+        "--action",
+        "resume",
+        "--request",
+        "resume-after-stop-1",
+    ]);
+    assert!(resumed_after_stop.status.success());
 
     let paused = Fixture::command(&[
         "campaign",
