@@ -183,6 +183,21 @@ pub enum LeadHumanDecisionReason {
     ReleaseDecision,
 }
 
+impl LeadHumanDecisionReason {
+    /// Stable content-free reason code for status and durable projections.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::AmbiguousScope => "ambiguous_scope",
+            Self::MaterialArchitectureChoice => "material_architecture_choice",
+            Self::RequestedAuthorityExpansion => "requested_authority_expansion",
+            Self::ProtectedBranchConsequence => "protected_branch_consequence",
+            Self::ExternalInfrastructureChange => "external_infrastructure_change",
+            Self::ReleaseDecision => "release_decision",
+        }
+    }
+}
+
 /// Exact task and snapshot binding required for every nonproposal disposition.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]

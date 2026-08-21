@@ -751,6 +751,27 @@ profiles = ["configured-gates"]
         paused["blocker_code"],
         "codingmage.campaign.no_deferred_trigger_observed"
     );
+    let deferred_status = Fixture::command(&[
+        "campaign-status",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(deferred_status.status.success());
+    let deferred_status: serde_json::Value =
+        serde_json::from_slice(&deferred_status.stdout).unwrap();
+    assert_eq!(deferred_status["deferrals"].as_array().unwrap().len(), 1);
+    assert_eq!(deferred_status["deferrals"][0]["task_id"], "0.1.1.1");
+    assert_eq!(
+        deferred_status["deferrals"][0]["reason_code"],
+        "operator_pause"
+    );
+    assert_eq!(
+        deferred_status["deferrals"][0]["trigger_code"],
+        "operator_resume"
+    );
+    assert_eq!(deferred_status["deferrals"][0]["trigger_state"], "pending");
 
     let observation_arguments = [
         "campaign-observe-trigger",
@@ -781,6 +802,21 @@ profiles = ["configured-gates"]
     assert!(repeated.status.success());
     let repeated: serde_json::Value = serde_json::from_slice(&repeated.stdout).unwrap();
     assert_eq!(repeated["changed"], false);
+    let satisfied_status = Fixture::command(&[
+        "campaign-status",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(satisfied_status.status.success());
+    let satisfied_status: serde_json::Value =
+        serde_json::from_slice(&satisfied_status.stdout).unwrap();
+    assert_eq!(satisfied_status["deferrals"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        satisfied_status["deferrals"][0]["trigger_state"],
+        "satisfied"
+    );
     let conflicting_observation = Fixture::command(&[
         "campaign-observe-trigger",
         "--config",
@@ -1564,6 +1600,14 @@ profiles = ["configured-gates"]
         status["blocker_code"],
         "codingmage.campaign.no_unblocked_ready_work"
     );
+    assert_eq!(status["blockers"].as_array().unwrap().len(), 1);
+    assert_eq!(status["blockers"][0]["task_id"], "0.1.1.1");
+    assert_eq!(
+        status["blockers"][0]["reason_code"],
+        "unavailable_external_dependency"
+    );
+    assert!(status["deferrals"].as_array().unwrap().is_empty());
+    assert!(status["human_decisions"].as_array().unwrap().is_empty());
     assert_eq!(
         fs::read_to_string(fixture.root.join("blocker-lead.log"))
             .unwrap()
@@ -1656,6 +1700,7 @@ profiles = ["configured-gates"]
     assert_eq!(cleared_status["state"], "ready");
     assert_eq!(cleared_status["blocker_count"], 0);
     assert_eq!(cleared_status["blocker_code"], serde_json::Value::Null);
+    assert!(cleared_status["blockers"].as_array().unwrap().is_empty());
 
     let conflicting = Fixture::command(&[
         "campaign-clear-blocker",

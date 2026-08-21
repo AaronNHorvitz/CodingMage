@@ -481,6 +481,12 @@ pub struct CampaignStatus {
     pub blocker_count: u32,
     /// Content-free durable blocker code.
     pub blocker_code: Option<String>,
+    /// Exact blocked tasks with closed reason codes.
+    pub blockers: Vec<CampaignStatusTaskReason>,
+    /// Exact deferred tasks with closed reasons, triggers, and trigger state.
+    pub deferrals: Vec<CampaignStatusDeferral>,
+    /// Exact tasks awaiting a human decision with closed reason codes.
+    pub human_decisions: Vec<CampaignStatusTaskReason>,
     /// Milliseconds since the durable campaign was first created.
     pub elapsed_ms: u64,
     /// Last durable checkpoint timestamp.
@@ -525,6 +531,30 @@ pub struct CampaignStatusUtilization {
     pub retained_state_bytes: u64,
     /// Observed provider and gate execution milliseconds.
     pub execution_elapsed_ms: u64,
+}
+
+/// Exact task identity paired with one closed content-free reason code.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignStatusTaskReason {
+    /// Exact canonical task identity.
+    pub task_id: String,
+    /// Stable reason from a closed enum.
+    pub reason_code: String,
+}
+
+/// Exact deferred-task status without provider or task prose.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignStatusDeferral {
+    /// Exact canonical task identity.
+    pub task_id: String,
+    /// Stable deferral reason from a closed enum.
+    pub reason_code: String,
+    /// Stable reconsideration trigger from a closed enum.
+    pub trigger_code: String,
+    /// Closed trigger state: `pending` or `satisfied`.
+    pub trigger_state: String,
 }
 
 /// Content-minimized result of one authenticated local blocker-clearance request.
@@ -617,6 +647,20 @@ pub fn campaign_status(
         },
         None => None,
     };
+    Ok(Some(project_campaign_status(
+        spec,
+        checkpoint,
+        current_round,
+        elapsed_ms,
+    )?))
+}
+
+fn project_campaign_status(
+    spec: &CampaignSpec,
+    checkpoint: CampaignCheckpoint,
+    current_round: Option<u16>,
+    elapsed_ms: u64,
+) -> Result<CampaignStatus, RuntimeError> {
     let model = match checkpoint.phase {
         CampaignPhase::Planning => Some(spec.team_lead.model.clone()),
         CampaignPhase::Ready
@@ -627,7 +671,39 @@ pub fn campaign_status(
         | CampaignPhase::Complete
         | CampaignPhase::Cancelled => None,
     };
-    Ok(Some(CampaignStatus {
+    let blockers = checkpoint
+        .blocked_reasons
+        .iter()
+        .map(|(task_id, reason)| CampaignStatusTaskReason {
+            task_id: task_id.clone(),
+            reason_code: reason.code().to_owned(),
+        })
+        .collect();
+    let deferrals = campaign_status_deferrals(&checkpoint);
+    let human_decisions = checkpoint
+        .human_decisions
+        .iter()
+        .map(|(task_id, projection)| CampaignStatusTaskReason {
+            task_id: task_id.clone(),
+            reason_code: projection.reason.code().to_owned(),
+        })
+        .collect();
+    let blocker_count = u32::try_from(checkpoint.blocked_task_ids.len())
+        .ok()
+        .and_then(|count| {
+            u32::try_from(checkpoint.human_decisions.len())
+                .ok()
+                .and_then(|human| count.checked_add(human))
+        })
+        .and_then(|count| {
+            count.checked_add(u32::from(
+                checkpoint.blocker_code.is_some()
+                    && checkpoint.blocked_task_ids.is_empty()
+                    && checkpoint.human_decisions.is_empty(),
+            ))
+        })
+        .ok_or(RuntimeError::State)?;
+    Ok(CampaignStatus {
         schema_version: 2,
         campaign_id: checkpoint.campaign_id,
         state: checkpoint.phase.label().to_owned(),
@@ -659,18 +735,42 @@ pub fn campaign_status(
             execution_elapsed_ms: checkpoint.utilization.execution_elapsed_ms,
         },
         limits: checkpoint.limits,
-        blocker_count: u32::try_from(checkpoint.blocked_task_ids.len())
-            .unwrap_or(u32::MAX)
-            .saturating_add(u32::try_from(checkpoint.human_decisions.len()).unwrap_or(u32::MAX))
-            .saturating_add(u32::from(
-                checkpoint.blocker_code.is_some()
-                    && checkpoint.blocked_task_ids.is_empty()
-                    && checkpoint.human_decisions.is_empty(),
-            )),
+        blocker_count,
         blocker_code: checkpoint.blocker_code,
+        blockers,
+        deferrals,
+        human_decisions,
         elapsed_ms,
         updated_at_ms: checkpoint.updated_at_ms,
-    }))
+    })
+}
+
+fn campaign_status_deferrals(checkpoint: &CampaignCheckpoint) -> Vec<CampaignStatusDeferral> {
+    let mut deferrals = checkpoint
+        .deferred_tasks
+        .iter()
+        .map(|(task_id, projection)| CampaignStatusDeferral {
+            task_id: task_id.clone(),
+            reason_code: projection.reason.code().to_owned(),
+            trigger_code: projection.trigger.code().to_owned(),
+            trigger_state: "pending".to_owned(),
+        })
+        .chain(
+            checkpoint
+                .satisfied_deferrals
+                .iter()
+                .map(|(task_id, projection)| CampaignStatusDeferral {
+                    task_id: task_id.clone(),
+                    reason_code: projection.reason.code().to_owned(),
+                    trigger_code: projection.trigger.code().to_owned(),
+                    trigger_state: "satisfied".to_owned(),
+                }),
+        )
+        .collect::<Vec<_>>();
+    deferrals.sort_by(|left, right| {
+        (&left.task_id, &left.trigger_state).cmp(&(&right.task_id, &right.trigger_state))
+    });
+    deferrals
 }
 
 /// Creates one same-user, exact-campaign lifecycle control request.

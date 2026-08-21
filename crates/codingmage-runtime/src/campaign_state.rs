@@ -68,11 +68,20 @@ pub(crate) struct DeferredTaskProjection {
     pub task_source_sha256: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum HumanDecisionProjectionReason {
     Lead(LeadHumanDecisionReason),
     RepeatedSatisfiedDeferral,
+}
+
+impl HumanDecisionProjectionReason {
+    pub(crate) const fn code(self) -> &'static str {
+        match self {
+            Self::Lead(reason) => reason.code(),
+            Self::RepeatedSatisfiedDeferral => "repeated_satisfied_deferral",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -1033,6 +1042,11 @@ impl CampaignCheckpoint {
     }
 
     fn validate_outcomes(&self) -> Result<(), RuntimeError> {
+        let blocked = self.blocked_task_ids.iter().collect::<BTreeSet<_>>();
+        let blocked_reasons = self.blocked_reasons.keys().collect::<BTreeSet<_>>();
+        let deferred = self.deferred_tasks.keys().collect::<BTreeSet<_>>();
+        let satisfied = self.satisfied_deferrals.keys().collect::<BTreeSet<_>>();
+        let human_decisions = self.human_decisions.keys().collect::<BTreeSet<_>>();
         let expected = self
             .outcomes
             .completed
@@ -1055,6 +1069,22 @@ impl CampaignCheckpoint {
             || self.applied_control_requests.len() > 10_000
             || self.cancelled && (self.operator_paused || self.stop_after_unit)
             || self.cancelled && self.resume_validation == ResumeValidationState::Pending
+            || blocked != blocked_reasons
+            || !blocked.is_disjoint(&deferred)
+            || !blocked.is_disjoint(&human_decisions)
+            || !deferred.is_disjoint(&satisfied)
+            || !deferred.is_disjoint(&human_decisions)
+            || blocked
+                .iter()
+                .chain(deferred.iter())
+                .chain(satisfied.iter())
+                .chain(human_decisions.iter())
+                .any(|task_id| TaskId::new((*task_id).clone()).is_err())
+            || self
+                .deferred_tasks
+                .values()
+                .chain(self.satisfied_deferrals.values())
+                .any(|projection| projection.reason.required_trigger() != projection.trigger)
         {
             return Err(RuntimeError::State);
         }
@@ -1991,6 +2021,10 @@ mod tests {
         let mut checkpoint = checkpoint();
         checkpoint.completed_units = 1;
         checkpoint.blocked_task_ids.insert("1.1.1.2".to_owned());
+        checkpoint.blocked_reasons.insert(
+            "1.1.1.2".to_owned(),
+            LeadBlockedReason::UnavailableExternalDependency,
+        );
         checkpoint.deferred_tasks.insert(
             "1.1.1.3".to_owned(),
             DeferredTaskProjection {
