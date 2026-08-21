@@ -846,7 +846,7 @@ fn authority_settings(
     session: &ClaudeSession,
     packet: &ClaudeWorkPacket,
 ) -> Result<String, ClaudeError> {
-    let git_metadata = format!("{}/.git", permission_path(&session.worktree)?);
+    let git_metadata = format!("{}/.git", permission_rule_path(&session.worktree)?);
     let allow = allowed_tool_rules(session, packet)?;
     let write_paths = packet
         .owned_paths
@@ -905,7 +905,7 @@ fn allowed_tool_rules(
         .map(|tool| format!("{tool}({root})"))
         .to_vec();
     for relative in &packet.owned_paths {
-        let owned = permission_path(&session.worktree.join(relative))?;
+        let owned = permission_rule_path(&session.worktree.join(relative))?;
         for tool in ["Edit", "Write"] {
             allow.push(format!("{tool}({owned})"));
             allow.push(format!("{tool}({owned}/**)"));
@@ -915,10 +915,10 @@ fn allowed_tool_rules(
 }
 
 fn permission_root(path: &std::path::Path) -> Result<String, ClaudeError> {
-    Ok(format!("{}/**", permission_path(path)?))
+    Ok(format!("{}/**", permission_rule_path(path)?))
 }
 
-fn permission_path(path: &std::path::Path) -> Result<String, ClaudeError> {
+fn permission_rule_path(path: &std::path::Path) -> Result<String, ClaudeError> {
     let path = path.to_str().ok_or(ClaudeError::InvalidBinding)?;
     if !path.starts_with('/')
         || path
@@ -927,7 +927,7 @@ fn permission_path(path: &std::path::Path) -> Result<String, ClaudeError> {
     {
         return Err(ClaudeError::InvalidBinding);
     }
-    Ok(path.trim_end_matches('/').to_owned())
+    Ok(format!("/{}", path.trim_end_matches('/')))
 }
 
 fn append_list(rendered: &mut String, heading: &str, values: &[String]) {
@@ -1111,11 +1111,12 @@ mod tests {
             .find(|pair| pair[0] == "--allowedTools")
             .map(|pair| pair[1].as_str())
             .unwrap();
-        assert!(allowed_tools.contains(&format!(
-            "Edit({})",
-            fixture.root.join("src/lib.rs").display()
+        let owned_rule = permission_rule_path(&fixture.root.join("src/lib.rs")).unwrap();
+        assert!(allowed_tools.contains(&format!("Edit({owned_rule})")));
+        assert!(!allowed_tools.contains(&format!(
+            "Edit({}/**)",
+            permission_rule_path(&fixture.root).unwrap()
         )));
-        assert!(!allowed_tools.contains(&format!("Edit({}/**)", fixture.root.display())));
         let settings = start
             .arguments
             .windows(2)
@@ -1148,6 +1149,20 @@ mod tests {
                     .as_str()
                     .is_some_and(|permission| permission.starts_with("Grep(")
                         && permission.ends_with("/.git)"))))
+        );
+        let metadata_rule = format!(
+            "Read({}/.git)",
+            permission_rule_path(&fixture.root).unwrap()
+        );
+        assert!(
+            settings["permissions"]["deny"]
+                .as_array()
+                .is_some_and(|values| values.iter().any(|value| value == &metadata_rule))
+        );
+
+        assert_eq!(
+            permission_rule_path(std::path::Path::new("/tmp/fixture.txt")),
+            Ok("//tmp/fixture.txt".to_owned())
         );
 
         let existing_login = ClaudeAdapter::new(PathBuf::from("/bin/true"), "sonnet", "high")
