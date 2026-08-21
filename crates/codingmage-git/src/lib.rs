@@ -16,8 +16,9 @@ pub use commit::{
     reobserve_owned_commit,
 };
 pub use integration::{
-    IntegrationError, IntegrationReceipt, IntegrationTransferReceipt, integrate_reviewed_delta,
-    integrate_reviewed_descendant,
+    IntegrationError, IntegrationReceipt, IntegrationTransferReceipt, PreparedIntegration,
+    install_prepared_integration, integrate_reviewed_delta, integrate_reviewed_descendant,
+    prepare_reviewed_delta,
 };
 pub use inventory::{
     Inventory, InventoryError, OperationState, RepositoryCondition, inventory_repository,

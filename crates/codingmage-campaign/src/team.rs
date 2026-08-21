@@ -16,7 +16,7 @@ use super::{
 
 const TEAM_POLICY_VERSION: u16 = 1;
 /// Current closed schema version for durable multi-agent state projections.
-pub const TEAM_STATE_SCHEMA_VERSION: u16 = 2;
+pub const TEAM_STATE_SCHEMA_VERSION: u16 = 3;
 const TEAM_STATE_VERSION: u16 = TEAM_STATE_SCHEMA_VERSION;
 const MAX_PROVIDER_TOKENS: u64 = 1_000_000_000_000;
 const MAX_TASK_RECORDS: usize = 1_000_000;
@@ -1065,6 +1065,8 @@ pub struct CampaignTaskRecord {
     pub candidate_commit: Option<String>,
     /// Exact candidate accepted by independent review.
     pub reviewed_commit: Option<String>,
+    /// Coordinator-created commit prepared for serialized campaign integration.
+    pub integration_commit: Option<String>,
     /// Exact mechanical canonical-task completion commit.
     pub completion_commit: Option<String>,
     /// Optional task issue number.
@@ -1127,6 +1129,7 @@ impl CampaignTaskRecord {
             base_commit,
             candidate_commit: None,
             reviewed_commit: None,
+            integration_commit: None,
             completion_commit: None,
             issue_number: None,
             pull_request_number: None,
@@ -1170,10 +1173,26 @@ impl CampaignTaskRecord {
                 .is_some_and(|v| !valid_commit(v))
             || self.reviewed_commit.is_some() && self.candidate_commit.is_none()
             || self
+                .integration_commit
+                .as_ref()
+                .is_some_and(|v| !valid_commit(v))
+            || self.integration_commit.is_some() && self.reviewed_commit.is_none()
+            || self.integration_commit.is_some()
+                && !matches!(
+                    self.state,
+                    CampaignTaskState::Integrating
+                        | CampaignTaskState::Merged
+                        | CampaignTaskState::Blocked
+                        | CampaignTaskState::Failed
+                        | CampaignTaskState::Cancelled
+                )
+            || self
                 .completion_commit
                 .as_ref()
                 .is_some_and(|v| !valid_commit(v))
             || self.completion_commit.is_some() && self.reviewed_commit.is_none()
+            || self.state == CampaignTaskState::Merged
+                && (self.integration_commit.is_none() || self.completion_commit.is_none())
             || self.issue_number == Some(0)
             || self.pull_request_number == Some(0)
             || self.review_sessions.len() > MAX_SESSIONS
@@ -1663,6 +1682,43 @@ impl TeamCampaignSnapshot {
         )
     }
 
+    /// Binds the exact prepared integration commit before campaign-head mutation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for a non-head task, wrong state, malformed commit, or replay.
+    pub fn bind_integration_commit(
+        &mut self,
+        task_id: &str,
+        integration_commit: String,
+        evidence_sha256: String,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        if self.integration_queue.first().map(String::as_str) != Some(task_id)
+            || !valid_commit(&integration_commit)
+            || !valid_sha256(&evidence_sha256)
+        {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        let mut candidate = self.clone();
+        let record = candidate
+            .tasks
+            .get_mut(task_id)
+            .ok_or(TeamStateError::InvalidRecord)?;
+        if record.state != CampaignTaskState::Integrating
+            || record.integration_commit.is_some()
+            || record.last_evidence_sha256.as_ref() == Some(&evidence_sha256)
+        {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        record.integration_commit = Some(integration_commit);
+        record.next_transition = record.next_transition.saturating_add(1);
+        record.last_evidence_sha256 = Some(evidence_sha256);
+        candidate.verify()?;
+        *self = candidate;
+        Ok(())
+    }
+
     /// Completes one observed integration and releases its exact scheduler lease.
     ///
     /// # Errors
@@ -1672,14 +1728,16 @@ impl TeamCampaignSnapshot {
         &mut self,
         task_id: &str,
         expected_head: &str,
-        integrated_head: String,
+        observed_integration_commit: &str,
+        completion_commit: String,
         evidence_sha256: String,
     ) -> Result<(), TeamStateError> {
         self.verify()?;
         if self.integration_queue.first().map(String::as_str) != Some(task_id)
             || self.campaign_head != expected_head
-            || integrated_head == expected_head
-            || !valid_commit(&integrated_head)
+            || completion_commit == expected_head
+            || !valid_commit(observed_integration_commit)
+            || !valid_commit(&completion_commit)
         {
             return Err(TeamStateError::InvalidTransition);
         }
@@ -1691,7 +1749,10 @@ impl TeamCampaignSnapshot {
         if record.state != CampaignTaskState::Integrating {
             return Err(TeamStateError::InvalidTransition);
         }
-        record.completion_commit = Some(integrated_head.clone());
+        if record.integration_commit.as_deref() != Some(observed_integration_commit) {
+            return Err(TeamStateError::InvalidTransition);
+        }
+        record.completion_commit = Some(completion_commit.clone());
         let request = task_transition(record, CampaignTaskState::Merged, evidence_sha256);
         record.transition_terminal(&request, TaskTerminalReason::Merged)?;
         let lease_id = record
@@ -1701,7 +1762,7 @@ impl TeamCampaignSnapshot {
         let mut scheduler = DurablePodScheduler::from_snapshot(candidate.scheduler.clone())?;
         scheduler.release(&lease_id)?;
         candidate.scheduler = scheduler.snapshot().clone();
-        candidate.campaign_head = integrated_head;
+        candidate.campaign_head = completion_commit;
         candidate.integration_queue.remove(0);
         candidate.verify()?;
         *self = candidate;
@@ -2868,16 +2929,31 @@ mod tests {
         assert_eq!(snapshot, before);
         snapshot.mark_merge_ready(first, "c".repeat(64)).unwrap();
         snapshot.begin_integration(first, "d".repeat(64)).unwrap();
+        snapshot
+            .bind_integration_commit(first, "d".repeat(40), "e".repeat(64))
+            .unwrap();
         let integrating = snapshot.clone();
         assert_eq!(
-            snapshot.complete_integration(first, &"f".repeat(40), "e".repeat(40), "e".repeat(64),),
+            snapshot.complete_integration(
+                first,
+                &"f".repeat(40),
+                &"d".repeat(40),
+                "e".repeat(40),
+                "f".repeat(64),
+            ),
             Err(TeamStateError::InvalidTransition)
         );
         assert_eq!(snapshot, integrating);
 
         let previous = snapshot.campaign_head.clone();
         snapshot
-            .complete_integration(first, &previous, "e".repeat(40), "f".repeat(64))
+            .complete_integration(
+                first,
+                &previous,
+                &"d".repeat(40),
+                "e".repeat(40),
+                "0".repeat(64),
+            )
             .unwrap();
         assert_eq!(snapshot.campaign_head, "e".repeat(40));
         assert_eq!(snapshot.integration_queue, [second]);
@@ -2889,6 +2965,10 @@ mod tests {
         assert_eq!(
             snapshot.tasks[first].completion_commit,
             Some("e".repeat(40))
+        );
+        assert_eq!(
+            snapshot.tasks[first].integration_commit,
+            Some("d".repeat(40))
         );
         assert!(
             snapshot

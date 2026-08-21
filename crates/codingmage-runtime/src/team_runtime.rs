@@ -729,6 +729,7 @@ fn apply_lifecycle(
             let mut candidate = record.clone();
             candidate.candidate_commit = Some(commit);
             candidate.reviewed_commit = None;
+            candidate.integration_commit = None;
             candidate.completion_commit = None;
             candidate.verify().map_err(|_| RuntimeError::State)?;
             *record = candidate;

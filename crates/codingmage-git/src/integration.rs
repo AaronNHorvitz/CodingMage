@@ -8,7 +8,7 @@ use crate::{
     command::{GitCommand, run_git, run_git_with_codes, run_git_with_input, text},
     commit_owned_changes, create_owned_worktree,
     inventory::condition_at,
-    remove_owned_worktree,
+    remove_owned_worktree, reobserve_owned_commit,
     worktree::revalidate_active_worktree,
 };
 
@@ -42,6 +42,39 @@ pub struct IntegrationTransferReceipt {
     pub changed_path_count: usize,
     /// Digest of the exact bounded binary patch.
     pub patch_sha256: String,
+}
+
+/// Coordinator-owned stale-base transfer awaiting integration-level verification and installation.
+#[derive(Clone, Debug)]
+pub struct PreparedIntegration {
+    worktree: OwnedWorktree,
+    previous_head: String,
+    candidate_base: String,
+    reviewed_head: String,
+    prepared_head: String,
+    changed_path_count: usize,
+    patch_sha256: String,
+    allowed_paths: Vec<PathBuf>,
+}
+
+impl PreparedIntegration {
+    /// Returns the immutable prepared worktree for deterministic gates and read-only review.
+    #[must_use]
+    pub const fn worktree(&self) -> &OwnedWorktree {
+        &self.worktree
+    }
+
+    /// Returns the exact coordinator-created commit awaiting installation.
+    #[must_use]
+    pub fn prepared_head(&self) -> &str {
+        &self.prepared_head
+    }
+
+    /// Returns the original independently reviewed candidate identity.
+    #[must_use]
+    pub fn reviewed_head(&self) -> &str {
+        &self.reviewed_head
+    }
 }
 
 /// Advances one owned campaign worktree to an exact reviewed descendant.
@@ -153,6 +186,40 @@ pub fn integrate_reviewed_delta(
     reviewed_head: &str,
     allowed_paths: &[PathBuf],
 ) -> Result<IntegrationTransferReceipt, IntegrationError> {
+    let prepared = prepare_reviewed_delta(
+        authorization,
+        config,
+        campaign,
+        integration_run_id,
+        task_id,
+        expected_head,
+        candidate_base,
+        reviewed_head,
+        allowed_paths,
+    )?;
+    install_prepared_integration(authorization, campaign, prepared)
+}
+
+/// Creates a clean coordinator commit for one reviewed stale-base delta without changing campaign.
+///
+/// Callers must run required integration gates and a fresh immutable review against the returned
+/// worktree before calling [`install_prepared_integration`].
+///
+/// # Errors
+///
+/// Returns [`IntegrationError`] for stale identity, path escape, conflict, or uncertain preparation.
+#[allow(clippy::too_many_arguments)]
+pub fn prepare_reviewed_delta(
+    authorization: &RepositoryAuthorization,
+    config: &Config,
+    campaign: &OwnedWorktree,
+    integration_run_id: RunId,
+    task_id: TaskId,
+    expected_head: &str,
+    candidate_base: &str,
+    reviewed_head: &str,
+    allowed_paths: &[PathBuf],
+) -> Result<PreparedIntegration, IntegrationError> {
     revalidate_active_worktree(authorization, campaign, expected_head)
         .map_err(|_| IntegrationError::Identity)?;
     if expected_head == reviewed_head
@@ -195,7 +262,7 @@ pub fn integrate_reviewed_delta(
         return Err(IntegrationError::InvalidOutput);
     }
 
-    let mut transfer = create_owned_worktree(
+    let transfer = create_owned_worktree(
         authorization,
         config,
         integration_run_id,
@@ -213,21 +280,58 @@ pub fn integrate_reviewed_delta(
         .map_err(|_| IntegrationError::Uncertain)?;
     let committed = commit_owned_changes(authorization, &transfer, expected_head, allowed_paths)
         .map_err(|_| IntegrationError::Uncertain)?;
-    remove_owned_worktree(authorization, &mut transfer).map_err(|_| IntegrationError::Uncertain)?;
+    Ok(PreparedIntegration {
+        worktree: transfer,
+        previous_head: expected_head.to_owned(),
+        candidate_base: candidate_base.to_owned(),
+        reviewed_head: reviewed_head.to_owned(),
+        prepared_head: committed.commit,
+        changed_path_count: paths.len(),
+        patch_sha256: patch.stdout_sha256,
+        allowed_paths: allowed_paths.to_vec(),
+    })
+}
+
+/// Installs an externally verified prepared delta through an exact campaign fast-forward.
+///
+/// The prepared commit and worktree are revalidated, and the temporary worktree is removed before
+/// campaign mutation. This operation does not itself claim that integration-level gates or review
+/// ran; that evidence remains the caller's policy responsibility.
+///
+/// # Errors
+///
+/// Returns [`IntegrationError`] for changed preparation, cleanup failure, or stale campaign state.
+pub fn install_prepared_integration(
+    authorization: &RepositoryAuthorization,
+    campaign: &OwnedWorktree,
+    mut prepared: PreparedIntegration,
+) -> Result<IntegrationTransferReceipt, IntegrationError> {
+    let observed = reobserve_owned_commit(
+        authorization,
+        &prepared.worktree,
+        &prepared.previous_head,
+        &prepared.allowed_paths,
+    )
+    .map_err(|_| IntegrationError::Identity)?;
+    if observed.commit != prepared.prepared_head {
+        return Err(IntegrationError::Identity);
+    }
+    remove_owned_worktree(authorization, &mut prepared.worktree)
+        .map_err(|_| IntegrationError::Uncertain)?;
     let installed = integrate_reviewed_descendant(
         authorization,
         campaign,
-        expected_head,
-        &committed.commit,
-        allowed_paths,
+        &prepared.previous_head,
+        &prepared.prepared_head,
+        &prepared.allowed_paths,
     )?;
     Ok(IntegrationTransferReceipt {
         previous_head: installed.previous_head,
-        candidate_base: candidate_base.to_owned(),
-        reviewed_head: reviewed_head.to_owned(),
+        candidate_base: prepared.candidate_base,
+        reviewed_head: prepared.reviewed_head,
         integrated_head: installed.integrated_head,
-        changed_path_count: paths.len(),
-        patch_sha256: patch.stdout_sha256,
+        changed_path_count: prepared.changed_path_count,
+        patch_sha256: prepared.patch_sha256,
     })
 }
 
@@ -480,7 +584,7 @@ mod tests {
             &[PathBuf::from("tracked-two.txt")],
         )
         .unwrap();
-        let receipt = integrate_reviewed_delta(
+        let prepared = prepare_reviewed_delta(
             &authorization,
             &config,
             &campaign,
@@ -492,6 +596,13 @@ mod tests {
             &[PathBuf::from("tracked-two.txt")],
         )
         .unwrap();
+        let campaign_before_install = run_git(&campaign.manifest().path, GitCommand::Head).unwrap();
+        assert_eq!(
+            text(&campaign_before_install).unwrap().trim(),
+            first_commit.commit
+        );
+        assert_ne!(prepared.prepared_head(), stale_commit.commit);
+        let receipt = install_prepared_integration(&authorization, &campaign, prepared).unwrap();
         assert_eq!(receipt.previous_head, first_commit.commit);
         assert_eq!(receipt.reviewed_head, stale_commit.commit);
         assert_ne!(receipt.integrated_head, receipt.reviewed_head);
