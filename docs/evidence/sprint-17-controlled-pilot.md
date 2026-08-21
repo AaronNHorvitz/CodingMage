@@ -1,6 +1,6 @@
 # Sprint 17 Controlled Target Pilot Evidence
 
-- **Status:** Preparation, fake-agent dry run, first live unit, five-unit supervised qualification, and owner-approved background enablement complete; unattended pilot execution remains open
+- **Status:** Preparation, fake-agent dry run, first live unit, five-unit supervised qualification, owner-approved background enablement, and one unattended corrected story complete; blocker/quota and handoff evidence remain open
 - **Initial CodingMage pilot build:** commit `c3b3103`
 - **Five-unit qualification build:** commit `2631265`
 - **Executed:** 2026-08-19 and 2026-08-21 on Fedora Linux with Rust 1.95.0
@@ -55,6 +55,24 @@ Every unit consumed exactly two provider attempts and eleven total process invoc
 The disposable fixtures and content-minimized journals remain under the operator's private CodingMage qualification state for review. No fixture branch was pushed, merged, or published. The five-unit evidence qualifies supervised bounded operation; by itself, it neither authorized background execution nor established an unattended production-target claim.
 
 On 2026-08-21, after receiving the five-unit results and retained limitations, the product owner explicitly approved the retained evidence and authorized background execution for the next bounded unattended pilot. That authorization is limited to the disposable pilot and does not grant target-repository publication, merge, release, network, or external-infrastructure authority.
+
+## Unattended Corrected Story
+
+Commits `595df9b` and `03d4674` added and corrected a dedicated one-story unattended qualification runner. It used the production serial campaign coordinator with one pod, one accepted-unit ceiling, local-only publication, a real Claude `opus` implementer, and deterministic fake Codex lead and reviewer adapters. The fake reviewer required one exact second-line attestation after the initial valid implementation. This isolates correction and resume behavior from reviewer variability; the five-unit evidence above separately establishes live Codex review behavior.
+
+The first run completed the story but exposed an incorrect harness assumption: serial campaigns intentionally retain one campaign-root worktree for durable reobservation, while implementation pod worktrees are released. The harness rejected that run rather than treating expected retained state as a leak. Commit `03d4674` changed the postcondition to require exactly one active checkout plus one Git-bound campaign worktree, and an empty campaign pod-scratch root.
+
+The fresh post-correction run completed without operator intervention:
+
+- base commit `ff39399595a1fd024d37a44832339a8ce34f90de` remained checked out cleanly on `main`;
+- campaign head `8b1e986070677e7792183ca458bd9e81d764eca6` contained the exact reviewed artifact and mechanical task completion;
+- five provider attempts and sixteen total process invocations covered lead selection, initial implementation, first review, resumed correction, and passing re-review;
+- exactly one correction round completed, with zero malformed-report repairs;
+- the durable checkpoint ended in `complete` with one completed unit, no active unit, no pending integration, and no blocker;
+- the implementation pod worktree was released, the single campaign-root worktree remained bound to the exact campaign head, and the active checkout was byte-for-byte preserved; and
+- a second process inspection found no qualification-owned CodingMage or Claude process.
+
+The retained state contained 42,437 bytes and the observed provider and gate output totaled 15,209 bytes, both within the operator-authorized 16 MiB ceilings. The run used no publication, network, issue, pull-request, merge, release, or external-infrastructure authority.
 
 ## Preserved Limits
 
