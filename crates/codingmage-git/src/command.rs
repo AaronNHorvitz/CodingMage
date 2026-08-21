@@ -3,7 +3,7 @@
 use std::{
     ffi::{OsStr, OsString},
     fs,
-    io::{self, Read},
+    io::{self, Read, Write},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     thread,
@@ -14,6 +14,7 @@ use sha2::{Digest, Sha256};
 
 const GIT_EXECUTABLE: &str = "/usr/bin/git";
 const MAX_OUTPUT_BYTES: usize = 4 * 1024 * 1024;
+const MAX_INPUT_BYTES: usize = 4 * 1024 * 1024;
 const COMMAND_TIMEOUT: Duration = Duration::from_secs(15);
 
 #[derive(Clone, Copy)]
@@ -29,6 +30,12 @@ pub(crate) enum GitCommand<'a> {
         base: &'a str,
         target: &'a str,
     },
+    BinaryDiff {
+        base: &'a str,
+        target: &'a str,
+    },
+    ApplyCheck,
+    Apply,
     VerifyCommit(&'a str),
     Parent(&'a str),
     CommitMetadata(&'a str),
@@ -91,6 +98,26 @@ pub(crate) fn run_git_with_codes(
     request: GitCommand<'_>,
     allowed_exit_codes: &[i32],
 ) -> Result<GitOutput, CommandError> {
+    run_git_internal(working_directory, request, allowed_exit_codes, None)
+}
+
+pub(crate) fn run_git_with_input(
+    working_directory: &Path,
+    request: GitCommand<'_>,
+    input: &[u8],
+) -> Result<GitOutput, CommandError> {
+    run_git_internal(working_directory, request, &[0], Some(input))
+}
+
+fn run_git_internal(
+    working_directory: &Path,
+    request: GitCommand<'_>,
+    allowed_exit_codes: &[i32],
+    input: Option<&[u8]>,
+) -> Result<GitOutput, CommandError> {
+    if input.is_some_and(|bytes| bytes.len() > MAX_INPUT_BYTES) {
+        return Err(CommandError::OutputLimit);
+    }
     let executable = PathBuf::from(GIT_EXECUTABLE);
     let before = executable_identity(&executable)?;
     let arguments = arguments(request);
@@ -130,7 +157,11 @@ pub(crate) fn run_git_with_codes(
             OsStr::new("core.pager=cat"),
         ])
         .args(arguments)
-        .stdin(Stdio::null())
+        .stdin(if input.is_some() {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
@@ -143,7 +174,20 @@ pub(crate) fn run_git_with_codes(
     let stderr = child.stderr.take().ok_or(CommandError::Spawn)?;
     let stdout_reader = thread::spawn(move || capture(stdout));
     let stderr_reader = thread::spawn(move || capture(stderr));
+    let stdin_writer = if let Some(bytes) = input {
+        let mut stdin = child.stdin.take().ok_or(CommandError::Spawn)?;
+        let bytes = bytes.to_vec();
+        Some(thread::spawn(move || stdin.write_all(&bytes)))
+    } else {
+        None
+    };
     let status = wait_bounded(&mut child, COMMAND_TIMEOUT)?;
+    if let Some(writer) = stdin_writer {
+        writer
+            .join()
+            .map_err(|_| CommandError::InvalidOutput)?
+            .map_err(|_| CommandError::Failed)?;
+    }
     let stdout = stdout_reader
         .join()
         .map_err(|_| CommandError::InvalidOutput)??;
@@ -213,6 +257,29 @@ fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
             base.into(),
             target.into(),
             "--".into(),
+        ],
+        GitCommand::BinaryDiff { base, target } => vec![
+            "diff".into(),
+            "--binary".into(),
+            "--full-index".into(),
+            "--no-ext-diff".into(),
+            "--no-textconv".into(),
+            base.into(),
+            target.into(),
+            "--".into(),
+        ],
+        GitCommand::ApplyCheck => vec![
+            "apply".into(),
+            "--check".into(),
+            "--index".into(),
+            "--whitespace=error-all".into(),
+            "-".into(),
+        ],
+        GitCommand::Apply => vec![
+            "apply".into(),
+            "--index".into(),
+            "--whitespace=error-all".into(),
+            "-".into(),
         ],
         GitCommand::VerifyCommit(object) => {
             vec![
