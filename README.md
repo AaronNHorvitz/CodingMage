@@ -2,6 +2,13 @@
 
 CodingMage is a local multi-agent engineering coordinator designed to move through large development roadmaps with better verified results per token. It assigns bounded tasks to isolated coding pods, routes work according to complexity and risk, and gives every candidate to deterministic checks and an independent senior-review model before integration.
 
+The current production path supports supervised units and durable one-pod serial campaigns. The
+accepted multi-agent architecture extends that path into one Codex team lead, bounded concurrent
+Claude implementation pods, independent Codex reviewers, per-task publication, and serialized
+integration while preserving the coordinator as the only Git, test, GitHub, and merge authority.
+See the [multi-agent architecture](docs/architecture/multi-agent-campaigns.md) and its
+[audited implementation gaps](docs/architecture/multi-agent-gap-analysis.md).
+
 Instead of assigning every mechanical step to the strongest model, or trusting a lighter model with every architectural decision, CodingMage combines both where they are strongest:
 
 - **Use model capacity deliberately:** reject formatting, test, schema, and scope failures locally before invoking the senior reviewer.
@@ -574,11 +581,11 @@ Operational guides are indexed in [`docs/operations/README.md`](docs/operations/
 - Provider-neutral adapter contract and fakes: yes
 - Claude adapter core and deterministic fixtures: yes
 - Claude and Codex adapter cores with deterministic fixtures: yes
-- Live confined Claude task and live Codex review: no
-- Complete agent-adapter integration: no
+- Live confined Claude task and live Codex review: yes, for the bounded supervised qualification
+- Complete serial agent-adapter integration: yes; multi-pod composition remains open
 - Background service core: yes; isolated login/logout evidence remains open
 - GitHub synchronization core: yes; authenticated disposable-repository evidence remains open
 - Reproducible Linux packaging and rootless lifecycle: yes
 - Reusable project task and gate adapters: yes
-- Unattended target-repository authorization: no
-- Unattended operation approved: no
+- Bounded unattended pilot authorization: yes; production target qualification remains open
+- Multi-pod unattended operation: no; implementation and qualification remain open

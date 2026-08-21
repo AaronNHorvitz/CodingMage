@@ -22,6 +22,29 @@ CodingMage is under active implementation. A checked item means its complete imp
 14. Treat `blocked`, `deferred`, `human_decision_required`, and invalid proposals as distinct states.
 15. Require the prescribed ten-outcome disposable soak before any ten-task controlled-target soak.
 16. Keep one-pod, local-only operation as the initial unattended boundary until its evidence passes.
+17. Implement and test multi-pod code behind explicit authority before enabling a second live pod;
+    implementation readiness and live qualification are separate claims.
+18. Keep serial mode supported and regression-tested through every multi-agent change.
+19. Keep monetary values outside campaign authority; use bounded provider attempts, tokens,
+    processes, output, storage, elapsed time, and accepted outcomes.
+
+## Multi-Agent Implementation Phases
+
+These phases refine Sprints 23 through 27 without replacing their stable identifiers:
+
+1. Audit and architecture reconciliation: Decision 0009, gap analysis, architecture, and task plan.
+2. Durable campaign-task and pod identity state.
+3. Persistent multi-pod scheduler and independent resource limits.
+4. Concurrent Claude execution with isolated failure and cancellation.
+5. Parallel deterministic gate scheduling with named resource leases.
+6. Fresh Codex review and same-lineage bounded correction.
+7. One task issue, branch, worktree, and draft pull-request mapping.
+8. Durable serialized integration queue and stale-base transfer.
+9. Commit-bound CI feedback routing.
+10. Campaign completion, final integration review, report, and final draft pull request.
+11. Closed task-integration and destination-promotion policies.
+12. Restart, adversarial, five-pod, serial-compatibility, and sustained-soak evidence.
+13. Operator documentation and credential-gated live qualification.
 
 ## Universal Definition of Done
 
@@ -55,6 +78,11 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 0.1.2.1:** Enumerate initially permitted local operations.
   - [x] **Sub-task 0.1.2.2:** Enumerate prohibited destructive, external, credential, merge, release, and infrastructure-changing operations.
   - [x] **Sub-task 0.1.2.3:** Define human product-owner authority and bounded agent authority.
+- [x] **Task 0.1.3 - Reconcile the durable multi-agent expansion**
+  - [x] **Sub-task 0.1.3.1:** Audit the serial runtime, lead and review adapters, scheduler, worktrees, gates, recovery, GitHub core, and qualification evidence at source baseline `b13973f`.
+  - [x] **Sub-task 0.1.3.2:** Record completed foundations and material multi-agent gaps without converting planned behavior into current claims.
+  - [x] **Sub-task 0.1.3.3:** Define persistent scheduling, durable task identity, concurrent pods, per-task publication, serialized integration, CI routing, and merge policy under the existing authority model.
+  - [x] **Sub-task 0.1.3.4:** Preserve serial mode and separate deterministic implementation from live-provider, authenticated-GitHub, platform, and release qualification.
 
 **Story acceptance criteria**
 
@@ -76,6 +104,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 0.2.2.3:** Record the external-to-target and no-self-modification decision.
   - [x] **Sub-task 0.2.2.4:** Record the CLI-adapter-first provider boundary.
   - [x] **Sub-task 0.2.2.5:** Record the append-only journal plus atomic snapshot decision.
+  - [x] **Sub-task 0.2.2.6:** Accept Decision 0009 for durable multi-agent campaigns, per-task identities, serialized integration, and deny-first merge policy.
 - [x] **Task 0.2.3 - Establish documentation checks**
   - [x] **Sub-task 0.2.3.1:** Add Markdown formatting and lint configuration.
   - [x] **Sub-task 0.2.3.2:** Add local-link validation.
@@ -1089,14 +1118,59 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 23.1.2.3:** Prevent shared provider quotas from creating retry storms.
   - [ ] **Sub-task 23.1.2.4:** Begin rollout at one pod, then require evidence before enabling two, three, or four.
 
+### Story 23.2 - Durable Task and Pod State
+
+- [ ] **Task 23.2.1 - Define closed campaign task states**
+  - [ ] **Sub-task 23.2.1.1:** Add planned, ready, proposed, leased, implementing, local-gates, reviewing, correcting, publication-ready, PR-open, CI-waiting, integration-queued, merge-ready, integrating, merged, blocked, disputed, failed, and cancelled states.
+  - [ ] **Sub-task 23.2.1.2:** Define the complete legal transition matrix and reject skipped, reversed, duplicate, stale-generation, and cross-task transitions.
+  - [ ] **Sub-task 23.2.1.3:** Record intent before every provider, Git, gate, GitHub, CI, integration, completion, and release effect and record one observation afterward.
+  - [ ] **Sub-task 23.2.1.4:** Preserve terminal blocker, dispute, failure, cancellation, and limit reasons as closed content-free codes.
+- [ ] **Task 23.2.2 - Persist one complete task identity record**
+  - [ ] **Sub-task 23.2.2.1:** Bind campaign, task, generation, pod, lease, worktree, branch, base, candidate, reviewed commit, and task state.
+  - [ ] **Sub-task 23.2.2.2:** Bind optional issue and pull-request numbers, implementation session lineage, independent review session IDs, evidence IDs, and utilization.
+  - [ ] **Sub-task 23.2.2.3:** Reject partial, duplicate, cross-campaign, stale-head, and contradictory identity mappings rather than synthesizing missing values.
+  - [ ] **Sub-task 23.2.2.4:** Add integrity-bound atomic snapshot and append-only projection events for every task record and active lease.
+  - [ ] **Sub-task 23.2.2.5:** Reconstruct the exact task and lease projection after restart and refuse legacy state that could erase authority or an unfinished effect.
+- [ ] **Task 23.2.3 - Add heartbeats and stale-pod reconciliation**
+  - [ ] **Sub-task 23.2.3.1:** Record bounded monotonic heartbeat sequence and observation time without provider prose.
+  - [ ] **Sub-task 23.2.3.2:** Classify stale, exited, cancelled, and externally missing process trees distinctly.
+  - [ ] **Sub-task 23.2.3.3:** Terminate and reap only the exact stale pod descendants before releasing its leases.
+  - [ ] **Sub-task 23.2.3.4:** Preserve healthy sibling pods and unrelated processes during stale-pod cleanup.
+
+### Story 23.3 - Concurrent Implementation, Gates, and Review
+
+- [ ] **Task 23.3.1 - Compose concurrent Claude implementation pods**
+  - [ ] **Sub-task 23.3.1.1:** Keep one campaign coordinator and scheduler alive while one through five implementation pods execute.
+  - [ ] **Sub-task 23.3.1.2:** Give every pod one task-scoped claim lock, branch, worktree, scratch root, state root, cancellation token, and Claude session lineage.
+  - [ ] **Sub-task 23.3.1.3:** Preserve the campaign-level repository lease while removing the per-unit coarse lock that serializes independent campaign pods.
+  - [ ] **Sub-task 23.3.1.4:** Collect terminal pod results through a bounded ordered channel without allowing one crash, timeout, or cancellation to terminate healthy siblings.
+  - [ ] **Sub-task 23.3.1.5:** Leave unused capacity idle when fewer dependency-ready nonconflicting tasks exist.
+- [ ] **Task 23.3.2 - Schedule deterministic gates and shared resources**
+  - [ ] **Sub-task 23.3.2.1:** Add independent configured ceilings for implementation pods, reviewers, gate workers, GitHub writers, and integration workers.
+  - [ ] **Sub-task 23.3.2.2:** Lease databases, ports, devices, fixtures, services, generated outputs, and other declared exclusive test resources.
+  - [ ] **Sub-task 23.3.2.3:** Run independent gate sets concurrently while serializing any equal resource and preserving literal operator-authored commands.
+  - [ ] **Sub-task 23.3.2.4:** Add backpressure, bounded retries with jitter, and provider circuit breakers without creating retry storms.
+  - [ ] **Sub-task 23.3.2.5:** Enforce per-task and campaign provider-attempt, token, process, output, storage, and elapsed limits before each effect.
+- [ ] **Task 23.3.3 - Preserve independent review and correction**
+  - [ ] **Sub-task 23.3.3.1:** Launch a fresh Codex reviewer session after the exact candidate and deterministic gate evidence are immutable.
+  - [ ] **Sub-task 23.3.3.2:** Accept only PASS, CHANGES_REQUIRED, BLOCKED, or DISPUTED with structured file-specific findings.
+  - [ ] **Sub-task 23.3.3.3:** Route accepted gate or review findings only to the matching Claude session lineage and task authority.
+  - [ ] **Sub-task 23.3.3.4:** Commit every correction through CodingMage, rerun affected gates, and rereview the complete cumulative base-to-candidate diff.
+  - [ ] **Sub-task 23.3.3.5:** Stop at configured correction or token limits and retain the task as blocked, disputed, or failed rather than completed.
+
 **Story acceptance criteria**
 
 - [ ] **AC 23.1:** Given disjoint and overlapping task proposals in every completion order, when pods are scheduled, then only disjoint authority runs concurrently and the resulting lease order is reproducible.
 - [ ] **AC 23.2:** Given one failed or stalled pod, when other pods are independent, then they continue without adopting its paths, processes, state, or findings.
+- [ ] **AC 23.3:** Given five independent dependency-ready tasks, when parallel mode runs with five implementation slots, then five distinct task, pod, branch, worktree, process, and state identities are active concurrently.
+- [ ] **AC 23.4:** Given fewer than five ready tasks or conflicting paths and resources, when admission runs, then only safe work starts and no task is invented to fill capacity.
+- [ ] **AC 23.5:** Given gate failure or CHANGES_REQUIRED, when correction runs, then only the matching Claude lineage changes its authorized worktree and a fresh cumulative Codex review is required.
+- [ ] **AC 23.6:** Given a pod crash, timeout, provider circuit break, campaign cancellation, or limit exhaustion, when reconciliation runs, then exact owned descendants and leases reach one recoverable terminal state while healthy siblings remain independent.
 
 ### Sprint 23 Gate
 
 - [ ] **Gate 23.1:** Path-collision, rename, shared-schema, generated-file, resource-contention, quota, cancellation, and completion-order permutation campaigns pass.
+- [ ] **Gate 23.2:** Durable state-transition, identity-mapping, heartbeat, stale-pod, circuit-breaker, independent-limit, five-pod, sibling-survival, and serial-regression suites pass.
 
 ---
 
@@ -1119,21 +1193,50 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 24.2 - GitHub Visibility
 
-- [ ] **Task 24.2.1 - Publish coherent story branches and draft PRs**
-  - [ ] **Sub-task 24.2.1.1:** Push only exact verified story or campaign branches after explicit capability checks.
-  - [ ] **Sub-task 24.2.1.2:** Create or update one draft PR per story or configured integration batch.
+- [ ] **Task 24.2.1 - Publish coherent task, story, and campaign review surfaces**
+  - [ ] **Sub-task 24.2.1.1:** Push only exact verified task, story, or campaign branches after exact account, host, repository, remote, branch, commit, and capability checks.
+  - [ ] **Sub-task 24.2.1.2:** Create or update one task issue and one task draft PR by default, with optional story or campaign batching only when explicitly configured.
   - [ ] **Sub-task 24.2.1.3:** Preserve human PR text and label automated findings without impersonating approval.
   - [ ] **Sub-task 24.2.1.4:** Keep local task state canonical when GitHub is unavailable, delayed, or edited concurrently.
   - [ ] **Sub-task 24.2.1.5:** Omit protected/default-branch merge, release, branch deletion, settings, secrets, and Actions-administration operations.
+  - [ ] **Sub-task 24.2.1.6:** Bind issue, task, pod, branch, worktree, base, candidate, pull request, review sessions, and implementation lineage in one durable mapping.
+  - [ ] **Sub-task 24.2.1.7:** Update only marker-bounded CodingMage sections containing typed task state, dependencies, paths, gates, branch, PR, review, blocker, and evidence fields.
+  - [ ] **Sub-task 24.2.1.8:** Reconcile issue, push, PR, comment, and update uncertainty by exact idempotency key before any retry.
+- [ ] **Task 24.2.2 - Route commit-bound CI feedback**
+  - [ ] **Sub-task 24.2.2.1:** Read required CI checks only for the exact task PR and reviewed commit SHA.
+  - [ ] **Sub-task 24.2.2.2:** Treat CI names, status, annotations, and logs as untrusted evidence that cannot supply commands or expand authority.
+  - [ ] **Sub-task 24.2.2.3:** Route attributable required-check failures to the matching Claude lineage, then rerun local gates and fresh cumulative Codex review.
+  - [ ] **Sub-task 24.2.2.4:** Update the existing PR after correction and refuse duplicate issues or PRs across restart.
+  - [ ] **Sub-task 24.2.2.5:** Pause truthfully when required CI is unavailable, stale, ambiguous, or bound to another commit.
+
+### Story 24.3 - Merge Policy and Campaign Completion
+
+- [ ] **Task 24.3.1 - Implement closed merge policies**
+  - [ ] **Sub-task 24.3.1.1:** Add never, human-required, and auto-to-campaign-branch task integration policies.
+  - [ ] **Sub-task 24.3.1.2:** Add never, human-required, and explicitly authorized auto-to-default-branch destination policies.
+  - [ ] **Sub-task 24.3.1.3:** Default task integration to the isolated campaign branch and default destination promotion to human-required.
+  - [ ] **Sub-task 24.3.1.4:** Bind every operator decision to campaign, destination, expected heads, reviewed commits, policy digest, and one create-once request ID.
+  - [ ] **Sub-task 24.3.1.5:** Reject model-authored policy changes, stale authorization, missing branch protection, incomplete tasks, blocking findings, failed checks, or changed SHAs.
+- [ ] **Task 24.3.2 - Complete the campaign deterministically**
+  - [ ] **Sub-task 24.3.2.1:** Continue replanning until every authorized task is merged, truthfully blocked, disputed, cancelled, or stopped by an exact limit.
+  - [ ] **Sub-task 24.3.2.2:** Run configurable batch gates after an integration count or logical story boundary.
+  - [ ] **Sub-task 24.3.2.3:** Run final complete gates and a fresh Codex integration review over the cumulative campaign diff.
+  - [ ] **Sub-task 24.3.2.4:** Permit follow-up tasks only when they map to the original authority or repair an evidenced integration defect, with a bounded follow-up ceiling.
+  - [ ] **Sub-task 24.3.2.5:** Produce a content-minimized campaign report and optional final draft PR to the configured destination without promoting it.
 
 **Story acceptance criteria**
 
 - [ ] **AC 24.1:** Given accepted pods in every completion order, when integration runs, then one deterministic campaign head results or the exact conflict is preserved without partial mutation.
 - [ ] **AC 24.2:** Given enabled GitHub publication, when a story batch passes, then one idempotent draft PR reflects exact local evidence and no model can merge it.
+- [ ] **AC 24.3:** Given task issue, push, pull-request, comment, and CI timeouts at every write boundary, when restart reconciles, then no duplicate remote object or blind replay occurs.
+- [ ] **AC 24.4:** Given two task PRs become eligible simultaneously, when integration runs, then one durable deterministic order advances the campaign head and stale candidates are refreshed and rereviewed before admission.
+- [ ] **AC 24.5:** Given default policy, when all campaign work passes, then task work may reach the campaign branch but default-branch promotion remains denied until an exact human authorization exists.
+- [ ] **AC 24.6:** Given explicitly authorized automatic destination promotion, when every task, gate, CI check, final review, head, and branch-protection prerequisite passes, then one idempotent promotion occurs.
 
 ### Sprint 24 Gate
 
 - [ ] **Gate 24.1:** Integration-order, stale-head, semantic-conflict, batch-gate, rollback, timeout-reconciliation, and draft-PR idempotency fixtures pass.
+- [ ] **Gate 24.2:** Task issue/PR mapping, human-content preservation, CI routing, duplicate suppression, merge-policy, final-review, and campaign-completion fixtures pass against fake GitHub.
 
 ---
 
@@ -1182,6 +1285,56 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 25.2.4.3:** Make stale evidence fail when its bound implementation, test command, schema, fixture, package, or platform claim changes.
   - [ ] **Sub-task 25.2.4.4:** Run formatting, strict Clippy, all-target workspace tests, documentation, architecture, traceability, supply-chain, packaging, and diff-integrity checks from a clean clone.
   - [ ] **Sub-task 25.2.4.5:** Require zero unexplained skips, warnings promoted by policy, dirty files, untracked release inputs, secret findings, broken links, invalid diagrams, or unsupported claims.
+- [ ] **Task 25.2.5 - Execute the complete multi-agent scenario matrix**
+  - [ ] **Sub-task 25.2.5.1:** Admit five independent tasks concurrently with five distinct pod identities.
+  - [ ] **Sub-task 25.2.5.2:** Run fewer than five ready tasks without manufacturing work.
+  - [ ] **Sub-task 25.2.5.3:** Keep dependency-blocked tasks out of the admitted ready set.
+  - [ ] **Sub-task 25.2.5.4:** Reject equal, ancestor, descendant, rename-source, and generated-artifact path conflicts.
+  - [ ] **Sub-task 25.2.5.5:** Serialize conflicting database, port, device, fixture, service, and declared test-resource leases.
+  - [ ] **Sub-task 25.2.5.6:** Continue healthy siblings when one Claude pod crashes.
+  - [ ] **Sub-task 25.2.5.7:** Terminate and reconcile only the exact timed-out Claude pod.
+  - [ ] **Sub-task 25.2.5.8:** Cancel every active owned pod and preserve unrelated processes during campaign cancellation.
+  - [ ] **Sub-task 25.2.5.9:** Reject a lead proposal for an unauthorized or nonexistent task before leasing.
+  - [ ] **Sub-task 25.2.5.10:** Reject overlapping assignments returned in one lead response.
+  - [ ] **Sub-task 25.2.5.11:** Reject and quarantine a Claude candidate that modifies an unauthorized path.
+  - [ ] **Sub-task 25.2.5.12:** Route deterministic gate failure only to the matching task correction loop.
+  - [ ] **Sub-task 25.2.5.13:** Route CHANGES_REQUIRED findings to the matching Claude lineage.
+  - [ ] **Sub-task 25.2.5.14:** Complete multiple bounded correction cycles with full gate and cumulative-review replay.
+  - [ ] **Sub-task 25.2.5.15:** Stop truthfully at correction-cycle exhaustion without completion.
+  - [ ] **Sub-task 25.2.5.16:** Persist Codex BLOCKED as a noncompletion with exact lease policy.
+  - [ ] **Sub-task 25.2.5.17:** Reject malformed Codex structured output without downstream effect.
+  - [ ] **Sub-task 25.2.5.18:** Retry only classified temporary provider failure within its exact bound.
+  - [ ] **Sub-task 25.2.5.19:** Open and recover provider circuit breakers without retry storms.
+  - [ ] **Sub-task 25.2.5.20:** Reconcile an uncertain Git push before retry.
+  - [ ] **Sub-task 25.2.5.21:** Reconcile uncertain issue creation by idempotency key.
+  - [ ] **Sub-task 25.2.5.22:** Reconcile uncertain pull-request creation by idempotency key.
+  - [ ] **Sub-task 25.2.5.23:** Restart before and after every external-write intent and observation with one resulting effect.
+  - [ ] **Sub-task 25.2.5.24:** Route exact-commit CI failure back to the correct Claude pod.
+  - [ ] **Sub-task 25.2.5.25:** Queue two simultaneously eligible pull requests without concurrent integration mutation.
+  - [ ] **Sub-task 25.2.5.26:** Produce one stable serialized integration order for every pod completion permutation.
+  - [ ] **Sub-task 25.2.5.27:** Refuse a stale campaign head before integration mutation.
+  - [ ] **Sub-task 25.2.5.28:** Refuse a changed reviewed commit SHA before publication or integration.
+  - [ ] **Sub-task 25.2.5.29:** Preserve candidate work and campaign head on a transfer or merge conflict.
+  - [ ] **Sub-task 25.2.5.30:** Detect declared semantic conflict across separate files and require batch validation or human decision.
+  - [ ] **Sub-task 25.2.5.31:** Refresh an active stale branch only through coordinator-owned transfer.
+  - [ ] **Sub-task 25.2.5.32:** Rerun affected gates and fresh cumulative review after branch refresh changes the effective diff.
+  - [ ] **Sub-task 25.2.5.33:** Preserve all task candidates when the final integration suite fails.
+  - [ ] **Sub-task 25.2.5.34:** Recover exactly once from interruption before and after integration or merge effect.
+  - [ ] **Sub-task 25.2.5.35:** Prove restart creates no duplicate issue, branch, worktree, session, or pull request.
+  - [ ] **Sub-task 25.2.5.36:** Preserve concurrent human-authored issue and pull-request content byte-for-byte outside owned markers.
+  - [ ] **Sub-task 25.2.5.37:** Exercise every task-integration and destination-promotion policy transition and refusal.
+  - [ ] **Sub-task 25.2.5.38:** Deny default-branch promotion under the safe default policy.
+  - [ ] **Sub-task 25.2.5.39:** Permit one explicitly authorized automatic destination promotion only after every prerequisite passes.
+  - [ ] **Sub-task 25.2.5.40:** Complete a full fake campaign with every task integrated and final report reconciled.
+  - [ ] **Sub-task 25.2.5.41:** End a campaign truthfully when blocked tasks leave no independent ready work.
+  - [ ] **Sub-task 25.2.5.42:** Stop before the next effect at every task and campaign resource or token boundary.
+  - [ ] **Sub-task 25.2.5.43:** Run the existing serial fixtures unchanged under serial execution mode.
+  - [ ] **Sub-task 25.2.5.44:** Verify the private downstream project name has zero case-insensitive matches in tracked repository content.
+- [ ] **Task 25.2.6 - Add live and sustained qualification harnesses**
+  - [ ] **Sub-task 25.2.6.1:** Add credential-gated opt-in live Claude, Codex, push, issue, draft-PR, CI, and integration qualification commands that ordinary tests cannot invoke accidentally.
+  - [ ] **Sub-task 25.2.6.2:** Add an accelerated deterministic five-pod soak with multiple integration cycles, randomized completion order, faults, restarts, and residue reconciliation.
+  - [ ] **Sub-task 25.2.6.3:** Add a sustained five-pod soak with bounded storage, process, provider, token, and elapsed growth and an authenticated operator stop.
+  - [ ] **Sub-task 25.2.6.4:** Keep every unexecuted live qualification open with its exact missing credential, service, platform, or human prerequisite.
 
 **Story acceptance criteria**
 

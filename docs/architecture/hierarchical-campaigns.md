@@ -63,11 +63,11 @@ A pod starts only when all of the following are true:
 
 The campaign lead itself is a process-backed Codex profile in a read-only sandbox. Its strict
 response is untrusted data, not an allocation decision. Before a pod lease exists, the coordinator
-rechecks the exact campaign head, task-source digest, dependency-ready set, paths, dependencies,
-gate tiers, shared resources, expected artifacts, and risk. The lead can instead return one bounded
-blocked, deferred, or human-decision disposition, but it cannot combine dispositions or attach
-executable instructions. These expanded dispositions are approved target behavior and remain
-unchecked implementation work in Story 21.2.
+    rechecks the exact campaign head, task-source digest, dependency-ready set, paths, dependencies,
+    gate tiers, shared resources, expected artifacts, and risk. The lead can instead return one bounded
+    blocked, deferred, or human-decision disposition, but it cannot combine dispositions or attach
+    executable instructions. These dispositions and their local deterministic evidence are complete
+    under Story 21.2; production multi-pod composition remains governed by Sprints 23 through 25.
 
 ## Correction Loop
 
@@ -121,3 +121,6 @@ GitHub is a visibility and collaboration surface, not execution authority.
 
 See [`Unattended Safeguards`](unattended-safeguards.md) for the exact disposition, soak, test, and
 publication contract.
+
+See [`Durable Multi-Agent Campaign Architecture`](multi-agent-campaigns.md) for the persistent
+scheduler, task state, per-task publication, serialized integration, and merge-policy design.
