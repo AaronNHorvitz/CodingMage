@@ -113,6 +113,12 @@ release the owned unit before pausing, so the same exact campaign can continue a
 restored. A process interruption that prevents the active unit from releasing remains blocked from
 automatic replay until exact provider-session recovery is implemented.
 
+Claude completion reports must select exactly one ready, blocked, or committed disposition. An
+invalid or malformed report receives one resume of the same exact provider session with a
+metadata-only correction instruction. If the resumed report is also invalid, the unit releases and
+the campaign pauses with `codingmage.campaign.provider_invalid_output`; CodingMage does not retry the
+whole unit or integrate its unaccepted candidate.
+
 ## Current Limits
 
 - Campaign checkpoints and accepted-head recovery are implemented; complete event journaling,

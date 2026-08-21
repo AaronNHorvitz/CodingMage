@@ -48,6 +48,7 @@ use campaign_state::{ActiveUnit, CampaignCheckpoint, CampaignPhase, PendingInteg
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 const MAX_SPEC_BYTES: u64 = 1024 * 1024;
 const CAMPAIGN_PROVIDER_ATTEMPT_LIMIT: u8 = 3;
+const CLAUDE_REPORT_ATTEMPT_LIMIT: u8 = 2;
 
 /// Content-minimized actor shown by the live CLI progress stream.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -806,8 +807,19 @@ const fn provider_pause_code(error: RuntimeError) -> Option<&'static str> {
         | RuntimeError::Reviewer(CodexError::Authentication) => {
             Some("codingmage.campaign.provider_authentication")
         }
+        RuntimeError::Implementer(ClaudeError::InvalidReport | ClaudeError::InvalidOutput)
+        | RuntimeError::Reviewer(CodexError::InvalidReport | CodexError::InvalidOutput) => {
+            Some("codingmage.campaign.provider_invalid_output")
+        }
         _ => None,
     }
+}
+
+const fn retryable_claude_report_failure(error: ClaudeError) -> bool {
+    matches!(
+        error,
+        ClaudeError::InvalidReport | ClaudeError::InvalidOutput
+    )
 }
 
 const fn retryable_campaign_provider_failure(error: RuntimeError) -> bool {
@@ -1321,6 +1333,54 @@ impl<'a> ProductionWorkflowPort<'a> {
         }
     }
 
+    fn execute_claude_packet(
+        &mut self,
+        mut packet: ClaudeWorkPacket,
+        source_commit: String,
+    ) -> Result<ClaudeCompletionReport, OrchestrationError> {
+        let (worktree, branch) = {
+            let owned = self.worktree()?;
+            (
+                owned.manifest().path.clone(),
+                owned.manifest().branch.clone(),
+            )
+        };
+        let session = ClaudeSession {
+            run_id: self.run_id.clone(),
+            task_id: self.task_id.clone(),
+            agent_id: AgentId::new("claude-implementer").map_err(|_| OrchestrationError::Port)?,
+            session_id: generated_attempt_id().map_err(|_| OrchestrationError::Port)?,
+            worktree,
+            branch,
+            source_commit,
+        };
+        let adapter = self.claude_adapter()?;
+        for attempt in 0..CLAUDE_REPORT_ATTEMPT_LIMIT {
+            let plan = if attempt == 0 {
+                adapter.plan_start(&session, &packet)
+            } else {
+                adapter.plan_resume(&session, &packet)
+            }
+            .map_err(|_| OrchestrationError::Port)?;
+            match adapter.execute(&self.executor, &plan, &CancellationToken::default()) {
+                Ok((report, _)) => return Ok(report),
+                Err(error)
+                    if retryable_claude_report_failure(error)
+                        && attempt + 1 < CLAUDE_REPORT_ATTEMPT_LIMIT =>
+                {
+                    packet.task_text.push_str(
+                        "\n\nCOMPLETION REPORT RETRY\nThe prior completion metadata was malformed or contradictory. Do not broaden scope, run commands, or change files merely to answer this retry. Reinspect only the authorized worktree files if needed, then return exactly one disposition: (1) ready_for_commit=true with commit=null, blocker_code=null, and limitations=[]; or (2) ready_for_commit=false with commit=null and one non-null blocker_code. Keep tests=[].",
+                    );
+                }
+                Err(error) => {
+                    self.failure = Some(RuntimeError::Implementer(error));
+                    return Err(OrchestrationError::Port);
+                }
+            }
+        }
+        Err(OrchestrationError::Port)
+    }
+
     fn run_gates(&mut self) -> Result<VerificationOutcome, OrchestrationError> {
         let commit = self.candidate()?.commit.clone();
         let worktree = self.worktree()?.manifest().path.clone();
@@ -1400,30 +1460,9 @@ impl<'a> ProductionWorkflowPort<'a> {
     }
 
     fn execute_claude_correction(&mut self) -> Result<ClaudeCompletionReport, OrchestrationError> {
-        let owned = self.worktree()?;
-        let candidate = self.candidate()?;
-        let session = ClaudeSession {
-            run_id: self.run_id.clone(),
-            task_id: self.task_id.clone(),
-            agent_id: AgentId::new("claude-implementer").map_err(|_| OrchestrationError::Port)?,
-            session_id: generated_attempt_id().map_err(|_| OrchestrationError::Port)?,
-            worktree: owned.manifest().path.clone(),
-            branch: owned.manifest().branch.clone(),
-            source_commit: candidate.commit.clone(),
-        };
+        let source_commit = self.candidate()?.commit.clone();
         let packet = self.claude_packet(Some(self.correction_context()?));
-        let adapter = self.claude_adapter()?;
-        let plan = adapter
-            .plan_start(&session, &packet)
-            .map_err(|_| OrchestrationError::Port)?;
-        let execution = adapter.execute(&self.executor, &plan, &CancellationToken::default());
-        let (report, _) = match execution {
-            Ok(value) => value,
-            Err(error) => {
-                self.failure = Some(RuntimeError::Implementer(error));
-                return Err(OrchestrationError::Port);
-            }
-        };
+        let report = self.execute_claude_packet(packet, source_commit)?;
         if !report.ready_for_commit
             || report.blocker_code.is_some()
             || report.commit.is_some()
@@ -1520,28 +1559,8 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
     }
 
     fn finish_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
-        let owned = self.worktree()?;
-        let session = ClaudeSession {
-            run_id: self.run_id.clone(),
-            task_id: self.task_id.clone(),
-            agent_id: AgentId::new("claude-implementer").map_err(|_| OrchestrationError::Port)?,
-            session_id: generated_attempt_id().map_err(|_| OrchestrationError::Port)?,
-            worktree: owned.manifest().path.clone(),
-            branch: owned.manifest().branch.clone(),
-            source_commit: self.source_commit.clone(),
-        };
-        let adapter = self.claude_adapter()?;
-        let plan = adapter
-            .plan_start(&session, &self.claude_packet(None))
-            .map_err(|_| OrchestrationError::Port)?;
-        let execution = adapter.execute(&self.executor, &plan, &CancellationToken::default());
-        let (report, _) = match execution {
-            Ok(value) => value,
-            Err(error) => {
-                self.failure = Some(RuntimeError::Implementer(error));
-                return Err(OrchestrationError::Port);
-            }
-        };
+        let report =
+            self.execute_claude_packet(self.claude_packet(None), self.source_commit.clone())?;
         if !report.ready_for_commit || report.blocker_code.is_some() || report.commit.is_some() {
             return Err(OrchestrationError::Port);
         }
@@ -1552,7 +1571,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         }
         let receipt = commit_owned_changes(
             &self.authorization,
-            owned,
+            self.worktree()?,
             &self.source_commit,
             &self.spec.owned_paths,
         )
@@ -2075,7 +2094,7 @@ effort = "high"
     }
 
     #[test]
-    fn provider_capacity_failures_have_only_explicit_pause_codes() {
+    fn provider_failures_have_only_explicit_pause_codes() {
         assert_eq!(
             provider_pause_code(RuntimeError::Implementer(ClaudeError::Quota)),
             Some("codingmage.campaign.provider_quota")
@@ -2084,7 +2103,30 @@ effort = "high"
             provider_pause_code(RuntimeError::Reviewer(CodexError::Authentication)),
             Some("codingmage.campaign.provider_authentication")
         );
+        assert_eq!(
+            provider_pause_code(RuntimeError::Implementer(ClaudeError::InvalidReport)),
+            Some("codingmage.campaign.provider_invalid_output")
+        );
+        assert_eq!(
+            provider_pause_code(RuntimeError::Reviewer(CodexError::InvalidOutput)),
+            Some("codingmage.campaign.provider_invalid_output")
+        );
         assert_eq!(provider_pause_code(RuntimeError::Verification), None);
+    }
+
+    #[test]
+    fn claude_report_retry_is_limited_to_invalid_completion_metadata() {
+        assert!(retryable_claude_report_failure(ClaudeError::InvalidReport));
+        assert!(retryable_claude_report_failure(ClaudeError::InvalidOutput));
+        for terminal in [
+            ClaudeError::Provider,
+            ClaudeError::Session,
+            ClaudeError::Quota,
+            ClaudeError::Authentication,
+            ClaudeError::Timeout,
+        ] {
+            assert!(!retryable_claude_report_failure(terminal));
+        }
     }
 
     #[test]

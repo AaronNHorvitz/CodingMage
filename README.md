@@ -331,7 +331,10 @@ content-minimized durable view. A content-free transient provider or session fai
 a fresh isolated whole-unit attempt at most three times; exhaustion, quota, and authentication
 become resumable campaign pauses after owned resources are released. An actual process interruption
 during an active provider turn still blocks automatic replay and requires reconciliation; this
-limitation is enforced rather than hidden.
+limitation is enforced rather than hidden. Claude completion metadata is constrained to mutually
+exclusive ready, blocked, or committed dispositions. Malformed or contradictory metadata receives
+one same-session report retry; a second failure pauses with
+`codingmage.campaign.provider_invalid_output` and cannot reach commit or integration.
 
 Run `codingmage` from a normal VS Code terminal and leave that terminal open until the final JSON
 appears. During `run`, a live activity stream is written to stderr while the machine-readable final
