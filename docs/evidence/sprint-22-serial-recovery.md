@@ -6,6 +6,7 @@
 - **Recovery implementation commit:** `f05f033`
 - **Queue-projection implementation commit:** `4745357`
 - **Stopping-contract implementation commit:** `9816043`
+- **Status-round implementation commit:** `442eb27`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -67,6 +68,20 @@ of independent ready work, and repository, authority, integrity, or policy refus
 verify serialized reasons for completed, blocked, deferred, correction-limit, and rejected-report
 runs. Authenticated cancellation is reserved in the closed contract; its state-changing control
 path remains truthfully open under sub-task `22.2.2.1` and is not claimed by this evidence.
+
+## Privacy-Safe Round Status
+
+`campaign-status` now includes `current_round` alongside phase, actor, current and last task,
+completed count, blocker count and code, and elapsed time. The value is `null` at a clean boundary,
+zero for an active unit before an accepted correction checkpoint, and otherwise the exact round
+loaded from the integrity-verified private correction checkpoint. It is never inferred from a
+transient progress label or provider statement.
+
+Binary fixtures verify round zero during interrupted integration and at the deliberate boundary
+immediately before the first correction checkpoint becomes durable, plus `null` after completion
+or a clean pause. Status remains read-only and excludes prompts, source text, filenames, provider
+prose, command output, environment values, and credentials. Model identity, independent attempt and
+limit utilization, and monitor noninterference remain open under Story `22.2`.
 
 ## Verification
 

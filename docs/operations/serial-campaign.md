@@ -115,8 +115,9 @@ completed-unit count, last task, and a content-free blocker code when applicable
 
 `campaign-status` validates the original campaign authority and checkpoint integrity before showing
 only the durable phase, actor category, local branch, reconciled head, current and last task IDs,
-completed count, blocker count and code, and elapsed time. It does not expose prompts, provider
-output, source text, repository paths, credentials, or diagnostics.
+the integrity-verified current correction round when active, completed count, blocker count and
+code, and elapsed time. It does not expose prompts, provider output, source text, repository paths,
+credentials, or diagnostics.
 
 `campaign-clear-blocker` is an explicit same-user mutation. The campaign state directory and
 checkpoint must remain owned by the invoking Linux user with no group or world access. The command

@@ -1004,7 +1004,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 22.1.2.1:** Journal campaign head, queue, active pod, attempts, corrections, blockers, deferrals, reconsideration triggers, limits, operator controls, and completion evidence.
   - [x] **Sub-task 22.1.2.2:** Resume from the last reconciled campaign head after restart without replaying accepted commits.
   - [ ] **Sub-task 22.1.2.3:** Pause on provider quota or authentication expiration and resume after revalidation.
-  - [ ] **Sub-task 22.1.2.4:** Expose privacy-safe campaign status, current task, actor, round, completed count, blocker count, and elapsed time.
+  - [x] **Sub-task 22.1.2.4:** Expose privacy-safe campaign status, current task, actor, round, completed count, blocker count, and elapsed time. See `docs/evidence/sprint-22-serial-recovery.md`.
 
 ### Story 22.2 - Durable Safeguard Enforcement
 
