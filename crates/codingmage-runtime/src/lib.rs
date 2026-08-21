@@ -47,6 +47,7 @@ use campaign_state::{ActiveUnit, CampaignCheckpoint, CampaignPhase, PendingInteg
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 const MAX_SPEC_BYTES: u64 = 1024 * 1024;
+const CAMPAIGN_PROVIDER_ATTEMPT_LIMIT: u8 = 3;
 
 /// Content-minimized actor shown by the live CLI progress stream.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -93,6 +94,8 @@ pub enum ProgressStage {
     ProbingProviders,
     /// The implementation model is editing only packet-owned files.
     Implementing,
+    /// A transient provider failure is being retried within a fixed attempt budget.
+    RetryingProvider,
     /// The implementation model is correcting a failed gate or accepted review finding.
     Correcting,
     /// Deterministic gates are checking the candidate commit.
@@ -127,6 +130,9 @@ impl ProgressStage {
             Self::Claiming => "acquiring the exact repository and task claim",
             Self::ProbingProviders => "creating the worktree and probing provider capabilities",
             Self::Implementing => "implementing the bounded task in the isolated worktree",
+            Self::RetryingProvider => {
+                "retrying a transient provider failure within the bounded attempt limit"
+            }
             Self::Correcting => "correcting the bounded candidate from verified diagnostics",
             Self::VerifyingCandidate => "running deterministic gates on the candidate",
             Self::CandidateBlocked => "candidate gates blocked; bounded correction will run",
@@ -692,26 +698,64 @@ pub fn run_serial_campaign_with_progress(
             },
             reviewer: provider_spec(&spec.reviewer),
         };
-        let unit = match run_one_with_progress(&pod_config, unit_spec, &binary, &mut observer) {
-            Ok(unit) => unit,
-            Err(error) if provider_pause_code(error).is_some() => {
-                let blocker_code = provider_pause_code(error)
-                    .ok_or(RuntimeError::Orchestration)?
-                    .to_owned();
-                checkpoint.phase = CampaignPhase::Paused;
-                checkpoint.blocker_code = Some(blocker_code.clone());
-                checkpoint.persist(&campaign_root)?;
-                return Ok(campaign_outcome(
-                    &spec,
-                    CampaignState::Paused,
-                    &campaign,
-                    head,
-                    completed_units,
-                    last_task_id,
-                    Some(blocker_code),
-                ));
+        let mut provider_attempt = 1_u8;
+        let unit = loop {
+            match run_one_with_progress(&pod_config, unit_spec.clone(), &binary, &mut observer) {
+                Ok(unit) => break unit,
+                Err(error)
+                    if retryable_campaign_provider_failure(error)
+                        && provider_attempt < CAMPAIGN_PROVIDER_ATTEMPT_LIMIT =>
+                {
+                    provider_attempt = provider_attempt.saturating_add(1);
+                    checkpoint.blocker_code = Some("codingmage.campaign.provider_retry".to_owned());
+                    checkpoint.persist(&campaign_root)?;
+                    observer(RunProgress::new(
+                        ProgressActor::Coordinator,
+                        ProgressStage::RetryingProvider,
+                    ));
+                }
+                Err(error) if provider_pause_code(error).is_some() => {
+                    let blocker_code = provider_pause_code(error)
+                        .ok_or(RuntimeError::Orchestration)?
+                        .to_owned();
+                    checkpoint.phase = CampaignPhase::Paused;
+                    checkpoint.active_unit = None;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    scheduler
+                        .release(&lease.pod_id)
+                        .map_err(RuntimeError::Campaign)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        CampaignState::Paused,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        Some(blocker_code),
+                    ));
+                }
+                Err(error) if retryable_campaign_provider_failure(error) => {
+                    let blocker_code = "codingmage.campaign.provider_unavailable".to_owned();
+                    checkpoint.phase = CampaignPhase::Paused;
+                    checkpoint.active_unit = None;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    scheduler
+                        .release(&lease.pod_id)
+                        .map_err(RuntimeError::Campaign)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        CampaignState::Paused,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        Some(blocker_code),
+                    ));
+                }
+                Err(error) => return Err(error),
             }
-            Err(error) => return Err(error),
         };
         if unit.state != TaskState::Complete || unit.review_verdict.as_deref() != Some("pass") {
             return Err(RuntimeError::Orchestration);
@@ -764,6 +808,14 @@ const fn provider_pause_code(error: RuntimeError) -> Option<&'static str> {
         }
         _ => None,
     }
+}
+
+const fn retryable_campaign_provider_failure(error: RuntimeError) -> bool {
+    matches!(
+        error,
+        RuntimeError::Implementer(ClaudeError::Provider | ClaudeError::Session)
+            | RuntimeError::Reviewer(CodexError::Provider | CodexError::Thread)
+    )
 }
 
 fn reconcile_campaign_restart(
@@ -2033,5 +2085,28 @@ effort = "high"
             Some("codingmage.campaign.provider_authentication")
         );
         assert_eq!(provider_pause_code(RuntimeError::Verification), None);
+    }
+
+    #[test]
+    fn campaign_retries_only_content_free_transient_provider_failures() {
+        for transient in [
+            RuntimeError::Implementer(ClaudeError::Provider),
+            RuntimeError::Implementer(ClaudeError::Session),
+            RuntimeError::Reviewer(CodexError::Provider),
+            RuntimeError::Reviewer(CodexError::Thread),
+        ] {
+            assert!(retryable_campaign_provider_failure(transient));
+        }
+        for terminal in [
+            RuntimeError::Implementer(ClaudeError::Quota),
+            RuntimeError::Implementer(ClaudeError::Authentication),
+            RuntimeError::Implementer(ClaudeError::InvalidOutput),
+            RuntimeError::Implementer(ClaudeError::Timeout),
+            RuntimeError::Reviewer(CodexError::InvalidReport),
+            RuntimeError::Verification,
+            RuntimeError::Repository,
+        ] {
+            assert!(!retryable_campaign_provider_failure(terminal));
+        }
     }
 }
