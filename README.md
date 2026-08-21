@@ -334,7 +334,11 @@ during an active provider turn still blocks automatic replay and requires reconc
 limitation is enforced rather than hidden. Claude completion metadata is constrained to mutually
 exclusive ready, blocked, or committed dispositions. Malformed or contradictory metadata receives
 one same-session report retry; a second failure pauses with
-`codingmage.campaign.provider_invalid_output` and cannot reach commit or integration.
+`codingmage.campaign.provider_invalid_output` and cannot reach commit or integration. When a unit
+still fails deterministic verification or senior review after its configured correction budget,
+the campaign clears the active-unit marker, retains the candidate branch, and pauses with
+`codingmage.campaign.unit_recoverable_failure`; it does not misreport a generic orchestration crash
+or integrate the unaccepted candidate.
 
 Run `codingmage` from a normal VS Code terminal and leave that terminal open until the final JSON
 appears. During `run`, a live activity stream is written to stderr while the machine-readable final

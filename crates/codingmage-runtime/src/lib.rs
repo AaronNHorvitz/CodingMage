@@ -758,6 +758,24 @@ pub fn run_serial_campaign_with_progress(
                 Err(error) => return Err(error),
             }
         };
+        if let Some((campaign_state, phase, blocker_code)) = campaign_unit_pause(&unit) {
+            checkpoint.phase = phase;
+            checkpoint.active_unit = None;
+            checkpoint.blocker_code = Some(blocker_code.to_owned());
+            checkpoint.persist(&campaign_root)?;
+            scheduler
+                .release(&lease.pod_id)
+                .map_err(RuntimeError::Campaign)?;
+            return Ok(campaign_outcome(
+                &spec,
+                campaign_state,
+                &campaign,
+                head,
+                completed_units,
+                last_task_id,
+                Some(blocker_code.to_owned()),
+            ));
+        }
         if unit.state != TaskState::Complete || unit.review_verdict.as_deref() != Some("pass") {
             return Err(RuntimeError::Orchestration);
         }
@@ -796,6 +814,33 @@ pub fn run_serial_campaign_with_progress(
         scheduler
             .release(&lease.pod_id)
             .map_err(RuntimeError::Campaign)?;
+    }
+}
+
+const fn campaign_unit_pause(
+    unit: &RunOutcome,
+) -> Option<(CampaignState, CampaignPhase, &'static str)> {
+    match unit.state {
+        TaskState::Blocked | TaskState::TerminalFailure => Some((
+            CampaignState::Blocked,
+            CampaignPhase::Blocked,
+            "codingmage.campaign.unit_blocked",
+        )),
+        TaskState::Paused | TaskState::RecoverableFailure | TaskState::Cancelled => Some((
+            CampaignState::Paused,
+            CampaignPhase::Paused,
+            "codingmage.campaign.unit_recoverable_failure",
+        )),
+        TaskState::Discovered
+        | TaskState::Ready
+        | TaskState::Claimed
+        | TaskState::Implementing
+        | TaskState::LocalVerification
+        | TaskState::SeniorReview
+        | TaskState::Correcting
+        | TaskState::FinalVerification
+        | TaskState::Checkpointed
+        | TaskState::Complete => None,
     }
 }
 
@@ -2150,5 +2195,37 @@ effort = "high"
         ] {
             assert!(!retryable_campaign_provider_failure(terminal));
         }
+    }
+
+    #[test]
+    fn campaign_maps_terminal_unit_outcomes_to_durable_pause_states() {
+        let outcome = |state| RunOutcome {
+            run_id: RunId::new("run-00000000000000000000000000000000").unwrap(),
+            task_id: TaskId::new("1.2.3.4").unwrap(),
+            state,
+            branch: Some("codingmage/candidate".to_owned()),
+            candidate_commit: Some("a".repeat(40)),
+            completion_commit: None,
+            review_verdict: Some("changes_required".to_owned()),
+            correction_rounds: 3,
+        };
+
+        assert_eq!(
+            campaign_unit_pause(&outcome(TaskState::RecoverableFailure)),
+            Some((
+                CampaignState::Paused,
+                CampaignPhase::Paused,
+                "codingmage.campaign.unit_recoverable_failure"
+            ))
+        );
+        assert_eq!(
+            campaign_unit_pause(&outcome(TaskState::TerminalFailure)),
+            Some((
+                CampaignState::Blocked,
+                CampaignPhase::Blocked,
+                "codingmage.campaign.unit_blocked"
+            ))
+        );
+        assert_eq!(campaign_unit_pause(&outcome(TaskState::Complete)), None);
     }
 }

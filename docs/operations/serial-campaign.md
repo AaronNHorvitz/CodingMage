@@ -119,6 +119,13 @@ metadata-only correction instruction. If the resumed report is also invalid, the
 the campaign pauses with `codingmage.campaign.provider_invalid_output`; CodingMage does not retry the
 whole unit or integrate its unaccepted candidate.
 
+If deterministic gates or independent review still reject a unit after the configured correction
+budget is exhausted, the one-unit coordinator returns a recoverable terminal state. The campaign
+then clears its active-unit marker, releases the pod lease, retains the candidate branch for
+inspection, and durably pauses with `codingmage.campaign.unit_recoverable_failure`. A terminal or
+explicitly blocked one-unit outcome instead records `codingmage.campaign.unit_blocked`. Neither
+path advances the campaign head or changes the active checkout.
+
 ## Current Limits
 
 - Campaign checkpoints and accepted-head recovery are implemented; complete event journaling,
