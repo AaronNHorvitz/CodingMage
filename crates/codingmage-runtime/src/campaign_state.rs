@@ -18,9 +18,9 @@ use codingmage_state::{
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::RuntimeError;
+use crate::{RunUtilization, RuntimeError};
 
-const SCHEMA_VERSION: u16 = 3;
+const SCHEMA_VERSION: u16 = 4;
 const MAX_CHECKPOINT_BYTES: usize = 1024 * 1024;
 const CLEARANCE_SCHEMA_VERSION: u16 = 1;
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
@@ -118,6 +118,18 @@ pub(crate) struct CampaignOutcomeProjection {
     pub max_accepted: u32,
 }
 
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct CampaignUtilization {
+    pub provider_attempts: u32,
+    pub malformed_report_repairs: u32,
+    pub correction_rounds: u32,
+    pub process_invocations: u32,
+    pub output_bytes: u64,
+    pub retained_state_bytes: u64,
+    pub execution_elapsed_ms: u64,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct CampaignCheckpoint {
@@ -147,6 +159,7 @@ pub(crate) struct CampaignCheckpoint {
     #[serde(default)]
     pub rejected_proposals: Vec<RejectedProposalProjection>,
     pub outcomes: CampaignOutcomeProjection,
+    pub utilization: CampaignUtilization,
     pub active_unit: Option<ActiveUnit>,
     pub pending_integration: Option<PendingIntegration>,
     pub started_at_ms: u64,
@@ -415,6 +428,7 @@ impl CampaignCheckpoint {
                 accepted: 0,
                 max_accepted: max_accepted_outcomes,
             },
+            utilization: CampaignUtilization::default(),
             active_unit: None,
             pending_integration: None,
             started_at_ms: now,
@@ -456,6 +470,7 @@ impl CampaignCheckpoint {
     pub(crate) fn persist(&mut self, root: &Path) -> Result<(), RuntimeError> {
         private_directory(root)?;
         self.refresh_outcomes()?;
+        self.utilization.retained_state_bytes = retained_tree_bytes(root)?;
         self.updated_at_ms = timestamp_ms()?;
         let canonical = serde_json::to_vec(self).map_err(|_| RuntimeError::State)?;
         let envelope = CheckpointEnvelope {
@@ -544,8 +559,13 @@ impl CampaignCheckpoint {
                 accepted_outcomes,
                 max_outcomes: Some(self.outcomes.max_accepted),
                 active_unit: self.active_unit.is_some(),
-                provider_attempts: None,
-                correction_round: None,
+                provider_attempts: Some(self.utilization.provider_attempts),
+                malformed_report_repairs: Some(self.utilization.malformed_report_repairs),
+                correction_round: Some(self.utilization.correction_rounds),
+                process_invocations: Some(self.utilization.process_invocations),
+                output_bytes: Some(self.utilization.output_bytes),
+                retained_state_bytes: Some(self.utilization.retained_state_bytes),
+                execution_elapsed_ms: Some(self.utilization.execution_elapsed_ms),
                 operator_paused: None,
                 stop_after_unit: None,
                 cancelled: None,
@@ -632,6 +652,81 @@ impl CampaignCheckpoint {
         {
             return Err(RuntimeError::State);
         }
+        Ok(())
+    }
+
+    pub(crate) fn record_provider_attempt(&mut self) -> Result<(), RuntimeError> {
+        self.utilization.provider_attempts = self
+            .utilization
+            .provider_attempts
+            .checked_add(1)
+            .ok_or(RuntimeError::State)?;
+        self.utilization.process_invocations = self
+            .utilization
+            .process_invocations
+            .checked_add(1)
+            .ok_or(RuntimeError::State)?;
+        Ok(())
+    }
+
+    pub(crate) fn record_process_result(
+        &mut self,
+        result: &codingmage_process::ProcessResult,
+    ) -> Result<(), RuntimeError> {
+        let output = result
+            .stdout
+            .total_bytes
+            .checked_add(result.stderr.total_bytes)
+            .ok_or(RuntimeError::State)?;
+        self.utilization.output_bytes = self
+            .utilization
+            .output_bytes
+            .checked_add(output)
+            .ok_or(RuntimeError::State)?;
+        let elapsed = u64::try_from(result.elapsed.as_millis()).map_err(|_| RuntimeError::State)?;
+        self.utilization.execution_elapsed_ms = self
+            .utilization
+            .execution_elapsed_ms
+            .checked_add(elapsed)
+            .ok_or(RuntimeError::State)?;
+        Ok(())
+    }
+
+    pub(crate) fn record_unit_utilization(
+        &mut self,
+        run: &RunUtilization,
+        correction_rounds: u16,
+    ) -> Result<(), RuntimeError> {
+        self.utilization.provider_attempts = self
+            .utilization
+            .provider_attempts
+            .checked_add(run.provider_attempts)
+            .ok_or(RuntimeError::State)?;
+        self.utilization.malformed_report_repairs = self
+            .utilization
+            .malformed_report_repairs
+            .checked_add(run.malformed_report_repairs)
+            .ok_or(RuntimeError::State)?;
+        self.utilization.correction_rounds = self
+            .utilization
+            .correction_rounds
+            .checked_add(u32::from(correction_rounds))
+            .ok_or(RuntimeError::State)?;
+        self.utilization.process_invocations = self
+            .utilization
+            .process_invocations
+            .checked_add(run.process_invocations)
+            .ok_or(RuntimeError::State)?;
+        self.utilization.output_bytes = self
+            .utilization
+            .output_bytes
+            .checked_add(run.output_bytes)
+            .ok_or(RuntimeError::State)?;
+        self.utilization.execution_elapsed_ms = self
+            .utilization
+            .execution_elapsed_ms
+            .checked_add(run.execution_elapsed_ms)
+            .ok_or(RuntimeError::State)?;
         Ok(())
     }
 }
@@ -883,6 +978,30 @@ fn private_directory(path: &Path) -> Result<(), RuntimeError> {
     Ok(())
 }
 
+fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
+    let mut total = 0_u64;
+    let mut pending = vec![root.to_path_buf()];
+    while let Some(directory) = pending.pop() {
+        for entry in fs::read_dir(directory).map_err(|_| RuntimeError::State)? {
+            let entry = entry.map_err(|_| RuntimeError::State)?;
+            let file_type = entry.file_type().map_err(|_| RuntimeError::State)?;
+            if file_type.is_symlink() {
+                return Err(RuntimeError::State);
+            }
+            if file_type.is_dir() {
+                pending.push(entry.path());
+            } else if file_type.is_file() {
+                total = total
+                    .checked_add(entry.metadata().map_err(|_| RuntimeError::State)?.len())
+                    .ok_or(RuntimeError::State)?;
+            } else {
+                return Err(RuntimeError::State);
+            }
+        }
+    }
+    Ok(total)
+}
+
 #[cfg(unix)]
 fn set_file_private(file: &File) -> Result<(), RuntimeError> {
     use std::os::unix::fs::PermissionsExt;
@@ -922,6 +1041,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn checkpoint_round_trips_and_rejects_tampering() {
         let root = root("round-trip");
         let mut checkpoint = checkpoint();
@@ -956,6 +1076,19 @@ mod tests {
                 source_head: "b".repeat(40),
                 task_source_sha256: "c".repeat(64),
             });
+        checkpoint
+            .record_unit_utilization(
+                &RunUtilization {
+                    provider_attempts: 2,
+                    malformed_report_repairs: 1,
+                    process_invocations: 4,
+                    output_bytes: 12,
+                    execution_elapsed_ms: 8,
+                    retained_state_bytes: 6,
+                },
+                2,
+            )
+            .unwrap();
         checkpoint.pending_integration = Some(PendingIntegration {
             task_id: "1.1.1.1".to_owned(),
             expected_head: "b".repeat(40),
@@ -989,8 +1122,13 @@ mod tests {
                 accepted_outcomes: 3,
                 max_outcomes: Some(10),
                 active_unit: false,
-                provider_attempts: None,
-                correction_round: None,
+                provider_attempts: Some(2),
+                malformed_report_repairs: Some(1),
+                correction_round: Some(2),
+                process_invocations: Some(4),
+                output_bytes: Some(12),
+                retained_state_bytes: Some(0),
+                execution_elapsed_ms: Some(8),
                 operator_paused: None,
                 stop_after_unit: None,
                 cancelled: None,

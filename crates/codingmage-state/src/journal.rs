@@ -101,8 +101,18 @@ pub enum EventKind {
         active_unit: bool,
         /// Provider attempts when the campaign owns an exact counter.
         provider_attempts: Option<u32>,
+        /// Metadata-only provider-report repairs when projected by the campaign.
+        malformed_report_repairs: Option<u32>,
         /// Correction round when the campaign owns an exact counter.
-        correction_round: Option<u16>,
+        correction_round: Option<u32>,
+        /// Provider and deterministic-gate process invocations.
+        process_invocations: Option<u32>,
+        /// Full observed stdout and stderr bytes where process receipts exist.
+        output_bytes: Option<u64>,
+        /// Bytes retained beneath campaign-owned private state at observation.
+        retained_state_bytes: Option<u64>,
+        /// Sum of observed provider and gate execution milliseconds.
+        execution_elapsed_ms: Option<u64>,
         /// Authenticated pause state once campaign controls are wired.
         operator_paused: Option<bool>,
         /// Authenticated stop-after-unit state once campaign controls are wired.
@@ -461,6 +471,13 @@ fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
             human_decisions,
             accepted_outcomes,
             max_outcomes,
+            provider_attempts,
+            malformed_report_repairs,
+            correction_round,
+            process_invocations,
+            output_bytes,
+            retained_state_bytes,
+            execution_elapsed_ms,
             ..
         } => {
             validate_label(phase)?;
@@ -471,6 +488,28 @@ fn validate_event(event: &JournalEvent) -> Result<(), JournalError> {
                 .ok_or(JournalError::InvalidField)?;
             if *accepted_outcomes != projected
                 || max_outcomes.is_some_and(|limit| limit == 0 || *accepted_outcomes > limit)
+            {
+                return Err(JournalError::InvalidField);
+            }
+            let utilization_present = [
+                provider_attempts.is_some(),
+                malformed_report_repairs.is_some(),
+                correction_round.is_some(),
+                process_invocations.is_some(),
+                output_bytes.is_some(),
+                retained_state_bytes.is_some(),
+                execution_elapsed_ms.is_some(),
+            ];
+            if utilization_present.iter().any(|present| *present)
+                && !utilization_present.iter().all(|present| *present)
+            {
+                return Err(JournalError::InvalidField);
+            }
+            if let (Some(provider), Some(repairs), Some(processes)) = (
+                provider_attempts,
+                malformed_report_repairs,
+                process_invocations,
+            ) && (repairs > provider || provider > processes)
             {
                 return Err(JournalError::InvalidField);
             }

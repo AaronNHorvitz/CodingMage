@@ -1154,13 +1154,14 @@ pub fn run_serial_campaign_with_progress(
             let binding = lead_binding(&spec, &campaign, &ready);
             checkpoint.phase = CampaignPhase::Planning;
             checkpoint.blocker_code = None;
+            checkpoint.record_provider_attempt()?;
             checkpoint.persist(&campaign_root)?;
             observer(RunProgress::new(
                 ProgressActor::CampaignLead,
                 ProgressStage::PlanningCampaign,
             ));
             let invocation = lead.plan(&binding).map_err(RuntimeError::Reviewer)?;
-            let (lead_result, _) = match lead.execute(
+            let (lead_result, lead_process) = match lead.execute(
                 &executor,
                 &invocation,
                 &binding,
@@ -1200,6 +1201,8 @@ pub fn run_serial_campaign_with_progress(
                 }
                 Err(error) => return Err(RuntimeError::Reviewer(error)),
             };
+            checkpoint.record_process_result(&lead_process)?;
+            checkpoint.persist(&campaign_root)?;
             let outcome = match validate_team_lead_report(lead_result.report, &spec, &ready) {
                 Ok(outcome) => outcome,
                 Err(CampaignError::InvalidProposal | CampaignError::InvalidAuthority) => {
@@ -1473,6 +1476,7 @@ pub fn run_serial_campaign_with_progress(
                 }
             }
         };
+        checkpoint.record_unit_utilization(&unit.utilization, unit.correction_rounds)?;
         if unit.state == TaskState::Blocked {
             checkpoint.blocked_task_ids.insert(lease.task_id.clone());
             checkpoint.phase = CampaignPhase::Ready;
