@@ -152,7 +152,9 @@ impl CancellationToken {
         }))
     }
 
-    fn is_cancelled(&self) -> bool {
+    /// Returns whether this exact token or any parent token has been cancelled.
+    #[must_use]
+    pub fn is_cancelled(&self) -> bool {
         self.0.cancelled.load(Ordering::Acquire)
             || self.0.parent.as_ref().is_some_and(Self::is_cancelled)
     }

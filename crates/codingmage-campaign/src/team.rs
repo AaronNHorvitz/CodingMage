@@ -1337,6 +1337,7 @@ impl CampaignTaskRecord {
                 | CampaignTaskState::LocalGates
                 | CampaignTaskState::Reviewing
                 | CampaignTaskState::Correcting
+                | CampaignTaskState::PublicationReady
                 | CampaignTaskState::PullRequestOpen
                 | CampaignTaskState::CiWaiting
                 | CampaignTaskState::IntegrationQueued
@@ -1981,9 +1982,12 @@ fn legal_transition(from: CampaignTaskState, to: CampaignTaskState) -> bool {
         (Planned, Ready | Blocked | Cancelled)
             | (Ready, Proposed | Blocked | Cancelled)
             | (Proposed, Leased | Ready | Blocked | Cancelled)
-            | (Leased, Implementing | Ready | Failed | Cancelled)
+            | (Leased, Implementing | Ready | Blocked | Failed | Cancelled)
             | (Implementing, LocalGates | Blocked | Failed | Cancelled)
-            | (LocalGates, Reviewing | Correcting | Failed | Cancelled)
+            | (
+                LocalGates,
+                Reviewing | Correcting | Blocked | Failed | Cancelled
+            )
             | (
                 Reviewing,
                 PublicationReady | Correcting | Blocked | Disputed | Failed | Cancelled
@@ -1994,7 +1998,7 @@ fn legal_transition(from: CampaignTaskState, to: CampaignTaskState) -> bool {
             )
             | (
                 PublicationReady,
-                PullRequestOpen | IntegrationQueued | Cancelled
+                PullRequestOpen | IntegrationQueued | Blocked | Failed | Cancelled
             )
             | (
                 PullRequestOpen,

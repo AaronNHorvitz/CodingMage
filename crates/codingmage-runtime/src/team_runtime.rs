@@ -1,0 +1,1442 @@
+//! Bounded concurrent execution and durable lifecycle projection for campaign pods.
+
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    panic::{AssertUnwindSafe, catch_unwind},
+    sync::{
+        Arc,
+        mpsc::{Receiver, RecvTimeoutError, SyncSender, sync_channel},
+    },
+    thread,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
+
+use codingmage_campaign::{
+    ActorClass, CampaignSpec, CampaignTaskRecord, CampaignTaskState, CampaignTaskTransition,
+    DurablePodLease, DurablePodScheduler, TaskResourceReservation, TaskTerminalReason,
+    TaskUtilization, TeamCampaignSnapshot, TeamResourceController,
+};
+use codingmage_orchestrator::TaskState;
+use codingmage_process::CancellationToken;
+use sha2::{Digest, Sha256};
+
+use crate::{RunOutcome, RunProgress, RuntimeError, UnitLifecycleEvent};
+
+const MESSAGE_POLL_INTERVAL: Duration = Duration::from_millis(10);
+const MIN_CHANNEL_CAPACITY: usize = 32;
+
+/// One admitted pod and its exact coordinator-owned resource reservation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TeamBatchJob {
+    /// Stable dispatch order used for deterministic result projection.
+    pub sequence: u64,
+    /// Exact durable scheduler lease.
+    pub lease: DurablePodLease,
+    /// Exact physical and logical resource reservation.
+    pub reservation: TaskResourceReservation,
+}
+
+impl TeamBatchJob {
+    fn verify(&self, snapshot: &TeamCampaignSnapshot) -> Result<(), RuntimeError> {
+        let record = snapshot
+            .tasks
+            .get(&self.lease.task_id)
+            .ok_or(RuntimeError::State)?;
+        let active = snapshot
+            .scheduler
+            .active
+            .get(&self.lease.lease_id)
+            .ok_or(RuntimeError::State)?;
+        if active != &self.lease
+            || record.state != CampaignTaskState::Leased
+            || record.lease_id.as_ref() != Some(&self.lease.lease_id)
+            || record.pod_id.as_ref() != Some(&self.lease.pod_id)
+            || self.reservation.task_id != self.lease.task_id
+            || self.reservation.lease_id != self.lease.lease_id
+            || self.reservation.actor != ActorClass::Implementer
+            || self.reservation.cpu_units != snapshot.resources.policy.implementation_cpu_units
+            || self.reservation.memory_bytes
+                != snapshot.resources.policy.implementation_memory_bytes
+            || self.reservation.disk_bytes != snapshot.resources.policy.implementation_disk_bytes
+            || self.reservation.process_slots != snapshot.resources.policy.implementation_processes
+            || self.reservation.exclusive_resources != self.lease.test_resources
+            || self.reservation.deadline_ms
+                != self
+                    .reservation
+                    .started_at_ms
+                    .checked_add(snapshot.resources.policy.pod_timeout_ms)
+                    .ok_or(RuntimeError::State)?
+        {
+            return Err(RuntimeError::State);
+        }
+        Ok(())
+    }
+}
+
+/// Content-minimized event sender scoped to exactly one admitted pod.
+#[derive(Clone)]
+pub struct TeamEventSink {
+    sequence: u64,
+    task_id: String,
+    sender: SyncSender<WorkerMessage>,
+}
+
+impl TeamEventSink {
+    /// Reports one typed progress transition without provider text.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RuntimeError::State`] when the coordinator is no longer receiving this pod.
+    pub fn progress(&self, progress: RunProgress) -> Result<(), RuntimeError> {
+        self.send(WorkerEvent::Progress(progress))
+    }
+
+    /// Reports one durable content-minimized lifecycle observation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RuntimeError::State`] when the coordinator is no longer receiving this pod.
+    pub fn lifecycle(&self, event: UnitLifecycleEvent) -> Result<(), RuntimeError> {
+        self.send(WorkerEvent::Lifecycle(event))
+    }
+
+    /// Reports monotonic observed utilization and liveness for this exact pod.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RuntimeError::State`] when the coordinator is no longer receiving this pod.
+    pub fn heartbeat(&self, utilization: TaskUtilization) -> Result<(), RuntimeError> {
+        self.send(WorkerEvent::Heartbeat(utilization))
+    }
+
+    fn send(&self, event: WorkerEvent) -> Result<(), RuntimeError> {
+        self.sender
+            .send(WorkerMessage {
+                sequence: self.sequence,
+                task_id: self.task_id.clone(),
+                event,
+            })
+            .map_err(|_| RuntimeError::State)
+    }
+}
+
+/// Injectable pod implementation used by the bounded team executor.
+pub trait TeamUnitRunner: Send + Sync + 'static {
+    /// Executes one exact admitted job and reports content-minimized observations through `events`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a stable content-free runtime failure for the exact pod. Implementations must
+    /// observe `cancellation` and release every owned process before returning.
+    fn run(
+        &self,
+        job: &TeamBatchJob,
+        cancellation: CancellationToken,
+        events: TeamEventSink,
+    ) -> Result<RunOutcome, RuntimeError>;
+}
+
+/// One operator-facing, content-minimized team observation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TeamBatchObservation {
+    /// One pod reported typed progress.
+    TaskProgress {
+        /// Stable dispatch sequence.
+        sequence: u64,
+        /// Canonical task identity.
+        task_id: String,
+        /// Typed progress observation.
+        progress: RunProgress,
+    },
+    /// One pod reached a terminal one-unit result.
+    TaskFinished {
+        /// Stable dispatch sequence.
+        sequence: u64,
+        /// Canonical task identity.
+        task_id: String,
+        /// Success or stable content-free failure code.
+        result: Result<TaskState, &'static str>,
+    },
+}
+
+/// One terminal pod result retained in stable dispatch order.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TeamTaskOutcome {
+    /// Stable dispatch sequence.
+    pub sequence: u64,
+    /// Canonical task identity.
+    pub task_id: String,
+    /// One-unit outcome or stable fail-closed runtime error.
+    pub result: Result<RunOutcome, RuntimeError>,
+}
+
+/// Complete bounded batch result and its final durable projection.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TeamBatchOutcome {
+    /// Results sorted by dispatch sequence, independent of completion timing.
+    pub tasks: Vec<TeamTaskOutcome>,
+    /// Task identities in observed completion order.
+    pub completion_order: Vec<String>,
+    /// Final integrity-valid campaign projection.
+    pub snapshot: TeamCampaignSnapshot,
+}
+
+#[derive(Debug)]
+enum WorkerEvent {
+    Progress(RunProgress),
+    Lifecycle(UnitLifecycleEvent),
+    Heartbeat(TaskUtilization),
+    Finished(Result<RunOutcome, RuntimeError>),
+}
+
+#[derive(Debug)]
+struct WorkerMessage {
+    sequence: u64,
+    task_id: String,
+    event: WorkerEvent,
+}
+
+struct WorkerSet {
+    receiver: Receiver<WorkerMessage>,
+    controls: BTreeMap<String, CancellationToken>,
+    reservations: BTreeMap<String, String>,
+    deadlines: BTreeMap<String, u64>,
+    expected_tasks: BTreeMap<u64, String>,
+    handles: Vec<thread::JoinHandle<()>>,
+}
+
+struct BatchDriver<'a, P, O> {
+    snapshot: &'a mut TeamCampaignSnapshot,
+    resources: TeamResourceController,
+    scheduler: DurablePodScheduler,
+    reservations: &'a BTreeMap<String, String>,
+    heartbeat_sequences: BTreeMap<String, u64>,
+    persist: &'a mut P,
+    observe: &'a mut O,
+    results: Vec<TeamTaskOutcome>,
+    completion_order: Vec<String>,
+}
+
+impl<P, O> BatchDriver<'_, P, O>
+where
+    P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
+    O: FnMut(TeamBatchObservation),
+{
+    fn handle(
+        &mut self,
+        message: WorkerMessage,
+        timed_out: bool,
+        campaign_cancelled: bool,
+    ) -> Result<(), RuntimeError> {
+        match message.event {
+            WorkerEvent::Progress(progress) => {
+                self.touch(&message.task_id, None)?;
+                apply_progress(self.snapshot, &message.task_id, progress)?;
+                self.persist()?;
+                (self.observe)(TeamBatchObservation::TaskProgress {
+                    sequence: message.sequence,
+                    task_id: message.task_id,
+                    progress,
+                });
+            }
+            WorkerEvent::Lifecycle(event) => {
+                self.touch(&message.task_id, None)?;
+                apply_lifecycle(self.snapshot, &message.task_id, event)?;
+                self.persist()?;
+            }
+            WorkerEvent::Heartbeat(utilization) => {
+                self.touch(&message.task_id, Some(utilization))?;
+                self.persist()?;
+            }
+            WorkerEvent::Finished(mut result) => {
+                if timed_out {
+                    result = Err(RuntimeError::Process);
+                }
+                let task_state = result
+                    .as_ref()
+                    .map(|value| value.state)
+                    .map_err(|error| error.code());
+                finish_task(
+                    self.snapshot,
+                    &mut self.resources,
+                    &mut self.scheduler,
+                    self.reservations,
+                    &message.task_id,
+                    &result,
+                    TerminalContext {
+                        timed_out,
+                        campaign_cancelled,
+                    },
+                )?;
+                self.persist()?;
+                self.completion_order.push(message.task_id.clone());
+                (self.observe)(TeamBatchObservation::TaskFinished {
+                    sequence: message.sequence,
+                    task_id: message.task_id.clone(),
+                    result: task_state,
+                });
+                self.results.push(TeamTaskOutcome {
+                    sequence: message.sequence,
+                    task_id: message.task_id,
+                    result,
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn touch(
+        &mut self,
+        task_id: &str,
+        utilization: Option<TaskUtilization>,
+    ) -> Result<(), RuntimeError> {
+        touch_task(
+            self.snapshot,
+            &mut self.resources,
+            &mut self.scheduler,
+            self.reservations,
+            &mut self.heartbeat_sequences,
+            task_id,
+            utilization,
+        )
+    }
+
+    fn persist(&mut self) -> Result<(), RuntimeError> {
+        persist_projection(
+            self.snapshot,
+            &self.resources,
+            &self.scheduler,
+            self.persist,
+        )
+    }
+}
+
+#[derive(Clone, Copy)]
+struct TerminalContext {
+    timed_out: bool,
+    campaign_cancelled: bool,
+}
+
+/// Executes an already-admitted set of independent pods concurrently.
+///
+/// All reservations are validated and durably persisted before any worker starts. Worker panics,
+/// deadlines, cancellation, and ordinary failures are isolated to their exact task. Results are
+/// returned in stable dispatch order while completion order is retained separately.
+///
+/// # Errors
+///
+/// Returns a stable fail-closed error before execution for contradictory authority, resources, or
+/// identity. A persistence failure cancels every exact child and returns without claiming success.
+pub fn execute_team_batch<R, P, O>(
+    spec: &CampaignSpec,
+    snapshot: &mut TeamCampaignSnapshot,
+    jobs: &[TeamBatchJob],
+    runner: &Arc<R>,
+    campaign_cancellation: &CancellationToken,
+    mut persist: P,
+    mut observe: O,
+) -> Result<TeamBatchOutcome, RuntimeError>
+where
+    R: TeamUnitRunner + ?Sized,
+    P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
+    O: FnMut(TeamBatchObservation),
+{
+    let (resources, scheduler) = prepare_batch(spec, snapshot, jobs, &mut persist)?;
+    let WorkerSet {
+        receiver,
+        controls,
+        reservations,
+        deadlines,
+        expected_tasks,
+        handles,
+    } = spawn_workers(jobs, runner, campaign_cancellation);
+    let mut timed_out = BTreeSet::new();
+    let mut fatal_error = None;
+    let mut driver = BatchDriver {
+        snapshot,
+        resources,
+        scheduler,
+        reservations: &reservations,
+        heartbeat_sequences: controls
+            .keys()
+            .map(|task_id| (task_id.clone(), 0_u64))
+            .collect(),
+        persist: &mut persist,
+        observe: &mut observe,
+        results: Vec::with_capacity(jobs.len()),
+        completion_order: Vec::with_capacity(jobs.len()),
+    };
+    while driver.results.len() < jobs.len() {
+        cancel_expired(
+            &controls,
+            &deadlines,
+            &mut timed_out,
+            campaign_cancellation.is_cancelled(),
+        );
+        match receiver.recv_timeout(MESSAGE_POLL_INTERVAL) {
+            Ok(message) => {
+                if !controls.contains_key(&message.task_id)
+                    || expected_tasks.get(&message.sequence) != Some(&message.task_id)
+                {
+                    fatal_error = Some(RuntimeError::State);
+                    break;
+                }
+                if timed_out.contains(&message.task_id)
+                    && !matches!(&message.event, WorkerEvent::Finished(_))
+                {
+                    continue;
+                }
+                let task_timed_out = timed_out.contains(&message.task_id);
+                if let Err(error) = driver.handle(
+                    message,
+                    task_timed_out,
+                    campaign_cancellation.is_cancelled(),
+                ) {
+                    fatal_error = Some(error);
+                    break;
+                }
+            }
+            Err(RecvTimeoutError::Timeout) => {}
+            Err(RecvTimeoutError::Disconnected) => {
+                fatal_error = Some(RuntimeError::State);
+                break;
+            }
+        }
+    }
+    if let Some(error) = fatal_error {
+        drop(driver);
+        cancel_all(&controls);
+        drop(receiver);
+        join_all(handles);
+        return Err(error);
+    }
+    driver.results.sort_by_key(|outcome| outcome.sequence);
+    let result = TeamBatchOutcome {
+        tasks: std::mem::take(&mut driver.results),
+        completion_order: std::mem::take(&mut driver.completion_order),
+        snapshot: driver.snapshot.clone(),
+    };
+    drop(driver);
+    drop(receiver);
+    join_all(handles);
+    snapshot.verify().map_err(|_| RuntimeError::State)?;
+    Ok(result)
+}
+
+fn prepare_batch<P>(
+    spec: &CampaignSpec,
+    snapshot: &mut TeamCampaignSnapshot,
+    jobs: &[TeamBatchJob],
+    persist: &mut P,
+) -> Result<(TeamResourceController, DurablePodScheduler), RuntimeError>
+where
+    P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
+{
+    spec.verify().map_err(RuntimeError::Campaign)?;
+    snapshot.verify().map_err(|_| RuntimeError::State)?;
+    if jobs.is_empty()
+        || jobs.len() > usize::from(snapshot.scheduler.max_parallel_pods)
+        || jobs
+            .iter()
+            .map(|job| job.sequence)
+            .collect::<BTreeSet<_>>()
+            .len()
+            != jobs.len()
+        || jobs
+            .iter()
+            .map(|job| &job.lease.task_id)
+            .collect::<BTreeSet<_>>()
+            .len()
+            != jobs.len()
+    {
+        return Err(RuntimeError::State);
+    }
+    for job in jobs {
+        job.verify(snapshot)?;
+    }
+    let mut candidate = snapshot.clone();
+    let mut resources = TeamResourceController::from_snapshot(spec, candidate.resources.clone())
+        .map_err(|_| RuntimeError::State)?;
+    let scheduler = DurablePodScheduler::from_snapshot(candidate.scheduler.clone())
+        .map_err(|_| RuntimeError::State)?;
+    for job in jobs {
+        resources
+            .reserve(job.reservation.clone())
+            .map_err(|_| RuntimeError::State)?;
+    }
+    candidate.resources = resources.snapshot().clone();
+    candidate.verify().map_err(|_| RuntimeError::State)?;
+    persist(&candidate)?;
+    *snapshot = candidate;
+    Ok((resources, scheduler))
+}
+
+fn spawn_workers<R>(
+    jobs: &[TeamBatchJob],
+    runner: &Arc<R>,
+    campaign_cancellation: &CancellationToken,
+) -> WorkerSet
+where
+    R: TeamUnitRunner + ?Sized,
+{
+    let channel_capacity = jobs.len().saturating_mul(16).max(MIN_CHANNEL_CAPACITY);
+    let (sender, receiver) = sync_channel(channel_capacity);
+    let mut controls = BTreeMap::new();
+    let mut reservations = BTreeMap::new();
+    let mut deadlines = BTreeMap::new();
+    let mut expected_tasks = BTreeMap::new();
+    let mut handles = Vec::new();
+    for job in jobs.iter().cloned() {
+        let task_id = job.lease.task_id.clone();
+        let token = campaign_cancellation.child();
+        controls.insert(task_id.clone(), token.clone());
+        reservations.insert(task_id.clone(), job.reservation.reservation_id.clone());
+        deadlines.insert(task_id.clone(), job.reservation.deadline_ms);
+        expected_tasks.insert(job.sequence, task_id.clone());
+        let worker_sender = sender.clone();
+        let worker_runner = Arc::clone(runner);
+        handles.push(thread::spawn(move || {
+            let events = TeamEventSink {
+                sequence: job.sequence,
+                task_id: task_id.clone(),
+                sender: worker_sender.clone(),
+            };
+            let result = catch_unwind(AssertUnwindSafe(|| worker_runner.run(&job, token, events)))
+                .unwrap_or(Err(RuntimeError::Process));
+            let _ = worker_sender.send(WorkerMessage {
+                sequence: job.sequence,
+                task_id,
+                event: WorkerEvent::Finished(result),
+            });
+        }));
+    }
+    drop(sender);
+    WorkerSet {
+        receiver,
+        controls,
+        reservations,
+        deadlines,
+        expected_tasks,
+        handles,
+    }
+}
+
+fn apply_progress(
+    snapshot: &mut TeamCampaignSnapshot,
+    task_id: &str,
+    progress: RunProgress,
+) -> Result<(), RuntimeError> {
+    use crate::ProgressStage;
+
+    let record = snapshot.tasks.get_mut(task_id).ok_or(RuntimeError::State)?;
+    let target = match progress.stage {
+        ProgressStage::VerifyingCandidate if record.state == CampaignTaskState::Implementing => {
+            Some(CampaignTaskState::LocalGates)
+        }
+        ProgressStage::Reviewing if record.state == CampaignTaskState::LocalGates => {
+            Some(CampaignTaskState::Reviewing)
+        }
+        ProgressStage::CandidateBlocked | ProgressStage::Correcting
+            if matches!(
+                record.state,
+                CampaignTaskState::LocalGates | CampaignTaskState::Reviewing
+            ) =>
+        {
+            Some(CampaignTaskState::Correcting)
+        }
+        _ => None,
+    };
+    if let Some(target) = target {
+        transition(record, target, "progress")?;
+    }
+    Ok(())
+}
+
+fn apply_lifecycle(
+    snapshot: &mut TeamCampaignSnapshot,
+    task_id: &str,
+    event: UnitLifecycleEvent,
+) -> Result<(), RuntimeError> {
+    let record = snapshot.tasks.get_mut(task_id).ok_or(RuntimeError::State)?;
+    match event {
+        UnitLifecycleEvent::WorktreeCreated {
+            worktree_id,
+            branch,
+        } => record
+            .bind_worktree(worktree_id, branch, event_evidence(record, "worktree"))
+            .map_err(|_| RuntimeError::State),
+        UnitLifecycleEvent::ImplementationSessionBound {
+            session_id,
+            correction_round,
+        } => {
+            let mut candidate = record.clone();
+            if correction_round == 0 {
+                if candidate.implementation_session.is_some() {
+                    return Err(RuntimeError::State);
+                }
+                candidate.implementation_session = Some(session_id);
+            } else {
+                candidate.correction_sessions.push(session_id);
+            }
+            candidate.verify().map_err(|_| RuntimeError::State)?;
+            *record = candidate;
+            Ok(())
+        }
+        UnitLifecycleEvent::CandidateCommitted {
+            commit,
+            correction_round: _,
+        } => {
+            let mut candidate = record.clone();
+            candidate.candidate_commit = Some(commit);
+            candidate.reviewed_commit = None;
+            candidate.completion_commit = None;
+            candidate.verify().map_err(|_| RuntimeError::State)?;
+            *record = candidate;
+            Ok(())
+        }
+        UnitLifecycleEvent::GatesObserved {
+            commit,
+            evidence,
+            passed: _,
+        } => {
+            if record.candidate_commit.as_deref() != Some(commit.as_str()) {
+                return Err(RuntimeError::State);
+            }
+            if matches!(
+                record.state,
+                CampaignTaskState::Implementing | CampaignTaskState::Correcting
+            ) {
+                transition(record, CampaignTaskState::LocalGates, "gates")?;
+            }
+            let mut candidate = record.clone();
+            candidate.gate_evidence_sha256.extend(evidence);
+            candidate.verify().map_err(|_| RuntimeError::State)?;
+            *record = candidate;
+            Ok(())
+        }
+        UnitLifecycleEvent::ReviewObserved {
+            session_id,
+            commit,
+            verdict,
+            evidence,
+        } => {
+            if record.candidate_commit.as_deref() != Some(commit.as_str()) {
+                return Err(RuntimeError::State);
+            }
+            if record.state == CampaignTaskState::LocalGates {
+                transition(record, CampaignTaskState::Reviewing, "review")?;
+            }
+            let mut candidate = record.clone();
+            candidate.review_sessions.push(session_id);
+            candidate.review_evidence_sha256.push(evidence);
+            if verdict == "pass" {
+                candidate.reviewed_commit = Some(commit);
+            }
+            candidate.verify().map_err(|_| RuntimeError::State)?;
+            *record = candidate;
+            Ok(())
+        }
+        UnitLifecycleEvent::CompletionCommitted { commit } => {
+            let mut candidate = record.clone();
+            candidate.completion_commit = Some(commit);
+            candidate.verify().map_err(|_| RuntimeError::State)?;
+            *record = candidate;
+            if record.state == CampaignTaskState::Reviewing {
+                transition(record, CampaignTaskState::PublicationReady, "completion")?;
+            }
+            Ok(())
+        }
+        UnitLifecycleEvent::WorktreeReleased { worktree_id } => {
+            if record.worktree_id.as_deref() != Some(worktree_id.as_str()) {
+                return Err(RuntimeError::State);
+            }
+            Ok(())
+        }
+    }
+}
+
+fn touch_task(
+    snapshot: &mut TeamCampaignSnapshot,
+    resources: &mut TeamResourceController,
+    scheduler: &mut DurablePodScheduler,
+    reservations: &BTreeMap<String, String>,
+    sequences: &mut BTreeMap<String, u64>,
+    task_id: &str,
+    utilization: Option<TaskUtilization>,
+) -> Result<(), RuntimeError> {
+    let sequence = sequences.get_mut(task_id).ok_or(RuntimeError::State)?;
+    *sequence = sequence.saturating_add(1);
+    let timestamp = now_ms();
+    let record = snapshot.tasks.get_mut(task_id).ok_or(RuntimeError::State)?;
+    let lease_id = record.lease_id.clone().ok_or(RuntimeError::State)?;
+    let reservation_id = reservations.get(task_id).ok_or(RuntimeError::State)?;
+    let current = resources
+        .snapshot()
+        .active
+        .get(reservation_id)
+        .ok_or(RuntimeError::State)?
+        .observed
+        .clone();
+    scheduler
+        .heartbeat(&lease_id, *sequence, timestamp)
+        .map_err(|_| RuntimeError::State)?;
+    record
+        .heartbeat(*sequence, timestamp)
+        .map_err(|_| RuntimeError::State)?;
+    resources
+        .observe(
+            reservation_id,
+            *sequence,
+            timestamp,
+            utilization.unwrap_or(current),
+        )
+        .map_err(|_| RuntimeError::State)
+}
+
+fn finish_task(
+    snapshot: &mut TeamCampaignSnapshot,
+    resources: &mut TeamResourceController,
+    scheduler: &mut DurablePodScheduler,
+    reservations: &BTreeMap<String, String>,
+    task_id: &str,
+    result: &Result<RunOutcome, RuntimeError>,
+    terminal: TerminalContext,
+) -> Result<(), RuntimeError> {
+    let reservation = reservations.get(task_id).ok_or(RuntimeError::State)?;
+    let released = resources
+        .release(reservation)
+        .map_err(|_| RuntimeError::State)?;
+    let record = snapshot.tasks.get_mut(task_id).ok_or(RuntimeError::State)?;
+    record.utilization = released.observed;
+    if matches!(result, Ok(outcome) if outcome.state == TaskState::Complete)
+        && record.state == CampaignTaskState::PublicationReady
+    {
+        return Ok(());
+    }
+
+    let (state, reason) = if terminal.campaign_cancelled {
+        (
+            CampaignTaskState::Cancelled,
+            TaskTerminalReason::OperatorCancelled,
+        )
+    } else if terminal.timed_out {
+        (CampaignTaskState::Failed, TaskTerminalReason::TimedOut)
+    } else {
+        classify_terminal(result)
+    };
+    transition_terminal(record, state, reason)?;
+    let lease_id = record.lease_id.clone().ok_or(RuntimeError::State)?;
+    scheduler
+        .release(&lease_id)
+        .map_err(|_| RuntimeError::State)?;
+    Ok(())
+}
+
+fn classify_terminal(
+    result: &Result<RunOutcome, RuntimeError>,
+) -> (CampaignTaskState, TaskTerminalReason) {
+    match result {
+        Ok(outcome) => match outcome.state {
+            TaskState::Blocked => (
+                CampaignTaskState::Blocked,
+                TaskTerminalReason::PrerequisiteBlocked,
+            ),
+            TaskState::Paused => (
+                CampaignTaskState::Blocked,
+                TaskTerminalReason::ProviderBlocked,
+            ),
+            TaskState::Cancelled => (
+                CampaignTaskState::Cancelled,
+                TaskTerminalReason::OperatorCancelled,
+            ),
+            _ => (
+                CampaignTaskState::Failed,
+                TaskTerminalReason::ProviderFailed,
+            ),
+        },
+        Err(RuntimeError::Process) => (
+            CampaignTaskState::Failed,
+            TaskTerminalReason::ProcessCrashed,
+        ),
+        Err(RuntimeError::Verification) => {
+            (CampaignTaskState::Failed, TaskTerminalReason::GateFailed)
+        }
+        Err(RuntimeError::Integration) => (
+            CampaignTaskState::Blocked,
+            TaskTerminalReason::IntegrationConflict,
+        ),
+        Err(RuntimeError::Repository | RuntimeError::State) => (
+            CampaignTaskState::Blocked,
+            TaskTerminalReason::StaleIdentity,
+        ),
+        Err(RuntimeError::CampaignLimit(_)) => {
+            (CampaignTaskState::Failed, TaskTerminalReason::LimitExceeded)
+        }
+        Err(RuntimeError::Implementer(_)) => (
+            CampaignTaskState::Failed,
+            TaskTerminalReason::ProviderFailed,
+        ),
+        Err(RuntimeError::Reviewer(_)) => (
+            CampaignTaskState::Blocked,
+            TaskTerminalReason::ReviewBlocked,
+        ),
+        Err(
+            RuntimeError::Spec
+            | RuntimeError::Authority
+            | RuntimeError::Plan
+            | RuntimeError::Orchestration
+            | RuntimeError::Campaign(_),
+        ) => (CampaignTaskState::Blocked, TaskTerminalReason::PolicyDenied),
+    }
+}
+
+fn transition(
+    record: &mut CampaignTaskRecord,
+    to: CampaignTaskState,
+    label: &str,
+) -> Result<(), RuntimeError> {
+    let request = transition_request(record, to, label);
+    record.transition(&request).map_err(|_| RuntimeError::State)
+}
+
+fn transition_terminal(
+    record: &mut CampaignTaskRecord,
+    to: CampaignTaskState,
+    reason: TaskTerminalReason,
+) -> Result<(), RuntimeError> {
+    let request = transition_request(record, to, reason.code());
+    record
+        .transition_terminal(&request, reason)
+        .map_err(|_| RuntimeError::State)
+}
+
+fn transition_request(
+    record: &CampaignTaskRecord,
+    to: CampaignTaskState,
+    label: &str,
+) -> CampaignTaskTransition {
+    CampaignTaskTransition {
+        sequence: record.next_transition,
+        campaign_id: record.campaign_id.clone(),
+        task_id: record.task_id.clone(),
+        generation: record.generation,
+        from: record.state,
+        to,
+        evidence_sha256: event_evidence(record, label),
+    }
+}
+
+fn event_evidence(record: &CampaignTaskRecord, label: &str) -> String {
+    let material = format!(
+        "{}\0{}\0{}\0{}\0{label}",
+        record.campaign_id, record.task_id, record.generation, record.next_transition
+    );
+    hex(&Sha256::digest(material.as_bytes()))
+}
+
+fn persist_projection<P>(
+    snapshot: &mut TeamCampaignSnapshot,
+    resources: &TeamResourceController,
+    scheduler: &DurablePodScheduler,
+    persist: &mut P,
+) -> Result<(), RuntimeError>
+where
+    P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
+{
+    snapshot.resources = resources.snapshot().clone();
+    snapshot.scheduler = scheduler.snapshot().clone();
+    snapshot.verify().map_err(|_| RuntimeError::State)?;
+    persist(snapshot)
+}
+
+fn cancel_expired(
+    controls: &BTreeMap<String, CancellationToken>,
+    deadlines: &BTreeMap<String, u64>,
+    timed_out: &mut BTreeSet<String>,
+    campaign_cancelled: bool,
+) {
+    let now = now_ms();
+    for (task_id, token) in controls {
+        if campaign_cancelled
+            || deadlines
+                .get(task_id)
+                .is_some_and(|deadline| now >= *deadline)
+        {
+            token.cancel();
+            if !campaign_cancelled {
+                timed_out.insert(task_id.clone());
+            }
+        }
+    }
+}
+
+fn cancel_all(controls: &BTreeMap<String, CancellationToken>) {
+    for token in controls.values() {
+        token.cancel();
+    }
+}
+
+fn join_all(handles: Vec<thread::JoinHandle<()>>) {
+    for handle in handles {
+        let _ = handle.join();
+    }
+}
+
+fn now_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |duration| {
+            u64::try_from(duration.as_millis()).unwrap_or(u64::MAX)
+        })
+}
+
+fn hex(bytes: &[u8]) -> String {
+    use std::fmt::Write as _;
+
+    let mut value = String::with_capacity(bytes.len().saturating_mul(2));
+    for byte in bytes {
+        let _ = write!(value, "{byte:02x}");
+    }
+    value
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        path::PathBuf,
+        sync::{
+            Barrier, Mutex,
+            atomic::{AtomicUsize, Ordering},
+        },
+    };
+
+    use codingmage_campaign::{
+        AdmissionDecision, CampaignAuthentication, CampaignConcurrency, CampaignExecutionMode,
+        CampaignGateTier, CampaignLimits, CampaignProvider, CampaignPublication,
+        DestinationPromotionPolicy, MultiAgentPolicy, PodProposal, PodRisk, TaskIntegrationPolicy,
+        TaskMergeStrategy, TaskPublicationMode, TeamResourcePolicy,
+    };
+    use codingmage_contracts::{RunId, TaskId};
+
+    use super::*;
+    use crate::RunUtilization;
+
+    struct ActiveGuard<'a>(&'a AtomicUsize);
+
+    impl Drop for ActiveGuard<'_> {
+        fn drop(&mut self) {
+            self.0.fetch_sub(1, Ordering::SeqCst);
+        }
+    }
+
+    struct FakeRunner {
+        barrier: Option<Arc<Barrier>>,
+        active: AtomicUsize,
+        peak: AtomicUsize,
+        delays_ms: BTreeMap<u64, u64>,
+        panic_sequence: Option<u64>,
+        wait_for_cancellation: Option<u64>,
+    }
+
+    struct CountingRunner(Arc<AtomicUsize>);
+
+    impl TeamUnitRunner for CountingRunner {
+        fn run(
+            &self,
+            _: &TeamBatchJob,
+            _: CancellationToken,
+            _: TeamEventSink,
+        ) -> Result<RunOutcome, RuntimeError> {
+            self.0.fetch_add(1, Ordering::SeqCst);
+            Err(RuntimeError::Process)
+        }
+    }
+
+    struct CancellationRunner(Arc<AtomicUsize>);
+
+    impl TeamUnitRunner for CancellationRunner {
+        fn run(
+            &self,
+            job: &TeamBatchJob,
+            cancellation: CancellationToken,
+            events: TeamEventSink,
+        ) -> Result<RunOutcome, RuntimeError> {
+            events.lifecycle(UnitLifecycleEvent::WorktreeCreated {
+                worktree_id: format!("worktree-{}", job.sequence),
+                branch: format!("codingmage/task-{}", job.sequence),
+            })?;
+            while !cancellation.is_cancelled() {
+                thread::sleep(Duration::from_millis(2));
+            }
+            self.0.fetch_add(1, Ordering::SeqCst);
+            Err(RuntimeError::Process)
+        }
+    }
+
+    impl FakeRunner {
+        fn successful() -> Self {
+            Self {
+                barrier: None,
+                active: AtomicUsize::new(0),
+                peak: AtomicUsize::new(0),
+                delays_ms: BTreeMap::new(),
+                panic_sequence: None,
+                wait_for_cancellation: None,
+            }
+        }
+    }
+
+    impl TeamUnitRunner for FakeRunner {
+        fn run(
+            &self,
+            job: &TeamBatchJob,
+            cancellation: CancellationToken,
+            events: TeamEventSink,
+        ) -> Result<RunOutcome, RuntimeError> {
+            let active = self.active.fetch_add(1, Ordering::SeqCst).saturating_add(1);
+            self.peak.fetch_max(active, Ordering::SeqCst);
+            let _guard = ActiveGuard(&self.active);
+            if let Some(barrier) = &self.barrier {
+                barrier.wait();
+            }
+            if self.wait_for_cancellation == Some(job.sequence) {
+                while !cancellation.is_cancelled() {
+                    thread::sleep(Duration::from_millis(2));
+                }
+                return Err(RuntimeError::Process);
+            }
+            assert_ne!(
+                self.panic_sequence,
+                Some(job.sequence),
+                "bounded fake worker panic"
+            );
+            if let Some(delay) = self.delays_ms.get(&job.sequence) {
+                thread::sleep(Duration::from_millis(*delay));
+            }
+            emit_success(job, &events)
+        }
+    }
+
+    fn emit_success(
+        job: &TeamBatchJob,
+        events: &TeamEventSink,
+    ) -> Result<RunOutcome, RuntimeError> {
+        let branch = format!("codingmage/task-{}", job.sequence);
+        let candidate = format!("{:040x}", job.sequence.saturating_add(1));
+        let completion = format!("{:040x}", job.sequence.saturating_add(101));
+        events.lifecycle(UnitLifecycleEvent::WorktreeCreated {
+            worktree_id: format!("worktree-{}", job.sequence),
+            branch: branch.clone(),
+        })?;
+        events.lifecycle(UnitLifecycleEvent::ImplementationSessionBound {
+            session_id: format!("implementation-{}", job.sequence),
+            correction_round: 0,
+        })?;
+        events.lifecycle(UnitLifecycleEvent::CandidateCommitted {
+            commit: candidate.clone(),
+            correction_round: 0,
+        })?;
+        events.lifecycle(UnitLifecycleEvent::GatesObserved {
+            commit: candidate.clone(),
+            evidence: vec![format!("{:064x}", job.sequence.saturating_add(201))],
+            passed: true,
+        })?;
+        events.lifecycle(UnitLifecycleEvent::ReviewObserved {
+            session_id: format!("review-{}", job.sequence),
+            commit: candidate.clone(),
+            verdict: "pass".to_owned(),
+            evidence: format!("{:064x}", job.sequence.saturating_add(301)),
+        })?;
+        events.lifecycle(UnitLifecycleEvent::GatesObserved {
+            commit: candidate.clone(),
+            evidence: vec![format!("{:064x}", job.sequence.saturating_add(401))],
+            passed: true,
+        })?;
+        events.lifecycle(UnitLifecycleEvent::CompletionCommitted {
+            commit: completion.clone(),
+        })?;
+        events.lifecycle(UnitLifecycleEvent::WorktreeReleased {
+            worktree_id: format!("worktree-{}", job.sequence),
+        })?;
+        events.heartbeat(TaskUtilization {
+            provider_attempts: 2,
+            provider_tokens: 100,
+            process_invocations: 3,
+            output_bytes: 50,
+            retained_state_bytes: 25,
+            execution_elapsed_ms: 10,
+        })?;
+        Ok(RunOutcome {
+            run_id: RunId::new(format!("run-{}", job.sequence)).expect("valid run"),
+            task_id: TaskId::new(job.lease.task_id.clone()).expect("valid task"),
+            state: TaskState::Complete,
+            branch: Some(branch),
+            candidate_commit: Some(candidate),
+            completion_commit: Some(completion),
+            review_verdict: Some("pass".to_owned()),
+            correction_rounds: 0,
+            utilization: RunUtilization::default(),
+        })
+    }
+
+    fn fixture(
+        capacity: u16,
+        count: u16,
+        timeout_ms: u64,
+    ) -> (CampaignSpec, TeamCampaignSnapshot, Vec<TeamBatchJob>) {
+        let mut spec = spec(capacity);
+        let policy = &mut spec.multi_agent.as_mut().expect("team policy").resources;
+        policy.pod_timeout_ms = timeout_ms;
+        policy.heartbeat_interval_ms = 10;
+        policy.stale_after_ms = timeout_ms.clamp(20, 100);
+        if policy.stale_after_ms >= policy.pod_timeout_ms {
+            policy.stale_after_ms = policy.pod_timeout_ms.saturating_sub(1);
+        }
+        let tasks = (0..count)
+            .map(|index| format!("23.3.2.{}", index.saturating_add(1)))
+            .collect::<Vec<_>>();
+        let mut scheduler = DurablePodScheduler::new(&spec).expect("scheduler");
+        let generation = scheduler.begin_generation(&tasks).expect("generation");
+        let resources = TeamResourceController::new(&spec).expect("resources");
+        let started_at = now_ms();
+        let mut records = BTreeMap::new();
+        let mut jobs = Vec::new();
+        for (sequence, task_id) in tasks.into_iter().enumerate() {
+            let proposal = proposal(&spec, &task_id, sequence);
+            let AdmissionDecision::Admitted(lease) = scheduler
+                .admit(&spec, generation, &spec.initial_commit, &proposal)
+                .expect("admission")
+            else {
+                panic!("independent task must be admitted");
+            };
+            let mut record = CampaignTaskRecord::planned(
+                spec.campaign_id.clone(),
+                task_id.clone(),
+                spec.initial_commit.clone(),
+            )
+            .expect("planned record");
+            record
+                .transition(&CampaignTaskTransition {
+                    sequence: 0,
+                    campaign_id: spec.campaign_id.clone(),
+                    task_id: task_id.clone(),
+                    generation: 0,
+                    from: CampaignTaskState::Planned,
+                    to: CampaignTaskState::Ready,
+                    evidence_sha256: format!("{:064x}", sequence.saturating_add(1)),
+                })
+                .expect("ready");
+            record
+                .propose(generation, format!("{:064x}", sequence.saturating_add(101)))
+                .expect("proposed");
+            record
+                .bind_lease(&lease, format!("{:064x}", sequence.saturating_add(201)))
+                .expect("leased");
+            let reservation = resources
+                .implementation_request(&lease, started_at)
+                .expect("reservation");
+            records.insert(task_id, record);
+            jobs.push(TeamBatchJob {
+                sequence: u64::try_from(sequence).expect("sequence"),
+                lease,
+                reservation,
+            });
+        }
+        let snapshot = TeamCampaignSnapshot {
+            version: 1,
+            campaign_id: spec.campaign_id.clone(),
+            generation,
+            campaign_head: spec.initial_commit.clone(),
+            task_source_sha256: spec.task_source_sha256.clone(),
+            scheduler: scheduler.snapshot().clone(),
+            resources: resources.snapshot().clone(),
+            tasks: records,
+            integration_queue: Vec::new(),
+        };
+        snapshot.verify().expect("valid fixture");
+        (spec, snapshot, jobs)
+    }
+
+    fn spec(capacity: u16) -> CampaignSpec {
+        CampaignSpec {
+            version: 3,
+            campaign_id: "campaign-runtime-team".to_owned(),
+            repository_id: "repo-runtime-team".to_owned(),
+            repository_path: PathBuf::from("/tmp/repository"),
+            initial_commit: "a".repeat(40),
+            task_source_sha256: "b".repeat(64),
+            operator_authorization_sha256: "c".repeat(64),
+            max_parallel_pods: capacity,
+            max_units: 100,
+            limits: CampaignLimits {
+                provider_attempts: 100,
+                malformed_report_repairs: 10,
+                correction_rounds: 20,
+                process_invocations: 1_000,
+                output_bytes: 1_000_000,
+                retained_state_bytes: 1_000_000,
+                execution_elapsed_ms: 1_000_000,
+            },
+            team_lead: provider("codex"),
+            implementer: provider("claude"),
+            implementer_authentication: CampaignAuthentication::Bare,
+            reviewer: provider("codex"),
+            gate_tiers: vec![CampaignGateTier {
+                name: "focused".to_owned(),
+                profiles: vec!["workspace".to_owned()],
+            }],
+            campaign_branch: "codingmage/campaign-runtime-team".to_owned(),
+            allowed_paths: vec![PathBuf::from("crates"), PathBuf::from("docs")],
+            denied_paths: Vec::new(),
+            protected_branches: vec!["main".to_owned()],
+            publication: CampaignPublication::LocalOnly,
+            multi_agent: Some(MultiAgentPolicy {
+                version: 1,
+                execution_mode: CampaignExecutionMode::Parallel,
+                publication_mode: TaskPublicationMode::LocalOnly,
+                task_integration_policy: TaskIntegrationPolicy::AutoToCampaignBranch,
+                destination_promotion_policy: DestinationPromotionPolicy::HumanRequired,
+                task_merge_strategy: TaskMergeStrategy::Squash,
+                concurrency: CampaignConcurrency {
+                    claude_implementers: capacity,
+                    codex_team_leads: 1,
+                    codex_reviewers: capacity,
+                    test_workers: capacity,
+                    github_writers: 1,
+                    integration_workers: 1,
+                },
+                resources: TeamResourcePolicy {
+                    total_cpu_units: capacity.saturating_mul(2),
+                    implementation_cpu_units: 1,
+                    total_memory_bytes: u64::from(capacity) * 8 * 1024 * 1024,
+                    implementation_memory_bytes: 4 * 1024 * 1024,
+                    total_disk_bytes: u64::from(capacity) * 8 * 1024 * 1024,
+                    implementation_disk_bytes: 4 * 1024 * 1024,
+                    total_processes: u32::from(capacity) * 128,
+                    implementation_processes: 64,
+                    ..TeamResourcePolicy::default()
+                },
+                max_campaign_tokens: 1_000_000,
+                max_task_tokens: 100_000,
+                max_task_correction_cycles: 3,
+                max_follow_up_tasks: 10,
+            }),
+        }
+    }
+
+    fn provider(name: &str) -> CampaignProvider {
+        CampaignProvider {
+            executable: PathBuf::from(format!("/usr/bin/{name}")),
+            model: "model".to_owned(),
+            effort: "high".to_owned(),
+        }
+    }
+
+    fn proposal(spec: &CampaignSpec, task_id: &str, sequence: usize) -> PodProposal {
+        let path = PathBuf::from(format!("crates/unit-{sequence}"));
+        PodProposal::seal(
+            PodProposal {
+                version: 3,
+                task_id: task_id.to_owned(),
+                task_source_sha256: spec.task_source_sha256.clone(),
+                owned_paths: vec![path.clone()],
+                dependencies: Vec::new(),
+                gate_tiers: vec!["focused".to_owned()],
+                test_resources: vec![format!("resource-{sequence}")],
+                expected_artifacts: vec![path],
+                risk: PodRisk::Routine,
+                rationale_summary: "bounded fixture".to_owned(),
+                proposal_sha256: "0".repeat(64),
+            },
+            spec,
+        )
+        .expect("sealed proposal")
+    }
+
+    #[test]
+    fn five_workers_overlap_and_preserve_stable_result_order() {
+        let (spec, mut snapshot, jobs) = fixture(5, 5, 2_000);
+        let runner = Arc::new(FakeRunner {
+            barrier: Some(Arc::new(Barrier::new(5))),
+            ..FakeRunner::successful()
+        });
+        let persisted = Arc::new(Mutex::new(Vec::new()));
+        let persisted_for_run = Arc::clone(&persisted);
+        let outcome = execute_team_batch(
+            &spec,
+            &mut snapshot,
+            &jobs,
+            &runner,
+            &CancellationToken::default(),
+            move |state| {
+                persisted_for_run.lock().expect("lock").push(state.clone());
+                Ok(())
+            },
+            |_| {},
+        )
+        .expect("batch succeeds");
+        assert_eq!(runner.peak.load(Ordering::SeqCst), 5);
+        assert_eq!(
+            outcome
+                .tasks
+                .iter()
+                .map(|task| task.sequence)
+                .collect::<Vec<_>>(),
+            vec![0, 1, 2, 3, 4]
+        );
+        assert!(outcome.tasks.iter().all(|task| task.result.is_ok()));
+        assert!(outcome.snapshot.resources.active.is_empty());
+        assert_eq!(outcome.snapshot.scheduler.active.len(), 5);
+        assert!(outcome.snapshot.tasks.values().all(|record| {
+            record.state == CampaignTaskState::PublicationReady
+                && record.implementation_session.is_some()
+                && record.reviewed_commit.is_some()
+                && record.completion_commit.is_some()
+        }));
+        assert!(persisted.lock().expect("lock").len() > 5);
+    }
+
+    #[test]
+    fn one_panicking_worker_does_not_cancel_successful_siblings() {
+        let (spec, mut snapshot, jobs) = fixture(3, 3, 2_000);
+        let runner = Arc::new(FakeRunner {
+            panic_sequence: Some(1),
+            ..FakeRunner::successful()
+        });
+        let outcome = execute_team_batch(
+            &spec,
+            &mut snapshot,
+            &jobs,
+            &runner,
+            &CancellationToken::default(),
+            |_| Ok(()),
+            |_| {},
+        )
+        .expect("batch remains coherent");
+        assert!(outcome.tasks[0].result.is_ok());
+        assert_eq!(outcome.tasks[1].result, Err(RuntimeError::Process));
+        assert!(outcome.tasks[2].result.is_ok());
+        let failed = &outcome.snapshot.tasks["23.3.2.2"];
+        assert_eq!(failed.state, CampaignTaskState::Failed);
+        assert_eq!(failed.terminal_reason.as_deref(), Some("process_crashed"));
+        assert_eq!(outcome.snapshot.scheduler.active.len(), 2);
+        assert!(outcome.snapshot.resources.active.is_empty());
+    }
+
+    #[test]
+    fn deadline_cancels_only_the_expired_worker() {
+        let (spec, mut snapshot, jobs) = fixture(2, 2, 120);
+        let runner = Arc::new(FakeRunner {
+            wait_for_cancellation: Some(0),
+            ..FakeRunner::successful()
+        });
+        let outcome = execute_team_batch(
+            &spec,
+            &mut snapshot,
+            &jobs,
+            &runner,
+            &CancellationToken::default(),
+            |_| Ok(()),
+            |_| {},
+        )
+        .expect("bounded timeout remains coherent");
+        assert_eq!(outcome.tasks[0].result, Err(RuntimeError::Process));
+        assert!(outcome.tasks[1].result.is_ok());
+        assert_eq!(
+            outcome.snapshot.tasks["23.3.2.1"]
+                .terminal_reason
+                .as_deref(),
+            Some("timed_out")
+        );
+        assert_eq!(
+            outcome.snapshot.tasks["23.3.2.2"].state,
+            CampaignTaskState::PublicationReady
+        );
+    }
+
+    #[test]
+    fn completion_permutations_do_not_change_result_order() {
+        let (spec, mut snapshot, jobs) = fixture(3, 3, 2_000);
+        let runner = Arc::new(FakeRunner {
+            delays_ms: BTreeMap::from([(0, 60), (1, 30), (2, 0)]),
+            ..FakeRunner::successful()
+        });
+        let outcome = execute_team_batch(
+            &spec,
+            &mut snapshot,
+            &jobs,
+            &runner,
+            &CancellationToken::default(),
+            |_| Ok(()),
+            |_| {},
+        )
+        .expect("permuted batch");
+        assert_eq!(
+            outcome.completion_order,
+            vec!["23.3.2.3", "23.3.2.2", "23.3.2.1"]
+        );
+        assert_eq!(
+            outcome
+                .tasks
+                .iter()
+                .map(|task| task.sequence)
+                .collect::<Vec<_>>(),
+            vec![0, 1, 2]
+        );
+    }
+
+    #[test]
+    fn conflicting_reservations_fail_before_persistence_or_execution() {
+        let (spec, mut snapshot, mut jobs) = fixture(2, 2, 2_000);
+        jobs[1].reservation.reservation_id = jobs[0].reservation.reservation_id.clone();
+        let calls = Arc::new(AtomicUsize::new(0));
+        let runner = Arc::new(CountingRunner(Arc::clone(&calls)));
+        let persists = AtomicUsize::new(0);
+        assert_eq!(
+            execute_team_batch(
+                &spec,
+                &mut snapshot,
+                &jobs,
+                &runner,
+                &CancellationToken::default(),
+                |_| {
+                    persists.fetch_add(1, Ordering::SeqCst);
+                    Ok(())
+                },
+                |_| {},
+            ),
+            Err(RuntimeError::State)
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+        assert_eq!(persists.load(Ordering::SeqCst), 0);
+        assert!(snapshot.resources.active.is_empty());
+    }
+
+    #[test]
+    fn persistence_failure_cancels_and_joins_owned_workers() {
+        let (spec, mut snapshot, jobs) = fixture(1, 1, 2_000);
+        let finished = Arc::new(AtomicUsize::new(0));
+        let runner = Arc::new(CancellationRunner(Arc::clone(&finished)));
+        let persists = AtomicUsize::new(0);
+        assert_eq!(
+            execute_team_batch(
+                &spec,
+                &mut snapshot,
+                &jobs,
+                &runner,
+                &CancellationToken::default(),
+                |_| {
+                    if persists.fetch_add(1, Ordering::SeqCst) == 0 {
+                        Ok(())
+                    } else {
+                        Err(RuntimeError::State)
+                    }
+                },
+                |_| {},
+            ),
+            Err(RuntimeError::State)
+        );
+        assert_eq!(finished.load(Ordering::SeqCst), 1);
+        assert_eq!(persists.load(Ordering::SeqCst), 2);
+    }
+}

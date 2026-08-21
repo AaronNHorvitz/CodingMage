@@ -2,8 +2,13 @@
 
 mod campaign_state;
 mod correction_state;
+mod team_runtime;
 mod team_state;
 
+pub use team_runtime::{
+    TeamBatchJob, TeamBatchObservation, TeamBatchOutcome, TeamEventSink, TeamTaskOutcome,
+    TeamUnitRunner, execute_team_batch,
+};
 pub use team_state::{TeamStateStore, TeamStateStoreError};
 
 use std::{
