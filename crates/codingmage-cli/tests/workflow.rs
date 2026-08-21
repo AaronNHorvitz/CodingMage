@@ -339,6 +339,9 @@ if "--version" in sys.argv:
     print("2.1.136 (Claude Code)")
     raise SystemExit(0)
 if "--help" in sys.argv:
+    if Path(__file__).with_name("break-resume-capability").exists():
+        print('--print "json"')
+        raise SystemExit(0)
     print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
     raise SystemExit(0)
 path = Path("src/lib.rs")
@@ -582,6 +585,28 @@ profiles = ["configured-gates"]
                 "resume-1",
             ]);
             assert!(resumed.status.success());
+
+            fs::write(fixture.root.join("break-resume-capability"), "break\n").unwrap();
+            let refused_resume = Fixture::command(&[
+                "campaign",
+                "--config",
+                config.to_str().unwrap(),
+                "--campaign",
+                campaign.to_str().unwrap(),
+            ]);
+            assert!(!refused_resume.status.success());
+            let checkpoint: serde_json::Value = serde_json::from_slice(
+                &fs::read(
+                    state
+                        .join("campaigns")
+                        .join("fixture-campaign")
+                        .join("checkpoint.json"),
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            assert_eq!(checkpoint["checkpoint"]["resume_validation"], "pending");
+            fs::remove_file(fixture.root.join("break-resume-capability")).unwrap();
         }
     }
 

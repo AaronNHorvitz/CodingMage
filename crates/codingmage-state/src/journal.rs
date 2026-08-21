@@ -140,6 +140,8 @@ pub enum EventKind {
         stop_after_unit: Option<bool>,
         /// Authenticated cancellation state once campaign controls are wired.
         cancelled: Option<bool>,
+        /// Whether resume revalidation must finish before admission.
+        resume_validation: Option<String>,
     },
 }
 
@@ -511,6 +513,7 @@ fn validate_campaign_checkpoint(kind: &EventKind) -> Result<(), JournalError> {
         operator_paused,
         stop_after_unit,
         cancelled,
+        resume_validation,
         ..
     } = kind
     else {
@@ -531,12 +534,17 @@ fn validate_campaign_checkpoint(kind: &EventKind) -> Result<(), JournalError> {
         operator_paused.is_some(),
         stop_after_unit.is_some(),
         cancelled.is_some(),
+        resume_validation.is_some(),
     ];
     if controls.iter().any(|value| *value) && !controls.iter().all(|value| *value)
         || matches!(
             (operator_paused, stop_after_unit, cancelled),
             (Some(true), _, Some(true)) | (_, Some(true), Some(true))
         )
+        || resume_validation
+            .as_deref()
+            .is_some_and(|value| !matches!(value, "not_required" | "pending"))
+        || cancelled == &Some(true) && resume_validation.as_deref() == Some("pending")
     {
         return Err(JournalError::InvalidField);
     }

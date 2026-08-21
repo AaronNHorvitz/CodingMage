@@ -21,7 +21,7 @@ use sha2::{Digest, Sha256};
 
 use crate::{CampaignLimitKind, RunUtilization, RuntimeError};
 
-const SCHEMA_VERSION: u16 = 6;
+const SCHEMA_VERSION: u16 = 7;
 const MAX_CHECKPOINT_BYTES: usize = 1024 * 1024;
 const CLEARANCE_SCHEMA_VERSION: u16 = 1;
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
@@ -270,6 +270,7 @@ pub(crate) struct CampaignCheckpoint {
     pub operator_paused: bool,
     pub stop_after_unit: bool,
     pub cancelled: bool,
+    pub resume_validation: ResumeValidationState,
     pub applied_control_requests: BTreeSet<String>,
     pub active_unit: Option<ActiveUnit>,
     pub pending_integration: Option<PendingIntegration>,
@@ -355,6 +356,13 @@ impl CampaignControlAction {
             Self::Cancel => "cancel",
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum ResumeValidationState {
+    NotRequired,
+    Pending,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -597,6 +605,7 @@ impl CampaignCheckpoint {
             operator_paused: false,
             stop_after_unit: false,
             cancelled: false,
+            resume_validation: ResumeValidationState::NotRequired,
             applied_control_requests: BTreeSet::new(),
             active_unit: None,
             pending_integration: None,
@@ -745,6 +754,10 @@ impl CampaignCheckpoint {
                 operator_paused: Some(self.operator_paused),
                 stop_after_unit: Some(self.stop_after_unit),
                 cancelled: Some(self.cancelled),
+                resume_validation: Some(match self.resume_validation {
+                    ResumeValidationState::NotRequired => "not_required".to_owned(),
+                    ResumeValidationState::Pending => "pending".to_owned(),
+                }),
             },
             outcome: EventOutcome::Succeeded,
             evidence: vec![evidence],
@@ -852,6 +865,7 @@ impl CampaignCheckpoint {
             {
                 self.operator_paused = false;
                 self.stop_after_unit = false;
+                self.resume_validation = ResumeValidationState::Pending;
             }
             CampaignControlAction::StopAfterUnit if !self.cancelled && !self.stop_after_unit => {
                 self.stop_after_unit = true;
@@ -860,6 +874,7 @@ impl CampaignCheckpoint {
                 self.cancelled = true;
                 self.operator_paused = false;
                 self.stop_after_unit = false;
+                self.resume_validation = ResumeValidationState::NotRequired;
             }
             _ => return Err(RuntimeError::Authority),
         }
@@ -1029,6 +1044,7 @@ impl CampaignCheckpoint {
             || self.outcomes.accepted > self.outcomes.max_accepted
             || self.applied_control_requests.len() > 10_000
             || self.cancelled && (self.operator_paused || self.stop_after_unit)
+            || self.cancelled && self.resume_validation == ResumeValidationState::Pending
         {
             return Err(RuntimeError::State);
         }
@@ -1701,7 +1717,8 @@ mod tests {
                 operator_paused: Some(false),
                 stop_after_unit: Some(false),
                 cancelled: Some(false),
-            } if phase == "integrating"
+                resume_validation: Some(ref resume),
+            } if phase == "integrating" && resume == "not_required"
         ));
         assert_eq!(record.event.evidence.len(), 1);
         assert_eq!(record.event.redactions.len(), 5);
@@ -2409,6 +2426,7 @@ mod tests {
                 .unwrap()
         );
         assert!(!checkpoint.operator_paused);
+        assert_eq!(checkpoint.resume_validation, ResumeValidationState::Pending);
         assert!(
             checkpoint
                 .apply_control(&control("stop-1", CampaignControlAction::StopAfterUnit))
@@ -2421,12 +2439,17 @@ mod tests {
                 .unwrap()
         );
         assert!(!checkpoint.stop_after_unit);
+        assert_eq!(checkpoint.resume_validation, ResumeValidationState::Pending);
         assert!(
             checkpoint
                 .apply_control(&control("cancel-1", CampaignControlAction::Cancel))
                 .unwrap()
         );
         assert!(checkpoint.cancelled);
+        assert_eq!(
+            checkpoint.resume_validation,
+            ResumeValidationState::NotRequired
+        );
         assert_eq!(
             checkpoint.apply_control(&control("resume-3", CampaignControlAction::Resume)),
             Err(RuntimeError::Authority)

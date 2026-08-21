@@ -60,7 +60,7 @@ use campaign_state::{
     CampaignControlIntent, CampaignPhase, CampaignReservation, CampaignUnitBudget,
     DeferralTriggerIntent, DeferredTaskProjection, HumanDecisionProjection,
     HumanDecisionProjectionReason, LeadRejectionReason, PendingIntegration,
-    RejectedProposalProjection, validate_private_campaign_state,
+    RejectedProposalProjection, ResumeValidationState, validate_private_campaign_state,
 };
 use correction_state::{CorrectionCheckpoint, CorrectionPhase};
 
@@ -1178,7 +1178,17 @@ pub fn run_serial_campaign_with_progress(
         ));
     }
     let applied_controls = apply_pending_campaign_controls(&mut checkpoint, &campaign_root)?;
-    if applied_controls.resumed {
+    if let Some(termination) = campaign_control_termination(&mut checkpoint, &campaign_root)? {
+        return Ok(campaign_outcome(
+            &spec,
+            &campaign,
+            checkpoint.head,
+            checkpoint.completed_units,
+            checkpoint.last_task_id,
+            termination,
+        ));
+    }
+    if applied_controls.resumed || checkpoint.resume_validation == ResumeValidationState::Pending {
         let revalidation = revalidate_campaign_resume(
             config,
             &spec,
@@ -2511,7 +2521,12 @@ fn revalidate_campaign_resume(
     })();
     drop(watcher);
     apply_pending_campaign_controls(checkpoint, campaign_root)?;
-    if checkpoint.cancelled { Ok(()) } else { result }
+    if checkpoint.cancelled {
+        return Ok(());
+    }
+    result?;
+    checkpoint.resume_validation = ResumeValidationState::NotRequired;
+    checkpoint.persist(campaign_root)
 }
 
 fn authorize_campaign_probe(
