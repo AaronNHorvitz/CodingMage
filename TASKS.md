@@ -775,13 +775,13 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [x] **Task 17.1.1 - Build disposable target fixtures**
   - [x] **Sub-task 17.1.1.1:** Create small Rust, Python, JavaScript, documentation-only, dirty, conflicted, and malformed-plan repositories.
   - [x] **Sub-task 17.1.1.2:** Create fake Claude, Codex, GitHub, quota, network, sleep, crash, and restart schedules.
-- [ ] **Task 17.1.2 - Execute the prescribed disposable campaign**
+- [x] **Task 17.1.2 - Execute the prescribed disposable campaign**
   - [x] **Sub-task 17.1.2.1:** Materialize the exact ten-outcome fixture schedule from `docs/architecture/unattended-safeguards.md` with deterministic task and fault identities. See `docs/evidence/sprint-17-disposable-soak.md`.
   - [x] **Sub-task 17.1.2.2:** Execute the schedule through fake lead, implementer, reviewer, gate, Git, process, monitor, and service adapters with one pod and local-only publication. See `docs/evidence/sprint-17-disposable-soak.md`.
   - [x] **Sub-task 17.1.2.3:** Inject provider capacity, malformed output, gate correction, review correction, blocker, deferral, interruption, restart, stop-after-unit, and final-ceiling cases at their recorded boundaries. See `docs/evidence/sprint-17-disposable-soak.md`.
   - [x] **Sub-task 17.1.2.4:** Reconcile all ten outcomes against the expected tasks, commits, gates, reviews, checkpoints, processes, worktrees, and active-checkout manifest. See `docs/evidence/sprint-17-disposable-soak.md`.
   - [x] **Sub-task 17.1.2.5:** Run the complete schedule repeatedly and prove identical terminal classifications and no cross-run state adoption. See `docs/evidence/sprint-17-disposable-soak.md`.
-  - [ ] **Sub-task 17.1.2.6:** Fail the gate on any duplicate task, skipped gate, false completion, unreviewed commit, orphan process, leaked worktree, unowned mutation, silent model downgrade, or unbounded retained state.
+  - [x] **Sub-task 17.1.2.6:** Fail the gate on any duplicate task, skipped gate, false completion, unreviewed commit, orphan process, leaked worktree, unowned mutation, silent model downgrade, or unbounded retained state. See `docs/evidence/sprint-17-disposable-soak.md`.
 
 ### Story 17.2 - Controlled Target Pilot
 
@@ -801,12 +801,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 **Story acceptance criteria**
 
-- [ ] **AC 17.1:** Given the prescribed ten-outcome disposable campaign, when evidence is reviewed, then every expected outcome and injected interruption is exact and no uncontrolled residue exists.
+- [x] **AC 17.1:** Given the prescribed ten-outcome disposable campaign, when evidence is reviewed, then every expected outcome and injected interruption is exact and no uncontrolled residue exists. See `docs/evidence/sprint-17-disposable-soak.md`.
 - [ ] **AC 17.2:** Given the controlled target pilot, when human review compares repository state and CodingMage claims, then every commit, test, finding, limitation, and blocker is accurate.
 
 ### Sprint 17 Gate
 
-- [ ] **Gate 17.1:** Disposable soak campaign passes after the last reliability correction.
+- [x] **Gate 17.1:** Disposable soak campaign passes after the last reliability correction. See `docs/evidence/sprint-17-disposable-soak.md`.
 - [ ] **Gate 17.2:** Product-owner approval is recorded as `External 6`, but unattended target operation remains disabled until the supervised evidence and all serial safeguard and qualification gates pass.
 
 ---
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 17 sub-task `17.1.2.6`: fail the fake-soak gate on every prohibited workflow, residue, authority, and resource observation.
+- [ ] **Next 1:** Complete Sprint 17 sub-task `17.2.2.3`: run five supervised bounded disposable units with no authority or recovery defect.

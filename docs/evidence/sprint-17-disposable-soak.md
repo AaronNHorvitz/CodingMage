@@ -1,12 +1,13 @@
 # Sprint 17 Disposable Soak Evidence
 
-- **Status:** Exact schedule materialization passes; fake-adapter execution and complete soak
-  reconciliation remain open
+- **Status:** Prescribed fake-adapter disposable campaign passes; production coordinator and
+  controlled-target qualifications remain open
 - **Schedule implementation commit:** `8f79bfa`
 - **Fake-adapter execution commit:** `1eb59a3`
 - **Behavioral injection commit:** `1c6f689`
 - **Outcome and residue reconciliation commit:** `dff3395`
 - **Repeated-run isolation commit:** `ee1d1bb`
+- **Complete invariant-gate commit:** `7e32c40`
 - **Executed:** 2026-08-21 on Fedora Linux with Rust 1.95.0
 
 ## Exact Schedule
@@ -94,6 +95,14 @@ Each later run is then given one outcome-evidence record from the baseline run. 
 reconciliation rejects the substitution. Empty, overlong, prefixed-dash, slash-bearing,
 whitespace-bearing, and post-execution rebound run identities are also rejected.
 
-This closes `17.1.2.1` through `17.1.2.5`. It does not yet claim the complete prohibited-observation
-gate, production coordinator qualification, controlled-target execution, or installed-package
-evidence.
+## Complete Invariant Gate
+
+The accelerated qualification report now tracks duplicate tasks, skipped gates, false completions,
+unreviewed commits, orphan processes, leaked worktrees, unowned mutations, silent model downgrades,
+and retained-state observations above the configured bound as nine independent defect classes.
+Each counter is mutated separately and every nonzero value fails the campaign gate.
+
+The complete focused suite passes after the final fake-soak reliability change. This closes Task
+`17.1.2`, acceptance criterion `17.1`, and Gate `17.1`. It does not claim production coordinator
+qualification, controlled-target execution, installed-package evidence, or any target-repository
+result.
