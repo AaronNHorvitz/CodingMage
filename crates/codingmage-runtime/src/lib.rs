@@ -348,6 +348,32 @@ pub enum CampaignStopReason {
     TerminalPolicyFailure,
 }
 
+/// Exact aggregate campaign ceiling that exhausted admission authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CampaignLimitKind {
+    ProviderAttempts,
+    MalformedReportRepairs,
+    CorrectionRounds,
+    ProcessInvocations,
+    OutputBytes,
+    RetainedStateBytes,
+    ExecutionElapsed,
+}
+
+impl CampaignLimitKind {
+    const fn code(self) -> &'static str {
+        match self {
+            Self::ProviderAttempts => "codingmage.campaign.limit.provider_attempts",
+            Self::MalformedReportRepairs => "codingmage.campaign.limit.malformed_report_repairs",
+            Self::CorrectionRounds => "codingmage.campaign.limit.correction_rounds",
+            Self::ProcessInvocations => "codingmage.campaign.limit.process_invocations",
+            Self::OutputBytes => "codingmage.campaign.limit.output_bytes",
+            Self::RetainedStateBytes => "codingmage.campaign.limit.retained_state_bytes",
+            Self::ExecutionElapsed => "codingmage.campaign.limit.execution_elapsed_ms",
+        }
+    }
+}
+
 /// Content-minimized result of one serial campaign invocation.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -1079,6 +1105,24 @@ pub fn run_serial_campaign_with_progress(
                     CampaignState::Paused,
                     CampaignStopReason::UnitLimit,
                     Some("codingmage.campaign.unit_ceiling".to_owned()),
+                ),
+            ));
+        }
+        if let Some(limit) = checkpoint.exhausted_limit() {
+            let blocker_code = limit.code().to_owned();
+            checkpoint.phase = CampaignPhase::Paused;
+            checkpoint.blocker_code = Some(blocker_code.clone());
+            checkpoint.persist(&campaign_root)?;
+            return Ok(campaign_outcome(
+                &spec,
+                &campaign,
+                head,
+                completed_units,
+                last_task_id,
+                CampaignTermination::new(
+                    CampaignState::Paused,
+                    CampaignStopReason::AttemptLimit,
+                    Some(blocker_code),
                 ),
             ));
         }

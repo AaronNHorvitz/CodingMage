@@ -19,7 +19,7 @@ use codingmage_state::{
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::{RunUtilization, RuntimeError};
+use crate::{CampaignLimitKind, RunUtilization, RuntimeError};
 
 const SCHEMA_VERSION: u16 = 5;
 const MAX_CHECKPOINT_BYTES: usize = 1024 * 1024;
@@ -617,6 +617,41 @@ impl CampaignCheckpoint {
 
     pub(crate) fn elapsed_ms(&self) -> Result<u64, RuntimeError> {
         Ok(timestamp_ms()?.saturating_sub(self.started_at_ms))
+    }
+
+    pub(crate) fn exhausted_limit(&self) -> Option<CampaignLimitKind> {
+        [
+            (
+                self.utilization.provider_attempts >= self.limits.provider_attempts,
+                CampaignLimitKind::ProviderAttempts,
+            ),
+            (
+                self.utilization.malformed_report_repairs >= self.limits.malformed_report_repairs,
+                CampaignLimitKind::MalformedReportRepairs,
+            ),
+            (
+                self.utilization.correction_rounds >= self.limits.correction_rounds,
+                CampaignLimitKind::CorrectionRounds,
+            ),
+            (
+                self.utilization.process_invocations >= self.limits.process_invocations,
+                CampaignLimitKind::ProcessInvocations,
+            ),
+            (
+                self.utilization.output_bytes >= self.limits.output_bytes,
+                CampaignLimitKind::OutputBytes,
+            ),
+            (
+                self.utilization.retained_state_bytes >= self.limits.retained_state_bytes,
+                CampaignLimitKind::RetainedStateBytes,
+            ),
+            (
+                self.utilization.execution_elapsed_ms >= self.limits.execution_elapsed_ms,
+                CampaignLimitKind::ExecutionElapsed,
+            ),
+        ]
+        .into_iter()
+        .find_map(|(exhausted, limit)| exhausted.then_some(limit))
     }
 
     fn refresh_outcomes(&mut self) -> Result<(), RuntimeError> {
@@ -1312,6 +1347,49 @@ mod tests {
                 &changed_limits,
             ),
             Err(RuntimeError::Authority)
+        );
+    }
+
+    #[test]
+    fn checkpoint_reports_each_exhausted_limit_in_stable_order() {
+        let mut checkpoint = checkpoint();
+        assert_eq!(checkpoint.exhausted_limit(), None);
+
+        checkpoint.utilization.execution_elapsed_ms = checkpoint.limits.execution_elapsed_ms;
+        assert_eq!(
+            checkpoint.exhausted_limit(),
+            Some(CampaignLimitKind::ExecutionElapsed)
+        );
+        checkpoint.utilization.retained_state_bytes = checkpoint.limits.retained_state_bytes;
+        assert_eq!(
+            checkpoint.exhausted_limit(),
+            Some(CampaignLimitKind::RetainedStateBytes)
+        );
+        checkpoint.utilization.output_bytes = checkpoint.limits.output_bytes;
+        assert_eq!(
+            checkpoint.exhausted_limit(),
+            Some(CampaignLimitKind::OutputBytes)
+        );
+        checkpoint.utilization.process_invocations = checkpoint.limits.process_invocations;
+        assert_eq!(
+            checkpoint.exhausted_limit(),
+            Some(CampaignLimitKind::ProcessInvocations)
+        );
+        checkpoint.utilization.correction_rounds = checkpoint.limits.correction_rounds;
+        assert_eq!(
+            checkpoint.exhausted_limit(),
+            Some(CampaignLimitKind::CorrectionRounds)
+        );
+        checkpoint.utilization.malformed_report_repairs =
+            checkpoint.limits.malformed_report_repairs;
+        assert_eq!(
+            checkpoint.exhausted_limit(),
+            Some(CampaignLimitKind::MalformedReportRepairs)
+        );
+        checkpoint.utilization.provider_attempts = checkpoint.limits.provider_attempts;
+        assert_eq!(
+            checkpoint.exhausted_limit(),
+            Some(CampaignLimitKind::ProviderAttempts)
         );
     }
 
