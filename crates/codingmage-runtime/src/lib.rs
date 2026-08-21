@@ -23,7 +23,9 @@ use codingmage_codex::{
     CodexAdapter, CodexError, CodexLeadAdapter, CodexLeadBinding, CodexLeadTask,
     CodexReviewBinding, CodexReviewReport, ReviewVerdict, codex_review_schema, team_lead_schema,
 };
-use codingmage_contracts::{AgentId, AttemptId, EvidenceId, RunId, TaskId};
+use codingmage_contracts::{
+    AgentId, AttemptId, EvidenceId, LeadReconsiderationTrigger, RunId, TaskId,
+};
 use codingmage_core::{Config, RepositoryAuthorization};
 use codingmage_gate::{
     GateAssertion, GateDiagnostic, GateEntry, GateRegistry, GateRequirement, GateRunner, GateTier,
@@ -48,8 +50,8 @@ use sha2::{Digest, Sha256};
 const RUN_SPEC_VERSION: u16 = 2;
 
 use campaign_state::{
-    ActiveUnit, BlockerClearanceIntent, CampaignCheckpoint, CampaignPhase, PendingIntegration,
-    validate_private_campaign_state,
+    ActiveUnit, BlockerClearanceIntent, CampaignCheckpoint, CampaignPhase, DeferredTaskProjection,
+    PendingIntegration, validate_private_campaign_state,
 };
 use correction_state::{CorrectionCheckpoint, CorrectionPhase};
 
@@ -756,6 +758,11 @@ pub fn run_serial_campaign_with_progress(
         let source = fs::read(campaign.manifest().path.join(&config.task_source))
             .map_err(|_| RuntimeError::Plan)?;
         let plan = TaskPlan::parse(&source).map_err(|_| RuntimeError::Plan)?;
+        if observe_deferred_tasks(&mut checkpoint, &head) {
+            checkpoint.phase = CampaignPhase::Ready;
+            checkpoint.blocker_code = None;
+            checkpoint.persist(&campaign_root)?;
+        }
         let open_subtasks = plan.items.iter().any(|item| {
             item.kind == PlanItemKind::SubTask && item.state == codingmage_plan::CheckState::Open
         });
@@ -775,6 +782,7 @@ pub fn run_serial_campaign_with_progress(
         }
         if completed_units
             .saturating_add(u32::try_from(checkpoint.blocked_task_ids.len()).unwrap_or(u32::MAX))
+            .saturating_add(u32::try_from(checkpoint.deferred_tasks.len()).unwrap_or(u32::MAX))
             >= spec.max_units
         {
             checkpoint.phase = CampaignPhase::Paused;
@@ -791,187 +799,228 @@ pub fn run_serial_campaign_with_progress(
             ));
         }
         let mut scheduler = PodScheduler::new(&spec).map_err(RuntimeError::Campaign)?;
-        let (lease, mut unit_run_id, lease_registered) = if let Some(active) =
-            interrupted_active.take()
-        {
-            if active.source_head != head
-                || active.task_source_sha256 != plan.source_sha256
-                || active.owned_paths.is_empty()
-                || active.owned_paths.iter().any(|path| {
+        let (lease, mut unit_run_id, lease_registered) =
+            if let Some(active) = interrupted_active.take() {
+                if active.source_head != head
+                    || active.task_source_sha256 != plan.source_sha256
+                    || active.owned_paths.is_empty()
+                    || active.owned_paths.iter().any(|path| {
+                        path == &config.task_source
+                            || path.starts_with(&config.task_source)
+                            || config.task_source.starts_with(path)
+                    })
+                {
+                    return Err(RuntimeError::Authority);
+                }
+                plan.select_exact(&active.task_id)
+                    .map_err(|_| RuntimeError::Plan)?;
+                (
+                    PodLease {
+                        pod_id: "recovered-pod-1".to_owned(),
+                        task_id: active.task_id,
+                        owned_paths: active.owned_paths,
+                        test_resources: Vec::new(),
+                        proposal_sha256: "recovered-from-integrity-bound-checkpoint".to_owned(),
+                    },
+                    active.run_id.ok_or(RuntimeError::State)?,
+                    false,
+                )
+            } else {
+                let mut unavailable = checkpoint.blocked_task_ids.clone();
+                unavailable.extend(checkpoint.deferred_tasks.keys().cloned());
+                let ready = match plan.select_ready(&unavailable, &BTreeSet::new(), 64) {
+                    Ok(ready) => ready,
+                    Err(PlanError::NoReadyWork)
+                        if !checkpoint.blocked_task_ids.is_empty()
+                            || !checkpoint.deferred_tasks.is_empty() =>
+                    {
+                        let (phase, state, blocker_code) = if checkpoint.deferred_tasks.is_empty() {
+                            (
+                                CampaignPhase::Blocked,
+                                CampaignState::Blocked,
+                                "codingmage.campaign.no_unblocked_ready_work",
+                            )
+                        } else {
+                            (
+                                CampaignPhase::Paused,
+                                CampaignState::Paused,
+                                "codingmage.campaign.no_deferred_trigger_observed",
+                            )
+                        };
+                        let blocker_code = blocker_code.to_owned();
+                        checkpoint.phase = phase;
+                        checkpoint.active_unit = None;
+                        checkpoint.blocker_code = Some(blocker_code.clone());
+                        checkpoint.persist(&campaign_root)?;
+                        return Ok(campaign_outcome(
+                            &spec,
+                            state,
+                            &campaign,
+                            head,
+                            completed_units,
+                            last_task_id,
+                            Some(blocker_code),
+                        ));
+                    }
+                    Err(_) => return Err(RuntimeError::Plan),
+                };
+                spec.initial_commit.clone_from(&head);
+                spec.task_source_sha256.clone_from(&plan.source_sha256);
+                let binding = lead_binding(&spec, &campaign, &ready);
+                checkpoint.phase = CampaignPhase::Planning;
+                checkpoint.blocker_code = None;
+                checkpoint.persist(&campaign_root)?;
+                observer(RunProgress::new(
+                    ProgressActor::CampaignLead,
+                    ProgressStage::PlanningCampaign,
+                ));
+                let invocation = lead.plan(&binding).map_err(RuntimeError::Reviewer)?;
+                let (lead_result, _) = match lead.execute(
+                    &executor,
+                    &invocation,
+                    &binding,
+                    &CancellationToken::default(),
+                ) {
+                    Ok(value) => value,
+                    Err(error @ (CodexError::Quota | CodexError::Authentication)) => {
+                        let blocker_code = error.code().to_owned();
+                        checkpoint.phase = CampaignPhase::Paused;
+                        checkpoint.blocker_code = Some(blocker_code.clone());
+                        checkpoint.persist(&campaign_root)?;
+                        return Ok(campaign_outcome(
+                            &spec,
+                            CampaignState::Paused,
+                            &campaign,
+                            head,
+                            completed_units,
+                            last_task_id,
+                            Some(blocker_code),
+                        ));
+                    }
+                    Err(error) => return Err(RuntimeError::Reviewer(error)),
+                };
+                let outcome = validate_team_lead_report(lead_result.report, &spec, &ready)
+                    .map_err(RuntimeError::Campaign)?;
+                let proposals = match outcome {
+                    TeamLeadOutcome::Proposals(proposals) => proposals,
+                    TeamLeadOutcome::Blocked(blocker) => {
+                        let task_id = blocker.binding.task_id;
+                        if !checkpoint.blocked_task_ids.insert(task_id.clone()) {
+                            return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
+                        }
+                        checkpoint.blocked_reasons.insert(task_id, blocker.reason);
+                        let blocker_code =
+                            format!("codingmage.campaign.lead_blocked.{}", blocker.reason.code());
+                        checkpoint.phase = CampaignPhase::Ready;
+                        checkpoint.active_unit = None;
+                        checkpoint.blocker_code = Some(blocker_code.clone());
+                        checkpoint.persist(&campaign_root)?;
+                        continue;
+                    }
+                    TeamLeadOutcome::Deferred(deferral) => {
+                        let task_id = deferral.binding.task_id;
+                        let projection = DeferredTaskProjection {
+                            reason: deferral.reason,
+                            trigger: deferral.reconsideration_trigger,
+                            source_head: head.clone(),
+                            task_source_sha256: plan.source_sha256.clone(),
+                        };
+                        if repeated_satisfied_deferral(&checkpoint, &task_id, &projection) {
+                            let blocker_code =
+                                "codingmage.campaign.lead_repeated_satisfied_deferral".to_owned();
+                            checkpoint.phase = CampaignPhase::Blocked;
+                            checkpoint.blocker_code = Some(blocker_code.clone());
+                            checkpoint.persist(&campaign_root)?;
+                            return Ok(campaign_outcome(
+                                &spec,
+                                CampaignState::Blocked,
+                                &campaign,
+                                head,
+                                completed_units,
+                                last_task_id,
+                                Some(blocker_code),
+                            ));
+                        }
+                        if checkpoint
+                            .deferred_tasks
+                            .insert(task_id, projection)
+                            .is_some()
+                        {
+                            return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
+                        }
+                        checkpoint.phase = CampaignPhase::Ready;
+                        checkpoint.active_unit = None;
+                        checkpoint.blocker_code = Some(format!(
+                            "codingmage.campaign.lead_deferred.{}",
+                            deferral.reason.code()
+                        ));
+                        checkpoint.persist(&campaign_root)?;
+                        continue;
+                    }
+                    TeamLeadOutcome::HumanDecision(_) => {
+                        let blocker_code = "codingmage.campaign.human_decision".to_owned();
+                        checkpoint.phase = CampaignPhase::Blocked;
+                        checkpoint.blocker_code = Some(blocker_code.clone());
+                        checkpoint.persist(&campaign_root)?;
+                        return Ok(campaign_outcome(
+                            &spec,
+                            CampaignState::Blocked,
+                            &campaign,
+                            head,
+                            completed_units,
+                            last_task_id,
+                            Some(blocker_code),
+                        ));
+                    }
+                };
+                let proposal = proposals
+                    .into_iter()
+                    .next()
+                    .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
+                if !proposal_owned_paths_exist(&campaign.manifest().path, &proposal.owned_paths) {
+                    let blocker_code = "codingmage.campaign.lead_invalid_owned_paths".to_owned();
+                    checkpoint.phase = CampaignPhase::Paused;
+                    checkpoint.active_unit = None;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        CampaignState::Paused,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        Some(blocker_code),
+                    ));
+                }
+                if proposal.owned_paths.iter().any(|path| {
                     path == &config.task_source
                         || path.starts_with(&config.task_source)
                         || config.task_source.starts_with(path)
-                })
-            {
-                return Err(RuntimeError::Authority);
-            }
-            plan.select_exact(&active.task_id)
-                .map_err(|_| RuntimeError::Plan)?;
-            (
-                PodLease {
-                    pod_id: "recovered-pod-1".to_owned(),
-                    task_id: active.task_id,
-                    owned_paths: active.owned_paths,
-                    test_resources: Vec::new(),
-                    proposal_sha256: "recovered-from-integrity-bound-checkpoint".to_owned(),
-                },
-                active.run_id.ok_or(RuntimeError::State)?,
-                false,
-            )
-        } else {
-            let ready = match plan.select_ready(&checkpoint.blocked_task_ids, &BTreeSet::new(), 64)
-            {
-                Ok(ready) => ready,
-                Err(PlanError::NoReadyWork) if !checkpoint.blocked_task_ids.is_empty() => {
-                    let blocker_code = "codingmage.campaign.no_unblocked_ready_work".to_owned();
-                    checkpoint.phase = CampaignPhase::Blocked;
-                    checkpoint.active_unit = None;
-                    checkpoint.blocker_code = Some(blocker_code.clone());
-                    checkpoint.persist(&campaign_root)?;
-                    return Ok(campaign_outcome(
-                        &spec,
-                        CampaignState::Blocked,
-                        &campaign,
-                        head,
-                        completed_units,
-                        last_task_id,
-                        Some(blocker_code),
-                    ));
+                }) {
+                    return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
                 }
-                Err(_) => return Err(RuntimeError::Plan),
-            };
-            spec.initial_commit.clone_from(&head);
-            spec.task_source_sha256.clone_from(&plan.source_sha256);
-            let binding = lead_binding(&spec, &campaign, &ready);
-            checkpoint.phase = CampaignPhase::Planning;
-            checkpoint.blocker_code = None;
-            checkpoint.persist(&campaign_root)?;
-            observer(RunProgress::new(
-                ProgressActor::CampaignLead,
-                ProgressStage::PlanningCampaign,
-            ));
-            let invocation = lead.plan(&binding).map_err(RuntimeError::Reviewer)?;
-            let (lead_result, _) = match lead.execute(
-                &executor,
-                &invocation,
-                &binding,
-                &CancellationToken::default(),
-            ) {
-                Ok(value) => value,
-                Err(error @ (CodexError::Quota | CodexError::Authentication)) => {
-                    let blocker_code = error.code().to_owned();
-                    checkpoint.phase = CampaignPhase::Paused;
-                    checkpoint.blocker_code = Some(blocker_code.clone());
-                    checkpoint.persist(&campaign_root)?;
-                    return Ok(campaign_outcome(
-                        &spec,
-                        CampaignState::Paused,
-                        &campaign,
-                        head,
-                        completed_units,
-                        last_task_id,
-                        Some(blocker_code),
-                    ));
-                }
-                Err(error) => return Err(RuntimeError::Reviewer(error)),
-            };
-            let outcome = validate_team_lead_report(lead_result.report, &spec, &ready)
-                .map_err(RuntimeError::Campaign)?;
-            let proposals = match outcome {
-                TeamLeadOutcome::Proposals(proposals) => proposals,
-                TeamLeadOutcome::Blocked(blocker) => {
-                    let task_id = blocker.binding.task_id;
-                    if !checkpoint.blocked_task_ids.insert(task_id.clone()) {
-                        return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
-                    }
-                    checkpoint.blocked_reasons.insert(task_id, blocker.reason);
-                    let blocker_code =
-                        format!("codingmage.campaign.lead_blocked.{}", blocker.reason.code());
-                    checkpoint.phase = CampaignPhase::Ready;
-                    checkpoint.active_unit = None;
-                    checkpoint.blocker_code = Some(blocker_code.clone());
-                    checkpoint.persist(&campaign_root)?;
-                    continue;
-                }
-                TeamLeadOutcome::Deferred(_) => {
-                    let blocker_code = "codingmage.campaign.lead_deferred".to_owned();
-                    checkpoint.phase = CampaignPhase::Paused;
-                    checkpoint.blocker_code = Some(blocker_code.clone());
-                    checkpoint.persist(&campaign_root)?;
-                    return Ok(campaign_outcome(
-                        &spec,
-                        CampaignState::Paused,
-                        &campaign,
-                        head,
-                        completed_units,
-                        last_task_id,
-                        Some(blocker_code),
-                    ));
-                }
-                TeamLeadOutcome::HumanDecision(_) => {
-                    let blocker_code = "codingmage.campaign.human_decision".to_owned();
-                    checkpoint.phase = CampaignPhase::Blocked;
-                    checkpoint.blocker_code = Some(blocker_code.clone());
-                    checkpoint.persist(&campaign_root)?;
-                    return Ok(campaign_outcome(
-                        &spec,
-                        CampaignState::Blocked,
-                        &campaign,
-                        head,
-                        completed_units,
-                        last_task_id,
-                        Some(blocker_code),
-                    ));
-                }
-            };
-            let proposal = proposals
-                .into_iter()
-                .next()
-                .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
-            if !proposal_owned_paths_exist(&campaign.manifest().path, &proposal.owned_paths) {
-                let blocker_code = "codingmage.campaign.lead_invalid_owned_paths".to_owned();
-                checkpoint.phase = CampaignPhase::Paused;
-                checkpoint.active_unit = None;
-                checkpoint.blocker_code = Some(blocker_code.clone());
+                let selected = ready
+                    .iter()
+                    .find(|selected| selected.item.id == proposal.task_id)
+                    .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
+                let lease = scheduler
+                    .admit(&spec, selected, proposal)
+                    .map_err(RuntimeError::Campaign)?;
+                let unit_run_id = generated_run_id()?;
+                last_task_id = Some(lease.task_id.clone());
+                checkpoint.last_task_id.clone_from(&last_task_id);
+                checkpoint.phase = CampaignPhase::RunningUnit;
+                checkpoint.active_unit = Some(ActiveUnit {
+                    task_id: lease.task_id.clone(),
+                    source_head: head.clone(),
+                    task_source_sha256: plan.source_sha256.clone(),
+                    owned_paths: lease.owned_paths.clone(),
+                    run_id: Some(unit_run_id.clone()),
+                });
                 checkpoint.persist(&campaign_root)?;
-                return Ok(campaign_outcome(
-                    &spec,
-                    CampaignState::Paused,
-                    &campaign,
-                    head,
-                    completed_units,
-                    last_task_id,
-                    Some(blocker_code),
-                ));
-            }
-            if proposal.owned_paths.iter().any(|path| {
-                path == &config.task_source
-                    || path.starts_with(&config.task_source)
-                    || config.task_source.starts_with(path)
-            }) {
-                return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
-            }
-            let selected = ready
-                .iter()
-                .find(|selected| selected.item.id == proposal.task_id)
-                .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
-            let lease = scheduler
-                .admit(&spec, selected, proposal)
-                .map_err(RuntimeError::Campaign)?;
-            let unit_run_id = generated_run_id()?;
-            last_task_id = Some(lease.task_id.clone());
-            checkpoint.last_task_id.clone_from(&last_task_id);
-            checkpoint.phase = CampaignPhase::RunningUnit;
-            checkpoint.active_unit = Some(ActiveUnit {
-                task_id: lease.task_id.clone(),
-                source_head: head.clone(),
-                task_source_sha256: plan.source_sha256.clone(),
-                owned_paths: lease.owned_paths.clone(),
-                run_id: Some(unit_run_id.clone()),
-            });
-            checkpoint.persist(&campaign_root)?;
-            (lease, unit_run_id, true)
-        };
+                (lease, unit_run_id, true)
+            };
 
         let mut pod_config = config.clone();
         pod_config.target_path.clone_from(&campaign.manifest().path);
@@ -1315,6 +1364,45 @@ fn reconcile_campaign_restart(
     checkpoint.pending_integration = None;
     checkpoint.blocker_code = None;
     checkpoint.persist(campaign_root)
+}
+
+fn observe_deferred_tasks(checkpoint: &mut CampaignCheckpoint, head: &str) -> bool {
+    let observed = checkpoint
+        .deferred_tasks
+        .iter()
+        .filter_map(|(task_id, projection)| {
+            let satisfied = match projection.trigger {
+                LeadReconsiderationTrigger::CampaignHeadAdvancement => {
+                    projection.source_head != head
+                }
+                LeadReconsiderationTrigger::LeaseRelease
+                | LeadReconsiderationTrigger::GateResourceRelease => true,
+                LeadReconsiderationTrigger::ProviderReset
+                | LeadReconsiderationTrigger::ReviewCompletion
+                | LeadReconsiderationTrigger::OperatorResume => false,
+            };
+            satisfied.then(|| task_id.clone())
+        })
+        .collect::<Vec<_>>();
+    for task_id in &observed {
+        if let Some(projection) = checkpoint.deferred_tasks.remove(task_id) {
+            checkpoint
+                .satisfied_deferrals
+                .insert(task_id.clone(), projection);
+        }
+    }
+    !observed.is_empty()
+}
+
+fn repeated_satisfied_deferral(
+    checkpoint: &CampaignCheckpoint,
+    task_id: &str,
+    projection: &DeferredTaskProjection,
+) -> bool {
+    checkpoint
+        .satisfied_deferrals
+        .get(task_id)
+        .is_some_and(|prior| prior == projection)
 }
 
 fn provider_spec(provider: &codingmage_campaign::CampaignProvider) -> ProviderSpec {
@@ -2808,6 +2896,70 @@ effort = "high"
             check_exact_line(before, 1),
             Err(OrchestrationError::PlanDrift)
         );
+    }
+
+    #[test]
+    fn deferral_triggers_preserve_order_and_reject_satisfied_repetition() {
+        let plan = TaskPlan::parse(
+            b"# Tasks\n\n## Sprint 1 - Build\n\n**Sprint goal:** Build.\n\n### Story 1.1 - Work\n\n- [ ] **Task 1.1.1 - Units**\n  - [ ] **Sub-task 1.1.1.1:** Complete the first independent bounded unit.\n  - [ ] **Sub-task 1.1.1.2:** Complete the second independent bounded unit.\n",
+        )
+        .unwrap();
+        let mut checkpoint = CampaignCheckpoint::new(
+            "a".repeat(64),
+            "campaign-1".to_owned(),
+            "repo-1".to_owned(),
+            RunId::new("run-1").unwrap(),
+            codingmage_contracts::WorktreeId::new("worktree-1").unwrap(),
+            "codingmage/campaign-1".to_owned(),
+            "b".repeat(40),
+        )
+        .unwrap();
+        let head_deferral = DeferredTaskProjection {
+            reason: codingmage_contracts::LeadDeferredReason::DeterministicDependencyOrder,
+            trigger: LeadReconsiderationTrigger::CampaignHeadAdvancement,
+            source_head: "b".repeat(40),
+            task_source_sha256: plan.source_sha256.clone(),
+        };
+        checkpoint
+            .deferred_tasks
+            .insert("1.1.1.1".to_owned(), head_deferral);
+        let unavailable = checkpoint
+            .deferred_tasks
+            .keys()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        let ready = plan
+            .select_ready(&unavailable, &BTreeSet::new(), 2)
+            .unwrap();
+        assert_eq!(ready[0].item.id, "1.1.1.2");
+        assert!(!observe_deferred_tasks(&mut checkpoint, &"b".repeat(40)));
+        assert!(observe_deferred_tasks(&mut checkpoint, &"c".repeat(40)));
+        let ready = plan
+            .select_ready(&BTreeSet::new(), &BTreeSet::new(), 2)
+            .unwrap();
+        assert_eq!(
+            ready
+                .iter()
+                .map(|selected| selected.item.id.as_str())
+                .collect::<Vec<_>>(),
+            ["1.1.1.1", "1.1.1.2"]
+        );
+
+        let lease_deferral = DeferredTaskProjection {
+            reason: codingmage_contracts::LeadDeferredReason::ActivePathLease,
+            trigger: LeadReconsiderationTrigger::LeaseRelease,
+            source_head: "c".repeat(40),
+            task_source_sha256: plan.source_sha256,
+        };
+        checkpoint
+            .deferred_tasks
+            .insert("1.1.1.2".to_owned(), lease_deferral.clone());
+        assert!(observe_deferred_tasks(&mut checkpoint, &"c".repeat(40)));
+        assert!(repeated_satisfied_deferral(
+            &checkpoint,
+            "1.1.1.2",
+            &lease_deferral
+        ));
     }
 
     #[test]

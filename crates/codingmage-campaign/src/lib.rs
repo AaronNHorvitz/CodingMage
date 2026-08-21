@@ -277,6 +277,7 @@ pub fn validate_team_lead_report(
                 || report.blocked.is_some()
                 || report.human_decision.is_some()
                 || !valid_lead_binding(&deferral.binding, &report, ready)
+                || deferral.reconsideration_trigger != deferral.reason.required_trigger()
             {
                 return Err(CampaignError::InvalidProposal);
             }
@@ -1007,6 +1008,27 @@ mod tests {
                 .unwrap(),
             TeamLeadOutcome::Deferred(_)
         ));
+
+        for trigger in [
+            LeadReconsiderationTrigger::CampaignHeadAdvancement,
+            LeadReconsiderationTrigger::LeaseRelease,
+            LeadReconsiderationTrigger::ProviderReset,
+            LeadReconsiderationTrigger::ReviewCompletion,
+            LeadReconsiderationTrigger::OperatorResume,
+        ] {
+            let mut mismatched = blocked.clone();
+            mismatched.disposition = LeadDispositionKind::Deferred;
+            mismatched.blocked = None;
+            mismatched.deferred = Some(LeadDeferredDisposition {
+                binding: bound.clone(),
+                reason: LeadDeferredReason::GateResourceContention,
+                reconsideration_trigger: trigger,
+            });
+            assert_eq!(
+                validate_team_lead_report(mismatched, &authority, std::slice::from_ref(&selected)),
+                Err(CampaignError::InvalidProposal)
+            );
+        }
 
         let mut mixed = blocked.clone();
         mixed.proposals = vec![lead_proposal(&selected, "crates/engine")];

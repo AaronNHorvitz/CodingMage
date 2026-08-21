@@ -106,6 +106,36 @@ pub enum LeadReconsiderationTrigger {
     OperatorResume,
 }
 
+impl LeadDeferredReason {
+    /// The only trigger capable of reconsidering this temporary reason.
+    #[must_use]
+    pub const fn required_trigger(self) -> LeadReconsiderationTrigger {
+        match self {
+            Self::TemporaryProviderCapacity => LeadReconsiderationTrigger::ProviderReset,
+            Self::ActivePathLease => LeadReconsiderationTrigger::LeaseRelease,
+            Self::GateResourceContention => LeadReconsiderationTrigger::GateResourceRelease,
+            Self::DeterministicDependencyOrder => {
+                LeadReconsiderationTrigger::CampaignHeadAdvancement
+            }
+            Self::PendingStrongerReview => LeadReconsiderationTrigger::ReviewCompletion,
+            Self::OperatorPause => LeadReconsiderationTrigger::OperatorResume,
+        }
+    }
+
+    /// Stable content-free reason code for durable status.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::TemporaryProviderCapacity => "temporary_provider_capacity",
+            Self::ActivePathLease => "active_path_lease",
+            Self::GateResourceContention => "gate_resource_contention",
+            Self::DeterministicDependencyOrder => "deterministic_dependency_order",
+            Self::PendingStrongerReview => "pending_stronger_review",
+            Self::OperatorPause => "operator_pause",
+        }
+    }
+}
+
 /// Closed reasons for requiring an external owner decision.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]

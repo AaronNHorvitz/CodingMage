@@ -298,7 +298,7 @@ fn serial_campaign_advances_two_reviewed_tasks_without_touching_active_checkout(
     let target = fixture.root.join("target");
     fs::create_dir(target.join("src")).unwrap();
     fs::write(target.join("src/lib.rs"), "pub fn value() -> u8 { 1 }\n").unwrap();
-    let task_source = "# Tasks\n\n## Sprint 0 - Start\n\n**Sprint goal:** Start safely.\n\n### Story 0.1 - First\n\n- [ ] **Task 0.1.1 - Work**\n  - [ ] **Sub-task 0.1.1.1:** Complete the first fixture operation.\n  - [ ] **Sub-task 0.1.1.2:** Complete the dependent fixture operation.\n<!-- depends-on: 0.1.1.1 -->\n";
+    let task_source = "# Tasks\n\n## Sprint 0 - Start\n\n**Sprint goal:** Start safely.\n\n### Story 0.1 - First\n\n- [ ] **Task 0.1.1 - Work**\n  - [ ] **Sub-task 0.1.1.1:** Complete the first fixture operation.\n  - [ ] **Sub-task 0.1.1.2:** Complete the second independent fixture operation.\n";
     fs::write(target.join("TASKS.md"), task_source).unwrap();
     git(&target, &["add", "TASKS.md", "src/lib.rs"]);
     git(&target, &["commit", "-m", "add campaign fixture"]);
@@ -331,6 +331,7 @@ print(json.dumps({
         "campaign-codex",
         r#"#!/usr/bin/python3
 import json, re, sys
+from pathlib import Path
 if "--version" in sys.argv:
     print("codex-cli 0.144.5")
     raise SystemExit(0)
@@ -342,22 +343,41 @@ if "--help" in sys.argv:
     raise SystemExit(0)
 packet = sys.stdin.read()
 if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
+    root = Path(__file__).parent
     campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
     head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
     digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
     task = re.search(r"- id=([0-9.]+)", packet).group(1)
-    dependencies = [] if task.endswith(".1") else ["0.1.1.1"]
-    report = {
-        "campaign_id": campaign_id, "campaign_head": head, "task_source_sha256": digest,
-        "disposition": "propose",
-        "proposals": [{
-            "task_id": task, "dependencies": dependencies, "owned_paths": ["src"],
-            "gate_tiers": ["focused"], "test_resources": ["rust-tests"],
-            "expected_artifacts": ["src/lib.rs"], "risk": "routine",
-            "rationale_summary": "The supplied task is dependency-ready and path-bounded."
-        }],
-        "blocked": None, "deferred": None, "human_decision": None
-    }
+    marker = root / "campaign-deferral-observed"
+    if not marker.exists():
+        marker.write_text("deferred\n", encoding="utf-8")
+        report = {
+            "campaign_id": campaign_id, "campaign_head": head,
+            "task_source_sha256": digest, "disposition": "deferred",
+            "proposals": [], "blocked": None,
+            "deferred": {
+                "binding": {
+                    "campaign_id": campaign_id, "campaign_head": head,
+                    "task_source_sha256": digest, "task_id": task,
+                    "dependencies": []
+                },
+                "reason": "deterministic_dependency_order",
+                "reconsideration_trigger": "campaign_head_advancement"
+            },
+            "human_decision": None
+        }
+    else:
+        report = {
+            "campaign_id": campaign_id, "campaign_head": head, "task_source_sha256": digest,
+            "disposition": "propose",
+            "proposals": [{
+                "task_id": task, "dependencies": [], "owned_paths": ["src"],
+                "gate_tiers": ["focused"], "test_resources": ["rust-tests"],
+                "expected_artifacts": ["src/lib.rs"], "risk": "routine",
+                "rationale_summary": "The supplied task is dependency-ready and path-bounded."
+            }],
+            "blocked": None, "deferred": None, "human_decision": None
+        }
 else:
     base = re.search(r"Base commit: ([0-9a-f]{40,64})", packet).group(1)
     target = re.search(r"Target commit: ([0-9a-f]{40,64})", packet).group(1)
@@ -471,7 +491,7 @@ profiles = ["configured-gates"]
     let interrupted_status: serde_json::Value =
         serde_json::from_slice(&interrupted_status.stdout).unwrap();
     assert_eq!(interrupted_status["state"], "integrating");
-    assert_eq!(interrupted_status["current_task_id"], "0.1.1.1");
+    assert_eq!(interrupted_status["current_task_id"], "0.1.1.2");
     assert_eq!(interrupted_status["completed_units"], 0);
 
     let run = Fixture::command(&[
@@ -490,7 +510,7 @@ profiles = ["configured-gates"]
     let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
     assert_eq!(outcome["state"], "complete");
     assert_eq!(outcome["completed_units"], 2);
-    assert_eq!(outcome["last_task_id"], "0.1.1.2");
+    assert_eq!(outcome["last_task_id"], "0.1.1.1");
     assert_eq!(
         fs::read_to_string(target.join("src/lib.rs")).unwrap(),
         "pub fn value() -> u8 { 1 }\n"
@@ -556,7 +576,7 @@ profiles = ["configured-gates"]
     assert_eq!(status["completed_units"], 2);
     assert_eq!(status["blocker_count"], 0);
     assert_eq!(status["current_task_id"], serde_json::Value::Null);
-    assert_eq!(status["last_task_id"], "0.1.1.2");
+    assert_eq!(status["last_task_id"], "0.1.1.1");
 }
 
 #[test]
