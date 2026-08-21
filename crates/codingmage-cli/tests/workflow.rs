@@ -613,6 +613,7 @@ profiles = ["configured-gates"]
     let config_value = load_config(&config).unwrap();
     let campaign_value = CampaignSpec::load(&campaign).unwrap();
     let mut stop_requested = false;
+    let mut planning_status_observed = false;
     let interrupted = catch_unwind(AssertUnwindSafe(|| {
         run_serial_campaign_with_progress(
             &config_value,
@@ -620,6 +621,22 @@ profiles = ["configured-gates"]
             Path::new(env!("CARGO_BIN_EXE_codingmage")),
             |progress| {
                 assert_ne!(progress.stage, ProgressStage::Failed);
+                if progress.stage == ProgressStage::PlanningCampaign {
+                    let status = Fixture::command(&[
+                        "campaign-status",
+                        "--config",
+                        config.to_str().unwrap(),
+                        "--campaign",
+                        campaign.to_str().unwrap(),
+                    ]);
+                    assert!(status.status.success());
+                    let status: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
+                    assert_eq!(status["state"], "planning");
+                    assert_eq!(status["actor"], "codex-lead");
+                    assert_eq!(status["model"], "fixture-lead");
+                    assert!(status["attempt_count"].as_u64().unwrap() > 0);
+                    planning_status_observed = true;
+                }
                 if progress.stage == ProgressStage::Implementing && !stop_requested {
                     let stop = Fixture::command(&[
                         "campaign-control",
@@ -645,6 +662,7 @@ profiles = ["configured-gates"]
         .unwrap();
     }));
     assert!(interrupted.is_err());
+    assert!(planning_status_observed);
     let interrupted_status = Fixture::command(&[
         "campaign-status",
         "--config",
@@ -858,9 +876,31 @@ profiles = ["configured-gates"]
     ]);
     assert!(status.status.success());
     let status: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
+    assert_eq!(status["schema_version"], 2);
     assert_eq!(status["state"], "complete");
     assert_eq!(status["actor"], "coordinator");
+    assert_eq!(status["model"], serde_json::Value::Null);
     assert_eq!(status["completed_units"], 2);
+    assert_eq!(
+        status["attempt_count"],
+        status["utilization"]["provider_attempts"]
+    );
+    assert!(status["attempt_count"].as_u64().unwrap() > 0);
+    assert_eq!(status["outcomes"]["completed"], 2);
+    assert_eq!(status["outcomes"]["blocked"], 0);
+    assert_eq!(status["outcomes"]["deferred"], 0);
+    assert_eq!(status["outcomes"]["pending_human_decision"], 0);
+    assert_eq!(status["outcomes"]["accepted"], 2);
+    assert!(status["outcomes"]["max_accepted"].as_u64().unwrap() >= 2);
+    assert!(status["limits"]["provider_attempts"].as_u64().unwrap() > 0);
+    assert!(status["limits"]["process_invocations"].as_u64().unwrap() > 0);
+    assert!(status["limits"]["output_bytes"].as_u64().unwrap() > 0);
+    assert!(
+        status["utilization"]["process_invocations"]
+            .as_u64()
+            .unwrap()
+            > 0
+    );
     assert_eq!(status["blocker_count"], 0);
     assert_eq!(status["current_task_id"], serde_json::Value::Null);
     assert_eq!(status["current_round"], serde_json::Value::Null);

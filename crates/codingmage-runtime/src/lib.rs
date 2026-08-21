@@ -16,8 +16,8 @@ use std::{
 };
 
 use codingmage_campaign::{
-    CampaignAuthentication, CampaignError, CampaignSpec, PodLease, PodScheduler, TeamLeadOutcome,
-    validate_team_lead_report,
+    CampaignAuthentication, CampaignError, CampaignLimits, CampaignSpec, PodLease, PodScheduler,
+    TeamLeadOutcome, validate_team_lead_report,
 };
 use codingmage_claude::{
     ClaudeAdapter, ClaudeAuthentication, ClaudeCompletionReport, ClaudeError, ClaudeSession,
@@ -455,6 +455,8 @@ pub struct CampaignStatus {
     pub state: String,
     /// Content-minimized actor category owning the durable phase.
     pub actor: String,
+    /// Exact active model only when the durable phase proves which configured provider owns it.
+    pub model: Option<String>,
     /// Coordinator-owned local campaign branch.
     pub branch: String,
     /// Exact last reconciled campaign head.
@@ -467,6 +469,14 @@ pub struct CampaignStatus {
     pub last_task_id: Option<String>,
     /// Number of accepted, reconciled campaign units.
     pub completed_units: u32,
+    /// Aggregate provider attempts observed across the campaign.
+    pub attempt_count: u32,
+    /// Independent durable outcome counters and their accepted-outcome ceiling.
+    pub outcomes: CampaignStatusOutcomes,
+    /// Current aggregate campaign resource utilization.
+    pub utilization: CampaignStatusUtilization,
+    /// Exact operator-authorized aggregate campaign ceilings.
+    pub limits: CampaignLimits,
     /// Number of durable blocked tasks, human-decision holds, or one campaign-level blocker.
     pub blocker_count: u32,
     /// Content-free durable blocker code.
@@ -475,6 +485,46 @@ pub struct CampaignStatus {
     pub elapsed_ms: u64,
     /// Last durable checkpoint timestamp.
     pub updated_at_ms: u64,
+}
+
+/// Independent content-free outcome counters shown by campaign status.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignStatusOutcomes {
+    /// Reconciled completed units.
+    pub completed: u32,
+    /// Exact tasks blocked on an unavailable prerequisite.
+    pub blocked: u32,
+    /// Exact tasks waiting on a typed reconsideration trigger.
+    pub deferred: u32,
+    /// Exact tasks waiting on an external human decision.
+    pub pending_human_decision: u32,
+    /// Rejected lead proposals, which do not consume accepted capacity.
+    pub rejected_proposals: u32,
+    /// Outcomes consumed against the campaign ceiling.
+    pub accepted: u32,
+    /// Operator-authorized accepted-outcome ceiling.
+    pub max_accepted: u32,
+}
+
+/// Content-free aggregate utilization shown by campaign status.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignStatusUtilization {
+    /// Attempted provider invocations.
+    pub provider_attempts: u32,
+    /// Metadata-only malformed-report repairs.
+    pub malformed_report_repairs: u32,
+    /// Completed correction rounds.
+    pub correction_rounds: u32,
+    /// Provider and gate process invocations.
+    pub process_invocations: u32,
+    /// Full observed process-output bytes.
+    pub output_bytes: u64,
+    /// Bytes retained beneath campaign-owned state.
+    pub retained_state_bytes: u64,
+    /// Observed provider and gate execution milliseconds.
+    pub execution_elapsed_ms: u64,
 }
 
 /// Content-minimized result of one authenticated local blocker-clearance request.
@@ -567,17 +617,48 @@ pub fn campaign_status(
         },
         None => None,
     };
+    let model = match checkpoint.phase {
+        CampaignPhase::Planning => Some(spec.team_lead.model.clone()),
+        CampaignPhase::Ready
+        | CampaignPhase::RunningUnit
+        | CampaignPhase::Integrating
+        | CampaignPhase::Paused
+        | CampaignPhase::Blocked
+        | CampaignPhase::Complete
+        | CampaignPhase::Cancelled => None,
+    };
     Ok(Some(CampaignStatus {
-        schema_version: 1,
+        schema_version: 2,
         campaign_id: checkpoint.campaign_id,
         state: checkpoint.phase.label().to_owned(),
         actor: checkpoint.phase.actor().to_owned(),
+        model,
         branch: checkpoint.branch,
         head: checkpoint.head,
         current_task_id: checkpoint.active_unit.map(|unit| unit.task_id),
         current_round,
         last_task_id: checkpoint.last_task_id,
         completed_units: checkpoint.completed_units,
+        attempt_count: checkpoint.utilization.provider_attempts,
+        outcomes: CampaignStatusOutcomes {
+            completed: checkpoint.outcomes.completed,
+            blocked: checkpoint.outcomes.blocked,
+            deferred: checkpoint.outcomes.deferred,
+            pending_human_decision: checkpoint.outcomes.pending_human_decision,
+            rejected_proposals: checkpoint.outcomes.rejected_proposals,
+            accepted: checkpoint.outcomes.accepted,
+            max_accepted: checkpoint.outcomes.max_accepted,
+        },
+        utilization: CampaignStatusUtilization {
+            provider_attempts: checkpoint.utilization.provider_attempts,
+            malformed_report_repairs: checkpoint.utilization.malformed_report_repairs,
+            correction_rounds: checkpoint.utilization.correction_rounds,
+            process_invocations: checkpoint.utilization.process_invocations,
+            output_bytes: checkpoint.utilization.output_bytes,
+            retained_state_bytes: checkpoint.utilization.retained_state_bytes,
+            execution_elapsed_ms: checkpoint.utilization.execution_elapsed_ms,
+        },
+        limits: checkpoint.limits,
         blocker_count: u32::try_from(checkpoint.blocked_task_ids.len())
             .unwrap_or(u32::MAX)
             .saturating_add(u32::try_from(checkpoint.human_decisions.len()).unwrap_or(u32::MAX))
