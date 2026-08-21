@@ -1618,6 +1618,58 @@ mod tests {
         .unwrap()
     }
 
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+    enum ControlCrashBoundary {
+        IntentPersisted,
+        RequestObserved,
+        StatePersisted,
+        AppliedObserved,
+    }
+
+    fn assert_control_effect(
+        checkpoint: &CampaignCheckpoint,
+        action: CampaignControlAction,
+        request_id: &str,
+    ) {
+        assert_eq!(checkpoint.applied_control_requests.len(), 1);
+        assert!(checkpoint.applied_control_requests.contains(request_id));
+        match action {
+            CampaignControlAction::Pause => {
+                assert!(checkpoint.operator_paused);
+                assert!(!checkpoint.stop_after_unit);
+                assert!(!checkpoint.cancelled);
+                assert_eq!(
+                    checkpoint.resume_validation,
+                    ResumeValidationState::NotRequired
+                );
+            }
+            CampaignControlAction::Resume => {
+                assert!(!checkpoint.operator_paused);
+                assert!(!checkpoint.stop_after_unit);
+                assert!(!checkpoint.cancelled);
+                assert_eq!(checkpoint.resume_validation, ResumeValidationState::Pending);
+            }
+            CampaignControlAction::StopAfterUnit => {
+                assert!(!checkpoint.operator_paused);
+                assert!(checkpoint.stop_after_unit);
+                assert!(!checkpoint.cancelled);
+                assert_eq!(
+                    checkpoint.resume_validation,
+                    ResumeValidationState::NotRequired
+                );
+            }
+            CampaignControlAction::Cancel => {
+                assert!(!checkpoint.operator_paused);
+                assert!(!checkpoint.stop_after_unit);
+                assert!(checkpoint.cancelled);
+                assert_eq!(
+                    checkpoint.resume_validation,
+                    ResumeValidationState::NotRequired
+                );
+            }
+        }
+    }
+
     #[test]
     #[allow(clippy::too_many_lines)]
     fn checkpoint_round_trips_and_rejects_tampering() {
@@ -2455,6 +2507,114 @@ mod tests {
             Err(RuntimeError::Authority)
         );
         assert_eq!(CampaignControlAction::parse("unknown"), None);
+    }
+
+    #[test]
+    fn every_control_crash_boundary_replays_to_one_recoverable_effect() {
+        let actions = [
+            CampaignControlAction::Pause,
+            CampaignControlAction::Resume,
+            CampaignControlAction::StopAfterUnit,
+            CampaignControlAction::Cancel,
+        ];
+        let boundaries = [
+            ControlCrashBoundary::IntentPersisted,
+            ControlCrashBoundary::RequestObserved,
+            ControlCrashBoundary::StatePersisted,
+            ControlCrashBoundary::AppliedObserved,
+        ];
+
+        for action in actions {
+            for boundary in boundaries {
+                let name = format!("control-crash-{}-{boundary:?}", action.code());
+                let root = root(&name);
+                let mut checkpoint = checkpoint();
+                if action == CampaignControlAction::Resume {
+                    checkpoint.operator_paused = true;
+                }
+                checkpoint.persist(&root).unwrap();
+                let request_id = format!("{}-{boundary:?}", action.code());
+                let intent = CampaignControlIntent::new(
+                    request_id.clone(),
+                    checkpoint.authority_sha256.clone(),
+                    checkpoint.campaign_id.clone(),
+                    checkpoint.repository_id.clone(),
+                    checkpoint.campaign_run_id.clone(),
+                    action,
+                    checkpoint.head.clone(),
+                    checkpoint.updated_at_ms,
+                )
+                .unwrap();
+                intent.persist_new(&root).unwrap();
+
+                if boundary >= ControlCrashBoundary::RequestObserved {
+                    let mut journal = Journal::open(&root, format!("{name}-requested")).unwrap();
+                    journal
+                        .append(checkpoint.control_event(&intent, false).unwrap())
+                        .unwrap();
+                }
+                if boundary >= ControlCrashBoundary::StatePersisted {
+                    assert!(checkpoint.apply_control(&intent).unwrap());
+                    checkpoint.persist(&root).unwrap();
+                }
+                if boundary == ControlCrashBoundary::AppliedObserved {
+                    checkpoint.reconcile_control_journal(&root).unwrap();
+                }
+
+                let mut recovered = CampaignCheckpoint::load(&root).unwrap().unwrap();
+                let first = crate::apply_pending_campaign_controls(&mut recovered, &root).unwrap();
+                assert_eq!(
+                    first.resumed,
+                    action == CampaignControlAction::Resume
+                        && boundary < ControlCrashBoundary::StatePersisted
+                );
+                assert_control_effect(&recovered, action, &request_id);
+                let stable = recovered.clone();
+
+                for _ in 0..2 {
+                    let replay =
+                        crate::apply_pending_campaign_controls(&mut recovered, &root).unwrap();
+                    assert!(!replay.resumed);
+                    assert_eq!(recovered, stable);
+                    assert_control_effect(&recovered, action, &request_id);
+                }
+
+                let journal = Journal::open(&root, format!("{name}-reader")).unwrap();
+                let requested = journal
+                    .records()
+                    .iter()
+                    .filter(|record| {
+                        matches!(
+                            &record.event.kind,
+                            EventKind::ControlRequested {
+                                request_id: observed,
+                                action: observed_action,
+                            } if observed == &request_id && observed_action == action.code()
+                        )
+                    })
+                    .count();
+                let applied = journal
+                    .records()
+                    .iter()
+                    .filter(|record| {
+                        matches!(
+                            &record.event.kind,
+                            EventKind::ControlApplied {
+                                request_id: observed,
+                                action: observed_action,
+                            } if observed == &request_id && observed_action == action.code()
+                        )
+                    })
+                    .count();
+                assert_eq!((requested, applied), (1, 1));
+                drop(journal);
+
+                let loaded = CampaignCheckpoint::load(&root).unwrap().unwrap();
+                assert_eq!(loaded, recovered);
+                assert_control_effect(&loaded, action, &request_id);
+                fs::remove_dir_all(root).unwrap();
+            }
+        }
     }
 
     #[test]
