@@ -978,7 +978,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [x] **AC 21.2:** Given a stale campaign head or task-source digest, when a proposal is admitted, then no worktree or provider starts. See `docs/evidence/sprint-21-lead-rejection.md`.
 - [x] **AC 21.3:** Given a valid external blocker and independent ready work, when the lead reports `blocked`, then the task remains unchecked, its descendants remain unavailable, and independent work continues. See `docs/evidence/sprint-21-blocker-continuation.md`.
 - [x] **AC 21.4:** Given a valid temporary condition, when the lead reports `deferred`, then the task becomes eligible only after its exact recorded trigger and cannot be deferred forever against unchanged state. See `docs/evidence/sprint-21-deferral-local.md`.
-- [ ] **AC 21.5:** Given ambiguous scope or requested authority expansion, when the lead reports `human_decision_required`, then no model or repository effect starts and independent work may continue.
+- [x] **AC 21.5:** Given ambiguous scope or requested authority expansion, when the lead reports `human_decision_required`, then no model or repository effect starts and independent work may continue. See `docs/evidence/sprint-21-human-decision.md`.
 - [x] **AC 21.6:** Given mixed, stale, unknown, duplicate, or unauthorized output, when validation runs, then the proposal is rejected without any accepted campaign outcome or external effect. See `docs/evidence/sprint-21-lead-rejection.md`.
 
 ### Sprint 21 Gate
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete `AC 21.5`: prove a typed human-decision hold creates no implementation or repository effect, suppresses only the exact task, survives restart, and permits independent dependency-ready work to continue.
+- [ ] **Next 1:** Complete Sprint 21 Gates `21.1` and `21.2`: run exhaustive campaign-authority mutation and complete disposition/reason/trigger matrices, then bind the passing evidence before beginning the remaining Sprint 22 projections.
