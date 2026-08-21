@@ -796,7 +796,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 17.2.2.4:** Enable background execution only after explicit owner approval of retained evidence. The owner approved the retained five-unit evidence and authorized the next bounded unattended pilot on 2026-08-21.
 - [ ] **Task 17.2.3 - Run unattended pilot**
   - [x] **Sub-task 17.2.3.1:** Run one story through implementation, review, correction, and checkpoint without operator intervention. The one-pod local-only campaign completed one resumed correction and reconciled its exact durable state; see `docs/evidence/sprint-17-controlled-pilot.md`.
-  - [ ] **Sub-task 17.2.3.2:** Pause correctly on every external blocker and quota event.
+  - [x] **Sub-task 17.2.3.2:** Pause correctly on every external blocker and quota event. Nine disposable unattended cases covered all six blocker reasons valid for dependency-ready work plus lead, implementer, and reviewer quota boundaries with exact bounded attempts, no false completion, and reconciled durable state; see `docs/evidence/sprint-17-controlled-pilot.md`.
   - [ ] **Sub-task 17.2.3.3:** Produce a complete handoff and status report for human inspection.
 
 **Story acceptance criteria**
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 17 sub-task `17.2.3.2`: qualify exact unattended pauses for external blockers and provider quota events without false completion or uncontrolled retry.
+- [ ] **Next 1:** Complete Sprint 17 sub-task `17.2.3.3`: produce and independently reconcile a complete unattended handoff and status report for human inspection.

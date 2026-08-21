@@ -1,6 +1,6 @@
 # Sprint 17 Controlled Target Pilot Evidence
 
-- **Status:** Preparation, fake-agent dry run, first live unit, five-unit supervised qualification, owner-approved background enablement, and one unattended corrected story complete; blocker/quota and handoff evidence remain open
+- **Status:** Preparation, fake-agent dry run, first live unit, five-unit supervised qualification, owner-approved background enablement, one unattended corrected story, and exact blocker/quota pause qualification complete; handoff evidence remains open
 - **Initial CodingMage pilot build:** commit `c3b3103`
 - **Five-unit qualification build:** commit `2631265`
 - **Executed:** 2026-08-19 and 2026-08-21 on Fedora Linux with Rust 1.95.0
@@ -73,6 +73,35 @@ The fresh post-correction run completed without operator intervention:
 - a second process inspection found no qualification-owned CodingMage or Claude process.
 
 The retained state contained 42,437 bytes and the observed provider and gate output totaled 15,209 bytes, both within the operator-authorized 16 MiB ceilings. The run used no publication, network, issue, pull-request, merge, release, or external-infrastructure authority.
+
+## External Blocker And Quota Pauses
+
+Commits `593c53c`, `a31328b`, and `79c671f` added and corrected a source-independent qualification executable for exact unattended stops. The executable drives the production serial campaign command through nine separate disposable repositories using deterministic provider fixtures. It grants no live-provider, network, publication, issue, pull-request, merge, release, or external-infrastructure authority.
+
+Two rejected prequalification runs tightened the evidence harness without changing production behavior. The first used a one-unit ceiling, which correctly paused after recording a blocker but before the second planning pass could classify that no unblocked ready work remained. The ceiling was raised to two. The second incorrectly required `last_task_id` to be null after an implementer quota; the durable checkpoint correctly preserved the attempted task identity for resume while leaving `active_unit` null and completed units at zero. The harness now requires that exact distinction.
+
+The fresh run exercised all six closed external-blocker reasons valid for a dependency-ready task:
+
+| Blocker reason | Lead invocations | Terminal state | Durable result |
+|---|---:|---|---|
+| `unavailable_external_dependency` | 1 | `blocked` | one exact blocker, task unchecked |
+| `unavailable_supported_hardware` | 1 | `blocked` | one exact blocker, task unchecked |
+| `missing_operator_managed_authentication` | 1 | `blocked` | one exact blocker, task unchecked |
+| `unavailable_external_service` | 1 | `blocked` | one exact blocker, task unchecked |
+| `unsupported_platform` | 1 | `blocked` | one exact blocker, task unchecked |
+| `implementation_condition_outside_authority` | 1 | `blocked` | one exact blocker, task unchecked |
+
+`blocked_prerequisite` is deliberately excluded from this ready-task pilot: the normative contract rejects that reason for a task already proven dependency-ready, and dependency blocking is instead derived mechanically from the canonical task graph.
+
+The same run injected provider quota at every campaign provider boundary:
+
+| Boundary | Exact invocation sequence | Terminal code | Durable result |
+|---|---|---|---|
+| team lead | `lead` | `codingmage.provider.codex.quota` | paused, zero completed |
+| implementer | `lead`, `implementer` | `codingmage.campaign.provider_quota` | paused, attempted task retained, zero completed |
+| reviewer | `lead`, `implementer`, `reviewer` | `codingmage.campaign.provider_quota` | paused, attempted task retained, zero completed |
+
+Every case stopped after the exact listed invocation sequence with no uncontrolled retry. Independent reconciliation found nine clean active checkouts, nine unchecked campaign task sources, exactly one retained campaign-root worktree per fixture, empty pod-scratch roots, and zero qualification-owned processes. The retained fixture set occupied 554,907 bytes. The content-minimized summary SHA-256 was `d0c9237f57360e5357559d954ba7bbe3b4876e504cb9ce718ce559ace73301ad`; the release CodingMage binary SHA-256 was `a4d774eaf858d37043b29f15e42c880c8e7e2aeffaec790ba557d97033bc9425`, and the qualification executable SHA-256 was `45195a3e56abdc6e29819515a0693c419632fa4c6fe09df73dd05e8e02105134`.
 
 ## Preserved Limits
 
