@@ -37,7 +37,8 @@ cargo fmt --all -- --check
 
 ## Open Scope
 
-This evidence closes Task `21.2.1` only. Durable blocker continuation, authenticated blocker
-clearance, deferral eligibility, repeated-deferral detection, starvation resistance, and the full
-Story 21.2 gate remain open. The runtime currently stops conservatively on a valid nonproposal
-disposition rather than claiming those unimplemented lifecycle semantics.
+This evidence closes Task `21.2.1` only. Durable blocker continuation is now covered separately by
+`docs/evidence/sprint-21-blocker-continuation.md`. Authenticated blocker clearance, deferral
+eligibility, repeated-deferral detection, starvation resistance, human-decision continuation, and
+the full Story 21.2 gate remain open. The runtime still stops conservatively on deferred and
+human-decision dispositions rather than claiming those unimplemented lifecycle semantics.

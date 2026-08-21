@@ -955,10 +955,10 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 21.2.1.4:** Require every deferral to name one supported reconsideration trigger and reject arbitrary dates, prose conditions, or executable instructions.
   - [x] **Sub-task 21.2.1.5:** Keep task completion outside lead authority; only the coordinator may complete a task after implementation, tests, gates, review, checkpoint, and reconciliation. See `docs/evidence/sprint-21-lead-contract.md`.
 - [ ] **Task 21.2.2 - Validate blocker semantics**
-  - [ ] **Sub-task 21.2.2.1:** Accept a blocker only for a dependency-ready task and a reason that cannot be resolved inside current task and path authority.
-  - [ ] **Sub-task 21.2.2.2:** Persist the exact blocked task and reason code while leaving its canonical checkbox unchanged.
-  - [ ] **Sub-task 21.2.2.3:** Suppress repeated selection of that exact blocked task without treating its dependency descendants as independently ready.
-  - [ ] **Sub-task 21.2.2.4:** Continue every independent ready task and stop with `no_unblocked_ready_work` only when no independent path remains.
+  - [x] **Sub-task 21.2.2.1:** Accept a blocker only for a dependency-ready task and a reason that cannot be resolved inside current task and path authority.
+  - [x] **Sub-task 21.2.2.2:** Persist the exact blocked task and reason code while leaving its canonical checkbox unchanged.
+  - [x] **Sub-task 21.2.2.3:** Suppress repeated selection of that exact blocked task without treating its dependency descendants as independently ready.
+  - [x] **Sub-task 21.2.2.4:** Continue every independent ready task and stop with `no_unblocked_ready_work` only when no independent path remains. See `docs/evidence/sprint-21-blocker-continuation.md`.
   - [ ] **Sub-task 21.2.2.5:** Permit blocker clearance only through an authenticated operator action that records the changed prerequisite and forces full campaign revalidation.
 - [ ] **Task 21.2.3 - Validate deferral and reconsideration semantics**
   - [ ] **Sub-task 21.2.3.1:** Accept deferral only for temporary provider capacity, active path lease, gate-resource contention, deterministic dependency order, pending stronger review, or operator pause.
@@ -976,7 +976,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 - [x] **AC 21.1:** Given hostile roadmap and repository text, when the campaign lead proposes work, then only dependency-ready tasks inside preapproved authority can become pod leases.
 - [ ] **AC 21.2:** Given a stale campaign head or task-source digest, when a proposal is admitted, then no worktree or provider starts.
-- [ ] **AC 21.3:** Given a valid external blocker and independent ready work, when the lead reports `blocked`, then the task remains unchecked, its descendants remain unavailable, and independent work continues.
+- [x] **AC 21.3:** Given a valid external blocker and independent ready work, when the lead reports `blocked`, then the task remains unchecked, its descendants remain unavailable, and independent work continues. See `docs/evidence/sprint-21-blocker-continuation.md`.
 - [ ] **AC 21.4:** Given a valid temporary condition, when the lead reports `deferred`, then the task becomes eligible only after its exact recorded trigger and cannot be deferred forever against unchanged state.
 - [ ] **AC 21.5:** Given ambiguous scope or requested authority expansion, when the lead reports `human_decision_required`, then no model or repository effect starts and independent work may continue.
 - [ ] **AC 21.6:** Given mixed, stale, unknown, duplicate, or unauthorized output, when validation runs, then the proposal is rejected without any accepted campaign outcome or external effect.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Implement sub-tasks `21.2.2.1` through `21.2.2.4`: validate resolvable versus external blocker semantics, persist exact typed blockers without completing tasks, suppress blocked descendants, continue independent ready work, and stop only at `no_unblocked_ready_work`; leave authenticated blocker clearance open.
+- [ ] **Next 1:** Implement sub-task `21.2.2.5`: add an authenticated, idempotent operator control that records the changed prerequisite, clears only the exact blocker, invalidates stale planning state, and forces full campaign revalidation before the task can re-enter deterministic ready-set evaluation.
