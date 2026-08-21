@@ -329,6 +329,10 @@ codingmage status --config /absolute/codingmage.toml
 codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml
 codingmage campaign --config /absolute/codingmage.toml --campaign /absolute/campaign.toml
 codingmage campaign-status --config /absolute/codingmage.toml --campaign /absolute/campaign.toml
+codingmage campaign-control --config /absolute/codingmage.toml \
+  --campaign /absolute/campaign.toml --action pause --request pause-example-1
+codingmage campaign-control --config /absolute/codingmage.toml \
+  --campaign /absolute/campaign.toml --action resume --request resume-example-1
 codingmage campaign-clear-blocker --config /absolute/codingmage.toml \
   --campaign /absolute/campaign.toml --task 21.2.2.5 --request clear-example-1 \
   --prerequisite-sha256 "${PREREQUISITE_SHA256}"
@@ -385,8 +389,14 @@ provider reset, review completion, and operator resume require the same-user
 `campaign-observe-trigger` control. That control binds one exact trigger to a create-once request
 and evidence digest, revalidates campaign authority, and is idempotent under exact replay. A repeated
 same-head deferral after its trigger was satisfied becomes a durable typed human-decision hold while
-independent work continues. Human-decision resolution and the broader Story 22.2 status controls
-remain roadmap work. A lead never completes a task; completion remains a coordinator transition
+independent work continues. Human-decision resolution remains roadmap work. The same-user
+`campaign-control` command accepts only `pause`, `resume`, `stop_after_unit`, or `cancel`, binds a
+caller-generated request ID to the exact campaign authority, and records the request in an atomic,
+private, integrity-checked inbox. Exact replay is idempotent and conflicting reuse fails closed.
+Pause prevents the next admission, resume clears the operator hold, and stop or cancel terminates
+at the next coordinator safe boundary. Live interruption of an already running provider or gate is
+not implemented yet, so `cancel` must not be treated as immediate process termination. A lead never
+completes a task; completion remains a coordinator transition
 after code, tests, gates, independent review, checkpointing, and exact task-source reconciliation.
 
 Malformed, stale, mixed, duplicate, or authority-expanding lead output is not a disposition. It is

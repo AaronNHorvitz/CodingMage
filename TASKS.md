@@ -1015,7 +1015,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.2.1.4:** Include every new projection in canonical checkpoint hashing, migration refusal, mutation tests, and restart reconstruction. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [x] **Sub-task 22.2.1.5:** Refuse a legacy or partial checkpoint whenever missing fields could broaden authority or erase a blocker, deferral, limit, or accepted outcome. See `docs/evidence/sprint-22-serial-recovery.md`.
 - [ ] **Task 22.2.2 - Compose campaign operator controls**
-  - [ ] **Sub-task 22.2.2.1:** Wire same-user, exact-campaign `pause`, `resume`, `stop-after-unit`, and `cancel` controls into the production campaign loop.
+  - [x] **Sub-task 22.2.2.1:** Wire same-user, exact-campaign `pause`, `resume`, `stop-after-unit`, and `cancel` controls into the production campaign loop. See `docs/evidence/sprint-22-serial-recovery.md`.
   - [ ] **Sub-task 22.2.2.2:** Journal each control intent and observation with an idempotency key and reject stale, cross-run, duplicate-effect, or unauthorized requests.
   - [ ] **Sub-task 22.2.2.3:** Make pause prevent new admission, stop-after-unit finish the current bounded unit and checkpoint, and cancel terminate only exact owned descendants.
   - [ ] **Sub-task 22.2.2.4:** Revalidate repository, campaign authority, provider capability, deferred triggers, and limits before resume admits work.
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.2.1`: add same-user, exact-campaign pause, resume, stop-after-unit, and cancel control requests without granting publication or unrelated process authority.
+- [ ] **Next 1:** Complete Sprint 22 sub-task `22.2.2.2`: make control intent and applied-observation recovery crash-consistent while rejecting stale, cross-run, duplicate-effect, and unauthorized requests.

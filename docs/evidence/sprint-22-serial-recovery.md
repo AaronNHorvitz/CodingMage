@@ -75,12 +75,14 @@ bounded-attempt limit, no independently safe ready work, or terminal policy fail
 state, stop reason, and content-free diagnostic are constructed as one internal termination value,
 so a call site cannot omit the reason or accidentally shift it into another argument.
 
-Current production exits explicitly classify canonical completion, the accepted-unit ceiling,
+Current production exits explicitly classify canonical completion, operator pause,
+stop-after-unit, authenticated cancellation, the accepted-unit ceiling,
 provider quota or authentication capacity, exhausted provider/correction/report attempts, absence
 of independent ready work, and repository, authority, integrity, or policy refusal. CLI fixtures
 verify serialized reasons for completed, blocked, deferred, correction-limit, and rejected-report
-runs. Authenticated cancellation is reserved in the closed contract; its state-changing control
-path remains truthfully open under sub-task `22.2.2.1` and is not claimed by this evidence.
+runs. Focused runtime tests verify the distinct stop and cancellation states. Cancellation is
+currently observed only at coordinator safe boundaries; exact live descendant termination remains
+open under sub-task `22.2.2.3` and is not claimed by this evidence.
 
 ## Privacy-Safe Round Status
 
@@ -107,11 +109,34 @@ provider output, source text, command output, environment values, and credential
 not accepted into the event schema.
 
 The journal schema uses optional fields for configured limits, provider attempts, correction round,
-and authenticated pause/stop/cancel state. They remain `null` in this foundation because their
-campaign-owned counters and control authority are not implemented yet. This commit therefore does
-not close `22.1.2.1`; it supplies the typed append path that the remaining Sprint 22 safeguard tasks
-will populate and reconcile. Focused tests verify exact identities and counts, checkpoint-digest
-evidence, redaction markers, journal-chain validity, and rejection of contradictory accepted counts.
+and authenticated pause/stop/cancel state. The current checkpoint writer populates the complete
+limit and utilization tuple and projects applied pause, stop, and cancellation state. This does not
+yet close `22.1.2.1`: exact control intent/observation crash reconciliation and the remaining actor
+and terminal-state coverage must still be completed. Focused tests verify exact identities and
+counts, checkpoint-digest evidence, redaction markers, journal-chain validity, and rejection of
+contradictory accepted counts or partial control projections.
+
+## Operator Control Inbox
+
+Checkpoint schema 6 includes `operator_paused`, `stop_after_unit`, `cancelled`, and the ordered set
+of applied control request IDs. A same-user caller can submit only `pause`, `resume`,
+`stop_after_unit`, or `cancel` through a create-once, integrity-bound request file beneath the
+campaign's private state root. The request binds the exact repository, campaign run, authority,
+action, request ID, and observed campaign head. Requests are consumed in a stable timestamp and ID
+order. Exact replay has no second effect; conflicting reuse, a symbolic link, loose permissions,
+wrong ownership, unknown action, cross-run authority, stale identity, malformed content, or a
+partial checkpoint projection fails closed.
+
+The coordinator remains the only checkpoint writer. Focused state-machine tests verify pause,
+resume, stop-after-unit, and cancel transitions and their distinct serialized termination mappings.
+The production binary campaign fixture submits the same pause twice, proves no provider advances
+while paused, then applies a separate resume before campaign work continues.
+
+This evidence closes only the safe-boundary control wiring in `22.2.2.1`. A crash between checkpoint
+replacement and the corresponding journal observation can still leave an applied request without
+its event, and cancel does not yet interrupt an in-flight provider or gate. Exhaustive restart,
+duplicate-delivery, and exact-descendant termination evidence remain open under `22.2.2.2` through
+`22.2.2.5`.
 
 ## Fail-Closed Checkpoint Schema
 
@@ -191,7 +216,7 @@ overflow, restart, and concurrent-observation matrix remains open under sub-task
 
 ## Verification
 
-The complete workspace test suite passed across all targets, including 31 runtime unit tests and
+The complete workspace test suite passed across all targets, including 34 runtime unit tests and
 eight CLI workflow tests. Strict workspace Clippy with warnings denied, workspace formatting,
 workspace documentation generation, architecture checks, documentation policy, 12 Python policy
 tests, and `git diff --check` also passed after aggregate-limit enforcement and evidence
@@ -206,8 +231,8 @@ without replay, durable status, and active-checkout preservation.
 ## Preserved Limits
 
 This evidence does not close initial-implementation-session recovery, complete campaign event
-journaling, production operator
-controls, parallel pods, GitHub publication, native macOS or Windows evidence,
+journaling, live process cancellation, exhaustive operator-control restart evidence, parallel pods,
+GitHub publication, native macOS or Windows evidence,
 manual fuzzing, or the sustained 24-hour or 48-hour soak gate. It authorizes only preparation of the
 explicitly requested bounded one-pod controlled-target pilot; it does not assert general
 unattended-release readiness.

@@ -103,6 +103,11 @@ cargo build --locked --release -p codingmage-cli
 ./target/release/codingmage campaign-status \
   --config /absolute/codingmage.toml \
   --campaign /absolute/campaign.toml
+./target/release/codingmage campaign-control \
+  --config /absolute/codingmage.toml \
+  --campaign /absolute/campaign.toml \
+  --action stop_after_unit \
+  --request stop-example-1
 ./target/release/codingmage campaign-clear-blocker \
   --config /absolute/codingmage.toml \
   --campaign /absolute/campaign.toml \
@@ -127,6 +132,15 @@ only the durable phase, actor category, local branch, reconciled head, current a
 the integrity-verified current correction round when active, completed count, blocker count and
 code, and elapsed time. It does not expose prompts, provider output, source text, repository paths,
 credentials, or diagnostics.
+
+`campaign-control` accepts only `pause`, `resume`, `stop_after_unit`, and `cancel`. Each request is
+bound to the exact campaign authority and a caller-generated idempotency ID, then written atomically
+to a private same-user inbox without replacing an existing request. The campaign consumes requests
+in a stable order and journals each applied observation once. Pause prevents a new unit from being
+admitted, resume clears the operator pause or pending stop, and stop-after-unit exits at the next
+clean unit boundary. Cancel makes the campaign terminal at the next safe boundary. It does not yet
+interrupt an already running provider or deterministic gate; live exact-descendant cancellation is
+still required before cancel can be described as immediate termination.
 
 `campaign-clear-blocker` is an explicit same-user mutation. The campaign state directory and
 checkpoint must remain owned by the invoking Linux user with no group or world access. The command
@@ -225,7 +239,9 @@ an unbounded provider-invocation loop.
   and failed lead and unit attempts project provider attempts, malformed-report repairs, corrections,
   processes, output, retained state, and execution time whenever a trustworthy process receipt
   exists. Aggregate ceilings are enforced before campaign admission and delegated unit effects;
-  control projections and interrupted initial-implementation resume remain open.
+  safe-boundary pause, resume, stop-after-unit, and cancel projections are implemented. Exact live
+  descendant cancellation, crash-gap reconciliation for control observations, exhaustive restart
+  evidence, and interrupted initial-implementation resume remain open.
 - Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable.
   Binary evidence proves quota and authentication pauses preserve zero accepted work and the active
   checkout before a later authorized provider invocation succeeds; CodingMage does not inspect,
