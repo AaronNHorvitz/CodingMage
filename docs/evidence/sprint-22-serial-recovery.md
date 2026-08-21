@@ -21,6 +21,7 @@
 - **Control-boundary restart matrix commit:** `4511b54`
 - **Limit-policy invariance commit:** `aaa1a87`
 - **Exhaustive limit-matrix commit:** `3c92e82`
+- **Complete status projection commit:** `87f2438`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -44,8 +45,10 @@ integration effect. The active checkout and canonical task source remain byte-id
 Claude and Codex adapters classify quota and authentication failures separately from generic
 provider failure. Campaign mode converts those categories into durable content-free pause codes.
 The read-only `campaign-status` command validates campaign authority and checkpoint integrity before
-reporting only phase, actor category, branch, reconciled head, current and last task identifiers,
-completed count, blocker count and code, elapsed time, and update time.
+reporting only phase, actor category, a model identity when the durable phase proves the exact
+configured owner, branch, reconciled head, current and last task identifiers, current correction
+round, aggregate attempt count, independent outcome counters, current utilization and configured
+ceilings, blocker count and code, elapsed time, and update time.
 
 Resume of a planning-time provider pause is available through the same exact campaign invocation
 after access is restored. The binary fixture makes the Codex lead return a quota error on the first
@@ -94,7 +97,7 @@ unrelated process, and returns the authenticated terminal cancellation code.
 
 ## Privacy-Safe Round Status
 
-`campaign-status` now includes `current_round` alongside phase, actor, current and last task,
+`campaign-status` schema 2 includes `current_round` alongside phase, actor, current and last task,
 completed count, blocker count and code, and elapsed time. The value is `null` at a clean boundary,
 zero for an active unit before an accepted correction checkpoint, and otherwise the exact round
 loaded from the integrity-verified private correction checkpoint. It is never inferred from a
@@ -102,9 +105,12 @@ transient progress label or provider statement.
 
 Binary fixtures verify round zero during interrupted integration and at the deliberate boundary
 immediately before the first correction checkpoint becomes durable, plus `null` after completion
-or a clean pause. Status remains read-only and excludes prompts, source text, filenames, provider
-prose, command output, environment values, and credentials. Model identity, independent attempt and
-limit utilization, and monitor noninterference remain open under Story `22.2`.
+or a clean pause. A concurrent planning-phase status read proves the `codex-lead` actor, exact
+configured lead model, and nonzero attempt count; terminal status reports no model rather than
+guessing across an ambiguous phase. The same fixture verifies every outcome, utilization, and limit
+object is present and internally consistent. Status remains read-only and excludes prompts, source
+text, filenames, provider prose, command output, environment values, and credentials. Typed blocker
+and deferral detail plus monitor noninterference remain open under `22.2.4.2` through `22.2.4.4`.
 
 ## Campaign Journal Foundation
 

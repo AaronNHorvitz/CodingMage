@@ -129,9 +129,11 @@ completed-unit count, last task, and a content-free blocker code when applicable
 
 `campaign-status` validates the original campaign authority and checkpoint integrity before showing
 only the durable phase, actor category, local branch, reconciled head, current and last task IDs,
-the integrity-verified current correction round when active, completed count, blocker count and
-code, and elapsed time. It does not expose prompts, provider output, source text, repository paths,
-credentials, or diagnostics.
+the exact configured model when the phase proves its owner, the integrity-verified current
+correction round when active, aggregate attempt count, independent outcome counters, current
+utilization and authorized ceilings, blocker count and code, and elapsed time. It reports no model
+for an ambiguous or terminal phase. It does not expose prompts, provider output, source text,
+repository paths, credentials, or diagnostics.
 
 `campaign-control` accepts only `pause`, `resume`, `stop_after_unit`, and `cancel`. Each request is
 bound to the exact campaign authority and a caller-generated idempotency ID, then written atomically
@@ -167,9 +169,8 @@ operator-supplied evidence digest before returning that task to deterministic re
 Exact replay reports no second change, while conflicting request reuse fails closed. It starts no
 provider and changes no task checkbox or active-checkout byte.
 
-The target status contract additionally exposes distinct completed, blocked, deferred,
-human-decision, and rejected-proposal counts, exact trigger state, and independent limit
-utilization. It remains incomplete until Story 22.2 passes.
+The remaining status work is a typed per-task blocker and deferral view, the prohibited-content
+mutation corpus, and attach/reconnect noninterference evidence.
 
 Malformed or unauthorized lead output pauses with either
 `codingmage.campaign.lead_rejected.malformed_output` or
