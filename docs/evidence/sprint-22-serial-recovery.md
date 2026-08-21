@@ -23,6 +23,7 @@
 - **Exhaustive limit-matrix commit:** `3c92e82`
 - **Complete status projection commit:** `87f2438`
 - **Typed task-status commit:** `3ad93a1`
+- **Status privacy-schema commit:** `e72a5bb`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -119,7 +120,15 @@ shape. Checkpoint loading now refuses mismatched blocker IDs and reason maps, ov
 dispositions, invalid task identities, pending/satisfied overlap, and reason/trigger mismatch before
 status can serialize them. Production CLI fixtures prove pending-to-satisfied deferral movement and
 exact blocker removal after authenticated clearance. The prohibited-content mutation corpus and
-monitor noninterference remain open under `22.2.4.3` and `22.2.4.4`.
+monitor noninterference remain open under `22.2.4.4`.
+
+The prohibited-content corpus injects unique prompt, source-text, filename, provider-prose,
+command-output, environment-value, credential, and hidden-reasoning markers into recovery-only
+fields. It proves none cross into status JSON or the append-only checkpoint journal. The status
+schema denies unknown fields at its top level and in every nested projection; mutation tests add
+each prohibited class plus a nested command-output field and require deserialization refusal.
+Recovery checkpoints may retain exact authorized paths and hashes needed for safe reconciliation,
+but public status and durable journal records do not copy them.
 
 ## Campaign Journal Foundation
 

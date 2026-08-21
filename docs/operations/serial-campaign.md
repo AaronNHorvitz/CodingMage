@@ -139,6 +139,11 @@ Per-task status is limited to sorted canonical task IDs and closed reason codes.
 their closed reconsideration-trigger code and `pending` or `satisfied` state. Human-decision holds
 use the same task/reason-only shape; model-authored summaries are never copied into status.
 
+Status and checkpoint-journal schemas reject unknown fields and omit prompts, source text,
+filenames, provider prose, command output, unrestricted environment values, credentials, and hidden
+reasoning. Exact paths and hashes required for recovery remain private checkpoint state and are not
+copied into either operator surface.
+
 `campaign-control` accepts only `pause`, `resume`, `stop_after_unit`, and `cancel`. Each request is
 bound to the exact campaign authority and a caller-generated idempotency ID, then written atomically
 to a private same-user inbox without replacing an existing request. The campaign consumes requests
@@ -173,8 +178,7 @@ operator-supplied evidence digest before returning that task to deterministic re
 Exact replay reports no second change, while conflicting request reuse fails closed. It starts no
 provider and changes no task checkbox or active-checkout byte.
 
-The remaining status work is the prohibited-content mutation corpus and attach/reconnect
-noninterference evidence.
+The remaining status work is attach/reconnect and polling noninterference evidence.
 
 Malformed or unauthorized lead output pauses with either
 `codingmage.campaign.lead_rejected.malformed_output` or
