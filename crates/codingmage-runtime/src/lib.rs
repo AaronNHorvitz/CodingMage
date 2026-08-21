@@ -557,6 +557,26 @@ pub struct CampaignStatusDeferral {
     pub trigger_state: String,
 }
 
+/// Privacy-safe explanation of every durable campaign hold visible to the local operator.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignBlockerExplanation {
+    /// Explanation schema version.
+    pub schema_version: u16,
+    /// Operator-selected campaign identity.
+    pub campaign_id: String,
+    /// Stable durable lifecycle phase.
+    pub state: String,
+    /// Content-free campaign-level blocker code.
+    pub blocker_code: Option<String>,
+    /// Exact blocked tasks with closed reason codes.
+    pub blockers: Vec<CampaignStatusTaskReason>,
+    /// Exact deferred tasks with closed reasons, triggers, and trigger state.
+    pub deferrals: Vec<CampaignStatusDeferral>,
+    /// Exact tasks awaiting a human decision with closed reason codes.
+    pub human_decisions: Vec<CampaignStatusTaskReason>,
+}
+
 /// Content-minimized result of one authenticated local blocker-clearance request.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -653,6 +673,34 @@ pub fn campaign_status(
         current_round,
         elapsed_ms,
     )?))
+}
+
+/// Reads the content-free blocker projection for one exact campaign authority.
+///
+/// This is deliberately implemented as a projection of [`campaign_status`], so it has no state,
+/// provider, process, or repository mutation authority of its own.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] for invalid authority, repository identity, or checkpoint integrity.
+pub fn campaign_blocker_explanation(
+    config: &Config,
+    spec: &CampaignSpec,
+    codingmage_binary: &Path,
+) -> Result<Option<CampaignBlockerExplanation>, RuntimeError> {
+    Ok(
+        campaign_status(config, spec, codingmage_binary)?.map(|status| {
+            CampaignBlockerExplanation {
+                schema_version: 1,
+                campaign_id: status.campaign_id,
+                state: status.state,
+                blocker_code: status.blocker_code,
+                blockers: status.blockers,
+                deferrals: status.deferrals,
+                human_decisions: status.human_decisions,
+            }
+        }),
+    )
 }
 
 fn project_campaign_status(

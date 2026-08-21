@@ -1,9 +1,10 @@
 //! Binary-level local operator workflow.
 
 use std::{
+    collections::BTreeMap,
     fs,
     panic::{AssertUnwindSafe, catch_unwind},
-    path::Path,
+    path::{Path, PathBuf},
     process::Command,
     thread,
     time::{Duration, Instant},
@@ -69,6 +70,31 @@ impl Drop for Fixture {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.root);
     }
+}
+
+fn snapshot_tree(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
+    fn visit(root: &Path, current: &Path, snapshot: &mut BTreeMap<PathBuf, Option<Vec<u8>>>) {
+        let mut entries = fs::read_dir(current)
+            .unwrap()
+            .map(|entry| entry.unwrap())
+            .collect::<Vec<_>>();
+        entries.sort_by_key(std::fs::DirEntry::file_name);
+        for entry in entries {
+            let path = entry.path();
+            let relative = path.strip_prefix(root).unwrap().to_path_buf();
+            let metadata = fs::symlink_metadata(&path).unwrap();
+            if metadata.is_dir() {
+                snapshot.insert(relative, None);
+                visit(root, &path, snapshot);
+            } else {
+                snapshot.insert(relative, Some(fs::read(path).unwrap()));
+            }
+        }
+    }
+
+    let mut snapshot = BTreeMap::new();
+    visit(root, root, &mut snapshot);
+    snapshot
 }
 
 #[test]
@@ -1585,6 +1611,17 @@ profiles = ["configured-gates"]
         "codingmage.campaign.no_unblocked_ready_work"
     );
 
+    let state_before_reads = snapshot_tree(&state);
+    let scratch_before_reads = snapshot_tree(&scratch);
+    let head_before_reads = git_output(&target, &["rev-parse", "HEAD"]);
+    let status_before_reads = git_output(&target, &["status", "--porcelain=v2"]);
+    let refs_before_reads = git_output(
+        &target,
+        &["for-each-ref", "--format=%(refname)%00%(objectname)"],
+    );
+    let lead_log_before_reads = fs::read(fixture.root.join("blocker-lead.log")).unwrap();
+    let implementer_log_before_reads = fs::read(fixture.root.join("blocker-claude.log")).unwrap();
+
     let status = Fixture::command(&[
         "campaign-status",
         "--config",
@@ -1608,6 +1645,73 @@ profiles = ["configured-gates"]
     );
     assert!(status["deferrals"].as_array().unwrap().is_empty());
     assert!(status["human_decisions"].as_array().unwrap().is_empty());
+    let attempt_count_before_reads = status["attempt_count"].as_u64().unwrap();
+
+    let explanation_arguments = [
+        "campaign-explain-blocker",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ];
+    let explanation = Fixture::command(&explanation_arguments);
+    assert!(explanation.status.success());
+    let explanation: serde_json::Value = serde_json::from_slice(&explanation.stdout).unwrap();
+    assert_eq!(explanation["schema_version"], 1);
+    assert_eq!(explanation["campaign_id"], "blocker-campaign");
+    assert_eq!(explanation["state"], "blocked");
+    assert_eq!(
+        explanation["blocker_code"],
+        "codingmage.campaign.no_unblocked_ready_work"
+    );
+    assert_eq!(explanation["blockers"], status["blockers"]);
+    assert_eq!(explanation["deferrals"], status["deferrals"]);
+    assert_eq!(explanation["human_decisions"], status["human_decisions"]);
+
+    for _ in 0..16 {
+        let polled = Fixture::command(&[
+            "campaign-status",
+            "--config",
+            config.to_str().unwrap(),
+            "--campaign",
+            campaign.to_str().unwrap(),
+        ]);
+        assert!(polled.status.success());
+        let polled: serde_json::Value = serde_json::from_slice(&polled.stdout).unwrap();
+        assert_eq!(polled["attempt_count"], attempt_count_before_reads);
+        assert_eq!(polled["blockers"], status["blockers"]);
+
+        let reattached = Fixture::command(&explanation_arguments);
+        assert!(reattached.status.success());
+        let reattached: serde_json::Value = serde_json::from_slice(&reattached.stdout).unwrap();
+        assert_eq!(reattached, explanation);
+    }
+
+    assert_eq!(snapshot_tree(&state), state_before_reads);
+    assert_eq!(snapshot_tree(&scratch), scratch_before_reads);
+    assert_eq!(
+        git_output(&target, &["rev-parse", "HEAD"]),
+        head_before_reads
+    );
+    assert_eq!(
+        git_output(&target, &["status", "--porcelain=v2"]),
+        status_before_reads
+    );
+    assert_eq!(
+        git_output(
+            &target,
+            &["for-each-ref", "--format=%(refname)%00%(objectname)"],
+        ),
+        refs_before_reads
+    );
+    assert_eq!(
+        fs::read(fixture.root.join("blocker-lead.log")).unwrap(),
+        lead_log_before_reads
+    );
+    assert_eq!(
+        fs::read(fixture.root.join("blocker-claude.log")).unwrap(),
+        implementer_log_before_reads
+    );
     assert_eq!(
         fs::read_to_string(fixture.root.join("blocker-lead.log"))
             .unwrap()
