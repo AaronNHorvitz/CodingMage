@@ -10,6 +10,7 @@
 - **Campaign-journal foundation commit:** `e3465f1`
 - **Provider-capacity recovery test commit:** `c8efa11`
 - **Fail-closed checkpoint-schema commit:** `a566021`
+- **Outcome-projection implementation commit:** `b28a358`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -124,6 +125,25 @@ inspect and explicitly start a new campaign authority from a verified repository
 allowing CodingMage to infer that absent safety state was empty. The remaining utilization and
 operator-control fields will be required members of this same closed checkpoint shape rather than
 backfilled through a permissive migration.
+
+## Outcome Projections And Ceiling
+
+Schema-3 checkpoints contain independent completed, blocked, deferred, pending-human-decision,
+rejected-proposal, accepted-outcome, and maximum-accepted counters. Before every replacement, the
+coordinator derives those counters from the canonical durable collections and refuses overflow or
+an accepted count above the operator-authorized ceiling. On restart, it verifies every stored count
+against those collections instead of normalizing a mismatch.
+
+The campaign admission boundary now reads the validated accepted-outcome projection. Completed,
+blocked, deferred, and pending-human-decision outcomes each consume one unit; rejected lead
+proposals remain historical evidence and consume no accepted-outcome capacity. The journal records
+the same exact counters and the configured maximum rather than leaving `max_outcomes` absent.
+
+Focused mutation coverage changes each outcome counter independently, recomputes a valid outer
+checkpoint checksum, and proves that semantic reconstruction still refuses the checkpoint. Existing
+restart coverage also preserves each disposition separately, including a deferred task's typed
+reason, exact reconsideration trigger, source head, task-source digest, and whether that trigger was
+already observed.
 
 ## Verification
 

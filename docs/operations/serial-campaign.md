@@ -151,7 +151,8 @@ summary or payload, creates no pod lease, and does not count as an accepted camp
 The campaign checkpoint is atomically replaced under the private campaign state directory. It binds
 the original authority digest, repository identity, campaign worktree identity, branch, initial and
 reconciled heads, active task, pending integration, completed count, typed blockers, deferrals,
-satisfied-trigger guards, human-decision holds, and timestamps. Every prior checkpoint shape is
+satisfied-trigger guards, human-decision holds, rejected proposals, independent outcome counters,
+the configured accepted-outcome ceiling, and timestamps. Every prior checkpoint shape is
 refused because a missing projection cannot prove that the corresponding blocker, deferral, accepted
 outcome, limit, or control state was empty. Recovery from a prior schema requires explicit operator
 inspection and a new campaign authority rooted at a verified repository state.
@@ -211,7 +212,8 @@ an unbounded provider-invocation loop.
 
 - Campaign checkpoints, accepted-head recovery, and exact correction-session recovery are
   implemented. Typed hash-chained checkpoint projection events now preserve campaign head, queue
-  counts, active identity, dispositions, and accepted outcomes; exact attempt, correction, control,
+  counts, active identity, dispositions, accepted outcomes, and the configured outcome ceiling;
+  exact attempt, correction, control,
   and configured-limit projections plus interrupted initial-implementation resume remain open.
 - Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable.
   Binary evidence proves quota and authentication pauses preserve zero accepted work and the active
