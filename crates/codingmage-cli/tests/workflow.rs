@@ -237,7 +237,7 @@ effort = "high"
     assert_eq!(outcome["correction_rounds"], 2);
     assert_eq!(outcome["utilization"]["provider_attempts"], 6);
     assert_eq!(outcome["utilization"]["malformed_report_repairs"], 1);
-    assert_eq!(outcome["utilization"]["process_invocations"], 10);
+    assert_eq!(outcome["utilization"]["process_invocations"], 15);
     assert!(
         outcome["utilization"]["output_bytes"].as_u64().unwrap() > 65536,
         "the rejected provider process receipt must contribute its distinctive output"

@@ -45,6 +45,15 @@ pub struct ClaudeCapabilities {
     pub bare: bool,
 }
 
+/// Capability-probe outcome that retains every trustworthy subprocess receipt.
+#[derive(Debug)]
+pub struct ClaudeProbe {
+    /// Parsed capability result.
+    pub capabilities: Result<ClaudeCapabilities, ClaudeError>,
+    /// Probe subprocesses that actually started, in execution order.
+    pub processes: Vec<ProcessResult>,
+}
+
 impl ClaudeCapabilities {
     /// Parses content-minimized `--version` and `--help` results.
     ///
@@ -398,24 +407,81 @@ impl ClaudeAdapter {
         working_directory: PathBuf,
         cancellation: &CancellationToken,
     ) -> Result<(ClaudeCapabilities, [ProcessResult; 2]), ClaudeError> {
-        let version = self.execute_probe(
+        let observed = self.probe_observed(executor, working_directory, cancellation);
+        let capabilities = observed.capabilities?;
+        let processes = observed
+            .processes
+            .try_into()
+            .map_err(|_| ClaudeError::Process)?;
+        Ok((capabilities, processes))
+    }
+
+    /// Runs capability probes while retaining receipts from every subprocess that started.
+    #[must_use]
+    pub fn probe_observed(
+        &self,
+        executor: &ProcessExecutor,
+        working_directory: PathBuf,
+        cancellation: &CancellationToken,
+    ) -> ClaudeProbe {
+        let mut processes = Vec::new();
+        let version = match self.execute_probe(
             executor,
             working_directory.clone(),
             vec!["--version".to_owned()],
             cancellation,
-        )?;
-        let help = self.execute_probe(
+        ) {
+            Ok(value) => value,
+            Err(error) => {
+                return ClaudeProbe {
+                    capabilities: Err(error),
+                    processes,
+                };
+            }
+        };
+        let outcome = map_process_outcome(&version);
+        processes.push(version);
+        if let Err(error) = outcome {
+            return ClaudeProbe {
+                capabilities: Err(error),
+                processes,
+            };
+        }
+        let help = match self.execute_probe(
             executor,
             working_directory,
             vec!["--help".to_owned()],
             cancellation,
-        )?;
-        let version_text = std::str::from_utf8(&version.stdout.retained)
-            .map_err(|_| ClaudeError::InvalidOutput)?;
+        ) {
+            Ok(value) => value,
+            Err(error) => {
+                return ClaudeProbe {
+                    capabilities: Err(error),
+                    processes,
+                };
+            }
+        };
+        let outcome = map_process_outcome(&help);
+        processes.push(help);
+        if let Err(error) = outcome {
+            return ClaudeProbe {
+                capabilities: Err(error),
+                processes,
+            };
+        }
+        let version = &processes[0];
+        let help = &processes[1];
+        let version_text =
+            std::str::from_utf8(&version.stdout.retained).map_err(|_| ClaudeError::InvalidOutput);
         let help_text =
-            std::str::from_utf8(&help.stdout.retained).map_err(|_| ClaudeError::InvalidOutput)?;
-        let capabilities = ClaudeCapabilities::parse(version_text, help_text)?;
-        Ok((capabilities, [version, help]))
+            std::str::from_utf8(&help.stdout.retained).map_err(|_| ClaudeError::InvalidOutput);
+        let capabilities = version_text
+            .and_then(|version| help_text.map(|help| (version, help)))
+            .and_then(|(version, help)| ClaudeCapabilities::parse(version, help));
+        ClaudeProbe {
+            capabilities,
+            processes,
+        }
     }
 
     fn execute_probe(
@@ -445,7 +511,6 @@ impl ClaudeAdapter {
         let result = executor
             .execute(&profile, &request, cancellation)
             .map_err(|_| ClaudeError::Process)?;
-        map_process_outcome(&result)?;
         Ok(result)
     }
 

@@ -1127,7 +1127,7 @@ pub fn run_serial_campaign_with_progress(
             )
             .map_err(|_| RuntimeError::Repository)?;
             let mut checkpoint = CampaignCheckpoint::new(
-                authority_sha256,
+                authority_sha256.clone(),
                 spec.campaign_id.clone(),
                 spec.repository_id.clone(),
                 campaign_run_id,
@@ -1177,7 +1177,39 @@ pub fn run_serial_campaign_with_progress(
             ),
         ));
     }
-    apply_pending_campaign_controls(&mut checkpoint, &campaign_root)?;
+    let applied_controls = apply_pending_campaign_controls(&mut checkpoint, &campaign_root)?;
+    if applied_controls.resumed {
+        let revalidation = revalidate_campaign_resume(
+            config,
+            &spec,
+            &authority_sha256,
+            &authorization,
+            &campaign,
+            &mut checkpoint,
+            &campaign_root,
+            &executor,
+            &login_environment,
+        );
+        if let Err(RuntimeError::CampaignLimit(limit)) = revalidation {
+            let blocker_code = limit.code().to_owned();
+            checkpoint.phase = CampaignPhase::Paused;
+            checkpoint.blocker_code = Some(blocker_code.clone());
+            checkpoint.persist(&campaign_root)?;
+            return Ok(campaign_outcome(
+                &spec,
+                &campaign,
+                checkpoint.head,
+                checkpoint.completed_units,
+                checkpoint.last_task_id,
+                CampaignTermination::new(
+                    CampaignState::Paused,
+                    CampaignStopReason::AttemptLimit,
+                    Some(blocker_code),
+                ),
+            ));
+        }
+        revalidation?;
+    }
     if let Some(termination) = campaign_control_termination(&mut checkpoint, &campaign_root)? {
         return Ok(campaign_outcome(
             &spec,
@@ -2305,18 +2337,25 @@ fn lead_binding(
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+struct AppliedCampaignControls {
+    resumed: bool,
+}
+
 fn apply_pending_campaign_controls(
     checkpoint: &mut CampaignCheckpoint,
     campaign_root: &Path,
-) -> Result<(), RuntimeError> {
+) -> Result<AppliedCampaignControls, RuntimeError> {
+    let mut applied = AppliedCampaignControls::default();
     checkpoint.reconcile_control_journal(campaign_root)?;
     for intent in CampaignControlIntent::pending(campaign_root)? {
         if checkpoint.apply_control(&intent)? {
+            applied.resumed |= intent.action == CampaignControlAction::Resume;
             checkpoint.persist(campaign_root)?;
             checkpoint.reconcile_control_journal(campaign_root)?;
         }
     }
-    Ok(())
+    Ok(applied)
 }
 
 struct CampaignCancellationWatcher {
@@ -2370,6 +2409,143 @@ impl Drop for CampaignCancellationWatcher {
             let _ = handle.join();
         }
     }
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn revalidate_campaign_resume(
+    config: &Config,
+    spec: &CampaignSpec,
+    authority_sha256: &str,
+    authorization: &RepositoryAuthorization,
+    campaign: &OwnedWorktree,
+    checkpoint: &mut CampaignCheckpoint,
+    campaign_root: &Path,
+    executor: &ProcessExecutor,
+    login_environment: &BTreeMap<String, String>,
+) -> Result<(), RuntimeError> {
+    authorization
+        .revalidate()
+        .map_err(|_| RuntimeError::Authority)?;
+    let inventory = inventory_repository(authorization).map_err(|_| RuntimeError::Repository)?;
+    if !inventory.condition.is_clean()
+        || inventory.head != spec.initial_commit
+        || authorization.identity().repository_id.as_str() != spec.repository_id
+    {
+        return Err(RuntimeError::Authority);
+    }
+    checkpoint.validate_authority(
+        authority_sha256,
+        &spec.campaign_id,
+        &spec.repository_id,
+        &spec.initial_commit,
+        spec.max_units,
+        &spec.limits,
+    )?;
+    campaign
+        .revalidate(authorization, &checkpoint.head)
+        .map_err(|_| RuntimeError::Repository)?;
+    let source = fs::read(campaign.manifest().path.join(&config.task_source))
+        .map_err(|_| RuntimeError::Plan)?;
+    let plan = TaskPlan::parse(&source).map_err(|_| RuntimeError::Plan)?;
+    if observe_deferred_tasks(checkpoint, &checkpoint.head.clone()) {
+        checkpoint.persist(campaign_root)?;
+    }
+    campaign_queue_projection(&plan, checkpoint)?;
+    if checkpoint.outcomes.accepted >= checkpoint.outcomes.max_accepted
+        || checkpoint.exhausted_limit().is_some()
+    {
+        return Ok(());
+    }
+
+    let cancellation = CancellationToken::default();
+    let watcher = CampaignCancellationWatcher::start(
+        campaign_root.to_path_buf(),
+        checkpoint,
+        cancellation.clone(),
+    );
+    let result = (|| {
+        let authentication = match spec.implementer_authentication {
+            CampaignAuthentication::Bare => ClaudeAuthentication::Bare,
+            CampaignAuthentication::ExistingLogin => ClaudeAuthentication::ExistingLogin,
+        };
+        let claude = ClaudeAdapter::new(
+            spec.implementer.executable.clone(),
+            &spec.implementer.model,
+            &spec.implementer.effort,
+        )
+        .map(|adapter| adapter.with_authentication(authentication))
+        .and_then(|adapter| match authentication {
+            ClaudeAuthentication::Bare => Ok(adapter),
+            ClaudeAuthentication::ExistingLogin => {
+                adapter.with_login_environment(login_environment.clone())
+            }
+        })
+        .map_err(RuntimeError::Implementer)?;
+        authorize_campaign_probe(checkpoint, 2)?;
+        let probe =
+            claude.probe_observed(executor, campaign.manifest().path.clone(), &cancellation);
+        record_campaign_probe(checkpoint, campaign_root, &probe.processes)?;
+        probe.capabilities.map_err(RuntimeError::Implementer)?;
+
+        let review_schema = campaign_root.join("resume-review.schema.json");
+        write_private_idempotent(&review_schema, codex_review_schema().as_bytes())?;
+        for provider in [&spec.team_lead, &spec.reviewer] {
+            if checkpoint.exhausted_limit().is_some() {
+                break;
+            }
+            let codex = CodexAdapter::new(
+                provider.executable.clone(),
+                &provider.model,
+                &provider.effort,
+                review_schema.clone(),
+            )
+            .and_then(|adapter| adapter.with_login_environment(login_environment.clone()))
+            .map_err(RuntimeError::Reviewer)?;
+            authorize_campaign_probe(checkpoint, 3)?;
+            let probe =
+                codex.probe_observed(executor, campaign.manifest().path.clone(), &cancellation);
+            record_campaign_probe(checkpoint, campaign_root, &probe.processes)?;
+            probe.capabilities.map_err(RuntimeError::Reviewer)?;
+        }
+        Ok(())
+    })();
+    drop(watcher);
+    apply_pending_campaign_controls(checkpoint, campaign_root)?;
+    if checkpoint.cancelled { Ok(()) } else { result }
+}
+
+fn authorize_campaign_probe(
+    checkpoint: &CampaignCheckpoint,
+    process_count: u32,
+) -> Result<(), RuntimeError> {
+    let projected = checkpoint
+        .utilization
+        .process_invocations
+        .checked_add(process_count)
+        .ok_or(RuntimeError::State)?;
+    if projected > checkpoint.limits.process_invocations {
+        return Err(RuntimeError::CampaignLimit(
+            CampaignLimitKind::ProcessInvocations,
+        ));
+    }
+    Ok(())
+}
+
+fn record_campaign_probe(
+    checkpoint: &mut CampaignCheckpoint,
+    campaign_root: &Path,
+    processes: &[ProcessResult],
+) -> Result<(), RuntimeError> {
+    let count = u32::try_from(processes.len()).map_err(|_| RuntimeError::State)?;
+    checkpoint.utilization.process_invocations = checkpoint
+        .utilization
+        .process_invocations
+        .checked_add(count)
+        .ok_or(RuntimeError::State)?;
+    for process in processes {
+        checkpoint.record_process_result(process)?;
+    }
+    checkpoint.persist(campaign_root)
 }
 
 fn campaign_control_termination(
@@ -2961,6 +3137,21 @@ impl<'a> ProductionWorkflowPort<'a> {
         self.sync_observed_usage()
     }
 
+    fn record_probe_results(
+        &mut self,
+        results: &[ProcessResult],
+    ) -> Result<(), OrchestrationError> {
+        for result in results {
+            self.utilization.process_invocations = self
+                .utilization
+                .process_invocations
+                .checked_add(1)
+                .ok_or(OrchestrationError::Port)?;
+            self.record_process_result(result)?;
+        }
+        Ok(())
+    }
+
     fn record_gate_run(
         &mut self,
         run: &codingmage_gate::GateRun,
@@ -3470,12 +3661,24 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             return Err(OrchestrationError::Port);
         }
         let claude = self.claude_adapter()?;
-        if let Err(error) = claude.probe(&self.executor, worktree.clone(), &self.cancellation) {
+        self.authorize_campaign_effect(CampaignReservation {
+            process_invocations: 2,
+            ..CampaignReservation::default()
+        })?;
+        let probe = claude.probe_observed(&self.executor, worktree.clone(), &self.cancellation);
+        self.record_probe_results(&probe.processes)?;
+        if let Err(error) = probe.capabilities {
             self.failure = Some(RuntimeError::Implementer(error));
             return Err(OrchestrationError::Port);
         }
         let codex = self.codex_adapter()?;
-        if let Err(error) = codex.probe(&self.executor, worktree, &self.cancellation) {
+        self.authorize_campaign_effect(CampaignReservation {
+            process_invocations: 3,
+            ..CampaignReservation::default()
+        })?;
+        let probe = codex.probe_observed(&self.executor, worktree, &self.cancellation);
+        self.record_probe_results(&probe.processes)?;
+        if let Err(error) = probe.capabilities {
             self.failure = Some(RuntimeError::Reviewer(error));
             return Err(OrchestrationError::Port);
         }

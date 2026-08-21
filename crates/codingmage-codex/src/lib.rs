@@ -42,6 +42,15 @@ pub struct CodexCapabilities {
     pub ignore_user_config: bool,
 }
 
+/// Capability-probe outcome that retains every trustworthy subprocess receipt.
+#[derive(Debug)]
+pub struct CodexProbe {
+    /// Parsed capability result.
+    pub capabilities: Result<CodexCapabilities, CodexError>,
+    /// Probe subprocesses that actually started, in execution order.
+    pub processes: Vec<ProcessResult>,
+}
+
 impl CodexCapabilities {
     /// Parses content-minimized version and help results.
     ///
@@ -588,32 +597,83 @@ impl CodexAdapter {
         working_directory: PathBuf,
         cancellation: &CancellationToken,
     ) -> Result<(CodexCapabilities, [ProcessResult; 3]), CodexError> {
-        let version = self.execute_probe(
-            executor,
-            working_directory.clone(),
+        let observed = self.probe_observed(executor, working_directory, cancellation);
+        let capabilities = observed.capabilities?;
+        let processes = observed
+            .processes
+            .try_into()
+            .map_err(|_| CodexError::Process)?;
+        Ok((capabilities, processes))
+    }
+
+    /// Runs capability probes while retaining receipts from every subprocess that started.
+    #[must_use]
+    pub fn probe_observed(
+        &self,
+        executor: &ProcessExecutor,
+        working_directory: PathBuf,
+        cancellation: &CancellationToken,
+    ) -> CodexProbe {
+        let mut processes = Vec::new();
+        let mut working_directory = Some(working_directory);
+        for (index, arguments) in [
             vec!["--version".to_owned()],
-            cancellation,
-        )?;
-        let exec_help = self.execute_probe(
-            executor,
-            working_directory.clone(),
             vec!["exec".to_owned(), "--help".to_owned()],
-            cancellation,
-        )?;
-        let resume_help = self.execute_probe(
-            executor,
-            working_directory,
             vec!["exec".to_owned(), "resume".to_owned(), "--help".to_owned()],
-            cancellation,
-        )?;
-        let version_text =
-            std::str::from_utf8(&version.stdout.retained).map_err(|_| CodexError::InvalidOutput)?;
-        let exec_text = std::str::from_utf8(&exec_help.stdout.retained)
-            .map_err(|_| CodexError::InvalidOutput)?;
-        let resume_text = std::str::from_utf8(&resume_help.stdout.retained)
-            .map_err(|_| CodexError::InvalidOutput)?;
-        let capabilities = CodexCapabilities::parse(version_text, exec_text, resume_text)?;
-        Ok((capabilities, [version, exec_help, resume_help]))
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let directory = if index == 2 {
+                working_directory.take().ok_or(CodexError::Process)
+            } else {
+                working_directory.clone().ok_or(CodexError::Process)
+            };
+            let directory = match directory {
+                Ok(value) => value,
+                Err(error) => {
+                    return CodexProbe {
+                        capabilities: Err(error),
+                        processes,
+                    };
+                }
+            };
+            let process = match self.execute_probe(executor, directory, arguments, cancellation) {
+                Ok(value) => value,
+                Err(error) => {
+                    return CodexProbe {
+                        capabilities: Err(error),
+                        processes,
+                    };
+                }
+            };
+            let outcome = map_process_outcome(&process);
+            processes.push(process);
+            if let Err(error) = outcome {
+                return CodexProbe {
+                    capabilities: Err(error),
+                    processes,
+                };
+            }
+        }
+        let version_text = std::str::from_utf8(&processes[0].stdout.retained)
+            .map_err(|_| CodexError::InvalidOutput);
+        let exec_text = std::str::from_utf8(&processes[1].stdout.retained)
+            .map_err(|_| CodexError::InvalidOutput);
+        let resume_text = std::str::from_utf8(&processes[2].stdout.retained)
+            .map_err(|_| CodexError::InvalidOutput);
+        let capabilities = version_text
+            .and_then(|version| exec_text.map(|help| (version, help)))
+            .and_then(|(version, exec_help)| {
+                resume_text.map(|resume_help| (version, exec_help, resume_help))
+            })
+            .and_then(|(version, exec_help, resume_help)| {
+                CodexCapabilities::parse(version, exec_help, resume_help)
+            });
+        CodexProbe {
+            capabilities,
+            processes,
+        }
     }
 
     fn execute_probe(
@@ -643,7 +703,6 @@ impl CodexAdapter {
         let result = executor
             .execute(&profile, &request, cancellation)
             .map_err(|_| CodexError::Process)?;
-        map_process_outcome(&result)?;
         Ok(result)
     }
 
