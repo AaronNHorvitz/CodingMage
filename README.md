@@ -389,6 +389,12 @@ independent work continues. Human-decision resolution and the broader Story 22.2
 remain roadmap work. A lead never completes a task; completion remains a coordinator transition
 after code, tests, gates, independent review, checkpointing, and exact task-source reconciliation.
 
+Malformed, stale, mixed, duplicate, or authority-expanding lead output is not a disposition. It is
+rejected before pod admission, recorded only as a typed content-free projection bound to the exact
+head and task-source digest, and does not consume the accepted-unit ceiling. Provider prose is not
+copied into campaign state, and the rejected output cannot start Claude, create a pod branch or
+worktree, change Git or task state, or modify the active checkout.
+
 Run `codingmage` from a normal VS Code terminal and leave that terminal open until the final JSON
 appears. During `run`, a live activity stream is written to stderr while the machine-readable final
 result remains isolated on stdout:

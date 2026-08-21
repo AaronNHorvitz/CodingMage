@@ -23,8 +23,9 @@ Each accepted unit follows this sequence:
 The lead contract distinguishes `blocked`, `deferred`, and `human_decision_required` outcomes.
 Typed blockers, authenticated blocker clearance, exact reconsideration triggers, authenticated
 external-trigger observations, repeated-deferral escalation, and independent-work continuation are
-implemented. Human-decision resolution, the complete hostile-output corpus, and the exact
-ten-outcome soak remain unchecked roadmap work.
+implemented. Invalid lead output is durably refused without downstream effects. Human-decision
+resolution, the complete campaign-level every-reason mutation gate, and the exact ten-outcome soak
+remain unchecked roadmap work.
 
 ## Campaign Spec
 
@@ -137,6 +138,12 @@ provider and changes no task checkbox or active-checkout byte.
 The target status contract additionally exposes distinct completed, blocked, deferred,
 human-decision, and rejected-proposal counts, exact trigger state, and independent limit
 utilization. It remains incomplete until Story 22.2 passes.
+
+Malformed or unauthorized lead output pauses with either
+`codingmage.campaign.lead_rejected.malformed_output` or
+`codingmage.campaign.lead_rejected.invalid_proposal`. The integrity-protected rejection projection
+contains only its sequence, closed reason, campaign head, and task-source digest. It stores no lead
+summary or payload, creates no pod lease, and does not count as an accepted campaign unit.
 
 ## Restart Behavior
 

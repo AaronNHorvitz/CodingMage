@@ -966,20 +966,20 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 21.2.3.3:** Exclude a deferred task until its exact trigger is positively observed, then return it to deterministic ready-set evaluation.
   - [x] **Sub-task 21.2.3.4:** Reject a repeated same-head deferral whose trigger is already satisfied and route the no-progress condition to a typed human decision.
   - [x] **Sub-task 21.2.3.5:** Prove deterministic task order and starvation resistance across blocker, deferral, completion, and trigger permutations. See `docs/evidence/sprint-21-deferral-local.md`.
-- [ ] **Task 21.2.4 - Reject ambiguous or unauthorized lead output**
-  - [ ] **Sub-task 21.2.4.1:** Reject mixed dispositions, unknown reasons, duplicate task identities, stale snapshots, contradictory dependencies, and undeclared fields.
-  - [ ] **Sub-task 21.2.4.2:** Reject escaping paths, unsupported artifacts, broadened gates, provider changes, publication changes, and authority expansion before leasing.
-  - [ ] **Sub-task 21.2.4.3:** Record a content-free rejection reason without adopting provider prose into durable state.
-  - [ ] **Sub-task 21.2.4.4:** Prove rejected output creates no worktree, process, provider implementation call, Git effect, task transition, or accepted-outcome count.
+- [x] **Task 21.2.4 - Reject ambiguous or unauthorized lead output**
+  - [x] **Sub-task 21.2.4.1:** Reject mixed dispositions, unknown reasons, duplicate task identities, stale snapshots, contradictory dependencies, and undeclared fields.
+  - [x] **Sub-task 21.2.4.2:** Reject escaping paths, unsupported artifacts, broadened gates, provider changes, publication changes, and authority expansion before leasing.
+  - [x] **Sub-task 21.2.4.3:** Record a content-free rejection reason without adopting provider prose into durable state.
+  - [x] **Sub-task 21.2.4.4:** Prove rejected output creates no worktree, process, provider implementation call, Git effect, task transition, or accepted-outcome count. See `docs/evidence/sprint-21-lead-rejection.md`.
 
 **Story acceptance criteria**
 
 - [x] **AC 21.1:** Given hostile roadmap and repository text, when the campaign lead proposes work, then only dependency-ready tasks inside preapproved authority can become pod leases.
-- [ ] **AC 21.2:** Given a stale campaign head or task-source digest, when a proposal is admitted, then no worktree or provider starts.
+- [x] **AC 21.2:** Given a stale campaign head or task-source digest, when a proposal is admitted, then no worktree or provider starts. See `docs/evidence/sprint-21-lead-rejection.md`.
 - [x] **AC 21.3:** Given a valid external blocker and independent ready work, when the lead reports `blocked`, then the task remains unchecked, its descendants remain unavailable, and independent work continues. See `docs/evidence/sprint-21-blocker-continuation.md`.
 - [x] **AC 21.4:** Given a valid temporary condition, when the lead reports `deferred`, then the task becomes eligible only after its exact recorded trigger and cannot be deferred forever against unchanged state. See `docs/evidence/sprint-21-deferral-local.md`.
 - [ ] **AC 21.5:** Given ambiguous scope or requested authority expansion, when the lead reports `human_decision_required`, then no model or repository effect starts and independent work may continue.
-- [ ] **AC 21.6:** Given mixed, stale, unknown, duplicate, or unauthorized output, when validation runs, then the proposal is rejected without any accepted campaign outcome or external effect.
+- [x] **AC 21.6:** Given mixed, stale, unknown, duplicate, or unauthorized output, when validation runs, then the proposal is rejected without any accepted campaign outcome or external effect. See `docs/evidence/sprint-21-lead-rejection.md`.
 
 ### Sprint 21 Gate
 
@@ -1343,4 +1343,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Task `21.2.4`: reject ambiguous, stale, mixed, unknown, duplicate, and authority-expanding lead output before any worktree, provider, Git, task, or accepted-outcome effect.
+- [ ] **Next 1:** Complete `AC 21.5`: prove a typed human-decision hold creates no implementation or repository effect, suppresses only the exact task, survives restart, and permits independent dependency-ready work to continue.
