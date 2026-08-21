@@ -11,6 +11,8 @@
 - **Provider-capacity recovery test commit:** `c8efa11`
 - **Fail-closed checkpoint-schema commit:** `a566021`
 - **Outcome-projection implementation commit:** `b28a358`
+- **Unit-utilization implementation commit:** `a8b9c62`
+- **Campaign-utilization aggregation commit:** `2d72917`
 - **Executed:** 2026-08-20 on Fedora Linux with Rust 1.95.0
 
 ## Durable Recovery
@@ -144,6 +146,31 @@ checkpoint checksum, and proves that semantic reconstruction still refuses the c
 restart coverage also preserves each disposition separately, including a deferred task's typed
 reason, exact reconsideration trigger, source head, task-source digest, and whether that trigger was
 already observed.
+
+## Utilization Ledger Progress
+
+Each successful supervised unit now returns a content-free utilization record containing attempted
+provider invocations, metadata-report repairs, provider and gate process invocations, full observed
+output-byte totals where receipts exist, observed execution milliseconds, and exact terminal bytes
+beneath its private run-state root. Provider attempts are incremented before invocation. Arithmetic
+overflow, unreadable state, a symbolic link, or a non-file entry beneath the run-state root fails
+closed.
+
+The binary workflow fixture injects one malformed Claude completion response before any edit and
+then completes two bounded correction rounds. It verifies exactly six provider attempts, one
+metadata repair, ten provider-plus-gate processes, nonzero observed output, and nonzero retained
+state while preserving the same reviewed completion result.
+
+Schema-4 campaign checkpoints aggregate those successful unit receipts plus lead attempts and
+successful lead-process observations. Each checkpoint records provider attempts, malformed-report
+repairs, correction rounds, process invocations, output bytes, retained campaign-state bytes, and
+observed execution milliseconds; the hash-chained journal projects the same complete tuple and
+rejects a partially present utilization record.
+
+Sub-task `22.2.1.2` remains open. A failed provider adapter currently returns a typed error without
+its process receipt, so failed-attempt output and elapsed totals cannot yet be aggregated. Aggregate
+provider, repair, correction, process, output, retained-state, and elapsed ceilings also remain to be
+added to campaign authority and enforced before admission.
 
 ## Verification
 

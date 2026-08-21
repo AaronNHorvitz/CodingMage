@@ -213,8 +213,10 @@ an unbounded provider-invocation loop.
 - Campaign checkpoints, accepted-head recovery, and exact correction-session recovery are
   implemented. Typed hash-chained checkpoint projection events now preserve campaign head, queue
   counts, active identity, dispositions, accepted outcomes, and the configured outcome ceiling;
-  exact attempt, correction, control,
-  and configured-limit projections plus interrupted initial-implementation resume remain open.
+  successful lead and unit receipts also project provider attempts, malformed-report repairs,
+  corrections, processes, output, retained state, and execution time. Failed-adapter process
+  receipts, aggregate ceilings, control projections, and interrupted initial-implementation resume
+  remain open.
 - Clean provider quota, authentication, and exhausted-transient pauses are durable and resumable.
   Binary evidence proves quota and authentication pauses preserve zero accepted work and the active
   checkout before a later authorized provider invocation succeeds; CodingMage does not inspect,
