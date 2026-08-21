@@ -1,8 +1,11 @@
 //! Durable, content-minimized state storage and recovery decisions.
 
+mod document;
 mod journal;
 mod recovery;
 mod snapshot;
+
+pub use document::{IntegrityDocument, IntegrityDocumentError};
 
 pub use journal::{
     CampaignCheckpointProjection, DurableIdentities, EffectClass, EventKind, EventOutcome, Journal,

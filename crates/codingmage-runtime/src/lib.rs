@@ -2,6 +2,9 @@
 
 mod campaign_state;
 mod correction_state;
+mod team_state;
+
+pub use team_state::{TeamStateStore, TeamStateStoreError};
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -4566,6 +4569,7 @@ mod tests {
             denied_paths: vec![PathBuf::from("private")],
             protected_branches: vec!["main".to_owned()],
             publication: CampaignPublication::LocalOnly,
+            multi_agent: None,
         }
     }
 

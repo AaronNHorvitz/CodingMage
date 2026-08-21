@@ -1747,6 +1747,7 @@ mod tests {
             denied_paths: vec![PathBuf::from("crates/private")],
             protected_branches: vec!["main".to_owned()],
             publication: CampaignPublication::LocalOnly,
+            multi_agent: None,
         }
     }
 

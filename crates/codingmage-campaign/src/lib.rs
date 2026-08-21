@@ -1,5 +1,15 @@
 //! Campaign authority, team-lead proposals, and deterministic pod leases.
 
+mod team;
+
+pub use team::{
+    AdmissionDecision, AdmissionReason, CampaignConcurrency, CampaignExecutionMode,
+    CampaignTaskRecord, CampaignTaskState, CampaignTaskTransition, DestinationPromotionPolicy,
+    DurablePodLease, DurablePodScheduler, DurableSchedulerSnapshot, MultiAgentPolicy,
+    TaskIntegrationPolicy, TaskMergeStrategy, TaskPublicationMode, TaskUtilization,
+    TeamCampaignSnapshot, TeamStateError,
+};
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt, fs,
@@ -157,6 +167,9 @@ pub struct CampaignSpec {
     pub protected_branches: Vec<String>,
     /// Highest configured remote visibility.
     pub publication: CampaignPublication,
+    /// Optional durable multi-agent policy. Absence preserves legacy serial authority bytes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub multi_agent: Option<MultiAgentPolicy>,
 }
 
 impl CampaignSpec {
@@ -238,6 +251,10 @@ impl CampaignSpec {
                 .any(|path| !safe_relative(path))
             || any_overlap(&self.allowed_paths)
             || any_overlap(&self.denied_paths)
+            || self
+                .multi_agent
+                .as_ref()
+                .is_some_and(|policy| policy.verify(self).is_err())
             || self.denied_paths.iter().any(|denied| {
                 self.allowed_paths
                     .iter()
@@ -796,6 +813,7 @@ mod tests {
             denied_paths: vec![PathBuf::from("docs/private")],
             protected_branches: vec!["main".to_owned()],
             publication: CampaignPublication::LocalOnly,
+            multi_agent: None,
         }
     }
 
