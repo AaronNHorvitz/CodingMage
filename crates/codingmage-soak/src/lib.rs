@@ -370,6 +370,8 @@ pub struct FakeResidueEvidence {
 /// Reconciled result of the complete prescribed fake-adapter execution.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FakeAdapterReport {
+    /// Exact source-independent fake campaign run identity.
+    pub run_id: String,
     /// Accepted outcomes observed exactly once.
     pub accepted_outcomes: u8,
     /// Peak simultaneous pod count.
@@ -395,7 +397,8 @@ impl FakeAdapterReport {
     /// authority-expanding adapter effect.
     pub fn verify(&self, schedule: &PrescribedSchedule) -> Result<(), SoakError> {
         schedule.validate()?;
-        if self.accepted_outcomes != schedule.max_accepted_outcomes
+        if !valid_run_id(&self.run_id)
+            || self.accepted_outcomes != schedule.max_accepted_outcomes
             || self.peak_active_pods != 1
             || self.publication != "local_only"
             || self
@@ -411,7 +414,8 @@ impl FakeAdapterReport {
         if self.injections != expected_injection_observations(schedule)? {
             return Err(SoakError::InvariantViolation);
         }
-        let expected_evidence = expected_outcome_evidence(schedule, &self.observations)?;
+        let expected_evidence =
+            expected_outcome_evidence(schedule, &self.observations, &self.run_id)?;
         if self.outcome_evidence != expected_evidence
             || self.residue != expected_residue(&expected_evidence)?
         {
@@ -473,7 +477,22 @@ impl FakeAdapterReport {
 pub fn execute_prescribed_fake_adapters(
     schedule: &PrescribedSchedule,
 ) -> Result<FakeAdapterReport, SoakError> {
+    execute_prescribed_fake_adapters_for_run(schedule, "prescribed-run-default")
+}
+
+/// Executes the exact schedule for one caller-selected canonical fake run identity.
+///
+/// # Errors
+///
+/// Returns [`SoakError`] for an invalid run identity, schedule, or final reconciliation.
+pub fn execute_prescribed_fake_adapters_for_run(
+    schedule: &PrescribedSchedule,
+    run_id: &str,
+) -> Result<FakeAdapterReport, SoakError> {
     schedule.validate()?;
+    if !valid_run_id(run_id) {
+        return Err(SoakError::InvalidConfiguration);
+    }
     let mut observations = Vec::new();
     let mut active_pods = 0_u8;
     let mut peak_active_pods = 0_u8;
@@ -530,9 +549,10 @@ pub fn execute_prescribed_fake_adapters(
     if active_pods != 0 {
         return Err(SoakError::InvariantViolation);
     }
-    let outcome_evidence = expected_outcome_evidence(schedule, &observations)?;
+    let outcome_evidence = expected_outcome_evidence(schedule, &observations, run_id)?;
     let residue = expected_residue(&outcome_evidence)?;
     let report = FakeAdapterReport {
+        run_id: run_id.to_owned(),
         accepted_outcomes: schedule.max_accepted_outcomes,
         peak_active_pods,
         publication: schedule.publication,
@@ -548,6 +568,7 @@ pub fn execute_prescribed_fake_adapters(
 fn expected_outcome_evidence(
     schedule: &PrescribedSchedule,
     observations: &[FakeAdapterObservation],
+    run_id: &str,
 ) -> Result<Vec<FakeOutcomeEvidence>, SoakError> {
     schedule
         .outcomes
@@ -585,11 +606,12 @@ fn expected_outcome_evidence(
                 outcome_id: outcome.outcome_id,
                 task_id: outcome.task_id,
                 candidate_commit: completed
-                    .then(|| digest(&["candidate", outcome.outcome_id])[..40].to_owned()),
+                    .then(|| digest(&["candidate", run_id, outcome.outcome_id])[..40].to_owned()),
                 gate_observations,
                 review_observations,
                 checkpoint_sha256: digest(&[
                     "checkpoint",
+                    run_id,
                     outcome.outcome_id,
                     outcome.task_id,
                     match outcome.disposition {
@@ -605,6 +627,15 @@ fn expected_outcome_evidence(
             })
         })
         .collect()
+}
+
+fn valid_run_id(run_id: &str) -> bool {
+    !run_id.is_empty()
+        && run_id.len() <= 64
+        && run_id.as_bytes()[0].is_ascii_alphanumeric()
+        && run_id
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
 }
 
 fn expected_residue(evidence: &[FakeOutcomeEvidence]) -> Result<FakeResidueEvidence, SoakError> {
@@ -1553,6 +1584,60 @@ mod tests {
                 Err(SoakError::InvariantViolation)
             );
         }
+    }
+
+    #[test]
+    fn repeated_prescribed_runs_are_stable_and_never_adopt_cross_run_evidence() {
+        let schedule = prescribed_ten_outcome_schedule();
+        let baseline = execute_prescribed_fake_adapters_for_run(&schedule, "soak-run-00").unwrap();
+        for index in 1..=32 {
+            let run_id = format!("soak-run-{index:02}");
+            let report = execute_prescribed_fake_adapters_for_run(&schedule, &run_id).unwrap();
+            assert_eq!(report.accepted_outcomes, baseline.accepted_outcomes);
+            assert_eq!(report.peak_active_pods, baseline.peak_active_pods);
+            assert_eq!(report.publication, baseline.publication);
+            assert_eq!(report.observations, baseline.observations);
+            assert_eq!(report.injections, baseline.injections);
+            assert_eq!(report.residue, baseline.residue);
+            assert!(
+                report
+                    .outcome_evidence
+                    .iter()
+                    .zip(&baseline.outcome_evidence)
+                    .all(|(current, first)| {
+                        current.outcome_id == first.outcome_id
+                            && current.task_id == first.task_id
+                            && match (&current.candidate_commit, &first.candidate_commit) {
+                                (Some(current), Some(first)) => current != first,
+                                (None, None) => true,
+                                _ => false,
+                            }
+                            && current.checkpoint_sha256 != first.checkpoint_sha256
+                    })
+            );
+
+            let mut adopted = report;
+            adopted.outcome_evidence[0] = baseline.outcome_evidence[0].clone();
+            assert_eq!(
+                adopted.verify(&schedule),
+                Err(SoakError::InvariantViolation)
+            );
+        }
+    }
+
+    #[test]
+    fn fake_campaign_run_identity_is_closed_and_load_bearing() {
+        let schedule = prescribed_ten_outcome_schedule();
+        for run_id in ["", "-run", "run/one", "run one", &"r".repeat(65)] {
+            assert_eq!(
+                execute_prescribed_fake_adapters_for_run(&schedule, run_id),
+                Err(SoakError::InvalidConfiguration)
+            );
+        }
+        let mut report =
+            execute_prescribed_fake_adapters_for_run(&schedule, "soak-run-original").unwrap();
+        report.run_id = "soak-run-rebound".to_owned();
+        assert_eq!(report.verify(&schedule), Err(SoakError::InvariantViolation));
     }
 
     #[test]
