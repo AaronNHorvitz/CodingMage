@@ -1898,6 +1898,16 @@ mod tests {
     #[allow(clippy::too_many_lines)]
     fn checkpoint_round_trips_and_rejects_tampering() {
         let root = root("round-trip");
+        let prohibited_log_content = [
+            "prompt_secret_marker",
+            "source_text_secret_marker",
+            "filename_secret_marker",
+            "provider_prose_secret_marker",
+            "command_output_secret_marker",
+            "environment_value_secret_marker",
+            "credential_secret_marker",
+            "hidden_reasoning_secret_marker",
+        ];
         let mut checkpoint = checkpoint();
         checkpoint.phase = CampaignPhase::Integrating;
         checkpoint.blocked_task_ids.insert("1.1.1.2".to_owned());
@@ -1947,7 +1957,7 @@ mod tests {
             task_id: "1.1.1.1".to_owned(),
             expected_head: "b".repeat(40),
             target_head: "c".repeat(40),
-            owned_paths: vec![PathBuf::from("src")],
+            owned_paths: prohibited_log_content.iter().map(PathBuf::from).collect(),
         });
         checkpoint.persist(&root).unwrap();
         assert_eq!(CampaignCheckpoint::load(&root).unwrap(), Some(checkpoint));
@@ -1999,11 +2009,13 @@ mod tests {
         assert_eq!(record.event.evidence.len(), 1);
         assert_eq!(record.event.redactions.len(), 5);
         let journal_bytes = fs::read(root.join("events.jsonl")).unwrap();
-        assert!(
-            !journal_bytes
-                .windows(b"provider prose".len())
-                .any(|window| window == b"provider prose")
-        );
+        for marker in prohibited_log_content {
+            assert!(
+                !journal_bytes
+                    .windows(marker.len())
+                    .any(|window| window == marker.as_bytes())
+            );
+        }
         drop(journal);
 
         let path = root.join("checkpoint.json");

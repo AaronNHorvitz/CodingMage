@@ -444,7 +444,7 @@ impl CampaignTermination {
 }
 
 /// Privacy-safe durable campaign status without provider or repository content.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct CampaignStatus {
     /// Status schema version.
@@ -494,7 +494,7 @@ pub struct CampaignStatus {
 }
 
 /// Independent content-free outcome counters shown by campaign status.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct CampaignStatusOutcomes {
     /// Reconciled completed units.
@@ -514,7 +514,7 @@ pub struct CampaignStatusOutcomes {
 }
 
 /// Content-free aggregate utilization shown by campaign status.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct CampaignStatusUtilization {
     /// Attempted provider invocations.
@@ -534,7 +534,7 @@ pub struct CampaignStatusUtilization {
 }
 
 /// Exact task identity paired with one closed content-free reason code.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct CampaignStatusTaskReason {
     /// Exact canonical task identity.
@@ -544,7 +544,7 @@ pub struct CampaignStatusTaskReason {
 }
 
 /// Exact deferred-task status without provider or task prose.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct CampaignStatusDeferral {
     /// Exact canonical task identity.
@@ -4471,7 +4471,10 @@ impl std::error::Error for RuntimeError {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codingmage_campaign::CampaignLimits;
+    use codingmage_campaign::{
+        CampaignAuthentication, CampaignGateTier, CampaignLimits, CampaignProvider,
+        CampaignPublication,
+    };
 
     fn campaign_limits() -> CampaignLimits {
         CampaignLimits {
@@ -4483,6 +4486,115 @@ mod tests {
             retained_state_bytes: 1_073_741_824,
             execution_elapsed_ms: 86_400_000,
         }
+    }
+
+    fn campaign_status_spec() -> CampaignSpec {
+        let provider = |name: &str| CampaignProvider {
+            executable: PathBuf::from(format!("/usr/bin/{name}")),
+            model: name.to_owned(),
+            effort: "high".to_owned(),
+        };
+        CampaignSpec {
+            version: 3,
+            campaign_id: "status-campaign".to_owned(),
+            repository_id: "status-repository".to_owned(),
+            repository_path: PathBuf::from("/tmp/status-repository"),
+            initial_commit: "a".repeat(40),
+            task_source_sha256: "b".repeat(64),
+            operator_authorization_sha256: "c".repeat(64),
+            max_parallel_pods: 1,
+            max_units: 10,
+            limits: campaign_limits(),
+            team_lead: provider("status-lead"),
+            implementer: provider("status-implementer"),
+            implementer_authentication: CampaignAuthentication::ExistingLogin,
+            reviewer: provider("status-reviewer"),
+            gate_tiers: vec![CampaignGateTier {
+                name: "required".to_owned(),
+                profiles: vec!["test".to_owned()],
+            }],
+            campaign_branch: "codingmage/status-campaign".to_owned(),
+            allowed_paths: vec![PathBuf::from("src")],
+            denied_paths: vec![PathBuf::from("private")],
+            protected_branches: vec!["main".to_owned()],
+            publication: CampaignPublication::LocalOnly,
+        }
+    }
+
+    #[test]
+    fn campaign_status_schema_excludes_prohibited_content_classes() {
+        let spec = campaign_status_spec();
+        let prohibited = [
+            "prompt_secret_marker",
+            "source_text_secret_marker",
+            "filename_secret_marker",
+            "provider_prose_secret_marker",
+            "command_output_secret_marker",
+            "environment_value_secret_marker",
+            "credential_secret_marker",
+            "hidden_reasoning_secret_marker",
+        ];
+        let mut checkpoint = CampaignCheckpoint::new(
+            spec.authority_sha256().unwrap(),
+            spec.campaign_id.clone(),
+            spec.repository_id.clone(),
+            RunId::new("status-run").unwrap(),
+            codingmage_contracts::WorktreeId::new("status-worktree").unwrap(),
+            "codingmage/status-campaign/campaign-root".to_owned(),
+            spec.initial_commit.clone(),
+            spec.max_units,
+            spec.limits.clone(),
+        )
+        .unwrap();
+        checkpoint.phase = CampaignPhase::Planning;
+        checkpoint.active_unit = Some(ActiveUnit {
+            task_id: "1.1.1.1".to_owned(),
+            source_head: prohibited[0].to_owned(),
+            task_source_sha256: prohibited[1].to_owned(),
+            owned_paths: prohibited[2..].iter().map(PathBuf::from).collect(),
+            run_id: Some(RunId::new("status-unit-run").unwrap()),
+        });
+        checkpoint.pending_integration = Some(PendingIntegration {
+            task_id: "1.1.1.1".to_owned(),
+            expected_head: prohibited[3].to_owned(),
+            target_head: prohibited[4].to_owned(),
+            owned_paths: vec![PathBuf::from(prohibited[5])],
+        });
+        checkpoint.deferred_tasks.insert(
+            "1.1.1.2".to_owned(),
+            DeferredTaskProjection {
+                reason: codingmage_contracts::LeadDeferredReason::OperatorPause,
+                trigger: LeadReconsiderationTrigger::OperatorResume,
+                source_head: prohibited[6].to_owned(),
+                task_source_sha256: prohibited[7].to_owned(),
+            },
+        );
+
+        let status = project_campaign_status(&spec, checkpoint, Some(0), 1).unwrap();
+        let encoded = serde_json::to_string(&status).unwrap();
+        for marker in prohibited {
+            assert!(!encoded.contains(marker));
+        }
+
+        let value = serde_json::to_value(&status).unwrap();
+        for field in [
+            "prompt",
+            "source_text",
+            "filename",
+            "provider_prose",
+            "command_output",
+            "environment_value",
+            "credential",
+            "hidden_reasoning",
+        ] {
+            let mut mutation = value.clone();
+            mutation[field] = serde_json::Value::String("prohibited".to_owned());
+            assert!(serde_json::from_value::<CampaignStatus>(mutation).is_err());
+        }
+        let mut nested = value;
+        nested["utilization"]["command_output"] =
+            serde_json::Value::String("prohibited".to_owned());
+        assert!(serde_json::from_value::<CampaignStatus>(nested).is_err());
     }
 
     #[test]
