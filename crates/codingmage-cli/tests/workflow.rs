@@ -1033,7 +1033,11 @@ path = Path(f"src/{name}.rs")
 log = Path(__file__).with_name("parallel-pods.log")
 with log.open("a", encoding="utf-8") as stream:
     stream.write(f"{task} start {time.monotonic_ns()}\n")
-time.sleep(0.4)
+deadline = time.monotonic() + 30
+while sum(line.split()[1] == "start" for line in log.read_text(encoding="utf-8").splitlines()) < 5:
+    if time.monotonic() >= deadline:
+        raise RuntimeError("five implementation processes did not overlap")
+    time.sleep(0.01)
 path.write_text(path.read_text(encoding="utf-8").replace("{ 1 }", "{ 2 }"), encoding="utf-8")
 with log.open("a", encoding="utf-8") as stream:
     stream.write(f"{task} end {time.monotonic_ns()}\n")
