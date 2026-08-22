@@ -122,6 +122,15 @@ impl TeamEventSink {
         self.send(WorkerEvent::Heartbeat(utilization))
     }
 
+    /// Reports liveness without changing the latest observed utilization.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RuntimeError::State`] when the coordinator is no longer receiving this pod.
+    pub fn liveness(&self) -> Result<(), RuntimeError> {
+        self.send(WorkerEvent::Liveness)
+    }
+
     fn send(&self, event: WorkerEvent) -> Result<(), RuntimeError> {
         self.sender
             .send(WorkerMessage {
@@ -438,6 +447,7 @@ enum WorkerEvent {
     Progress(RunProgress),
     Lifecycle(UnitLifecycleEvent),
     Heartbeat(TaskUtilization),
+    Liveness,
     Finished(Result<RunOutcome, RuntimeError>),
 }
 
@@ -498,6 +508,10 @@ where
             }
             WorkerEvent::Heartbeat(utilization) => {
                 self.touch(&message.task_id, Some(utilization))?;
+                self.persist()?;
+            }
+            WorkerEvent::Liveness => {
+                self.touch(&message.task_id, None)?;
                 self.persist()?;
             }
             WorkerEvent::Finished(mut result) => {
@@ -601,7 +615,12 @@ where
         deadlines,
         expected_tasks,
         handles,
-    } = spawn_workers(jobs, runner, campaign_cancellation);
+    } = spawn_workers(
+        jobs,
+        runner,
+        campaign_cancellation,
+        Duration::from_millis(snapshot.resources.policy.heartbeat_interval_ms),
+    );
     let mut timed_out = BTreeSet::new();
     let mut fatal_error = None;
     let mut driver = BatchDriver {
@@ -632,6 +651,15 @@ where
                 {
                     fatal_error = Some(RuntimeError::State);
                     break;
+                }
+                if deadlines
+                    .get(&message.task_id)
+                    .is_some_and(|deadline| now_ms() >= *deadline)
+                {
+                    timed_out.insert(message.task_id.clone());
+                    if let Some(control) = controls.get(&message.task_id) {
+                        control.cancel();
+                    }
                 }
                 if timed_out.contains(&message.task_id)
                     && !matches!(&message.event, WorkerEvent::Finished(_))
@@ -737,6 +765,7 @@ fn spawn_workers<R>(
     jobs: &[TeamBatchJob],
     runner: &Arc<R>,
     campaign_cancellation: &CancellationToken,
+    heartbeat_interval: Duration,
 ) -> WorkerSet
 where
     R: TeamUnitRunner + ?Sized,
@@ -756,8 +785,31 @@ where
         deadlines.insert(task_id.clone(), job.reservation.deadline_ms);
         expected_tasks.insert(job.sequence, task_id.clone());
         let worker_sender = sender.clone();
+        let heartbeat_sender = sender.clone();
+        let heartbeat_task_id = task_id.clone();
+        let heartbeat_sequence = job.sequence;
         let worker_runner = Arc::clone(runner);
         handles.push(thread::spawn(move || {
+            let (heartbeat_stop, heartbeat_control) = std::sync::mpsc::channel::<()>();
+            let heartbeat = thread::spawn(move || {
+                loop {
+                    match heartbeat_control.recv_timeout(heartbeat_interval) {
+                        Ok(()) | Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+                        Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                            if heartbeat_sender
+                                .send(WorkerMessage {
+                                    sequence: heartbeat_sequence,
+                                    task_id: heartbeat_task_id.clone(),
+                                    event: WorkerEvent::Liveness,
+                                })
+                                .is_err()
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
             let events = TeamEventSink {
                 sequence: job.sequence,
                 task_id: task_id.clone(),
@@ -765,6 +817,8 @@ where
             };
             let result = catch_unwind(AssertUnwindSafe(|| worker_runner.run(&job, token, events)))
                 .unwrap_or(Err(RuntimeError::Process));
+            let _ = heartbeat_stop.send(());
+            let _ = heartbeat.join();
             let _ = worker_sender.send(WorkerMessage {
                 sequence: job.sequence,
                 task_id,
@@ -1884,5 +1938,23 @@ mod tests {
         thread::sleep(Duration::from_millis(30));
         cancellation.cancel();
         assert!(handle.join().unwrap().is_err());
+    }
+
+    #[test]
+    fn active_worker_liveness_advances_durable_heartbeats() {
+        let (spec, mut snapshot, jobs) = fixture(1, 1, 500);
+        let mut runner = FakeRunner::successful();
+        runner.delays_ms.insert(0, 45);
+        let outcome = execute_team_batch(
+            &spec,
+            &mut snapshot,
+            &jobs,
+            &Arc::new(runner),
+            &CancellationToken::default(),
+            |_| Ok(()),
+            |_| {},
+        )
+        .unwrap();
+        assert!(outcome.snapshot.tasks["23.3.2.1"].heartbeat_sequence > 9);
     }
 }
