@@ -382,6 +382,31 @@ mod tests {
     }
 
     #[test]
+    fn fewer_ready_proposals_leave_parallel_capacity_idle() {
+        let plan = TaskPlan::parse(PLAN.as_bytes()).unwrap();
+        let spec = spec(&plan, 5);
+        let mut snapshot = initialize_team_campaign(&spec, &plan).unwrap();
+        let report = report(&snapshot, (1..=2).map(proposal).collect());
+        let TeamPlanningOutcome::Admitted(jobs) =
+            admit_team_lead_report(&spec, &plan, &mut snapshot, report, 1_000, |_| Ok(())).unwrap()
+        else {
+            panic!("bounded proposals must admit");
+        };
+        assert_eq!(jobs.len(), 2);
+        assert_eq!(snapshot.scheduler.active.len(), 2);
+        assert_eq!(
+            snapshot
+                .tasks
+                .values()
+                .filter(|record| record.state == CampaignTaskState::Ready)
+                .count(),
+            3
+        );
+        assert_eq!(snapshot.tasks["24.1.1.6"].state, CampaignTaskState::Planned);
+        snapshot.verify().unwrap();
+    }
+
+    #[test]
     fn overlapping_lead_assignments_defer_without_effect_and_persistence_is_atomic() {
         let plan = TaskPlan::parse(PLAN.as_bytes()).unwrap();
         let spec = spec(&plan, 5);

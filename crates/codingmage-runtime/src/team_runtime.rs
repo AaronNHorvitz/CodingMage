@@ -1980,6 +1980,31 @@ mod tests {
         }
     }
 
+    struct CampaignCancellationRunner {
+        barrier: Arc<Barrier>,
+        finished: Arc<AtomicUsize>,
+    }
+
+    impl TeamUnitRunner for CampaignCancellationRunner {
+        fn run(
+            &self,
+            job: &TeamBatchJob,
+            cancellation: CancellationToken,
+            events: TeamEventSink,
+        ) -> Result<RunOutcome, RuntimeError> {
+            events.lifecycle(UnitLifecycleEvent::WorktreeCreated {
+                worktree_id: format!("worktree-{}", job.sequence),
+                branch: format!("codingmage/task-{}", job.sequence),
+            })?;
+            self.barrier.wait();
+            while !cancellation.is_cancelled() {
+                thread::sleep(Duration::from_millis(2));
+            }
+            self.finished.fetch_add(1, Ordering::SeqCst);
+            Err(RuntimeError::Process)
+        }
+    }
+
     struct CheckpointRunner;
 
     impl TeamUnitRunner for CheckpointRunner {
@@ -2380,7 +2405,7 @@ mod tests {
 
     #[test]
     fn one_panicking_worker_does_not_cancel_successful_siblings() {
-        let (spec, mut snapshot, jobs) = fixture(3, 3, 2_000);
+        let (spec, mut snapshot, jobs) = fixture(5, 5, 2_000);
         let runner = Arc::new(FakeRunner {
             panic_sequence: Some(1),
             ..FakeRunner::successful()
@@ -2397,11 +2422,17 @@ mod tests {
         .expect("batch remains coherent");
         assert!(outcome.tasks[0].result.is_ok());
         assert_eq!(outcome.tasks[1].result, Err(RuntimeError::Process));
-        assert!(outcome.tasks[2].result.is_ok());
+        assert!(
+            outcome
+                .tasks
+                .iter()
+                .enumerate()
+                .all(|(index, task)| index == 1 || task.result.is_ok())
+        );
         let failed = &outcome.snapshot.tasks["23.3.2.2"];
         assert_eq!(failed.state, CampaignTaskState::Failed);
         assert_eq!(failed.terminal_reason.as_deref(), Some("process_crashed"));
-        assert_eq!(outcome.snapshot.scheduler.active.len(), 2);
+        assert_eq!(outcome.snapshot.scheduler.active.len(), 4);
         assert!(outcome.snapshot.resources.active.is_empty());
     }
 
@@ -2434,6 +2465,43 @@ mod tests {
             outcome.snapshot.tasks["23.3.2.2"].state,
             CampaignTaskState::PublicationReady
         );
+    }
+
+    #[test]
+    fn campaign_cancellation_reconciles_all_five_active_pods() {
+        let (spec, mut snapshot, jobs) = fixture(5, 5, 2_000);
+        let barrier = Arc::new(Barrier::new(6));
+        let finished = Arc::new(AtomicUsize::new(0));
+        let runner = Arc::new(CampaignCancellationRunner {
+            barrier: Arc::clone(&barrier),
+            finished: Arc::clone(&finished),
+        });
+        let cancellation = CancellationToken::default();
+        let cancellation_for_thread = cancellation.clone();
+        let cancel_barrier = Arc::clone(&barrier);
+        let canceller = thread::spawn(move || {
+            cancel_barrier.wait();
+            cancellation_for_thread.cancel();
+        });
+        let outcome = execute_team_batch(
+            &spec,
+            &mut snapshot,
+            &jobs,
+            &runner,
+            &cancellation,
+            |_| Ok(()),
+            |_| {},
+        )
+        .expect("campaign cancellation remains coherent");
+        canceller.join().unwrap();
+        assert_eq!(finished.load(Ordering::SeqCst), 5);
+        assert!(outcome.tasks.iter().all(|task| task.result.is_err()));
+        assert!(outcome.snapshot.tasks.values().all(|record| {
+            record.state == CampaignTaskState::Cancelled
+                && record.terminal_reason.as_deref() == Some("operator_cancelled")
+        }));
+        assert!(outcome.snapshot.resources.active.is_empty());
+        assert!(outcome.snapshot.scheduler.active.is_empty());
     }
 
     #[test]
