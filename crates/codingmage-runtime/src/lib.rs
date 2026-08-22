@@ -110,6 +110,8 @@ use correction_state::{CorrectionCheckpoint, CorrectionPhase};
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 const MAX_SPEC_BYTES: u64 = 1024 * 1024;
 const CAMPAIGN_PROVIDER_ATTEMPT_LIMIT: u8 = 3;
+const PROVIDER_RETRY_BASE_DELAY_MS: u64 = 25;
+const PROVIDER_RETRY_MAX_DELAY_MS: u64 = 400;
 const CLAUDE_REPORT_ATTEMPT_LIMIT: u8 = 2;
 
 /// Content-minimized actor shown by the live CLI progress stream.
@@ -2247,6 +2249,7 @@ pub fn run_serial_campaign_with_progress(
                         ProgressActor::Coordinator,
                         ProgressStage::RetryingProvider,
                     ));
+                    thread::sleep(provider_retry_delay(unit_run_id.as_str(), provider_attempt));
                 }
                 Err(error) if provider_pause_code(error).is_some() => {
                     let stop_reason =
@@ -2611,6 +2614,21 @@ const fn retryable_campaign_provider_failure(error: RuntimeError) -> bool {
         error,
         RuntimeError::Implementer(ClaudeError::Provider | ClaudeError::Session)
             | RuntimeError::Reviewer(CodexError::Provider | CodexError::Thread)
+    )
+}
+
+fn provider_retry_delay(operation_id: &str, attempt: u8) -> Duration {
+    let exponent = u32::from(attempt.saturating_sub(1).min(4));
+    let backoff = PROVIDER_RETRY_BASE_DELAY_MS
+        .saturating_mul(1_u64 << exponent)
+        .min(PROVIDER_RETRY_MAX_DELAY_MS);
+    let digest = Sha256::digest(format!("{operation_id}\0{attempt}").as_bytes());
+    let sample = u64::from(u16::from_be_bytes([digest[0], digest[1]]));
+    let jitter_window = PROVIDER_RETRY_BASE_DELAY_MS.max(1);
+    Duration::from_millis(
+        backoff
+            .saturating_add(sample % jitter_window)
+            .min(PROVIDER_RETRY_MAX_DELAY_MS),
     )
 }
 
@@ -5477,6 +5495,24 @@ effort = "high"
         ] {
             assert!(!retryable_campaign_provider_failure(terminal));
         }
+    }
+
+    #[test]
+    fn provider_retry_backoff_is_deterministic_bounded_and_increasing() {
+        let first = provider_retry_delay("run-retry-a", 1);
+        assert_eq!(first, provider_retry_delay("run-retry-a", 1));
+        assert!(first >= Duration::from_millis(PROVIDER_RETRY_BASE_DELAY_MS));
+        let mut previous = first;
+        for attempt in 2..=CAMPAIGN_PROVIDER_ATTEMPT_LIMIT {
+            let delay = provider_retry_delay("run-retry-a", attempt);
+            assert!(delay >= previous);
+            assert!(delay <= Duration::from_millis(PROVIDER_RETRY_MAX_DELAY_MS));
+            previous = delay;
+        }
+        assert!(
+            provider_retry_delay("run-retry-b", 1)
+                <= Duration::from_millis(PROVIDER_RETRY_MAX_DELAY_MS)
+        );
     }
 
     #[test]
