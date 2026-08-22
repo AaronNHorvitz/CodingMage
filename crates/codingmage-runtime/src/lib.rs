@@ -20,7 +20,7 @@ pub use team_github::GhCliPublicationPort;
 pub use team_integration::{
     IntegrationVerification, ProductionTeamIntegrationVerifier, TeamIntegrationOutcome,
     TeamIntegrationVerifier, enqueue_team_integration, integrate_team_queue_head,
-    integrate_team_queue_head_with_strategy,
+    integrate_team_queue_head_with_strategy, integrate_team_queue_head_with_validation,
 };
 pub use team_planning::{
     TeamPlanningOutcome, admit_team_lead_report, build_team_lead_binding, initialize_team_campaign,

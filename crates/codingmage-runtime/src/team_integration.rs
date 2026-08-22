@@ -57,6 +57,24 @@ pub trait TeamIntegrationVerifier {
         prepared_worktree: &OwnedWorktree,
         prepared_commit: &str,
     ) -> Result<IntegrationVerification, RuntimeError>;
+
+    /// Verifies a cumulative campaign diff from an explicitly supplied immutable base.
+    ///
+    /// Test adapters may inherit the ordinary verification behavior. Production adapters must
+    /// bind the supplied base into their read-only review request.
+    ///
+    /// # Errors
+    ///
+    /// Returns a content-free gate, review, identity, process, or cancellation failure.
+    fn verify_from_base(
+        &mut self,
+        task_id: &str,
+        prepared_worktree: &OwnedWorktree,
+        _base_commit: &str,
+        prepared_commit: &str,
+    ) -> Result<IntegrationVerification, RuntimeError> {
+        self.verify(task_id, prepared_worktree, prepared_commit)
+    }
 }
 
 /// Production integration verifier composed from configured gates and a fresh Codex review.
@@ -149,15 +167,17 @@ impl ProductionTeamIntegrationVerifier {
             .collect::<Result<Vec<_>, RuntimeError>>()?;
         GateRegistry::new(entries).map_err(|_| RuntimeError::Verification)
     }
-}
 
-impl TeamIntegrationVerifier for ProductionTeamIntegrationVerifier {
-    fn verify(
+    fn verify_bound(
         &mut self,
         task_id: &str,
         prepared_worktree: &OwnedWorktree,
+        base_commit: &str,
         prepared_commit: &str,
     ) -> Result<IntegrationVerification, RuntimeError> {
+        if !valid_commit(base_commit) || !valid_commit(prepared_commit) {
+            return Err(RuntimeError::Verification);
+        }
         let registry = self.gate_registry(&prepared_worktree.manifest().path)?;
         let gates = GateRunner::new(self.executor.clone())
             .run_with_cancellation(
@@ -198,7 +218,7 @@ impl TeamIntegrationVerifier for ProductionTeamIntegrationVerifier {
                 .map_err(|_| RuntimeError::State)?,
             thread_id: None,
             worktree: prepared_worktree.manifest().path.clone(),
-            base_commit: prepared_worktree.manifest().source_commit.clone(),
+            base_commit: base_commit.to_owned(),
             target_commit: prepared_commit.to_owned(),
             evidence,
         };
@@ -213,6 +233,7 @@ impl TeamIntegrationVerifier for ProductionTeamIntegrationVerifier {
             .map_err(RuntimeError::Reviewer)?;
         let result = execution.report.map_err(RuntimeError::Reviewer)?;
         if result.report.verdict != ReviewVerdict::Pass
+            || result.report.base_commit != base_commit
             || result.report.target_commit != prepared_commit
         {
             return Err(RuntimeError::Verification);
@@ -220,10 +241,36 @@ impl TeamIntegrationVerifier for ProductionTeamIntegrationVerifier {
         Ok(IntegrationVerification {
             gate_evidence_sha256,
             review_evidence_sha256: digest(&format!(
-                "{}\0{}\0pass",
-                result.thread_id, result.report.target_commit
+                "{}\0{}\0{}\0pass",
+                result.thread_id, result.report.base_commit, result.report.target_commit
             )),
         })
+    }
+}
+
+impl TeamIntegrationVerifier for ProductionTeamIntegrationVerifier {
+    fn verify(
+        &mut self,
+        task_id: &str,
+        prepared_worktree: &OwnedWorktree,
+        prepared_commit: &str,
+    ) -> Result<IntegrationVerification, RuntimeError> {
+        self.verify_bound(
+            task_id,
+            prepared_worktree,
+            &prepared_worktree.manifest().source_commit,
+            prepared_commit,
+        )
+    }
+
+    fn verify_from_base(
+        &mut self,
+        task_id: &str,
+        prepared_worktree: &OwnedWorktree,
+        base_commit: &str,
+        prepared_commit: &str,
+    ) -> Result<IntegrationVerification, RuntimeError> {
+        self.verify_bound(task_id, prepared_worktree, base_commit, prepared_commit)
     }
 }
 
@@ -312,12 +359,51 @@ pub fn integrate_team_queue_head_with_strategy<V, P>(
     snapshot: &mut TeamCampaignSnapshot,
     verifier: &mut V,
     strategy: TaskMergeStrategy,
+    persist: P,
+) -> Result<TeamIntegrationOutcome, RuntimeError>
+where
+    V: TeamIntegrationVerifier,
+    P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
+{
+    integrate_team_queue_head_with_validation(
+        config,
+        authorization,
+        campaign,
+        snapshot,
+        verifier,
+        strategy,
+        None,
+        persist,
+    )
+}
+
+/// Integrates the queue head and performs cumulative validation at the configured interval.
+///
+/// The cumulative review is completed on the prepared commit before the campaign head mutates.
+/// Its immutable base is the campaign worktree's original source commit.
+///
+/// # Errors
+///
+/// Returns a content-free failure for a zero interval or any ordinary integration, gate, review,
+/// identity, persistence, or repository failure.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn integrate_team_queue_head_with_validation<V, P>(
+    config: &Config,
+    authorization: &RepositoryAuthorization,
+    campaign: &OwnedWorktree,
+    snapshot: &mut TeamCampaignSnapshot,
+    verifier: &mut V,
+    strategy: TaskMergeStrategy,
+    validation_interval: Option<u16>,
     mut persist: P,
 ) -> Result<TeamIntegrationOutcome, RuntimeError>
 where
     V: TeamIntegrationVerifier,
     P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
 {
+    if validation_interval == Some(0) {
+        return Err(RuntimeError::State);
+    }
     snapshot.verify().map_err(|_| RuntimeError::State)?;
     let task_id = snapshot
         .integration_queue
@@ -348,6 +434,20 @@ where
     }
     let reviewed_commit = record.reviewed_commit.clone().ok_or(RuntimeError::State)?;
     let expected_head = snapshot.campaign_head.clone();
+    let projected_merged_count = snapshot
+        .tasks
+        .values()
+        .filter(|task| task.state == CampaignTaskState::Merged)
+        .count()
+        .saturating_add(1);
+    let cumulative_validation = validation_interval
+        .filter(|interval| projected_merged_count % usize::from(*interval) == 0)
+        .map(|_| {
+            (
+                campaign.manifest().source_commit.as_str(),
+                projected_merged_count,
+            )
+        });
     let integration_commit = if let Some(commit) = record.integration_commit.clone() {
         commit
     } else {
@@ -362,6 +462,7 @@ where
                 &record.base_commit,
                 &reviewed_commit,
                 &record.owned_paths,
+                cumulative_validation,
             )?,
             TaskMergeStrategy::FastForwardOnly => prepare_fast_forward_integration(
                 config,
@@ -372,6 +473,7 @@ where
                 &record.base_commit,
                 &reviewed_commit,
                 &record.owned_paths,
+                cumulative_validation,
             )?,
         };
         let evidence = integration_evidence(
@@ -466,6 +568,7 @@ fn prepare_squash_integration<V: TeamIntegrationVerifier>(
     candidate_base: &str,
     reviewed_commit: &str,
     owned_paths: &[PathBuf],
+    cumulative_validation: Option<(&str, usize)>,
 ) -> Result<(String, IntegrationVerification), RuntimeError> {
     let prepared = prepare_reviewed_delta(
         authorization,
@@ -479,8 +582,19 @@ fn prepare_squash_integration<V: TeamIntegrationVerifier>(
         owned_paths,
     )
     .map_err(|_| RuntimeError::Integration)?;
-    let verification_result =
-        verifier.verify(task_id, prepared.worktree(), prepared.prepared_head());
+    let verification_result = (|| {
+        let task = verifier.verify(task_id, prepared.worktree(), prepared.prepared_head())?;
+        let Some((base_commit, merged_count)) = cumulative_validation else {
+            return Ok(task);
+        };
+        let cumulative = verifier.verify_from_base(
+            &format!("campaign-batch-{merged_count}"),
+            prepared.worktree(),
+            base_commit,
+            prepared.prepared_head(),
+        )?;
+        combined_verification(&task, &cumulative)
+    })();
     let released = release_prepared_integration(authorization, prepared)
         .map_err(|_| RuntimeError::Integration)?;
     let verification = verification_result?;
@@ -505,6 +619,7 @@ fn prepare_fast_forward_integration<V: TeamIntegrationVerifier>(
     candidate_base: &str,
     reviewed_commit: &str,
     owned_paths: &[PathBuf],
+    cumulative_validation: Option<(&str, usize)>,
 ) -> Result<(String, IntegrationVerification), RuntimeError> {
     if candidate_base != expected_head {
         return Err(RuntimeError::Integration);
@@ -529,7 +644,18 @@ fn prepare_fast_forward_integration<V: TeamIntegrationVerifier>(
         if receipt.integrated_head != reviewed_commit {
             return Err(RuntimeError::State);
         }
-        let verification = verifier.verify(task_id, &verification_worktree, reviewed_commit)?;
+        let task = verifier.verify(task_id, &verification_worktree, reviewed_commit)?;
+        let verification = if let Some((base_commit, merged_count)) = cumulative_validation {
+            let cumulative = verifier.verify_from_base(
+                &format!("campaign-batch-{merged_count}"),
+                &verification_worktree,
+                base_commit,
+                reviewed_commit,
+            )?;
+            combined_verification(&task, &cumulative)?
+        } else {
+            task
+        };
         verification.verify()?;
         Ok(verification)
     })();
@@ -538,6 +664,24 @@ fn prepare_fast_forward_integration<V: TeamIntegrationVerifier>(
     released?;
     let verification = attempt_result?;
     Ok((reviewed_commit.to_owned(), verification))
+}
+
+fn combined_verification(
+    task: &IntegrationVerification,
+    cumulative: &IntegrationVerification,
+) -> Result<IntegrationVerification, RuntimeError> {
+    task.verify()?;
+    cumulative.verify()?;
+    Ok(IntegrationVerification {
+        gate_evidence_sha256: digest(&format!(
+            "{}\0{}",
+            task.gate_evidence_sha256, cumulative.gate_evidence_sha256
+        )),
+        review_evidence_sha256: digest(&format!(
+            "{}\0{}",
+            task.review_evidence_sha256, cumulative.review_evidence_sha256
+        )),
+    })
 }
 
 fn create_completion_commit(
@@ -650,6 +794,13 @@ fn digest(value: &str) -> String {
 
 fn valid_sha256(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn valid_commit(value: &str) -> bool {
+    matches!(value.len(), 40 | 64)
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 #[cfg(test)]
@@ -908,6 +1059,35 @@ mod tests {
         }
     }
 
+    #[derive(Default)]
+    struct ScopeVerifier(Vec<String>);
+
+    impl TeamIntegrationVerifier for ScopeVerifier {
+        fn verify(
+            &mut self,
+            task_id: &str,
+            _: &OwnedWorktree,
+            _: &str,
+        ) -> Result<IntegrationVerification, RuntimeError> {
+            self.0.push(task_id.to_owned());
+            Ok(IntegrationVerification {
+                gate_evidence_sha256: "d".repeat(64),
+                review_evidence_sha256: "e".repeat(64),
+            })
+        }
+
+        fn verify_from_base(
+            &mut self,
+            task_id: &str,
+            worktree: &OwnedWorktree,
+            base_commit: &str,
+            prepared_commit: &str,
+        ) -> Result<IntegrationVerification, RuntimeError> {
+            assert_eq!(base_commit, worktree.manifest().source_commit);
+            self.verify(task_id, worktree, prepared_commit)
+        }
+    }
+
     #[test]
     fn serialized_integration_completes_from_fresh_and_every_durable_git_boundary() {
         for boundary in 0..4 {
@@ -972,6 +1152,29 @@ mod tests {
                 outcome.task_source_sha256
             );
         }
+    }
+
+    #[test]
+    fn configured_interval_runs_cumulative_validation_before_head_mutation() {
+        let mut fixture = Fixture::new();
+        enqueue_team_integration(&mut fixture.snapshot, TASK_ID, |_| Ok(())).unwrap();
+        let mut verifier = ScopeVerifier::default();
+        let outcome = integrate_team_queue_head_with_validation(
+            &fixture.config,
+            &fixture.authorization,
+            &fixture.campaign,
+            &mut fixture.snapshot,
+            &mut verifier,
+            TaskMergeStrategy::Squash,
+            Some(1),
+            |_| Ok(()),
+        )
+        .unwrap();
+        assert_eq!(
+            verifier.0,
+            vec![TASK_ID.to_owned(), "campaign-batch-1".to_owned()]
+        );
+        assert_eq!(outcome.completion_commit, fixture.snapshot.campaign_head);
     }
 
     #[test]
@@ -1131,6 +1334,7 @@ mod tests {
                 max_task_tokens: 100_000,
                 max_task_correction_cycles: 3,
                 max_follow_up_tasks: 10,
+                integration_validation_interval: 1,
             }),
         }
     }

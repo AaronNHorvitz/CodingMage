@@ -328,6 +328,13 @@ pub struct MultiAgentPolicy {
     pub max_task_correction_cycles: u16,
     /// Maximum follow-up tasks accepted inside the original authority.
     pub max_follow_up_tasks: u16,
+    /// Number of task integrations between cumulative campaign validation checkpoints.
+    #[serde(default = "default_integration_validation_interval")]
+    pub integration_validation_interval: u16,
+}
+
+const fn default_integration_validation_interval() -> u16 {
+    1
 }
 
 impl MultiAgentPolicy {
@@ -348,6 +355,8 @@ impl MultiAgentPolicy {
             || self.max_task_correction_cycles == 0
             || self.max_task_correction_cycles > 100
             || self.max_follow_up_tasks > 10_000
+            || self.integration_validation_interval == 0
+            || self.integration_validation_interval > 10_000
             || (self.execution_mode == CampaignExecutionMode::Serial
                 && self.concurrency.claude_implementers != 1)
             || (self.publication_mode != TaskPublicationMode::LocalOnly
@@ -2777,6 +2786,7 @@ mod tests {
                 max_task_tokens: 100_000,
                 max_task_correction_cycles: 3,
                 max_follow_up_tasks: 10,
+                integration_validation_interval: 1,
             }),
         }
     }

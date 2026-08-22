@@ -1362,6 +1362,7 @@ mod tests {
                 max_task_tokens: 100_000,
                 max_task_correction_cycles: 3,
                 max_follow_up_tasks: 0,
+                integration_validation_interval: 1,
             }),
         };
         let mut snapshot = initialize_team_campaign(&spec, &plan).unwrap();
