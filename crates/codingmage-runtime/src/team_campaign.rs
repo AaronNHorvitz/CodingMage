@@ -360,7 +360,7 @@ pub fn run_team_campaign_with_progress(
                         error.code(),
                     ));
                 }
-            };
+            }
             if policy.publication_mode == TaskPublicationMode::PerTaskDraftPullRequest {
                 for (task_id, record) in &snapshot.tasks {
                     if record.state != CampaignTaskState::Merged
