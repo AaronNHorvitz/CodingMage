@@ -92,8 +92,10 @@ publication, one serialized integration worker, and human-required destination p
 [`Durable Multi-Agent Campaign Architecture`](../architecture/multi-agent-campaigns.md).
 
 The current campaign path remains pre-release. The prescribed production ten-outcome soak,
-human-reconciled controlled-target campaign, authenticated live providers and GitHub, sustained
-five-pod execution, native platforms, independent review, signing, and publication remain open. See
+human-reconciled controlled-target campaign, authenticated live providers and GitHub,
+long-duration or live-provider five-pod execution, native platforms, independent review, signing,
+and publication remain open. The guarded two-cycle local five-pod qualification has passed; it does
+not satisfy those broader gates. See
 [`Unattended Safeguards`](../architecture/unattended-safeguards.md) before using valuable target
 repositories.
 

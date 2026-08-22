@@ -1279,7 +1279,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 25.2.3.3:** Exercise hostile Git configuration, aliases, hooks, filters, signers, credential helpers, replacement refs, alternates, submodules, large-file metadata, symlinks, case collisions, and Unicode collisions.
   - [ ] **Sub-task 25.2.3.4:** Exercise process escape, descendant survival, executable replacement, response-file injection, output pressure, process pressure, storage pressure, sleep, logout, shutdown, and concurrent unrelated processes.
   - [x] **Sub-task 25.2.3.5:** Prove sensitive values, prompts, provider prose, source text, hidden reasoning, unrestricted environment data, and unnecessary target copies never enter durable state, logs, status, evidence, packages, or publication payloads.
-- [ ] **Task 25.2.4 - Bind verification evidence and traceability**
+- [x] **Task 25.2.4 - Bind verification evidence and traceability**
   - [x] **Sub-task 25.2.4.1:** Create a machine-checkable test matrix linking every approved multi-agent safeguard and claim to implementation, focused tests, integration tests, and evidence records. See `docs/evidence/multi-agent-scenario-matrix.json`.
   - [x] **Sub-task 25.2.4.2:** Record exact source commit, command, exit status, test counts, skipped prerequisites, artifact digests, and limitations for each required local multi-agent gate. See `docs/evidence/sprint-25-multi-agent-local.md`.
   - [x] **Sub-task 25.2.4.3:** Make stale evidence fail when its bound implementation, test command, schema, fixture, package, or platform claim changes. See `docs/evidence/multi-agent-evidence-binding.json` and its mutation tests.
