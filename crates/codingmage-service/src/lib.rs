@@ -38,9 +38,11 @@ mod tests {
         fs::create_dir_all(root.join("state")).unwrap();
         fs::create_dir_all(root.join("scratch")).unwrap();
         fs::write(root.join("config.toml"), b"version = 1\n").unwrap();
+        fs::write(root.join("campaign.toml"), b"version = 3\n").unwrap();
         ServiceSpec::new(
             std::path::Path::new("/usr/bin/true"),
             &root.join("config.toml"),
+            &root.join("campaign.toml"),
             &root.join("state"),
             &root.join("scratch"),
             ServiceLimits {
@@ -58,6 +60,8 @@ mod tests {
         let spec = service_spec(&root);
         let unit = spec.render_unit();
         for expected in [
+            " campaign --config ",
+            " --campaign ",
             "NoNewPrivileges=true",
             "KillMode=control-group",
             "TimeoutStopSec=30s",

@@ -24,6 +24,7 @@ pub struct ServiceLimits {
 pub struct ServiceSpec {
     executable: PathBuf,
     configuration: PathBuf,
+    campaign: PathBuf,
     state_root: PathBuf,
     scratch_root: PathBuf,
     limits: ServiceLimits,
@@ -38,12 +39,14 @@ impl ServiceSpec {
     pub fn new(
         executable: &Path,
         configuration: &Path,
+        campaign: &Path,
         state_root: &Path,
         scratch_root: &Path,
         limits: ServiceLimits,
     ) -> Result<Self, LifecycleError> {
         let executable = validate_file(executable)?;
         let configuration = validate_file(configuration)?;
+        let campaign = validate_file(campaign)?;
         let state_root = validate_directory(state_root)?;
         let scratch_root = validate_directory(scratch_root)?;
         if limits.memory_bytes < 64 * 1024 * 1024
@@ -55,6 +58,7 @@ impl ServiceSpec {
         Ok(Self {
             executable,
             configuration,
+            campaign,
             state_root,
             scratch_root,
             limits,
@@ -65,9 +69,10 @@ impl ServiceSpec {
     #[must_use]
     pub fn render_unit(&self) -> String {
         format!(
-            "[Unit]\nDescription=CodingMage local development coordinator\nAfter=default.target\n\n[Service]\nType=simple\nExecStart={} run --config {}\nRestart=on-failure\nRestartSec=10s\nKillMode=control-group\nTimeoutStopSec=30s\nNoNewPrivileges=true\nPrivateTmp=true\nProtectSystem=strict\nProtectHome=read-only\nReadWritePaths={} {}\nMemoryMax={}\nTasksMax={}\nCPUQuota={}%\n\n[Install]\nWantedBy=default.target\n",
+            "[Unit]\nDescription=CodingMage local development coordinator\nAfter=default.target\n\n[Service]\nType=simple\nExecStart={} campaign --config {} --campaign {}\nRestart=on-failure\nRestartSec=10s\nKillMode=control-group\nTimeoutStopSec=30s\nNoNewPrivileges=true\nPrivateTmp=true\nProtectSystem=strict\nProtectHome=read-only\nReadWritePaths={} {}\nMemoryMax={}\nTasksMax={}\nCPUQuota={}%\n\n[Install]\nWantedBy=default.target\n",
             systemd_argument(&self.executable),
             systemd_argument(&self.configuration),
+            systemd_argument(&self.campaign),
             systemd_argument(&self.state_root),
             systemd_argument(&self.scratch_root),
             self.limits.memory_bytes,
