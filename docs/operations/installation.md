@@ -23,6 +23,27 @@ Installation defaults to `~/.local`, uses atomic replacement, and retains one pr
 
 The archive is Linux x86-64 evidence only. It is not a macOS or Windows package.
 
+## Optional User Service
+
+Install the binary first, then bind the user service to one exact validated configuration and
+campaign specification:
+
+```bash
+python3 scripts/install_release.py service-install \
+  --config "$HOME/.config/codingmage/config.toml" \
+  --campaign "$HOME/.config/codingmage/campaign.toml"
+python3 scripts/install_release.py service-verify
+python3 scripts/install_release.py service-start
+python3 scripts/install_release.py service-stop
+python3 scripts/install_release.py service-remove
+```
+
+These are separate operator actions. Installation reloads the user service manager but does not
+start or enable the unit, and it never enables lingering. Start and stop use exact `systemctl
+--user` argument vectors without a shell. Verification and removal fail closed if the installed
+unit or its receipt changed. Remove the service before removing the binary; configuration and
+runtime state remain preserved unless the separate `--purge-data` decision is supplied.
+
 Release-candidate and public-artifact verification must use the packaged binary rather than a
 source-tree build. See [`Release`](release.md) for clean-clone construction, signing separation,
 installed-candidate testing, owner authorization, and independent post-publication verification.

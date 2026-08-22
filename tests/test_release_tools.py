@@ -41,6 +41,14 @@ def archive(root: Path, name: str, content: bytes) -> Path:
     return bundle
 
 
+class FakeController:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, ...]] = []
+
+    def __call__(self, *arguments: str) -> None:
+        self.calls.append(arguments)
+
+
 class ReleaseToolsTest(unittest.TestCase):
     def test_local_build_paths_are_rejected_without_printing_content(self) -> None:
         with tempfile.TemporaryDirectory(prefix="codingmage-packager-test-") as temporary:
@@ -105,6 +113,87 @@ class ReleaseToolsTest(unittest.TestCase):
             extract.mkdir()
             with self.assertRaises(ValueError):
                 INSTALLER.safe_extract(traversal, extract)
+
+    def test_packaged_service_install_start_upgrade_rollback_stop_and_remove(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="codingmage-service-test-") as temporary:
+            root = Path(temporary)
+            prefix = root / "prefix"
+            unit_root = root / "units"
+            state = root / "state"
+            scratch = root / "scratch"
+            state.mkdir()
+            scratch.mkdir()
+            configuration = root / "config.toml"
+            configuration.write_text(
+                f'state_root = "{state}"\nscratch_root = "{scratch}"\n', encoding="utf-8"
+            )
+            campaign = root / "campaign.toml"
+            campaign.write_text("version = 3\n", encoding="utf-8")
+            first = archive(root, "service-first", b"first-service-binary")
+            second = archive(root, "service-second", b"second-service-binary")
+            controller = FakeController()
+
+            INSTALLER.install(first, prefix)
+            INSTALLER.install_service(
+                prefix, unit_root, configuration, campaign, controller
+            )
+            INSTALLER.verify_service(prefix, unit_root)
+            unit, receipt = INSTALLER.service_paths(prefix, unit_root)
+            unit_content = unit.read_text(encoding="utf-8")
+            self.assertIn(" campaign --config ", unit_content)
+            self.assertIn(" --campaign ", unit_content)
+            self.assertNotIn(" run --config ", unit_content)
+
+            INSTALLER.control_service(prefix, unit_root, "start", controller)
+            INSTALLER.control_service(prefix, unit_root, "stop", controller)
+            INSTALLER.install(second, prefix)
+            INSTALLER.verify_service(prefix, unit_root)
+            INSTALLER.rollback(prefix)
+            INSTALLER.verify_service(prefix, unit_root)
+            INSTALLER.control_service(prefix, unit_root, "start", controller)
+            INSTALLER.remove_service(prefix, unit_root, controller)
+            INSTALLER.remove_service(prefix, unit_root, controller)
+
+            self.assertFalse(unit.exists())
+            self.assertFalse(receipt.exists())
+            self.assertEqual(
+                controller.calls,
+                [
+                    ("daemon-reload",),
+                    ("start", "codingmage.service"),
+                    ("stop", "codingmage.service"),
+                    ("start", "codingmage.service"),
+                    ("stop", "codingmage.service"),
+                    ("daemon-reload",),
+                ],
+            )
+
+    def test_changed_or_linked_service_state_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="codingmage-service-test-") as temporary:
+            root = Path(temporary)
+            prefix = root / "prefix"
+            unit_root = root / "units"
+            state = root / "state"
+            scratch = root / "scratch"
+            state.mkdir()
+            scratch.mkdir()
+            configuration = root / "config.toml"
+            configuration.write_text(
+                f'state_root = "{state}"\nscratch_root = "{scratch}"\n', encoding="utf-8"
+            )
+            campaign = root / "campaign.toml"
+            campaign.write_text("version = 3\n", encoding="utf-8")
+            INSTALLER.install(archive(root, "service", b"binary"), prefix)
+            controller = FakeController()
+            INSTALLER.install_service(
+                prefix, unit_root, configuration, campaign, controller
+            )
+            unit, _ = INSTALLER.service_paths(prefix, unit_root)
+            unit.write_text("human change\n", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                INSTALLER.verify_service(prefix, unit_root)
+            with self.assertRaises(ValueError):
+                INSTALLER.remove_service(prefix, unit_root, controller)
 
 
 if __name__ == "__main__":

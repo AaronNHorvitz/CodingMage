@@ -58,7 +58,13 @@ cargo test -p codingmage-cli --all-targets
 
 ## Open Evidence
 
-Sub-task `18.1.2.2` and `Gate 18.1` remain open because the packaged binary does not yet install and exercise the user service through start, stop, upgrade, rollback, and removal. Signing is also still a human release operation.
+The packaged installer now generates a campaign-bound user unit and exercises deterministic
+install, verification, start, stop, binary upgrade, rollback, drift refusal, and removal through a
+fake service controller. The Rust service contract and installer both render the production
+`campaign --config ... --campaign ...` entry point, and native `systemd-analyze --user verify`
+accepts the Rust-rendered unit. Sub-task `18.1.2.2` and `Gate 18.1` remain open until the same
+lifecycle runs through a real isolated user service manager and the resulting installed-package
+evidence is bound to a release candidate. Signing also remains a human release operation.
 
 Sub-task `18.2.2.1`, `18.2.2.2`, and native macOS evidence remain open. The contract and literal launch/keychain plans do not substitute for native process, filesystem, launch-agent, credential, provider, monitoring, and recovery execution. Windows executable support remains intentionally unimplemented.
 
