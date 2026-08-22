@@ -18,9 +18,10 @@ use codingmage_git::inventory_repository;
 use codingmage_plan::TaskPlan;
 use codingmage_runtime::{
     RunProgress, RunSpec, RuntimeError, approve_campaign_destination_promotion,
-    approve_campaign_task_integration, campaign_blocker_explanation, campaign_status,
-    clear_campaign_blocker, observe_campaign_deferral_trigger, request_campaign_control,
-    run_one_with_progress, run_team_campaign_with_progress, team_campaign_report,
+    approve_campaign_task_integration, campaign_blocker_explanation, campaign_preflight,
+    campaign_status, clear_campaign_blocker, observe_campaign_deferral_trigger,
+    request_campaign_control, run_one_with_progress, run_team_campaign_with_progress,
+    team_campaign_report,
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -42,6 +43,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "status" => diagnose(&arguments[1..], "status"),
         "plan" => select_plan(&arguments[1..]),
         "run" => execute(&arguments[1..]),
+        "campaign-preflight" => preflight_campaign(&arguments[1..]),
         "campaign" => execute_campaign(&arguments[1..]),
         "campaign-status" => inspect_campaign(&arguments[1..]),
         "campaign-report" => inspect_campaign_report(&arguments[1..]),
@@ -161,6 +163,18 @@ fn execute_campaign(arguments: &[String]) -> Result<String, CliError> {
     })
     .map_err(CliError::Runtime)?;
     serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)
+}
+
+fn preflight_campaign(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "campaign", "authorization"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let authorization = parsed.absolute_file("authorization")?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let report = campaign_preflight(&config, &spec, &executable, &authorization)
+        .map_err(CliError::Runtime)?;
+    serde_json::to_string_pretty(&report).map_err(|_| CliError::Internal)
 }
 
 fn inspect_campaign(arguments: &[String]) -> Result<String, CliError> {

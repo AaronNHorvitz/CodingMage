@@ -229,6 +229,7 @@ dependencies = [
  "codingmage-process",
  "codingmage-service",
  "codingmage-state",
+ "nix",
  "serde",
  "serde_json",
  "sha2",

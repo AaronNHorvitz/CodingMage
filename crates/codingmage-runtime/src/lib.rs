@@ -49,6 +49,7 @@ pub use team_state::{TeamStateStore, TeamStateStoreError};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt, fs,
+    io::Read as _,
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex,
@@ -59,8 +60,9 @@ use std::{
 };
 
 use codingmage_campaign::{
-    CampaignAuthentication, CampaignError, CampaignExecutionMode, CampaignLimits, CampaignSpec,
-    PodLease, PodScheduler, TeamLeadOutcome, validate_team_lead_report,
+    CampaignAuthentication, CampaignError, CampaignExecutionMode, CampaignLimits,
+    CampaignPublication, CampaignSpec, PodLease, PodScheduler, TaskPublicationMode,
+    TeamLeadOutcome, validate_team_lead_report,
 };
 use codingmage_claude::{
     ClaudeAdapter, ClaudeAuthentication, ClaudeCompletionReport, ClaudeError, ClaudeSession,
@@ -73,7 +75,7 @@ use codingmage_codex::{
 use codingmage_contracts::{
     AgentId, AttemptId, EvidenceId, LeadReconsiderationTrigger, RunId, TaskId,
 };
-use codingmage_core::{Config, RepositoryAuthorization};
+use codingmage_core::{CapabilityGrant, Config, PublicationMode, RepositoryAuthorization};
 use codingmage_gate::{
     GateAssertion, GateDiagnostic, GateEntry, GateRegistry, GateRequirement, GateRunner, GateTier,
     GateTrigger, TrustedGateDefinition,
@@ -113,6 +115,8 @@ const CAMPAIGN_PROVIDER_ATTEMPT_LIMIT: u8 = 3;
 const PROVIDER_RETRY_BASE_DELAY_MS: u64 = 25;
 const PROVIDER_RETRY_MAX_DELAY_MS: u64 = 400;
 const CLAUDE_REPORT_ATTEMPT_LIMIT: u8 = 2;
+const MAX_AUTHORIZATION_BYTES: u64 = 1024 * 1024;
+const MAX_IDENTITY_FILE_BYTES: u64 = 512 * 1024 * 1024;
 
 /// Content-minimized actor shown by the live CLI progress stream.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -548,6 +552,152 @@ impl CampaignTermination {
     }
 }
 
+/// Source-free result of validating one controlled campaign before model inference.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignPreflightReport {
+    /// Preflight report schema version.
+    pub schema_version: u16,
+    /// Closed terminal state; successful reports always contain `ready`.
+    pub state: String,
+    /// Digest of every operator-authorized campaign field.
+    pub authority_sha256: String,
+    /// Digest of the independently supplied authorization record.
+    pub operator_authorization_sha256: String,
+    /// Content-free repository and task-source baseline.
+    pub repository: CampaignPreflightRepository,
+    /// Closed execution and publication authority summary.
+    pub policy: CampaignPreflightPolicy,
+    /// Exact provider identities and probed capability surfaces.
+    pub providers: Vec<CampaignPreflightProvider>,
+    /// Deterministic gate-registry identity.
+    pub gates: CampaignPreflightGates,
+    /// Guarded process and operator-control identities.
+    pub controls: CampaignPreflightControls,
+    /// Available storage observed at private authority roots.
+    pub storage: CampaignPreflightStorage,
+    /// True only when the report excludes source, paths, model names, and process output.
+    pub source_free: bool,
+}
+
+/// Content-free repository baseline for campaign preflight.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignPreflightRepository {
+    /// Stable authorized repository identity.
+    pub repository_id: String,
+    /// Exact immutable starting commit.
+    pub initial_commit: String,
+    /// Digest of the dedicated active branch name.
+    pub branch_sha256: String,
+    /// Digest of the canonical task source.
+    pub task_source_sha256: String,
+    /// Digest of the clean porcelain observation.
+    pub status_sha256: String,
+    /// Digest of the complete bounded ref observation.
+    pub references_sha256: String,
+    /// Digest of the registered-worktree observation.
+    pub worktrees_sha256: String,
+    /// Number of dependency-plan items without retaining their prose.
+    pub plan_item_count: usize,
+    /// Number of open sub-tasks available to the campaign.
+    pub open_subtask_count: usize,
+    /// Whether the active checkout is clean.
+    pub clean: bool,
+    /// Whether the active branch is dedicated and non-protected.
+    pub dedicated_branch: bool,
+    /// Whether unsupported checkout features were absent.
+    pub checkout_safe: bool,
+}
+
+/// Closed campaign authority summarized without provider or path text.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignPreflightPolicy {
+    /// Maximum simultaneously active pods.
+    pub max_parallel_pods: u16,
+    /// Exact accepted-outcome ceiling.
+    pub max_accepted_outcomes: u32,
+    /// Closed publication code.
+    pub publication: String,
+    /// Whether the configured default branch is protected.
+    pub default_branch_protected: bool,
+    /// Number of allowed path roots for manual least-authority review.
+    pub allowed_path_count: usize,
+    /// Digest of allowed path roots without exposing names.
+    pub allowed_paths_sha256: String,
+    /// Number of explicitly denied path roots.
+    pub denied_path_count: usize,
+    /// Digest of denied path roots without exposing names.
+    pub denied_paths_sha256: String,
+    /// Whether every external and publication capability is denied.
+    pub external_capabilities_denied: bool,
+}
+
+/// One provider profile and capability probe without executable, model, or output text.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignPreflightProvider {
+    /// Closed provider role.
+    pub role: String,
+    /// Digest of the provider executable bytes.
+    pub executable_sha256: String,
+    /// Digest of the operator-selected model and effort profile.
+    pub profile_sha256: String,
+    /// Digest of parsed version and required capability booleans.
+    pub capabilities_sha256: String,
+    /// Closed credential-discovery boundary.
+    pub authentication: String,
+    /// Number of guarded version/help subprocesses observed.
+    pub probe_process_count: u32,
+    /// True only after all required capability flags pass.
+    pub capability_verified: bool,
+}
+
+/// Deterministic gate registry identity without command or path text.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignPreflightGates {
+    /// Number of configured deterministic gate commands.
+    pub command_count: usize,
+    /// Digest of the exact gate registry.
+    pub registry_sha256: String,
+    /// Ordered executable-content digests.
+    pub executable_sha256: Vec<String>,
+    /// Number of campaign gate tiers.
+    pub tier_count: usize,
+    /// Digest of exact tier and profile authority.
+    pub tiers_sha256: String,
+}
+
+/// Guarded process and same-user operator-control capability summary.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignPreflightControls {
+    /// Digest of the exact process-guard executable bytes.
+    pub process_guard_sha256: String,
+    /// Number of closed operator control actions.
+    pub operator_control_count: usize,
+    /// Digest of the supported control action codes.
+    pub operator_controls_sha256: String,
+    /// True when capability probes ran through the guarded process runtime.
+    pub process_guard_verified: bool,
+}
+
+/// Available storage evidence for private scratch and state roots.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignPreflightStorage {
+    /// Available bytes at the scratch authority root.
+    pub scratch_available_bytes: u64,
+    /// Available bytes at the state authority root.
+    pub state_available_bytes: u64,
+    /// Campaign retained-state ceiling used as the minimum observed threshold.
+    pub required_available_bytes: u64,
+    /// True when both roots meet the configured retained-state threshold.
+    pub sufficient: bool,
+}
+
 /// Privacy-safe durable campaign status without provider or repository content.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -748,6 +898,281 @@ pub struct CampaignControlOutcome {
     pub action: String,
     /// True only when this invocation created the durable request.
     pub created: bool,
+}
+
+/// Validates one exact controlled campaign and probes only version/help capability surfaces.
+///
+/// This operation never creates a campaign worktree, invokes model inference, or mutates the
+/// target repository. The returned report contains identities, counts, booleans, and stable codes
+/// only.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] when authorization, repository, policy, provider, gate, process, or
+/// storage preconditions fail closed.
+#[allow(clippy::too_many_lines)]
+pub fn campaign_preflight(
+    config: &Config,
+    spec: &CampaignSpec,
+    codingmage_binary: &Path,
+    authorization_record: &Path,
+) -> Result<CampaignPreflightReport, RuntimeError> {
+    spec.verify().map_err(RuntimeError::Campaign)?;
+    let authority_sha256 = spec.authority_sha256().map_err(RuntimeError::Campaign)?;
+    let operator_authorization_sha256 = bounded_file_sha256(
+        authorization_record,
+        MAX_AUTHORIZATION_BYTES,
+        RuntimeError::Authority,
+    )?;
+    if operator_authorization_sha256 != spec.operator_authorization_sha256 {
+        return Err(RuntimeError::Authority);
+    }
+    let binary = canonical_file(codingmage_binary)?;
+    let source_root = binary.parent().ok_or(RuntimeError::Authority)?;
+    let authorization = RepositoryAuthorization::authorize(config, source_root)
+        .map_err(|_| RuntimeError::Authority)?;
+    let inventory = inventory_repository(&authorization).map_err(|_| RuntimeError::Repository)?;
+    let configured_target =
+        fs::canonicalize(&config.target_path).map_err(|_| RuntimeError::Authority)?;
+    let branch = inventory.branch.as_deref().ok_or(RuntimeError::Authority)?;
+    let dedicated_branch = branch != config.default_branch
+        && !spec
+            .protected_branches
+            .iter()
+            .any(|protected| protected == branch);
+    let default_branch_protected = spec
+        .protected_branches
+        .iter()
+        .any(|protected| protected == &config.default_branch);
+    if !inventory.condition.is_clean()
+        || inventory.unsafe_checkout_features
+        || configured_target != spec.repository_path
+        || authorization.identity().repository_id.as_str() != spec.repository_id
+        || inventory.head != spec.initial_commit
+        || !dedicated_branch
+        || !default_branch_protected
+    {
+        return Err(RuntimeError::Authority);
+    }
+    let source =
+        fs::read(config.target_path.join(&config.task_source)).map_err(|_| RuntimeError::Plan)?;
+    let plan = TaskPlan::parse(&source).map_err(|_| RuntimeError::Plan)?;
+    let open_subtask_count = plan
+        .items
+        .iter()
+        .filter(|item| item.kind == PlanItemKind::SubTask && item.state == CheckState::Open)
+        .count();
+    if plan.source_sha256 != spec.task_source_sha256 || open_subtask_count < 10 {
+        return Err(RuntimeError::Plan);
+    }
+
+    let capabilities = config.capabilities;
+    let external_capabilities_denied = [
+        capabilities.network,
+        capabilities.push,
+        capabilities.issues,
+        capabilities.pull_requests,
+        capabilities.task_merge,
+        capabilities.destination_merge,
+    ]
+    .into_iter()
+    .all(|grant| grant == CapabilityGrant::Denied)
+        && config.publication.mode == PublicationMode::LocalOnly;
+    let multi_agent_local = spec.multi_agent.as_ref().is_none_or(|policy| {
+        policy.publication_mode == TaskPublicationMode::LocalOnly && policy.github.is_none()
+    });
+    if spec.max_parallel_pods != 1
+        || spec.max_units != 10
+        || spec.publication != CampaignPublication::LocalOnly
+        || spec.implementer_authentication != CampaignAuthentication::ExistingLogin
+        || !multi_agent_local
+        || !external_capabilities_denied
+    {
+        return Err(RuntimeError::Authority);
+    }
+
+    private_directory(&config.scratch_root)?;
+    private_directory(&config.state_root)?;
+    let scratch_available_bytes = available_bytes(&config.scratch_root)?;
+    let state_available_bytes = available_bytes(&config.state_root)?;
+    let required_available_bytes = spec.limits.retained_state_bytes;
+    let storage_sufficient = scratch_available_bytes >= required_available_bytes
+        && state_available_bytes >= required_available_bytes;
+    if !storage_sufficient {
+        return Err(RuntimeError::State);
+    }
+
+    let preflight_root = config
+        .state_root
+        .join("preflights")
+        .join(&authority_sha256[..32]);
+    private_directory(&preflight_root)?;
+    let process_root = preflight_root.join("processes");
+    let executor = ProcessExecutor::new_with_guard_arguments(
+        &binary,
+        vec!["__process-guard".to_owned()],
+        &process_root,
+    )
+    .map_err(|_| RuntimeError::Process)?;
+    let login_environment = login_discovery_environment()?;
+    let cancellation = CancellationToken::default();
+
+    let authentication = match spec.implementer_authentication {
+        CampaignAuthentication::Bare => ClaudeAuthentication::Bare,
+        CampaignAuthentication::ExistingLogin => ClaudeAuthentication::ExistingLogin,
+    };
+    let claude = ClaudeAdapter::new(
+        spec.implementer.executable.clone(),
+        &spec.implementer.model,
+        &spec.implementer.effort,
+    )
+    .map(|adapter| adapter.with_authentication(authentication))
+    .and_then(|adapter| match authentication {
+        ClaudeAuthentication::Bare => Ok(adapter),
+        ClaudeAuthentication::ExistingLogin => {
+            adapter.with_login_environment(login_environment.clone())
+        }
+    })
+    .map_err(RuntimeError::Implementer)?;
+    let (claude_capabilities, claude_processes) = claude
+        .probe(&executor, config.target_path.clone(), &cancellation)
+        .map_err(RuntimeError::Implementer)?;
+    let mut providers = vec![CampaignPreflightProvider {
+        role: "implementer".to_owned(),
+        executable_sha256: bounded_file_sha256(
+            &spec.implementer.executable,
+            MAX_IDENTITY_FILE_BYTES,
+            RuntimeError::Implementer(ClaudeError::InvalidProfile),
+        )?,
+        profile_sha256: serializable_sha256(&spec.implementer)?,
+        capabilities_sha256: serializable_sha256(&serde_json::json!({
+            "version_sha256": bytes_sha256(claude_capabilities.version.as_bytes()),
+            "print": claude_capabilities.print,
+            "json": claude_capabilities.json,
+            "stream_json": claude_capabilities.stream_json,
+            "json_schema": claude_capabilities.json_schema,
+            "session_resume": claude_capabilities.session_resume,
+            "model": claude_capabilities.model,
+            "effort": claude_capabilities.effort,
+            "permission_mode": claude_capabilities.permission_mode,
+            "bare": claude_capabilities.bare,
+        }))?,
+        authentication: match spec.implementer_authentication {
+            CampaignAuthentication::Bare => "bare",
+            CampaignAuthentication::ExistingLogin => "existing_login",
+        }
+        .to_owned(),
+        probe_process_count: u32::try_from(claude_processes.len())
+            .map_err(|_| RuntimeError::State)?,
+        capability_verified: true,
+    }];
+
+    let review_schema = preflight_root.join("codex-review.schema.json");
+    write_private_idempotent(&review_schema, codex_review_schema().as_bytes())?;
+    for (role, provider) in [("team_lead", &spec.team_lead), ("reviewer", &spec.reviewer)] {
+        let codex = CodexAdapter::new(
+            provider.executable.clone(),
+            &provider.model,
+            &provider.effort,
+            review_schema.clone(),
+        )
+        .and_then(|adapter| adapter.with_login_environment(login_environment.clone()))
+        .map_err(RuntimeError::Reviewer)?;
+        let (capabilities, processes) = codex
+            .probe(&executor, config.target_path.clone(), &cancellation)
+            .map_err(RuntimeError::Reviewer)?;
+        providers.push(CampaignPreflightProvider {
+            role: role.to_owned(),
+            executable_sha256: bounded_file_sha256(
+                &provider.executable,
+                MAX_IDENTITY_FILE_BYTES,
+                RuntimeError::Reviewer(CodexError::InvalidProfile),
+            )?,
+            profile_sha256: serializable_sha256(provider)?,
+            capabilities_sha256: serializable_sha256(&serde_json::json!({
+                "version_sha256": bytes_sha256(capabilities.version.as_bytes()),
+                "exec": capabilities.exec,
+                "json": capabilities.json,
+                "output_schema": capabilities.output_schema,
+                "resume": capabilities.resume,
+                "model": capabilities.model,
+                "read_only": capabilities.read_only,
+                "ignore_user_config": capabilities.ignore_user_config,
+            }))?,
+            authentication: "existing_login".to_owned(),
+            probe_process_count: u32::try_from(processes.len()).map_err(|_| RuntimeError::State)?,
+            capability_verified: true,
+        });
+    }
+
+    let gate_executables = config
+        .gate_commands
+        .iter()
+        .map(|command| {
+            bounded_file_sha256(
+                &command.executable,
+                MAX_IDENTITY_FILE_BYTES,
+                RuntimeError::Authority,
+            )
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let controls = ["pause", "resume", "stop_after_unit", "cancel"];
+    Ok(CampaignPreflightReport {
+        schema_version: 1,
+        state: "ready".to_owned(),
+        authority_sha256,
+        operator_authorization_sha256,
+        repository: CampaignPreflightRepository {
+            repository_id: spec.repository_id.clone(),
+            initial_commit: spec.initial_commit.clone(),
+            branch_sha256: bytes_sha256(branch.as_bytes()),
+            task_source_sha256: plan.source_sha256,
+            status_sha256: inventory.status_sha256,
+            references_sha256: inventory.references_sha256,
+            worktrees_sha256: inventory.worktrees_sha256,
+            plan_item_count: plan.items.len(),
+            open_subtask_count,
+            clean: true,
+            dedicated_branch,
+            checkout_safe: true,
+        },
+        policy: CampaignPreflightPolicy {
+            max_parallel_pods: spec.max_parallel_pods,
+            max_accepted_outcomes: spec.max_units,
+            publication: "local_only".to_owned(),
+            default_branch_protected,
+            allowed_path_count: spec.allowed_paths.len(),
+            allowed_paths_sha256: serializable_sha256(&spec.allowed_paths)?,
+            denied_path_count: spec.denied_paths.len(),
+            denied_paths_sha256: serializable_sha256(&spec.denied_paths)?,
+            external_capabilities_denied,
+        },
+        providers,
+        gates: CampaignPreflightGates {
+            command_count: config.gate_commands.len(),
+            registry_sha256: serializable_sha256(&config.gate_commands)?,
+            executable_sha256: gate_executables,
+            tier_count: spec.gate_tiers.len(),
+            tiers_sha256: serializable_sha256(&spec.gate_tiers)?,
+        },
+        controls: CampaignPreflightControls {
+            process_guard_sha256: bounded_file_sha256(
+                &binary,
+                MAX_IDENTITY_FILE_BYTES,
+                RuntimeError::Process,
+            )?,
+            operator_control_count: controls.len(),
+            operator_controls_sha256: serializable_sha256(&controls)?,
+            process_guard_verified: true,
+        },
+        storage: CampaignPreflightStorage {
+            scratch_available_bytes,
+            state_available_bytes,
+            required_available_bytes,
+            sufficient: storage_sufficient,
+        },
+        source_free: true,
+    })
 }
 
 /// Reads and validates the durable status for one exact campaign authority.
@@ -4700,6 +5125,54 @@ fn login_discovery_environment() -> Result<BTreeMap<String, String>, RuntimeErro
     environment.insert("PATH".to_owned(), "/usr/bin:/bin".to_owned());
     validate_login_discovery_environment(&environment)?;
     Ok(environment)
+}
+
+fn bounded_file_sha256(
+    path: &Path,
+    maximum_bytes: u64,
+    error: RuntimeError,
+) -> Result<String, RuntimeError> {
+    if !path.is_absolute() {
+        return Err(error);
+    }
+    let metadata = fs::symlink_metadata(path).map_err(|_| error)?;
+    if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.len() > maximum_bytes {
+        return Err(error);
+    }
+    let mut file = fs::File::open(path).map_err(|_| error)?;
+    let mut digest = Sha256::new();
+    let mut buffer = vec![0_u8; 64 * 1024].into_boxed_slice();
+    loop {
+        let count = file.read(&mut buffer).map_err(|_| error)?;
+        if count == 0 {
+            break;
+        }
+        digest.update(&buffer[..count]);
+    }
+    Ok(hex(&digest.finalize()))
+}
+
+fn serializable_sha256(value: &impl Serialize) -> Result<String, RuntimeError> {
+    let bytes = serde_json::to_vec(value).map_err(|_| RuntimeError::State)?;
+    Ok(bytes_sha256(&bytes))
+}
+
+fn bytes_sha256(bytes: &[u8]) -> String {
+    hex(&Sha256::digest(bytes))
+}
+
+#[cfg(unix)]
+fn available_bytes(path: &Path) -> Result<u64, RuntimeError> {
+    let observation = nix::sys::statvfs::statvfs(path).map_err(|_| RuntimeError::State)?;
+    observation
+        .blocks_available()
+        .checked_mul(observation.fragment_size())
+        .ok_or(RuntimeError::State)
+}
+
+#[cfg(not(unix))]
+fn available_bytes(_path: &Path) -> Result<u64, RuntimeError> {
+    Err(RuntimeError::Authority)
 }
 
 fn validate_login_discovery_environment(
