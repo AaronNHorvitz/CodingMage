@@ -537,6 +537,7 @@ fn validate_campaign_checkpoint(kind: &EventKind) -> Result<(), JournalError> {
         completed_units,
         blocked_tasks,
         deferred_tasks,
+        satisfied_deferrals,
         human_decisions,
         accepted_outcomes,
         max_outcomes,
@@ -584,6 +585,7 @@ fn validate_campaign_checkpoint(kind: &EventKind) -> Result<(), JournalError> {
     let projected = completed_units
         .checked_add(*blocked_tasks)
         .and_then(|value| value.checked_add(*deferred_tasks))
+        .and_then(|value| value.checked_add(*satisfied_deferrals))
         .and_then(|value| value.checked_add(*human_decisions))
         .ok_or(JournalError::InvalidField)?;
     if *accepted_outcomes != projected

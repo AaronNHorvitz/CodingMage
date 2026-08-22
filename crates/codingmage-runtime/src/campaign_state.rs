@@ -1061,6 +1061,8 @@ impl CampaignCheckpoint {
     }
 
     fn refresh_outcomes(&mut self) -> Result<(), RuntimeError> {
+        let satisfied_deferrals =
+            u32::try_from(self.satisfied_deferrals.len()).map_err(|_| RuntimeError::State)?;
         let projection = CampaignOutcomeProjection {
             completed: self.completed_units,
             blocked: u32::try_from(self.blocked_task_ids.len()).map_err(|_| RuntimeError::State)?,
@@ -1076,6 +1078,7 @@ impl CampaignCheckpoint {
             .completed
             .checked_add(projection.blocked)
             .and_then(|value| value.checked_add(projection.deferred))
+            .and_then(|value| value.checked_add(satisfied_deferrals))
             .and_then(|value| value.checked_add(projection.pending_human_decision))
             .ok_or(RuntimeError::State)?;
         self.outcomes = CampaignOutcomeProjection {
@@ -1090,12 +1093,15 @@ impl CampaignCheckpoint {
         let blocked_reasons = self.blocked_reasons.keys().collect::<BTreeSet<_>>();
         let deferred = self.deferred_tasks.keys().collect::<BTreeSet<_>>();
         let satisfied = self.satisfied_deferrals.keys().collect::<BTreeSet<_>>();
+        let satisfied_count =
+            u32::try_from(self.satisfied_deferrals.len()).map_err(|_| RuntimeError::State)?;
         let human_decisions = self.human_decisions.keys().collect::<BTreeSet<_>>();
         let expected = self
             .outcomes
             .completed
             .checked_add(self.outcomes.blocked)
             .and_then(|value| value.checked_add(self.outcomes.deferred))
+            .and_then(|value| value.checked_add(satisfied_count))
             .and_then(|value| value.checked_add(self.outcomes.pending_human_decision))
             .ok_or(RuntimeError::State)?;
         if self.outcomes.completed != self.completed_units
@@ -2061,7 +2067,7 @@ mod tests {
                     satisfied_deferrals: 1,
                     human_decisions: 1,
                     rejected_proposals: 1,
-                    accepted_outcomes: 3,
+                    accepted_outcomes: 4,
                     max_outcomes: Some(10),
                     active_unit: true,
                     active_pod_run_id: Some(active_run),
@@ -2355,6 +2361,54 @@ mod tests {
         );
         assert_eq!(overflow.persist(&overflow_root), Err(RuntimeError::State));
         fs::remove_dir_all(overflow_root).unwrap();
+    }
+
+    #[test]
+    fn satisfied_deferral_remains_an_accepted_outcome_through_completion() {
+        let root = root("satisfied-deferral-outcome");
+        let mut checkpoint = CampaignCheckpoint::new(
+            "a".repeat(64),
+            "campaign-1".to_owned(),
+            "repo-1".to_owned(),
+            RunId::new("run-1").unwrap(),
+            WorktreeId::new("wt-1").unwrap(),
+            "codingmage/campaign-1/campaign-root".to_owned(),
+            "b".repeat(40),
+            2,
+            campaign_limits(),
+        )
+        .unwrap();
+        let projection = DeferredTaskProjection {
+            reason: LeadDeferredReason::DeterministicDependencyOrder,
+            trigger: LeadReconsiderationTrigger::CampaignHeadAdvancement,
+            source_head: "b".repeat(40),
+            task_source_sha256: "c".repeat(64),
+        };
+
+        checkpoint
+            .deferred_tasks
+            .insert("1.1.1.1".to_owned(), projection.clone());
+        checkpoint.persist(&root).unwrap();
+        assert_eq!(checkpoint.outcomes.accepted, 1);
+
+        std::thread::sleep(std::time::Duration::from_millis(2));
+        checkpoint.deferred_tasks.remove("1.1.1.1");
+        checkpoint
+            .satisfied_deferrals
+            .insert("1.1.1.1".to_owned(), projection);
+        checkpoint.persist(&root).unwrap();
+        assert_eq!(checkpoint.outcomes.accepted, 1);
+
+        std::thread::sleep(std::time::Duration::from_millis(2));
+        checkpoint.completed_units = 1;
+        checkpoint.persist(&root).unwrap();
+        assert_eq!(checkpoint.outcomes.accepted, 2);
+        assert_eq!(
+            checkpoint.outcomes.accepted,
+            checkpoint.outcomes.max_accepted
+        );
+        assert_eq!(CampaignCheckpoint::load(&root).unwrap(), Some(checkpoint));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
