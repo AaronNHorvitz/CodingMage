@@ -5116,7 +5116,11 @@ fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
             Err(_) => return Err(RuntimeError::State),
         };
         for entry in entries {
-            let entry = entry.map_err(|_| RuntimeError::State)?;
+            let entry = match entry {
+                Ok(entry) => entry,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(_) => return Err(RuntimeError::State),
+            };
             let file_type = match entry.file_type() {
                 Ok(file_type) => file_type,
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
