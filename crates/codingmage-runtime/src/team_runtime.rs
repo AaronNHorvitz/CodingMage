@@ -2536,6 +2536,61 @@ mod tests {
     }
 
     #[test]
+    fn accelerated_parallel_soak_covers_every_capacity_and_completion_rotation() {
+        for capacity in 1..=5 {
+            for cycle in 0_u64..10 {
+                let (spec, mut snapshot, jobs) = fixture(capacity, capacity, 2_000);
+                let delays_ms = jobs
+                    .iter()
+                    .map(|job| {
+                        let rank = (job.sequence.saturating_add(cycle)) % u64::from(capacity);
+                        (job.sequence, rank.saturating_mul(2))
+                    })
+                    .collect();
+                let runner = Arc::new(FakeRunner {
+                    delays_ms,
+                    ..FakeRunner::successful()
+                });
+                let outcome = execute_team_batch(
+                    &spec,
+                    &mut snapshot,
+                    &jobs,
+                    &runner,
+                    &CancellationToken::default(),
+                    |_| Ok(()),
+                    |_| {},
+                )
+                .expect("accelerated soak cycle");
+                assert_eq!(outcome.tasks.len(), usize::from(capacity));
+                assert!(outcome.tasks.iter().all(|task| task.result.is_ok()));
+                assert_eq!(
+                    outcome
+                        .tasks
+                        .iter()
+                        .map(|task| task.sequence)
+                        .collect::<Vec<_>>(),
+                    (0..u64::from(capacity)).collect::<Vec<_>>()
+                );
+                assert_eq!(outcome.completion_order.len(), usize::from(capacity));
+                assert_eq!(
+                    outcome
+                        .completion_order
+                        .iter()
+                        .collect::<BTreeSet<_>>()
+                        .len(),
+                    usize::from(capacity)
+                );
+                assert!(outcome.snapshot.resources.active.is_empty());
+                assert_eq!(
+                    outcome.snapshot.scheduler.active.len(),
+                    usize::from(capacity)
+                );
+                outcome.snapshot.verify().expect("verified soak snapshot");
+            }
+        }
+    }
+
+    #[test]
     fn conflicting_reservations_fail_before_persistence_or_execution() {
         let (spec, mut snapshot, mut jobs) = fixture(2, 2, 2_000);
         jobs[1].reservation.reservation_id = jobs[0].reservation.reservation_id.clone();

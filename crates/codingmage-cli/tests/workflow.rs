@@ -1357,6 +1357,24 @@ print(json.dumps({"type": "turn.completed"}))
 }
 
 #[test]
+#[ignore = "explicit local sustained qualification; requires CODINGMAGE_SUSTAINED_SOAK=approved"]
+fn sustained_five_pod_campaign_qualification() {
+    assert_eq!(
+        std::env::var("CODINGMAGE_SUSTAINED_SOAK").as_deref(),
+        Ok("approved"),
+        "set the explicit sustained-soak guard"
+    );
+    let cycles = std::env::var("CODINGMAGE_SUSTAINED_SOAK_CYCLES")
+        .expect("set a bounded sustained-soak cycle count")
+        .parse::<u16>()
+        .expect("sustained-soak cycles must be an integer");
+    assert!((2..=100).contains(&cycles));
+    for _ in 0..cycles {
+        parallel_campaign_runs_five_pods_and_serializes_reviewed_integrations();
+    }
+}
+
+#[test]
 #[allow(clippy::too_many_lines)]
 fn campaign_cancel_terminates_owned_provider_without_signalling_unrelated_process() {
     let fixture = Fixture::new();
