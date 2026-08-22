@@ -395,6 +395,7 @@ pub fn run_team_campaign_with_progress(
                     };
                     let outcome = match synchronize_task_publication(
                         &spec,
+                        &manifest.branch,
                         &plan,
                         &mut snapshot,
                         &task_id,

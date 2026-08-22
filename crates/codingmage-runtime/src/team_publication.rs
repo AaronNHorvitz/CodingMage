@@ -47,7 +47,11 @@ pub struct TaskPublicationRequest {
 }
 
 impl TaskPublicationRequest {
-    fn verify(&self, spec: &CampaignSpec) -> Result<(), TeamPublicationError> {
+    fn verify(
+        &self,
+        spec: &CampaignSpec,
+        campaign_branch: &str,
+    ) -> Result<(), TeamPublicationError> {
         if self.campaign_id != spec.campaign_id
             || self.task_id.is_empty()
             || self.title.is_empty()
@@ -60,7 +64,12 @@ impl TaskPublicationRequest {
             || self.task_branch.is_empty()
             || self.state.is_empty()
             || self.task_branch == self.campaign_branch
-            || self.campaign_branch != spec.campaign_branch
+            || self.campaign_branch != campaign_branch
+            || !is_campaign_branch(&spec.campaign_branch, campaign_branch)
+            || spec
+                .protected_branches
+                .iter()
+                .any(|branch| branch == campaign_branch)
             || !valid_commit(&self.reviewed_commit)
             || self.owned_paths.is_empty()
             || self.gate_tiers.is_empty()
@@ -231,6 +240,7 @@ impl std::error::Error for TeamPublicationError {}
 #[allow(clippy::too_many_lines)]
 pub fn synchronize_task_publication<T, P>(
     spec: &CampaignSpec,
+    campaign_branch: &str,
     plan: &TaskPlan,
     snapshot: &mut TeamCampaignSnapshot,
     task_id: &str,
@@ -259,7 +269,10 @@ where
         return Ok(TeamPublicationOutcome::ReadyForIntegration);
     }
 
-    let mut request = publication_request(spec, plan, snapshot, task_id)?;
+    if !is_campaign_branch(&spec.campaign_branch, campaign_branch) {
+        return Err(TeamPublicationError::Authority);
+    }
+    let mut request = publication_request(spec, campaign_branch, plan, snapshot, task_id)?;
     let issue = port.ensure_issue(&request)?;
     if issue.number == 0
         || !valid_sha256(&issue.evidence_sha256)
@@ -277,7 +290,7 @@ where
             .bind_issue_number(issue.number, issue.evidence_sha256)
             .map_err(|_| TeamPublicationError::State)?;
         persist(snapshot).map_err(|_| TeamPublicationError::State)?;
-        request = publication_request(spec, plan, snapshot, task_id)?;
+        request = publication_request(spec, campaign_branch, plan, snapshot, task_id)?;
     }
 
     let pushed = port.ensure_reviewed_branch(&request)?;
@@ -307,7 +320,7 @@ where
             .bind_pull_request_number(pull_request.number, pull_request.evidence_sha256)
             .map_err(|_| TeamPublicationError::State)?;
         persist(snapshot).map_err(|_| TeamPublicationError::State)?;
-        request = publication_request(spec, plan, snapshot, task_id)?;
+        request = publication_request(spec, campaign_branch, plan, snapshot, task_id)?;
         let updated_issue = port.ensure_issue(&request)?;
         if updated_issue.number != issue.number || !valid_sha256(&updated_issue.evidence_sha256) {
             return Err(TeamPublicationError::Identity);
@@ -361,6 +374,7 @@ where
 
 fn publication_request(
     spec: &CampaignSpec,
+    campaign_branch: &str,
     plan: &TaskPlan,
     snapshot: &TeamCampaignSnapshot,
     task_id: &str,
@@ -389,7 +403,7 @@ fn publication_request(
         pull_request_number: record.pull_request_number,
         task_branch: record.branch.clone().ok_or(TeamPublicationError::State)?,
         state: task_state_code(record.state).to_owned(),
-        campaign_branch: spec.campaign_branch.clone(),
+        campaign_branch: campaign_branch.to_owned(),
         reviewed_commit: record
             .reviewed_commit
             .clone()
@@ -405,7 +419,7 @@ fn publication_request(
         review_evidence_sha256: record.review_evidence_sha256.clone(),
         correction_sessions: record.correction_sessions.clone(),
     };
-    request.verify(spec)?;
+    request.verify(spec, campaign_branch)?;
     Ok(request)
 }
 
@@ -422,6 +436,13 @@ fn validate_ci(
 
 fn valid_commit(value: &str) -> bool {
     matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn is_campaign_branch(configured_prefix: &str, actual: &str) -> bool {
+    actual == configured_prefix
+        || actual
+            .strip_prefix(configured_prefix)
+            .is_some_and(|suffix| suffix.starts_with('/'))
 }
 
 fn valid_sha256(value: &str) -> bool {
@@ -491,6 +512,7 @@ mod tests {
         issue_creations: usize,
         pull_request_creations: usize,
         calls: usize,
+        last_campaign_branch: Option<String>,
     }
 
     impl TeamPublicationPort for FakePublicationPort {
@@ -541,6 +563,7 @@ mod tests {
             request: &TaskPublicationRequest,
         ) -> Result<PullRequestObservation, TeamPublicationError> {
             self.calls = self.calls.saturating_add(1);
+            self.last_campaign_branch = Some(request.campaign_branch.clone());
             let number = *self.pull_request.get_or_insert_with(|| {
                 self.pull_request_creations = self.pull_request_creations.saturating_add(1);
                 57
@@ -585,18 +608,30 @@ mod tests {
             ..FakePublicationPort::default()
         };
         assert_eq!(
-            synchronize_task_publication(&spec, &plan, &mut snapshot, TASK_ID, &mut port, |_| {
-                Ok(())
-            }),
+            synchronize_task_publication(
+                &spec,
+                &spec.campaign_branch,
+                &plan,
+                &mut snapshot,
+                TASK_ID,
+                &mut port,
+                |_| { Ok(()) }
+            ),
             Err(TeamPublicationError::Uncertain)
         );
         assert_eq!(port.issue_creations, 1);
         assert_eq!(snapshot.tasks[TASK_ID].issue_number, None);
 
         assert_eq!(
-            synchronize_task_publication(&spec, &plan, &mut snapshot, TASK_ID, &mut port, |_| {
-                Ok(())
-            })
+            synchronize_task_publication(
+                &spec,
+                &spec.campaign_branch,
+                &plan,
+                &mut snapshot,
+                TASK_ID,
+                &mut port,
+                |_| { Ok(()) }
+            )
             .unwrap(),
             TeamPublicationOutcome::WaitingForCi
         );
@@ -605,9 +640,15 @@ mod tests {
         assert_eq!(snapshot.tasks[TASK_ID].state, CampaignTaskState::CiWaiting);
 
         assert_eq!(
-            synchronize_task_publication(&spec, &plan, &mut snapshot, TASK_ID, &mut port, |_| {
-                Ok(())
-            })
+            synchronize_task_publication(
+                &spec,
+                &spec.campaign_branch,
+                &plan,
+                &mut snapshot,
+                TASK_ID,
+                &mut port,
+                |_| { Ok(()) }
+            )
             .unwrap(),
             TeamPublicationOutcome::ReadyForIntegration
         );
@@ -619,9 +660,15 @@ mod tests {
             vec!["7".repeat(64)]
         );
         assert_eq!(
-            synchronize_task_publication(&spec, &plan, &mut snapshot, TASK_ID, &mut port, |_| {
-                Ok(())
-            })
+            synchronize_task_publication(
+                &spec,
+                &spec.campaign_branch,
+                &plan,
+                &mut snapshot,
+                TASK_ID,
+                &mut port,
+                |_| { Ok(()) }
+            )
             .unwrap(),
             TeamPublicationOutcome::ReadyForIntegration
         );
@@ -640,15 +687,61 @@ mod tests {
             ..FakePublicationPort::default()
         };
         assert_eq!(
-            synchronize_task_publication(&spec, &plan, &mut snapshot, TASK_ID, &mut port, |_| {
-                Ok(())
-            })
+            synchronize_task_publication(
+                &spec,
+                &spec.campaign_branch,
+                &plan,
+                &mut snapshot,
+                TASK_ID,
+                &mut port,
+                |_| { Ok(()) }
+            )
             .unwrap(),
             TeamPublicationOutcome::CorrectionRequired
         );
         assert_eq!(snapshot.tasks[TASK_ID].state, CampaignTaskState::Correcting);
         assert_eq!(snapshot.tasks[TASK_ID].reviewed_commit, None);
         assert_eq!(snapshot.tasks[TASK_ID].correction_sessions.len(), 0);
+    }
+
+    #[test]
+    fn publication_targets_the_exact_owned_campaign_branch() {
+        let (spec, plan, mut snapshot) = fixture();
+        let owned_branch = format!("{}/owned-run", spec.campaign_branch);
+        let mut port = FakePublicationPort::default();
+        assert_eq!(
+            synchronize_task_publication(
+                &spec,
+                &owned_branch,
+                &plan,
+                &mut snapshot,
+                TASK_ID,
+                &mut port,
+                |_| Ok(())
+            )
+            .unwrap(),
+            TeamPublicationOutcome::WaitingForCi
+        );
+        assert_eq!(
+            port.last_campaign_branch.as_deref(),
+            Some(owned_branch.as_str())
+        );
+
+        let (spec, plan, mut snapshot) = fixture();
+        let mut denied = FakePublicationPort::default();
+        assert_eq!(
+            synchronize_task_publication(
+                &spec,
+                "codingmage/unowned",
+                &plan,
+                &mut snapshot,
+                TASK_ID,
+                &mut denied,
+                |_| Ok(())
+            ),
+            Err(TeamPublicationError::Authority)
+        );
+        assert_eq!(denied.calls, 0);
     }
 
     #[allow(clippy::too_many_lines)]
