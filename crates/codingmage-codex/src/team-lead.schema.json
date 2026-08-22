@@ -9,16 +9,10 @@
     "task_source_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "disposition": { "enum": ["propose", "blocked", "deferred", "human_decision_required"] },
     "proposals": { "type": "array", "maxItems": 16, "items": { "$ref": "#/$defs/proposal" } },
-    "blocked": { "oneOf": [{ "$ref": "#/$defs/blocked" }, { "type": "null" }] },
-    "deferred": { "oneOf": [{ "$ref": "#/$defs/deferred" }, { "type": "null" }] },
-    "human_decision": { "oneOf": [{ "$ref": "#/$defs/human_decision" }, { "type": "null" }] }
+    "blocked": { "$ref": "#/$defs/blocked" },
+    "deferred": { "$ref": "#/$defs/deferred" },
+    "human_decision": { "$ref": "#/$defs/human_decision" }
   },
-  "oneOf": [
-    { "properties": { "disposition": { "const": "propose" }, "proposals": { "minItems": 1 }, "blocked": { "type": "null" }, "deferred": { "type": "null" }, "human_decision": { "type": "null" } } },
-    { "properties": { "disposition": { "const": "blocked" }, "proposals": { "maxItems": 0 }, "blocked": { "$ref": "#/$defs/blocked" }, "deferred": { "type": "null" }, "human_decision": { "type": "null" } } },
-    { "properties": { "disposition": { "const": "deferred" }, "proposals": { "maxItems": 0 }, "blocked": { "type": "null" }, "deferred": { "$ref": "#/$defs/deferred" }, "human_decision": { "type": "null" } } },
-    { "properties": { "disposition": { "const": "human_decision_required" }, "proposals": { "maxItems": 0 }, "blocked": { "type": "null" }, "deferred": { "type": "null" }, "human_decision": { "$ref": "#/$defs/human_decision" } } }
-  ],
   "$defs": {
     "binding": {
       "type": "object",
@@ -48,7 +42,7 @@
       }
     },
     "blocked": {
-      "type": "object",
+      "type": ["object", "null"],
       "additionalProperties": false,
       "required": ["binding", "reason"],
       "properties": {
@@ -57,7 +51,7 @@
       }
     },
     "deferred": {
-      "type": "object",
+      "type": ["object", "null"],
       "additionalProperties": false,
       "required": ["binding", "reason", "reconsideration_trigger"],
       "properties": {
@@ -67,7 +61,7 @@
       }
     },
     "human_decision": {
-      "type": "object",
+      "type": ["object", "null"],
       "additionalProperties": false,
       "required": ["binding", "reason", "summary"],
       "properties": {

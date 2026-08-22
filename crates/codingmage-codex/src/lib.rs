@@ -1325,6 +1325,16 @@ mod tests {
 
     static NEXT: AtomicU64 = AtomicU64::new(1);
 
+    fn contains_key(value: &serde_json::Value, key: &str) -> bool {
+        match value {
+            serde_json::Value::Object(object) => {
+                object.contains_key(key) || object.values().any(|value| contains_key(value, key))
+            }
+            serde_json::Value::Array(array) => array.iter().any(|value| contains_key(value, key)),
+            _ => false,
+        }
+    }
+
     struct Fixture {
         root: PathBuf,
         schema: PathBuf,
@@ -1419,7 +1429,16 @@ mod tests {
             Err(CodexError::UnsupportedVersion)
         );
         let schema: serde_json::Value = serde_json::from_str(team_lead_schema()).unwrap();
-        assert_eq!(schema["oneOf"].as_array().unwrap().len(), 4);
+        assert_eq!(schema["type"], "object");
+        assert!(!contains_key(&schema, "oneOf"));
+        for field in ["blocked", "deferred", "human_decision"] {
+            let reference = schema["properties"][field]["$ref"].as_str().unwrap();
+            let definition = reference.strip_prefix("#/$defs/").unwrap();
+            assert_eq!(
+                schema["$defs"][definition]["type"],
+                serde_json::json!(["object", "null"])
+            );
+        }
         assert_eq!(
             schema["properties"]["disposition"]["enum"],
             serde_json::json!(["propose", "blocked", "deferred", "human_decision_required"])
