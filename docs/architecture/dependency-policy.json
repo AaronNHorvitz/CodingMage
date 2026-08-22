@@ -18,7 +18,7 @@
     "codingmage-project": ["codingmage-plan"],
     "codingmage-review": ["codingmage-contracts"],
     "codingmage-routing": [],
-    "codingmage-runtime": ["codingmage-campaign", "codingmage-claude", "codingmage-codex", "codingmage-contracts", "codingmage-core", "codingmage-gate", "codingmage-git", "codingmage-orchestrator", "codingmage-plan", "codingmage-process", "codingmage-service", "codingmage-state"],
+    "codingmage-runtime": ["codingmage-campaign", "codingmage-claude", "codingmage-codex", "codingmage-contracts", "codingmage-core", "codingmage-gate", "codingmage-git", "codingmage-github", "codingmage-orchestrator", "codingmage-plan", "codingmage-process", "codingmage-service", "codingmage-state"],
     "codingmage-service": ["codingmage-contracts", "codingmage-state"],
     "codingmage-soak": [],
     "codingmage-state": ["codingmage-contracts"]

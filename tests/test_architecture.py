@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -15,6 +16,12 @@ SPEC.loader.exec_module(check_architecture)
 
 
 class ArchitecturePolicyTest(unittest.TestCase):
+    def test_runtime_github_composition_is_explicitly_granted(self) -> None:
+        policy_path = SCRIPT.parents[1] / "docs" / "architecture" / "dependency-policy.json"
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+        granted = policy["allowed_internal_dependencies"]["codingmage-runtime"]
+        self.assertIn("codingmage-github", granted)
+
     def test_seeded_forbidden_edge_names_exact_dependency(self) -> None:
         metadata = {
             "packages": [
