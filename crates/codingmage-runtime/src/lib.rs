@@ -2966,6 +2966,42 @@ const fn campaign_unit_error(
             CampaignStopReason::AttemptLimit,
             "codingmage.campaign.unit_verification_failure",
         ),
+        RuntimeError::Implementer(ClaudeError::InvalidProfile) => (
+            CampaignState::Blocked,
+            CampaignPhase::Blocked,
+            CampaignStopReason::TerminalPolicyFailure,
+            "codingmage.campaign.unit_implementer_invalid_profile",
+        ),
+        RuntimeError::Implementer(ClaudeError::InvalidBinding) => (
+            CampaignState::Blocked,
+            CampaignPhase::Blocked,
+            CampaignStopReason::TerminalPolicyFailure,
+            "codingmage.campaign.unit_implementer_invalid_binding",
+        ),
+        RuntimeError::Implementer(ClaudeError::InvalidPacket) => (
+            CampaignState::Blocked,
+            CampaignPhase::Blocked,
+            CampaignStopReason::TerminalPolicyFailure,
+            "codingmage.campaign.unit_implementer_invalid_packet",
+        ),
+        RuntimeError::Reviewer(CodexError::InvalidProfile) => (
+            CampaignState::Blocked,
+            CampaignPhase::Blocked,
+            CampaignStopReason::TerminalPolicyFailure,
+            "codingmage.campaign.unit_reviewer_invalid_profile",
+        ),
+        RuntimeError::Reviewer(CodexError::InvalidBinding) => (
+            CampaignState::Blocked,
+            CampaignPhase::Blocked,
+            CampaignStopReason::TerminalPolicyFailure,
+            "codingmage.campaign.unit_reviewer_invalid_binding",
+        ),
+        RuntimeError::Reviewer(CodexError::InvalidPacket) => (
+            CampaignState::Blocked,
+            CampaignPhase::Blocked,
+            CampaignStopReason::TerminalPolicyFailure,
+            "codingmage.campaign.unit_reviewer_invalid_packet",
+        ),
         RuntimeError::Implementer(_) | RuntimeError::Reviewer(_) => (
             CampaignState::Paused,
             CampaignPhase::Paused,
@@ -4186,35 +4222,47 @@ impl<'a> ProductionWorkflowPort<'a> {
         }
     }
 
-    fn claude_adapter(&self) -> Result<ClaudeAdapter, OrchestrationError> {
+    fn claude_adapter(&mut self) -> Result<ClaudeAdapter, OrchestrationError> {
         let authentication = match self.spec.implementer.authentication {
             AuthenticationMode::Bare => ClaudeAuthentication::Bare,
             AuthenticationMode::ExistingLogin => ClaudeAuthentication::ExistingLogin,
         };
-        let adapter = ClaudeAdapter::new(
+        let result = ClaudeAdapter::new(
             self.spec.implementer.provider.executable.clone(),
             &self.spec.implementer.provider.model,
             &self.spec.implementer.provider.effort,
         )
         .map(|adapter| adapter.with_authentication(authentication))
-        .map_err(|_| OrchestrationError::Port)?;
-        match authentication {
+        .and_then(|adapter| match authentication {
             ClaudeAuthentication::Bare => Ok(adapter),
-            ClaudeAuthentication::ExistingLogin => adapter
-                .with_login_environment(self.login_environment.clone())
-                .map_err(|_| OrchestrationError::Port),
+            ClaudeAuthentication::ExistingLogin => {
+                adapter.with_login_environment(self.login_environment.clone())
+            }
+        });
+        match result {
+            Ok(adapter) => Ok(adapter),
+            Err(error) => {
+                self.failure = Some(RuntimeError::Implementer(error));
+                Err(OrchestrationError::Port)
+            }
         }
     }
 
-    fn codex_adapter(&self) -> Result<CodexAdapter, OrchestrationError> {
-        CodexAdapter::new(
+    fn codex_adapter(&mut self) -> Result<CodexAdapter, OrchestrationError> {
+        let result = CodexAdapter::new(
             self.spec.reviewer.executable.clone(),
             &self.spec.reviewer.model,
             &self.spec.reviewer.effort,
             self.schema_path.clone(),
         )
-        .and_then(|adapter| adapter.with_login_environment(self.login_environment.clone()))
-        .map_err(|_| OrchestrationError::Port)
+        .and_then(|adapter| adapter.with_login_environment(self.login_environment.clone()));
+        match result {
+            Ok(adapter) => Ok(adapter),
+            Err(error) => {
+                self.failure = Some(RuntimeError::Reviewer(error));
+                Err(OrchestrationError::Port)
+            }
+        }
     }
 
     fn claude_packet(&self, correction_context: Option<String>) -> ClaudeWorkPacket {
@@ -4303,8 +4351,14 @@ impl<'a> ProductionWorkflowPort<'a> {
                 adapter.plan_resume(session, &packet)
             } else {
                 adapter.plan_start(session, &packet)
-            }
-            .map_err(|_| OrchestrationError::Port)?;
+            };
+            let plan = match plan {
+                Ok(plan) => plan,
+                Err(error) => {
+                    self.failure = Some(RuntimeError::Implementer(error));
+                    return Err(OrchestrationError::Port);
+                }
+            };
             self.record_provider_attempt()?;
             let execution =
                 match adapter.execute_observed(&self.executor, &plan, &self.cancellation) {
@@ -4761,9 +4815,13 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             evidence: self.gate_evidence.clone(),
         };
         let adapter = self.codex_adapter()?;
-        let plan = adapter
-            .plan_start(&binding, &self.selected.item.title)
-            .map_err(|_| OrchestrationError::Port)?;
+        let plan = match adapter.plan_start(&binding, &self.selected.item.title) {
+            Ok(plan) => plan,
+            Err(error) => {
+                self.failure = Some(RuntimeError::Reviewer(error));
+                return Err(OrchestrationError::Port);
+            }
+        };
         self.record_provider_attempt()?;
         let execution =
             adapter.execute_observed(&self.executor, &plan, &binding, &self.cancellation);
@@ -6032,6 +6090,42 @@ effort = "high"
 
     #[test]
     fn campaign_maps_unit_errors_to_content_free_durable_states() {
+        for (error, code) in [
+            (
+                RuntimeError::Implementer(ClaudeError::InvalidProfile),
+                "codingmage.campaign.unit_implementer_invalid_profile",
+            ),
+            (
+                RuntimeError::Implementer(ClaudeError::InvalidBinding),
+                "codingmage.campaign.unit_implementer_invalid_binding",
+            ),
+            (
+                RuntimeError::Implementer(ClaudeError::InvalidPacket),
+                "codingmage.campaign.unit_implementer_invalid_packet",
+            ),
+            (
+                RuntimeError::Reviewer(CodexError::InvalidProfile),
+                "codingmage.campaign.unit_reviewer_invalid_profile",
+            ),
+            (
+                RuntimeError::Reviewer(CodexError::InvalidBinding),
+                "codingmage.campaign.unit_reviewer_invalid_binding",
+            ),
+            (
+                RuntimeError::Reviewer(CodexError::InvalidPacket),
+                "codingmage.campaign.unit_reviewer_invalid_packet",
+            ),
+        ] {
+            assert_eq!(
+                campaign_unit_error(error),
+                (
+                    CampaignState::Blocked,
+                    CampaignPhase::Blocked,
+                    CampaignStopReason::TerminalPolicyFailure,
+                    code
+                )
+            );
+        }
         assert_eq!(
             campaign_unit_error(RuntimeError::Repository),
             (
