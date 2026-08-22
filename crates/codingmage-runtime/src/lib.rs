@@ -3784,11 +3784,20 @@ fn run_one_observed_with_id(
             }
         }
     };
-    let outcome = port.inner.outcome(run_id, task_id, coordinator.state())?;
-    if result.is_err() {
-        return Err(port.inner.failure.unwrap_or(RuntimeError::Orchestration));
+    resolve_unit_outcome(result, port.inner.failure, |state| {
+        port.inner.outcome(run_id, task_id, state)
+    })
+}
+
+fn resolve_unit_outcome(
+    result: Result<TaskState, OrchestrationError>,
+    failure: Option<RuntimeError>,
+    success: impl FnOnce(TaskState) -> Result<RunOutcome, RuntimeError>,
+) -> Result<RunOutcome, RuntimeError> {
+    match result {
+        Ok(state) => success(state),
+        Err(_) => Err(failure.unwrap_or(RuntimeError::Orchestration)),
     }
-    Ok(outcome)
 }
 
 fn validate_external_context(context: Option<&str>) -> Result<(), RuntimeError> {
@@ -6170,6 +6179,24 @@ effort = "high"
                 "codingmage.campaign.unit_internal_failure"
             )
         );
+    }
+
+    #[test]
+    fn failed_unit_returns_primary_error_without_projecting_success_outcome() {
+        let projected = std::cell::Cell::new(false);
+        let result = resolve_unit_outcome(
+            Err(OrchestrationError::Port),
+            Some(RuntimeError::Reviewer(CodexError::InvalidBinding)),
+            |_| {
+                projected.set(true);
+                Err(RuntimeError::State)
+            },
+        );
+        assert_eq!(
+            result,
+            Err(RuntimeError::Reviewer(CodexError::InvalidBinding))
+        );
+        assert!(!projected.get());
     }
 
     #[test]

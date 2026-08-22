@@ -277,7 +277,9 @@ needed for inspection, and never advances the campaign or active checkout.
 Resource release is always attempted after a unit result. If both the unit operation and cleanup
 fail, the coordinator returns the original operation failure and retains its typed provider,
 verification, repository, or limit diagnostic; cleanup cannot replace it with a less precise error.
-A release failure is authoritative only when the preceding unit operation succeeded.
+A release failure is authoritative only when the preceding unit operation succeeded. Final outcome
+projection is likewise success-only: a failed unit returns its retained primary error before any
+success snapshot or utilization projection can replace that diagnostic.
 
 A valid implementer-blocked disposition is a task result, not an internal provider failure. The
 coordinator transitions that unit to `Blocked`, journals generic evidence without retaining the
