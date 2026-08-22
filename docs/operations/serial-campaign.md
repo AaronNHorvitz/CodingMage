@@ -284,6 +284,11 @@ A release failure is authoritative only when the preceding unit operation succee
 projection is likewise success-only: a failed unit returns its retained primary error before any
 success snapshot or utilization projection can replace that diagnostic.
 
+Retained-state accounting treats an owned descendant that disappears during process cleanup as no
+longer retained and continues the scan. The campaign root itself must remain present, symlinks and
+non-regular entries still fail closed, metadata errors other than `NotFound` still block, and all
+observed byte totals remain overflow checked before another effect is authorized.
+
 A valid implementer-blocked disposition is a task result, not an internal provider failure. The
 coordinator transitions that unit to `Blocked`, journals generic evidence without retaining the
 provider's prose or blocker text, releases all owned resources, and adds the exact task ID to the

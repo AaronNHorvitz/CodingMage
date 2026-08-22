@@ -5096,19 +5096,31 @@ fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
     let mut total = 0_u64;
     let mut pending = vec![root.to_path_buf()];
     while let Some(directory) = pending.pop() {
-        for entry in fs::read_dir(directory).map_err(|_| RuntimeError::State)? {
+        let entries = match fs::read_dir(&directory) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound && directory != root => {
+                continue;
+            }
+            Err(_) => return Err(RuntimeError::State),
+        };
+        for entry in entries {
             let entry = entry.map_err(|_| RuntimeError::State)?;
-            let metadata = entry.metadata().map_err(|_| RuntimeError::State)?;
-            if entry
-                .file_type()
-                .map_err(|_| RuntimeError::State)?
-                .is_symlink()
-            {
+            let file_type = match entry.file_type() {
+                Ok(file_type) => file_type,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(_) => return Err(RuntimeError::State),
+            };
+            if file_type.is_symlink() {
                 return Err(RuntimeError::State);
             }
-            if metadata.is_dir() {
+            if file_type.is_dir() {
                 pending.push(entry.path());
-            } else if metadata.is_file() {
+            } else if file_type.is_file() {
+                let metadata = match entry.metadata() {
+                    Ok(metadata) => metadata,
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                    Err(_) => return Err(RuntimeError::State),
+                };
                 total = total
                     .checked_add(metadata.len())
                     .ok_or(RuntimeError::State)?;

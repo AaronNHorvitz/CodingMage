@@ -1643,25 +1643,45 @@ fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
     let mut total = 0_u64;
     let mut pending = vec![root.to_path_buf()];
     while let Some(directory) = pending.pop() {
-        for entry in fs::read_dir(directory).map_err(|_| RuntimeError::State)? {
+        let Some(entries) = retained_directory_entries(root, &directory)? else {
+            continue;
+        };
+        for entry in entries {
             let entry = entry.map_err(|_| RuntimeError::State)?;
-            let file_type = entry.file_type().map_err(|_| RuntimeError::State)?;
+            let file_type = match entry.file_type() {
+                Ok(file_type) => file_type,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(_) => return Err(RuntimeError::State),
+            };
             if file_type.is_symlink() {
                 return Err(RuntimeError::State);
             }
             if file_type.is_dir() {
                 pending.push(entry.path());
             } else if file_type.is_file() {
-                total = checked_retained_total(
-                    total,
-                    entry.metadata().map_err(|_| RuntimeError::State)?.len(),
-                )?;
+                let metadata = match entry.metadata() {
+                    Ok(metadata) => metadata,
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                    Err(_) => return Err(RuntimeError::State),
+                };
+                total = checked_retained_total(total, metadata.len())?;
             } else {
                 return Err(RuntimeError::State);
             }
         }
     }
     Ok(total)
+}
+
+fn retained_directory_entries(
+    root: &Path,
+    directory: &Path,
+) -> Result<Option<fs::ReadDir>, RuntimeError> {
+    match fs::read_dir(directory) {
+        Ok(entries) => Ok(Some(entries)),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound && directory != root => Ok(None),
+        Err(_) => Err(RuntimeError::State),
+    }
 }
 
 fn checked_retained_total(total: u64, next: u64) -> Result<u64, RuntimeError> {
@@ -2646,6 +2666,23 @@ mod tests {
             Err(RuntimeError::CampaignLimit(
                 CampaignLimitKind::RetainedStateBytes
             ))
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn retained_state_scan_tolerates_only_disappearing_owned_descendants() {
+        let root = root("retained-disappearing-descendant");
+        fs::create_dir_all(&root).unwrap();
+        assert!(
+            retained_directory_entries(&root, &root.join("removed-process-directory"))
+                .unwrap()
+                .is_none()
+        );
+        let missing_root = root.join("missing-root");
+        assert_eq!(
+            retained_directory_entries(&missing_root, &missing_root).err(),
+            Some(RuntimeError::State)
         );
         fs::remove_dir_all(root).unwrap();
     }
