@@ -23,7 +23,7 @@ use crate::{
     admit_team_lead_report, build_team_lead_binding, enqueue_team_integration, execute_team_batch,
     generated_run_id, initialize_team_campaign, integrate_team_queue_head_with_strategy,
     login_discovery_environment, private_directory, refresh_team_readiness,
-    synchronize_task_publication,
+    synchronize_campaign_branch, synchronize_task_completion, synchronize_task_publication,
     team_control::{
         TeamCancellationWatcher, observe_team_control, observe_team_integration_approval,
     },
@@ -323,6 +323,76 @@ pub fn run_team_campaign_with_progress(
         refresh_team_readiness(&plan, &mut snapshot)?;
         persist(&mut state_store, &snapshot)?;
 
+        if policy.publication_mode != TaskPublicationMode::LocalOnly {
+            if publication_port.is_none() {
+                publication_port = match crate::GhCliPublicationPort::new(
+                    config,
+                    &spec,
+                    &binary,
+                    &campaign_root.join("publication-processes"),
+                    cancellation.child(),
+                ) {
+                    Ok(port) => Some(port),
+                    Err(error) => {
+                        return Ok(blocked_outcome(
+                            &spec,
+                            &campaign,
+                            &snapshot,
+                            integrated_this_invocation,
+                            last_task_id,
+                            error.code(),
+                        ));
+                    }
+                };
+            }
+            let Some(port) = publication_port.as_mut() else {
+                return Err(RuntimeError::State);
+            };
+            match synchronize_campaign_branch(&spec, &manifest.branch, &snapshot, port) {
+                Ok(_) => {}
+                Err(error) => {
+                    return Ok(blocked_outcome(
+                        &spec,
+                        &campaign,
+                        &snapshot,
+                        integrated_this_invocation,
+                        last_task_id,
+                        error.code(),
+                    ));
+                }
+            };
+            if policy.publication_mode == TaskPublicationMode::PerTaskDraftPullRequest {
+                for (task_id, record) in &snapshot.tasks {
+                    if record.state != CampaignTaskState::Merged
+                        || record.issue_number.is_none()
+                        || record.pull_request_number.is_none()
+                    {
+                        continue;
+                    }
+                    match synchronize_task_completion(
+                        &spec,
+                        &manifest.branch,
+                        &initial_plan,
+                        &snapshot,
+                        task_id,
+                        port,
+                    ) {
+                        Ok(_) => {}
+                        Err(error) => {
+                            return Ok(blocked_outcome(
+                                &spec,
+                                &campaign,
+                                &snapshot,
+                                integrated_this_invocation,
+                                last_task_id,
+                                error.code(),
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
         let publication_candidates = snapshot
             .tasks
             .iter()
@@ -368,27 +438,6 @@ pub fn run_team_campaign_with_progress(
                 }
             }
             TaskPublicationMode::PerTaskDraftPullRequest => {
-                if !publication_candidates.is_empty() && publication_port.is_none() {
-                    publication_port = match crate::GhCliPublicationPort::new(
-                        config,
-                        &spec,
-                        &binary,
-                        &campaign_root.join("publication-processes"),
-                        cancellation.child(),
-                    ) {
-                        Ok(port) => Some(port),
-                        Err(error) => {
-                            return Ok(blocked_outcome(
-                                &spec,
-                                &campaign,
-                                &snapshot,
-                                integrated_this_invocation,
-                                last_task_id,
-                                error.code(),
-                            ));
-                        }
-                    };
-                }
                 for task_id in publication_candidates {
                     let Some(port) = publication_port.as_mut() else {
                         return Err(RuntimeError::State);
@@ -447,15 +496,31 @@ pub fn run_team_campaign_with_progress(
                 }
             }
             TaskPublicationMode::CampaignDraftPullRequest => {
-                if !publication_candidates.is_empty() {
-                    return Ok(blocked_outcome(
+                for task_id in publication_candidates {
+                    let approved = task_integration_approved(
+                        &campaign_root,
                         &spec,
-                        &campaign,
+                        &manifest,
+                        &authority_sha256,
                         &snapshot,
-                        integrated_this_invocation,
-                        last_task_id,
-                        "codingmage.team.campaign_publication_not_configured",
-                    ));
+                        &task_id,
+                        policy.task_integration_policy,
+                    )?;
+                    if let Some(blocker_code) =
+                        task_integration_blocker(policy.task_integration_policy, approved)
+                    {
+                        return Ok(blocked_outcome(
+                            &spec,
+                            &campaign,
+                            &snapshot,
+                            integrated_this_invocation,
+                            last_task_id,
+                            blocker_code,
+                        ));
+                    }
+                    enqueue_team_integration(&mut snapshot, &task_id, |value| {
+                        persist(&mut state_store, value)
+                    })?;
                 }
             }
         }

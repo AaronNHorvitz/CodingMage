@@ -107,6 +107,67 @@ pub struct PushObservation {
     pub evidence_sha256: String,
 }
 
+/// Immutable authority for publishing one exact coordinator-owned campaign head.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CampaignBranchPublicationRequest {
+    /// Exact campaign identity.
+    pub campaign_id: String,
+    /// Configured campaign-branch namespace.
+    pub campaign_branch_prefix: String,
+    /// Exact collision-resistant campaign branch.
+    pub campaign_branch: String,
+    /// Immutable campaign starting commit.
+    pub initial_commit: String,
+    /// Exact locally verified campaign head to publish.
+    pub campaign_commit: String,
+    /// Whether this publication advances accepted task work rather than creating the base branch.
+    pub includes_task_integration: bool,
+}
+
+impl CampaignBranchPublicationRequest {
+    fn verify(&self, spec: &CampaignSpec) -> Result<(), TeamPublicationError> {
+        if self.campaign_id != spec.campaign_id
+            || self.campaign_branch_prefix != spec.campaign_branch
+            || !is_campaign_branch(&self.campaign_branch_prefix, &self.campaign_branch)
+            || self.initial_commit != spec.initial_commit
+            || !valid_commit(&self.initial_commit)
+            || !valid_commit(&self.campaign_commit)
+            || (!self.includes_task_integration && self.campaign_commit != self.initial_commit)
+            || spec
+                .protected_branches
+                .iter()
+                .any(|branch| branch == &self.campaign_branch)
+        {
+            return Err(TeamPublicationError::Authority);
+        }
+        Ok(())
+    }
+}
+
+/// Exact remote campaign-branch observation after an idempotent non-force push.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CampaignBranchObservation {
+    /// Exact remote campaign branch.
+    pub branch: String,
+    /// Exact coordinator-verified commit observed at the remote branch.
+    pub commit: String,
+    /// Integrity digest of the reconciled observation.
+    pub evidence_sha256: String,
+}
+
+/// Exact remote issue and task-PR disposition after local campaign integration.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TaskCompletionObservation {
+    /// Exact issue updated and closed by the coordinator.
+    pub issue_number: u64,
+    /// Exact pull request reconciled by the coordinator.
+    pub pull_request_number: u64,
+    /// True when GitHub observed the task PR as merged rather than closed-as-integrated.
+    pub pull_request_merged: bool,
+    /// Integrity digest of the complete reconciled observation.
+    pub evidence_sha256: String,
+}
+
 /// One exact draft task pull-request observation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PullRequestObservation {
@@ -145,6 +206,16 @@ pub enum CiObservation {
 
 /// Narrow side-effect port owned by the deterministic coordinator.
 pub trait TeamPublicationPort {
+    /// Publishes one exact verified campaign head without force-pushing or rewriting remote state.
+    ///
+    /// # Errors
+    ///
+    /// Returns a content-free authority, identity, transport, or reconciliation failure.
+    fn ensure_campaign_branch(
+        &mut self,
+        request: &CampaignBranchPublicationRequest,
+    ) -> Result<CampaignBranchObservation, TeamPublicationError>;
+
     /// Creates or updates the one exact task issue and reconciles uncertain completion.
     ///
     /// # Errors
@@ -184,6 +255,22 @@ pub trait TeamPublicationPort {
         &mut self,
         request: &TaskPublicationRequest,
     ) -> Result<CiObservation, TeamPublicationError>;
+
+    /// Reconciles the task issue and PR after exact local campaign integration.
+    ///
+    /// A squash-integrated task PR may be closed-as-integrated because its reviewed task commit is
+    /// intentionally not an ancestor of the campaign branch. Fast-forward task PRs are expected to
+    /// appear merged naturally. Both outcomes retain explicit coordinator-owned evidence.
+    ///
+    /// # Errors
+    ///
+    /// Returns a content-free authority, identity, transport, or reconciliation failure.
+    fn ensure_task_completion(
+        &mut self,
+        request: &TaskPublicationRequest,
+        integration_commit: &str,
+        completion_commit: &str,
+    ) -> Result<TaskCompletionObservation, TeamPublicationError>;
 }
 
 /// Terminal result from one restart-safe publication step.
@@ -372,6 +459,118 @@ where
     }
 }
 
+/// Builds exact authority for creating or advancing the remotely visible campaign branch.
+///
+/// # Errors
+///
+/// Returns a content-free authority failure for a stale branch or campaign identity.
+pub fn campaign_branch_publication_request(
+    spec: &CampaignSpec,
+    campaign_branch: &str,
+    snapshot: &TeamCampaignSnapshot,
+) -> Result<CampaignBranchPublicationRequest, TeamPublicationError> {
+    let request = CampaignBranchPublicationRequest {
+        campaign_id: spec.campaign_id.clone(),
+        campaign_branch_prefix: spec.campaign_branch.clone(),
+        campaign_branch: campaign_branch.to_owned(),
+        initial_commit: spec.initial_commit.clone(),
+        campaign_commit: snapshot.campaign_head.clone(),
+        includes_task_integration: snapshot.campaign_head != spec.initial_commit,
+    };
+    request.verify(spec)?;
+    Ok(request)
+}
+
+/// Reconciles one exact campaign branch and validates the complete adapter observation.
+///
+/// # Errors
+///
+/// Returns a content-free identity or authority failure without accepting a mismatched response.
+pub fn synchronize_campaign_branch<T: TeamPublicationPort>(
+    spec: &CampaignSpec,
+    campaign_branch: &str,
+    snapshot: &TeamCampaignSnapshot,
+    port: &mut T,
+) -> Result<CampaignBranchObservation, TeamPublicationError> {
+    let request = campaign_branch_publication_request(spec, campaign_branch, snapshot)?;
+    let observation = port.ensure_campaign_branch(&request)?;
+    if observation.branch != request.campaign_branch
+        || observation.commit != request.campaign_commit
+        || !valid_sha256(&observation.evidence_sha256)
+    {
+        return Err(TeamPublicationError::Identity);
+    }
+    Ok(observation)
+}
+
+/// Builds the immutable remote reconciliation request for one locally merged task.
+///
+/// # Errors
+///
+/// Returns a content-free state or authority failure unless every task identity is complete.
+pub fn task_completion_publication_request(
+    spec: &CampaignSpec,
+    campaign_branch: &str,
+    plan: &TaskPlan,
+    snapshot: &TeamCampaignSnapshot,
+    task_id: &str,
+) -> Result<TaskPublicationRequest, TeamPublicationError> {
+    let record = snapshot
+        .tasks
+        .get(task_id)
+        .ok_or(TeamPublicationError::State)?;
+    if record.state != CampaignTaskState::Merged
+        || record.integration_commit.is_none()
+        || record.completion_commit.is_none()
+    {
+        return Err(TeamPublicationError::State);
+    }
+    build_publication_request(spec, campaign_branch, plan, snapshot, task_id)
+}
+
+/// Reconciles one merged task's remote issue and pull request idempotently.
+///
+/// # Errors
+///
+/// Returns a content-free state, authority, or identity failure for incomplete local evidence or
+/// a mismatched remote observation.
+pub fn synchronize_task_completion<T: TeamPublicationPort>(
+    spec: &CampaignSpec,
+    campaign_branch: &str,
+    plan: &TaskPlan,
+    snapshot: &TeamCampaignSnapshot,
+    task_id: &str,
+    port: &mut T,
+) -> Result<TaskCompletionObservation, TeamPublicationError> {
+    let request =
+        task_completion_publication_request(spec, campaign_branch, plan, snapshot, task_id)?;
+    let record = snapshot
+        .tasks
+        .get(task_id)
+        .ok_or(TeamPublicationError::State)?;
+    let observation = port.ensure_task_completion(
+        &request,
+        record
+            .integration_commit
+            .as_deref()
+            .ok_or(TeamPublicationError::State)?,
+        record
+            .completion_commit
+            .as_deref()
+            .ok_or(TeamPublicationError::State)?,
+    )?;
+    if observation.issue_number != request.issue_number.ok_or(TeamPublicationError::State)?
+        || observation.pull_request_number
+            != request
+                .pull_request_number
+                .ok_or(TeamPublicationError::State)?
+        || !valid_sha256(&observation.evidence_sha256)
+    {
+        return Err(TeamPublicationError::Identity);
+    }
+    Ok(observation)
+}
+
 fn publication_request(
     spec: &CampaignSpec,
     campaign_branch: &str,
@@ -391,6 +590,20 @@ fn publication_request(
     ) {
         return Err(TeamPublicationError::State);
     }
+    build_publication_request(spec, campaign_branch, plan, snapshot, task_id)
+}
+
+fn build_publication_request(
+    spec: &CampaignSpec,
+    campaign_branch: &str,
+    plan: &TaskPlan,
+    snapshot: &TeamCampaignSnapshot,
+    task_id: &str,
+) -> Result<TaskPublicationRequest, TeamPublicationError> {
+    let record = snapshot
+        .tasks
+        .get(task_id)
+        .ok_or(TeamPublicationError::State)?;
     let selected = plan
         .select_exact(task_id)
         .map_err(|_| TeamPublicationError::Authority)?;
@@ -513,9 +726,24 @@ mod tests {
         pull_request_creations: usize,
         calls: usize,
         last_campaign_branch: Option<String>,
+        campaign_branch_override: Option<String>,
     }
 
     impl TeamPublicationPort for FakePublicationPort {
+        fn ensure_campaign_branch(
+            &mut self,
+            request: &CampaignBranchPublicationRequest,
+        ) -> Result<CampaignBranchObservation, TeamPublicationError> {
+            Ok(CampaignBranchObservation {
+                branch: self
+                    .campaign_branch_override
+                    .clone()
+                    .unwrap_or_else(|| request.campaign_branch.clone()),
+                commit: request.campaign_commit.clone(),
+                evidence_sha256: "0".repeat(64),
+            })
+        }
+
         fn ensure_issue(
             &mut self,
             request: &TaskPublicationRequest,
@@ -590,6 +818,38 @@ mod tests {
             self.calls = self.calls.saturating_add(1);
             Ok(self.ci.pop_front().unwrap_or(CiObservation::Pending))
         }
+
+        fn ensure_task_completion(
+            &mut self,
+            request: &TaskPublicationRequest,
+            _: &str,
+            _: &str,
+        ) -> Result<TaskCompletionObservation, TeamPublicationError> {
+            Ok(TaskCompletionObservation {
+                issue_number: request.issue_number.ok_or(TeamPublicationError::State)?,
+                pull_request_number: request
+                    .pull_request_number
+                    .ok_or(TeamPublicationError::State)?,
+                pull_request_merged: false,
+                evidence_sha256: "9".repeat(64),
+            })
+        }
+    }
+
+    #[test]
+    fn campaign_branch_publication_rejects_mismatched_adapter_identity() {
+        let (spec, _, snapshot) = fixture();
+        let mut port = FakePublicationPort::default();
+        let observation =
+            synchronize_campaign_branch(&spec, &spec.campaign_branch, &snapshot, &mut port)
+                .unwrap();
+        assert_eq!(observation.commit, snapshot.campaign_head);
+
+        port.campaign_branch_override = Some("codingmage/unowned".to_owned());
+        assert_eq!(
+            synchronize_campaign_branch(&spec, &spec.campaign_branch, &snapshot, &mut port,),
+            Err(TeamPublicationError::Identity)
+        );
     }
 
     #[test]

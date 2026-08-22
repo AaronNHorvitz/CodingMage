@@ -14,9 +14,9 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    CiObservation, IssueObservation, PullRequestObservation, PushObservation,
-    TaskPublicationRequest, TeamPublicationError, TeamPublicationPort, login_discovery_environment,
-    private_directory,
+    CampaignBranchObservation, CampaignBranchPublicationRequest, CiObservation, IssueObservation,
+    PullRequestObservation, PushObservation, TaskCompletionObservation, TaskPublicationRequest,
+    TeamPublicationError, TeamPublicationPort, login_discovery_environment, private_directory,
 };
 
 const MAX_REMOTE_OUTPUT: u64 = 4 * 1024 * 1024;
@@ -26,10 +26,14 @@ const REMOTE_DEADLINE_MS: u64 = 2 * 60 * 1_000;
 #[derive(Clone, Debug)]
 pub struct GhCliPublicationPort {
     policy: GitHubCampaignPolicy,
+    campaign_id: String,
+    campaign_branch_prefix: String,
+    initial_commit: String,
     target_path: PathBuf,
     executor: ProcessExecutor,
     environment: std::collections::BTreeMap<String, String>,
     cancellation: CancellationToken,
+    task_merge_allowed: bool,
 }
 
 impl GhCliPublicationPort {
@@ -71,10 +75,14 @@ impl GhCliPublicationPort {
             login_discovery_environment().map_err(|_| TeamPublicationError::Authority)?;
         let mut port = Self {
             policy,
+            campaign_id: spec.campaign_id.clone(),
+            campaign_branch_prefix: spec.campaign_branch.clone(),
+            initial_commit: spec.initial_commit.clone(),
             target_path: config.target_path.clone(),
             executor,
             environment,
             cancellation,
+            task_merge_allowed: config.capabilities.task_merge == CapabilityGrant::Allowed,
         };
         port.probe_identity()?;
         port.verify_remote_url()?;
@@ -147,7 +155,7 @@ impl GhCliPublicationPort {
                     "--repo".to_owned(),
                     self.repository_selector(),
                     "--json".to_owned(),
-                    "number,body".to_owned(),
+                    "number,body,state".to_owned(),
                 ],
                 Vec::new(),
             )?;
@@ -168,7 +176,7 @@ impl GhCliPublicationPort {
                 "--search".to_owned(),
                 format!("\"{marker}\" in:body"),
                 "--json".to_owned(),
-                "number,body".to_owned(),
+                "number,body,state".to_owned(),
                 "--limit".to_owned(),
                 "2".to_owned(),
             ],
@@ -190,7 +198,7 @@ impl GhCliPublicationPort {
                     "--repo".to_owned(),
                     self.repository_selector(),
                     "--json".to_owned(),
-                    "number,body,baseRefName,headRefName,headRefOid,isDraft".to_owned(),
+                    "number,body,baseRefName,headRefName,headRefOid,isDraft,state".to_owned(),
                 ],
                 Vec::new(),
             )?;
@@ -209,7 +217,7 @@ impl GhCliPublicationPort {
                 "--base".to_owned(),
                 request.campaign_branch.clone(),
                 "--json".to_owned(),
-                "number,body,baseRefName,headRefName,headRefOid,isDraft".to_owned(),
+                "number,body,baseRefName,headRefName,headRefOid,isDraft,state".to_owned(),
                 "--limit".to_owned(),
                 "2".to_owned(),
             ],
@@ -281,7 +289,14 @@ impl GhCliPublicationPort {
         &mut self,
         request: &TaskPublicationRequest,
     ) -> Result<Option<String>, TeamPublicationError> {
-        let reference = format!("refs/heads/{}", request.task_branch);
+        self.observe_named_branch(&request.task_branch)
+    }
+
+    fn observe_named_branch(
+        &mut self,
+        branch: &str,
+    ) -> Result<Option<String>, TeamPublicationError> {
+        let reference = format!("refs/heads/{branch}");
         let output = self.run_git(
             vec![
                 "ls-remote".to_owned(),
@@ -382,9 +397,206 @@ impl GhCliPublicationPort {
         }
         Ok(result.stdout.retained)
     }
+
+    fn reconcile_completed_issue(
+        &mut self,
+        request: &TaskPublicationRequest,
+        issue_number: u64,
+    ) -> Result<GhIssue, TeamPublicationError> {
+        let issue = self
+            .issue_record(request)?
+            .ok_or(TeamPublicationError::Identity)?;
+        if issue.number != issue_number {
+            return Err(TeamPublicationError::Identity);
+        }
+        let expected_body = Self::render_issue(request, &issue.body)?;
+        if issue.body != expected_body {
+            let attempt = self.run_gh(
+                vec![
+                    "issue".to_owned(),
+                    "edit".to_owned(),
+                    issue_number.to_string(),
+                    "--repo".to_owned(),
+                    self.repository_selector(),
+                    "--body-file".to_owned(),
+                    "-".to_owned(),
+                ],
+                expected_body.clone().into_bytes(),
+            );
+            if self
+                .issue_record(request)?
+                .as_ref()
+                .map(|value| &value.body)
+                != Some(&expected_body)
+            {
+                return Err(reconciled_write_error(attempt.is_err()));
+            }
+        }
+        if self
+            .issue_record(request)?
+            .is_some_and(|value| value.state == "OPEN")
+        {
+            let attempt = self.run_gh(
+                vec![
+                    "issue".to_owned(),
+                    "close".to_owned(),
+                    issue_number.to_string(),
+                    "--repo".to_owned(),
+                    self.repository_selector(),
+                ],
+                Vec::new(),
+            );
+            if self
+                .issue_record(request)?
+                .is_none_or(|value| value.state != "CLOSED")
+            {
+                return Err(reconciled_write_error(attempt.is_err()));
+            }
+        }
+        let observed = self
+            .issue_record(request)?
+            .ok_or(TeamPublicationError::Identity)?;
+        if observed.number != issue_number
+            || observed.state != "CLOSED"
+            || observed.body != Self::render_issue(request, &observed.body)?
+        {
+            return Err(TeamPublicationError::Identity);
+        }
+        Ok(observed)
+    }
+
+    fn reconcile_completed_pull_request(
+        &mut self,
+        request: &TaskPublicationRequest,
+        pull_request_number: u64,
+    ) -> Result<GhPullRequest, TeamPublicationError> {
+        let pull_request = self
+            .pull_request_record(request)?
+            .ok_or(TeamPublicationError::Identity)?;
+        if pull_request.number != pull_request_number
+            || pull_request.base_ref_name != request.campaign_branch
+            || pull_request.head_ref_name != request.task_branch
+            || pull_request.head_ref_oid != request.reviewed_commit
+        {
+            return Err(TeamPublicationError::Identity);
+        }
+        let expected_body = self.render_pull_request(request, &pull_request.body)?;
+        if pull_request.body != expected_body {
+            let attempt = self.run_gh(
+                vec![
+                    "pr".to_owned(),
+                    "edit".to_owned(),
+                    pull_request_number.to_string(),
+                    "--repo".to_owned(),
+                    self.repository_selector(),
+                    "--body-file".to_owned(),
+                    "-".to_owned(),
+                ],
+                expected_body.clone().into_bytes(),
+            );
+            if self
+                .pull_request_record(request)?
+                .as_ref()
+                .map(|value| &value.body)
+                != Some(&expected_body)
+            {
+                return Err(reconciled_write_error(attempt.is_err()));
+            }
+        }
+        if self
+            .pull_request_record(request)?
+            .is_some_and(|value| value.state == "OPEN")
+        {
+            let attempt = self.run_gh(
+                vec![
+                    "pr".to_owned(),
+                    "close".to_owned(),
+                    pull_request_number.to_string(),
+                    "--repo".to_owned(),
+                    self.repository_selector(),
+                ],
+                Vec::new(),
+            );
+            if self
+                .pull_request_record(request)?
+                .is_none_or(|value| !matches!(value.state.as_str(), "CLOSED" | "MERGED"))
+            {
+                return Err(reconciled_write_error(attempt.is_err()));
+            }
+        }
+        let observed = self
+            .pull_request_record(request)?
+            .ok_or(TeamPublicationError::Identity)?;
+        if observed.number != pull_request_number
+            || !matches!(observed.state.as_str(), "CLOSED" | "MERGED")
+            || observed.body != self.render_pull_request(request, &observed.body)?
+        {
+            return Err(TeamPublicationError::Identity);
+        }
+        Ok(observed)
+    }
 }
 
 impl TeamPublicationPort for GhCliPublicationPort {
+    fn ensure_campaign_branch(
+        &mut self,
+        request: &CampaignBranchPublicationRequest,
+    ) -> Result<CampaignBranchObservation, TeamPublicationError> {
+        if request.campaign_id != self.campaign_id
+            || request.campaign_branch_prefix != self.campaign_branch_prefix
+            || request.initial_commit != self.initial_commit
+            || request.campaign_branch == self.policy.destination_branch
+            || request.campaign_branch != self.campaign_branch_prefix
+                && !request
+                    .campaign_branch
+                    .strip_prefix(&self.campaign_branch_prefix)
+                    .is_some_and(|suffix| suffix.starts_with('/'))
+            || !valid_commit(&request.campaign_commit)
+            || !valid_commit(&request.initial_commit)
+            || !request.includes_task_integration
+                && request.campaign_commit != request.initial_commit
+            || request.includes_task_integration && !self.task_merge_allowed
+        {
+            return Err(TeamPublicationError::Authority);
+        }
+        self.verify_remote_url()?;
+        if self
+            .observe_named_branch(&request.campaign_branch)?
+            .as_deref()
+            != Some(&request.campaign_commit)
+        {
+            let refspec = format!(
+                "{}:refs/heads/{}",
+                request.campaign_commit, request.campaign_branch
+            );
+            let attempt = self.run_git(
+                vec![
+                    "push".to_owned(),
+                    "--porcelain".to_owned(),
+                    self.policy.remote.clone(),
+                    refspec,
+                ],
+                Vec::new(),
+            );
+            let observed = self.observe_named_branch(&request.campaign_branch)?;
+            if observed.as_deref() != Some(&request.campaign_commit) {
+                return Err(if attempt.is_err() {
+                    TeamPublicationError::Uncertain
+                } else {
+                    TeamPublicationError::Identity
+                });
+            }
+        }
+        Ok(CampaignBranchObservation {
+            branch: request.campaign_branch.clone(),
+            commit: request.campaign_commit.clone(),
+            evidence_sha256: digest(&format!(
+                "{}\0{}\0{}",
+                request.campaign_id, request.campaign_branch, request.campaign_commit
+            )),
+        })
+    }
+
     fn ensure_issue(
         &mut self,
         request: &TaskPublicationRequest,
@@ -481,6 +693,7 @@ impl TeamPublicationPort for GhCliPublicationPort {
                 || value.head_ref_name != request.task_branch
                 || value.head_ref_oid != request.reviewed_commit
                 || !value.is_draft
+                || value.state != "OPEN"
         }) {
             return Err(TeamPublicationError::Identity);
         }
@@ -527,6 +740,7 @@ impl TeamPublicationPort for GhCliPublicationPort {
             || observed.head_ref_name != request.task_branch
             || observed.head_ref_oid != request.reviewed_commit
             || !observed.is_draft
+            || observed.state != "OPEN"
             || observed.body != self.render_pull_request(request, &observed.body)?
         {
             return Err(TeamPublicationError::Identity);
@@ -608,6 +822,48 @@ impl TeamPublicationPort for GhCliPublicationPort {
             })
         }
     }
+
+    fn ensure_task_completion(
+        &mut self,
+        request: &TaskPublicationRequest,
+        integration_commit: &str,
+        completion_commit: &str,
+    ) -> Result<TaskCompletionObservation, TeamPublicationError> {
+        if !self.task_merge_allowed
+            || request.state != "merged"
+            || !valid_commit(integration_commit)
+            || !valid_commit(completion_commit)
+            || self
+                .observe_named_branch(&request.campaign_branch)?
+                .as_deref()
+                != Some(completion_commit)
+        {
+            return Err(TeamPublicationError::Authority);
+        }
+        let issue_number = request
+            .issue_number
+            .ok_or(TeamPublicationError::Authority)?;
+        let pull_request_number = request
+            .pull_request_number
+            .ok_or(TeamPublicationError::Authority)?;
+
+        let _ = self.reconcile_completed_issue(request, issue_number)?;
+        let final_pull_request =
+            self.reconcile_completed_pull_request(request, pull_request_number)?;
+        Ok(TaskCompletionObservation {
+            issue_number,
+            pull_request_number,
+            pull_request_merged: final_pull_request.state == "MERGED",
+            evidence_sha256: digest(&format!(
+                "{}\0{}\0{}\0{}\0{}",
+                request.campaign_id,
+                request.task_id,
+                integration_commit,
+                completion_commit,
+                final_pull_request.state
+            )),
+        })
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -615,6 +871,7 @@ impl TeamPublicationPort for GhCliPublicationPort {
 struct GhIssue {
     number: u64,
     body: String,
+    state: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -626,6 +883,7 @@ struct GhPullRequest {
     head_ref_name: String,
     head_ref_oid: String,
     is_draft: bool,
+    state: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -651,6 +909,14 @@ fn publication_evidence(
         )
         .collect::<Result<Vec<_>, _>>()
         .map_err(|_| TeamPublicationError::Authority)
+}
+
+const fn reconciled_write_error(attempt_failed: bool) -> TeamPublicationError {
+    if attempt_failed {
+        TeamPublicationError::Uncertain
+    } else {
+        TeamPublicationError::Identity
+    }
 }
 
 fn gate_evidence(

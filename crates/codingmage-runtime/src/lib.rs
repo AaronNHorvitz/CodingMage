@@ -26,9 +26,11 @@ pub use team_planning::{
     refresh_team_readiness,
 };
 pub use team_publication::{
-    CiObservation, IssueObservation, PullRequestObservation, PushObservation,
-    TaskPublicationRequest, TeamPublicationError, TeamPublicationOutcome, TeamPublicationPort,
-    synchronize_task_publication,
+    CampaignBranchObservation, CampaignBranchPublicationRequest, CiObservation, IssueObservation,
+    PullRequestObservation, PushObservation, TaskCompletionObservation, TaskPublicationRequest,
+    TeamPublicationError, TeamPublicationOutcome, TeamPublicationPort,
+    campaign_branch_publication_request, synchronize_campaign_branch, synchronize_task_completion,
+    synchronize_task_publication, task_completion_publication_request,
 };
 pub use team_runtime::{
     ProductionTeamUnitRunner, TeamBatchJob, TeamBatchObservation, TeamBatchOutcome, TeamEventSink,
