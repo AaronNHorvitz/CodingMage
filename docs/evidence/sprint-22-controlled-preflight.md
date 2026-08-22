@@ -1,7 +1,8 @@
 # Sprint 22 Controlled Campaign Preflight Evidence
 
-- **Status:** Deterministic preparation implemented; real-target report review and campaign remain
-  open
+- **Status:** Controlled-target preparation and report review complete; executions so far stopped
+  safely with zero accepted outcomes, and the revised gate-storage authority
+  awaits a new exact-digest approval
 - **Implementation commit:** `061a604`
 - **Target-artifact boundary correction:** `35ce2b6`
 - **Stable approval-projection correction:** `174c320`
@@ -67,6 +68,34 @@ schema was accepted by the real configured Codex endpoint and produced a structu
 Codex adapter tests, 89 runtime tests, the repeated binary preflight fixture, and strict Clippy pass.
 The failed campaign remains retained with zero accepted outcomes and is not resumed or rewritten.
 
+## Controlled-Target Replacement Results
+
+The owner reviewed and approved replacement report digest
+`3aeabb522559163dfa9cf30e631ec0b99c2090846d540c9d6bf51a93febb52c2`. The guarded launcher
+recomputed the exact report, revalidated the clean dedicated clone and authority, and began the
+one-pod local-only campaign. The corrected lead schema was accepted, the lead selected dependency-
+ready sub-task `5.2.1.1`, and the implementation provider produced candidate commit
+`381cd23e45049b882164f13122eea80321267aa0` on its isolated pod branch.
+
+The candidate passed focused `agentmage-kernel-contracts` tests and strict focused Clippy but failed
+`cargo fmt --all -- --check` on two import layouts. The configured gate order had already run an
+expensive workspace build inside the task worktree. Live task and build state crossed the 1 GiB
+retained-state ceiling before bounded correction could begin, so the coordinator paused with
+`codingmage.campaign.limit.retained_state_bytes`, zero completed units, and zero accepted outcomes.
+After exact owned-worktree cleanup, retained durable state measured about 30 KiB; the lower terminal
+number does not erase the measured live ceiling event. The clean source clone, paused campaign,
+candidate branch, journal, checkpoint, and both earlier failed campaign records remain preserved.
+
+A second replacement authority moves compiler artifacts to an explicit private campaign-owned build
+cache outside retained journal and worktree state and orders formatting and documentation checks
+before workspace compilation. It does not increase the 1 GiB retained-state limit or broaden model,
+Git, network, publication, path, or process authority. Its schema-v2 source-free report was generated
+twice with identical bytes and digest
+`009cf73129cf77677364440c8276bb66590e392a49f49157dd5957dbd0aa948b`. The report is mode `0600`,
+the dedicated clone is clean at `835049c9e943dade2f1d523708e84ee7e4a3d5d0` with exactly one
+worktree, no campaign state exists, and no inference process is active. This changed gate registry is
+not authorized by either prior digest and must receive a new exact-digest approval before launch.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
@@ -107,8 +136,8 @@ rerun. No historical package digest or source-commit claim was rewritten for thi
 
 ## Open Boundary
 
-No real controlled target has been selected by the operator. Sub-task 22.3.2.4 remains open until an
-exact target, branch, commit, task source, authorization record, provider profiles, paths, and gates
-are selected; the generated source-free report is manually inspected; and its digest is approved.
-Task 22.3.3, human reconciliation, external publication, parallel expansion, and Sprint 22 Gate 22.3
-also remain open.
+Controlled-target preparation and manual review are complete. The revised source-free digest still
+requires explicit approval before its first provider invocation. Task 22.3.3, ten accepted outcomes
+or another exact terminal result, complete human reconciliation, external publication, parallel
+expansion, and Sprint 22 Gate 22.3 remain open. Neither failed execution is represented as controlled-
+target qualification evidence.

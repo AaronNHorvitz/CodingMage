@@ -1069,11 +1069,14 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.3.1.3:** Capture preflight repository, task-source, configuration, provider-capability, process, worktree, and storage baselines without recording sensitive content. See `docs/evidence/sprint-22-production-disposable.md`.
   - [x] **Sub-task 22.3.1.4:** Verify each prescribed completion, correction, blocker, deferral, malformed report, pause, interruption, control, and ceiling outcome against immutable evidence. See `docs/evidence/sprint-22-production-disposable.md`.
   - [x] **Sub-task 22.3.1.5:** Repeat the production schedule after every reliability correction and invalidate evidence from any earlier implementation commit. See `docs/evidence/sprint-22-production-disposable.md`.
-- [ ] **Task 22.3.2 - Prepare the ten-task controlled-target campaign**
+- [x] **Task 22.3.2 - Prepare the ten-task controlled-target campaign.** The exact AgentMage
+  replacement authorities, stable source-free reports, owner review, failed-run preservation, and
+  revised gate-storage boundary are recorded in `docs/evidence/sprint-22-controlled-preflight.md`;
+  execution and reconciliation remain open under Task 22.3.3.
   - [x] **Sub-task 22.3.2.1:** Require an explicitly authorized target, dedicated clean branch, exact starting commit, canonical task-source digest, and no unrelated working-tree state. See `docs/evidence/sprint-22-controlled-preflight.md`.
   - [x] **Sub-task 22.3.2.2:** Generate a versioned campaign authority with one pod, an exact ten-outcome ceiling, local-only publication, protected default branch, and the minimum necessary allowed paths. See `docs/evidence/sprint-22-controlled-preflight.md`.
   - [x] **Sub-task 22.3.2.3:** Verify provider executable identities, capability surfaces, existing-login boundaries, model profiles, deterministic gates, process guard, free storage, and operator controls. See `docs/evidence/sprint-22-controlled-preflight.md`.
-  - [ ] **Sub-task 22.3.2.4:** Produce and manually inspect a source-free preflight report before the first provider invocation.
+  - [x] **Sub-task 22.3.2.4:** Produce and manually inspect a source-free preflight report before the first provider invocation. The owner approved stable replacement digest `3aeabb522559163dfa9cf30e631ec0b99c2090846d540c9d6bf51a93febb52c2`; the resulting zero-outcome retained-state stop remains preserved, and revised stable digest `009cf73129cf77677364440c8276bb66590e392a49f49157dd5957dbd0aa948b` awaits separate approval because its hashed gate authority differs. See `docs/evidence/sprint-22-controlled-preflight.md`.
 - [ ] **Task 22.3.3 - Execute and reconcile the ten-task controlled-target campaign**
   - [ ] **Sub-task 22.3.3.1:** Run unattended until ten accepted task outcomes, plan completion, an exact safety stop, or an authenticated operator control occurs.
   - [ ] **Sub-task 22.3.3.2:** Keep all work on the isolated local campaign branch with push, issues, pull requests, merge, release, and external-infrastructure capabilities denied.
