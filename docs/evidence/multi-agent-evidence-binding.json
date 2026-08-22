@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "evidence_id": "codingmage.multi_agent.local.v1",
+  "source_commit": "1673dfb92c8ca92fea1a8f82030b731d7c488cef",
+  "commands": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --workspace --all-targets -- -D warnings",
+    "cargo test --workspace --all-targets",
+    "python3 scripts/check_architecture.py",
+    "python3 scripts/docs_check.py",
+    "python3 -m unittest discover -s tests -p 'test_*.py'",
+    "python3 scripts/package_release.py --output <output>",
+    "python3 scripts/install_release.py <action> --prefix <prefix>",
+    "git diff --check"
+  ],
+  "command_set_sha256": "b0c962d69ca9666c579cd94bf6b00fff0a4ba7e5e75cdee460ffcce4641414f3",
+  "inputs": [
+    {
+      "group": "implementation",
+      "path": "crates/codingmage-campaign/src/team.rs",
+      "sha256": "22754656e62f01559a39501ad4baae36d00fb5dd04ae446ffc13d19a64d915ab"
+    },
+    {
+      "group": "implementation",
+      "path": "crates/codingmage-runtime/src/team_runtime.rs",
+      "sha256": "7a57bd46ec406404e26f72f056f2d2bf78e97799633c4bbe2ad842719d55ba9b"
+    },
+    {
+      "group": "implementation",
+      "path": "crates/codingmage-runtime/src/team_integration.rs",
+      "sha256": "5efb35f8af142e5e77309d4d3674aaa6bf0a34bf09033ef880d56dd822c82742"
+    },
+    {
+      "group": "test",
+      "path": "tests/test_multi_agent_matrix.py",
+      "sha256": "0fd340b72707e728f29905afc2fb02fdaf5112116788ffcc7355670559806f39"
+    },
+    {
+      "group": "schema",
+      "path": "docs/evidence/multi-agent-scenario-matrix.json",
+      "sha256": "02961fdbbae9995c350c1def63a2fb50f7e1a5399bb0611a319f01cb11cee499"
+    },
+    {
+      "group": "fixture",
+      "path": "crates/codingmage-soak/src/lib.rs",
+      "sha256": "77dc10ace5d6f8d9cde6af180b1aa3ccd2c0edc29598756493e403257db82fe2"
+    },
+    {
+      "group": "package",
+      "path": "scripts/package_release.py",
+      "sha256": "bb4292ee529f86d1cb0dc9231f740fb1f61274302dc69241a827c2bb3ed8e987"
+    },
+    {
+      "group": "package",
+      "path": "Cargo.lock",
+      "sha256": "3e6a9f10d7f0b9b4a11d26c30132635a39cbffa4962530b1e1402c3bfb4203ad"
+    },
+    {
+      "group": "package",
+      "path": "README.md",
+      "sha256": "2cf43629981437095abb767a6c168dce87b32911161668d6fb412a66c79166a1"
+    },
+    {
+      "group": "package",
+      "path": "LICENSE",
+      "sha256": "4d55073ed26851fbbcad51cfe67b4942fdfa6ecc099e4fa020260580493866f7"
+    },
+    {
+      "group": "package",
+      "path": "SECURITY.md",
+      "sha256": "b86227505fcfbf79a813ccaeb3fbf9da8414cddf4a9307f3e6043535c8646b99"
+    }
+  ],
+  "package": {
+    "archive": "codingmage-0.1.0-linux-x86_64.tar.gz",
+    "sha256": "7a4b6bf72d6cd96dec965abcbf3eb269c6b09219ade6f731715e68cd00d22af0",
+    "source_commit": "1673dfb92c8ca92fea1a8f82030b731d7c488cef"
+  },
+  "package_claim_sha256": "3c99cdc427f20e13445c379237ebd5069753081a9d591a4f71b2081755ec91f0",
+  "platform": {
+    "architecture": "x86_64",
+    "operating_system": "linux"
+  },
+  "platform_claim_sha256": "1fe4cb868d9656275f7cfbaa04be2a5a81159b57f697e558693820b32a6c1088"
+}
