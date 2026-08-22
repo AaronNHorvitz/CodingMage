@@ -1282,9 +1282,9 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [ ] **Task 25.2.4 - Bind verification evidence and traceability**
   - [x] **Sub-task 25.2.4.1:** Create a machine-checkable test matrix linking every approved multi-agent safeguard and claim to implementation, focused tests, integration tests, and evidence records. See `docs/evidence/multi-agent-scenario-matrix.json`.
   - [x] **Sub-task 25.2.4.2:** Record exact source commit, command, exit status, test counts, skipped prerequisites, artifact digests, and limitations for each required local multi-agent gate. See `docs/evidence/sprint-25-multi-agent-local.md`.
-  - [ ] **Sub-task 25.2.4.3:** Make stale evidence fail when its bound implementation, test command, schema, fixture, package, or platform claim changes.
-  - [ ] **Sub-task 25.2.4.4:** Run formatting, strict Clippy, all-target workspace tests, documentation, architecture, traceability, supply-chain, packaging, and diff-integrity checks from a clean clone.
-  - [ ] **Sub-task 25.2.4.5:** Require zero unexplained skips, warnings promoted by policy, dirty files, untracked release inputs, secret findings, broken links, invalid diagrams, or unsupported claims.
+  - [x] **Sub-task 25.2.4.3:** Make stale evidence fail when its bound implementation, test command, schema, fixture, package, or platform claim changes. See `docs/evidence/multi-agent-evidence-binding.json` and its mutation tests.
+  - [x] **Sub-task 25.2.4.4:** Run formatting, strict Clippy, all-target workspace tests, documentation, architecture, traceability, supply-chain, packaging, and diff-integrity checks from a clean clone. See `docs/evidence/sprint-25-multi-agent-local.md`.
+  - [x] **Sub-task 25.2.4.5:** Require zero unexplained skips, warnings promoted by policy, dirty files, untracked release inputs, secret findings, broken links, invalid diagrams, or unsupported claims. The one ignored live qualification is guarded and documented.
 - [x] **Task 25.2.5 - Execute the complete multi-agent scenario matrix**
   - [x] **Sub-task 25.2.5.1:** Admit five independent tasks concurrently with five distinct pod identities.
   - [x] **Sub-task 25.2.5.2:** Run fewer than five ready tasks without manufacturing work.
@@ -1340,15 +1340,15 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 - [ ] **AC 25.1:** Given the complete fault corpus and sustained disposable campaign, when evidence is reconciled, then every effect is exact, recoverable, or truthfully blocked with no uncontrolled residue.
 - [x] **AC 25.2:** Given provider and machine capacity changes, when concurrency adapts, then required model strength and verification depth never silently decrease.
-- [ ] **AC 25.3:** Given the complete contract inventory, when unit and schema suites run, then every applicable positive, negative, boundary, malformed, mutation, and repeatability case has a passing test or a truthful external blocker.
-- [ ] **AC 25.4:** Given a clean clone and packaged candidate, when the full workflow matrix runs, then all local gates and traceability checks pass without undocumented skips or authority expansion.
+- [x] **AC 25.3:** Given the complete contract inventory, when unit and schema suites run, then every applicable positive, negative, boundary, malformed, mutation, and repeatability case has a passing test or a truthful external blocker.
+- [x] **AC 25.4:** Given a clean clone and packaged candidate, when the full workflow matrix runs, then all local gates and traceability checks pass without undocumented skips or authority expansion.
 
 ### Sprint 25 Gate
 
 - [x] **Gate 25.1:** Deterministic adversarial campaigns pass after the final correction. See `docs/evidence/sprint-25-multi-agent-local.md`.
 - [ ] **Gate 25.2:** Sustained one-pod and multi-pod soak evidence passes before unattended valuable-target use.
-- [ ] **Gate 25.3:** Complete crate-level unit, schema, integration, workflow, mutation, recovery, security, privacy, and package tests pass from a clean clone.
-- [ ] **Gate 25.4:** Every safeguard and supported release claim maps to current immutable evidence; unsupported and external claims remain explicitly open.
+- [x] **Gate 25.3:** Complete crate-level unit, schema, integration, workflow, mutation, recovery, security, privacy, and package tests pass from a clean clone. See `docs/evidence/sprint-25-multi-agent-local.md`.
+- [x] **Gate 25.4:** Every safeguard and supported release claim maps to current immutable evidence; unsupported and external claims remain explicitly open. See `docs/evidence/multi-agent-evidence-binding.json`.
 
 ---
 

@@ -2,21 +2,26 @@
 
 ## Boundary
 
-This record covers deterministic local, fake-provider, fake-publication, and local-process evidence
-for the multi-agent campaign implementation. It does not claim authenticated provider or GitHub
-qualification, sustained-duration execution, native macOS or Windows evidence, independent human
-review, package signing, release publication, or valuable-target approval.
+This record covers deterministic local, fake-provider, fake-publication, local-process, clean-clone,
+and unsigned Linux-package evidence for the multi-agent campaign implementation. It does not claim
+authenticated provider or GitHub qualification, long-duration execution, native macOS or Windows
+evidence, independent human review, package signing, release publication, or valuable-target
+approval.
 
 The machine-checkable mapping is
 [`multi-agent-scenario-matrix.json`](multi-agent-scenario-matrix.json). Every required scenario maps
 to existing implementation and executable test symbols. The matrix validator rejects missing,
 duplicate, reordered, malformed, or dangling mappings and independently scans tracked content for
-the prohibited private project identifier.
+the prohibited private project identifier. The separate
+[`multi-agent-evidence-binding.json`](multi-agent-evidence-binding.json) binds the implementation,
+test, schema, fixture, package inputs, gate-command set, reproducible archive, and platform claim.
+Mutation tests prove that drift in each claim class fails closed.
 
 ## Local Commands
 
-The current implementation was verified against source and task-ledger baseline `5d61bf3` with
-these local commands:
+The release and clean-clone qualification is bound to source commit
+`1673dfb92c8ca92fea1a8f82030b731d7c488cef`. The current evidence-binding implementation is commit
+`e80f25c4bc303a601cbf77d64d1a23d0af4e2afc`. The following commands were run locally:
 
 ```bash
 python3 -m unittest tests.test_multi_agent_matrix
@@ -26,8 +31,13 @@ cargo test -p codingmage-cli --test workflow parallel_campaign_runs_five_pods_an
 cargo test -p codingmage-cli --test workflow serial_campaign_advances_two_reviewed_tasks_without_touching_active_checkout -- --exact
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all -- --check
+python3 scripts/check_architecture.py
 python3 scripts/docs_check.py
 python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m unittest tests.test_release_tools -v
+python3 scripts/package_release.py --output <first-output>
+python3 scripts/package_release.py --output <second-output>
+python3 scripts/install_release.py <install-or-lifecycle-action> --prefix <temporary-prefix>
 git diff --check
 ```
 
@@ -40,16 +50,29 @@ git diff --check
 | Guarded sustained five-pod workflow | `0` | 1 passed, 0 failed, 2 complete internal cycles, 121.97 seconds. |
 | `cargo clippy --workspace --all-targets -- -D warnings` | `0` | No warnings. |
 | `cargo fmt --all -- --check` | `0` | No formatting drift. |
-| `python3 -m unittest discover -s tests -p 'test_*.py'` | `0` | 19 passed, 0 failed. |
-| `python3 -m unittest tests.test_multi_agent_matrix` | `0` | 3 passed, 0 failed. |
+| `python3 scripts/check_architecture.py` | `0` | Dependency policy passed from the clean clone. |
+| Clean-clone Python discovery | `0` | 20 passed, 0 failed at the package source commit. |
+| Current Python discovery | `0` | 22 passed, 0 failed after adding evidence-binding mutation coverage. |
+| `python3 -m unittest tests.test_multi_agent_matrix` | `0` | 5 passed, 0 failed. |
+| `python3 -m unittest tests.test_release_tools -v` | `0` | 3 passed, 0 failed. |
 | `python3 scripts/docs_check.py` | `0` | Documentation checks passed. |
 | `cargo test -p codingmage-plan --lib` | `0` | 10 passed, including canonical repository-plan parsing. |
+| Two independent package invocations | `0` | Byte-identical Linux x86-64 archives. |
+| Installed-package lifecycle | `0` | Install, verify, version execution, upgrade, verify, rollback, verify, and remove passed under a temporary rootless prefix. |
 | `git diff --check` | `0` | No whitespace errors. |
 
 The scenario-matrix SHA-256 at this baseline is
-`02961fdbbae9995c350c1def63a2fb50f7e1a5399bb0611a319f01cb11cee499`. No release artifact,
-package, SBOM, signature, or publication asset was produced by these local implementation gates, so
-no release-artifact digest is applicable.
+`02961fdbbae9995c350c1def63a2fb50f7e1a5399bb0611a319f01cb11cee499`. Both package invocations
+produced `codingmage-0.1.0-linux-x86_64.tar.gz` with SHA-256
+`7a4b6bf72d6cd96dec965abcbf3eb269c6b09219ade6f731715e68cd00d22af0`. The archive contains the
+binary, checksums, source-bound build manifest, SPDX 2.3 SBOM, license, readme, and security policy.
+It is an unsigned local candidate, not a published release.
+
+The clean clone was unchanged after qualification. Strict Clippy produced no warnings. The ordinary
+workspace run ignored one credential-gated sustained qualification by design; that case was then
+run explicitly at its minimum two-cycle bound. Documentation checking covered local links, Mermaid
+declarations, unsupported claims, and configured secret patterns. Both required case-insensitive
+repository scans returned zero prohibited-name matches.
 
 The sustained five-pod qualification is separately guarded and ignored during ordinary test runs:
 
