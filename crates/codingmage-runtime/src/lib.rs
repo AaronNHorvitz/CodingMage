@@ -4802,16 +4802,25 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
     }
 
     fn review(&mut self) -> Result<(ReviewOutcome, EvidenceId), OrchestrationError> {
-        let owned = self.worktree()?;
-        let candidate = self.candidate()?;
+        self.failure = Some(RuntimeError::Reviewer(CodexError::InvalidBinding));
+        let (worktree, target_commit) =
+            if let (Some(owned), Some(candidate)) = (&self.worktree, &self.candidate) {
+                (owned.manifest().path.clone(), candidate.commit.clone())
+            } else {
+                self.failure = Some(RuntimeError::Repository);
+                return Err(OrchestrationError::Port);
+            };
         let binding = CodexReviewBinding {
             run_id: self.run_id.clone(),
             task_id: self.task_id.clone(),
-            agent_id: AgentId::new("codex-reviewer").map_err(|_| OrchestrationError::Port)?,
+            agent_id: match AgentId::new("codex-reviewer") {
+                Ok(agent_id) => agent_id,
+                Err(_) => return Err(OrchestrationError::Port),
+            },
             thread_id: None,
-            worktree: owned.manifest().path.clone(),
+            worktree,
             base_commit: self.source_commit.clone(),
-            target_commit: candidate.commit.clone(),
+            target_commit,
             evidence: self.gate_evidence.clone(),
         };
         let adapter = self.codex_adapter()?;
@@ -4822,7 +4831,9 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
                 return Err(OrchestrationError::Port);
             }
         };
+        self.failure = Some(RuntimeError::State);
         self.record_provider_attempt()?;
+        self.failure = Some(RuntimeError::Reviewer(CodexError::Process));
         let execution =
             adapter.execute_observed(&self.executor, &plan, &binding, &self.cancellation);
         let execution = match execution {
@@ -4832,6 +4843,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
                 return Err(OrchestrationError::Port);
             }
         };
+        self.failure = Some(RuntimeError::State);
         self.record_process_result(&execution.process)?;
         let result = match execution.report {
             Ok(value) => value,
@@ -4840,6 +4852,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
                 return Err(OrchestrationError::Port);
             }
         };
+        self.failure = None;
         self.review_verdict = Some(result.report.verdict);
         self.review_report = Some(result.report.clone());
         let evidence = evidence_id(&format!(
@@ -5041,8 +5054,12 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
     fn release(&mut self) -> Result<EvidenceId, OrchestrationError> {
         if let Some(mut owned) = self.worktree.take() {
             let worktree_id = owned.manifest().worktree_id.as_str().to_owned();
-            remove_owned_worktree(&self.authorization, &mut owned)
-                .map_err(|_| OrchestrationError::Port)?;
+            if remove_owned_worktree(&self.authorization, &mut owned).is_err() {
+                if self.failure.is_none() {
+                    self.failure = Some(RuntimeError::Repository);
+                }
+                return Err(OrchestrationError::Port);
+            }
             self.worktree = Some(owned);
             self.observe_lifecycle(UnitLifecycleEvent::WorktreeReleased { worktree_id })?;
         }

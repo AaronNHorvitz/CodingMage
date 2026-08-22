@@ -639,9 +639,10 @@ impl OneUnitCoordinator {
         self.transition(TaskState::Claimed, SideEffectIntent::AcquireClaim, claim)?;
         let result = self.run_claimed(port, reconcile);
         let release = port.release();
-        match release {
-            Ok(_) => result,
-            Err(error) => Err(error),
+        match (result, release) {
+            (Err(primary), _) => Err(primary),
+            (Ok(state), Ok(_)) => Ok(state),
+            (Ok(_), Err(release)) => Err(release),
         }
     }
 
@@ -1019,6 +1020,7 @@ mod tests {
         local: Option<VerificationOutcome>,
         final_outcome: Option<VerificationOutcome>,
         fail_at: Option<&'static str>,
+        release_error: Option<OrchestrationError>,
     }
 
     impl FakePort {
@@ -1086,7 +1088,8 @@ mod tests {
             self.call("complete")
         }
         fn release(&mut self) -> Result<EvidenceId, OrchestrationError> {
-            self.call("release")
+            let evidence = self.call("release")?;
+            self.release_error.map_or(Ok(evidence), Err)
         }
     }
 
@@ -1356,6 +1359,25 @@ mod tests {
         };
         assert_eq!(coordinator.run(&mut port), Err(OrchestrationError::Port));
         assert_eq!(port.calls.last(), Some(&"release"));
+
+        let mut coordinator = new_coordinator();
+        let mut port = FakePort {
+            fail_at: Some("review"),
+            release_error: Some(OrchestrationError::DurableState),
+            ..FakePort::default()
+        };
+        assert_eq!(coordinator.run(&mut port), Err(OrchestrationError::Port));
+        assert_eq!(port.calls.last(), Some(&"release"));
+
+        let mut coordinator = new_coordinator();
+        let mut port = FakePort {
+            release_error: Some(OrchestrationError::DurableState),
+            ..FakePort::default()
+        };
+        assert_eq!(
+            coordinator.run(&mut port),
+            Err(OrchestrationError::DurableState)
+        );
     }
 
     #[test]
