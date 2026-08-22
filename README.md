@@ -329,6 +329,10 @@ The qualification sequence begins with the prescribed disposable ten-outcome cam
 supervised units on a CodingMage-owned test branch, and only later an explicitly authorized
 ten-task campaign on a dedicated development branch. The first valuable-target boundary remains one
 pod and local-only publication even though deterministic parallel implementation is available.
+Before the first provider inference, `campaign-preflight` verifies the independent authorization
+record, exact clean branch and task digest, provider and gate identities, denied external authority,
+process controls, and storage. Its source-free report must be inspected and approved by exact digest;
+the guarded wrapper stops instead of beginning a campaign when that approval is absent or stale.
 It must prove clean interruption, exact commit review, concurrent user-work preservation, provider
 pause and resume, malformed-output handling, blocker and deferral semantics, operator controls,
 bounded disagreement, exact ceiling enforcement, and complete residue reconciliation before

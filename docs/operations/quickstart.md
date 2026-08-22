@@ -102,8 +102,22 @@ repositories.
 ## Run Guarded Qualification
 
 Ordinary tests cannot invoke real providers or GitHub accidentally. For an explicitly authorized
-disposable target, first review the exact configuration and campaign files, then run provider-only,
-GitHub, or full qualification through the guarded wrapper:
+target, first review the exact configuration, campaign, and independent authorization record. The
+first invocation runs `doctor` and source-free provider capability probes, writes a private report,
+prints its SHA-256 digest, and stops before model inference:
+
+```bash
+python3 scripts/qualify_campaign.py \
+  --mode providers \
+  --binary /absolute/codingmage \
+  --config /absolute/config.toml \
+  --campaign /absolute/campaign.toml \
+  --authorization /absolute/operator-authorization.txt \
+  --preflight-report /absolute/private/preflight.json
+```
+
+Manually inspect that report. If it matches the reviewed authority, repeat the command with the
+printed digest and the external-effects acknowledgment:
 
 ```bash
 CODINGMAGE_LIVE_QUALIFICATION=I_ACKNOWLEDGE_EXTERNAL_EFFECTS \
@@ -111,10 +125,16 @@ CODINGMAGE_LIVE_QUALIFICATION=I_ACKNOWLEDGE_EXTERNAL_EFFECTS \
   --mode providers \
   --binary /absolute/codingmage \
   --config /absolute/config.toml \
-  --campaign /absolute/campaign.toml
+  --campaign /absolute/campaign.toml \
+  --authorization /absolute/operator-authorization.txt \
+  --preflight-report /absolute/private/preflight.json \
+  --approved-preflight-sha256 PRINTED_SHA256
 ```
 
-`providers` requires local-only publication. `github` and `full` require exact remote authority.
-Every mode refuses automatic destination promotion, linked or relative selected files, a dirty or
-moved target head, missing acknowledgment, or inconsistent publication policy. The wrapper runs
-`doctor` before `campaign` and uses only the provider and GitHub CLIs' existing login stores.
+The controlled-target `providers` mode requires one pod, exactly ten accepted outcomes, local-only
+publication, a dedicated clean branch, and denied external capabilities. `github` and `full` require
+separate exact remote authority. Every mode refuses automatic destination promotion, linked or
+relative selected files, a dirty or moved target head, changed preflight bytes, missing approval,
+missing acknowledgment, an authorization record or report inside the target repository, or
+inconsistent publication policy. Provider probes use only version/help surfaces and existing login
+stores; they do not invoke model inference or read credential values.

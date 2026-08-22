@@ -91,10 +91,12 @@ open.
 ## External Qualification
 
 [`qualify_campaign.py`](../../scripts/qualify_campaign.py) provides a guarded live runner. It
-requires an exact acknowledgment, absolute ordinary files, a clean repository at the campaign's
-immutable starting commit, deny-first destination policy, and mode-consistent publication. It runs
-one read-only `doctor` preflight before one bounded campaign invocation and relies on the provider
-CLIs' existing login stores; it does not read or persist credential values.
+requires absolute ordinary files, a clean repository at the campaign's immutable starting commit,
+deny-first destination policy, and mode-consistent publication. It runs `doctor`, captures a
+source-free `campaign-preflight` report, and stops before model inference. A later invocation runs
+the campaign only when both the exact manually approved report digest and external-effects
+acknowledgment are supplied. Capability probes rely on the provider CLIs' existing login stores;
+they do not read or persist credential values.
 
 Authenticated provider, GitHub, CI, and integration evidence remains open until an operator supplies
 an authorized disposable target and executes the guarded command. No ordinary unit, integration, or

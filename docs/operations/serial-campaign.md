@@ -97,6 +97,10 @@ permission control fails.
 ```bash
 cargo build --locked --release -p codingmage-cli
 ./target/release/codingmage doctor --config /absolute/codingmage.toml
+./target/release/codingmage campaign-preflight \
+  --config /absolute/codingmage.toml \
+  --campaign /absolute/campaign.toml \
+  --authorization /absolute/operator-authorization.txt
 ./target/release/codingmage campaign \
   --config /absolute/codingmage.toml \
   --campaign /absolute/campaign.toml
@@ -125,6 +129,19 @@ cargo build --locked --release -p codingmage-cli
   --request resume-21-2-3-3-1 \
   --evidence-sha256 "${TRIGGER_EVIDENCE_SHA256}"
 ```
+
+`campaign-preflight` is the controlled-target boundary before the first provider inference. It
+requires the authorization record's exact bytes to match `operator_authorization_sha256`, then
+revalidates the clean dedicated branch, starting commit, task digest, ten open sub-tasks, one-pod
+local-only authority, denied external capabilities, existing-login provider boundary, executable
+identities, version/help capability surfaces, deterministic gates, process guard, storage, and
+operator controls. Its JSON contains only identities, digests, counts, booleans, and closed codes;
+it omits repository paths, source and task prose, provider output, model names, and credentials.
+
+Use [`qualify_campaign.py`](../../scripts/qualify_campaign.py) for an actual controlled run. The
+wrapper writes the report with mode `0600` and stops. A second invocation must supply the exact
+reviewed report digest and explicit external-effects acknowledgment before it can call `campaign`.
+Changing any preflight byte invalidates that approval.
 
 The final JSON reports campaign identity, terminal state, retained local branch, exact head,
 completed-unit count, last task, and a content-free blocker code when applicable. Live stderr adds

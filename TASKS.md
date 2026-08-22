@@ -1070,9 +1070,9 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.3.1.4:** Verify each prescribed completion, correction, blocker, deferral, malformed report, pause, interruption, control, and ceiling outcome against immutable evidence. See `docs/evidence/sprint-22-production-disposable.md`.
   - [x] **Sub-task 22.3.1.5:** Repeat the production schedule after every reliability correction and invalidate evidence from any earlier implementation commit. See `docs/evidence/sprint-22-production-disposable.md`.
 - [ ] **Task 22.3.2 - Prepare the ten-task controlled-target campaign**
-  - [ ] **Sub-task 22.3.2.1:** Require an explicitly authorized target, dedicated clean branch, exact starting commit, canonical task-source digest, and no unrelated working-tree state.
-  - [ ] **Sub-task 22.3.2.2:** Generate a versioned campaign authority with one pod, an exact ten-outcome ceiling, local-only publication, protected default branch, and the minimum necessary allowed paths.
-  - [ ] **Sub-task 22.3.2.3:** Verify provider executable identities, capability surfaces, existing-login boundaries, model profiles, deterministic gates, process guard, free storage, and operator controls.
+  - [x] **Sub-task 22.3.2.1:** Require an explicitly authorized target, dedicated clean branch, exact starting commit, canonical task-source digest, and no unrelated working-tree state. See `docs/evidence/sprint-22-controlled-preflight.md`.
+  - [x] **Sub-task 22.3.2.2:** Generate a versioned campaign authority with one pod, an exact ten-outcome ceiling, local-only publication, protected default branch, and the minimum necessary allowed paths. See `docs/evidence/sprint-22-controlled-preflight.md`.
+  - [x] **Sub-task 22.3.2.3:** Verify provider executable identities, capability surfaces, existing-login boundaries, model profiles, deterministic gates, process guard, free storage, and operator controls. See `docs/evidence/sprint-22-controlled-preflight.md`.
   - [ ] **Sub-task 22.3.2.4:** Produce and manually inspect a source-free preflight report before the first provider invocation.
 - [ ] **Task 22.3.3 - Execute and reconcile the ten-task controlled-target campaign**
   - [ ] **Sub-task 22.3.3.1:** Run unattended until ten accepted task outcomes, plan completion, an exact safety stop, or an authenticated operator control occurs.
