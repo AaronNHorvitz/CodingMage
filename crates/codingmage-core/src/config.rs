@@ -126,6 +126,12 @@ pub struct CapabilityPolicy {
     /// Permit creating or updating draft pull requests.
     #[serde(default)]
     pub pull_requests: CapabilityGrant,
+    /// Permit merging one exact passing task pull request into its campaign branch.
+    #[serde(default)]
+    pub task_merge: CapabilityGrant,
+    /// Permit promoting one exact completed campaign into its protected destination.
+    #[serde(default)]
+    pub destination_merge: CapabilityGrant,
 }
 
 /// One explicit capability grant.
@@ -270,19 +276,29 @@ fn validate_config(config: &Config) -> Result<(), ConfigLoadError> {
     let capabilities = config.capabilities;
     if (capabilities.push.is_allowed()
         || capabilities.issues.is_allowed()
-        || capabilities.pull_requests.is_allowed())
+        || capabilities.pull_requests.is_allowed()
+        || capabilities.task_merge.is_allowed()
+        || capabilities.destination_merge.is_allowed())
         && !capabilities.network.is_allowed()
     {
         return Err(ConfigLoadError::ConflictingPolicy);
     }
     match config.publication.mode {
         PublicationMode::LocalOnly => {
-            if capabilities.push.is_allowed() || capabilities.pull_requests.is_allowed() {
+            if capabilities.push.is_allowed()
+                || capabilities.pull_requests.is_allowed()
+                || capabilities.task_merge.is_allowed()
+                || capabilities.destination_merge.is_allowed()
+            {
                 return Err(ConfigLoadError::ConflictingPolicy);
             }
         }
         PublicationMode::PushFeatureBranch => {
-            if !capabilities.push.is_allowed() || capabilities.pull_requests.is_allowed() {
+            if !capabilities.push.is_allowed()
+                || capabilities.pull_requests.is_allowed()
+                || capabilities.task_merge.is_allowed()
+                || capabilities.destination_merge.is_allowed()
+            {
                 return Err(ConfigLoadError::ConflictingPolicy);
             }
         }
