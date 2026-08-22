@@ -37,6 +37,7 @@ const MESSAGE_POLL_INTERVAL: Duration = Duration::from_millis(10);
 const MIN_CHANNEL_CAPACITY: usize = 32;
 const CI_CORRECTION_RESULT_NAME: &str = "ci-correction-result.json";
 const CI_CORRECTION_RESULT_VERSION: u16 = 1;
+const POD_PROVIDER_CIRCUIT: &str = "pod-provider-pipeline";
 
 /// One admitted pod and its exact coordinator-owned resource reservation.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1083,6 +1084,7 @@ struct TerminalContext {
 ///
 /// Returns a stable fail-closed error before execution for contradictory authority, resources, or
 /// identity. A persistence failure cancels every exact child and returns without claiming success.
+#[allow(clippy::too_many_lines)]
 pub fn execute_team_batch<R, P, O>(
     spec: &CampaignSpec,
     snapshot: &mut TeamCampaignSnapshot,
@@ -1182,6 +1184,26 @@ where
         return Err(error);
     }
     driver.results.sort_by_key(|outcome| outcome.sequence);
+    let transient_provider_failure = driver.results.iter().any(|task| {
+        matches!(
+            task.result,
+            Err(RuntimeError::Implementer(
+                codingmage_claude::ClaudeError::Provider | codingmage_claude::ClaudeError::Session
+            ) | RuntimeError::Reviewer(
+                codingmage_codex::CodexError::Provider | codingmage_codex::CodexError::Thread
+            ))
+        )
+    });
+    driver
+        .resources
+        .finish_provider_attempt(
+            POD_PROVIDER_CIRCUIT,
+            now_ms(),
+            !transient_provider_failure,
+            transient_provider_failure,
+        )
+        .map_err(|_| RuntimeError::State)?;
+    driver.persist()?;
     let result = TeamBatchOutcome {
         tasks: std::mem::take(&mut driver.results),
         completion_order: std::mem::take(&mut driver.completion_order),
@@ -1485,6 +1507,9 @@ where
             return Err(RuntimeError::State);
         }
     }
+    resources
+        .begin_provider_attempt(POD_PROVIDER_CIRCUIT, now_ms())
+        .map_err(|_| RuntimeError::State)?;
     candidate.resources = resources.snapshot().clone();
     candidate.verify().map_err(|_| RuntimeError::State)?;
     persist(&candidate)?;
@@ -2101,6 +2126,22 @@ mod tests {
         ) -> Result<RunOutcome, RuntimeError> {
             self.0.fetch_add(1, Ordering::SeqCst);
             Err(RuntimeError::Process)
+        }
+    }
+
+    struct ProviderFailureRunner(Arc<AtomicUsize>);
+
+    impl TeamUnitRunner for ProviderFailureRunner {
+        fn run(
+            &self,
+            _: &TeamBatchJob,
+            _: CancellationToken,
+            _: TeamEventSink,
+        ) -> Result<RunOutcome, RuntimeError> {
+            self.0.fetch_add(1, Ordering::SeqCst);
+            Err(RuntimeError::Implementer(
+                codingmage_claude::ClaudeError::Provider,
+            ))
         }
     }
 
@@ -2760,6 +2801,58 @@ mod tests {
         assert_eq!(calls.load(Ordering::SeqCst), 0);
         assert_eq!(persists.load(Ordering::SeqCst), 0);
         assert!(snapshot.resources.active.is_empty());
+    }
+
+    #[test]
+    fn production_batch_circuit_stops_retry_storm_before_third_provider_call() {
+        let (mut spec, mut snapshot, jobs) = fixture(3, 3, 2_000);
+        spec.multi_agent
+            .as_mut()
+            .unwrap()
+            .resources
+            .provider_failure_threshold = 2;
+        snapshot.resources.policy.provider_failure_threshold = 2;
+        spec.verify().unwrap();
+        snapshot.verify().unwrap();
+        let calls = Arc::new(AtomicUsize::new(0));
+        let runner = Arc::new(ProviderFailureRunner(Arc::clone(&calls)));
+
+        for job in &jobs[..2] {
+            let outcome = execute_team_batch(
+                &spec,
+                &mut snapshot,
+                std::slice::from_ref(job),
+                &runner,
+                &CancellationToken::default(),
+                |_| Ok(()),
+                |_| {},
+            )
+            .expect("bounded transient failure remains a task outcome");
+            assert_eq!(
+                outcome.tasks[0].result,
+                Err(RuntimeError::Implementer(
+                    codingmage_claude::ClaudeError::Provider
+                ))
+            );
+        }
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert_eq!(
+            snapshot.resources.provider_circuits[POD_PROVIDER_CIRCUIT].status,
+            codingmage_campaign::ProviderCircuitStatus::Open
+        );
+        assert_eq!(
+            execute_team_batch(
+                &spec,
+                &mut snapshot,
+                std::slice::from_ref(&jobs[2]),
+                &runner,
+                &CancellationToken::default(),
+                |_| Ok(()),
+                |_| {},
+            ),
+            Err(RuntimeError::State)
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
     }
 
     #[test]
