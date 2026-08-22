@@ -22,9 +22,9 @@ use codingmage_state::IntegrityDocument;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CampaignControlOutcome, CampaignStatus, CampaignStatusDeferral, CampaignStatusOutcomes,
-    CampaignStatusTaskReason, CampaignStatusUtilization, RuntimeError, canonical_file,
-    generated_run_id,
+    CampaignActiveTaskStatus, CampaignControlOutcome, CampaignStatus, CampaignStatusDeferral,
+    CampaignStatusOutcomes, CampaignStatusTaskReason, CampaignStatusUtilization, RuntimeError,
+    canonical_file, generated_run_id,
     team_campaign::{MANIFEST_NAME, TeamCampaignManifest},
 };
 
@@ -765,8 +765,27 @@ fn project_status(
         TeamCampaignCondition::Active
     };
     let (state, actor, model) = status_identity(spec, active, condition);
+    let active_tasks = snapshot
+        .tasks
+        .values()
+        .filter(|record| active_task_state(record.state))
+        .map(|record| {
+            let (_, actor, model) =
+                status_identity(spec, Some(record), TeamCampaignCondition::Active);
+            CampaignActiveTaskStatus {
+                task_id: record.task_id.clone(),
+                pod_id: record.pod_id.clone(),
+                state: task_state_code(record.state).to_owned(),
+                actor: actor.to_owned(),
+                model,
+                correction_round: u16::try_from(record.correction_sessions.len())
+                    .unwrap_or(u16::MAX),
+                heartbeat_sequence: record.heartbeat_sequence,
+            }
+        })
+        .collect();
     Ok(CampaignStatus {
-        schema_version: 2,
+        schema_version: 3,
         campaign_id: snapshot.campaign_id,
         state: state.to_owned(),
         actor: actor.to_owned(),
@@ -776,6 +795,7 @@ fn project_status(
         current_task_id: active.map(|record| record.task_id.clone()),
         current_round: active
             .map(|record| u16::try_from(record.correction_sessions.len()).unwrap_or(u16::MAX)),
+        active_tasks,
         last_task_id: snapshot
             .tasks
             .values()
@@ -819,6 +839,18 @@ fn project_status(
         elapsed_ms: updated_at_ms.saturating_sub(started_at_ms),
         updated_at_ms,
     })
+}
+
+const fn active_task_state(state: CampaignTaskState) -> bool {
+    matches!(
+        state,
+        CampaignTaskState::Leased
+            | CampaignTaskState::Implementing
+            | CampaignTaskState::LocalGates
+            | CampaignTaskState::Reviewing
+            | CampaignTaskState::Correcting
+            | CampaignTaskState::Integrating
+    )
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

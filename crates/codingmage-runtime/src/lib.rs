@@ -557,6 +557,8 @@ pub struct CampaignStatus {
     pub current_task_id: Option<String>,
     /// Current correction round for an active unit; zero before the first correction.
     pub current_round: Option<u16>,
+    /// Every concurrently active task in stable task order.
+    pub active_tasks: Vec<CampaignActiveTaskStatus>,
     /// Last selected task at a clean boundary.
     pub last_task_id: Option<String>,
     /// Number of accepted, reconciled campaign units.
@@ -583,6 +585,26 @@ pub struct CampaignStatus {
     pub elapsed_ms: u64,
     /// Last durable checkpoint timestamp.
     pub updated_at_ms: u64,
+}
+
+/// One privacy-safe active task projection within a campaign status response.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignActiveTaskStatus {
+    /// Exact canonical task identity.
+    pub task_id: String,
+    /// Exact coordinator-assigned pod identity when leased.
+    pub pod_id: Option<String>,
+    /// Closed durable task state.
+    pub state: String,
+    /// Content-minimized actor currently responsible for progress.
+    pub actor: String,
+    /// Configured model identity only while a provider owns the phase.
+    pub model: Option<String>,
+    /// Number of completed correction sessions for this task.
+    pub correction_round: u16,
+    /// Latest monotonic heartbeat sequence.
+    pub heartbeat_sequence: u64,
 }
 
 /// Independent content-free outcome counters shown by campaign status.
@@ -850,8 +872,22 @@ fn project_campaign_status(
             ))
         })
         .ok_or(RuntimeError::State)?;
+    let active_tasks = checkpoint
+        .active_unit
+        .as_ref()
+        .map_or_else(Vec::new, |unit| {
+            vec![CampaignActiveTaskStatus {
+                task_id: unit.task_id.clone(),
+                pod_id: None,
+                state: checkpoint.phase.label().to_owned(),
+                actor: checkpoint.phase.actor().to_owned(),
+                model: model.clone(),
+                correction_round: current_round.unwrap_or(0),
+                heartbeat_sequence: 0,
+            }]
+        });
     Ok(CampaignStatus {
-        schema_version: 2,
+        schema_version: 3,
         campaign_id: checkpoint.campaign_id,
         state: checkpoint.phase.label().to_owned(),
         actor: checkpoint.phase.actor().to_owned(),
@@ -860,6 +896,7 @@ fn project_campaign_status(
         head: checkpoint.head,
         current_task_id: checkpoint.active_unit.map(|unit| unit.task_id),
         current_round,
+        active_tasks,
         last_task_id: checkpoint.last_task_id,
         completed_units: checkpoint.completed_units,
         attempt_count: checkpoint.utilization.provider_attempts,
