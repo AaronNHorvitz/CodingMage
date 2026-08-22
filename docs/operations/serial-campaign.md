@@ -269,10 +269,13 @@ Deterministic verification and provider failures pause with
 invalid provider profiles, session or review bindings, and bounded work or review packets block with
 their role-specific `codingmage.campaign.unit_implementer_*` or
 `codingmage.campaign.unit_reviewer_*` diagnostic. These pre-spawn errors are retained before the
-orchestration boundary and never collapse into a generic provider or internal failure. Unexpected
-internal failures block with `codingmage.campaign.unit_internal_failure`. Each path clears the
-durable active-unit marker, releases the pod lease, preserves any candidate branch or scratch state
-needed for inspection, and never advances the campaign or active checkout.
+orchestration boundary and never collapse into a generic provider failure. Other terminal runtime
+categories remain distinct as `unit_spec_failure`, `unit_authority_failure`, `unit_plan_failure`,
+`unit_process_failure`, `unit_state_failure`, `unit_orchestration_failure`,
+`unit_campaign_failure`, or `unit_integration_failure`; CodingMage does not merge them into one
+ambiguous internal code. Each path clears the durable active-unit marker, releases the pod lease,
+preserves any candidate branch or scratch state needed for inspection, and never advances the
+campaign or active checkout.
 
 Resource release is always attempted after a unit result. If both the unit operation and cleanup
 fail, the coordinator returns the original operation failure and retains its typed provider,

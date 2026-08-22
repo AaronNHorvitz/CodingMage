@@ -2945,88 +2945,75 @@ const fn campaign_unit_pause(
     }
 }
 
-const fn campaign_unit_error(
-    error: RuntimeError,
-) -> (
+type CampaignUnitError = (
     CampaignState,
     CampaignPhase,
     CampaignStopReason,
     &'static str,
-) {
+);
+
+const fn blocked_unit_error(code: &'static str) -> CampaignUnitError {
+    (
+        CampaignState::Blocked,
+        CampaignPhase::Blocked,
+        CampaignStopReason::TerminalPolicyFailure,
+        code,
+    )
+}
+
+const fn paused_unit_error(code: &'static str) -> CampaignUnitError {
+    (
+        CampaignState::Paused,
+        CampaignPhase::Paused,
+        CampaignStopReason::AttemptLimit,
+        code,
+    )
+}
+
+const fn campaign_unit_error(error: RuntimeError) -> CampaignUnitError {
     match error {
-        RuntimeError::CampaignLimit(_) => (
-            CampaignState::Paused,
-            CampaignPhase::Paused,
-            CampaignStopReason::AttemptLimit,
-            "codingmage.campaign.unit_limit",
-        ),
-        RuntimeError::Verification => (
-            CampaignState::Paused,
-            CampaignPhase::Paused,
-            CampaignStopReason::AttemptLimit,
-            "codingmage.campaign.unit_verification_failure",
-        ),
-        RuntimeError::Implementer(ClaudeError::InvalidProfile) => (
-            CampaignState::Blocked,
-            CampaignPhase::Blocked,
-            CampaignStopReason::TerminalPolicyFailure,
-            "codingmage.campaign.unit_implementer_invalid_profile",
-        ),
-        RuntimeError::Implementer(ClaudeError::InvalidBinding) => (
-            CampaignState::Blocked,
-            CampaignPhase::Blocked,
-            CampaignStopReason::TerminalPolicyFailure,
-            "codingmage.campaign.unit_implementer_invalid_binding",
-        ),
-        RuntimeError::Implementer(ClaudeError::InvalidPacket) => (
-            CampaignState::Blocked,
-            CampaignPhase::Blocked,
-            CampaignStopReason::TerminalPolicyFailure,
-            "codingmage.campaign.unit_implementer_invalid_packet",
-        ),
-        RuntimeError::Reviewer(CodexError::InvalidProfile) => (
-            CampaignState::Blocked,
-            CampaignPhase::Blocked,
-            CampaignStopReason::TerminalPolicyFailure,
-            "codingmage.campaign.unit_reviewer_invalid_profile",
-        ),
-        RuntimeError::Reviewer(CodexError::InvalidBinding) => (
-            CampaignState::Blocked,
-            CampaignPhase::Blocked,
-            CampaignStopReason::TerminalPolicyFailure,
-            "codingmage.campaign.unit_reviewer_invalid_binding",
-        ),
-        RuntimeError::Reviewer(CodexError::InvalidPacket) => (
-            CampaignState::Blocked,
-            CampaignPhase::Blocked,
-            CampaignStopReason::TerminalPolicyFailure,
-            "codingmage.campaign.unit_reviewer_invalid_packet",
-        ),
-        RuntimeError::Implementer(_) | RuntimeError::Reviewer(_) => (
-            CampaignState::Paused,
-            CampaignPhase::Paused,
-            CampaignStopReason::AttemptLimit,
-            "codingmage.campaign.unit_provider_failure",
-        ),
-        RuntimeError::Repository => (
-            CampaignState::Blocked,
-            CampaignPhase::Blocked,
-            CampaignStopReason::TerminalPolicyFailure,
-            "codingmage.campaign.unit_repository_boundary",
-        ),
-        RuntimeError::Spec
-        | RuntimeError::Authority
-        | RuntimeError::Plan
-        | RuntimeError::Process
-        | RuntimeError::State
-        | RuntimeError::Orchestration
-        | RuntimeError::Campaign(_)
-        | RuntimeError::Integration => (
-            CampaignState::Blocked,
-            CampaignPhase::Blocked,
-            CampaignStopReason::TerminalPolicyFailure,
-            "codingmage.campaign.unit_internal_failure",
-        ),
+        RuntimeError::CampaignLimit(_) => paused_unit_error("codingmage.campaign.unit_limit"),
+        RuntimeError::Verification => {
+            paused_unit_error("codingmage.campaign.unit_verification_failure")
+        }
+        RuntimeError::Implementer(ClaudeError::InvalidProfile) => {
+            blocked_unit_error("codingmage.campaign.unit_implementer_invalid_profile")
+        }
+        RuntimeError::Implementer(ClaudeError::InvalidBinding) => {
+            blocked_unit_error("codingmage.campaign.unit_implementer_invalid_binding")
+        }
+        RuntimeError::Implementer(ClaudeError::InvalidPacket) => {
+            blocked_unit_error("codingmage.campaign.unit_implementer_invalid_packet")
+        }
+        RuntimeError::Reviewer(CodexError::InvalidProfile) => {
+            blocked_unit_error("codingmage.campaign.unit_reviewer_invalid_profile")
+        }
+        RuntimeError::Reviewer(CodexError::InvalidBinding) => {
+            blocked_unit_error("codingmage.campaign.unit_reviewer_invalid_binding")
+        }
+        RuntimeError::Reviewer(CodexError::InvalidPacket) => {
+            blocked_unit_error("codingmage.campaign.unit_reviewer_invalid_packet")
+        }
+        RuntimeError::Implementer(_) | RuntimeError::Reviewer(_) => {
+            paused_unit_error("codingmage.campaign.unit_provider_failure")
+        }
+        RuntimeError::Repository => {
+            blocked_unit_error("codingmage.campaign.unit_repository_boundary")
+        }
+        RuntimeError::Spec => blocked_unit_error("codingmage.campaign.unit_spec_failure"),
+        RuntimeError::Authority => blocked_unit_error("codingmage.campaign.unit_authority_failure"),
+        RuntimeError::Plan => blocked_unit_error("codingmage.campaign.unit_plan_failure"),
+        RuntimeError::Process => blocked_unit_error("codingmage.campaign.unit_process_failure"),
+        RuntimeError::State => blocked_unit_error("codingmage.campaign.unit_state_failure"),
+        RuntimeError::Orchestration => {
+            blocked_unit_error("codingmage.campaign.unit_orchestration_failure")
+        }
+        RuntimeError::Campaign(_) => {
+            blocked_unit_error("codingmage.campaign.unit_campaign_failure")
+        }
+        RuntimeError::Integration => {
+            blocked_unit_error("codingmage.campaign.unit_integration_failure")
+        }
     }
 }
 
@@ -6170,15 +6157,44 @@ effort = "high"
                 "codingmage.campaign.unit_verification_failure"
             )
         );
-        assert_eq!(
-            campaign_unit_error(RuntimeError::Orchestration),
+        for (error, code) in [
+            (RuntimeError::Spec, "codingmage.campaign.unit_spec_failure"),
             (
-                CampaignState::Blocked,
-                CampaignPhase::Blocked,
-                CampaignStopReason::TerminalPolicyFailure,
-                "codingmage.campaign.unit_internal_failure"
-            )
-        );
+                RuntimeError::Authority,
+                "codingmage.campaign.unit_authority_failure",
+            ),
+            (RuntimeError::Plan, "codingmage.campaign.unit_plan_failure"),
+            (
+                RuntimeError::Process,
+                "codingmage.campaign.unit_process_failure",
+            ),
+            (
+                RuntimeError::State,
+                "codingmage.campaign.unit_state_failure",
+            ),
+            (
+                RuntimeError::Orchestration,
+                "codingmage.campaign.unit_orchestration_failure",
+            ),
+            (
+                RuntimeError::Campaign(CampaignError::InvalidSpec),
+                "codingmage.campaign.unit_campaign_failure",
+            ),
+            (
+                RuntimeError::Integration,
+                "codingmage.campaign.unit_integration_failure",
+            ),
+        ] {
+            assert_eq!(
+                campaign_unit_error(error),
+                (
+                    CampaignState::Blocked,
+                    CampaignPhase::Blocked,
+                    CampaignStopReason::TerminalPolicyFailure,
+                    code
+                )
+            );
+        }
     }
 
     #[test]
