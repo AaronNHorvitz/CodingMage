@@ -792,6 +792,31 @@ pub fn run_team_campaign_with_progress(
                 "codingmage.team.all_proposals_deferred",
             ));
         }
+        if policy.publication_mode == TaskPublicationMode::PerTaskDraftPullRequest {
+            let Some(port) = publication_port.as_mut() else {
+                return Err(RuntimeError::State);
+            };
+            for job in &jobs {
+                if let Err(error) = synchronize_task_issue(
+                    &spec,
+                    &manifest.branch,
+                    &initial_plan,
+                    &mut snapshot,
+                    &job.lease.task_id,
+                    port,
+                    |value| persist(&mut state_store, value),
+                ) {
+                    return Ok(blocked_outcome(
+                        &spec,
+                        &campaign,
+                        &snapshot,
+                        integrated_this_invocation,
+                        last_task_id,
+                        error.code(),
+                    ));
+                }
+            }
+        }
         let batch = execute_team_batch(
             &spec,
             &mut snapshot,
