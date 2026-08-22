@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "matrix_id": "codingmage.multi_agent.required_scenarios",
+  "evidence_boundary": "Automated local and fake-adapter evidence; authenticated live services, sustained-duration execution, native platforms, independent review, and release publication require separate evidence.",
+  "scenarios": [
+    {
+      "task_id": "25.2.5.1",
+      "claim": "Five independent tasks receive distinct concurrent pod identities.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/team.rs", "crates/codingmage-runtime/src/team_runtime.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/team.rs::scheduler_admits_five_independent_tasks_and_survives_round_trip", "crates/codingmage-runtime/src/team_runtime.rs::five_workers_overlap_and_preserve_stable_result_order"],
+      "limitations": "Deterministic local workers; real-provider concurrency is separately opt-in."
+    },
+    {
+      "task_id": "25.2.5.2",
+      "claim": "Unused capacity stays idle when fewer tasks are ready.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/team.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/team.rs::scheduler_defers_capacity_path_resource_and_duplicate_conflicts"],
+      "limitations": "Scheduler-level deterministic evidence."
+    },
+    {
+      "task_id": "25.2.5.3",
+      "claim": "Dependency-blocked tasks are excluded from admission.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/lib.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/lib.rs::team_lead_output_is_only_untrusted_bounded_input"],
+      "limitations": "Uses the canonical local task graph."
+    },
+    {
+      "task_id": "25.2.5.4",
+      "claim": "Equal, ancestor, descendant, and declared path conflicts are rejected.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/team.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/team.rs::scheduler_defers_capacity_path_resource_and_duplicate_conflicts"],
+      "limitations": "Generated and rename paths must be declared in the task authority."
+    },
+    {
+      "task_id": "25.2.5.5",
+      "claim": "Exclusive test resources and actor limits serialize conflicting work.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/team.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/team.rs::five_resource_reservations_enforce_actor_physical_and_exclusive_limits"],
+      "limitations": "External resources are protected only when declared."
+    },
+    {
+      "task_id": "25.2.5.6",
+      "claim": "A panicking implementation worker does not cancel healthy siblings.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_runtime.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_runtime.rs::one_panicking_worker_does_not_cancel_successful_siblings"],
+      "limitations": "Local worker-failure injection."
+    },
+    {
+      "task_id": "25.2.5.7",
+      "claim": "A timed-out pod is cancelled without terminating healthy siblings.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_runtime.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_runtime.rs::deadline_cancels_only_the_expired_worker"],
+      "limitations": "Local deterministic timeout injection."
+    },
+    {
+      "task_id": "25.2.5.8",
+      "claim": "Campaign cancellation reconciles all owned pods and preserves unrelated processes.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_runtime.rs", "crates/codingmage-cli/tests/workflow.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_runtime.rs::campaign_cancellation_reconciles_all_five_active_pods", "crates/codingmage-cli/tests/workflow.rs::campaign_cancel_terminates_owned_provider_without_signalling_unrelated_process"],
+      "limitations": "Linux process evidence; native-platform evidence is separate."
+    },
+    {
+      "task_id": "25.2.5.9",
+      "claim": "Unauthorized or nonexistent lead assignments fail before leasing.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/lib.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission"],
+      "limitations": "Structured lead-output corpus."
+    },
+    {
+      "task_id": "25.2.5.10",
+      "claim": "Overlapping assignments in one lead response are refused.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/team.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/team.rs::scheduler_defers_capacity_path_resource_and_duplicate_conflicts"],
+      "limitations": "Deterministic proposal validation."
+    },
+    {
+      "task_id": "25.2.5.11",
+      "claim": "A candidate with an undeclared changed path is refused before staging.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-git/src/commit.rs"],
+      "test_refs": ["crates/codingmage-git/src/commit.rs::undeclared_change_fails_before_staging"],
+      "limitations": "Coordinator-owned Git commit boundary."
+    },
+    {
+      "task_id": "25.2.5.12",
+      "claim": "Deterministic gate failure cannot advance to accepted integration.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-orchestrator/src/lib.rs"],
+      "test_refs": ["crates/codingmage-orchestrator/src/lib.rs::correction_and_block_paths_are_bounded"],
+      "limitations": "Fake workflow port with exact gate dispositions."
+    },
+    {
+      "task_id": "25.2.5.13",
+      "claim": "Changes-required findings return only to the matching correction lineage.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_runtime.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_runtime.rs::ci_correction_requires_complete_exact_fresh_evidence"],
+      "limitations": "Lineage and evidence binding are local and deterministic."
+    },
+    {
+      "task_id": "25.2.5.14",
+      "claim": "Bounded correction cycles rerun gates and cumulative review.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-orchestrator/src/lib.rs"],
+      "test_refs": ["crates/codingmage-orchestrator/src/lib.rs::interrupted_correction_resumes_without_replaying_prior_effects"],
+      "limitations": "Correction-port evidence; real providers require opt-in qualification."
+    },
+    {
+      "task_id": "25.2.5.15",
+      "claim": "Correction exhaustion stops without false completion.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-orchestrator/src/lib.rs"],
+      "test_refs": ["crates/codingmage-orchestrator/src/lib.rs::repeated_gate_failure_consumes_the_exact_correction_limit"],
+      "limitations": "Deterministic correction fixture."
+    },
+    {
+      "task_id": "25.2.5.16",
+      "claim": "Blocked review outcomes remain terminal noncompletions.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-orchestrator/src/lib.rs"],
+      "test_refs": ["crates/codingmage-orchestrator/src/lib.rs::correction_and_block_paths_are_bounded"],
+      "limitations": "Structured fake reviewer result."
+    },
+    {
+      "task_id": "25.2.5.17",
+      "claim": "Malformed reviewer output fails closed without downstream effect.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-codex/src/lib.rs"],
+      "test_refs": ["crates/codingmage-codex/src/lib.rs::malformed_or_changed_thread_fails_closed"],
+      "limitations": "Adapter-level malformed-output corpus."
+    },
+    {
+      "task_id": "25.2.5.18",
+      "claim": "Only classified temporary provider failures retry within a bound.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/lib.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/lib.rs::campaign_retries_only_content_free_transient_provider_failures", "crates/codingmage-runtime/src/lib.rs::provider_retry_backoff_is_deterministic_bounded_and_increasing"],
+      "limitations": "Deterministic failure classification and jitter."
+    },
+    {
+      "task_id": "25.2.5.19",
+      "claim": "Provider circuit breakers open and suppress retry storms.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_runtime.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_runtime.rs::production_batch_circuit_stops_retry_storm_before_third_provider_call"],
+      "limitations": "Production batch wrapper with deterministic provider failure."
+    },
+    {
+      "task_id": "25.2.5.20",
+      "claim": "Uncertain branch publication is observed before retry.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-github/src/lib.rs"],
+      "test_refs": ["crates/codingmage-github/src/lib.rs::timeout_is_reconciled_by_key_and_never_blindly_replayed"],
+      "limitations": "Fake transport; authenticated GitHub evidence remains open."
+    },
+    {
+      "task_id": "25.2.5.21",
+      "claim": "Uncertain issue creation reconciles by idempotency key.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_publication.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_publication.rs::publication_reconciles_uncertain_issue_and_never_duplicates_remote_objects"],
+      "limitations": "Fake publication port; authenticated GitHub evidence remains open."
+    },
+    {
+      "task_id": "25.2.5.22",
+      "claim": "Uncertain pull-request creation reconciles by idempotency key.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_publication.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_publication.rs::publication_reconciles_uncertain_issue_and_never_duplicates_remote_objects"],
+      "limitations": "Fake publication port; authenticated GitHub evidence remains open."
+    },
+    {
+      "task_id": "25.2.5.23",
+      "claim": "Restart around external-write intent produces at most one remote effect.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-github/src/lib.rs"],
+      "test_refs": ["crates/codingmage-github/src/lib.rs::duplicate_delivery_returns_one_remote_object", "crates/codingmage-github/src/lib.rs::boundary_changes_are_durably_recorded_without_remote_content"],
+      "limitations": "Fake transport at every represented publication boundary."
+    },
+    {
+      "task_id": "25.2.5.24",
+      "claim": "Exact-commit CI failure returns only the matching task to correction.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_publication.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_publication.rs::failing_ci_returns_only_the_exact_task_to_correction"],
+      "limitations": "Fake CI projection; live CI evidence remains open."
+    },
+    {
+      "task_id": "25.2.5.25",
+      "claim": "Simultaneously eligible tasks enter one serialized integration queue.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/team.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/team.rs::integration_queue_is_canonical_serial_and_head_bound"],
+      "limitations": "Task candidates are represented locally; remote PRs use the same mapping."
+    },
+    {
+      "task_id": "25.2.5.26",
+      "claim": "Every completion permutation yields one stable integration order.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/team.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/team.rs::integration_enqueue_order_ignores_completion_permutation"],
+      "limitations": "Deterministic in-memory permutations plus durable round-trip coverage."
+    },
+    {
+      "task_id": "25.2.5.27",
+      "claim": "A stale campaign head is refused before integration mutation.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_integration.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_integration.rs::fast_forward_strategy_refuses_a_stale_candidate_base"],
+      "limitations": "Local Git integration fixture."
+    },
+    {
+      "task_id": "25.2.5.28",
+      "claim": "A changed reviewed commit identity is refused.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-git/src/integration.rs"],
+      "test_refs": ["crates/codingmage-git/src/integration.rs::non_descendant_and_unowned_changes_refuse_before_mutation"],
+      "limitations": "Local Git identity fixture."
+    },
+    {
+      "task_id": "25.2.5.29",
+      "claim": "Transfer conflict preserves campaign head and candidate work.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-git/src/integration.rs"],
+      "test_refs": ["crates/codingmage-git/src/integration.rs::stale_delta_conflict_preserves_campaign_and_candidate"],
+      "limitations": "Local Git conflict fixture."
+    },
+    {
+      "task_id": "25.2.5.30",
+      "claim": "Declared cross-file semantic coupling requires shared-resource or cumulative validation.",
+      "status": "local_automated_with_boundary",
+      "implementation": ["crates/codingmage-campaign/src/team.rs", "crates/codingmage-runtime/src/team_integration.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/team.rs::five_resource_reservations_enforce_actor_physical_and_exclusive_limits", "crates/codingmage-runtime/src/team_integration.rs::configured_interval_runs_cumulative_validation_before_head_mutation"],
+      "limitations": "Arbitrary semantic inference remains a reviewer or human judgment boundary; declared contracts are deterministic."
+    },
+    {
+      "task_id": "25.2.5.31",
+      "claim": "A stale accepted delta transfers only through the coordinator-owned integration worktree.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-git/src/integration.rs"],
+      "test_refs": ["crates/codingmage-git/src/integration.rs::stale_reviewed_delta_transfers_onto_current_campaign_head"],
+      "limitations": "Local Git transfer fixture."
+    },
+    {
+      "task_id": "25.2.5.32",
+      "claim": "Changed effective integration diffs receive cumulative gates and review.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_integration.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_integration.rs::configured_interval_runs_cumulative_validation_before_head_mutation"],
+      "limitations": "Uses configured integration validation interval."
+    },
+    {
+      "task_id": "25.2.5.33",
+      "claim": "Failed integration verification preserves accepted candidates and releases temporary state.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_integration.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_integration.rs::failed_integration_verification_releases_temporary_worktrees"],
+      "limitations": "Local deterministic integration gate."
+    },
+    {
+      "task_id": "25.2.5.34",
+      "claim": "Integration interruption reconciles exactly once at each durable boundary.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_integration.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_integration.rs::serialized_integration_completes_from_fresh_and_every_durable_git_boundary"],
+      "limitations": "Local durable Git-boundary injection."
+    },
+    {
+      "task_id": "25.2.5.35",
+      "claim": "Restart does not duplicate owned task or publication identities.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/team.rs", "crates/codingmage-runtime/src/team_publication.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/team.rs::complete_task_mapping_binds_one_lease_and_rejects_duplicate_remote_identity", "crates/codingmage-runtime/src/team_publication.rs::publication_reconciles_uncertain_issue_and_never_duplicates_remote_objects"],
+      "limitations": "Fake remote identities; local branch, worktree, and session identities are durable."
+    },
+    {
+      "task_id": "25.2.5.36",
+      "claim": "Human-authored issue and pull-request bytes survive owned-section updates.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-github/src/lib.rs", "crates/codingmage-runtime/src/team_github.rs"],
+      "test_refs": ["crates/codingmage-github/src/lib.rs::concurrent_human_edit_is_refetched_and_preserved", "crates/codingmage-runtime/src/team_github.rs::final_pull_request_markers_preserve_human_text_and_reject_duplicates"],
+      "limitations": "Fake transport and renderer evidence."
+    },
+    {
+      "task_id": "25.2.5.37",
+      "claim": "Task-integration and destination-promotion policies reject stale or missing grants.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_control.rs", "crates/codingmage-runtime/src/team_promotion.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_control.rs::task_integration_approval_is_exact_idempotent_and_stale_head_bound", "crates/codingmage-runtime/src/team_control.rs::destination_approval_is_exact_idempotent_and_report_bound"],
+      "limitations": "Policy engine and fake destination adapter."
+    },
+    {
+      "task_id": "25.2.5.38",
+      "claim": "Safe default policy denies destination-branch promotion.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_promotion.rs"],
+      "test_refs": ["crates/codingmage-runtime/src/team_promotion.rs::never_policy_publishes_one_draft_and_cannot_promote"],
+      "limitations": "Fake destination adapter; no live merge performed."
+    },
+    {
+      "task_id": "25.2.5.39",
+      "claim": "Explicit automatic destination promotion requires every immutable prerequisite.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-github/src/lib.rs", "crates/codingmage-runtime/src/team_promotion.rs"],
+      "test_refs": ["crates/codingmage-github/src/lib.rs::merge_authority_enforces_exact_sha_policy_and_safe_destination_default", "crates/codingmage-runtime/src/team_promotion.rs::pending_ci_denied_capability_and_moved_destination_all_fail_closed"],
+      "limitations": "Fake destination adapter; authenticated automatic promotion is not qualified."
+    },
+    {
+      "task_id": "25.2.5.40",
+      "claim": "A complete five-task campaign integrates every task and reconciles its final report.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/team_campaign.rs", "crates/codingmage-cli/tests/workflow.rs"],
+      "test_refs": ["crates/codingmage-cli/tests/workflow.rs::parallel_campaign_runs_five_pods_and_serializes_reviewed_integrations"],
+      "limitations": "Real local processes with fake provider executables and local-only publication."
+    },
+    {
+      "task_id": "25.2.5.41",
+      "claim": "A campaign stops truthfully when blockers leave no independent ready work.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-runtime/src/lib.rs", "crates/codingmage-cli/tests/workflow.rs"],
+      "test_refs": ["crates/codingmage-cli/tests/workflow.rs::serial_campaign_persists_blocker_and_continues_independent_work"],
+      "limitations": "Serial compatibility path shares canonical blocker projections with team mode."
+    },
+    {
+      "task_id": "25.2.5.42",
+      "claim": "Task and campaign resource or token boundaries stop before an unauthorized next effect.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/team.rs", "crates/codingmage-runtime/src/campaign_state.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/team.rs::token_boundaries_and_provider_circuit_are_closed_and_recoverable", "crates/codingmage-runtime/src/campaign_state.rs::unit_budget_matrix_covers_boundaries_overflow_and_concurrent_observation"],
+      "limitations": "Deterministic budget accounting; provider-reported token precision remains provider-dependent."
+    },
+    {
+      "task_id": "25.2.5.43",
+      "claim": "Serial execution remains the compatibility default and its workflow still passes.",
+      "status": "local_automated",
+      "implementation": ["crates/codingmage-campaign/src/team.rs", "crates/codingmage-cli/tests/workflow.rs"],
+      "test_refs": ["crates/codingmage-campaign/src/team.rs::serial_policy_remains_the_compatibility_default", "crates/codingmage-cli/tests/workflow.rs::serial_campaign_advances_two_reviewed_tasks_without_touching_active_checkout"],
+      "limitations": "Local process-backed fake providers."
+    },
+    {
+      "task_id": "25.2.5.44",
+      "claim": "Tracked repository content contains no case-insensitive occurrence of the prohibited private project identifier.",
+      "status": "local_automated",
+      "implementation": ["tests/test_multi_agent_matrix.py"],
+      "test_refs": ["tests/test_multi_agent_matrix.py::test_private_downstream_name_is_absent_from_tracked_content"],
+      "limitations": "Generated build output is excluded; tracked source and documentation are authoritative."
+    }
+  ]
+}
