@@ -19,10 +19,11 @@ use serde::{Deserialize, Serialize};
 use crate::{
     CampaignOutcome, CampaignState, CampaignStopReason, ProductionTeamIntegrationVerifier,
     ProductionTeamUnitRunner, ProgressActor, ProgressStage, RunProgress, RuntimeError,
-    TeamIntegrationVerifier, TeamPlanningOutcome, TeamStateStore, admit_team_lead_report,
-    build_team_lead_binding, enqueue_team_integration, execute_team_batch, generated_run_id,
-    initialize_team_campaign, integrate_team_queue_head_with_strategy, login_discovery_environment,
-    private_directory, refresh_team_readiness,
+    TeamIntegrationVerifier, TeamPlanningOutcome, TeamPublicationOutcome, TeamStateStore,
+    admit_team_lead_report, build_team_lead_binding, enqueue_team_integration, execute_team_batch,
+    generated_run_id, initialize_team_campaign, integrate_team_queue_head_with_strategy,
+    login_discovery_environment, private_directory, refresh_team_readiness,
+    synchronize_task_publication,
     team_control::{TeamCancellationWatcher, observe_team_control},
     write_private_idempotent,
 };
@@ -271,6 +272,7 @@ pub fn run_team_campaign_with_progress(
     )?;
     let mut integrated_this_invocation = 0_u32;
     let mut last_task_id = None;
+    let mut publication_port = None;
 
     loop {
         let control = observe_team_control(&campaign_root, &spec, &manifest, &authority_sha256)?;
@@ -319,42 +321,122 @@ pub fn run_team_campaign_with_progress(
         refresh_team_readiness(&plan, &mut snapshot)?;
         persist(&mut state_store, &snapshot)?;
 
-        let publication_ready = snapshot
+        let publication_candidates = snapshot
             .tasks
             .iter()
             .filter_map(|(task_id, record)| {
-                (record.state == CampaignTaskState::PublicationReady).then_some(task_id.clone())
+                matches!(
+                    record.state,
+                    CampaignTaskState::PublicationReady
+                        | CampaignTaskState::PullRequestOpen
+                        | CampaignTaskState::CiWaiting
+                )
+                .then_some(task_id.clone())
             })
             .collect::<Vec<_>>();
-        if !publication_ready.is_empty() {
-            let blocker_code = task_integration_blocker(policy.task_integration_policy);
-            if let Some(blocker_code) = blocker_code {
-                return Ok(blocked_outcome(
-                    &spec,
-                    &campaign,
-                    &snapshot,
-                    integrated_this_invocation,
-                    last_task_id,
-                    blocker_code,
-                ));
+        let mut waiting_for_ci = false;
+        let mut correction_required = false;
+        match policy.publication_mode {
+            TaskPublicationMode::LocalOnly => {
+                for task_id in publication_candidates {
+                    if let Some(blocker_code) =
+                        task_integration_blocker(policy.task_integration_policy)
+                    {
+                        return Ok(blocked_outcome(
+                            &spec,
+                            &campaign,
+                            &snapshot,
+                            integrated_this_invocation,
+                            last_task_id,
+                            blocker_code,
+                        ));
+                    }
+                    enqueue_team_integration(&mut snapshot, &task_id, |value| {
+                        persist(&mut state_store, value)
+                    })?;
+                }
             }
-        }
-        if !publication_ready.is_empty()
-            && policy.publication_mode != TaskPublicationMode::LocalOnly
-        {
-            return Ok(blocked_outcome(
-                &spec,
-                &campaign,
-                &snapshot,
-                integrated_this_invocation,
-                last_task_id,
-                "codingmage.team.remote_publication_not_configured",
-            ));
-        }
-        for task_id in publication_ready {
-            enqueue_team_integration(&mut snapshot, &task_id, |value| {
-                persist(&mut state_store, value)
-            })?;
+            TaskPublicationMode::PerTaskDraftPullRequest => {
+                if !publication_candidates.is_empty() && publication_port.is_none() {
+                    publication_port = match crate::GhCliPublicationPort::new(
+                        config,
+                        &spec,
+                        &binary,
+                        &campaign_root.join("publication-processes"),
+                        cancellation.child(),
+                    ) {
+                        Ok(port) => Some(port),
+                        Err(error) => {
+                            return Ok(blocked_outcome(
+                                &spec,
+                                &campaign,
+                                &snapshot,
+                                integrated_this_invocation,
+                                last_task_id,
+                                error.code(),
+                            ));
+                        }
+                    };
+                }
+                for task_id in publication_candidates {
+                    let Some(port) = publication_port.as_mut() else {
+                        return Err(RuntimeError::State);
+                    };
+                    let outcome = match synchronize_task_publication(
+                        &spec,
+                        &plan,
+                        &mut snapshot,
+                        &task_id,
+                        port,
+                        |value| persist(&mut state_store, value),
+                    ) {
+                        Ok(outcome) => outcome,
+                        Err(error) => {
+                            return Ok(blocked_outcome(
+                                &spec,
+                                &campaign,
+                                &snapshot,
+                                integrated_this_invocation,
+                                last_task_id,
+                                error.code(),
+                            ));
+                        }
+                    };
+                    match outcome {
+                        TeamPublicationOutcome::WaitingForCi => waiting_for_ci = true,
+                        TeamPublicationOutcome::CorrectionRequired => correction_required = true,
+                        TeamPublicationOutcome::ReadyForIntegration => {
+                            if let Some(blocker_code) =
+                                task_integration_blocker(policy.task_integration_policy)
+                            {
+                                return Ok(blocked_outcome(
+                                    &spec,
+                                    &campaign,
+                                    &snapshot,
+                                    integrated_this_invocation,
+                                    last_task_id,
+                                    blocker_code,
+                                ));
+                            }
+                            enqueue_team_integration(&mut snapshot, &task_id, |value| {
+                                persist(&mut state_store, value)
+                            })?;
+                        }
+                    }
+                }
+            }
+            TaskPublicationMode::CampaignDraftPullRequest => {
+                if !publication_candidates.is_empty() {
+                    return Ok(blocked_outcome(
+                        &spec,
+                        &campaign,
+                        &snapshot,
+                        integrated_this_invocation,
+                        last_task_id,
+                        "codingmage.team.campaign_publication_not_configured",
+                    ));
+                }
+            }
         }
         if !snapshot.integration_queue.is_empty() {
             observer(RunProgress::new(
@@ -428,6 +510,29 @@ pub fn run_team_campaign_with_progress(
                 last_task_id,
                 "codingmage.team.no_dependency_ready_work",
             ));
+        }
+        if !snapshot
+            .tasks
+            .values()
+            .any(|record| record.state == CampaignTaskState::Ready)
+        {
+            let blocker_code = if correction_required {
+                Some("codingmage.team.ci_correction_required")
+            } else if waiting_for_ci {
+                Some("codingmage.team.ci_pending")
+            } else {
+                None
+            };
+            if let Some(blocker_code) = blocker_code {
+                return Ok(blocked_outcome(
+                    &spec,
+                    &campaign,
+                    &snapshot,
+                    integrated_this_invocation,
+                    last_task_id,
+                    blocker_code,
+                ));
+            }
         }
         observer(RunProgress::new(
             ProgressActor::CampaignLead,
