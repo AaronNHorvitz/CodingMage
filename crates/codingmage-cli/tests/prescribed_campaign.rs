@@ -523,10 +523,15 @@ profiles = ["configured-gates"]
         fs::read_to_string(target.join("src/baseline.txt")).unwrap(),
         "preserved\n"
     );
-    assert!(fs::read_dir(&scratch).unwrap().next().is_none());
     let worktrees = git_output(&target, &["worktree", "list", "--porcelain"]);
     assert_eq!(worktrees.matches("worktree ").count(), 2);
     assert!(!worktrees.contains("/pod/"));
+    let retained = fs::read_dir(&scratch)
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .collect::<Vec<_>>();
+    assert_eq!(retained.len(), 1);
+    assert!(worktrees.contains(retained[0].to_str().unwrap()));
 
     let implementer_calls = fs::read_to_string(fixture.root.join("implementer.log")).unwrap();
     for (task, expected) in [
