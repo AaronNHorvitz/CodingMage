@@ -36,7 +36,7 @@ The required 44-scenario mapping is machine checked in
 | Prescribed serial production qualification | Gate 22.3 has not been executed after the latest implementation change. | Disposable ten-outcome run and human-reconciled ten-task controlled target. |
 | Real-provider parallel execution | Ordinary tests deliberately cannot use ambient authenticated providers. | Guarded disposable campaign with approved provider logins and retained content-minimized report. |
 | Authenticated GitHub and CI | Fake transport proves policy and idempotency, not service identity or live branch protection. | Guarded disposable repository covering issue, push, draft PR, CI, correction, and integration. |
-| Sustained duration | An ignored bounded harness exists but no current post-correction result is recorded. | Run the guarded five-pod soak and record duration, cycles, resource growth, residue, and source commit. |
+| Sustained duration | The guarded local five-pod harness passed two complete cycles in 121.97 seconds, but the one-pod production soak and longer authenticated operation remain open. | Run and reconcile the prescribed one-pod soak, then execute the approved longer live duration when its prerequisites exist. |
 | Native platforms | Current evidence is Linux-local. | Native macOS and Windows process, filesystem, credential, packaging, and lifecycle runs. |
 | Independent judgment | Automated model review is not independent human approval. | Human security and architecture review with resolved findings. |
 | Release effects | Signing, tagging, publishing, and post-download verification are intentionally outside implementation tests. | Separately authorized release-candidate procedure. |

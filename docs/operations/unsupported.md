@@ -10,7 +10,8 @@ The current build does not claim:
 - A current passing prescribed ten-outcome production soak campaign.
 - A current passing one-pod, local-only ten-task controlled-target campaign with complete human
   reconciliation.
-- A completed post-correction sustained-duration five-pod soak.
+- Long-duration or authenticated-provider multi-pod soak qualification; the bounded two-cycle local
+  harness is not represented as that broader evidence.
 - Native macOS process, filesystem, credential, lifecycle, packaging, or provider evidence.
 - Native Windows job-object, NTFS, credential, console, lifecycle, packaging, or provider evidence.
 - Independent human security or architecture approval.

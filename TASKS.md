@@ -1281,7 +1281,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 25.2.3.5:** Prove sensitive values, prompts, provider prose, source text, hidden reasoning, unrestricted environment data, and unnecessary target copies never enter durable state, logs, status, evidence, packages, or publication payloads.
 - [ ] **Task 25.2.4 - Bind verification evidence and traceability**
   - [x] **Sub-task 25.2.4.1:** Create a machine-checkable test matrix linking every approved multi-agent safeguard and claim to implementation, focused tests, integration tests, and evidence records. See `docs/evidence/multi-agent-scenario-matrix.json`.
-  - [ ] **Sub-task 25.2.4.2:** Record exact source commit, command, exit status, test counts, skipped prerequisites, artifact digests, and limitations for each required gate.
+  - [x] **Sub-task 25.2.4.2:** Record exact source commit, command, exit status, test counts, skipped prerequisites, artifact digests, and limitations for each required local multi-agent gate. See `docs/evidence/sprint-25-multi-agent-local.md`.
   - [ ] **Sub-task 25.2.4.3:** Make stale evidence fail when its bound implementation, test command, schema, fixture, package, or platform claim changes.
   - [ ] **Sub-task 25.2.4.4:** Run formatting, strict Clippy, all-target workspace tests, documentation, architecture, traceability, supply-chain, packaging, and diff-integrity checks from a clean clone.
   - [ ] **Sub-task 25.2.4.5:** Require zero unexplained skips, warnings promoted by policy, dirty files, untracked release inputs, secret findings, broken links, invalid diagrams, or unsupported claims.

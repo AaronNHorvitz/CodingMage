@@ -620,4 +620,4 @@ Operational guides are indexed in [`docs/operations/README.md`](docs/operations/
 - Bounded unattended pilot authorization: yes; production target qualification remains open
 - Parallel authenticated-provider operation: implementation present; guarded live qualification remains open
 - Multi-agent scenario matrix: 44 required scenarios mapped to executable local evidence
-- Sustained five-pod soak: guarded harness present; post-correction execution evidence remains open
+- Sustained five-pod soak: guarded two-cycle local run passed; longer live qualification remains open
