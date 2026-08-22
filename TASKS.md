@@ -1063,12 +1063,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Story 22.3 - Serial Unattended Qualification
 
-- [ ] **Task 22.3.1 - Qualify the production path on the disposable ten-outcome schedule**
-  - [ ] **Sub-task 22.3.1.1:** Run the production campaign coordinator against the same prescribed ten-outcome schedule proven by the Sprint 17 fake-adapter harness.
-  - [ ] **Sub-task 22.3.1.2:** Use one pod, local-only publication, fixed provider profiles, exact gate registry, a clean disposable repository, and isolated private state and scratch roots.
-  - [ ] **Sub-task 22.3.1.3:** Capture preflight repository, task-source, configuration, provider-capability, process, worktree, and storage baselines without recording sensitive content.
-  - [ ] **Sub-task 22.3.1.4:** Verify each prescribed completion, correction, blocker, deferral, malformed report, pause, interruption, control, and ceiling outcome against immutable evidence.
-  - [ ] **Sub-task 22.3.1.5:** Repeat the production schedule after every reliability correction and invalidate evidence from any earlier implementation commit.
+- [x] **Task 22.3.1 - Qualify the production path on the disposable ten-outcome schedule**
+  - [x] **Sub-task 22.3.1.1:** Run the production campaign coordinator against the same prescribed ten-outcome schedule proven by the Sprint 17 fake-adapter harness. See `docs/evidence/sprint-22-production-disposable.md`.
+  - [x] **Sub-task 22.3.1.2:** Use one pod, local-only publication, fixed provider profiles, exact gate registry, a clean disposable repository, and isolated private state and scratch roots. See `docs/evidence/sprint-22-production-disposable.md`.
+  - [x] **Sub-task 22.3.1.3:** Capture preflight repository, task-source, configuration, provider-capability, process, worktree, and storage baselines without recording sensitive content. See `docs/evidence/sprint-22-production-disposable.md`.
+  - [x] **Sub-task 22.3.1.4:** Verify each prescribed completion, correction, blocker, deferral, malformed report, pause, interruption, control, and ceiling outcome against immutable evidence. See `docs/evidence/sprint-22-production-disposable.md`.
+  - [x] **Sub-task 22.3.1.5:** Repeat the production schedule after every reliability correction and invalidate evidence from any earlier implementation commit. See `docs/evidence/sprint-22-production-disposable.md`.
 - [ ] **Task 22.3.2 - Prepare the ten-task controlled-target campaign**
   - [ ] **Sub-task 22.3.2.1:** Require an explicitly authorized target, dedicated clean branch, exact starting commit, canonical task-source digest, and no unrelated working-tree state.
   - [ ] **Sub-task 22.3.2.2:** Generate a versioned campaign authority with one pod, an exact ten-outcome ceiling, local-only publication, protected default branch, and the minimum necessary allowed paths.
