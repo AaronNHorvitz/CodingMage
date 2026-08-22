@@ -1,90 +1,61 @@
-# Multi-Agent Campaign Gap Analysis
+# Multi-Agent Campaign Implementation Reconciliation
 
-## Audit Baseline
+## Baseline
 
 - Repository branch: `feat/hierarchical-campaigns`
-- Audited source baseline: `b13973f`
-- Audit date: 2026-08-21
-- Scope: local implementation, deterministic fakes, documentation, and qualification boundaries
+- Reconciliation date: 2026-08-21
+- Scope: implementation, deterministic local evidence, operator boundaries, and remaining external
+  qualification
 
-This analysis is an internal implementation aid. `README.md`, `TASKS.md`, accepted architecture
-decisions, and typed source contracts remain authoritative.
+This is a non-normative implementation aid. `README.md`, `TASKS.md`, accepted decisions, typed
+source contracts, and current evidence records remain authoritative.
 
-## Working Foundations
+## Implemented Locally
 
-CodingMage already has the following foundations and they must be preserved:
-
-- A deny-first target authorization model with exact repository, path, branch, and capability
-  boundaries.
-- A bounded one-unit runtime that composes a Claude implementation session, coordinator-owned Git
-  commit, deterministic gates, an independent Codex review, bounded correction, checkpointing,
-  task reconciliation, and exact resource release.
-- A serial campaign runtime that reparses the canonical plan from an evolving isolated campaign
-  head and handles completion, blockers, deferrals, human-decision holds, provider pauses, limits,
-  controls, and restart recovery.
-- Structured Codex team-lead and reviewer adapters whose output is untrusted data.
-- A `PodScheduler` that rejects overlapping path and test-resource leases and enforces a configured
-  capacity.
-- Owned worktrees and branches with physical-identity manifests, hostile Git configuration checks,
-  coordinator-owned commits, immutable review ranges, and exact fast-forward integration.
-- Integrity-bound campaign checkpoints, a hash-chained journal projection, idempotent operator
-  controls, content-minimized status, and fail-closed legacy-state refusal.
-- A deny-first GitHub core with exact identity checks, marker-bounded human-content preservation,
-  draft-only pull-request content, idempotency keys, optimistic concurrency, and uncertain-write
-  reconciliation.
-- Deterministic fake providers, repository fixtures, GitHub transport fixtures, disposable soak
-  fixtures, Linux packaging tools, and local policy gates.
-
-## Material Gaps
-
-| Area | Current behavior | Required change |
+| Area | Current behavior | Primary implementation |
 | --- | --- | --- |
-| Planning | Lead schema can return multiple proposals. | Preserve an ordered proposal batch and validate every assignment against one immutable generation. |
-| Scheduler lifetime | `PodScheduler` is recreated for each serial unit. | Persist scheduler sequence, active leases, queue age, capacity, heartbeats, and terminal lease disposition for the campaign lifetime. |
-| Admission | Only the first validated proposal is consumed. | Admit every dependency-ready, nonconflicting proposal up to configured actor and resource ceilings. |
-| Unit lock | The one-unit runtime takes a repository-wide lock beneath its state root. | Retain one campaign lease and use exact task/pod claims so independent pods can execute concurrently. |
-| Execution | Campaign code invokes one unit synchronously. | Run bounded pod workers concurrently, isolate cancellation and failure, and collect terminal results without cancelling healthy siblings. |
-| Gate scheduling | Gate execution is bounded inside one unit. | Add campaign-level test-worker and named-resource admission so conflicting gates serialize while independent gates may run concurrently. |
-| Durable task state | The one-unit state machine stops at local completion. | Add campaign task states for publication, CI, integration, merge, dispute, cancellation, and recovery. |
-| Identity mapping | Run, task, worktree, and branch identity exist in separate records. | Persist one integrity-bound task record joining campaign, task, issue, pod, worktree, branch, base, candidate, PR, and provider sessions. |
-| Integration | Integration requires the reviewed commit to descend from the current campaign head. | Add immutable integration intents, stale-base detection, patch-transfer or refresh into an isolated integration worktree, affected gates, and compare-and-swap head advancement. |
-| GitHub publication | Core issue and draft-PR primitives exist but are not composed into campaign runtime. | Add task-owned issue/PR sections, exact branch push, uncertain-write reconciliation, CI status ingestion, and idempotent resume. |
-| Merge policy | Protected-branch mutation is absent. | Add a closed policy enum with deny-first defaults and deterministic preconditions; keep default-branch promotion human-gated by default. |
-| Recovery | Serial head and correction recovery are implemented; initial implementation replay remains blocked. | Reconcile every active pod and external write independently, detect stale heartbeats, and never replay an uncertain non-idempotent effect. |
-| Monitoring | Serial status and controls are implemented. | Project multiple active pods, queue and integration state, resource utilization, and per-task terminal codes without exposing repository or provider content. |
-| Qualification | Serial and bounded unattended pilots exist. | Add deterministic five-pod, publication, CI, integration-order, recovery, merge-policy, and sustained-soak campaigns plus opt-in credential-gated live qualification. |
+| Planning | One read-only Codex lead can return a bounded multi-proposal batch or one closed blocker, deferral, or human-decision disposition. Every proposal is revalidated against one immutable generation. | `codingmage-campaign`, `codingmage-runtime::team_planning` |
+| Scheduler | A campaign-lifetime scheduler persists stable sequence, leases, actor and physical resources, provider circuits, and task records. It admits only dependency-ready nonconflicting work. | `codingmage-campaign::team` |
+| Execution | One through five implementation workers run concurrently with task-scoped identities, cancellation, timeout, panic isolation, ordered collection, durable liveness, and sibling preservation. | `codingmage-runtime::team_runtime` |
+| Gates and review | Shared gate and reviewer semaphores bound execution. Every candidate uses deterministic gates and fresh cumulative Codex review; accepted findings return only to the matching lineage. | `codingmage-runtime::team_runtime` |
+| Task state | Closed states cover planning through publication, CI, integration, terminal noncompletion, and merge. Integrity-bound snapshots and events reject stale, skipped, duplicate, and cross-task transitions. | `codingmage-campaign::team` |
+| Publication | Assigned issues are synchronized before provider execution when remote mode is enabled. Exact reviewed branches, task draft PRs, commit-bound CI, correction, and completion use idempotent durable mappings. | `codingmage-runtime::team_publication`, `codingmage-runtime::team_github` |
+| Integration | One durable queue serializes accepted candidates. Exact fast-forward or isolated squash transfer, compare-and-swap head advancement, cumulative validation, and crash reconciliation preserve candidates on refusal. | `codingmage-runtime::team_integration`, `codingmage-git::integration` |
+| Promotion | Final gates and review produce a content-minimized report and optional final draft PR. Task and destination grants are separate, exact, idempotent, and human-gated by default. | `codingmage-runtime::team_promotion`, `codingmage-runtime::team_control` |
+| Recovery | Initial batches, lifecycle events, CI corrections, publication, integration, and promotion reobserve durable intent and actual state before resuming. | `codingmage-runtime` team modules |
+| Monitoring | Status projects active pods, lifecycle, queue, resource use, terminal reasons, and final report state without source or provider prose. Same-user controls are idempotent. | `codingmage-runtime::team_control`, `codingmage-cli` |
+| Qualification | Deterministic capacities one through five, a process-backed five-pod workflow, failure permutations, guarded sustained soak, and guarded live qualification exist. | `codingmage-runtime`, `codingmage-cli/tests/workflow.rs`, `scripts/qualify_campaign.py` |
 
-## Security Consequences
+The required 44-scenario mapping is machine checked in
+[`multi-agent-scenario-matrix.json`](../evidence/multi-agent-scenario-matrix.json).
 
-Concurrency must not broaden model authority. The coordinator remains the sole holder of Git,
-GitHub, test-command, state-transition, integration, and merge authority. Each pod receives one
-immutable task packet and one exact path lease. Provider output cannot create a lease, command,
-issue, pull request, commit, integration operation, policy change, or completion transition.
+## Remaining Evidence Gaps
 
-The campaign state must fail closed when any identity is missing, duplicated, stale, contradictory,
-or bound to another generation. Shared-resource conflicts include equal paths, ancestors,
-descendants, rename sources, generated artifacts, public contracts, schemas, migrations, ports,
-databases, devices, services, and operator-declared resources.
+| Boundary | Why it remains open | Required evidence |
+| --- | --- | --- |
+| Prescribed serial production qualification | Gate 22.3 has not been executed after the latest implementation change. | Disposable ten-outcome run and human-reconciled ten-task controlled target. |
+| Real-provider parallel execution | Ordinary tests deliberately cannot use ambient authenticated providers. | Guarded disposable campaign with approved provider logins and retained content-minimized report. |
+| Authenticated GitHub and CI | Fake transport proves policy and idempotency, not service identity or live branch protection. | Guarded disposable repository covering issue, push, draft PR, CI, correction, and integration. |
+| Sustained duration | An ignored bounded harness exists but no current post-correction result is recorded. | Run the guarded five-pod soak and record duration, cycles, resource growth, residue, and source commit. |
+| Native platforms | Current evidence is Linux-local. | Native macOS and Windows process, filesystem, credential, packaging, and lifecycle runs. |
+| Independent judgment | Automated model review is not independent human approval. | Human security and architecture review with resolved findings. |
+| Release effects | Signing, tagging, publishing, and post-download verification are intentionally outside implementation tests. | Separately authorized release-candidate procedure. |
 
-## Implementation Boundary
+## Intentionally Bounded Behavior
 
-The change should extend existing contracts rather than introduce a second coordinator:
-
-1. Extend `codingmage-campaign` with closed execution, publication, integration, merge, task-state,
-   resource, and durable pod-record contracts.
-2. Extend `codingmage-runtime` with an integrity-bound multi-pod checkpoint and one persistent
-   scheduler that composes the existing one-unit implementation and review path.
-3. Extend `codingmage-git` with a mutation-free integration preview and isolated stale-base
-   transfer primitive.
-4. Extend `codingmage-github` with per-task records, issue/PR owned sections, CI projections, and
-   merge-policy authorization over an abstract transport.
-5. Keep `codingmage campaign` serial by default. Parallel execution requires explicit authority and
-   remains locally publish-disabled unless the corresponding GitHub capabilities are also granted.
-6. Keep live provider and GitHub qualification opt-in, credential-gated, and excluded from ordinary
-   tests.
+- Serial mode remains the compatibility default when `multi_agent` is absent.
+- Arbitrary semantic coupling cannot be proven mechanically. Operators declare shared contracts and
+  resources; cumulative gates, Codex review, or a human decision cover residual judgment.
+- Follow-up work is count-bounded and must remain inside original authority. Model output cannot
+  expand scope.
+- Remote publication is optional. Local state stays canonical and remote text never grants
+  authority.
+- Automatic task integration and destination promotion are different permissions. Destination
+  promotion is human-required by default.
 
 ## Rollout Truth
 
-Architecture and deterministic fake-backed behavior may be implemented before production
-qualification, but a second live pod, authenticated GitHub mutation, default-branch merge, package
-publication, or public release must not be described as qualified until its explicit gate passes.
+Implemented local behavior is not synonymous with qualified valuable-target operation. A second
+live pod, authenticated mutation, sustained unattended campaign, native-platform claim, signed
+package, or public release must remain described as unqualified until its explicit evidence gate
+passes after the last relevant implementation correction.

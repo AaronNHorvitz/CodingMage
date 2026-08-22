@@ -63,11 +63,11 @@ A pod starts only when all of the following are true:
 
 The campaign lead itself is a process-backed Codex profile in a read-only sandbox. Its strict
 response is untrusted data, not an allocation decision. Before a pod lease exists, the coordinator
-    rechecks the exact campaign head, task-source digest, dependency-ready set, paths, dependencies,
-    gate tiers, shared resources, expected artifacts, and risk. The lead can instead return one bounded
-    blocked, deferred, or human-decision disposition, but it cannot combine dispositions or attach
-    executable instructions. These dispositions and their local deterministic evidence are complete
-    under Story 21.2; production multi-pod composition remains governed by Sprints 23 through 25.
+rechecks the exact campaign head, task-source digest, dependency-ready set, paths, dependencies,
+gate tiers, shared resources, expected artifacts, and risk. The lead can instead return one bounded
+blocked, deferred, or human-decision disposition, but it cannot combine dispositions or attach
+executable instructions. These dispositions and multi-proposal batch admission are implemented
+locally; authenticated live qualification remains governed by Sprints 22 through 25.
 
 ## Correction Loop
 
@@ -99,9 +99,10 @@ conflicts and therefore require batch gates or sequential scheduling.
 
 GitHub is a visibility and collaboration surface, not execution authority.
 
-- Local pod commits remain private until their story or batch is verified.
-- The coordinator may push one configured campaign or story branch.
-- The GitHub adapter may create or update one draft PR per story or integration batch.
+- Local pod commits remain private until their task is verified.
+- The coordinator may push exact configured task and campaign branches.
+- The GitHub adapter defaults to one issue and one draft PR per task and may publish one final
+  campaign draft PR.
 - Codex findings may appear as labeled automated review comments, never as human approval.
 - Automatic merge into the campaign branch is a local coordinator operation backed by exact
   evidence, not a model-issued GitHub command.
@@ -118,6 +119,18 @@ GitHub is a visibility and collaboration surface, not execution authority.
 7. Story-level draft PR publication against an authorized disposable repository.
 8. Complete adversarial, package, manual fuzz, independent-review, and release-candidate gates.
 9. Human-authorized merge, signed tag, release publication, and independent artifact verification.
+
+## Implementation Status
+
+The durable task state machine, persistent scheduler, one-to-five-pod worker pool, independent gate
+and review limits, provider circuit, per-task remote mapping, CI correction lineage, serialized
+integration, cumulative validation, final report, promotion policy, recovery, status, and controls
+are implemented with deterministic local evidence. The accelerated soak exercises capacities one
+through five and the process-backed fixture executes five concurrent pods through final integration.
+
+This status does not enable the rollout gates above automatically. The prescribed production serial
+evidence, sustained-duration soak, authenticated providers and GitHub, native platforms, independent
+review, signing, and publication remain separate open evidence boundaries.
 
 See [`Unattended Safeguards`](unattended-safeguards.md) for the exact disposition, soak, test, and
 publication contract.

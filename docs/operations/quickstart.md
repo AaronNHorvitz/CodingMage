@@ -37,7 +37,7 @@ codingmage run --config /absolute/config/codingmage.toml \
 The supervised path retains successful work on a coordinator-owned local branch. It does not merge,
 push, create a pull request, publish, or alter the active checkout.
 
-## Execute A Serial Campaign
+## Execute A Campaign
 
 After reviewing an absolute version 2 campaign specification:
 
@@ -45,6 +45,8 @@ After reviewing an absolute version 2 campaign specification:
 codingmage campaign --config /absolute/config/codingmage.toml \
   --campaign /absolute/config/campaign.toml
 codingmage campaign-status --config /absolute/config/codingmage.toml \
+  --campaign /absolute/config/campaign.toml
+codingmage campaign-report --config /absolute/config/codingmage.toml \
   --campaign /absolute/config/campaign.toml
 codingmage campaign-explain-blocker --config /absolute/config/codingmage.toml \
   --campaign /absolute/config/campaign.toml
@@ -83,9 +85,34 @@ Only `provider_reset`, `review_completion`, and `operator_resume` are external c
 advancement, lease release, and gate-resource release are observed automatically from
 coordinator-owned state. Exact request replay is idempotent; conflicting request reuse fails closed.
 
-Use one pod and `local_only` publication. The current campaign path is pre-release: interrupted
-initial-implementation resume, expanded lead dispositions, production lifecycle controls, the prescribed
-ten-outcome soak, and the controlled-target qualification gate remain incomplete. See
-[`Serial Campaign`](serial-campaign.md) and
+Omitting `multi_agent` preserves serial compatibility. An explicit parallel policy may configure one
+through five implementers, separate reviewer and test-worker limits, `local_only` or exact remote
+publication, one serialized integration worker, and human-required destination promotion. See
+[`Configuration`](configuration.md) and
+[`Durable Multi-Agent Campaign Architecture`](../architecture/multi-agent-campaigns.md).
+
+The current campaign path remains pre-release. The prescribed production ten-outcome soak,
+human-reconciled controlled-target campaign, authenticated live providers and GitHub, sustained
+five-pod execution, native platforms, independent review, signing, and publication remain open. See
 [`Unattended Safeguards`](../architecture/unattended-safeguards.md) before using valuable target
 repositories.
+
+## Run Guarded Qualification
+
+Ordinary tests cannot invoke real providers or GitHub accidentally. For an explicitly authorized
+disposable target, first review the exact configuration and campaign files, then run provider-only,
+GitHub, or full qualification through the guarded wrapper:
+
+```bash
+CODINGMAGE_LIVE_QUALIFICATION=I_ACKNOWLEDGE_EXTERNAL_EFFECTS \
+  python3 scripts/qualify_campaign.py \
+  --mode providers \
+  --binary /absolute/codingmage \
+  --config /absolute/config.toml \
+  --campaign /absolute/campaign.toml
+```
+
+`providers` requires local-only publication. `github` and `full` require exact remote authority.
+Every mode refuses automatic destination promotion, linked or relative selected files, a dirty or
+moved target head, missing acknowledgment, or inconsistent publication policy. The wrapper runs
+`doctor` before `campaign` and uses only the provider and GitHub CLIs' existing login stores.

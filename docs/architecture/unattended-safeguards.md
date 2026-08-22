@@ -6,9 +6,10 @@ This document defines the approved target contract for unattended CodingMage cam
 normative policy, while [`TASKS.md`](../../TASKS.md) records implementation and evidence status.
 Nothing here claims that an unchecked task or gate is implemented.
 
-The first unattended release boundary is one local campaign, one implementation pod, and no remote
-publication. Parallel pods, branch push, draft pull requests, default-branch merge, and release
-publication each require later independent gates.
+The first valuable-target rollout boundary is one local campaign, one implementation pod, and no
+remote publication. Parallel scheduling, branch push, draft pull requests, integration, and
+destination policy are implemented behind explicit authority, but each broader live effect still
+requires its later independent qualification gate. Release publication remains separately denied.
 
 ## Authority Invariants
 

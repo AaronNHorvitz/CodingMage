@@ -2,10 +2,11 @@
 
 CodingMage is a local multi-agent engineering coordinator designed to move through large development roadmaps with better verified results per token. It assigns bounded tasks to isolated coding pods, routes work according to complexity and risk, and gives every candidate to deterministic checks and an independent senior-review model before integration.
 
-The current production path supports supervised units and durable one-pod serial campaigns. The
-accepted multi-agent architecture extends that path into one Codex team lead, bounded concurrent
-Claude implementation pods, independent Codex reviewers, per-task publication, and serialized
-integration while preserving the coordinator as the only Git, test, GitHub, and merge authority.
+The current local campaign path supports both durable serial execution and bounded parallel teams:
+one Codex team lead, up to five concurrent Claude implementation pods, fresh Codex reviewers,
+per-task publication records, serialized integration, final validation, and restart-safe campaign
+state. The coordinator remains the only Git, test, GitHub, integration, and promotion authority.
+Authenticated live-provider and GitHub qualification remains an explicit opt-in boundary.
 See the [multi-agent architecture](docs/architecture/multi-agent-campaigns.md) and its
 [audited implementation gaps](docs/architecture/multi-agent-gap-analysis.md).
 
@@ -76,7 +77,13 @@ flowchart TD
 The router does not let a model choose its own authority or quietly downgrade a required gate. Task class, risk, failure history, review disagreement, configured policy, and operator overrides determine the profile; CodingMage records the decision and the resolved model identity when the provider exposes it.
 
 > [!IMPORTANT]
-> CodingMage is under active implementation. Its supervised one-unit `run` path now composes an isolated worktree, file-only Claude candidate, coordinator-owned commit, bounded gate and review corrections, deterministic verification, immutable Codex review, exact checklist reconciliation, durable checkpoint, and verified cleanup. Its initial `campaign` path can repeat that workflow across dependency-ordered tasks on one isolated evolving campaign branch. Durable campaign-head, interrupted-integration, and exact correction-session recovery now exist; interrupted initial-implementation recovery, parallel live pods, story-level draft PR publication, authenticated GitHub evidence, sustained soak evidence, native macOS/Windows evidence, and unattended release gates remain open.
+> CodingMage is under active implementation. Its supervised `run` path and local `campaign` path
+> compose isolated worktrees, coordinator-owned commits, bounded gate and review corrections,
+> immutable review, exact task reconciliation, durable recovery, parallel pod scheduling, optional
+> task publication, serialized integration, and final campaign validation. Deterministic five-pod
+> and fake-publication evidence exists. Authenticated live-provider and GitHub evidence,
+> sustained-duration soak evidence, native macOS/Windows evidence, independent review, and release
+> publication remain open and are not implied by local tests.
 
 ## Why CodingMage Exists
 
@@ -107,8 +114,9 @@ CodingMage is not intended to replace human product ownership. Scope changes, de
 | Senior review agent | Codex | Reviews exact commits, validates claims and architecture, identifies defects, and verifies corrections. |
 | Deterministic verifier | Local tools | Runs formatting, linting, tests, schemas, traceability, and repository checks without model judgment. |
 
-The initial campaign mode adds a read-only campaign lead and one deterministic integration lead.
-Multiple concurrent implementation/review pods remain staged behind serial-campaign evidence. See
+Campaign mode adds a read-only campaign lead, bounded implementation/review pods, and one
+deterministic integration lead. Parallel execution is implemented behind explicit campaign policy;
+valuable-target use remains staged behind the documented serial and live qualification gates. See
 [`Hierarchical Campaign Architecture`](docs/architecture/hierarchical-campaigns.md) and
 [`Decision 0007`](docs/decisions/0007-hierarchical-campaign-pods.md). The approved unattended and
 release boundary is defined by [`Unattended Safeguards`](docs/architecture/unattended-safeguards.md)
@@ -232,7 +240,10 @@ The initial Git workflow is intentionally conservative:
 10. Push only the configured story or campaign branch and create a draft PR when policy permits.
 11. Keep protected/default-branch promotion and release under a separate explicit policy.
 
-GitHub issues and pull requests are workflow views, not the canonical source of authority. The local task plan and CodingMage state remain canonical. The proposed default is one issue and one draft pull request per coherent story, with sub-tasks represented as checkboxes rather than thousands of tiny pull requests.
+GitHub issues and pull requests are workflow views, not the canonical source of authority. The local
+task plan and CodingMage state remain canonical. Remote publication defaults to one issue and one
+draft pull request per admitted task. Optional story or campaign batching requires separate explicit
+policy and is not inferred by a model.
 
 ## Verification Tiers
 
@@ -291,10 +302,11 @@ The intended entry point is `codingmage monitor --config /absolute/codingmage.to
 attachable TUI is not implemented in the current release. The current stderr activity stream and the
 process-level `watch` command below are the available monitoring surfaces today.
 
-The CLI currently provides `campaign-status`, `campaign-explain-blocker`, `pause`, `resume`,
-`stop-after-unit`, and `cancel`. The attachable monitor still plans `open-diff` and `open-log` views.
-Cancellation terminates only CodingMage-owned descendants and leaves the target repository
-recoverable.
+The CLI currently provides `campaign-status`, `campaign-report`,
+`campaign-explain-blocker`, and `campaign-control` actions for `pause`, `resume`,
+`stop_after_unit`, and `cancel`. It also accepts exact task-integration and destination-promotion
+decisions. The attachable monitor still plans `open-diff` and `open-log` views. Cancellation
+terminates only CodingMage-owned descendants and leaves the target repository recoverable.
 
 ## Background Operation
 
@@ -313,9 +325,10 @@ The service must:
 
 CodingMage begins with a controlled pilot against an independently authorized target repository. CodingMage remains a separate repository and process so it cannot rewrite its own authority logic while coordinating target work.
 
-The pilot begins with the prescribed disposable ten-outcome campaign, then supervised units on a
-CodingMage-owned test branch, and only later an explicitly authorized ten-task campaign on a
-dedicated development branch. The first unattended boundary is one pod and local-only publication.
+The qualification sequence begins with the prescribed disposable ten-outcome campaign, then
+supervised units on a CodingMage-owned test branch, and only later an explicitly authorized
+ten-task campaign on a dedicated development branch. The first valuable-target boundary remains one
+pod and local-only publication even though deterministic parallel implementation is available.
 It must prove clean interruption, exact commit review, concurrent user-work preservation, provider
 pause and resume, malformed-output handling, blocker and deferral semantics, operator controls,
 bounded disagreement, exact ceiling enforcement, and complete residue reconciliation before
@@ -324,7 +337,7 @@ parallel pods or remote visibility are enabled.
 ## Local CLI
 
 The current binary supports deny-first initialization, repository diagnosis, task selection, local
-status, one explicitly scoped supervised run, and a bounded serial campaign. A campaign uses a
+status, one explicitly scoped supervised run, and bounded serial or parallel campaigns. A campaign uses a
 separate absolute authority file that binds repository identity, initial commit, task-source digest,
 providers, paths, gates, unit ceilings, protected branches, and publication policy.
 
@@ -337,6 +350,7 @@ codingmage status --config /absolute/codingmage.toml
 codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml
 codingmage campaign --config /absolute/codingmage.toml --campaign /absolute/campaign.toml
 codingmage campaign-status --config /absolute/codingmage.toml --campaign /absolute/campaign.toml
+codingmage campaign-report --config /absolute/codingmage.toml --campaign /absolute/campaign.toml
 codingmage campaign-explain-blocker --config /absolute/codingmage.toml \
   --campaign /absolute/campaign.toml
 codingmage campaign-control --config /absolute/codingmage.toml \
@@ -351,11 +365,14 @@ codingmage campaign-observe-trigger --config /absolute/codingmage.toml \
   --request resume-example-1 --evidence-sha256 "${TRIGGER_EVIDENCE_SHA256}"
 ```
 
-`campaign` intentionally starts with one pod regardless of available hardware. For each iteration,
-Codex proposes one task from the deterministic ready set in a read-only snapshot, Claude implements
-inside a separate worktree, local gates and Codex review must pass, and only a fixed coordinator
-fast-forward may advance the isolated campaign branch. The active checkout remains unchanged. See
-[`Serial Campaign`](docs/operations/serial-campaign.md) for the authority file and current limits.
+With no `multi_agent` policy, `campaign` preserves the one-pod serial compatibility path. An
+explicit `execution_mode = "parallel"` policy lets Codex propose a bounded batch and lets the
+coordinator admit up to the configured safe capacity. Every task still receives a separate claim,
+branch, worktree, provider lineage, gates, and review. Accepted candidates enter one serialized
+integration queue, and configurable cumulative validation runs before campaign-head mutation. The
+active checkout remains unchanged. See [`Configuration`](docs/operations/configuration.md),
+[`Serial Campaign`](docs/operations/serial-campaign.md), and
+[`Multi-Agent Campaign Architecture`](docs/architecture/multi-agent-campaigns.md).
 Every lead-proposed ownership root is interpreted from the repository root and must identify an
 existing regular file or directory. New files are authorized by leasing their exact existing parent
 directory. Claude can read the worktree but receives Edit/Write permission only for those validated
@@ -366,9 +383,11 @@ codes and authorized task identities. Both reads are observational: repeated pro
 and reconnect cannot change campaign state, Git state, or provider-attempt accounting. A
 content-free transient provider or session failure is retried as
 a fresh isolated whole-unit attempt at most three times; exhaustion, quota, and authentication
-become resumable campaign pauses after owned resources are released. An actual process interruption
-during an active provider turn still blocks automatic replay and requires reconciliation; this
-limitation is enforced rather than hidden. Claude completion metadata is constrained to mutually
+become resumable campaign pauses after owned resources are released. Team campaigns reconcile an
+interrupted initial batch from durable intent: they reconstruct a fresh bounded attempt before any
+provider intent, or reuse the exact recorded run and reservation identities after intent. Completed
+lifecycle observations are replayed idempotently rather than repeating provider or Git effects.
+Claude completion metadata is constrained to mutually
 exclusive ready, blocked, or committed dispositions. Malformed or contradictory metadata receives
 one same-session report retry; a second failure pauses with
 `codingmage.campaign.provider_invalid_output` and cannot reach commit or integration. When a unit
@@ -475,9 +494,11 @@ its final JSON result. Stopping the separate `watch` display has no effect on ei
 
 For an emergency interruption, press `Ctrl+C` in the terminal that owns `codingmage run`. The
 process guard terminates CodingMage-owned provider descendants, and durable state remains available
-for diagnosis. Because production re-observation and same-run resume are not complete yet, an
-interrupted unit must not be assumed successful or automatically resumed. Do not manually delete its
-state, worktree, or retained branch; inspect the repository and run `doctor` first.
+for diagnosis. Do not assume an interrupted unit succeeded and do not manually delete its state,
+worktree, or retained branch. Inspect the repository and run `doctor` first. Team-campaign restart
+then revalidates durable run, reservation, lifecycle, Git, publication, integration, and
+campaign-head identities before it resumes or refuses. The standalone one-unit path retains its
+narrower recovery contract documented in the supervised-run guide.
 
 An authenticated campaign resume is a new admission boundary. Before another unit can start,
 CodingMage revalidates the active repository, isolated campaign worktree and head, campaign
@@ -505,7 +526,15 @@ codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml > ou
 
 Existing provider logins are discovered through a four-name, non-secret ambient allowlist plus the compiled literal `PATH=/usr/bin:/bin` required to locate sandbox dependencies. CodingMage does not accept raw API-key or token fields, inherit arbitrary environment variables or ambient `PATH`, or persist login-discovery values.
 
-`run` never merges, pushes, opens a pull request, publishes, or modifies the active checkout. A passing unit leaves a local `codingmage/integration/...` branch containing the reviewed implementation commit and a separate mechanically verified checklist commit. `campaign` may fast-forward only its own isolated local campaign branch to an exact reviewed descendant; it does not push or perform a GitHub merge. See [`Supervised One-Unit Run`](docs/operations/supervised-run.md) and [`Serial Campaign`](docs/operations/serial-campaign.md).
+`run` never merges, pushes, opens a pull request, publishes, or modifies the active checkout. A
+passing unit leaves a local `codingmage/integration/...` branch containing the reviewed
+implementation commit and a separate mechanically verified checklist commit. A local-only
+`campaign` advances only its isolated campaign branch. With exact remote publication authority,
+the coordinator may publish assigned issues, push reviewed task branches, maintain task draft PRs,
+observe commit-bound CI, and publish a final draft PR. Destination promotion remains
+human-required by default. See [`Supervised One-Unit Run`](docs/operations/supervised-run.md),
+[`GitHub`](docs/operations/github.md), and [`Multi-Agent Campaign
+Architecture`](docs/architecture/multi-agent-campaigns.md).
 
 ## Repository Layout
 
@@ -582,10 +611,13 @@ Operational guides are indexed in [`docs/operations/README.md`](docs/operations/
 - Claude adapter core and deterministic fixtures: yes
 - Claude and Codex adapter cores with deterministic fixtures: yes
 - Live confined Claude task and live Codex review: yes, for the bounded supervised qualification
-- Complete serial agent-adapter integration: yes; multi-pod composition remains open
+- Complete serial agent-adapter integration: yes
+- Deterministic parallel campaign composition: yes; one through five local pods, serialized integration, and final report
 - Background service core: yes; isolated login/logout evidence remains open
 - GitHub synchronization core: yes; authenticated disposable-repository evidence remains open
 - Reproducible Linux packaging and rootless lifecycle: yes
 - Reusable project task and gate adapters: yes
 - Bounded unattended pilot authorization: yes; production target qualification remains open
-- Multi-pod unattended operation: no; implementation and qualification remain open
+- Parallel authenticated-provider operation: implementation present; guarded live qualification remains open
+- Multi-agent scenario matrix: 44 required scenarios mapped to executable local evidence
+- Sustained five-pod soak: guarded harness present; post-correction execution evidence remains open

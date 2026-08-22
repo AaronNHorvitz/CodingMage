@@ -232,3 +232,20 @@ Completion requires every authorized plan task to be merged or explicitly accept
 noncompletion under operator policy, complete integration-level gates, final independent review, a
 reconciled report, and an optional final draft pull request. Public promotion remains a separate
 effect.
+
+## Implementation And Evidence Status
+
+The architecture above is implemented on the current feature branch for deterministic local and
+fake-adapter execution. Local coverage includes one through five workers, sibling failure isolation,
+durable liveness and resource reservations, bounded provider retry and circuit behavior, initial
+batch recovery, assigned-issue ordering, exact task PR bases, CI correction lineage, serialized
+integration, configurable cumulative validation, final reporting, and separate promotion grants.
+
+The process-backed five-pod fixture executes real local worktrees, commits, gates, reviews,
+controls, integration, and final reporting using fake provider executables. The accelerated soak
+rotates capacities and completion orders. The exact scenario mapping and limitations are recorded in
+[`Multi-Agent Scenario Matrix`](../evidence/multi-agent-scenario-matrix.json).
+
+This local status does not claim completion of the prescribed production serial qualification,
+authenticated provider or GitHub runs, sustained-duration soak, native macOS or Windows evidence,
+independent review, signing, or release publication.

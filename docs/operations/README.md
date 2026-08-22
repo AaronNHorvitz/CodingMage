@@ -14,7 +14,7 @@
 - [Serial campaign](serial-campaign.md)
 - [Supervised run](supervised-run.md)
 - [Durable multi-agent campaign architecture](../architecture/multi-agent-campaigns.md)
-- [Multi-agent implementation gap analysis](../architecture/multi-agent-gap-analysis.md)
+- [Multi-agent implementation reconciliation](../architecture/multi-agent-gap-analysis.md)
 - [Unattended safeguards](../architecture/unattended-safeguards.md)
 - [Troubleshooting](troubleshooting.md)
 - [Unsupported behavior](unsupported.md)
