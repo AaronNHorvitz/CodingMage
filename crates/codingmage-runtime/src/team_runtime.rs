@@ -2,6 +2,7 @@
 
 use std::{
     collections::{BTreeMap, BTreeSet},
+    fs,
     panic::{AssertUnwindSafe, catch_unwind},
     path::PathBuf,
     sync::{
@@ -17,10 +18,13 @@ use codingmage_campaign::{
     CampaignTaskTransition, DurablePodLease, DurablePodScheduler, TaskResourceReservation,
     TaskTerminalReason, TaskUtilization, TeamCampaignSnapshot, TeamResourceController,
 };
-use codingmage_contracts::RunId;
-use codingmage_core::Config;
+use codingmage_contracts::{RunId, WorktreeId};
+use codingmage_core::{Config, RepositoryAuthorization};
+use codingmage_git::{OwnedWorktree, integrate_reviewed_descendant};
 use codingmage_orchestrator::TaskState;
 use codingmage_process::CancellationToken;
+use codingmage_state::IntegrityDocument;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::{
@@ -31,6 +35,8 @@ use crate::{
 
 const MESSAGE_POLL_INTERVAL: Duration = Duration::from_millis(10);
 const MIN_CHANNEL_CAPACITY: usize = 32;
+const CI_CORRECTION_RESULT_NAME: &str = "ci-correction-result.json";
+const CI_CORRECTION_RESULT_VERSION: u16 = 1;
 
 /// One admitted pod and its exact coordinator-owned resource reservation.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -249,6 +255,373 @@ impl ProductionTeamUnitRunner {
             reviewer: provider_spec(&self.campaign_spec.reviewer),
         }
     }
+
+    fn run_ci_correction(
+        &self,
+        record: &CampaignTaskRecord,
+        cancellation: CancellationToken,
+        progress: impl FnMut(RunProgress),
+    ) -> Result<(CiCorrectionContext, CiCorrectionExecution), RuntimeError> {
+        let context = self.ci_correction_context(record)?;
+        let execution = self.load_or_run_ci_correction(record, &context, cancellation, progress)?;
+        Ok((context, execution))
+    }
+
+    fn ci_correction_context(
+        &self,
+        record: &CampaignTaskRecord,
+    ) -> Result<CiCorrectionContext, RuntimeError> {
+        if record.state != CampaignTaskState::Correcting {
+            return Err(RuntimeError::State);
+        }
+        let lease_id = record.lease_id.as_deref().ok_or(RuntimeError::State)?;
+        let pod_id = record.pod_id.as_deref().ok_or(RuntimeError::State)?;
+        let worktree_id = WorktreeId::new(record.worktree_id.clone().ok_or(RuntimeError::State)?)
+            .map_err(|_| RuntimeError::State)?;
+        let prior_commit = record.candidate_commit.clone().ok_or(RuntimeError::State)?;
+        let ci_evidence = record
+            .ci_evidence_sha256
+            .last()
+            .cloned()
+            .ok_or(RuntimeError::State)?;
+        let run_material = format!(
+            "{}\0{}\0{}\0{}",
+            record.campaign_id, record.task_id, prior_commit, ci_evidence
+        );
+        let run_digest = hex(&Sha256::digest(run_material.as_bytes()));
+        let run_id = RunId::new(format!("ci-correction-{}", &run_digest[..32]))
+            .map_err(|_| RuntimeError::State)?;
+
+        let pod_root = self.private_root.join("pods").join(lease_id);
+        let mut original_config = self.base_config.clone();
+        original_config
+            .target_path
+            .clone_from(&self.campaign_repository);
+        original_config
+            .default_branch
+            .clone_from(&self.campaign_spec.campaign_branch);
+        original_config.integration_branch =
+            format!("{}/pods/{pod_id}", self.campaign_spec.campaign_branch);
+        original_config.scratch_root = pod_root.join("scratch");
+        original_config.state_root = pod_root.join("state");
+        let original_worktree = OwnedWorktree::load(&original_config, &worktree_id)
+            .map_err(|_| RuntimeError::Repository)?;
+        if original_worktree.manifest().branch != record.branch.as_deref().unwrap_or_default() {
+            return Err(RuntimeError::Authority);
+        }
+
+        let correction_root = self
+            .private_root
+            .join("ci-corrections")
+            .join(&record.task_id)
+            .join(&run_digest[..32]);
+        let mut correction_config = self.base_config.clone();
+        correction_config
+            .target_path
+            .clone_from(&original_worktree.manifest().path);
+        correction_config
+            .default_branch
+            .clone_from(&original_worktree.manifest().branch);
+        correction_config.integration_branch = format!(
+            "{}/ci-corrections/{}",
+            original_worktree.manifest().branch,
+            &run_digest[..16]
+        );
+        correction_config.scratch_root = correction_root.join("scratch");
+        correction_config.state_root = correction_root.join("state");
+        let policy = self
+            .campaign_spec
+            .multi_agent
+            .as_ref()
+            .ok_or(RuntimeError::Authority)?;
+        let consumed = u16::try_from(record.correction_sessions.len()).unwrap_or(u16::MAX);
+        let remaining = policy.max_task_correction_cycles.saturating_sub(consumed);
+        if remaining == 0 {
+            return Err(RuntimeError::CampaignLimit(
+                crate::CampaignLimitKind::CorrectionRounds,
+            ));
+        }
+        correction_config.correction_limit = remaining;
+        private_directory(&correction_config.scratch_root)?;
+        private_directory(&correction_config.state_root)?;
+        let spec = RunSpec {
+            version: 2,
+            task_id: record.task_id.clone(),
+            owned_paths: record.owned_paths.clone(),
+            completion_policy: CompletionPolicy::CandidateOnly,
+            implementer: ImplementerSpec {
+                provider: provider_spec(&self.campaign_spec.implementer),
+                authentication: match self.campaign_spec.implementer_authentication {
+                    CampaignAuthentication::Bare => AuthenticationMode::Bare,
+                    CampaignAuthentication::ExistingLogin => AuthenticationMode::ExistingLogin,
+                },
+            },
+            reviewer: provider_spec(&self.campaign_spec.reviewer),
+        };
+        let external_context = format!(
+            "REMOTE CI CORRECTION\nThe configured remote checks failed for reviewed commit {prior_commit}. The failure observation is bound by SHA-256 evidence {ci_evidence}. Re-run every authorized local gate, inspect task-scoped platform or integration assumptions, make only necessary changes within the declared owned paths, and return a complete candidate for fresh independent review. Do not access the network or alter publication policy."
+        );
+        Ok(CiCorrectionContext {
+            run_id,
+            correction_root,
+            correction_config,
+            spec,
+            original_config,
+            original_worktree,
+            prior_commit,
+            ci_evidence,
+            external_context,
+        })
+    }
+
+    fn load_or_run_ci_correction(
+        &self,
+        record: &CampaignTaskRecord,
+        context: &CiCorrectionContext,
+        cancellation: CancellationToken,
+        progress: impl FnMut(RunProgress),
+    ) -> Result<CiCorrectionExecution, RuntimeError> {
+        let verify = |value: &CiCorrectionExecution| {
+            value.verify(
+                &record.campaign_id,
+                &record.task_id,
+                context.run_id.as_str(),
+                &context.prior_commit,
+                &context.ci_evidence,
+            )
+        };
+        if fs::symlink_metadata(context.correction_root.join(CI_CORRECTION_RESULT_NAME)).is_ok() {
+            return IntegrityDocument::<CiCorrectionExecution>::load(
+                &context.correction_root,
+                CI_CORRECTION_RESULT_NAME,
+                verify,
+            )
+            .map(|document| document.payload)
+            .map_err(|_| RuntimeError::State);
+        }
+        let lifecycle_events = Arc::new(Mutex::new(Vec::new()));
+        let lifecycle_capture = Arc::clone(&lifecycle_events);
+        let lifecycle: LifecycleObserver = Arc::new(move |event| {
+            lifecycle_capture
+                .lock()
+                .map_err(|_| RuntimeError::State)?
+                .push(event);
+            Ok(())
+        });
+        let mut limited_progress =
+            limited_progress_observer(self.actor_permits.clone(), cancellation.clone(), progress);
+        let outcome = run_one_with_progress_id_budget(
+            &context.correction_config,
+            context.spec.clone(),
+            &self.codingmage_binary,
+            context.run_id.clone(),
+            &mut limited_progress,
+            None,
+            None,
+            Some(lifecycle),
+            cancellation,
+            Some(context.external_context.clone()),
+        )?;
+        let candidate_commit = outcome
+            .candidate_commit
+            .clone()
+            .ok_or(RuntimeError::State)?;
+        if outcome.state != TaskState::Checkpointed
+            || outcome.review_verdict.as_deref() != Some("pass")
+            || candidate_commit == context.prior_commit
+        {
+            return Err(RuntimeError::Verification);
+        }
+        let execution = CiCorrectionExecution {
+            version: CI_CORRECTION_RESULT_VERSION,
+            campaign_id: record.campaign_id.clone(),
+            task_id: record.task_id.clone(),
+            run_id: context.run_id.as_str().to_owned(),
+            prior_commit: context.prior_commit.clone(),
+            ci_evidence_sha256: context.ci_evidence.clone(),
+            candidate_commit,
+            utilization: task_utilization(&outcome.utilization),
+            events: lifecycle_events
+                .lock()
+                .map_err(|_| RuntimeError::State)?
+                .clone(),
+        };
+        if !verify(&execution) {
+            return Err(RuntimeError::State);
+        }
+        IntegrityDocument::write_atomic(
+            &context.correction_root,
+            CI_CORRECTION_RESULT_NAME,
+            execution.clone(),
+            verify,
+        )
+        .map_err(|_| RuntimeError::State)?;
+        Ok(execution)
+    }
+
+    fn reconcile_ci_correction(
+        &self,
+        record: &CampaignTaskRecord,
+        context: &CiCorrectionContext,
+        execution: &CiCorrectionExecution,
+    ) -> Result<(), RuntimeError> {
+        let source_root = self
+            .codingmage_binary
+            .parent()
+            .ok_or(RuntimeError::Authority)?;
+        let authorization =
+            RepositoryAuthorization::authorize(&context.original_config, source_root)
+                .map_err(|_| RuntimeError::Authority)?;
+        let observed = context
+            .original_worktree
+            .observe_head(&authorization)
+            .map_err(|_| RuntimeError::Repository)?;
+        if observed == context.prior_commit {
+            integrate_reviewed_descendant(
+                &authorization,
+                &context.original_worktree,
+                &context.prior_commit,
+                &execution.candidate_commit,
+                &record.owned_paths,
+            )
+            .map_err(|_| RuntimeError::Integration)?;
+        } else if observed != execution.candidate_commit {
+            return Err(RuntimeError::State);
+        }
+        Ok(())
+    }
+}
+
+struct CiCorrectionContext {
+    run_id: RunId,
+    correction_root: PathBuf,
+    correction_config: Config,
+    spec: RunSpec,
+    original_config: Config,
+    original_worktree: OwnedWorktree,
+    prior_commit: String,
+    ci_evidence: String,
+    external_context: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct CiCorrectionExecution {
+    version: u16,
+    campaign_id: String,
+    task_id: String,
+    run_id: String,
+    prior_commit: String,
+    ci_evidence_sha256: String,
+    candidate_commit: String,
+    utilization: TaskUtilization,
+    events: Vec<UnitLifecycleEvent>,
+}
+
+impl CiCorrectionExecution {
+    fn verify(
+        &self,
+        campaign_id: &str,
+        task_id: &str,
+        run_id: &str,
+        prior_commit: &str,
+        ci_evidence_sha256: &str,
+    ) -> bool {
+        self.version == CI_CORRECTION_RESULT_VERSION
+            && self.campaign_id == campaign_id
+            && self.task_id == task_id
+            && self.run_id == run_id
+            && self.prior_commit == prior_commit
+            && self.ci_evidence_sha256 == ci_evidence_sha256
+            && valid_commit(&self.prior_commit)
+            && valid_commit(&self.candidate_commit)
+            && self.candidate_commit != self.prior_commit
+            && valid_sha256(&self.ci_evidence_sha256)
+            && !self.events.is_empty()
+            && self.events.len() <= 1_000
+            && self.lifecycle_evidence().is_ok()
+    }
+
+    fn lifecycle_evidence(&self) -> Result<CiCorrectionLifecycle, RuntimeError> {
+        let mut evidence = CiCorrectionLifecycle::default();
+        let mut candidate_observed = false;
+        let mut passing_review_observed = false;
+        for event in &self.events {
+            match event {
+                UnitLifecycleEvent::ImplementationSessionBound { session_id, .. } => {
+                    if session_id.is_empty() {
+                        return Err(RuntimeError::State);
+                    }
+                    evidence.implementation_sessions.push(session_id.clone());
+                }
+                UnitLifecycleEvent::CandidateCommitted { commit, .. }
+                    if commit == &self.candidate_commit =>
+                {
+                    candidate_observed = true;
+                }
+                UnitLifecycleEvent::GatesObserved {
+                    commit,
+                    evidence: gate_evidence,
+                    passed,
+                } if commit == &self.candidate_commit && *passed => {
+                    if gate_evidence.is_empty()
+                        || gate_evidence.iter().any(|value| !valid_sha256(value))
+                    {
+                        return Err(RuntimeError::State);
+                    }
+                    evidence.gate_evidence.extend(gate_evidence.clone());
+                }
+                UnitLifecycleEvent::ReviewObserved {
+                    session_id,
+                    commit,
+                    verdict,
+                    evidence: review_evidence,
+                } if commit == &self.candidate_commit && verdict == "pass" => {
+                    if session_id.is_empty() || !valid_sha256(review_evidence) {
+                        return Err(RuntimeError::State);
+                    }
+                    passing_review_observed = true;
+                    evidence.review_sessions.push(session_id.clone());
+                    evidence.review_evidence.push(review_evidence.clone());
+                }
+                UnitLifecycleEvent::WorktreeCreated { .. }
+                | UnitLifecycleEvent::CandidateCommitted { .. }
+                | UnitLifecycleEvent::GatesObserved { .. }
+                | UnitLifecycleEvent::ReviewObserved { .. }
+                | UnitLifecycleEvent::CompletionCommitted { .. }
+                | UnitLifecycleEvent::WorktreeReleased { .. } => {}
+            }
+        }
+        if evidence.implementation_sessions.is_empty()
+            || evidence.gate_evidence.is_empty()
+            || evidence.review_sessions.is_empty()
+            || !candidate_observed
+            || !passing_review_observed
+            || evidence
+                .implementation_sessions
+                .iter()
+                .collect::<BTreeSet<_>>()
+                .len()
+                != evidence.implementation_sessions.len()
+            || evidence
+                .review_sessions
+                .iter()
+                .collect::<BTreeSet<_>>()
+                .len()
+                != evidence.review_sessions.len()
+        {
+            return Err(RuntimeError::State);
+        }
+        Ok(evidence)
+    }
+}
+
+#[derive(Default)]
+struct CiCorrectionLifecycle {
+    implementation_sessions: Vec<String>,
+    gate_evidence: Vec<String>,
+    review_sessions: Vec<String>,
+    review_evidence: Vec<String>,
 }
 
 impl TeamUnitRunner for ProductionTeamUnitRunner {
@@ -261,25 +634,17 @@ impl TeamUnitRunner for ProductionTeamUnitRunner {
         let config = self.config_for(job)?;
         let spec = self.run_spec_for(job);
         let progress_sink = events.clone();
-        let progress_cancellation = cancellation.clone();
-        let actor_permits = self.actor_permits.clone();
-        let mut actor_permit: Option<(PermitClass, ActorPermit)> = None;
-        let mut progress = move |event| {
-            let desired = permit_class(event);
-            if actor_permit.as_ref().map(|value| value.0) != desired {
-                actor_permit = None;
-                if let Some(class) = desired {
-                    let Ok(permit) = actor_permits.acquire(class, &progress_cancellation) else {
-                        progress_cancellation.cancel();
-                        return;
-                    };
-                    actor_permit = Some((class, permit));
-                }
-            }
+        let sink_cancellation = cancellation.clone();
+        let sink_observer = move |event| {
             if progress_sink.progress(event).is_err() {
-                progress_cancellation.cancel();
+                sink_cancellation.cancel();
             }
         };
+        let mut progress = limited_progress_observer(
+            self.actor_permits.clone(),
+            cancellation.clone(),
+            sink_observer,
+        );
         let lifecycle_sink = events.clone();
         let lifecycle: LifecycleObserver = Arc::new(move |event| lifecycle_sink.lifecycle(event));
         let outcome = run_one_with_progress_id_budget(
@@ -292,6 +657,7 @@ impl TeamUnitRunner for ProductionTeamUnitRunner {
             None,
             Some(lifecycle),
             cancellation,
+            None,
         )?;
         events.heartbeat(task_utilization(&outcome.utilization))?;
         Ok(outcome)
@@ -312,6 +678,31 @@ fn permit_class(progress: RunProgress) -> Option<PermitClass> {
         | crate::ProgressActor::Claude
         | crate::ProgressActor::CampaignLead
         | crate::ProgressActor::IntegrationLead => None,
+    }
+}
+
+fn limited_progress_observer<F>(
+    actor_permits: ActorPermitPool,
+    cancellation: CancellationToken,
+    mut observer: F,
+) -> impl FnMut(RunProgress)
+where
+    F: FnMut(RunProgress),
+{
+    let mut actor_permit: Option<(PermitClass, ActorPermit)> = None;
+    move |event| {
+        let desired = permit_class(event);
+        if actor_permit.as_ref().map(|value| value.0) != desired {
+            actor_permit = None;
+            if let Some(class) = desired {
+                let Ok(permit) = actor_permits.acquire(class, &cancellation) else {
+                    cancellation.cancel();
+                    return;
+                };
+                actor_permit = Some((class, permit));
+            }
+        }
+        observer(event);
     }
 }
 
@@ -701,6 +1092,236 @@ where
     join_all(handles);
     snapshot.verify().map_err(|_| RuntimeError::State)?;
     Ok(result)
+}
+
+/// Reviewed remote-CI correction accepted back onto the original task branch.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TeamCiCorrectionOutcome {
+    /// Exact corrected task.
+    pub task_id: String,
+    /// Fresh locally gated and independently reviewed candidate.
+    pub reviewed_commit: String,
+}
+
+/// Resumes one exact CI-failed task through bounded implementation, gates, and fresh review.
+///
+/// The retained task worktree is the immutable starting point. A deterministic child run captures
+/// an integrity-protected correction result before the original task branch is fast-forwarded, so
+/// interruption after either local effect is reconciled without duplicate provider work.
+///
+/// # Errors
+///
+/// Returns a content-free authority, resource, provider, gate, review, repository, or persistence
+/// failure. No unrelated task state is changed.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn execute_team_ci_correction<P, O>(
+    spec: &CampaignSpec,
+    snapshot: &mut TeamCampaignSnapshot,
+    task_id: &str,
+    runner: &ProductionTeamUnitRunner,
+    cancellation: CancellationToken,
+    mut persist: P,
+    mut observe: O,
+) -> Result<TeamCiCorrectionOutcome, RuntimeError>
+where
+    P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
+    O: FnMut(RunProgress),
+{
+    spec.verify().map_err(RuntimeError::Campaign)?;
+    snapshot.verify().map_err(|_| RuntimeError::State)?;
+    let record = snapshot
+        .tasks
+        .get(task_id)
+        .cloned()
+        .ok_or(RuntimeError::State)?;
+    if record.state != CampaignTaskState::Correcting
+        || record.reviewed_commit.is_some()
+        || record.candidate_commit.is_none()
+        || record.ci_evidence_sha256.is_empty()
+    {
+        return Err(RuntimeError::State);
+    }
+    let lease_id = record.lease_id.as_deref().ok_or(RuntimeError::State)?;
+    let lease = snapshot
+        .scheduler
+        .active
+        .get(lease_id)
+        .cloned()
+        .ok_or(RuntimeError::State)?;
+    if lease.task_id != task_id {
+        return Err(RuntimeError::State);
+    }
+    let (mut resources, reservation) =
+        ensure_ci_correction_reservation(spec, snapshot, &lease, now_ms(), &mut persist)?;
+
+    let result = runner.run_ci_correction(&record, cancellation, &mut observe);
+    let (context, execution) = match result {
+        Ok(execution) => execution,
+        Err(error) => {
+            resources
+                .release(&reservation.reservation_id)
+                .map_err(|_| RuntimeError::State)?;
+            snapshot.resources = resources.snapshot().clone();
+            persist(snapshot)?;
+            return Err(error);
+        }
+    };
+    let observed_at = now_ms();
+    if observed_at > reservation.deadline_ms {
+        resources
+            .release(&reservation.reservation_id)
+            .map_err(|_| RuntimeError::State)?;
+        snapshot.resources = resources.snapshot().clone();
+        persist(snapshot)?;
+        return Err(RuntimeError::Process);
+    }
+    if resources
+        .observe(
+            &reservation.reservation_id,
+            reservation.heartbeat_sequence.saturating_add(1),
+            observed_at,
+            execution.utilization.clone(),
+        )
+        .is_err()
+    {
+        resources
+            .release(&reservation.reservation_id)
+            .map_err(|_| RuntimeError::State)?;
+        snapshot.resources = resources.snapshot().clone();
+        persist(snapshot)?;
+        return Err(RuntimeError::State);
+    }
+    let released = resources
+        .release(&reservation.reservation_id)
+        .map_err(|_| RuntimeError::State)?;
+
+    let lifecycle = match execution.lifecycle_evidence() {
+        Ok(lifecycle) => lifecycle,
+        Err(error) => {
+            snapshot.resources = resources.snapshot().clone();
+            persist(snapshot)?;
+            return Err(error);
+        }
+    };
+    if lifecycle.implementation_sessions.iter().any(|session| {
+        record.implementation_session.as_ref() == Some(session)
+            || record
+                .correction_sessions
+                .iter()
+                .any(|value| value == session)
+    }) {
+        snapshot.resources = resources.snapshot().clone();
+        persist(snapshot)?;
+        return Err(RuntimeError::State);
+    }
+    let combined_utilization = match add_utilization(&record.utilization, &released.observed) {
+        Ok(utilization) => utilization,
+        Err(error) => {
+            snapshot.resources = resources.snapshot().clone();
+            persist(snapshot)?;
+            return Err(error);
+        }
+    };
+    if let Err(error) = runner.reconcile_ci_correction(&record, &context, &execution) {
+        snapshot.resources = resources.snapshot().clone();
+        persist(snapshot)?;
+        return Err(error);
+    }
+
+    let mut corrected = record;
+    corrected
+        .correction_sessions
+        .extend(lifecycle.implementation_sessions);
+    corrected
+        .gate_evidence_sha256
+        .extend(lifecycle.gate_evidence);
+    corrected.review_sessions.extend(lifecycle.review_sessions);
+    corrected
+        .review_evidence_sha256
+        .extend(lifecycle.review_evidence);
+    corrected.candidate_commit = Some(execution.candidate_commit.clone());
+    corrected.reviewed_commit = Some(execution.candidate_commit.clone());
+    corrected.integration_commit = None;
+    corrected.completion_commit = None;
+    corrected.utilization = combined_utilization;
+    transition(
+        &mut corrected,
+        CampaignTaskState::LocalGates,
+        "ci-correction-gates",
+    )?;
+    transition(
+        &mut corrected,
+        CampaignTaskState::Reviewing,
+        "ci-correction-review",
+    )?;
+    transition(
+        &mut corrected,
+        CampaignTaskState::PublicationReady,
+        "ci-correction-ready",
+    )?;
+    snapshot.tasks.insert(task_id.to_owned(), corrected);
+    snapshot.resources = resources.snapshot().clone();
+    snapshot.verify().map_err(|_| RuntimeError::State)?;
+    persist(snapshot)?;
+    Ok(TeamCiCorrectionOutcome {
+        task_id: task_id.to_owned(),
+        reviewed_commit: execution.candidate_commit,
+    })
+}
+
+fn ensure_ci_correction_reservation<P>(
+    spec: &CampaignSpec,
+    snapshot: &mut TeamCampaignSnapshot,
+    lease: &DurablePodLease,
+    started_at_ms: u64,
+    persist: &mut P,
+) -> Result<(TeamResourceController, TaskResourceReservation), RuntimeError>
+where
+    P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
+{
+    let mut resources = TeamResourceController::from_snapshot(spec, snapshot.resources.clone())
+        .map_err(|_| RuntimeError::State)?;
+    let existing = resources
+        .snapshot()
+        .active
+        .values()
+        .find(|reservation| {
+            reservation.lease_id == lease.lease_id && reservation.actor == ActorClass::Implementer
+        })
+        .cloned();
+    let existing = if existing
+        .as_ref()
+        .is_some_and(|reservation| started_at_ms > reservation.deadline_ms)
+    {
+        let reservation_id = existing
+            .as_ref()
+            .map(|reservation| reservation.reservation_id.clone())
+            .ok_or(RuntimeError::State)?;
+        resources
+            .release(&reservation_id)
+            .map_err(|_| RuntimeError::State)?;
+        snapshot.resources = resources.snapshot().clone();
+        persist(snapshot)?;
+        None
+    } else {
+        existing
+    };
+    if let Some(reservation) = existing {
+        if reservation.task_id != lease.task_id {
+            return Err(RuntimeError::State);
+        }
+        return Ok((resources, reservation));
+    }
+    let reservation = resources
+        .implementation_request(lease, started_at_ms)
+        .map_err(|_| RuntimeError::State)?;
+    resources
+        .reserve(reservation.clone())
+        .map_err(|_| RuntimeError::State)?;
+    snapshot.resources = resources.snapshot().clone();
+    snapshot.verify().map_err(|_| RuntimeError::State)?;
+    persist(snapshot)?;
+    Ok((resources, reservation))
 }
 
 fn prepare_batch<P>(
@@ -1178,6 +1799,46 @@ fn event_evidence(record: &CampaignTaskRecord, label: &str) -> String {
     hex(&Sha256::digest(material.as_bytes()))
 }
 
+fn valid_commit(value: &str) -> bool {
+    matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn valid_sha256(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn add_utilization(
+    left: &TaskUtilization,
+    right: &TaskUtilization,
+) -> Result<TaskUtilization, RuntimeError> {
+    Ok(TaskUtilization {
+        provider_attempts: left
+            .provider_attempts
+            .checked_add(right.provider_attempts)
+            .ok_or(RuntimeError::State)?,
+        provider_tokens: left
+            .provider_tokens
+            .checked_add(right.provider_tokens)
+            .ok_or(RuntimeError::State)?,
+        process_invocations: left
+            .process_invocations
+            .checked_add(right.process_invocations)
+            .ok_or(RuntimeError::State)?,
+        output_bytes: left
+            .output_bytes
+            .checked_add(right.output_bytes)
+            .ok_or(RuntimeError::State)?,
+        retained_state_bytes: left
+            .retained_state_bytes
+            .checked_add(right.retained_state_bytes)
+            .ok_or(RuntimeError::State)?,
+        execution_elapsed_ms: left
+            .execution_elapsed_ms
+            .checked_add(right.execution_elapsed_ms)
+            .ok_or(RuntimeError::State)?,
+    })
+}
+
 fn persist_projection<P>(
     snapshot: &mut TeamCampaignSnapshot,
     resources: &TeamResourceController,
@@ -1247,6 +1908,7 @@ fn hex(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use std::{
+        cell::Cell,
         path::PathBuf,
         sync::{
             Barrier, Mutex,
@@ -1903,6 +2565,132 @@ mod tests {
             ),
             Err(RuntimeError::State)
         );
+    }
+
+    fn correction_execution() -> CiCorrectionExecution {
+        let candidate = "d".repeat(40);
+        CiCorrectionExecution {
+            version: CI_CORRECTION_RESULT_VERSION,
+            campaign_id: "campaign-runtime-team".to_owned(),
+            task_id: "23.3.2.1".to_owned(),
+            run_id: "ci-correction-fixture".to_owned(),
+            prior_commit: "a".repeat(40),
+            ci_evidence_sha256: "b".repeat(64),
+            candidate_commit: candidate.clone(),
+            utilization: TaskUtilization::default(),
+            events: vec![
+                UnitLifecycleEvent::ImplementationSessionBound {
+                    session_id: "implementation-correction".to_owned(),
+                    correction_round: 0,
+                },
+                UnitLifecycleEvent::CandidateCommitted {
+                    commit: candidate.clone(),
+                    correction_round: 0,
+                },
+                UnitLifecycleEvent::GatesObserved {
+                    commit: candidate.clone(),
+                    evidence: vec!["e".repeat(64)],
+                    passed: true,
+                },
+                UnitLifecycleEvent::ReviewObserved {
+                    session_id: "review-correction".to_owned(),
+                    commit: candidate,
+                    verdict: "pass".to_owned(),
+                    evidence: "f".repeat(64),
+                },
+            ],
+        }
+    }
+
+    fn correction_execution_is_valid(execution: &CiCorrectionExecution) -> bool {
+        execution.verify(
+            "campaign-runtime-team",
+            "23.3.2.1",
+            "ci-correction-fixture",
+            &"a".repeat(40),
+            &"b".repeat(64),
+        )
+    }
+
+    #[test]
+    fn ci_correction_requires_complete_exact_fresh_evidence() {
+        let execution = correction_execution();
+        assert!(correction_execution_is_valid(&execution));
+        let evidence = execution.lifecycle_evidence().expect("exact evidence");
+        assert_eq!(
+            evidence.implementation_sessions,
+            vec!["implementation-correction"]
+        );
+        assert_eq!(evidence.gate_evidence, vec!["e".repeat(64)]);
+        assert_eq!(evidence.review_sessions, vec!["review-correction"]);
+        assert_eq!(evidence.review_evidence, vec!["f".repeat(64)]);
+
+        for event_index in 0..execution.events.len() {
+            let mut missing = execution.clone();
+            missing.events.remove(event_index);
+            assert!(!correction_execution_is_valid(&missing));
+        }
+    }
+
+    #[test]
+    fn ci_correction_rejects_failed_mismatched_or_malformed_evidence() {
+        let mut failed_gate = correction_execution();
+        let UnitLifecycleEvent::GatesObserved { passed, .. } = &mut failed_gate.events[2] else {
+            panic!("gate event");
+        };
+        *passed = false;
+        assert!(!correction_execution_is_valid(&failed_gate));
+
+        let mut mismatched_review = correction_execution();
+        let UnitLifecycleEvent::ReviewObserved { commit, .. } = &mut mismatched_review.events[3]
+        else {
+            panic!("review event");
+        };
+        *commit = "c".repeat(40);
+        assert!(!correction_execution_is_valid(&mismatched_review));
+
+        let mut malformed_digest = correction_execution();
+        let UnitLifecycleEvent::GatesObserved { evidence, .. } = &mut malformed_digest.events[2]
+        else {
+            panic!("gate event");
+        };
+        evidence[0] = "not-a-digest".to_owned();
+        assert!(!correction_execution_is_valid(&malformed_digest));
+
+        let mut duplicate_session = correction_execution();
+        duplicate_session
+            .events
+            .push(duplicate_session.events[0].clone());
+        assert!(!correction_execution_is_valid(&duplicate_session));
+    }
+
+    #[test]
+    fn ci_correction_reservation_is_reused_and_stale_ownership_is_reconciled() {
+        let (spec, mut snapshot, jobs) = fixture(1, 1, 2_000);
+        let lease = &jobs[0].lease;
+        let persists = Cell::<usize>::new(0);
+        let mut persist = |_: &TeamCampaignSnapshot| {
+            persists.set(persists.get().saturating_add(1));
+            Ok(())
+        };
+
+        let (_, first) =
+            ensure_ci_correction_reservation(&spec, &mut snapshot, lease, 100, &mut persist)
+                .expect("first reservation");
+        assert_eq!(persists.get(), 1);
+        let (_, recovered) =
+            ensure_ci_correction_reservation(&spec, &mut snapshot, lease, 200, &mut persist)
+                .expect("recover existing reservation");
+        assert_eq!(recovered.reservation_id, first.reservation_id);
+        assert_eq!(persists.get(), 1);
+
+        let (_, replacement) =
+            ensure_ci_correction_reservation(&spec, &mut snapshot, lease, 5_000, &mut persist)
+                .expect("replace stale reservation");
+        assert_ne!(replacement.reservation_id, first.reservation_id);
+        assert!(snapshot.resources.released.contains(&first.reservation_id));
+        assert_eq!(snapshot.resources.active.len(), 1);
+        assert_eq!(persists.get(), 3);
     }
 
     #[test]

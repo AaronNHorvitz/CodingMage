@@ -39,8 +39,9 @@ pub use team_publication::{
     synchronize_task_publication, task_completion_publication_request,
 };
 pub use team_runtime::{
-    ProductionTeamUnitRunner, TeamBatchJob, TeamBatchObservation, TeamBatchOutcome, TeamEventSink,
-    TeamTaskOutcome, TeamUnitRunner, execute_team_batch,
+    ProductionTeamUnitRunner, TeamBatchJob, TeamBatchObservation, TeamBatchOutcome,
+    TeamCiCorrectionOutcome, TeamEventSink, TeamTaskOutcome, TeamUnitRunner, execute_team_batch,
+    execute_team_ci_correction,
 };
 pub use team_state::{TeamStateStore, TeamStateStoreError};
 
@@ -219,7 +220,8 @@ pub struct RunProgress {
 }
 
 /// Content-minimized durable identity observation emitted by one production unit.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum UnitLifecycleEvent {
     /// Coordinator created one exact worktree and branch.
     WorktreeCreated {
@@ -2165,6 +2167,7 @@ pub fn run_serial_campaign_with_progress(
                 Some(Arc::clone(&observed_usage)),
                 None,
                 unit_cancellation,
+                None,
             );
             drop(unit_watcher);
             let usage_snapshot = observed_usage
@@ -3144,6 +3147,7 @@ fn run_one_with_progress_id(
         None,
         None,
         CancellationToken::default(),
+        None,
     )
 }
 
@@ -3158,6 +3162,7 @@ fn run_one_with_progress_id_budget(
     observed_usage: Option<SharedUnitUsage>,
     lifecycle_observer: Option<LifecycleObserver>,
     cancellation: CancellationToken,
+    external_context: Option<String>,
 ) -> Result<RunOutcome, RuntimeError> {
     observer(RunProgress::new(
         ProgressActor::Coordinator,
@@ -3173,6 +3178,7 @@ fn run_one_with_progress_id_budget(
         observed_usage,
         lifecycle_observer,
         cancellation,
+        external_context,
     );
     observer(RunProgress::new(
         ProgressActor::Coordinator,
@@ -3196,8 +3202,10 @@ fn run_one_observed_with_id(
     observed_usage: Option<SharedUnitUsage>,
     lifecycle_observer: Option<LifecycleObserver>,
     cancellation: CancellationToken,
+    external_context: Option<String>,
 ) -> Result<RunOutcome, RuntimeError> {
     spec.validate()?;
+    validate_external_context(external_context.as_deref())?;
     let codingmage_binary = canonical_file(codingmage_binary)?;
     let source_root = codingmage_binary.parent().ok_or(RuntimeError::Authority)?;
     let authorization = RepositoryAuthorization::authorize(config, source_root)
@@ -3249,6 +3257,7 @@ fn run_one_observed_with_id(
         observed_usage,
         lifecycle_observer,
         cancellation,
+        external_context,
     };
     let port = match correction_recovery.as_ref() {
         Some(checkpoint) => ProductionWorkflowPort::recover_correction(inputs, checkpoint)?,
@@ -3294,6 +3303,14 @@ fn run_one_observed_with_id(
         return Err(port.inner.failure.unwrap_or(RuntimeError::Orchestration));
     }
     Ok(outcome)
+}
+
+fn validate_external_context(context: Option<&str>) -> Result<(), RuntimeError> {
+    if context.is_some_and(|value| value.is_empty() || value.len() > 4_096 || value.contains('\0'))
+    {
+        return Err(RuntimeError::Spec);
+    }
+    Ok(())
 }
 
 struct ProgressWorkflowPort<'a, P, F> {
@@ -3400,6 +3417,7 @@ struct ProductionInputs<'a> {
     observed_usage: Option<SharedUnitUsage>,
     lifecycle_observer: Option<LifecycleObserver>,
     cancellation: CancellationToken,
+    external_context: Option<String>,
 }
 
 struct ProductionWorkflowPort<'a> {
@@ -3419,6 +3437,7 @@ struct ProductionWorkflowPort<'a> {
     observed_usage: Option<SharedUnitUsage>,
     lifecycle_observer: Option<LifecycleObserver>,
     cancellation: CancellationToken,
+    external_context: Option<String>,
     lock: Option<CoordinatorLock>,
     worktree: Option<OwnedWorktree>,
     implementation: Option<ClaudeCompletionReport>,
@@ -3454,6 +3473,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             observed_usage: inputs.observed_usage,
             lifecycle_observer: inputs.lifecycle_observer,
             cancellation: inputs.cancellation,
+            external_context: inputs.external_context,
             lock: None,
             worktree: None,
             implementation: None,
@@ -3748,12 +3768,16 @@ impl<'a> ProductionWorkflowPort<'a> {
     }
 
     fn claude_packet(&self, correction_context: Option<String>) -> ClaudeWorkPacket {
-        let task_text = correction_context.map_or_else(
+        let task = self.external_context.as_ref().map_or_else(
             || self.selected.item.title.clone(),
+            |context| format!("{}\n\n{context}", self.selected.item.title),
+        );
+        let task_text = correction_context.map_or_else(
+            || task.clone(),
             |context| {
                 format!(
                     "{}\n\nCORRECTION ROUND {}\n{}",
-                    self.selected.item.title,
+                    task,
                     self.correction_round.saturating_add(1),
                     context
                 )
@@ -4980,6 +5004,21 @@ effort = "high"
         let escaping = valid.replace("owned_paths = [\"src\"]", "owned_paths = [\"../src\"]");
         assert_eq!(
             toml::from_str::<RunSpec>(&escaping).unwrap().validate(),
+            Err(RuntimeError::Spec)
+        );
+    }
+
+    #[test]
+    fn external_task_context_is_bounded_and_content_safe() {
+        assert_eq!(validate_external_context(None), Ok(()));
+        assert_eq!(validate_external_context(Some("remote CI failed")), Ok(()));
+        assert_eq!(validate_external_context(Some("")), Err(RuntimeError::Spec));
+        assert_eq!(
+            validate_external_context(Some("contains\0nul")),
+            Err(RuntimeError::Spec)
+        );
+        assert_eq!(
+            validate_external_context(Some(&"x".repeat(4_097))),
             Err(RuntimeError::Spec)
         );
     }

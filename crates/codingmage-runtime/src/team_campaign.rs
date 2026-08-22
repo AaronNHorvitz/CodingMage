@@ -21,10 +21,10 @@ use crate::{
     ProductionTeamIntegrationVerifier, ProductionTeamUnitRunner, ProgressActor, ProgressStage,
     RunProgress, RuntimeError, TeamIntegrationVerifier, TeamPlanningOutcome,
     TeamPublicationOutcome, TeamStateStore, admit_team_lead_report, build_team_lead_binding,
-    enqueue_team_integration, execute_team_batch, generated_run_id, initialize_team_campaign,
-    integrate_team_queue_head_with_strategy, login_discovery_environment, private_directory,
-    refresh_team_readiness, synchronize_campaign_branch, synchronize_task_completion,
-    synchronize_task_publication,
+    enqueue_team_integration, execute_team_batch, execute_team_ci_correction, generated_run_id,
+    initialize_team_campaign, integrate_team_queue_head_with_strategy, login_discovery_environment,
+    private_directory, refresh_team_readiness, synchronize_campaign_branch,
+    synchronize_task_completion, synchronize_task_publication,
     team_control::{
         TeamCancellationWatcher, observe_team_control, observe_team_destination_approval,
         observe_team_integration_approval,
@@ -409,7 +409,10 @@ pub fn run_team_campaign_with_progress(
             })
             .collect::<Vec<_>>();
         let mut waiting_for_ci = false;
-        let mut correction_required = false;
+        let mut correction_required = snapshot
+            .tasks
+            .values()
+            .any(|record| record.state == CampaignTaskState::Correcting);
         match policy.publication_mode {
             TaskPublicationMode::LocalOnly => {
                 for task_id in publication_candidates {
@@ -544,6 +547,30 @@ pub fn run_team_campaign_with_progress(
             last_task_id = Some(outcome.task_id);
             continue;
         }
+        if correction_required {
+            let task_id = snapshot
+                .tasks
+                .iter()
+                .find_map(|(task_id, record)| {
+                    (record.state == CampaignTaskState::Correcting).then_some(task_id.clone())
+                })
+                .ok_or(RuntimeError::State)?;
+            observer(RunProgress::new(
+                ProgressActor::Claude,
+                ProgressStage::Correcting,
+            ));
+            let outcome = execute_team_ci_correction(
+                &spec,
+                &mut snapshot,
+                &task_id,
+                runner.as_ref(),
+                cancellation.child(),
+                |value| persist(&mut state_store, value),
+                &mut observer,
+            )?;
+            last_task_id = Some(outcome.task_id);
+            continue;
+        }
         if snapshot
             .tasks
             .values()
@@ -664,9 +691,7 @@ pub fn run_team_campaign_with_progress(
             .values()
             .any(|record| record.state == CampaignTaskState::Ready)
         {
-            let blocker_code = if correction_required {
-                Some("codingmage.team.ci_correction_required")
-            } else if waiting_for_ci {
+            let blocker_code = if waiting_for_ci {
                 Some("codingmage.team.ci_pending")
             } else {
                 None
