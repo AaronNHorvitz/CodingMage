@@ -946,7 +946,7 @@ profiles = ["configured-gates"]
     ]);
     assert!(status.status.success());
     let status: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
-    assert_eq!(status["schema_version"], 2);
+    assert_eq!(status["schema_version"], 3);
     assert_eq!(status["state"], "complete");
     assert_eq!(status["actor"], "coordinator");
     assert_eq!(status["model"], serde_json::Value::Null);
