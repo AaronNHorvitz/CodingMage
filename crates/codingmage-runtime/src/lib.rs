@@ -42,7 +42,7 @@ pub use team_publication::{
 pub use team_runtime::{
     ProductionTeamUnitRunner, TeamBatchJob, TeamBatchObservation, TeamBatchOutcome,
     TeamCiCorrectionOutcome, TeamEventSink, TeamTaskOutcome, TeamUnitRunner, execute_team_batch,
-    execute_team_ci_correction,
+    execute_team_ci_correction, recoverable_team_jobs,
 };
 pub use team_state::{TeamStateStore, TeamStateStoreError};
 

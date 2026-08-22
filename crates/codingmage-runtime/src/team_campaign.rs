@@ -23,7 +23,7 @@ use crate::{
     TeamPublicationOutcome, TeamStateStore, admit_team_lead_report, build_team_lead_binding,
     enqueue_team_integration, execute_team_batch, execute_team_ci_correction, generated_run_id,
     initialize_team_campaign, integrate_team_queue_head_with_strategy, login_discovery_environment,
-    private_directory, refresh_team_readiness, synchronize_campaign_branch,
+    private_directory, recoverable_team_jobs, refresh_team_readiness, synchronize_campaign_branch,
     synchronize_task_completion, synchronize_task_issue, synchronize_task_publication,
     team_control::{
         TeamCancellationWatcher, observe_team_control, observe_team_destination_approval,
@@ -277,6 +277,24 @@ pub fn run_team_campaign_with_progress(
     let mut integrated_this_invocation = 0_u32;
     let mut last_task_id = None;
     let mut publication_port = None;
+
+    let recovery_jobs = recoverable_team_jobs(&spec, &snapshot, now_ms())?;
+    if !recovery_jobs.is_empty() {
+        let batch = execute_team_batch(
+            &spec,
+            &mut snapshot,
+            &recovery_jobs,
+            &runner,
+            &cancellation,
+            |value| persist(&mut state_store, value),
+            |observation| {
+                if let crate::TeamBatchObservation::TaskProgress { progress, .. } = observation {
+                    observer(progress);
+                }
+            },
+        )?;
+        snapshot = batch.snapshot;
+    }
 
     loop {
         let control = observe_team_control(&campaign_root, &spec, &manifest, &authority_sha256)?;

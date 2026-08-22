@@ -62,8 +62,24 @@ impl TeamBatchJob {
             .active
             .get(&self.lease.lease_id)
             .ok_or(RuntimeError::State)?;
+        let active_reservation = snapshot
+            .resources
+            .active
+            .get(&self.reservation.reservation_id);
+        let fresh = record.state == CampaignTaskState::Leased
+            && record.run_id.is_none()
+            && active_reservation.is_none();
+        let resumable = matches!(
+            record.state,
+            CampaignTaskState::Leased
+                | CampaignTaskState::Implementing
+                | CampaignTaskState::LocalGates
+                | CampaignTaskState::Reviewing
+                | CampaignTaskState::Correcting
+        ) && record.run_id.as_deref() == Some(self.run_id.as_str())
+            && active_reservation == Some(&self.reservation);
         if active != &self.lease
-            || record.state != CampaignTaskState::Leased
+            || (!fresh && !resumable)
             || record.lease_id.as_ref() != Some(&self.lease.lease_id)
             || record.pod_id.as_ref() != Some(&self.lease.pod_id)
             || record
@@ -90,6 +106,89 @@ impl TeamBatchJob {
         }
         Ok(())
     }
+}
+
+/// Reconstructs exact in-flight jobs from durable task, scheduler, run, and resource state.
+///
+/// Tasks that already reached publication or integration stay outside this recovery set. Any
+/// partial active identity fails closed instead of synthesizing replacement authority.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError::State`] when an execution-state task lacks one exact lease, run, or
+/// implementation reservation, or when the reconstructed job does not revalidate.
+pub fn recoverable_team_jobs(
+    spec: &CampaignSpec,
+    snapshot: &TeamCampaignSnapshot,
+    timestamp_ms: u64,
+) -> Result<Vec<TeamBatchJob>, RuntimeError> {
+    snapshot.verify().map_err(|_| RuntimeError::State)?;
+    let mut resources = TeamResourceController::from_snapshot(spec, snapshot.resources.clone())
+        .map_err(|_| RuntimeError::State)?;
+    let mut jobs = Vec::new();
+    for (task_id, record) in &snapshot.tasks {
+        if !matches!(
+            record.state,
+            CampaignTaskState::Leased
+                | CampaignTaskState::Implementing
+                | CampaignTaskState::LocalGates
+                | CampaignTaskState::Reviewing
+                | CampaignTaskState::Correcting
+        ) || (record.state == CampaignTaskState::Correcting
+            && !record.ci_evidence_sha256.is_empty())
+        {
+            continue;
+        }
+        let lease_id = record.lease_id.as_ref().ok_or(RuntimeError::State)?;
+        let lease = snapshot
+            .scheduler
+            .active
+            .get(lease_id)
+            .cloned()
+            .ok_or(RuntimeError::State)?;
+        let (run_id, reservation) = if let Some(run_id) = &record.run_id {
+            let reservations = snapshot
+                .resources
+                .active
+                .values()
+                .filter(|reservation| {
+                    reservation.task_id == *task_id
+                        && reservation.lease_id == *lease_id
+                        && reservation.actor == ActorClass::Implementer
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+            let [reservation] = reservations.as_slice() else {
+                return Err(RuntimeError::State);
+            };
+            (
+                RunId::new(run_id.clone()).map_err(|_| RuntimeError::State)?,
+                reservation.clone(),
+            )
+        } else {
+            if record.state != CampaignTaskState::Leased {
+                return Err(RuntimeError::State);
+            }
+            let reservation = resources
+                .implementation_request(&lease, timestamp_ms)
+                .map_err(|_| RuntimeError::State)?;
+            resources
+                .reserve(reservation.clone())
+                .map_err(|_| RuntimeError::State)?;
+            (crate::generated_run_id()?, reservation)
+        };
+        jobs.push(TeamBatchJob {
+            sequence: 0,
+            run_id,
+            lease,
+            reservation,
+        });
+    }
+    for (sequence, job) in jobs.iter_mut().enumerate() {
+        job.sequence = u64::try_from(sequence).map_err(|_| RuntimeError::State)?;
+        job.verify(snapshot)?;
+    }
+    Ok(jobs)
 }
 
 /// Content-minimized event sender scoped to exactly one admitted pod.
@@ -1014,15 +1113,16 @@ where
     );
     let mut timed_out = BTreeSet::new();
     let mut fatal_error = None;
+    let heartbeat_sequences = controls
+        .keys()
+        .map(|task_id| (task_id.clone(), snapshot.tasks[task_id].heartbeat_sequence))
+        .collect();
     let mut driver = BatchDriver {
         snapshot,
         resources,
         scheduler,
         reservations: &reservations,
-        heartbeat_sequences: controls
-            .keys()
-            .map(|task_id| (task_id.clone(), 0_u64))
-            .collect(),
+        heartbeat_sequences,
         persist: &mut persist,
         observe: &mut observe,
         results: Vec::with_capacity(jobs.len()),
@@ -1365,15 +1465,25 @@ where
             .tasks
             .get_mut(&job.lease.task_id)
             .ok_or(RuntimeError::State)?;
-        record
-            .bind_run(
-                job.run_id.as_str().to_owned(),
-                event_evidence(record, "run"),
-            )
-            .map_err(|_| RuntimeError::State)?;
-        resources
-            .reserve(job.reservation.clone())
-            .map_err(|_| RuntimeError::State)?;
+        if record.run_id.is_none() {
+            record
+                .bind_run(
+                    job.run_id.as_str().to_owned(),
+                    event_evidence(record, "run"),
+                )
+                .map_err(|_| RuntimeError::State)?;
+            resources
+                .reserve(job.reservation.clone())
+                .map_err(|_| RuntimeError::State)?;
+        } else if record.run_id.as_deref() != Some(job.run_id.as_str())
+            || resources
+                .snapshot()
+                .active
+                .get(&job.reservation.reservation_id)
+                != Some(&job.reservation)
+        {
+            return Err(RuntimeError::State);
+        }
     }
     candidate.resources = resources.snapshot().clone();
     candidate.verify().map_err(|_| RuntimeError::State)?;
@@ -1489,6 +1599,7 @@ fn apply_progress(
     Ok(())
 }
 
+#[allow(clippy::too_many_lines)]
 fn apply_lifecycle(
     snapshot: &mut TeamCampaignSnapshot,
     task_id: &str,
@@ -1499,20 +1610,34 @@ fn apply_lifecycle(
         UnitLifecycleEvent::WorktreeCreated {
             worktree_id,
             branch,
-        } => record
-            .bind_worktree(worktree_id, branch, event_evidence(record, "worktree"))
-            .map_err(|_| RuntimeError::State),
+        } => {
+            if record.worktree_id.as_deref() == Some(worktree_id.as_str())
+                && record.branch.as_deref() == Some(branch.as_str())
+            {
+                return Ok(());
+            }
+            record
+                .bind_worktree(worktree_id, branch, event_evidence(record, "worktree"))
+                .map_err(|_| RuntimeError::State)
+        }
         UnitLifecycleEvent::ImplementationSessionBound {
             session_id,
             correction_round,
         } => {
             let mut candidate = record.clone();
             if correction_round == 0 {
-                if candidate.implementation_session.is_some() {
-                    return Err(RuntimeError::State);
+                if let Some(existing) = &candidate.implementation_session {
+                    return if existing == &session_id {
+                        Ok(())
+                    } else {
+                        Err(RuntimeError::State)
+                    };
                 }
                 candidate.implementation_session = Some(session_id);
             } else {
+                if candidate.correction_sessions.contains(&session_id) {
+                    return Ok(());
+                }
                 candidate.correction_sessions.push(session_id);
             }
             candidate.verify().map_err(|_| RuntimeError::State)?;
@@ -1523,6 +1648,9 @@ fn apply_lifecycle(
             commit,
             correction_round: _,
         } => {
+            if record.candidate_commit.as_deref() == Some(commit.as_str()) {
+                return Ok(());
+            }
             let mut candidate = record.clone();
             candidate.candidate_commit = Some(commit);
             candidate.reviewed_commit = None;
@@ -1547,7 +1675,11 @@ fn apply_lifecycle(
                 transition(record, CampaignTaskState::LocalGates, "gates")?;
             }
             let mut candidate = record.clone();
-            candidate.gate_evidence_sha256.extend(evidence);
+            for item in evidence {
+                if !candidate.gate_evidence_sha256.contains(&item) {
+                    candidate.gate_evidence_sha256.push(item);
+                }
+            }
             candidate.verify().map_err(|_| RuntimeError::State)?;
             *record = candidate;
             Ok(())
@@ -1560,6 +1692,16 @@ fn apply_lifecycle(
         } => {
             if record.candidate_commit.as_deref() != Some(commit.as_str()) {
                 return Err(RuntimeError::State);
+            }
+            if record.review_sessions.contains(&session_id) {
+                return if record.review_evidence_sha256.contains(&evidence)
+                    && (verdict != "pass"
+                        || record.reviewed_commit.as_deref() == Some(commit.as_str()))
+                {
+                    Ok(())
+                } else {
+                    Err(RuntimeError::State)
+                };
             }
             if record.state == CampaignTaskState::LocalGates {
                 transition(record, CampaignTaskState::Reviewing, "review")?;
@@ -1575,6 +1717,9 @@ fn apply_lifecycle(
             Ok(())
         }
         UnitLifecycleEvent::CompletionCommitted { commit } => {
+            if record.completion_commit.as_deref() == Some(commit.as_str()) {
+                return Ok(());
+            }
             let mut candidate = record.clone();
             candidate.completion_commit = Some(commit);
             candidate.verify().map_err(|_| RuntimeError::State)?;
@@ -2688,6 +2833,123 @@ mod tests {
             ),
             Err(RuntimeError::State)
         );
+    }
+
+    #[test]
+    fn interrupted_initial_batch_reuses_exact_runs_reservations_and_lifecycle() {
+        let (spec, mut snapshot, jobs) = fixture(2, 2, 2_000);
+        let _ = prepare_batch(&spec, &mut snapshot, &jobs, &mut |_| Ok(())).unwrap();
+        for job in &jobs {
+            let candidate = format!("{:040x}", job.sequence.saturating_add(1));
+            apply_lifecycle(
+                &mut snapshot,
+                &job.lease.task_id,
+                UnitLifecycleEvent::WorktreeCreated {
+                    worktree_id: format!("worktree-{}", job.sequence),
+                    branch: format!("codingmage/task-{}", job.sequence),
+                },
+            )
+            .unwrap();
+            apply_lifecycle(
+                &mut snapshot,
+                &job.lease.task_id,
+                UnitLifecycleEvent::ImplementationSessionBound {
+                    session_id: format!("implementation-{}", job.sequence),
+                    correction_round: 0,
+                },
+            )
+            .unwrap();
+            apply_lifecycle(
+                &mut snapshot,
+                &job.lease.task_id,
+                UnitLifecycleEvent::CandidateCommitted {
+                    commit: candidate.clone(),
+                    correction_round: 0,
+                },
+            )
+            .unwrap();
+            apply_lifecycle(
+                &mut snapshot,
+                &job.lease.task_id,
+                UnitLifecycleEvent::GatesObserved {
+                    commit: candidate.clone(),
+                    evidence: vec![format!("{:064x}", job.sequence.saturating_add(201))],
+                    passed: true,
+                },
+            )
+            .unwrap();
+            apply_lifecycle(
+                &mut snapshot,
+                &job.lease.task_id,
+                UnitLifecycleEvent::ReviewObserved {
+                    session_id: format!("review-{}", job.sequence),
+                    commit: candidate,
+                    verdict: "pass".to_owned(),
+                    evidence: format!("{:064x}", job.sequence.saturating_add(301)),
+                },
+            )
+            .unwrap();
+        }
+        snapshot.verify().unwrap();
+
+        let recovered = recoverable_team_jobs(&spec, &snapshot, now_ms()).unwrap();
+        assert_eq!(recovered, jobs);
+        let outcome = execute_team_batch(
+            &spec,
+            &mut snapshot,
+            &recovered,
+            &Arc::new(FakeRunner::successful()),
+            &CancellationToken::default(),
+            |_| Ok(()),
+            |_| {},
+        )
+        .expect("replayed lifecycle is idempotent");
+        assert!(outcome.tasks.iter().all(|task| task.result.is_ok()));
+        assert!(outcome.snapshot.resources.active.is_empty());
+        assert!(
+            outcome
+                .snapshot
+                .tasks
+                .values()
+                .all(|record| record.state == CampaignTaskState::PublicationReady)
+        );
+        outcome.snapshot.verify().unwrap();
+    }
+
+    #[test]
+    fn admitted_batch_without_provider_intent_reconstructs_fresh_exact_jobs() {
+        let (spec, mut snapshot, _) = fixture(3, 3, 2_000);
+        let recovered = recoverable_team_jobs(&spec, &snapshot, now_ms()).unwrap();
+        assert_eq!(recovered.len(), 3);
+        assert_eq!(
+            recovered
+                .iter()
+                .map(|job| job.run_id.as_str())
+                .collect::<BTreeSet<_>>()
+                .len(),
+            3
+        );
+        assert_eq!(
+            recovered
+                .iter()
+                .map(|job| job.reservation.reservation_id.as_str())
+                .collect::<BTreeSet<_>>()
+                .len(),
+            3
+        );
+        assert!(snapshot.resources.active.is_empty());
+        let outcome = execute_team_batch(
+            &spec,
+            &mut snapshot,
+            &recovered,
+            &Arc::new(FakeRunner::successful()),
+            &CancellationToken::default(),
+            |_| Ok(()),
+            |_| {},
+        )
+        .expect("fresh recovered batch");
+        assert!(outcome.tasks.iter().all(|task| task.result.is_ok()));
+        assert!(outcome.snapshot.resources.active.is_empty());
     }
 
     fn correction_execution() -> CiCorrectionExecution {
