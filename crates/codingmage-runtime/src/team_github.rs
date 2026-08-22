@@ -1,6 +1,6 @@
 //! Guarded production GitHub task-publication adapter.
 
-use std::{collections::BTreeSet, path::PathBuf};
+use std::{collections::BTreeSet, path::PathBuf, thread, time::Duration};
 
 use codingmage_campaign::{CampaignSpec, GitHubCampaignPolicy};
 use codingmage_contracts::{EvidenceId, TaskId};
@@ -14,9 +14,12 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    CampaignBranchObservation, CampaignBranchPublicationRequest, CiObservation, IssueObservation,
+    CampaignBranchObservation, CampaignBranchPublicationRequest, CampaignPromotionError,
+    CampaignPromotionRequest, CampaignPullRequestObservation, CiObservation,
+    DestinationObservation, DestinationPromotionObservation, IssueObservation,
     PullRequestObservation, PushObservation, TaskCompletionObservation, TaskPublicationRequest,
-    TeamPublicationError, TeamPublicationPort, login_discovery_environment, private_directory,
+    TeamPromotionPort, TeamPublicationError, TeamPublicationPort, login_discovery_environment,
+    private_directory,
 };
 
 const MAX_REMOTE_OUTPUT: u64 = 4 * 1024 * 1024;
@@ -34,6 +37,7 @@ pub struct GhCliPublicationPort {
     environment: std::collections::BTreeMap<String, String>,
     cancellation: CancellationToken,
     task_merge_allowed: bool,
+    destination_merge_allowed: bool,
 }
 
 impl GhCliPublicationPort {
@@ -83,6 +87,8 @@ impl GhCliPublicationPort {
             environment,
             cancellation,
             task_merge_allowed: config.capabilities.task_merge == CapabilityGrant::Allowed,
+            destination_merge_allowed: config.capabilities.destination_merge
+                == CapabilityGrant::Allowed,
         };
         port.probe_identity()?;
         port.verify_remote_url()?;
@@ -224,6 +230,74 @@ impl GhCliPublicationPort {
             Vec::new(),
         )?;
         unique_record(&output, |_| true)
+    }
+
+    fn final_pull_request_record(
+        &mut self,
+        request: &CampaignPromotionRequest,
+    ) -> Result<Option<GhPullRequest>, CampaignPromotionError> {
+        let arguments = if let Some(number) = request.pull_request_number {
+            vec![
+                "pr".to_owned(),
+                "view".to_owned(),
+                number.to_string(),
+                "--repo".to_owned(),
+                self.repository_selector(),
+                "--json".to_owned(),
+                "number,body,baseRefName,headRefName,headRefOid,isDraft,state".to_owned(),
+            ]
+        } else {
+            vec![
+                "pr".to_owned(),
+                "list".to_owned(),
+                "--repo".to_owned(),
+                self.repository_selector(),
+                "--state".to_owned(),
+                "all".to_owned(),
+                "--head".to_owned(),
+                request.campaign_branch.clone(),
+                "--base".to_owned(),
+                request.destination_branch.clone(),
+                "--json".to_owned(),
+                "number,body,baseRefName,headRefName,headRefOid,isDraft,state".to_owned(),
+                "--limit".to_owned(),
+                "2".to_owned(),
+            ]
+        };
+        let output = self
+            .run_gh(arguments, Vec::new())
+            .map_err(map_promotion_error)?;
+        if request.pull_request_number.is_some() {
+            parse_one(&output).map(Some).map_err(map_promotion_error)
+        } else {
+            unique_record(&output, |_| true).map_err(map_promotion_error)
+        }
+    }
+
+    fn render_final_pull_request(
+        request: &CampaignPromotionRequest,
+        existing: &str,
+    ) -> Result<String, CampaignPromotionError> {
+        let start = format!(
+            "<!-- codingmage:campaign-pr:start {} -->",
+            request.campaign_id
+        );
+        let end = format!(
+            "<!-- codingmage:campaign-pr:end {} -->",
+            request.campaign_id
+        );
+        let replacement = format!(
+            "{start}\nAutomated campaign record; this is not human approval.\n\nCampaign: `{}`\nBase: `{}`\nHead: `{}`\nFinal commit: `{}`\nFinal gate evidence: `{}`\nFinal automated review evidence: `{}`\nCampaign report: `{}`\n{end}",
+            request.campaign_id,
+            request.destination_branch,
+            request.campaign_branch,
+            request.final_commit,
+            request.final_gate_evidence_sha256,
+            request.final_review_evidence_sha256,
+            request.report_sha256,
+        );
+        replace_owned_section(existing, &start, &end, &replacement)
+            .ok_or(CampaignPromotionError::Identity)
     }
 
     fn render_issue(
@@ -535,6 +609,136 @@ impl GhCliPublicationPort {
         }
         Ok(observed)
     }
+
+    fn observe_commit_ci(&self, commit: &str) -> Result<CiObservation, TeamPublicationError> {
+        let endpoint = format!(
+            "repos/{}/{}/commits/{commit}/check-runs",
+            self.policy.owner, self.policy.repository
+        );
+        let output = self.run_gh(
+            vec![
+                "api".to_owned(),
+                "--hostname".to_owned(),
+                self.policy.host.clone(),
+                endpoint,
+                "--jq".to_owned(),
+                ".check_runs | map({name:.name,status:.status,conclusion:.conclusion})".to_owned(),
+            ],
+            Vec::new(),
+        )?;
+        let mut checks: Vec<GhCheck> =
+            serde_json::from_slice(&output).map_err(|_| TeamPublicationError::Identity)?;
+        checks.sort_by(|left, right| left.name.cmp(&right.name));
+        let selected = self
+            .policy
+            .required_checks
+            .iter()
+            .map(|required| {
+                let matches = checks
+                    .iter()
+                    .filter(|check| &check.name == required)
+                    .collect::<Vec<_>>();
+                if matches.len() != 1 {
+                    return Err(TeamPublicationError::Identity);
+                }
+                Ok(matches[0])
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        if selected.iter().any(|check| check.status != "completed") {
+            return Ok(CiObservation::Pending);
+        }
+        let material = selected
+            .iter()
+            .map(|check| {
+                format!(
+                    "{}:{}:{}",
+                    check.name,
+                    check.status,
+                    check.conclusion.as_deref().unwrap_or("none")
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\0");
+        let evidence_sha256 = digest(&format!("{commit}\0{material}"));
+        if selected
+            .iter()
+            .all(|check| check.conclusion.as_deref() == Some("success"))
+        {
+            Ok(CiObservation::Passed {
+                commit: commit.to_owned(),
+                evidence_sha256,
+            })
+        } else {
+            Ok(CiObservation::Failed {
+                commit: commit.to_owned(),
+                evidence_sha256,
+            })
+        }
+    }
+
+    fn verify_promotion_request(
+        &self,
+        request: &CampaignPromotionRequest,
+    ) -> Result<(), CampaignPromotionError> {
+        if request.campaign_id != self.campaign_id
+            || request.campaign_branch == request.destination_branch
+            || request.campaign_branch != self.campaign_branch_prefix
+                && !request
+                    .campaign_branch
+                    .strip_prefix(&self.campaign_branch_prefix)
+                    .is_some_and(|suffix| suffix.starts_with('/'))
+            || request.destination_branch != self.policy.destination_branch
+            || !valid_commit(&request.final_commit)
+            || request
+                .destination_commit
+                .as_ref()
+                .is_some_and(|value| !valid_commit(value))
+            || request.pull_request_number == Some(0)
+            || !valid_sha256(&request.final_gate_evidence_sha256)
+            || !valid_sha256(&request.final_review_evidence_sha256)
+            || !valid_sha256(&request.report_sha256)
+        {
+            return Err(CampaignPromotionError::Authority);
+        }
+        Ok(())
+    }
+
+    fn reconcile_promoted_destination(
+        &mut self,
+        request: &CampaignPromotionRequest,
+        pull_request_number: u64,
+    ) -> Result<DestinationPromotionObservation, CampaignPromotionError> {
+        for attempt in 0..20 {
+            let pull_request = self
+                .final_pull_request_record(request)?
+                .ok_or(CampaignPromotionError::Identity)?;
+            if pull_request.number != pull_request_number
+                || pull_request.base_ref_name != request.destination_branch
+                || pull_request.head_ref_name != request.campaign_branch
+                || pull_request.head_ref_oid != request.final_commit
+            {
+                return Err(CampaignPromotionError::Identity);
+            }
+            if pull_request.state == "MERGED" {
+                return Ok(DestinationPromotionObservation {
+                    branch: request.destination_branch.clone(),
+                    commit: request.final_commit.clone(),
+                    pull_request_number,
+                    evidence_sha256: digest(&format!(
+                        "{}\0{}\0{}\0merged",
+                        request.campaign_id, pull_request_number, request.final_commit
+                    )),
+                });
+            }
+            if pull_request.state != "OPEN" {
+                return Err(CampaignPromotionError::Identity);
+            }
+            if attempt < 19 {
+                thread::sleep(Duration::from_millis(100));
+            }
+        }
+        Err(CampaignPromotionError::Uncertain)
+    }
 }
 
 impl TeamPublicationPort for GhCliPublicationPort {
@@ -758,69 +962,7 @@ impl TeamPublicationPort for GhCliPublicationPort {
         &mut self,
         request: &TaskPublicationRequest,
     ) -> Result<CiObservation, TeamPublicationError> {
-        let endpoint = format!(
-            "repos/{}/{}/commits/{}/check-runs",
-            self.policy.owner, self.policy.repository, request.reviewed_commit
-        );
-        let output = self.run_gh(
-            vec![
-                "api".to_owned(),
-                "--hostname".to_owned(),
-                self.policy.host.clone(),
-                endpoint,
-                "--jq".to_owned(),
-                ".check_runs | map({name:.name,status:.status,conclusion:.conclusion})".to_owned(),
-            ],
-            Vec::new(),
-        )?;
-        let mut checks: Vec<GhCheck> =
-            serde_json::from_slice(&output).map_err(|_| TeamPublicationError::Identity)?;
-        checks.sort_by(|left, right| left.name.cmp(&right.name));
-        let selected = self
-            .policy
-            .required_checks
-            .iter()
-            .map(|required| {
-                let matches = checks
-                    .iter()
-                    .filter(|check| &check.name == required)
-                    .collect::<Vec<_>>();
-                if matches.len() != 1 {
-                    return Err(TeamPublicationError::Identity);
-                }
-                Ok(matches[0])
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        if selected.iter().any(|check| check.status != "completed") {
-            return Ok(CiObservation::Pending);
-        }
-        let material = selected
-            .iter()
-            .map(|check| {
-                format!(
-                    "{}:{}:{}",
-                    check.name,
-                    check.status,
-                    check.conclusion.as_deref().unwrap_or("none")
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("\0");
-        let evidence_sha256 = digest(&format!("{}\0{material}", request.reviewed_commit));
-        if selected
-            .iter()
-            .all(|check| check.conclusion.as_deref() == Some("success"))
-        {
-            Ok(CiObservation::Passed {
-                commit: request.reviewed_commit.clone(),
-                evidence_sha256,
-            })
-        } else {
-            Ok(CiObservation::Failed {
-                commit: request.reviewed_commit.clone(),
-                evidence_sha256,
-            })
-        }
+        self.observe_commit_ci(&request.reviewed_commit)
     }
 
     fn ensure_task_completion(
@@ -863,6 +1005,216 @@ impl TeamPublicationPort for GhCliPublicationPort {
                 final_pull_request.state
             )),
         })
+    }
+}
+
+impl TeamPromotionPort for GhCliPublicationPort {
+    fn ensure_final_pull_request(
+        &mut self,
+        request: &CampaignPromotionRequest,
+    ) -> Result<CampaignPullRequestObservation, CampaignPromotionError> {
+        self.verify_promotion_request(request)?;
+        let current = self.final_pull_request_record(request)?;
+        if current.as_ref().is_some_and(|value| {
+            value.base_ref_name != request.destination_branch
+                || value.head_ref_name != request.campaign_branch
+                || value.head_ref_oid != request.final_commit
+                || !matches!(value.state.as_str(), "OPEN" | "MERGED")
+        }) {
+            return Err(CampaignPromotionError::Identity);
+        }
+        let body = Self::render_final_pull_request(
+            request,
+            current.as_ref().map_or("", |value| &value.body),
+        )?;
+        if current.as_ref().is_none_or(|value| value.body != body) {
+            let arguments = if let Some(pull_request) = &current {
+                vec![
+                    "pr".to_owned(),
+                    "edit".to_owned(),
+                    pull_request.number.to_string(),
+                    "--repo".to_owned(),
+                    self.repository_selector(),
+                    "--body-file".to_owned(),
+                    "-".to_owned(),
+                ]
+            } else {
+                vec![
+                    "pr".to_owned(),
+                    "create".to_owned(),
+                    "--repo".to_owned(),
+                    self.repository_selector(),
+                    "--draft".to_owned(),
+                    "--base".to_owned(),
+                    request.destination_branch.clone(),
+                    "--head".to_owned(),
+                    request.campaign_branch.clone(),
+                    "--title".to_owned(),
+                    format!("Campaign {} integration", request.campaign_id),
+                    "--body-file".to_owned(),
+                    "-".to_owned(),
+                ]
+            };
+            let attempt = self.run_gh(arguments, body.clone().into_bytes());
+            let observed = self.final_pull_request_record(request)?;
+            if observed.as_ref().map(|value| &value.body) != Some(&body) {
+                return Err(map_reconciled_promotion_error(attempt.is_err()));
+            }
+        }
+        let observed = self
+            .final_pull_request_record(request)?
+            .ok_or(CampaignPromotionError::Uncertain)?;
+        if observed.base_ref_name != request.destination_branch
+            || observed.head_ref_name != request.campaign_branch
+            || observed.head_ref_oid != request.final_commit
+            || !matches!(observed.state.as_str(), "OPEN" | "MERGED")
+            || observed.body != Self::render_final_pull_request(request, &observed.body)?
+        {
+            return Err(CampaignPromotionError::Identity);
+        }
+        Ok(CampaignPullRequestObservation {
+            number: observed.number,
+            base_branch: observed.base_ref_name,
+            head_branch: observed.head_ref_name,
+            head_commit: observed.head_ref_oid,
+            draft: observed.is_draft,
+            merged: observed.state == "MERGED",
+            evidence_sha256: digest(&format!("{}\0{}", observed.number, observed.body)),
+        })
+    }
+
+    fn observe_destination(
+        &mut self,
+        request: &CampaignPromotionRequest,
+    ) -> Result<DestinationObservation, CampaignPromotionError> {
+        self.verify_promotion_request(request)?;
+        let commit = self
+            .observe_named_branch(&request.destination_branch)
+            .map_err(map_promotion_error)?
+            .ok_or(CampaignPromotionError::Identity)?;
+        let endpoint = format!(
+            "repos/{}/{}/branches/{}/protection",
+            self.policy.owner, self.policy.repository, request.destination_branch
+        );
+        let output = self
+            .run_gh(
+                vec![
+                    "api".to_owned(),
+                    "--hostname".to_owned(),
+                    self.policy.host.clone(),
+                    endpoint,
+                    "--jq".to_owned(),
+                    ".required_status_checks.contexts // []".to_owned(),
+                ],
+                Vec::new(),
+            )
+            .map_err(map_promotion_error)?;
+        let protected_checks: Vec<String> =
+            serde_json::from_slice(&output).map_err(|_| CampaignPromotionError::Identity)?;
+        let protection_satisfied = self
+            .policy
+            .required_checks
+            .iter()
+            .all(|required| protected_checks.iter().any(|value| value == required));
+        Ok(DestinationObservation {
+            branch: request.destination_branch.clone(),
+            commit: commit.clone(),
+            protection_satisfied,
+            evidence_sha256: digest(&format!(
+                "{}\0{}\0{}",
+                request.destination_branch,
+                commit,
+                protected_checks.join("\0")
+            )),
+        })
+    }
+
+    fn observe_final_ci(
+        &mut self,
+        request: &CampaignPromotionRequest,
+    ) -> Result<CiObservation, CampaignPromotionError> {
+        self.verify_promotion_request(request)?;
+        self.observe_commit_ci(&request.final_commit)
+            .map_err(map_promotion_error)
+    }
+
+    fn promote_destination(
+        &mut self,
+        request: &CampaignPromotionRequest,
+    ) -> Result<DestinationPromotionObservation, CampaignPromotionError> {
+        self.verify_promotion_request(request)?;
+        if !self.destination_merge_allowed {
+            return Err(CampaignPromotionError::Authority);
+        }
+        let pull_request_number = request
+            .pull_request_number
+            .ok_or(CampaignPromotionError::Authority)?;
+        let expected_destination = request
+            .destination_commit
+            .as_deref()
+            .ok_or(CampaignPromotionError::Authority)?;
+        let observed_destination = self
+            .observe_named_branch(&request.destination_branch)
+            .map_err(map_promotion_error)?
+            .ok_or(CampaignPromotionError::Identity)?;
+        if observed_destination == request.final_commit {
+            return self.reconcile_promoted_destination(request, pull_request_number);
+        }
+        if observed_destination != expected_destination {
+            return Err(CampaignPromotionError::Identity);
+        }
+        let pull_request = self
+            .final_pull_request_record(request)?
+            .ok_or(CampaignPromotionError::Identity)?;
+        if pull_request.number != pull_request_number
+            || pull_request.base_ref_name != request.destination_branch
+            || pull_request.head_ref_name != request.campaign_branch
+            || pull_request.head_ref_oid != request.final_commit
+            || pull_request.state != "OPEN"
+        {
+            return Err(CampaignPromotionError::Identity);
+        }
+        if pull_request.is_draft {
+            let attempt = self.run_gh(
+                vec![
+                    "pr".to_owned(),
+                    "ready".to_owned(),
+                    pull_request_number.to_string(),
+                    "--repo".to_owned(),
+                    self.repository_selector(),
+                ],
+                Vec::new(),
+            );
+            let observed = self.final_pull_request_record(request)?;
+            if observed
+                .as_ref()
+                .is_none_or(|value| value.is_draft || value.state != "OPEN")
+            {
+                return Err(map_reconciled_promotion_error(attempt.is_err()));
+            }
+        }
+        let refspec = format!(
+            "{}:refs/heads/{}",
+            request.final_commit, request.destination_branch
+        );
+        let attempt = self.run_git(
+            vec![
+                "push".to_owned(),
+                "--porcelain".to_owned(),
+                self.policy.remote.clone(),
+                refspec,
+            ],
+            Vec::new(),
+        );
+        if self
+            .observe_named_branch(&request.destination_branch)
+            .map_err(map_promotion_error)?
+            .as_deref()
+            != Some(&request.final_commit)
+        {
+            return Err(map_reconciled_promotion_error(attempt.is_err()));
+        }
+        self.reconcile_promoted_destination(request, pull_request_number)
     }
 }
 
@@ -916,6 +1268,49 @@ const fn reconciled_write_error(attempt_failed: bool) -> TeamPublicationError {
         TeamPublicationError::Uncertain
     } else {
         TeamPublicationError::Identity
+    }
+}
+
+const fn map_promotion_error(error: TeamPublicationError) -> CampaignPromotionError {
+    match error {
+        TeamPublicationError::Authority => CampaignPromotionError::Authority,
+        TeamPublicationError::Identity => CampaignPromotionError::Identity,
+        TeamPublicationError::Uncertain => CampaignPromotionError::Uncertain,
+        TeamPublicationError::State => CampaignPromotionError::State,
+    }
+}
+
+const fn map_reconciled_promotion_error(attempt_failed: bool) -> CampaignPromotionError {
+    if attempt_failed {
+        CampaignPromotionError::Uncertain
+    } else {
+        CampaignPromotionError::Identity
+    }
+}
+
+fn replace_owned_section(
+    existing: &str,
+    start: &str,
+    end: &str,
+    replacement: &str,
+) -> Option<String> {
+    let starts = existing.match_indices(start).collect::<Vec<_>>();
+    let ends = existing.match_indices(end).collect::<Vec<_>>();
+    match (starts.as_slice(), ends.as_slice()) {
+        ([], []) => {
+            let separator = if existing.is_empty() { "" } else { "\n\n" };
+            Some(format!("{existing}{separator}{replacement}"))
+        }
+        ([(start_at, _)], [(end_at, _)]) if start_at < end_at => {
+            let after = end_at.saturating_add(end.len());
+            Some(format!(
+                "{}{}{}",
+                &existing[..*start_at],
+                replacement,
+                &existing[after..]
+            ))
+        }
+        _ => None,
     }
 }
 
@@ -988,6 +1383,10 @@ fn valid_commit(value: &str) -> bool {
     matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
+fn valid_sha256(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
 fn digest(value: &str) -> String {
     let bytes = Sha256::digest(value.as_bytes());
     let mut output = String::with_capacity(64);
@@ -1034,5 +1433,33 @@ mod tests {
                 Err(TeamPublicationError::Identity)
             );
         }
+    }
+
+    #[test]
+    fn final_pull_request_markers_preserve_human_text_and_reject_duplicates() {
+        let request = CampaignPromotionRequest {
+            campaign_id: "campaign-1".to_owned(),
+            repository_id: "repository-1".to_owned(),
+            campaign_branch: "codingmage/campaign-1/owned".to_owned(),
+            destination_branch: "main".to_owned(),
+            final_commit: "a".repeat(40),
+            destination_commit: Some("b".repeat(40)),
+            pull_request_number: Some(17),
+            final_gate_evidence_sha256: "c".repeat(64),
+            final_review_evidence_sha256: "d".repeat(64),
+            report_sha256: "e".repeat(64),
+        };
+        let human = "Human introduction.\n\nHuman conclusion.";
+        let first = GhCliPublicationPort::render_final_pull_request(&request, human).unwrap();
+        assert!(first.starts_with(human));
+        assert!(first.contains("Automated campaign record; this is not human approval."));
+        let second = GhCliPublicationPort::render_final_pull_request(&request, &first).unwrap();
+        assert_eq!(first, second);
+
+        let duplicated = format!("{first}\n{first}");
+        assert_eq!(
+            GhCliPublicationPort::render_final_pull_request(&request, &duplicated),
+            Err(CampaignPromotionError::Identity)
+        );
     }
 }

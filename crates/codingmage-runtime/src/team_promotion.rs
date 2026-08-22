@@ -84,6 +84,8 @@ pub struct CampaignPullRequestObservation {
     pub head_commit: String,
     /// Whether the pull request remains a draft.
     pub draft: bool,
+    /// Whether the pull request is observed merged into the exact destination.
+    pub merged: bool,
     /// Integrity digest of the complete observation.
     pub evidence_sha256: String,
 }
@@ -410,30 +412,35 @@ where
     if state.promotion_evidence_sha256.is_some() {
         if destination.branch == request.destination_branch
             && destination.commit == request.final_commit
+            && pull_request.merged
             && valid_sha256(&destination.evidence_sha256)
         {
             return Ok(CampaignPromotionOutcome::Promoted);
         }
         return Err(CampaignPromotionError::Identity);
     }
-    validate_destination(&request, &destination)?;
-    if let Some(bound) = &state.destination_commit {
-        if bound != &destination.commit {
-            return Err(CampaignPromotionError::Identity);
+    let promotion_already_observed =
+        destination.commit == request.final_commit && pull_request.merged;
+    if !promotion_already_observed {
+        validate_destination(&request, &destination)?;
+        if let Some(bound) = &state.destination_commit {
+            if bound != &destination.commit {
+                return Err(CampaignPromotionError::Identity);
+            }
+        } else {
+            state.destination_commit = Some(destination.commit.clone());
+            persist_promotion(
+                campaign_root,
+                &state,
+                spec,
+                policy,
+                campaign_branch,
+                report,
+                authority_sha256,
+                &report_sha256,
+            )?;
+            request = state.request(report);
         }
-    } else {
-        state.destination_commit = Some(destination.commit.clone());
-        persist_promotion(
-            campaign_root,
-            &state,
-            spec,
-            policy,
-            campaign_branch,
-            report,
-            authority_sha256,
-            &report_sha256,
-        )?;
-        request = state.request(report);
     }
 
     match port.observe_final_ci(&request)? {
@@ -509,6 +516,46 @@ where
         &approval.report_sha256,
     )?;
     Ok(CampaignPromotionOutcome::Promoted)
+}
+
+pub(crate) fn campaign_promotion_approval_binding(
+    campaign_root: &Path,
+    spec: &CampaignSpec,
+    campaign_branch: &str,
+    report: &TeamCampaignReport,
+    authority_sha256: &str,
+) -> Result<Option<CampaignPromotionApprovalBinding>, CampaignPromotionError> {
+    let policy = spec
+        .multi_agent
+        .as_ref()
+        .and_then(|value| value.github.as_ref())
+        .ok_or(CampaignPromotionError::Authority)?;
+    let report_sha256 = report_digest(report)?;
+    let Some(state) = load_promotion(
+        campaign_root,
+        spec,
+        policy,
+        campaign_branch,
+        report,
+        authority_sha256,
+        &report_sha256,
+    )?
+    else {
+        return Ok(None);
+    };
+    let (Some(pull_request_number), Some(destination_commit)) =
+        (state.pull_request_number, state.destination_commit)
+    else {
+        return Ok(None);
+    };
+    Ok(Some(CampaignPromotionApprovalBinding {
+        campaign_id: spec.campaign_id.clone(),
+        pull_request_number,
+        destination_branch: policy.destination_branch.clone(),
+        destination_commit,
+        final_commit: report.final_commit.clone(),
+        report_sha256,
+    }))
 }
 
 fn load_promotion(
@@ -663,6 +710,7 @@ mod tests {
                 head_branch: request.campaign_branch.clone(),
                 head_commit: request.final_commit.clone(),
                 draft: self.destination != self.final_commit,
+                merged: self.destination == self.final_commit,
                 evidence_sha256: "1".repeat(64),
             })
         }
@@ -798,6 +846,67 @@ mod tests {
             )
             .unwrap(),
             CampaignPromotionOutcome::PullRequestReady
+        );
+        assert_eq!(port.promotions, 0);
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn pending_ci_denied_capability_and_moved_destination_all_fail_closed() {
+        let (root, spec, snapshot, report) =
+            fixture(DestinationPromotionPolicy::AutoToDefaultBranch);
+        let authority = spec.authority_sha256().unwrap();
+        let branch = "codingmage/promotion-fixture/owned";
+        let mut port = FakePromotionPort {
+            destination: spec.initial_commit.clone(),
+            final_commit: report.final_commit.clone(),
+            ci_pending: true,
+            ..FakePromotionPort::default()
+        };
+        assert_eq!(
+            synchronize_campaign_promotion(
+                &root,
+                &spec,
+                branch,
+                &snapshot,
+                &report,
+                &authority,
+                true,
+                &mut port,
+                |_| panic!("automatic policy must not request approval"),
+            )
+            .unwrap(),
+            CampaignPromotionOutcome::WaitingForCi
+        );
+        port.ci_pending = false;
+        assert_eq!(
+            synchronize_campaign_promotion(
+                &root,
+                &spec,
+                branch,
+                &snapshot,
+                &report,
+                &authority,
+                false,
+                &mut port,
+                |_| panic!("automatic policy must not request approval"),
+            ),
+            Err(CampaignPromotionError::Authority)
+        );
+        port.destination = "9".repeat(40);
+        assert_eq!(
+            synchronize_campaign_promotion(
+                &root,
+                &spec,
+                branch,
+                &snapshot,
+                &report,
+                &authority,
+                true,
+                &mut port,
+                |_| panic!("automatic policy must not request approval"),
+            ),
+            Err(CampaignPromotionError::Identity)
         );
         assert_eq!(port.promotions, 0);
         let _ = fs::remove_dir_all(root);

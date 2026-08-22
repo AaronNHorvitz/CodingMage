@@ -1119,6 +1119,48 @@ pub fn approve_campaign_task_integration(
     )
 }
 
+/// Creates one exact human approval for final protected-destination promotion.
+///
+/// The approval is bound to the immutable campaign authority, final pull request, observed
+/// destination head, final campaign commit, and final report digest. Any changed identity makes
+/// the approval ineligible.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] for serial mode, stale identity, malformed input, missing final
+/// evidence, or conflicting idempotency evidence.
+#[allow(clippy::too_many_arguments)]
+pub fn approve_campaign_destination_promotion(
+    config: &Config,
+    spec: &CampaignSpec,
+    codingmage_binary: &Path,
+    pull_request_number: u64,
+    destination_branch: &str,
+    destination_commit: &str,
+    final_commit: &str,
+    report_sha256: &str,
+    request_id: &str,
+) -> Result<CampaignControlOutcome, RuntimeError> {
+    if spec
+        .multi_agent
+        .as_ref()
+        .is_none_or(|policy| policy.execution_mode != CampaignExecutionMode::Parallel)
+    {
+        return Err(RuntimeError::Spec);
+    }
+    team_control::request_team_destination_approval(
+        config,
+        spec,
+        codingmage_binary,
+        pull_request_number,
+        destination_branch,
+        destination_commit,
+        final_commit,
+        report_sha256,
+        request_id,
+    )
+}
+
 /// Clears one exact durable blocker after same-user local authentication and full revalidation.
 ///
 /// The prerequisite digest is an operator-supplied, content-free binding to the external change.

@@ -8,7 +8,7 @@ use codingmage_campaign::{
 };
 use codingmage_codex::{CodexLeadAdapter, team_lead_schema};
 use codingmage_contracts::{RunId, TaskId, WorktreeId};
-use codingmage_core::{Config, RepositoryAuthorization};
+use codingmage_core::{CapabilityGrant, Config, RepositoryAuthorization};
 use codingmage_git::{OwnedWorktree, create_owned_worktree, inventory_repository};
 use codingmage_plan::TaskPlan;
 use codingmage_process::{CancellationToken, ProcessExecutor};
@@ -17,15 +17,17 @@ use codingmage_state::IntegrityDocument;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CampaignOutcome, CampaignState, CampaignStopReason, ProductionTeamIntegrationVerifier,
-    ProductionTeamUnitRunner, ProgressActor, ProgressStage, RunProgress, RuntimeError,
-    TeamIntegrationVerifier, TeamPlanningOutcome, TeamPublicationOutcome, TeamStateStore,
-    admit_team_lead_report, build_team_lead_binding, enqueue_team_integration, execute_team_batch,
-    generated_run_id, initialize_team_campaign, integrate_team_queue_head_with_strategy,
-    login_discovery_environment, private_directory, refresh_team_readiness,
-    synchronize_campaign_branch, synchronize_task_completion, synchronize_task_publication,
+    CampaignOutcome, CampaignPromotionOutcome, CampaignState, CampaignStopReason,
+    ProductionTeamIntegrationVerifier, ProductionTeamUnitRunner, ProgressActor, ProgressStage,
+    RunProgress, RuntimeError, TeamIntegrationVerifier, TeamPlanningOutcome,
+    TeamPublicationOutcome, TeamStateStore, admit_team_lead_report, build_team_lead_binding,
+    enqueue_team_integration, execute_team_batch, generated_run_id, initialize_team_campaign,
+    integrate_team_queue_head_with_strategy, login_discovery_environment, private_directory,
+    refresh_team_readiness, synchronize_campaign_branch, synchronize_task_completion,
+    synchronize_task_publication,
     team_control::{
-        TeamCancellationWatcher, observe_team_control, observe_team_integration_approval,
+        TeamCancellationWatcher, observe_team_control, observe_team_destination_approval,
+        observe_team_integration_approval,
     },
     write_private_idempotent,
 };
@@ -551,7 +553,7 @@ pub fn run_team_campaign_with_progress(
                 ProgressActor::LocalGates,
                 ProgressStage::VerifyingFinal,
             ));
-            let _ = finalize_team_campaign(
+            let report = finalize_team_campaign(
                 &campaign_root,
                 &spec,
                 &manifest,
@@ -560,6 +562,66 @@ pub fn run_team_campaign_with_progress(
                 &campaign,
                 &mut integration_verifier,
             )?;
+            if policy.publication_mode != TaskPublicationMode::LocalOnly {
+                let Some(port) = publication_port.as_mut() else {
+                    return Err(RuntimeError::State);
+                };
+                let promotion = match crate::synchronize_campaign_promotion(
+                    &campaign_root,
+                    &spec,
+                    &manifest.branch,
+                    &snapshot,
+                    &report,
+                    &authority_sha256,
+                    config.capabilities.destination_merge == CapabilityGrant::Allowed,
+                    port,
+                    |binding| {
+                        observe_team_destination_approval(
+                            &campaign_root,
+                            &spec,
+                            &manifest,
+                            &authority_sha256,
+                            binding,
+                        )
+                    },
+                ) {
+                    Ok(outcome) => outcome,
+                    Err(error) => {
+                        return Ok(blocked_outcome(
+                            &spec,
+                            &campaign,
+                            &snapshot,
+                            integrated_this_invocation,
+                            last_task_id,
+                            error.code(),
+                        ));
+                    }
+                };
+                match promotion {
+                    CampaignPromotionOutcome::WaitingForCi => {
+                        return Ok(blocked_outcome(
+                            &spec,
+                            &campaign,
+                            &snapshot,
+                            integrated_this_invocation,
+                            last_task_id,
+                            "codingmage.team.promotion.ci_pending",
+                        ));
+                    }
+                    CampaignPromotionOutcome::ApprovalRequired => {
+                        return Ok(blocked_outcome(
+                            &spec,
+                            &campaign,
+                            &snapshot,
+                            integrated_this_invocation,
+                            last_task_id,
+                            "codingmage.team.promotion.approval_required",
+                        ));
+                    }
+                    CampaignPromotionOutcome::PullRequestReady
+                    | CampaignPromotionOutcome::Promoted => {}
+                }
+            }
             observer(RunProgress::new(
                 ProgressActor::Coordinator,
                 ProgressStage::Finished,

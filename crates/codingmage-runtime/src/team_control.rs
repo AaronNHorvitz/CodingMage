@@ -22,14 +22,16 @@ use codingmage_state::IntegrityDocument;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CampaignActiveTaskStatus, CampaignControlOutcome, CampaignStatus, CampaignStatusDeferral,
-    CampaignStatusOutcomes, CampaignStatusTaskReason, CampaignStatusUtilization, RuntimeError,
-    canonical_file, generated_run_id,
+    CampaignActiveTaskStatus, CampaignControlOutcome, CampaignPromotionApprovalBinding,
+    CampaignStatus, CampaignStatusDeferral, CampaignStatusOutcomes, CampaignStatusTaskReason,
+    CampaignStatusUtilization, RuntimeError, canonical_file, generated_run_id,
     team_campaign::{MANIFEST_NAME, TeamCampaignManifest},
+    team_promotion::campaign_promotion_approval_binding,
 };
 
 const CONTROL_NAME: &str = "team-control.json";
 const APPROVAL_NAME: &str = "team-integration-approvals.json";
+const DESTINATION_APPROVAL_NAME: &str = "team-destination-approvals.json";
 const STATE_NAME: &str = "team-campaign.json";
 const CONTROL_VERSION: u16 = 1;
 const APPROVAL_VERSION: u16 = 1;
@@ -112,6 +114,133 @@ struct TeamApprovalState {
     created_at_ms: u64,
     updated_at_ms: u64,
     approvals: Vec<TeamIntegrationApproval>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct TeamDestinationApproval {
+    request_id: String,
+    pull_request_number: u64,
+    destination_branch: String,
+    destination_commit: String,
+    final_commit: String,
+    report_sha256: String,
+    timestamp_ms: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct TeamDestinationApprovalState {
+    version: u16,
+    authority_sha256: String,
+    campaign_id: String,
+    repository_id: String,
+    campaign_run_id: String,
+    worktree_id: String,
+    created_at_ms: u64,
+    updated_at_ms: u64,
+    approvals: Vec<TeamDestinationApproval>,
+}
+
+impl TeamDestinationApprovalState {
+    fn initial(
+        spec: &CampaignSpec,
+        manifest: &TeamCampaignManifest,
+        authority_sha256: &str,
+        timestamp_ms: u64,
+    ) -> Self {
+        Self {
+            version: APPROVAL_VERSION,
+            authority_sha256: authority_sha256.to_owned(),
+            campaign_id: spec.campaign_id.clone(),
+            repository_id: spec.repository_id.clone(),
+            campaign_run_id: manifest.campaign_run_id.clone(),
+            worktree_id: manifest.worktree_id.clone(),
+            created_at_ms: timestamp_ms,
+            updated_at_ms: timestamp_ms,
+            approvals: Vec::new(),
+        }
+    }
+
+    fn verify(
+        &self,
+        spec: &CampaignSpec,
+        manifest: &TeamCampaignManifest,
+        authority_sha256: &str,
+    ) -> bool {
+        if self.version != APPROVAL_VERSION
+            || self.authority_sha256 != authority_sha256
+            || self.campaign_id != spec.campaign_id
+            || self.repository_id != spec.repository_id
+            || self.campaign_run_id != manifest.campaign_run_id
+            || self.worktree_id != manifest.worktree_id
+            || self.created_at_ms > self.updated_at_ms
+            || self.approvals.len() > MAX_CONTROL_REQUESTS
+        {
+            return false;
+        }
+        let mut requests = BTreeSet::new();
+        let mut bindings = BTreeSet::new();
+        let mut prior_timestamp = self.created_at_ms;
+        for approval in &self.approvals {
+            if RunId::new(approval.request_id.clone()).is_err()
+                || approval.pull_request_number == 0
+                || !valid_branch(&approval.destination_branch)
+                || !valid_commit(&approval.destination_commit)
+                || !valid_commit(&approval.final_commit)
+                || !valid_sha256(&approval.report_sha256)
+                || approval.timestamp_ms < prior_timestamp
+                || !requests.insert(approval.request_id.as_str())
+                || !bindings.insert((
+                    approval.pull_request_number,
+                    approval.destination_branch.as_str(),
+                    approval.destination_commit.as_str(),
+                    approval.final_commit.as_str(),
+                    approval.report_sha256.as_str(),
+                ))
+            {
+                return false;
+            }
+            prior_timestamp = approval.timestamp_ms;
+        }
+        prior_timestamp == self.updated_at_ms
+    }
+
+    fn apply(&mut self, approval: TeamDestinationApproval) -> Result<bool, RuntimeError> {
+        if let Some(existing) = self
+            .approvals
+            .iter()
+            .find(|value| value.request_id == approval.request_id)
+        {
+            return if destination_approval_matches(existing, &approval) {
+                Ok(false)
+            } else {
+                Err(RuntimeError::Authority)
+            };
+        }
+        if self.approvals.len() >= MAX_CONTROL_REQUESTS
+            || approval.timestamp_ms < self.updated_at_ms
+            || self
+                .approvals
+                .iter()
+                .any(|value| destination_approval_matches(value, &approval))
+        {
+            return Err(RuntimeError::Authority);
+        }
+        self.updated_at_ms = approval.timestamp_ms;
+        self.approvals.push(approval);
+        Ok(true)
+    }
+
+    fn contains(&self, binding: &CampaignPromotionApprovalBinding) -> bool {
+        self.approvals.iter().any(|approval| {
+            approval.pull_request_number == binding.pull_request_number
+                && approval.destination_branch == binding.destination_branch
+                && approval.destination_commit == binding.destination_commit
+                && approval.final_commit == binding.final_commit
+                && approval.report_sha256 == binding.report_sha256
+        })
+    }
 }
 
 impl TeamApprovalState {
@@ -421,6 +550,19 @@ pub(crate) fn observe_team_integration_approval(
     )
 }
 
+pub(crate) fn observe_team_destination_approval(
+    campaign_root: &Path,
+    spec: &CampaignSpec,
+    manifest: &TeamCampaignManifest,
+    authority_sha256: &str,
+    binding: &CampaignPromotionApprovalBinding,
+) -> Result<bool, RuntimeError> {
+    Ok(
+        load_destination_approvals(campaign_root, spec, manifest, authority_sha256)?
+            .is_some_and(|state| state.contains(binding)),
+    )
+}
+
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 pub(crate) fn request_team_integration_approval(
     config: &Config,
@@ -496,6 +638,96 @@ pub(crate) fn request_team_integration_approval(
         campaign_id: spec.campaign_id.clone(),
         request_id: request_id.as_str().to_owned(),
         action: "approve_task_integration".to_owned(),
+        created,
+    })
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub(crate) fn request_team_destination_approval(
+    config: &Config,
+    spec: &CampaignSpec,
+    codingmage_binary: &Path,
+    pull_request_number: u64,
+    destination_branch: &str,
+    destination_commit: &str,
+    final_commit: &str,
+    report_sha256: &str,
+    request_id: &str,
+) -> Result<CampaignControlOutcome, RuntimeError> {
+    let request_id = RunId::new(request_id.to_owned()).map_err(|_| RuntimeError::Spec)?;
+    if pull_request_number == 0
+        || !valid_branch(destination_branch)
+        || !valid_commit(destination_commit)
+        || !valid_commit(final_commit)
+        || !valid_sha256(report_sha256)
+    {
+        return Err(RuntimeError::Spec);
+    }
+    let (authorization, authority_sha256, campaign_root) =
+        validate_team_authority(config, spec, codingmage_binary, true)?;
+    let manifest =
+        load_manifest(&campaign_root, spec, &authority_sha256)?.ok_or(RuntimeError::State)?;
+    let report =
+        crate::team_campaign_report(config, spec, codingmage_binary)?.ok_or(RuntimeError::State)?;
+    let expected = campaign_promotion_approval_binding(
+        &campaign_root,
+        spec,
+        &manifest.branch,
+        &report,
+        &authority_sha256,
+    )
+    .map_err(|_| RuntimeError::State)?
+    .ok_or(RuntimeError::State)?;
+    let supplied = CampaignPromotionApprovalBinding {
+        campaign_id: spec.campaign_id.clone(),
+        pull_request_number,
+        destination_branch: destination_branch.to_owned(),
+        destination_commit: destination_commit.to_owned(),
+        final_commit: final_commit.to_owned(),
+        report_sha256: report_sha256.to_owned(),
+    };
+    if authorization.identity().repository_id.as_str() != manifest.repository_id
+        || supplied != expected
+    {
+        return Err(RuntimeError::Authority);
+    }
+    let lock_id = generated_run_id()?;
+    let _lock = CoordinatorLock::acquire(
+        &config
+            .state_root
+            .join("team-campaign-destination-approval-locks")
+            .join(&spec.campaign_id),
+        &authorization.identity().repository_id,
+        lock_id.as_str(),
+    )
+    .map_err(|_| RuntimeError::Orchestration)?;
+    let timestamp_ms = now_ms()?;
+    let mut state = load_destination_approvals(&campaign_root, spec, &manifest, &authority_sha256)?
+        .unwrap_or_else(|| {
+            TeamDestinationApprovalState::initial(spec, &manifest, &authority_sha256, timestamp_ms)
+        });
+    let created = state.apply(TeamDestinationApproval {
+        request_id: request_id.as_str().to_owned(),
+        pull_request_number,
+        destination_branch: destination_branch.to_owned(),
+        destination_commit: destination_commit.to_owned(),
+        final_commit: final_commit.to_owned(),
+        report_sha256: report_sha256.to_owned(),
+        timestamp_ms,
+    })?;
+    if created {
+        IntegrityDocument::write_atomic(
+            &campaign_root,
+            DESTINATION_APPROVAL_NAME,
+            state,
+            |value| value.verify(spec, &manifest, &authority_sha256),
+        )
+        .map_err(|_| RuntimeError::State)?;
+    }
+    Ok(CampaignControlOutcome {
+        campaign_id: spec.campaign_id.clone(),
+        request_id: request_id.as_str().to_owned(),
+        action: "approve_destination_promotion".to_owned(),
         created,
     })
 }
@@ -677,6 +909,24 @@ fn load_approvals(
     IntegrityDocument::<TeamApprovalState>::load(campaign_root, APPROVAL_NAME, |value| {
         value.verify(spec, manifest, authority_sha256)
     })
+    .map(|document| Some(document.payload))
+    .map_err(|_| RuntimeError::State)
+}
+
+fn load_destination_approvals(
+    campaign_root: &Path,
+    spec: &CampaignSpec,
+    manifest: &TeamCampaignManifest,
+    authority_sha256: &str,
+) -> Result<Option<TeamDestinationApprovalState>, RuntimeError> {
+    if fs::symlink_metadata(campaign_root.join(DESTINATION_APPROVAL_NAME)).is_err() {
+        return Ok(None);
+    }
+    IntegrityDocument::<TeamDestinationApprovalState>::load(
+        campaign_root,
+        DESTINATION_APPROVAL_NAME,
+        |value| value.verify(spec, manifest, authority_sha256),
+    )
     .map(|document| Some(document.payload))
     .map_err(|_| RuntimeError::State)
 }
@@ -981,6 +1231,31 @@ fn valid_commit(value: &str) -> bool {
     matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
+fn valid_sha256(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn valid_branch(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 256
+        && !value.starts_with('-')
+        && !value.contains("..")
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'/'))
+}
+
+fn destination_approval_matches(
+    left: &TeamDestinationApproval,
+    right: &TeamDestinationApproval,
+) -> bool {
+    left.pull_request_number == right.pull_request_number
+        && left.destination_branch == right.destination_branch
+        && left.destination_commit == right.destination_commit
+        && left.final_commit == right.final_commit
+        && left.report_sha256 == right.report_sha256
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1065,6 +1340,45 @@ mod tests {
         let mut conflicting = approval;
         conflicting.reviewed_commit = "0".repeat(40);
         conflicting.timestamp_ms = 13;
+        assert_eq!(state.apply(conflicting), Err(RuntimeError::Authority));
+    }
+
+    #[test]
+    fn destination_approval_is_exact_idempotent_and_report_bound() {
+        let spec = spec();
+        let authority = spec.authority_sha256().unwrap();
+        let manifest = manifest(&spec, &authority);
+        let mut state = TeamDestinationApprovalState::initial(&spec, &manifest, &authority, 20);
+        let approval = TeamDestinationApproval {
+            request_id: "destination-approval-1".to_owned(),
+            pull_request_number: 81,
+            destination_branch: "main".to_owned(),
+            destination_commit: "d".repeat(40),
+            final_commit: "e".repeat(40),
+            report_sha256: "f".repeat(64),
+            timestamp_ms: 21,
+        };
+        assert!(state.apply(approval.clone()).unwrap());
+        let mut replay = approval.clone();
+        replay.timestamp_ms = 22;
+        assert!(!state.apply(replay).unwrap());
+        assert!(state.verify(&spec, &manifest, &authority));
+        let binding = CampaignPromotionApprovalBinding {
+            campaign_id: spec.campaign_id.clone(),
+            pull_request_number: approval.pull_request_number,
+            destination_branch: approval.destination_branch.clone(),
+            destination_commit: approval.destination_commit.clone(),
+            final_commit: approval.final_commit.clone(),
+            report_sha256: approval.report_sha256.clone(),
+        };
+        assert!(state.contains(&binding));
+        let mut changed_binding = binding;
+        changed_binding.report_sha256 = "0".repeat(64);
+        assert!(!state.contains(&changed_binding));
+
+        let mut conflicting = approval;
+        conflicting.destination_commit = "1".repeat(40);
+        conflicting.timestamp_ms = 23;
         assert_eq!(state.apply(conflicting), Err(RuntimeError::Authority));
     }
 
