@@ -291,9 +291,12 @@ success snapshot or utilization projection can replace that diagnostic.
 
 Retained-state accounting treats an owned descendant that disappears during process cleanup as no
 longer retained and continues the scan, including `NotFound` observed while a live directory
-iterator is yielding cleanup entries. The campaign root itself must remain present, symlinks and
-non-regular entries still fail closed, iterator or metadata errors other than `NotFound` still
-block, and all observed byte totals remain overflow checked before another effect is authorized.
+iterator is yielding cleanup entries. If a descendant observed as a directory is replaced before
+it can be opened, accounting restarts the complete scan under a fixed three-attempt ceiling; a
+persistent replacement is then counted in its observed form rather than skipped. The campaign root
+itself must remain present, symlinks and non-regular entries still fail closed, nontransient
+iterator or metadata errors still block, and all byte totals remain overflow checked before
+another effect is authorized.
 
 A valid implementer-blocked disposition is a task result, not an internal provider failure. The
 coordinator transitions that unit to `Blocked`, journals generic evidence without retaining the

@@ -1640,10 +1640,35 @@ fn validate_private_control_entry(
     Ok(())
 }
 
+const RETAINED_SCAN_ATTEMPTS: usize = 3;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum RetainedScanError {
+    Transient,
+    Unsafe,
+}
+
 fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
+    for attempt in 0..RETAINED_SCAN_ATTEMPTS {
+        match retained_tree_bytes_once(root, |_| {}) {
+            Ok(total) => return Ok(total),
+            Err(RetainedScanError::Transient) if attempt + 1 < RETAINED_SCAN_ATTEMPTS => {}
+            Err(RetainedScanError::Transient | RetainedScanError::Unsafe) => {
+                return Err(RuntimeError::State);
+            }
+        }
+    }
+    Err(RuntimeError::State)
+}
+
+fn retained_tree_bytes_once(
+    root: &Path,
+    mut before_read: impl FnMut(&Path),
+) -> Result<u64, RetainedScanError> {
     let mut total = 0_u64;
     let mut pending = vec![root.to_path_buf()];
     while let Some(directory) = pending.pop() {
+        before_read(&directory);
         let Some(entries) = retained_directory_entries(root, &directory)? else {
             continue;
         };
@@ -1651,15 +1676,21 @@ fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
             let entry = match entry {
                 Ok(entry) => entry,
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
-                Err(_) => return Err(RuntimeError::State),
+                Err(error) if transient_scan_error(&error) => {
+                    return Err(RetainedScanError::Transient);
+                }
+                Err(_) => return Err(RetainedScanError::Unsafe),
             };
             let file_type = match entry.file_type() {
                 Ok(file_type) => file_type,
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
-                Err(_) => return Err(RuntimeError::State),
+                Err(error) if transient_scan_error(&error) => {
+                    return Err(RetainedScanError::Transient);
+                }
+                Err(_) => return Err(RetainedScanError::Unsafe),
             };
             if file_type.is_symlink() {
-                return Err(RuntimeError::State);
+                return Err(RetainedScanError::Unsafe);
             }
             if file_type.is_dir() {
                 pending.push(entry.path());
@@ -1667,11 +1698,15 @@ fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
                 let metadata = match entry.metadata() {
                     Ok(metadata) => metadata,
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
-                    Err(_) => return Err(RuntimeError::State),
+                    Err(error) if transient_scan_error(&error) => {
+                        return Err(RetainedScanError::Transient);
+                    }
+                    Err(_) => return Err(RetainedScanError::Unsafe),
                 };
-                total = checked_retained_total(total, metadata.len())?;
+                total = checked_retained_total(total, metadata.len())
+                    .map_err(|_| RetainedScanError::Unsafe)?;
             } else {
-                return Err(RuntimeError::State);
+                return Err(RetainedScanError::Unsafe);
             }
         }
     }
@@ -1681,12 +1716,22 @@ fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
 fn retained_directory_entries(
     root: &Path,
     directory: &Path,
-) -> Result<Option<fs::ReadDir>, RuntimeError> {
+) -> Result<Option<fs::ReadDir>, RetainedScanError> {
     match fs::read_dir(directory) {
         Ok(entries) => Ok(Some(entries)),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound && directory != root => Ok(None),
-        Err(_) => Err(RuntimeError::State),
+        Err(error) if directory != root && transient_scan_error(&error) => {
+            Err(RetainedScanError::Transient)
+        }
+        Err(_) => Err(RetainedScanError::Unsafe),
     }
+}
+
+fn transient_scan_error(error: &std::io::Error) -> bool {
+    matches!(
+        error.kind(),
+        std::io::ErrorKind::Interrupted | std::io::ErrorKind::NotADirectory
+    )
 }
 
 fn checked_retained_total(total: u64, next: u64) -> Result<u64, RuntimeError> {
@@ -2687,8 +2732,27 @@ mod tests {
         let missing_root = root.join("missing-root");
         assert_eq!(
             retained_directory_entries(&missing_root, &missing_root).err(),
-            Some(RuntimeError::State)
+            Some(RetainedScanError::Unsafe)
         );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn retained_state_scan_restarts_after_directory_replacement_race() {
+        let root = root("retained-directory-replacement");
+        let child = root.join("child");
+        fs::create_dir_all(&child).unwrap();
+        fs::write(child.join("temporary"), b"temporary").unwrap();
+        let mut replaced = false;
+        let first = retained_tree_bytes_once(&root, |directory| {
+            if directory == child && !replaced {
+                fs::remove_dir_all(&child).unwrap();
+                fs::write(&child, b"replacement").unwrap();
+                replaced = true;
+            }
+        });
+        assert_eq!(first, Err(RetainedScanError::Transient));
+        assert_eq!(retained_tree_bytes(&root).unwrap(), 11);
         fs::remove_dir_all(root).unwrap();
     }
 
