@@ -24,6 +24,8 @@ SPEC.loader.exec_module(QUALIFY)
 
 class LiveQualificationTests(unittest.TestCase):
     def qualification_fixture(self, root: Path) -> tuple[list[str], bytes]:
+        target = root / "target"
+        target.mkdir()
         binary = root / "codingmage"
         binary.write_text("#!/bin/sh\n", encoding="utf-8")
         binary.chmod(0o700)
@@ -33,7 +35,7 @@ class LiveQualificationTests(unittest.TestCase):
         campaign.write_text(
             '\n'.join(
                 (
-                    f'repository_path = "{root}"',
+                    f'repository_path = "{target}"',
                     f'initial_commit = "{"a" * 40}"',
                     "max_parallel_pods = 1",
                     "max_units = 10",
@@ -231,6 +233,23 @@ class LiveQualificationTests(unittest.TestCase):
                         self.assertEqual(QUALIFY.main(invocation), 2)
                     self.assertEqual(run.call_count, 2)
                     self.assertIn(message, stderr.getvalue())
+
+    def test_main_refuses_report_path_inside_target_before_process_access(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            arguments, _ = self.qualification_fixture(root)
+            report_index = arguments.index("--preflight-report") + 1
+            arguments[report_index] = str(root / "target" / "preflight.json")
+            stderr = io.StringIO()
+            with (
+                mock.patch.dict(os.environ, {}, clear=True),
+                mock.patch.object(QUALIFY, "verify_repository"),
+                mock.patch("subprocess.run") as run,
+                mock.patch("sys.stderr", stderr),
+            ):
+                self.assertEqual(QUALIFY.main(arguments), 2)
+            run.assert_not_called()
+            self.assertIn("cannot be stored in the target repository", stderr.getvalue())
 
 
 def subprocess_result(returncode: int, *, stdout: bytes = b"") -> object:

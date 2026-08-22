@@ -934,6 +934,11 @@ pub fn campaign_preflight(
     let inventory = inventory_repository(&authorization).map_err(|_| RuntimeError::Repository)?;
     let configured_target =
         fs::canonicalize(&config.target_path).map_err(|_| RuntimeError::Authority)?;
+    let authorization_path =
+        fs::canonicalize(authorization_record).map_err(|_| RuntimeError::Authority)?;
+    if authorization_path.starts_with(&configured_target) {
+        return Err(RuntimeError::Authority);
+    }
     let branch = inventory.branch.as_deref().ok_or(RuntimeError::Authority)?;
     let dedicated_branch = branch != config.default_branch
         && !spec

@@ -157,6 +157,18 @@ def main(arguments: list[str] | None = None) -> int:
         authorization = absolute_file(args.authorization, "operator authorization")
         document = load_campaign(campaign)
         repository, initial_commit = validate_campaign(document, args.mode)
+        report = Path(args.preflight_report)
+        if (
+            not report.is_absolute()
+            or not report.parent.is_dir()
+            or report.parent.is_symlink()
+            or report.is_symlink()
+        ):
+            raise QualificationError("invalid preflight report path")
+        resolved_report = report.parent.resolve(strict=True) / report.name
+        resolved_repository = repository.resolve(strict=True)
+        if resolved_report == resolved_repository or resolved_repository in resolved_report.parents:
+            raise QualificationError("preflight report cannot be stored in the target repository")
         verify_repository(repository, initial_commit)
         commands = qualification_commands(binary, config, campaign, authorization)
         doctor = subprocess.run(commands[0], check=False, timeout=args.max_runtime_seconds)
@@ -177,9 +189,6 @@ def main(arguments: list[str] | None = None) -> int:
             or parsed.get("source_free") is not True
         ):
             raise QualificationError("campaign preflight report is invalid")
-        report = Path(args.preflight_report)
-        if not report.is_absolute() or not report.parent.is_dir() or report.is_symlink():
-            raise QualificationError("invalid preflight report path")
         if report.exists():
             if not report.is_file() or report.read_bytes() != preflight.stdout:
                 raise QualificationError("preflight report differs from reviewed evidence")
