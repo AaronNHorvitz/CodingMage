@@ -1,0 +1,752 @@
+//! Exact, restart-safe task publication and CI routing.
+
+use std::path::PathBuf;
+
+use codingmage_campaign::{
+    CampaignSpec, CampaignTaskState, TaskPublicationMode, TeamCampaignSnapshot,
+};
+use codingmage_plan::TaskPlan;
+
+use crate::RuntimeError;
+
+/// Immutable authority supplied to one task publication adapter.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TaskPublicationRequest {
+    /// Exact campaign identity.
+    pub campaign_id: String,
+    /// Exact canonical task identity.
+    pub task_id: String,
+    /// Exact assigned pod identity.
+    pub pod_id: String,
+    /// Existing issue identity, when already bound.
+    pub issue_number: Option<u64>,
+    /// Existing pull-request identity, when already bound.
+    pub pull_request_number: Option<u64>,
+    /// Exact task branch.
+    pub task_branch: String,
+    /// Exact campaign integration branch.
+    pub campaign_branch: String,
+    /// Immutable reviewed task commit.
+    pub reviewed_commit: String,
+    /// Exact repository-relative write authority.
+    pub owned_paths: Vec<PathBuf>,
+    /// Ordered task dependencies.
+    pub dependencies: Vec<String>,
+    /// Required deterministic gate tiers.
+    pub gate_tiers: Vec<String>,
+    /// Deterministic gate evidence digests.
+    pub gate_evidence_sha256: Vec<String>,
+    /// Independent review evidence digests.
+    pub review_evidence_sha256: Vec<String>,
+}
+
+impl TaskPublicationRequest {
+    fn verify(&self, spec: &CampaignSpec) -> Result<(), TeamPublicationError> {
+        if self.campaign_id != spec.campaign_id
+            || self.task_id.is_empty()
+            || self.pod_id.is_empty()
+            || self.issue_number == Some(0)
+            || self.pull_request_number == Some(0)
+            || self.pull_request_number.is_some() && self.issue_number.is_none()
+            || self.task_branch.is_empty()
+            || self.task_branch == self.campaign_branch
+            || self.campaign_branch != spec.campaign_branch
+            || !valid_commit(&self.reviewed_commit)
+            || self.owned_paths.is_empty()
+            || self.gate_tiers.is_empty()
+            || self.gate_evidence_sha256.is_empty()
+            || self.review_evidence_sha256.is_empty()
+            || self
+                .gate_evidence_sha256
+                .iter()
+                .chain(&self.review_evidence_sha256)
+                .any(|value| !valid_sha256(value))
+        {
+            return Err(TeamPublicationError::Authority);
+        }
+        Ok(())
+    }
+}
+
+/// One exact remote issue observation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssueObservation {
+    /// Exact issue number.
+    pub number: u64,
+    /// Integrity digest of the reconciled remote observation.
+    pub evidence_sha256: String,
+}
+
+/// One exact remote branch observation after an idempotent push.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PushObservation {
+    /// Exact task branch.
+    pub branch: String,
+    /// Exact commit observed at the remote branch.
+    pub commit: String,
+    /// Integrity digest of the reconciled remote observation.
+    pub evidence_sha256: String,
+}
+
+/// One exact draft task pull-request observation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PullRequestObservation {
+    /// Exact pull-request number.
+    pub number: u64,
+    /// Exact task pull-request base.
+    pub base_branch: String,
+    /// Exact task pull-request head.
+    pub head_branch: String,
+    /// Exact reviewed commit observed remotely.
+    pub head_commit: String,
+    /// Integrity digest of the reconciled remote observation.
+    pub evidence_sha256: String,
+}
+
+/// Commit-bound aggregate CI observation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum CiObservation {
+    /// At least one required check is not terminal.
+    Pending,
+    /// Every required check passed for the exact reviewed commit.
+    Passed {
+        /// Exact checked commit.
+        commit: String,
+        /// Integrity digest of the complete check observation.
+        evidence_sha256: String,
+    },
+    /// At least one required check failed for the exact reviewed commit.
+    Failed {
+        /// Exact checked commit.
+        commit: String,
+        /// Integrity digest of the complete check observation.
+        evidence_sha256: String,
+    },
+}
+
+/// Narrow side-effect port owned by the deterministic coordinator.
+pub trait TeamPublicationPort {
+    /// Creates or updates the one exact task issue and reconciles uncertain completion.
+    ///
+    /// # Errors
+    ///
+    /// Returns a content-free authority, identity, transport, or reconciliation failure.
+    fn ensure_issue(
+        &mut self,
+        request: &TaskPublicationRequest,
+    ) -> Result<IssueObservation, TeamPublicationError>;
+
+    /// Pushes only the exact reviewed commit to the exact task branch and reobserves its head.
+    ///
+    /// # Errors
+    ///
+    /// Returns a content-free authority, identity, transport, or reconciliation failure.
+    fn ensure_reviewed_branch(
+        &mut self,
+        request: &TaskPublicationRequest,
+    ) -> Result<PushObservation, TeamPublicationError>;
+
+    /// Creates or updates the one exact draft task pull request.
+    ///
+    /// # Errors
+    ///
+    /// Returns a content-free authority, identity, transport, or reconciliation failure.
+    fn ensure_pull_request(
+        &mut self,
+        request: &TaskPublicationRequest,
+    ) -> Result<PullRequestObservation, TeamPublicationError>;
+
+    /// Reads configured checks for the exact pull request and reviewed commit without mutation.
+    ///
+    /// # Errors
+    ///
+    /// Returns a content-free authority, identity, transport, or response failure.
+    fn observe_ci(
+        &mut self,
+        request: &TaskPublicationRequest,
+    ) -> Result<CiObservation, TeamPublicationError>;
+}
+
+/// Terminal result from one restart-safe publication step.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TeamPublicationOutcome {
+    /// Remote checks remain pending; no integration authority exists.
+    WaitingForCi,
+    /// Exact reviewed commit has passed remote checks and may enter the integration queue.
+    ReadyForIntegration,
+    /// Failing remote checks returned only this task to its correction lineage.
+    CorrectionRequired,
+}
+
+/// Stable content-free publication failure.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TeamPublicationError {
+    /// Campaign or task publication authority was malformed or stale.
+    Authority,
+    /// A remote object identity contradicted durable local state.
+    Identity,
+    /// A remote effect remains uncertain after reconciliation.
+    Uncertain,
+    /// Durable state could not be advanced exactly.
+    State,
+}
+
+impl TeamPublicationError {
+    /// Stable diagnostic code.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::Authority => "codingmage.team.publication.authority",
+            Self::Identity => "codingmage.team.publication.identity",
+            Self::Uncertain => "codingmage.team.publication.uncertain",
+            Self::State => "codingmage.team.publication.state",
+        }
+    }
+}
+
+impl std::fmt::Display for TeamPublicationError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.code())
+    }
+}
+
+impl std::error::Error for TeamPublicationError {}
+
+/// Reconciles one task's issue, branch, pull request, and CI state without duplicate effects.
+///
+/// # Errors
+///
+/// Returns a content-free authority, identity, uncertainty, or durable-state failure. The caller
+/// must retain the snapshot and retry only through this same reconciliation operation.
+#[allow(clippy::too_many_lines)]
+pub fn synchronize_task_publication<T, P>(
+    spec: &CampaignSpec,
+    plan: &TaskPlan,
+    snapshot: &mut TeamCampaignSnapshot,
+    task_id: &str,
+    port: &mut T,
+    mut persist: P,
+) -> Result<TeamPublicationOutcome, TeamPublicationError>
+where
+    T: TeamPublicationPort,
+    P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
+{
+    spec.verify().map_err(|_| TeamPublicationError::Authority)?;
+    snapshot.verify().map_err(|_| TeamPublicationError::State)?;
+    let policy = spec
+        .multi_agent
+        .as_ref()
+        .ok_or(TeamPublicationError::Authority)?;
+    if policy.publication_mode != TaskPublicationMode::PerTaskDraftPullRequest
+        || policy.github.is_none()
+        || snapshot.campaign_id != spec.campaign_id
+    {
+        return Err(TeamPublicationError::Authority);
+    }
+    if snapshot.tasks.get(task_id).is_some_and(|record| {
+        record.state == CampaignTaskState::CiWaiting && !record.ci_evidence_sha256.is_empty()
+    }) {
+        return Ok(TeamPublicationOutcome::ReadyForIntegration);
+    }
+
+    let mut request = publication_request(spec, plan, snapshot, task_id)?;
+    let issue = port.ensure_issue(&request)?;
+    if issue.number == 0
+        || !valid_sha256(&issue.evidence_sha256)
+        || request
+            .issue_number
+            .is_some_and(|expected| expected != issue.number)
+    {
+        return Err(TeamPublicationError::Identity);
+    }
+    if request.issue_number.is_none() {
+        snapshot
+            .tasks
+            .get_mut(task_id)
+            .ok_or(TeamPublicationError::State)?
+            .bind_issue_number(issue.number, issue.evidence_sha256)
+            .map_err(|_| TeamPublicationError::State)?;
+        persist(snapshot).map_err(|_| TeamPublicationError::State)?;
+        request = publication_request(spec, plan, snapshot, task_id)?;
+    }
+
+    let pushed = port.ensure_reviewed_branch(&request)?;
+    if pushed.branch != request.task_branch
+        || pushed.commit != request.reviewed_commit
+        || !valid_sha256(&pushed.evidence_sha256)
+    {
+        return Err(TeamPublicationError::Identity);
+    }
+    let pull_request = port.ensure_pull_request(&request)?;
+    if pull_request.number == 0
+        || pull_request.base_branch != request.campaign_branch
+        || pull_request.head_branch != request.task_branch
+        || pull_request.head_commit != request.reviewed_commit
+        || !valid_sha256(&pull_request.evidence_sha256)
+        || request
+            .pull_request_number
+            .is_some_and(|expected| expected != pull_request.number)
+    {
+        return Err(TeamPublicationError::Identity);
+    }
+    if request.pull_request_number.is_none() {
+        snapshot
+            .tasks
+            .get_mut(task_id)
+            .ok_or(TeamPublicationError::State)?
+            .bind_pull_request_number(pull_request.number, pull_request.evidence_sha256)
+            .map_err(|_| TeamPublicationError::State)?;
+        persist(snapshot).map_err(|_| TeamPublicationError::State)?;
+        request = publication_request(spec, plan, snapshot, task_id)?;
+        let updated_issue = port.ensure_issue(&request)?;
+        if updated_issue.number != issue.number || !valid_sha256(&updated_issue.evidence_sha256) {
+            return Err(TeamPublicationError::Identity);
+        }
+    }
+    if snapshot.tasks[task_id].state == CampaignTaskState::PullRequestOpen {
+        let evidence = digest(&format!(
+            "{}\0{}\0ci-waiting",
+            request.task_id, request.reviewed_commit
+        ));
+        snapshot
+            .tasks
+            .get_mut(task_id)
+            .ok_or(TeamPublicationError::State)?
+            .begin_ci_waiting(evidence)
+            .map_err(|_| TeamPublicationError::State)?;
+        persist(snapshot).map_err(|_| TeamPublicationError::State)?;
+    }
+    match port.observe_ci(&request)? {
+        CiObservation::Pending => Ok(TeamPublicationOutcome::WaitingForCi),
+        CiObservation::Passed {
+            commit,
+            evidence_sha256,
+        } => {
+            validate_ci(&request, &commit, &evidence_sha256)?;
+            snapshot
+                .tasks
+                .get_mut(task_id)
+                .ok_or(TeamPublicationError::State)?
+                .record_ci_pass(&commit, evidence_sha256)
+                .map_err(|_| TeamPublicationError::State)?;
+            persist(snapshot).map_err(|_| TeamPublicationError::State)?;
+            Ok(TeamPublicationOutcome::ReadyForIntegration)
+        }
+        CiObservation::Failed {
+            commit,
+            evidence_sha256,
+        } => {
+            validate_ci(&request, &commit, &evidence_sha256)?;
+            snapshot
+                .tasks
+                .get_mut(task_id)
+                .ok_or(TeamPublicationError::State)?
+                .record_ci_failure(&commit, evidence_sha256)
+                .map_err(|_| TeamPublicationError::State)?;
+            persist(snapshot).map_err(|_| TeamPublicationError::State)?;
+            Ok(TeamPublicationOutcome::CorrectionRequired)
+        }
+    }
+}
+
+fn publication_request(
+    spec: &CampaignSpec,
+    plan: &TaskPlan,
+    snapshot: &TeamCampaignSnapshot,
+    task_id: &str,
+) -> Result<TaskPublicationRequest, TeamPublicationError> {
+    let record = snapshot
+        .tasks
+        .get(task_id)
+        .ok_or(TeamPublicationError::State)?;
+    if !matches!(
+        record.state,
+        CampaignTaskState::PublicationReady
+            | CampaignTaskState::PullRequestOpen
+            | CampaignTaskState::CiWaiting
+    ) {
+        return Err(TeamPublicationError::State);
+    }
+    let selected = plan
+        .select_exact(task_id)
+        .map_err(|_| TeamPublicationError::Authority)?;
+    let request = TaskPublicationRequest {
+        campaign_id: spec.campaign_id.clone(),
+        task_id: task_id.to_owned(),
+        pod_id: record.pod_id.clone().ok_or(TeamPublicationError::State)?,
+        issue_number: record.issue_number,
+        pull_request_number: record.pull_request_number,
+        task_branch: record.branch.clone().ok_or(TeamPublicationError::State)?,
+        campaign_branch: spec.campaign_branch.clone(),
+        reviewed_commit: record
+            .reviewed_commit
+            .clone()
+            .ok_or(TeamPublicationError::State)?,
+        owned_paths: record.owned_paths.clone(),
+        dependencies: selected.item.dependencies.clone(),
+        gate_tiers: spec
+            .gate_tiers
+            .iter()
+            .map(|tier| tier.name.clone())
+            .collect(),
+        gate_evidence_sha256: record.gate_evidence_sha256.clone(),
+        review_evidence_sha256: record.review_evidence_sha256.clone(),
+    };
+    request.verify(spec)?;
+    Ok(request)
+}
+
+fn validate_ci(
+    request: &TaskPublicationRequest,
+    commit: &str,
+    evidence_sha256: &str,
+) -> Result<(), TeamPublicationError> {
+    if commit != request.reviewed_commit || !valid_sha256(evidence_sha256) {
+        return Err(TeamPublicationError::Identity);
+    }
+    Ok(())
+}
+
+fn valid_commit(value: &str) -> bool {
+    matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn valid_sha256(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn digest(value: &str) -> String {
+    use sha2::Digest as _;
+    let bytes = sha2::Sha256::digest(value.as_bytes());
+    let mut output = String::with_capacity(64);
+    for byte in bytes {
+        use std::fmt::Write as _;
+        let _ = write!(output, "{byte:02x}");
+    }
+    output
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::VecDeque;
+
+    use codingmage_campaign::{
+        AdmissionDecision, CampaignAuthentication, CampaignConcurrency, CampaignGateTier,
+        CampaignLimits, CampaignProvider, CampaignPublication, CampaignTaskTransition,
+        DestinationPromotionPolicy, DurablePodScheduler, GitHubCampaignPolicy, MultiAgentPolicy,
+        PodProposal, PodRisk, TaskIntegrationPolicy, TaskMergeStrategy, TeamResourcePolicy,
+    };
+    use codingmage_plan::TaskPlan;
+
+    use super::*;
+    use crate::initialize_team_campaign;
+
+    const TASK_ID: &str = "24.2.1.1";
+    const TASKS: &str = "# Tasks\n\n## Sprint 24 - Publication\n\n**Sprint goal:** Publish safely.\n\n### Story 24.2 - Visibility\n\n- [ ] **Task 24.2.1 - Publish task work**\n  - [ ] **Sub-task 24.2.1.1:** Publish one exact task issue and pull request.\n";
+
+    #[derive(Default)]
+    struct FakePublicationPort {
+        issue: Option<u64>,
+        pull_request: Option<u64>,
+        branch_commit: Option<String>,
+        ci: VecDeque<CiObservation>,
+        uncertain_issue_once: bool,
+        issue_creations: usize,
+        pull_request_creations: usize,
+        calls: usize,
+    }
+
+    impl TeamPublicationPort for FakePublicationPort {
+        fn ensure_issue(
+            &mut self,
+            request: &TaskPublicationRequest,
+        ) -> Result<IssueObservation, TeamPublicationError> {
+            self.calls = self.calls.saturating_add(1);
+            let number = *self.issue.get_or_insert_with(|| {
+                self.issue_creations = self.issue_creations.saturating_add(1);
+                41
+            });
+            if request.issue_number.is_some_and(|value| value != number) {
+                return Err(TeamPublicationError::Identity);
+            }
+            if self.uncertain_issue_once {
+                self.uncertain_issue_once = false;
+                return Err(TeamPublicationError::Uncertain);
+            }
+            Ok(IssueObservation {
+                number,
+                evidence_sha256: "1".repeat(64),
+            })
+        }
+
+        fn ensure_reviewed_branch(
+            &mut self,
+            request: &TaskPublicationRequest,
+        ) -> Result<PushObservation, TeamPublicationError> {
+            self.calls = self.calls.saturating_add(1);
+            if self
+                .branch_commit
+                .as_ref()
+                .is_some_and(|commit| commit != &request.reviewed_commit)
+            {
+                return Err(TeamPublicationError::Identity);
+            }
+            self.branch_commit = Some(request.reviewed_commit.clone());
+            Ok(PushObservation {
+                branch: request.task_branch.clone(),
+                commit: request.reviewed_commit.clone(),
+                evidence_sha256: "2".repeat(64),
+            })
+        }
+
+        fn ensure_pull_request(
+            &mut self,
+            request: &TaskPublicationRequest,
+        ) -> Result<PullRequestObservation, TeamPublicationError> {
+            self.calls = self.calls.saturating_add(1);
+            let number = *self.pull_request.get_or_insert_with(|| {
+                self.pull_request_creations = self.pull_request_creations.saturating_add(1);
+                57
+            });
+            if request
+                .pull_request_number
+                .is_some_and(|value| value != number)
+            {
+                return Err(TeamPublicationError::Identity);
+            }
+            Ok(PullRequestObservation {
+                number,
+                base_branch: request.campaign_branch.clone(),
+                head_branch: request.task_branch.clone(),
+                head_commit: request.reviewed_commit.clone(),
+                evidence_sha256: "3".repeat(64),
+            })
+        }
+
+        fn observe_ci(
+            &mut self,
+            _: &TaskPublicationRequest,
+        ) -> Result<CiObservation, TeamPublicationError> {
+            self.calls = self.calls.saturating_add(1);
+            Ok(self.ci.pop_front().unwrap_or(CiObservation::Pending))
+        }
+    }
+
+    #[test]
+    fn publication_reconciles_uncertain_issue_and_never_duplicates_remote_objects() {
+        let (spec, plan, mut snapshot) = fixture();
+        let reviewed = snapshot.tasks[TASK_ID].reviewed_commit.clone().unwrap();
+        let mut port = FakePublicationPort {
+            uncertain_issue_once: true,
+            ci: VecDeque::from([
+                CiObservation::Pending,
+                CiObservation::Passed {
+                    commit: reviewed,
+                    evidence_sha256: "7".repeat(64),
+                },
+            ]),
+            ..FakePublicationPort::default()
+        };
+        assert_eq!(
+            synchronize_task_publication(&spec, &plan, &mut snapshot, TASK_ID, &mut port, |_| {
+                Ok(())
+            }),
+            Err(TeamPublicationError::Uncertain)
+        );
+        assert_eq!(port.issue_creations, 1);
+        assert_eq!(snapshot.tasks[TASK_ID].issue_number, None);
+
+        assert_eq!(
+            synchronize_task_publication(&spec, &plan, &mut snapshot, TASK_ID, &mut port, |_| {
+                Ok(())
+            })
+            .unwrap(),
+            TeamPublicationOutcome::WaitingForCi
+        );
+        assert_eq!(snapshot.tasks[TASK_ID].issue_number, Some(41));
+        assert_eq!(snapshot.tasks[TASK_ID].pull_request_number, Some(57));
+        assert_eq!(snapshot.tasks[TASK_ID].state, CampaignTaskState::CiWaiting);
+
+        assert_eq!(
+            synchronize_task_publication(&spec, &plan, &mut snapshot, TASK_ID, &mut port, |_| {
+                Ok(())
+            })
+            .unwrap(),
+            TeamPublicationOutcome::ReadyForIntegration
+        );
+        let calls_after_pass = port.calls;
+        assert_eq!(port.issue_creations, 1);
+        assert_eq!(port.pull_request_creations, 1);
+        assert_eq!(
+            snapshot.tasks[TASK_ID].ci_evidence_sha256,
+            vec!["7".repeat(64)]
+        );
+        assert_eq!(
+            synchronize_task_publication(&spec, &plan, &mut snapshot, TASK_ID, &mut port, |_| {
+                Ok(())
+            })
+            .unwrap(),
+            TeamPublicationOutcome::ReadyForIntegration
+        );
+        assert_eq!(port.calls, calls_after_pass);
+    }
+
+    #[test]
+    fn failing_ci_returns_only_the_exact_task_to_correction() {
+        let (spec, plan, mut snapshot) = fixture();
+        let reviewed = snapshot.tasks[TASK_ID].reviewed_commit.clone().unwrap();
+        let mut port = FakePublicationPort {
+            ci: VecDeque::from([CiObservation::Failed {
+                commit: reviewed,
+                evidence_sha256: "8".repeat(64),
+            }]),
+            ..FakePublicationPort::default()
+        };
+        assert_eq!(
+            synchronize_task_publication(&spec, &plan, &mut snapshot, TASK_ID, &mut port, |_| {
+                Ok(())
+            })
+            .unwrap(),
+            TeamPublicationOutcome::CorrectionRequired
+        );
+        assert_eq!(snapshot.tasks[TASK_ID].state, CampaignTaskState::Correcting);
+        assert_eq!(snapshot.tasks[TASK_ID].reviewed_commit, None);
+        assert_eq!(snapshot.tasks[TASK_ID].correction_sessions.len(), 0);
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn fixture() -> (CampaignSpec, TaskPlan, TeamCampaignSnapshot) {
+        let plan = TaskPlan::parse(TASKS.as_bytes()).unwrap();
+        let provider = |name: &str| CampaignProvider {
+            executable: PathBuf::from(format!("/usr/bin/{name}")),
+            model: "fixture".to_owned(),
+            effort: "high".to_owned(),
+        };
+        let spec = CampaignSpec {
+            version: 3,
+            campaign_id: "publication-fixture".to_owned(),
+            repository_id: "repo-publication".to_owned(),
+            repository_path: PathBuf::from("/tmp/publication-fixture"),
+            initial_commit: "a".repeat(40),
+            task_source_sha256: plan.source_sha256.clone(),
+            operator_authorization_sha256: "b".repeat(64),
+            max_parallel_pods: 1,
+            max_units: 1,
+            limits: CampaignLimits {
+                provider_attempts: 100,
+                malformed_report_repairs: 10,
+                correction_rounds: 10,
+                process_invocations: 1_000,
+                output_bytes: 1_000_000,
+                retained_state_bytes: 1_000_000,
+                execution_elapsed_ms: 1_000_000,
+            },
+            team_lead: provider("codex"),
+            implementer: provider("claude"),
+            implementer_authentication: CampaignAuthentication::Bare,
+            reviewer: provider("codex"),
+            gate_tiers: vec![CampaignGateTier {
+                name: "focused".to_owned(),
+                profiles: vec!["workspace".to_owned()],
+            }],
+            campaign_branch: "codingmage/publication-fixture".to_owned(),
+            allowed_paths: vec![PathBuf::from("src")],
+            denied_paths: Vec::new(),
+            protected_branches: vec!["main".to_owned()],
+            publication: CampaignPublication::DraftStoryPullRequests,
+            multi_agent: Some(MultiAgentPolicy {
+                version: 1,
+                execution_mode: codingmage_campaign::CampaignExecutionMode::Parallel,
+                publication_mode: TaskPublicationMode::PerTaskDraftPullRequest,
+                task_integration_policy: TaskIntegrationPolicy::AutoToCampaignBranch,
+                destination_promotion_policy: DestinationPromotionPolicy::HumanRequired,
+                task_merge_strategy: TaskMergeStrategy::Squash,
+                github: Some(GitHubCampaignPolicy {
+                    cli_executable: PathBuf::from("/usr/bin/gh"),
+                    account: "fixture-user".to_owned(),
+                    host: "github.com".to_owned(),
+                    owner: "fixture-owner".to_owned(),
+                    repository: "fixture-repository".to_owned(),
+                    remote: "origin".to_owned(),
+                    destination_branch: "main".to_owned(),
+                    required_checks: vec!["workspace".to_owned()],
+                }),
+                concurrency: CampaignConcurrency::default(),
+                resources: TeamResourcePolicy::default(),
+                max_campaign_tokens: 1_000_000,
+                max_task_tokens: 100_000,
+                max_task_correction_cycles: 3,
+                max_follow_up_tasks: 0,
+            }),
+        };
+        let mut snapshot = initialize_team_campaign(&spec, &plan).unwrap();
+        let proposal = PodProposal::seal(
+            PodProposal {
+                version: 3,
+                task_id: TASK_ID.to_owned(),
+                task_source_sha256: plan.source_sha256.clone(),
+                owned_paths: vec![PathBuf::from("src")],
+                dependencies: Vec::new(),
+                gate_tiers: vec!["focused".to_owned()],
+                test_resources: vec!["workspace".to_owned()],
+                expected_artifacts: vec![PathBuf::from("src")],
+                risk: PodRisk::Routine,
+                rationale_summary: "bounded fixture".to_owned(),
+                proposal_sha256: "0".repeat(64),
+            },
+            &spec,
+        )
+        .unwrap();
+        let mut scheduler = DurablePodScheduler::from_snapshot(snapshot.scheduler.clone()).unwrap();
+        let generation = scheduler.begin_generation(&[TASK_ID.to_owned()]).unwrap();
+        snapshot.generation = generation;
+        let record = snapshot.tasks.get_mut(TASK_ID).unwrap();
+        record.propose(generation, "1".repeat(64)).unwrap();
+        let AdmissionDecision::Admitted(lease) = scheduler
+            .admit(&spec, generation, &snapshot.campaign_head, &proposal)
+            .unwrap()
+        else {
+            panic!("fixture task must be admitted");
+        };
+        record.bind_lease(&lease, "2".repeat(64)).unwrap();
+        record
+            .bind_run("run-publication".to_owned(), "3".repeat(64))
+            .unwrap();
+        record
+            .bind_worktree(
+                "worktree-publication".to_owned(),
+                "codingmage/publication-task".to_owned(),
+                "4".repeat(64),
+            )
+            .unwrap();
+        record.candidate_commit = Some("c".repeat(40));
+        transition(record, CampaignTaskState::LocalGates, "5");
+        record.gate_evidence_sha256.push("6".repeat(64));
+        transition(record, CampaignTaskState::Reviewing, "7");
+        record.reviewed_commit = Some("c".repeat(40));
+        record.review_sessions.push("review-publication".to_owned());
+        record.review_evidence_sha256.push("8".repeat(64));
+        transition(record, CampaignTaskState::PublicationReady, "9");
+        snapshot.scheduler = scheduler.snapshot().clone();
+        snapshot.verify().unwrap();
+        (spec, plan, snapshot)
+    }
+
+    fn transition(
+        record: &mut codingmage_campaign::CampaignTaskRecord,
+        to: CampaignTaskState,
+        digit: &str,
+    ) {
+        record
+            .transition(&CampaignTaskTransition {
+                sequence: record.next_transition,
+                campaign_id: record.campaign_id.clone(),
+                task_id: record.task_id.clone(),
+                generation: record.generation,
+                from: record.state,
+                to,
+                evidence_sha256: digit.repeat(64),
+            })
+            .unwrap();
+    }
+}

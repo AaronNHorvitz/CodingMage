@@ -6,6 +6,7 @@ mod team_campaign;
 mod team_control;
 mod team_integration;
 mod team_planning;
+mod team_publication;
 mod team_runtime;
 mod team_state;
 
@@ -21,6 +22,11 @@ pub use team_integration::{
 pub use team_planning::{
     TeamPlanningOutcome, admit_team_lead_report, build_team_lead_binding, initialize_team_campaign,
     refresh_team_readiness,
+};
+pub use team_publication::{
+    CiObservation, IssueObservation, PullRequestObservation, PushObservation,
+    TaskPublicationRequest, TeamPublicationError, TeamPublicationOutcome, TeamPublicationPort,
+    synchronize_task_publication,
 };
 pub use team_runtime::{
     ProductionTeamUnitRunner, TeamBatchJob, TeamBatchObservation, TeamBatchOutcome, TeamEventSink,

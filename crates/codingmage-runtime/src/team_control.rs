@@ -805,6 +805,7 @@ mod tests {
                 task_integration_policy: TaskIntegrationPolicy::AutoToCampaignBranch,
                 destination_promotion_policy: DestinationPromotionPolicy::HumanRequired,
                 task_merge_strategy: TaskMergeStrategy::Squash,
+                github: None,
                 concurrency: CampaignConcurrency {
                     claude_implementers: 2,
                     codex_team_leads: 1,

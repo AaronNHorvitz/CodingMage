@@ -23,6 +23,7 @@ const MAX_TASK_RECORDS: usize = 1_000_000;
 const MAX_SESSIONS: usize = 1_024;
 const MAX_RESOURCE_BYTES: u64 = 1 << 50;
 const MAX_ELAPSED_MS: u64 = 365 * 24 * 60 * 60 * 1_000;
+const MAX_GITHUB_CHECKS: usize = 256;
 
 /// Campaign execution shape. Serial mode remains the compatibility default.
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -83,6 +84,54 @@ pub enum TaskMergeStrategy {
     Squash,
     /// Fast-forward only when the reviewed task commit directly descends from the campaign head.
     FastForwardOnly,
+}
+
+/// Exact GitHub endpoint and destination authority for a remotely visible campaign.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct GitHubCampaignPolicy {
+    /// Absolute GitHub CLI executable selected by the operator.
+    pub cli_executable: PathBuf,
+    /// Expected authenticated account.
+    pub account: String,
+    /// Exact GitHub API host.
+    pub host: String,
+    /// Repository owner.
+    pub owner: String,
+    /// Repository name.
+    pub repository: String,
+    /// Exact configured Git remote name.
+    pub remote: String,
+    /// Protected destination branch for the final campaign pull request.
+    pub destination_branch: String,
+    /// Required commit-check names, in deterministic order.
+    #[serde(default)]
+    pub required_checks: Vec<String>,
+}
+
+impl GitHubCampaignPolicy {
+    fn verify(&self, spec: &CampaignSpec) -> Result<(), CampaignError> {
+        if !self.cli_executable.is_absolute()
+            || !valid_component(&self.account)
+            || !valid_host(&self.host)
+            || !valid_component(&self.owner)
+            || !valid_component(&self.repository)
+            || !valid_component(&self.remote)
+            || !valid_branch(&self.destination_branch)
+            || !spec.protected_branches.contains(&self.destination_branch)
+            || self.destination_branch == spec.campaign_branch
+            || self.required_checks.len() > MAX_GITHUB_CHECKS
+            || self
+                .required_checks
+                .iter()
+                .any(|check| !valid_external_name(check))
+            || self.required_checks.iter().collect::<BTreeSet<_>>().len()
+                != self.required_checks.len()
+        {
+            return Err(CampaignError::InvalidAuthority);
+        }
+        Ok(())
+    }
 }
 
 /// Independent actor and worker ceilings for one campaign.
@@ -264,6 +313,9 @@ pub struct MultiAgentPolicy {
     pub destination_promotion_policy: DestinationPromotionPolicy,
     /// Integration commit strategy.
     pub task_merge_strategy: TaskMergeStrategy,
+    /// Exact remote authority, present only when remote publication is enabled.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub github: Option<GitHubCampaignPolicy>,
     /// Independent actor and worker ceilings.
     pub concurrency: CampaignConcurrency,
     /// Coordinator-owned concurrent resource and liveness ceilings.
@@ -287,6 +339,7 @@ impl MultiAgentPolicy {
     pub fn verify(&self, spec: &CampaignSpec) -> Result<(), CampaignError> {
         self.concurrency.verify(spec)?;
         self.resources.verify(&self.concurrency)?;
+        let remote_publication = self.publication_mode != TaskPublicationMode::LocalOnly;
         if self.version != TEAM_POLICY_VERSION
             || self.max_campaign_tokens == 0
             || self.max_campaign_tokens > MAX_PROVIDER_TOKENS
@@ -299,11 +352,27 @@ impl MultiAgentPolicy {
                 && self.concurrency.claude_implementers != 1)
             || (self.publication_mode != TaskPublicationMode::LocalOnly
                 && matches!(spec.publication, super::CampaignPublication::LocalOnly))
+            || remote_publication != self.github.is_some()
+            || self
+                .github
+                .as_ref()
+                .is_some_and(|github| github.verify(spec).is_err())
         {
             return Err(CampaignError::InvalidAuthority);
         }
         Ok(())
     }
+}
+
+fn valid_host(value: &str) -> bool {
+    valid_component(value) && value.contains('.') && !value.starts_with('.')
+}
+
+fn valid_external_name(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 256
+        && !value.chars().any(char::is_control)
+        && !value.contains(['\0', '\n', '\r'])
 }
 
 /// Durable campaign-level lifecycle for one authorized task.
@@ -2684,6 +2753,7 @@ mod tests {
                 task_integration_policy: TaskIntegrationPolicy::AutoToCampaignBranch,
                 destination_promotion_policy: DestinationPromotionPolicy::HumanRequired,
                 task_merge_strategy: TaskMergeStrategy::Squash,
+                github: None,
                 concurrency: CampaignConcurrency {
                     claude_implementers: capacity,
                     codex_team_leads: 1,
@@ -2717,6 +2787,37 @@ mod tests {
             model: "model".to_owned(),
             effort: "high".to_owned(),
         }
+    }
+
+    #[test]
+    fn remote_publication_requires_exact_github_authority() {
+        let mut value = spec(CampaignExecutionMode::Parallel, 2);
+        value.publication = CampaignPublication::DraftStoryPullRequests;
+        let policy = value.multi_agent.as_mut().unwrap();
+        policy.publication_mode = TaskPublicationMode::PerTaskDraftPullRequest;
+        assert_eq!(value.verify(), Err(CampaignError::InvalidAuthority));
+
+        value.multi_agent.as_mut().unwrap().github = Some(GitHubCampaignPolicy {
+            cli_executable: PathBuf::from("/usr/bin/gh"),
+            account: "fixture-user".to_owned(),
+            host: "github.com".to_owned(),
+            owner: "fixture-owner".to_owned(),
+            repository: "fixture-repository".to_owned(),
+            remote: "origin".to_owned(),
+            destination_branch: "main".to_owned(),
+            required_checks: vec!["workspace tests".to_owned()],
+        });
+        value.verify().unwrap();
+
+        value
+            .multi_agent
+            .as_mut()
+            .unwrap()
+            .github
+            .as_mut()
+            .unwrap()
+            .destination_branch = "unprotected".to_owned();
+        assert_eq!(value.verify(), Err(CampaignError::InvalidAuthority));
     }
 
     fn proposal(spec: &CampaignSpec, task: &str, path: &str, resource: &str) -> PodProposal {
