@@ -63,7 +63,7 @@ class LiveQualificationTests(unittest.TestCase):
             str(report),
         ]
         preflight = json.dumps(
-            {"schema_version": 1, "state": "ready", "source_free": True},
+            {"schema_version": 2, "state": "ready", "source_free": True},
             sort_keys=True,
         ).encode("utf-8")
         return arguments, preflight

@@ -688,10 +688,10 @@ pub struct CampaignPreflightControls {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct CampaignPreflightStorage {
-    /// Available bytes at the scratch authority root.
-    pub scratch_available_bytes: u64,
-    /// Available bytes at the state authority root.
-    pub state_available_bytes: u64,
+    /// Whether the scratch authority root meets the configured threshold.
+    pub scratch_sufficient: bool,
+    /// Whether the state authority root meets the configured threshold.
+    pub state_sufficient: bool,
     /// Campaign retained-state ceiling used as the minimum observed threshold.
     pub required_available_bytes: u64,
     /// True when both roots meet the configured retained-state threshold.
@@ -1001,8 +1001,9 @@ pub fn campaign_preflight(
     let scratch_available_bytes = available_bytes(&config.scratch_root)?;
     let state_available_bytes = available_bytes(&config.state_root)?;
     let required_available_bytes = spec.limits.retained_state_bytes;
-    let storage_sufficient = scratch_available_bytes >= required_available_bytes
-        && state_available_bytes >= required_available_bytes;
+    let scratch_sufficient = scratch_available_bytes >= required_available_bytes;
+    let state_sufficient = state_available_bytes >= required_available_bytes;
+    let storage_sufficient = scratch_sufficient && state_sufficient;
     if !storage_sufficient {
         return Err(RuntimeError::State);
     }
@@ -1123,7 +1124,7 @@ pub fn campaign_preflight(
         .collect::<Result<Vec<_>, _>>()?;
     let controls = ["pause", "resume", "stop_after_unit", "cancel"];
     Ok(CampaignPreflightReport {
-        schema_version: 1,
+        schema_version: 2,
         state: "ready".to_owned(),
         authority_sha256,
         operator_authorization_sha256,
@@ -1171,8 +1172,8 @@ pub fn campaign_preflight(
             process_guard_verified: true,
         },
         storage: CampaignPreflightStorage {
-            scratch_available_bytes,
-            state_available_bytes,
+            scratch_sufficient,
+            state_sufficient,
             required_available_bytes,
             sufficient: storage_sufficient,
         },

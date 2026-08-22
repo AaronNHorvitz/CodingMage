@@ -261,7 +261,7 @@ profiles = ["configured-gates"]
         String::from_utf8_lossy(&output.stdout)
     );
     let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(report["state"], "ready");
     assert_eq!(report["source_free"], true);
     assert_eq!(report["repository"]["initial_commit"], initial_head);
@@ -282,6 +282,10 @@ profiles = ["configured-gates"]
     assert_eq!(report["controls"]["operator_control_count"], 4);
     assert_eq!(report["controls"]["process_guard_verified"], true);
     assert_eq!(report["storage"]["sufficient"], true);
+    assert_eq!(report["storage"]["scratch_sufficient"], true);
+    assert_eq!(report["storage"]["state_sufficient"], true);
+    assert!(report["storage"].get("scratch_available_bytes").is_none());
+    assert!(report["storage"].get("state_available_bytes").is_none());
     assert!(!inference_marker.exists());
     assert!(!state.join("campaigns").exists());
     assert_eq!(
@@ -289,6 +293,10 @@ profiles = ["configured-gates"]
         initial_worktrees
     );
     assert_eq!(git_output(&target, &["status", "--porcelain=v1"]), "");
+
+    let repeated = preflight(&config, &campaign, &authorization);
+    assert!(repeated.status.success());
+    assert_eq!(repeated.stdout, output.stdout);
 
     let encoded = String::from_utf8(output.stdout).unwrap();
     for prohibited in [
