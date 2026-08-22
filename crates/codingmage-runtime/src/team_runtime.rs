@@ -5,7 +5,7 @@ use std::{
     panic::{AssertUnwindSafe, catch_unwind},
     path::PathBuf,
     sync::{
-        Arc,
+        Arc, Condvar, Mutex,
         mpsc::{Receiver, RecvTimeoutError, SyncSender, sync_channel},
     },
     thread,
@@ -157,6 +157,7 @@ pub struct ProductionTeamUnitRunner {
     campaign_repository: PathBuf,
     codingmage_binary: PathBuf,
     private_root: PathBuf,
+    actor_permits: ActorPermitPool,
 }
 
 impl ProductionTeamUnitRunner {
@@ -185,12 +186,21 @@ impl ProductionTeamUnitRunner {
         {
             return Err(RuntimeError::Authority);
         }
+        let policy = campaign_spec
+            .multi_agent
+            .as_ref()
+            .ok_or(RuntimeError::Authority)?;
+        let actor_permits = ActorPermitPool::new(
+            usize::from(policy.concurrency.test_workers),
+            usize::from(policy.concurrency.codex_reviewers),
+        )?;
         Ok(Self {
             base_config,
             campaign_spec,
             campaign_repository,
             codingmage_binary,
             private_root,
+            actor_permits,
         })
     }
 
@@ -243,7 +253,20 @@ impl TeamUnitRunner for ProductionTeamUnitRunner {
         let spec = self.run_spec_for(job);
         let progress_sink = events.clone();
         let progress_cancellation = cancellation.clone();
+        let actor_permits = self.actor_permits.clone();
+        let mut actor_permit: Option<(PermitClass, ActorPermit)> = None;
         let mut progress = move |event| {
+            let desired = permit_class(event);
+            if actor_permit.as_ref().map(|value| value.0) != desired {
+                actor_permit = None;
+                if let Some(class) = desired {
+                    let Ok(permit) = actor_permits.acquire(class, &progress_cancellation) else {
+                        progress_cancellation.cancel();
+                        return;
+                    };
+                    actor_permit = Some((class, permit));
+                }
+            }
             if progress_sink.progress(event).is_err() {
                 progress_cancellation.cancel();
             }
@@ -263,6 +286,105 @@ impl TeamUnitRunner for ProductionTeamUnitRunner {
         )?;
         events.heartbeat(task_utilization(&outcome.utilization))?;
         Ok(outcome)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PermitClass {
+    Gate,
+    Reviewer,
+}
+
+fn permit_class(progress: RunProgress) -> Option<PermitClass> {
+    match progress.actor {
+        crate::ProgressActor::LocalGates => Some(PermitClass::Gate),
+        crate::ProgressActor::Codex => Some(PermitClass::Reviewer),
+        crate::ProgressActor::Coordinator
+        | crate::ProgressActor::Claude
+        | crate::ProgressActor::CampaignLead
+        | crate::ProgressActor::IntegrationLead => None,
+    }
+}
+
+#[derive(Clone, Debug)]
+struct ActorPermitPool {
+    gates: Arc<BoundedSemaphore>,
+    reviewers: Arc<BoundedSemaphore>,
+}
+
+impl ActorPermitPool {
+    fn new(gates: usize, reviewers: usize) -> Result<Self, RuntimeError> {
+        if gates == 0 || reviewers == 0 {
+            return Err(RuntimeError::Authority);
+        }
+        Ok(Self {
+            gates: Arc::new(BoundedSemaphore::new(gates)),
+            reviewers: Arc::new(BoundedSemaphore::new(reviewers)),
+        })
+    }
+
+    fn acquire(
+        &self,
+        class: PermitClass,
+        cancellation: &CancellationToken,
+    ) -> Result<ActorPermit, ()> {
+        match class {
+            PermitClass::Gate => BoundedSemaphore::acquire(&self.gates, cancellation),
+            PermitClass::Reviewer => BoundedSemaphore::acquire(&self.reviewers, cancellation),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct BoundedSemaphore {
+    limit: usize,
+    active: Mutex<usize>,
+    changed: Condvar,
+}
+
+impl BoundedSemaphore {
+    const fn new(limit: usize) -> Self {
+        Self {
+            limit,
+            active: Mutex::new(0),
+            changed: Condvar::new(),
+        }
+    }
+
+    fn acquire(semaphore: &Arc<Self>, cancellation: &CancellationToken) -> Result<ActorPermit, ()> {
+        let mut active = semaphore.active.lock().map_err(|_| ())?;
+        while *active >= semaphore.limit {
+            if cancellation.is_cancelled() {
+                return Err(());
+            }
+            let (observed, _) = semaphore
+                .changed
+                .wait_timeout(active, MESSAGE_POLL_INTERVAL)
+                .map_err(|_| ())?;
+            active = observed;
+        }
+        if cancellation.is_cancelled() {
+            return Err(());
+        }
+        *active = active.checked_add(1).ok_or(())?;
+        drop(active);
+        Ok(ActorPermit {
+            semaphore: Arc::clone(semaphore),
+        })
+    }
+}
+
+#[derive(Debug)]
+struct ActorPermit {
+    semaphore: Arc<BoundedSemaphore>,
+}
+
+impl Drop for ActorPermit {
+    fn drop(&mut self) {
+        if let Ok(mut active) = self.semaphore.active.lock() {
+            *active = active.saturating_sub(1);
+            self.semaphore.changed.notify_one();
+        }
     }
 }
 
@@ -1727,5 +1849,40 @@ mod tests {
             ),
             Err(RuntimeError::State)
         );
+    }
+
+    #[test]
+    fn actor_permits_enforce_capacity_and_release_exactly() {
+        let pool = ActorPermitPool::new(1, 1).unwrap();
+        let cancellation = CancellationToken::default();
+        let first = pool.acquire(PermitClass::Gate, &cancellation).unwrap();
+        let waiting_pool = pool.clone();
+        let waiting_cancellation = cancellation.clone();
+        let (sender, receiver) = std::sync::mpsc::channel();
+        let handle = thread::spawn(move || {
+            let acquired = waiting_pool
+                .acquire(PermitClass::Gate, &waiting_cancellation)
+                .is_ok();
+            sender.send(acquired).unwrap();
+        });
+        assert!(receiver.recv_timeout(Duration::from_millis(30)).is_err());
+        drop(first);
+        assert!(receiver.recv_timeout(Duration::from_secs(1)).unwrap());
+        handle.join().unwrap();
+    }
+
+    #[test]
+    fn actor_permit_wait_observes_task_cancellation() {
+        let pool = ActorPermitPool::new(1, 1).unwrap();
+        let cancellation = CancellationToken::default();
+        let _first = pool.acquire(PermitClass::Reviewer, &cancellation).unwrap();
+        let waiting_pool = pool.clone();
+        let waiting_cancellation = cancellation.clone();
+        let handle = thread::spawn(move || {
+            waiting_pool.acquire(PermitClass::Reviewer, &waiting_cancellation)
+        });
+        thread::sleep(Duration::from_millis(30));
+        cancellation.cancel();
+        assert!(handle.join().unwrap().is_err());
     }
 }
