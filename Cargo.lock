@@ -222,6 +222,7 @@ dependencies = [
  "codingmage-core",
  "codingmage-gate",
  "codingmage-git",
+ "codingmage-github",
  "codingmage-orchestrator",
  "codingmage-plan",
  "codingmage-process",

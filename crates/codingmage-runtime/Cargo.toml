@@ -15,6 +15,7 @@ codingmage-contracts.workspace = true
 codingmage-core.workspace = true
 codingmage-gate.workspace = true
 codingmage-git.workspace = true
+codingmage-github.workspace = true
 codingmage-orchestrator.workspace = true
 codingmage-plan.workspace = true
 codingmage-process.workspace = true

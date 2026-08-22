@@ -16,6 +16,8 @@ pub struct TaskPublicationRequest {
     pub campaign_id: String,
     /// Exact canonical task identity.
     pub task_id: String,
+    /// Bounded canonical task title.
+    pub title: String,
     /// Exact assigned pod identity.
     pub pod_id: String,
     /// Existing issue identity, when already bound.
@@ -24,6 +26,8 @@ pub struct TaskPublicationRequest {
     pub pull_request_number: Option<u64>,
     /// Exact task branch.
     pub task_branch: String,
+    /// Current closed task-state identifier.
+    pub state: String,
     /// Exact campaign integration branch.
     pub campaign_branch: String,
     /// Immutable reviewed task commit.
@@ -38,17 +42,23 @@ pub struct TaskPublicationRequest {
     pub gate_evidence_sha256: Vec<String>,
     /// Independent review evidence digests.
     pub review_evidence_sha256: Vec<String>,
+    /// Ordered Claude correction-session identities.
+    pub correction_sessions: Vec<String>,
 }
 
 impl TaskPublicationRequest {
     fn verify(&self, spec: &CampaignSpec) -> Result<(), TeamPublicationError> {
         if self.campaign_id != spec.campaign_id
             || self.task_id.is_empty()
+            || self.title.is_empty()
+            || self.title.len() > 512
+            || self.title.contains(['\0', '\n', '\r'])
             || self.pod_id.is_empty()
             || self.issue_number == Some(0)
             || self.pull_request_number == Some(0)
             || self.pull_request_number.is_some() && self.issue_number.is_none()
             || self.task_branch.is_empty()
+            || self.state.is_empty()
             || self.task_branch == self.campaign_branch
             || self.campaign_branch != spec.campaign_branch
             || !valid_commit(&self.reviewed_commit)
@@ -373,10 +383,12 @@ fn publication_request(
     let request = TaskPublicationRequest {
         campaign_id: spec.campaign_id.clone(),
         task_id: task_id.to_owned(),
+        title: selected.item.title.clone(),
         pod_id: record.pod_id.clone().ok_or(TeamPublicationError::State)?,
         issue_number: record.issue_number,
         pull_request_number: record.pull_request_number,
         task_branch: record.branch.clone().ok_or(TeamPublicationError::State)?,
+        state: task_state_code(record.state).to_owned(),
         campaign_branch: spec.campaign_branch.clone(),
         reviewed_commit: record
             .reviewed_commit
@@ -391,6 +403,7 @@ fn publication_request(
             .collect(),
         gate_evidence_sha256: record.gate_evidence_sha256.clone(),
         review_evidence_sha256: record.review_evidence_sha256.clone(),
+        correction_sessions: record.correction_sessions.clone(),
     };
     request.verify(spec)?;
     Ok(request)
@@ -424,6 +437,30 @@ fn digest(value: &str) -> String {
         let _ = write!(output, "{byte:02x}");
     }
     output
+}
+
+const fn task_state_code(state: CampaignTaskState) -> &'static str {
+    match state {
+        CampaignTaskState::Planned => "planned",
+        CampaignTaskState::Ready => "ready",
+        CampaignTaskState::Proposed => "proposed",
+        CampaignTaskState::Leased => "leased",
+        CampaignTaskState::Implementing => "implementing",
+        CampaignTaskState::LocalGates => "local_gates",
+        CampaignTaskState::Reviewing => "reviewing",
+        CampaignTaskState::Correcting => "correcting",
+        CampaignTaskState::PublicationReady => "publication_ready",
+        CampaignTaskState::PullRequestOpen => "pr_open",
+        CampaignTaskState::CiWaiting => "ci_waiting",
+        CampaignTaskState::IntegrationQueued => "integration_queued",
+        CampaignTaskState::MergeReady => "merge_ready",
+        CampaignTaskState::Integrating => "integrating",
+        CampaignTaskState::Merged => "merged",
+        CampaignTaskState::Blocked => "blocked",
+        CampaignTaskState::Disputed => "disputed",
+        CampaignTaskState::Failed => "failed",
+        CampaignTaskState::Cancelled => "cancelled",
+    }
 }
 
 #[cfg(test)]

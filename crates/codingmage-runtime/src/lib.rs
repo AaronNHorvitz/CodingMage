@@ -4,6 +4,7 @@ mod campaign_state;
 mod correction_state;
 mod team_campaign;
 mod team_control;
+mod team_github;
 mod team_integration;
 mod team_planning;
 mod team_publication;
@@ -14,6 +15,7 @@ pub use team_campaign::{
     TeamCampaignReport, TeamTaskCompletionReport, run_team_campaign_with_progress,
     team_campaign_report,
 };
+pub use team_github::GhCliPublicationPort;
 pub use team_integration::{
     IntegrationVerification, ProductionTeamIntegrationVerifier, TeamIntegrationOutcome,
     TeamIntegrationVerifier, enqueue_team_integration, integrate_team_queue_head,
