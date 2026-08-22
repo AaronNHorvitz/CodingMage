@@ -9,6 +9,95 @@ use codingmage_plan::TaskPlan;
 
 use crate::RuntimeError;
 
+/// Immutable authority for creating or updating one assigned task issue.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TaskIssueRequest {
+    /// Exact campaign identity.
+    pub campaign_id: String,
+    /// Exact canonical task identity.
+    pub task_id: String,
+    /// Bounded canonical task title.
+    pub title: String,
+    /// Exact assigned pod identity.
+    pub pod_id: String,
+    /// Existing issue identity, when already bound.
+    pub issue_number: Option<u64>,
+    /// Existing pull-request identity, when already bound.
+    pub pull_request_number: Option<u64>,
+    /// Exact task branch.
+    pub task_branch: String,
+    /// Current closed task-state identifier.
+    pub state: String,
+    /// Exact campaign integration branch.
+    pub campaign_branch: String,
+    /// Latest coordinator-created candidate, when one exists.
+    pub candidate_commit: Option<String>,
+    /// Latest automated review result, when one exists.
+    pub review_result: Option<String>,
+    /// Exact repository-relative write authority.
+    pub owned_paths: Vec<PathBuf>,
+    /// Ordered task dependencies.
+    pub dependencies: Vec<String>,
+    /// Required deterministic gate tiers.
+    pub gate_tiers: Vec<String>,
+    /// Deterministic gate evidence digests observed so far.
+    pub gate_evidence_sha256: Vec<String>,
+    /// Independent review evidence digests observed so far.
+    pub review_evidence_sha256: Vec<String>,
+    /// Stable content-free terminal reason, when one exists.
+    pub blocker: Option<String>,
+}
+
+impl TaskIssueRequest {
+    fn verify(
+        &self,
+        spec: &CampaignSpec,
+        campaign_branch: &str,
+    ) -> Result<(), TeamPublicationError> {
+        if self.campaign_id != spec.campaign_id
+            || self.task_id.is_empty()
+            || self.title.is_empty()
+            || self.title.len() > 512
+            || self.title.contains(['\0', '\n', '\r'])
+            || !valid_component(&self.pod_id)
+            || self.issue_number == Some(0)
+            || self.pull_request_number == Some(0)
+            || self.pull_request_number.is_some() && self.issue_number.is_none()
+            || self.task_branch.is_empty()
+            || !valid_component(&self.state)
+            || self.task_branch == self.campaign_branch
+            || self.campaign_branch != campaign_branch
+            || !is_campaign_branch(&spec.campaign_branch, campaign_branch)
+            || spec
+                .protected_branches
+                .iter()
+                .any(|branch| branch == campaign_branch)
+            || self
+                .candidate_commit
+                .as_ref()
+                .is_some_and(|value| !valid_commit(value))
+            || self
+                .review_result
+                .as_ref()
+                .is_some_and(|value| !valid_component(value))
+            || self
+                .blocker
+                .as_ref()
+                .is_some_and(|value| !valid_component(value))
+            || self.owned_paths.is_empty()
+            || self.gate_tiers.is_empty()
+            || self
+                .gate_evidence_sha256
+                .iter()
+                .chain(&self.review_evidence_sha256)
+                .any(|value| !valid_sha256(value))
+        {
+            return Err(TeamPublicationError::Authority);
+        }
+        Ok(())
+    }
+}
+
 /// Immutable authority supplied to one task publication adapter.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TaskPublicationRequest {
@@ -84,6 +173,28 @@ impl TaskPublicationRequest {
             return Err(TeamPublicationError::Authority);
         }
         Ok(())
+    }
+
+    pub(crate) fn issue_request(&self) -> TaskIssueRequest {
+        TaskIssueRequest {
+            campaign_id: self.campaign_id.clone(),
+            task_id: self.task_id.clone(),
+            title: self.title.clone(),
+            pod_id: self.pod_id.clone(),
+            issue_number: self.issue_number,
+            pull_request_number: self.pull_request_number,
+            task_branch: self.task_branch.clone(),
+            state: self.state.clone(),
+            campaign_branch: self.campaign_branch.clone(),
+            candidate_commit: Some(self.reviewed_commit.clone()),
+            review_result: Some("pass".to_owned()),
+            owned_paths: self.owned_paths.clone(),
+            dependencies: self.dependencies.clone(),
+            gate_tiers: self.gate_tiers.clone(),
+            gate_evidence_sha256: self.gate_evidence_sha256.clone(),
+            review_evidence_sha256: self.review_evidence_sha256.clone(),
+            blocker: None,
+        }
     }
 }
 
@@ -223,7 +334,7 @@ pub trait TeamPublicationPort {
     /// Returns a content-free authority, identity, transport, or reconciliation failure.
     fn ensure_issue(
         &mut self,
-        request: &TaskPublicationRequest,
+        request: &TaskIssueRequest,
     ) -> Result<IssueObservation, TeamPublicationError>;
 
     /// Pushes only the exact reviewed commit to the exact task branch and reobserves its head.
@@ -318,6 +429,105 @@ impl std::fmt::Display for TeamPublicationError {
 
 impl std::error::Error for TeamPublicationError {}
 
+/// Builds exact authority for one assigned task issue before a reviewed candidate exists.
+///
+/// # Errors
+///
+/// Returns a content-free authority or state failure unless the task has a durable pod and branch.
+pub fn task_issue_publication_request(
+    spec: &CampaignSpec,
+    campaign_branch: &str,
+    plan: &TaskPlan,
+    snapshot: &TeamCampaignSnapshot,
+    task_id: &str,
+) -> Result<TaskIssueRequest, TeamPublicationError> {
+    spec.verify().map_err(|_| TeamPublicationError::Authority)?;
+    snapshot.verify().map_err(|_| TeamPublicationError::State)?;
+    let policy = spec
+        .multi_agent
+        .as_ref()
+        .ok_or(TeamPublicationError::Authority)?;
+    if policy.publication_mode != TaskPublicationMode::PerTaskDraftPullRequest
+        || policy.github.is_none()
+        || snapshot.campaign_id != spec.campaign_id
+    {
+        return Err(TeamPublicationError::Authority);
+    }
+    let record = snapshot
+        .tasks
+        .get(task_id)
+        .ok_or(TeamPublicationError::State)?;
+    let selected = plan
+        .select_exact(task_id)
+        .map_err(|_| TeamPublicationError::Authority)?;
+    let request = TaskIssueRequest {
+        campaign_id: spec.campaign_id.clone(),
+        task_id: task_id.to_owned(),
+        title: selected.item.title.clone(),
+        pod_id: record.pod_id.clone().ok_or(TeamPublicationError::State)?,
+        issue_number: record.issue_number,
+        pull_request_number: record.pull_request_number,
+        task_branch: record.branch.clone().ok_or(TeamPublicationError::State)?,
+        state: task_state_code(record.state).to_owned(),
+        campaign_branch: campaign_branch.to_owned(),
+        candidate_commit: record.candidate_commit.clone(),
+        review_result: record.reviewed_commit.as_ref().map(|_| "pass".to_owned()),
+        owned_paths: record.owned_paths.clone(),
+        dependencies: selected.item.dependencies.clone(),
+        gate_tiers: spec
+            .gate_tiers
+            .iter()
+            .map(|tier| tier.name.clone())
+            .collect(),
+        gate_evidence_sha256: record.gate_evidence_sha256.clone(),
+        review_evidence_sha256: record.review_evidence_sha256.clone(),
+        blocker: record.terminal_reason.clone(),
+    };
+    request.verify(spec, campaign_branch)?;
+    Ok(request)
+}
+
+/// Creates or updates one assigned task issue and binds its exact identity durably.
+///
+/// # Errors
+///
+/// Returns a content-free authority, identity, uncertainty, or state failure. Uncertain writes are
+/// reconciled by the adapter's exact campaign/task marker before a caller may retry.
+pub fn synchronize_task_issue<T, P>(
+    spec: &CampaignSpec,
+    campaign_branch: &str,
+    plan: &TaskPlan,
+    snapshot: &mut TeamCampaignSnapshot,
+    task_id: &str,
+    port: &mut T,
+    mut persist: P,
+) -> Result<IssueObservation, TeamPublicationError>
+where
+    T: TeamPublicationPort,
+    P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
+{
+    let request = task_issue_publication_request(spec, campaign_branch, plan, snapshot, task_id)?;
+    let observation = port.ensure_issue(&request)?;
+    if observation.number == 0
+        || !valid_sha256(&observation.evidence_sha256)
+        || request
+            .issue_number
+            .is_some_and(|expected| expected != observation.number)
+    {
+        return Err(TeamPublicationError::Identity);
+    }
+    if request.issue_number.is_none() {
+        snapshot
+            .tasks
+            .get_mut(task_id)
+            .ok_or(TeamPublicationError::State)?
+            .bind_issue_number(observation.number, observation.evidence_sha256.clone())
+            .map_err(|_| TeamPublicationError::State)?;
+        persist(snapshot).map_err(|_| TeamPublicationError::State)?;
+    }
+    Ok(observation)
+}
+
 /// Reconciles one task's issue, branch, pull request, and CI state without duplicate effects.
 ///
 /// # Errors
@@ -360,7 +570,7 @@ where
         return Err(TeamPublicationError::Authority);
     }
     let mut request = publication_request(spec, campaign_branch, plan, snapshot, task_id)?;
-    let issue = port.ensure_issue(&request)?;
+    let issue = port.ensure_issue(&request.issue_request())?;
     if issue.number == 0
         || !valid_sha256(&issue.evidence_sha256)
         || request
@@ -408,7 +618,7 @@ where
             .map_err(|_| TeamPublicationError::State)?;
         persist(snapshot).map_err(|_| TeamPublicationError::State)?;
         request = publication_request(spec, campaign_branch, plan, snapshot, task_id)?;
-        let updated_issue = port.ensure_issue(&request)?;
+        let updated_issue = port.ensure_issue(&request.issue_request())?;
         if updated_issue.number != issue.number || !valid_sha256(&updated_issue.evidence_sha256) {
             return Err(TeamPublicationError::Identity);
         }
@@ -662,6 +872,14 @@ fn valid_sha256(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
+fn valid_component(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 256
+        && value.bytes().all(|byte| {
+            byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-' | b':' | b'/')
+        })
+}
+
 fn digest(value: &str) -> String {
     use sha2::Digest as _;
     let bytes = sha2::Sha256::digest(value.as_bytes());
@@ -727,6 +945,8 @@ mod tests {
         calls: usize,
         last_campaign_branch: Option<String>,
         campaign_branch_override: Option<String>,
+        last_issue_state: Option<String>,
+        last_issue_candidate: Option<String>,
     }
 
     impl TeamPublicationPort for FakePublicationPort {
@@ -746,9 +966,12 @@ mod tests {
 
         fn ensure_issue(
             &mut self,
-            request: &TaskPublicationRequest,
+            request: &TaskIssueRequest,
         ) -> Result<IssueObservation, TeamPublicationError> {
             self.calls = self.calls.saturating_add(1);
+            self.last_issue_state = Some(request.state.clone());
+            self.last_issue_candidate
+                .clone_from(&request.candidate_commit);
             let number = *self.issue.get_or_insert_with(|| {
                 self.issue_creations = self.issue_creations.saturating_add(1);
                 41
@@ -850,6 +1073,63 @@ mod tests {
             synchronize_campaign_branch(&spec, &spec.campaign_branch, &snapshot, &mut port,),
             Err(TeamPublicationError::Identity)
         );
+    }
+
+    #[test]
+    fn assigned_task_issue_is_reconciled_before_candidate_or_review() {
+        let (spec, plan, mut snapshot) = assigned_fixture();
+        let mut port = FakePublicationPort {
+            uncertain_issue_once: true,
+            ..FakePublicationPort::default()
+        };
+        assert_eq!(
+            snapshot.tasks[TASK_ID].state,
+            CampaignTaskState::Implementing
+        );
+        assert_eq!(snapshot.tasks[TASK_ID].candidate_commit, None);
+
+        assert_eq!(
+            synchronize_task_issue(
+                &spec,
+                &spec.campaign_branch,
+                &plan,
+                &mut snapshot,
+                TASK_ID,
+                &mut port,
+                |_| Ok(())
+            ),
+            Err(TeamPublicationError::Uncertain)
+        );
+        assert_eq!(snapshot.tasks[TASK_ID].issue_number, None);
+        assert_eq!(port.issue_creations, 1);
+
+        let observed = synchronize_task_issue(
+            &spec,
+            &spec.campaign_branch,
+            &plan,
+            &mut snapshot,
+            TASK_ID,
+            &mut port,
+            |_| Ok(()),
+        )
+        .expect("reconciled assigned issue");
+        assert_eq!(observed.number, 41);
+        assert_eq!(snapshot.tasks[TASK_ID].issue_number, Some(41));
+        assert_eq!(port.last_issue_state.as_deref(), Some("implementing"));
+        assert_eq!(port.last_issue_candidate, None);
+        assert_eq!(port.pull_request_creations, 0);
+
+        synchronize_task_issue(
+            &spec,
+            &spec.campaign_branch,
+            &plan,
+            &mut snapshot,
+            TASK_ID,
+            &mut port,
+            |_| Ok(()),
+        )
+        .expect("idempotent assigned issue");
+        assert_eq!(port.issue_creations, 1);
     }
 
     #[test]
@@ -1004,8 +1284,23 @@ mod tests {
         assert_eq!(denied.calls, 0);
     }
 
-    #[allow(clippy::too_many_lines)]
     fn fixture() -> (CampaignSpec, TaskPlan, TeamCampaignSnapshot) {
+        let (spec, plan, mut snapshot) = assigned_fixture();
+        let record = snapshot.tasks.get_mut(TASK_ID).unwrap();
+        record.candidate_commit = Some("c".repeat(40));
+        transition(record, CampaignTaskState::LocalGates, "5");
+        record.gate_evidence_sha256.push("6".repeat(64));
+        transition(record, CampaignTaskState::Reviewing, "7");
+        record.reviewed_commit = Some("c".repeat(40));
+        record.review_sessions.push("review-publication".to_owned());
+        record.review_evidence_sha256.push("8".repeat(64));
+        transition(record, CampaignTaskState::PublicationReady, "9");
+        snapshot.verify().unwrap();
+        (spec, plan, snapshot)
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn assigned_fixture() -> (CampaignSpec, TaskPlan, TeamCampaignSnapshot) {
         let plan = TaskPlan::parse(TASKS.as_bytes()).unwrap();
         let provider = |name: &str| CampaignProvider {
             executable: PathBuf::from(format!("/usr/bin/{name}")),
@@ -1109,14 +1404,6 @@ mod tests {
                 "4".repeat(64),
             )
             .unwrap();
-        record.candidate_commit = Some("c".repeat(40));
-        transition(record, CampaignTaskState::LocalGates, "5");
-        record.gate_evidence_sha256.push("6".repeat(64));
-        transition(record, CampaignTaskState::Reviewing, "7");
-        record.reviewed_commit = Some("c".repeat(40));
-        record.review_sessions.push("review-publication".to_owned());
-        record.review_evidence_sha256.push("8".repeat(64));
-        transition(record, CampaignTaskState::PublicationReady, "9");
         snapshot.scheduler = scheduler.snapshot().clone();
         snapshot.verify().unwrap();
         (spec, plan, snapshot)

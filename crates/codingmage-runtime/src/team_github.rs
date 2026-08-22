@@ -17,9 +17,9 @@ use crate::{
     CampaignBranchObservation, CampaignBranchPublicationRequest, CampaignPromotionError,
     CampaignPromotionRequest, CampaignPullRequestObservation, CiObservation,
     DestinationObservation, DestinationPromotionObservation, IssueObservation,
-    PullRequestObservation, PushObservation, TaskCompletionObservation, TaskPublicationRequest,
-    TeamPromotionPort, TeamPublicationError, TeamPublicationPort, login_discovery_environment,
-    private_directory,
+    PullRequestObservation, PushObservation, TaskCompletionObservation, TaskIssueRequest,
+    TaskPublicationRequest, TeamPromotionPort, TeamPublicationError, TeamPublicationPort,
+    login_discovery_environment, private_directory,
 };
 
 const MAX_REMOTE_OUTPUT: u64 = 4 * 1024 * 1024;
@@ -150,7 +150,7 @@ impl GhCliPublicationPort {
 
     fn issue_record(
         &mut self,
-        request: &TaskPublicationRequest,
+        request: &TaskIssueRequest,
     ) -> Result<Option<GhIssue>, TeamPublicationError> {
         if let Some(number) = request.issue_number {
             let output = self.run_gh(
@@ -301,7 +301,7 @@ impl GhCliPublicationPort {
     }
 
     fn render_issue(
-        request: &TaskPublicationRequest,
+        request: &TaskIssueRequest,
         existing: &str,
     ) -> Result<String, TeamPublicationError> {
         let dependencies = request
@@ -323,9 +323,9 @@ impl GhCliPublicationPort {
             state: request.state.clone(),
             branch: request.task_branch.clone(),
             pull_request: request.pull_request_number,
-            candidate_commit: Some(request.reviewed_commit.clone()),
-            review_result: Some("pass".to_owned()),
-            blocker: None,
+            candidate_commit: request.candidate_commit.clone(),
+            review_result: request.review_result.clone(),
+            blocker: request.blocker.clone(),
             evidence: publication_evidence(request)?,
         }
         .merge_into(existing)
@@ -477,13 +477,14 @@ impl GhCliPublicationPort {
         request: &TaskPublicationRequest,
         issue_number: u64,
     ) -> Result<GhIssue, TeamPublicationError> {
+        let issue_request = request.issue_request();
         let issue = self
-            .issue_record(request)?
+            .issue_record(&issue_request)?
             .ok_or(TeamPublicationError::Identity)?;
         if issue.number != issue_number {
             return Err(TeamPublicationError::Identity);
         }
-        let expected_body = Self::render_issue(request, &issue.body)?;
+        let expected_body = Self::render_issue(&issue_request, &issue.body)?;
         if issue.body != expected_body {
             let attempt = self.run_gh(
                 vec![
@@ -498,7 +499,7 @@ impl GhCliPublicationPort {
                 expected_body.clone().into_bytes(),
             );
             if self
-                .issue_record(request)?
+                .issue_record(&issue_request)?
                 .as_ref()
                 .map(|value| &value.body)
                 != Some(&expected_body)
@@ -507,7 +508,7 @@ impl GhCliPublicationPort {
             }
         }
         if self
-            .issue_record(request)?
+            .issue_record(&issue_request)?
             .is_some_and(|value| value.state == "OPEN")
         {
             let attempt = self.run_gh(
@@ -521,18 +522,18 @@ impl GhCliPublicationPort {
                 Vec::new(),
             );
             if self
-                .issue_record(request)?
+                .issue_record(&issue_request)?
                 .is_none_or(|value| value.state != "CLOSED")
             {
                 return Err(reconciled_write_error(attempt.is_err()));
             }
         }
         let observed = self
-            .issue_record(request)?
+            .issue_record(&issue_request)?
             .ok_or(TeamPublicationError::Identity)?;
         if observed.number != issue_number
             || observed.state != "CLOSED"
-            || observed.body != Self::render_issue(request, &observed.body)?
+            || observed.body != Self::render_issue(&issue_request, &observed.body)?
         {
             return Err(TeamPublicationError::Identity);
         }
@@ -803,7 +804,7 @@ impl TeamPublicationPort for GhCliPublicationPort {
 
     fn ensure_issue(
         &mut self,
-        request: &TaskPublicationRequest,
+        request: &TaskIssueRequest,
     ) -> Result<IssueObservation, TeamPublicationError> {
         let current = self.issue_record(request)?;
         let body = Self::render_issue(request, current.as_ref().map_or("", |value| &value.body))?;
@@ -1247,7 +1248,7 @@ struct GhCheck {
 }
 
 fn publication_evidence(
-    request: &TaskPublicationRequest,
+    request: &TaskIssueRequest,
 ) -> Result<Vec<EvidenceId>, TeamPublicationError> {
     request
         .gate_evidence_sha256
@@ -1461,5 +1462,44 @@ mod tests {
             GhCliPublicationPort::render_final_pull_request(&request, &duplicated),
             Err(CampaignPromotionError::Identity)
         );
+    }
+
+    #[test]
+    fn assigned_issue_preserves_human_text_before_candidate_exists() {
+        let mut request = TaskIssueRequest {
+            campaign_id: "campaign-1".to_owned(),
+            task_id: "23.3.1.1".to_owned(),
+            title: "Implement one bounded task".to_owned(),
+            pod_id: "pod-1".to_owned(),
+            issue_number: Some(17),
+            pull_request_number: None,
+            task_branch: "codingmage/campaign-1/pods/pod-1".to_owned(),
+            state: "implementing".to_owned(),
+            campaign_branch: "codingmage/campaign-1".to_owned(),
+            candidate_commit: None,
+            review_result: None,
+            owned_paths: vec![PathBuf::from("src/unit.rs")],
+            dependencies: Vec::new(),
+            gate_tiers: vec!["focused".to_owned()],
+            gate_evidence_sha256: Vec::new(),
+            review_evidence_sha256: Vec::new(),
+            blocker: None,
+        };
+        let human = "Human introduction.\n\nHuman follow-up.";
+        let assigned = GhCliPublicationPort::render_issue(&request, human).unwrap();
+        assert!(assigned.starts_with(human));
+        assert!(assigned.contains("State: `implementing`"));
+        assert!(assigned.contains("Candidate: none"));
+
+        request.state = "publication_ready".to_owned();
+        request.candidate_commit = Some("a".repeat(40));
+        request.review_result = Some("pass".to_owned());
+        request.gate_evidence_sha256 = vec!["b".repeat(64)];
+        request.review_evidence_sha256 = vec!["c".repeat(64)];
+        let reviewed = GhCliPublicationPort::render_issue(&request, &assigned).unwrap();
+        assert!(reviewed.starts_with(human));
+        assert!(reviewed.contains("State: `publication_ready`"));
+        assert!(reviewed.contains(&format!("Candidate: {}", "a".repeat(40))));
+        assert_eq!(reviewed.matches("Human introduction.").count(), 1);
     }
 }

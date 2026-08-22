@@ -33,10 +33,11 @@ pub use team_promotion::{
 };
 pub use team_publication::{
     CampaignBranchObservation, CampaignBranchPublicationRequest, CiObservation, IssueObservation,
-    PullRequestObservation, PushObservation, TaskCompletionObservation, TaskPublicationRequest,
-    TeamPublicationError, TeamPublicationOutcome, TeamPublicationPort,
+    PullRequestObservation, PushObservation, TaskCompletionObservation, TaskIssueRequest,
+    TaskPublicationRequest, TeamPublicationError, TeamPublicationOutcome, TeamPublicationPort,
     campaign_branch_publication_request, synchronize_campaign_branch, synchronize_task_completion,
-    synchronize_task_publication, task_completion_publication_request,
+    synchronize_task_issue, synchronize_task_publication, task_completion_publication_request,
+    task_issue_publication_request,
 };
 pub use team_runtime::{
     ProductionTeamUnitRunner, TeamBatchJob, TeamBatchObservation, TeamBatchOutcome,

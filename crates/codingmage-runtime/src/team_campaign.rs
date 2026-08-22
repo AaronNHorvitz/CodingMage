@@ -24,7 +24,7 @@ use crate::{
     enqueue_team_integration, execute_team_batch, execute_team_ci_correction, generated_run_id,
     initialize_team_campaign, integrate_team_queue_head_with_strategy, login_discovery_environment,
     private_directory, refresh_team_readiness, synchronize_campaign_branch,
-    synchronize_task_completion, synchronize_task_publication,
+    synchronize_task_completion, synchronize_task_issue, synchronize_task_publication,
     team_control::{
         TeamCancellationWatcher, observe_team_control, observe_team_destination_approval,
         observe_team_integration_approval,
@@ -364,6 +364,34 @@ pub fn run_team_campaign_with_progress(
                 }
             }
             if policy.publication_mode == TaskPublicationMode::PerTaskDraftPullRequest {
+                let issue_candidates = snapshot
+                    .tasks
+                    .iter()
+                    .filter_map(|(task_id, record)| {
+                        (record.pod_id.is_some() && record.branch.is_some())
+                            .then_some(task_id.clone())
+                    })
+                    .collect::<Vec<_>>();
+                for task_id in issue_candidates {
+                    if let Err(error) = synchronize_task_issue(
+                        &spec,
+                        &manifest.branch,
+                        &initial_plan,
+                        &mut snapshot,
+                        &task_id,
+                        port,
+                        |value| persist(&mut state_store, value),
+                    ) {
+                        return Ok(blocked_outcome(
+                            &spec,
+                            &campaign,
+                            &snapshot,
+                            integrated_this_invocation,
+                            last_task_id,
+                            error.code(),
+                        ));
+                    }
+                }
                 for (task_id, record) in &snapshot.tasks {
                     if record.state != CampaignTaskState::Merged
                         || record.issue_number.is_none()
