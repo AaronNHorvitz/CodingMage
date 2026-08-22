@@ -3,7 +3,8 @@
 use std::{collections::BTreeMap, fs, path::Path, sync::Arc, time::SystemTime};
 
 use codingmage_campaign::{
-    CampaignExecutionMode, CampaignSpec, CampaignTaskState, TaskPublicationMode, TeamLeadOutcome,
+    CampaignExecutionMode, CampaignSpec, CampaignTaskState, TaskIntegrationPolicy,
+    TaskPublicationMode, TeamLeadOutcome,
 };
 use codingmage_codex::{CodexLeadAdapter, team_lead_schema};
 use codingmage_contracts::{RunId, TaskId, WorktreeId};
@@ -20,7 +21,7 @@ use crate::{
     ProductionTeamUnitRunner, ProgressActor, ProgressStage, RunProgress, RuntimeError,
     TeamIntegrationVerifier, TeamPlanningOutcome, TeamStateStore, admit_team_lead_report,
     build_team_lead_binding, enqueue_team_integration, execute_team_batch, generated_run_id,
-    initialize_team_campaign, integrate_team_queue_head, login_discovery_environment,
+    initialize_team_campaign, integrate_team_queue_head_with_strategy, login_discovery_environment,
     private_directory, refresh_team_readiness,
     team_control::{TeamCancellationWatcher, observe_team_control},
     write_private_idempotent,
@@ -325,6 +326,19 @@ pub fn run_team_campaign_with_progress(
                 (record.state == CampaignTaskState::PublicationReady).then_some(task_id.clone())
             })
             .collect::<Vec<_>>();
+        if !publication_ready.is_empty() {
+            let blocker_code = task_integration_blocker(policy.task_integration_policy);
+            if let Some(blocker_code) = blocker_code {
+                return Ok(blocked_outcome(
+                    &spec,
+                    &campaign,
+                    &snapshot,
+                    integrated_this_invocation,
+                    last_task_id,
+                    blocker_code,
+                ));
+            }
+        }
         if !publication_ready.is_empty()
             && policy.publication_mode != TaskPublicationMode::LocalOnly
         {
@@ -347,12 +361,13 @@ pub fn run_team_campaign_with_progress(
                 ProgressActor::IntegrationLead,
                 ProgressStage::Integrating,
             ));
-            let outcome = integrate_team_queue_head(
+            let outcome = integrate_team_queue_head_with_strategy(
                 config,
                 &authorization,
                 &campaign,
                 &mut snapshot,
                 &mut integration_verifier,
+                policy.task_merge_strategy,
                 |value| persist(&mut state_store, value),
             )?;
             integrated_this_invocation = integrated_this_invocation.saturating_add(1);
@@ -738,4 +753,35 @@ fn now_ms() -> u64 {
 
 fn valid_sha256(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+const fn task_integration_blocker(policy: TaskIntegrationPolicy) -> Option<&'static str> {
+    match policy {
+        TaskIntegrationPolicy::Never => Some("codingmage.team.integration_denied"),
+        TaskIntegrationPolicy::HumanRequired => {
+            Some("codingmage.team.integration_approval_required")
+        }
+        TaskIntegrationPolicy::AutoToCampaignBranch => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn task_integration_policy_is_closed_and_deny_first() {
+        assert_eq!(
+            task_integration_blocker(TaskIntegrationPolicy::Never),
+            Some("codingmage.team.integration_denied")
+        );
+        assert_eq!(
+            task_integration_blocker(TaskIntegrationPolicy::HumanRequired),
+            Some("codingmage.team.integration_approval_required")
+        );
+        assert_eq!(
+            task_integration_blocker(TaskIntegrationPolicy::AutoToCampaignBranch),
+            None
+        );
+    }
 }

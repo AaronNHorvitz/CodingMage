@@ -2,7 +2,7 @@
 
 use std::{collections::BTreeMap, collections::BTreeSet, fmt::Write as _, fs, path::PathBuf};
 
-use codingmage_campaign::{CampaignTaskState, TeamCampaignSnapshot};
+use codingmage_campaign::{CampaignTaskState, TaskMergeStrategy, TeamCampaignSnapshot};
 use codingmage_codex::{CodexAdapter, CodexReviewBinding, ReviewVerdict, codex_review_schema};
 use codingmage_contracts::{AgentId, EvidenceId, TaskId};
 use codingmage_core::{Config, RepositoryAuthorization};
@@ -11,8 +11,9 @@ use codingmage_gate::{
     TrustedGateDefinition,
 };
 use codingmage_git::{
-    OwnedWorktree, commit_owned_changes, integrate_reviewed_descendant, observe_owned_child_commit,
-    prepare_reviewed_delta, release_prepared_integration,
+    OwnedWorktree, commit_owned_changes, create_owned_worktree, integrate_reviewed_descendant,
+    observe_owned_child_commit, prepare_reviewed_delta, release_prepared_integration,
+    remove_owned_worktree,
 };
 use codingmage_orchestrator::reconcile_and_select_next;
 use codingmage_plan::{CheckState, TaskPlan};
@@ -280,6 +281,37 @@ pub fn integrate_team_queue_head<V, P>(
     campaign: &OwnedWorktree,
     snapshot: &mut TeamCampaignSnapshot,
     verifier: &mut V,
+    persist: P,
+) -> Result<TeamIntegrationOutcome, RuntimeError>
+where
+    V: TeamIntegrationVerifier,
+    P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
+{
+    integrate_team_queue_head_with_strategy(
+        config,
+        authorization,
+        campaign,
+        snapshot,
+        verifier,
+        TaskMergeStrategy::Squash,
+        persist,
+    )
+}
+
+/// Integrates the queue head using the exact configured commit strategy.
+///
+/// # Errors
+///
+/// Returns a content-free failure when the selected strategy cannot preserve the reviewed commit,
+/// or when any ordinary serialized-integration precondition fails.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn integrate_team_queue_head_with_strategy<V, P>(
+    config: &Config,
+    authorization: &RepositoryAuthorization,
+    campaign: &OwnedWorktree,
+    snapshot: &mut TeamCampaignSnapshot,
+    verifier: &mut V,
+    strategy: TaskMergeStrategy,
     mut persist: P,
 ) -> Result<TeamIntegrationOutcome, RuntimeError>
 where
@@ -319,41 +351,40 @@ where
     let integration_commit = if let Some(commit) = record.integration_commit.clone() {
         commit
     } else {
-        let prepared = prepare_reviewed_delta(
-            authorization,
-            config,
-            campaign,
-            generated_run_id()?,
-            TaskId::new(task_id.clone()).map_err(|_| RuntimeError::State)?,
-            &expected_head,
-            &record.base_commit,
-            &reviewed_commit,
-            &record.owned_paths,
-        )
-        .map_err(|_| RuntimeError::Integration)?;
-        let verification =
-            verifier.verify(&task_id, prepared.worktree(), prepared.prepared_head())?;
-        verification.verify()?;
-        let released = release_prepared_integration(authorization, prepared)
-            .map_err(|_| RuntimeError::Integration)?;
-        if released.previous_head != expected_head
-            || released.candidate_base != record.base_commit
-            || released.reviewed_head != reviewed_commit
-            || released.allowed_paths != record.owned_paths
-        {
-            return Err(RuntimeError::State);
-        }
+        let (integration_commit, verification) = match strategy {
+            TaskMergeStrategy::Squash => prepare_squash_integration(
+                config,
+                authorization,
+                campaign,
+                verifier,
+                &task_id,
+                &expected_head,
+                &record.base_commit,
+                &reviewed_commit,
+                &record.owned_paths,
+            )?,
+            TaskMergeStrategy::FastForwardOnly => prepare_fast_forward_integration(
+                config,
+                authorization,
+                verifier,
+                &task_id,
+                &expected_head,
+                &record.base_commit,
+                &reviewed_commit,
+                &record.owned_paths,
+            )?,
+        };
         let evidence = integration_evidence(
             &task_id,
-            &released.prepared_head,
+            &integration_commit,
             &verification.gate_evidence_sha256,
             &verification.review_evidence_sha256,
         );
         snapshot
-            .bind_integration_commit(&task_id, released.prepared_head.clone(), evidence)
+            .bind_integration_commit(&task_id, integration_commit.clone(), evidence)
             .map_err(|_| RuntimeError::State)?;
         persist(snapshot)?;
-        released.prepared_head
+        integration_commit
     };
 
     let observed_head = campaign
@@ -422,6 +453,91 @@ where
         completion_commit,
         task_source_sha256,
     })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn prepare_squash_integration<V: TeamIntegrationVerifier>(
+    config: &Config,
+    authorization: &RepositoryAuthorization,
+    campaign: &OwnedWorktree,
+    verifier: &mut V,
+    task_id: &str,
+    expected_head: &str,
+    candidate_base: &str,
+    reviewed_commit: &str,
+    owned_paths: &[PathBuf],
+) -> Result<(String, IntegrationVerification), RuntimeError> {
+    let prepared = prepare_reviewed_delta(
+        authorization,
+        config,
+        campaign,
+        generated_run_id()?,
+        TaskId::new(task_id.to_owned()).map_err(|_| RuntimeError::State)?,
+        expected_head,
+        candidate_base,
+        reviewed_commit,
+        owned_paths,
+    )
+    .map_err(|_| RuntimeError::Integration)?;
+    let verification_result =
+        verifier.verify(task_id, prepared.worktree(), prepared.prepared_head());
+    let released = release_prepared_integration(authorization, prepared)
+        .map_err(|_| RuntimeError::Integration)?;
+    let verification = verification_result?;
+    verification.verify()?;
+    if released.previous_head != expected_head
+        || released.candidate_base != candidate_base
+        || released.reviewed_head != reviewed_commit
+        || released.allowed_paths != owned_paths
+    {
+        return Err(RuntimeError::State);
+    }
+    Ok((released.prepared_head, verification))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn prepare_fast_forward_integration<V: TeamIntegrationVerifier>(
+    config: &Config,
+    authorization: &RepositoryAuthorization,
+    verifier: &mut V,
+    task_id: &str,
+    expected_head: &str,
+    candidate_base: &str,
+    reviewed_commit: &str,
+    owned_paths: &[PathBuf],
+) -> Result<(String, IntegrationVerification), RuntimeError> {
+    if candidate_base != expected_head {
+        return Err(RuntimeError::Integration);
+    }
+    let mut verification_worktree = create_owned_worktree(
+        authorization,
+        config,
+        generated_run_id()?,
+        TaskId::new(task_id.to_owned()).map_err(|_| RuntimeError::State)?,
+        candidate_base,
+    )
+    .map_err(|_| RuntimeError::Integration)?;
+    let attempt_result = (|| {
+        let receipt = integrate_reviewed_descendant(
+            authorization,
+            &verification_worktree,
+            candidate_base,
+            reviewed_commit,
+            owned_paths,
+        )
+        .map_err(|_| RuntimeError::Integration)?;
+        if receipt.integrated_head != reviewed_commit {
+            return Err(RuntimeError::State);
+        }
+        let verification = verifier.verify(task_id, &verification_worktree, reviewed_commit)?;
+        verification.verify()?;
+        Ok(verification)
+    })();
+    let released = remove_owned_worktree(authorization, &mut verification_worktree)
+        .map_err(|_| RuntimeError::Integration);
+    released?;
+    let verification = attempt_result?;
+    Ok((reviewed_commit.to_owned(), verification))
 }
 
 fn create_completion_commit(
@@ -779,6 +895,19 @@ mod tests {
         }
     }
 
+    struct RejectVerifier;
+
+    impl TeamIntegrationVerifier for RejectVerifier {
+        fn verify(
+            &mut self,
+            _: &str,
+            _: &OwnedWorktree,
+            _: &str,
+        ) -> Result<IntegrationVerification, RuntimeError> {
+            Err(RuntimeError::Verification)
+        }
+    }
+
     #[test]
     fn serialized_integration_completes_from_fresh_and_every_durable_git_boundary() {
         for boundary in 0..4 {
@@ -842,6 +971,104 @@ mod tests {
                 completed_task_source_digest(&fixture.config, &fixture.campaign, TASK_ID).unwrap(),
                 outcome.task_source_sha256
             );
+        }
+    }
+
+    #[test]
+    fn fast_forward_strategy_preserves_reviewed_commit() {
+        let mut fixture = Fixture::new();
+        let reviewed = fixture.snapshot.tasks[TASK_ID]
+            .reviewed_commit
+            .clone()
+            .unwrap();
+        enqueue_team_integration(&mut fixture.snapshot, TASK_ID, |_| Ok(())).unwrap();
+        let mut verifier = ManifestVerifier(AtomicUsize::new(0));
+        let outcome = integrate_team_queue_head_with_strategy(
+            &fixture.config,
+            &fixture.authorization,
+            &fixture.campaign,
+            &mut fixture.snapshot,
+            &mut verifier,
+            TaskMergeStrategy::FastForwardOnly,
+            |_| Ok(()),
+        )
+        .unwrap();
+        assert_eq!(outcome.integration_commit, reviewed);
+        assert_eq!(verifier.0.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            fixture.snapshot.tasks[TASK_ID].state,
+            CampaignTaskState::Merged
+        );
+    }
+
+    #[test]
+    fn fast_forward_strategy_refuses_a_stale_candidate_base() {
+        let mut fixture = Fixture::new();
+        std::fs::write(
+            fixture.campaign.manifest().path.join("code.txt"),
+            "campaign advanced\n",
+        )
+        .unwrap();
+        let advanced = commit_owned_changes(
+            &fixture.authorization,
+            &fixture.campaign,
+            &fixture.snapshot.campaign_head,
+            &[PathBuf::from("code.txt")],
+        )
+        .unwrap()
+        .commit;
+        fixture.snapshot.campaign_head = advanced;
+        fixture.snapshot.verify().unwrap();
+        enqueue_team_integration(&mut fixture.snapshot, TASK_ID, |_| Ok(())).unwrap();
+        let mut verifier = ManifestVerifier(AtomicUsize::new(0));
+        assert_eq!(
+            integrate_team_queue_head_with_strategy(
+                &fixture.config,
+                &fixture.authorization,
+                &fixture.campaign,
+                &mut fixture.snapshot,
+                &mut verifier,
+                TaskMergeStrategy::FastForwardOnly,
+                |_| Ok(()),
+            ),
+            Err(RuntimeError::Integration)
+        );
+        assert_eq!(verifier.0.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn failed_integration_verification_releases_temporary_worktrees() {
+        for strategy in [
+            TaskMergeStrategy::Squash,
+            TaskMergeStrategy::FastForwardOnly,
+        ] {
+            let mut fixture = Fixture::new();
+            let before = git_output(
+                &fixture.config.target_path,
+                &["worktree", "list", "--porcelain"],
+            )
+            .matches("worktree ")
+            .count();
+            enqueue_team_integration(&mut fixture.snapshot, TASK_ID, |_| Ok(())).unwrap();
+            assert_eq!(
+                integrate_team_queue_head_with_strategy(
+                    &fixture.config,
+                    &fixture.authorization,
+                    &fixture.campaign,
+                    &mut fixture.snapshot,
+                    &mut RejectVerifier,
+                    strategy,
+                    |_| Ok(()),
+                ),
+                Err(RuntimeError::Verification)
+            );
+            let after = git_output(
+                &fixture.config.target_path,
+                &["worktree", "list", "--porcelain"],
+            )
+            .matches("worktree ")
+            .count();
+            assert_eq!(after, before);
         }
     }
 
