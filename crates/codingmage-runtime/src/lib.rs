@@ -1038,6 +1038,42 @@ pub fn request_campaign_control(
     })
 }
 
+/// Creates one exact human approval for a parallel-campaign task integration.
+///
+/// Approval is bound to the immutable campaign authority, current campaign head, task identity,
+/// and reviewed commit. Advancing either head makes the approval ineligible for later use.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] for serial mode, stale identity, malformed input, ineligible task
+/// state, or conflicting idempotency evidence.
+pub fn approve_campaign_task_integration(
+    config: &Config,
+    spec: &CampaignSpec,
+    codingmage_binary: &Path,
+    task_id: &str,
+    campaign_head: &str,
+    reviewed_commit: &str,
+    request_id: &str,
+) -> Result<CampaignControlOutcome, RuntimeError> {
+    if spec
+        .multi_agent
+        .as_ref()
+        .is_none_or(|policy| policy.execution_mode != CampaignExecutionMode::Parallel)
+    {
+        return Err(RuntimeError::Spec);
+    }
+    team_control::request_team_integration_approval(
+        config,
+        spec,
+        codingmage_binary,
+        task_id,
+        campaign_head,
+        reviewed_commit,
+        request_id,
+    )
+}
+
 /// Clears one exact durable blocker after same-user local authentication and full revalidation.
 ///
 /// The prerequisite digest is an operator-supplied, content-free binding to the external change.

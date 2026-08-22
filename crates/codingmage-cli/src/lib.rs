@@ -17,9 +17,10 @@ use codingmage_core::{
 use codingmage_git::inventory_repository;
 use codingmage_plan::TaskPlan;
 use codingmage_runtime::{
-    RunProgress, RunSpec, RuntimeError, campaign_blocker_explanation, campaign_status,
-    clear_campaign_blocker, observe_campaign_deferral_trigger, request_campaign_control,
-    run_one_with_progress, run_team_campaign_with_progress, team_campaign_report,
+    RunProgress, RunSpec, RuntimeError, approve_campaign_task_integration,
+    campaign_blocker_explanation, campaign_status, clear_campaign_blocker,
+    observe_campaign_deferral_trigger, request_campaign_control, run_one_with_progress,
+    run_team_campaign_with_progress, team_campaign_report,
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -48,6 +49,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign-clear-blocker" => clear_blocker(&arguments[1..]),
         "campaign-observe-trigger" => observe_trigger(&arguments[1..]),
         "campaign-control" => control_campaign(&arguments[1..]),
+        "campaign-approve-task" => approve_campaign_task(&arguments[1..]),
         _ => Err(CliError::Usage),
     }
 }
@@ -258,6 +260,35 @@ fn control_campaign(arguments: &[String]) -> Result<String, CliError> {
         &spec,
         &executable,
         parsed.value("action")?,
+        parsed.value("request")?,
+    )
+    .map_err(CliError::Runtime)?;
+    serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)
+}
+
+fn approve_campaign_task(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(
+        arguments,
+        &[
+            "config",
+            "campaign",
+            "task",
+            "campaign-head",
+            "reviewed-commit",
+            "request",
+        ],
+    )?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let outcome = approve_campaign_task_integration(
+        &config,
+        &spec,
+        &executable,
+        parsed.value("task")?,
+        parsed.value("campaign-head")?,
+        parsed.value("reviewed-commit")?,
         parsed.value("request")?,
     )
     .map_err(CliError::Runtime)?;

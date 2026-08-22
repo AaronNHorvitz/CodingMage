@@ -29,8 +29,10 @@ use crate::{
 };
 
 const CONTROL_NAME: &str = "team-control.json";
+const APPROVAL_NAME: &str = "team-integration-approvals.json";
 const STATE_NAME: &str = "team-campaign.json";
 const CONTROL_VERSION: u16 = 1;
+const APPROVAL_VERSION: u16 = 1;
 const MAX_CONTROL_REQUESTS: usize = 10_000;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -86,6 +88,131 @@ pub(crate) struct TeamControlState {
     created_at_ms: u64,
     updated_at_ms: u64,
     requests: Vec<TeamControlRequest>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct TeamIntegrationApproval {
+    request_id: String,
+    task_id: String,
+    campaign_head: String,
+    reviewed_commit: String,
+    timestamp_ms: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct TeamApprovalState {
+    version: u16,
+    authority_sha256: String,
+    campaign_id: String,
+    repository_id: String,
+    campaign_run_id: String,
+    worktree_id: String,
+    created_at_ms: u64,
+    updated_at_ms: u64,
+    approvals: Vec<TeamIntegrationApproval>,
+}
+
+impl TeamApprovalState {
+    fn initial(
+        spec: &CampaignSpec,
+        manifest: &TeamCampaignManifest,
+        authority_sha256: &str,
+        timestamp_ms: u64,
+    ) -> Self {
+        Self {
+            version: APPROVAL_VERSION,
+            authority_sha256: authority_sha256.to_owned(),
+            campaign_id: spec.campaign_id.clone(),
+            repository_id: spec.repository_id.clone(),
+            campaign_run_id: manifest.campaign_run_id.clone(),
+            worktree_id: manifest.worktree_id.clone(),
+            created_at_ms: timestamp_ms,
+            updated_at_ms: timestamp_ms,
+            approvals: Vec::new(),
+        }
+    }
+
+    fn verify(
+        &self,
+        spec: &CampaignSpec,
+        manifest: &TeamCampaignManifest,
+        authority_sha256: &str,
+    ) -> bool {
+        if self.version != APPROVAL_VERSION
+            || self.authority_sha256 != authority_sha256
+            || self.campaign_id != spec.campaign_id
+            || self.repository_id != spec.repository_id
+            || self.campaign_run_id != manifest.campaign_run_id
+            || self.worktree_id != manifest.worktree_id
+            || RunId::new(self.campaign_run_id.clone()).is_err()
+            || WorktreeId::new(self.worktree_id.clone()).is_err()
+            || self.created_at_ms > self.updated_at_ms
+            || self.approvals.len() > MAX_CONTROL_REQUESTS
+        {
+            return false;
+        }
+        let mut requests = BTreeSet::new();
+        let mut task_bindings = BTreeSet::new();
+        let mut prior_timestamp = self.created_at_ms;
+        for approval in &self.approvals {
+            if RunId::new(approval.request_id.clone()).is_err()
+                || codingmage_contracts::TaskId::new(approval.task_id.clone()).is_err()
+                || !valid_commit(&approval.campaign_head)
+                || !valid_commit(&approval.reviewed_commit)
+                || approval.timestamp_ms < prior_timestamp
+                || !requests.insert(approval.request_id.as_str())
+                || !task_bindings.insert((
+                    approval.task_id.as_str(),
+                    approval.campaign_head.as_str(),
+                    approval.reviewed_commit.as_str(),
+                ))
+            {
+                return false;
+            }
+            prior_timestamp = approval.timestamp_ms;
+        }
+        prior_timestamp == self.updated_at_ms
+    }
+
+    fn apply(&mut self, approval: TeamIntegrationApproval) -> Result<bool, RuntimeError> {
+        if let Some(existing) = self
+            .approvals
+            .iter()
+            .find(|value| value.request_id == approval.request_id)
+        {
+            return if existing.task_id == approval.task_id
+                && existing.campaign_head == approval.campaign_head
+                && existing.reviewed_commit == approval.reviewed_commit
+            {
+                Ok(false)
+            } else {
+                Err(RuntimeError::Authority)
+            };
+        }
+        if self.approvals.len() >= MAX_CONTROL_REQUESTS
+            || approval.timestamp_ms < self.updated_at_ms
+            || self.approvals.iter().any(|value| {
+                value.task_id == approval.task_id
+                    && value.campaign_head == approval.campaign_head
+                    && value.reviewed_commit == approval.reviewed_commit
+            })
+        {
+            return Err(RuntimeError::Authority);
+        }
+        self.updated_at_ms = approval.timestamp_ms;
+        self.approvals.push(approval);
+        Ok(true)
+    }
+
+    fn contains(&self, task_id: &str, campaign_head: &str, reviewed_commit: &str) -> bool {
+        self.approvals.iter().any(|approval| {
+            approval.task_id == task_id
+                && approval.campaign_head == campaign_head
+                && approval.reviewed_commit == reviewed_commit
+        })
+    }
 }
 
 impl TeamControlState {
@@ -279,6 +406,100 @@ pub(crate) fn observe_team_control(
     })
 }
 
+pub(crate) fn observe_team_integration_approval(
+    campaign_root: &Path,
+    spec: &CampaignSpec,
+    manifest: &TeamCampaignManifest,
+    authority_sha256: &str,
+    task_id: &str,
+    campaign_head: &str,
+    reviewed_commit: &str,
+) -> Result<bool, RuntimeError> {
+    Ok(
+        load_approvals(campaign_root, spec, manifest, authority_sha256)?
+            .is_some_and(|state| state.contains(task_id, campaign_head, reviewed_commit)),
+    )
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub(crate) fn request_team_integration_approval(
+    config: &Config,
+    spec: &CampaignSpec,
+    codingmage_binary: &Path,
+    task_id: &str,
+    campaign_head: &str,
+    reviewed_commit: &str,
+    request_id: &str,
+) -> Result<CampaignControlOutcome, RuntimeError> {
+    let task_id =
+        codingmage_contracts::TaskId::new(task_id.to_owned()).map_err(|_| RuntimeError::Spec)?;
+    let request_id = RunId::new(request_id.to_owned()).map_err(|_| RuntimeError::Spec)?;
+    if !valid_commit(campaign_head) || !valid_commit(reviewed_commit) {
+        return Err(RuntimeError::Spec);
+    }
+    let (authorization, authority_sha256, campaign_root) =
+        validate_team_authority(config, spec, codingmage_binary, true)?;
+    let manifest =
+        load_manifest(&campaign_root, spec, &authority_sha256)?.ok_or(RuntimeError::State)?;
+    let snapshot = IntegrityDocument::<codingmage_campaign::TeamCampaignSnapshot>::load(
+        &campaign_root.join("state"),
+        STATE_NAME,
+        |value| value.verify().is_ok(),
+    )
+    .map_err(|_| RuntimeError::State)?
+    .payload;
+    let record = snapshot
+        .tasks
+        .get(task_id.as_str())
+        .ok_or(RuntimeError::State)?;
+    if authorization.identity().repository_id.as_str() != manifest.repository_id
+        || snapshot.campaign_head != campaign_head
+        || record.reviewed_commit.as_deref() != Some(reviewed_commit)
+        || !matches!(
+            record.state,
+            CampaignTaskState::PublicationReady
+                | CampaignTaskState::PullRequestOpen
+                | CampaignTaskState::CiWaiting
+        )
+    {
+        return Err(RuntimeError::Authority);
+    }
+    let lock_id = generated_run_id()?;
+    let _lock = CoordinatorLock::acquire(
+        &config
+            .state_root
+            .join("team-campaign-approval-locks")
+            .join(&spec.campaign_id),
+        &authorization.identity().repository_id,
+        lock_id.as_str(),
+    )
+    .map_err(|_| RuntimeError::Orchestration)?;
+    let timestamp_ms = now_ms()?;
+    let mut state = load_approvals(&campaign_root, spec, &manifest, &authority_sha256)?
+        .unwrap_or_else(|| {
+            TeamApprovalState::initial(spec, &manifest, &authority_sha256, timestamp_ms)
+        });
+    let created = state.apply(TeamIntegrationApproval {
+        request_id: request_id.as_str().to_owned(),
+        task_id: task_id.as_str().to_owned(),
+        campaign_head: campaign_head.to_owned(),
+        reviewed_commit: reviewed_commit.to_owned(),
+        timestamp_ms,
+    })?;
+    if created {
+        IntegrityDocument::write_atomic(&campaign_root, APPROVAL_NAME, state, |value| {
+            value.verify(spec, &manifest, &authority_sha256)
+        })
+        .map_err(|_| RuntimeError::State)?;
+    }
+    Ok(CampaignControlOutcome {
+        campaign_id: spec.campaign_id.clone(),
+        request_id: request_id.as_str().to_owned(),
+        action: "approve_task_integration".to_owned(),
+        created,
+    })
+}
+
 pub(crate) fn team_campaign_status(
     config: &Config,
     spec: &CampaignSpec,
@@ -438,6 +659,22 @@ fn load_control(
         return Ok(None);
     }
     IntegrityDocument::<TeamControlState>::load(campaign_root, CONTROL_NAME, |value| {
+        value.verify(spec, manifest, authority_sha256)
+    })
+    .map(|document| Some(document.payload))
+    .map_err(|_| RuntimeError::State)
+}
+
+fn load_approvals(
+    campaign_root: &Path,
+    spec: &CampaignSpec,
+    manifest: &TeamCampaignManifest,
+    authority_sha256: &str,
+) -> Result<Option<TeamApprovalState>, RuntimeError> {
+    if fs::symlink_metadata(campaign_root.join(APPROVAL_NAME)).is_err() {
+        return Ok(None);
+    }
+    IntegrityDocument::<TeamApprovalState>::load(campaign_root, APPROVAL_NAME, |value| {
         value.verify(spec, manifest, authority_sha256)
     })
     .map(|document| Some(document.payload))
@@ -708,6 +945,10 @@ fn now_ms() -> Result<u64, RuntimeError> {
         .ok_or(RuntimeError::State)
 }
 
+fn valid_commit(value: &str) -> bool {
+    matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -758,6 +999,41 @@ mod tests {
         let mut tampered = state;
         tampered.requests.swap(0, 1);
         assert!(!tampered.verify(&spec, &manifest, &authority));
+    }
+
+    #[test]
+    fn task_integration_approval_is_exact_idempotent_and_stale_head_bound() {
+        let spec = spec();
+        let authority = spec.authority_sha256().unwrap();
+        let manifest = manifest(&spec, &authority);
+        let mut state = TeamApprovalState::initial(&spec, &manifest, &authority, 10);
+        let approval = TeamIntegrationApproval {
+            request_id: "approval-1".to_owned(),
+            task_id: "24.1.1.1".to_owned(),
+            campaign_head: "d".repeat(40),
+            reviewed_commit: "e".repeat(40),
+            timestamp_ms: 11,
+        };
+        assert!(state.apply(approval.clone()).unwrap());
+        let mut replay = approval.clone();
+        replay.timestamp_ms = 12;
+        assert!(!state.apply(replay).unwrap());
+        assert!(state.verify(&spec, &manifest, &authority));
+        assert!(state.contains(
+            &approval.task_id,
+            &approval.campaign_head,
+            &approval.reviewed_commit
+        ));
+        assert!(!state.contains(
+            &approval.task_id,
+            &"f".repeat(40),
+            &approval.reviewed_commit
+        ));
+
+        let mut conflicting = approval;
+        conflicting.reviewed_commit = "0".repeat(40);
+        conflicting.timestamp_ms = 13;
+        assert_eq!(state.apply(conflicting), Err(RuntimeError::Authority));
     }
 
     fn spec() -> CampaignSpec {

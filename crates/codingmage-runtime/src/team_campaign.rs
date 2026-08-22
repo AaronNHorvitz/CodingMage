@@ -24,7 +24,9 @@ use crate::{
     generated_run_id, initialize_team_campaign, integrate_team_queue_head_with_strategy,
     login_discovery_environment, private_directory, refresh_team_readiness,
     synchronize_task_publication,
-    team_control::{TeamCancellationWatcher, observe_team_control},
+    team_control::{
+        TeamCancellationWatcher, observe_team_control, observe_team_integration_approval,
+    },
     write_private_idempotent,
 };
 
@@ -339,8 +341,17 @@ pub fn run_team_campaign_with_progress(
         match policy.publication_mode {
             TaskPublicationMode::LocalOnly => {
                 for task_id in publication_candidates {
+                    let approved = task_integration_approved(
+                        &campaign_root,
+                        &spec,
+                        &manifest,
+                        &authority_sha256,
+                        &snapshot,
+                        &task_id,
+                        policy.task_integration_policy,
+                    )?;
                     if let Some(blocker_code) =
-                        task_integration_blocker(policy.task_integration_policy)
+                        task_integration_blocker(policy.task_integration_policy, approved)
                     {
                         return Ok(blocked_outcome(
                             &spec,
@@ -406,8 +417,17 @@ pub fn run_team_campaign_with_progress(
                         TeamPublicationOutcome::WaitingForCi => waiting_for_ci = true,
                         TeamPublicationOutcome::CorrectionRequired => correction_required = true,
                         TeamPublicationOutcome::ReadyForIntegration => {
+                            let approved = task_integration_approved(
+                                &campaign_root,
+                                &spec,
+                                &manifest,
+                                &authority_sha256,
+                                &snapshot,
+                                &task_id,
+                                policy.task_integration_policy,
+                            )?;
                             if let Some(blocker_code) =
-                                task_integration_blocker(policy.task_integration_policy)
+                                task_integration_blocker(policy.task_integration_policy, approved)
                             {
                                 return Ok(blocked_outcome(
                                     &spec,
@@ -860,13 +880,44 @@ fn valid_sha256(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
-const fn task_integration_blocker(policy: TaskIntegrationPolicy) -> Option<&'static str> {
+fn task_integration_approved(
+    campaign_root: &Path,
+    spec: &CampaignSpec,
+    manifest: &TeamCampaignManifest,
+    authority_sha256: &str,
+    snapshot: &codingmage_campaign::TeamCampaignSnapshot,
+    task_id: &str,
+    policy: TaskIntegrationPolicy,
+) -> Result<bool, RuntimeError> {
+    if policy != TaskIntegrationPolicy::HumanRequired {
+        return Ok(false);
+    }
+    let reviewed_commit = snapshot
+        .tasks
+        .get(task_id)
+        .and_then(|record| record.reviewed_commit.as_deref())
+        .ok_or(RuntimeError::State)?;
+    observe_team_integration_approval(
+        campaign_root,
+        spec,
+        manifest,
+        authority_sha256,
+        task_id,
+        &snapshot.campaign_head,
+        reviewed_commit,
+    )
+}
+
+const fn task_integration_blocker(
+    policy: TaskIntegrationPolicy,
+    approved: bool,
+) -> Option<&'static str> {
     match policy {
         TaskIntegrationPolicy::Never => Some("codingmage.team.integration_denied"),
-        TaskIntegrationPolicy::HumanRequired => {
+        TaskIntegrationPolicy::HumanRequired if !approved => {
             Some("codingmage.team.integration_approval_required")
         }
-        TaskIntegrationPolicy::AutoToCampaignBranch => None,
+        TaskIntegrationPolicy::HumanRequired | TaskIntegrationPolicy::AutoToCampaignBranch => None,
     }
 }
 
@@ -877,15 +928,19 @@ mod tests {
     #[test]
     fn task_integration_policy_is_closed_and_deny_first() {
         assert_eq!(
-            task_integration_blocker(TaskIntegrationPolicy::Never),
+            task_integration_blocker(TaskIntegrationPolicy::Never, false),
             Some("codingmage.team.integration_denied")
         );
         assert_eq!(
-            task_integration_blocker(TaskIntegrationPolicy::HumanRequired),
+            task_integration_blocker(TaskIntegrationPolicy::HumanRequired, false),
             Some("codingmage.team.integration_approval_required")
         );
         assert_eq!(
-            task_integration_blocker(TaskIntegrationPolicy::AutoToCampaignBranch),
+            task_integration_blocker(TaskIntegrationPolicy::HumanRequired, true),
+            None
+        );
+        assert_eq!(
+            task_integration_blocker(TaskIntegrationPolicy::AutoToCampaignBranch, false),
             None
         );
     }
