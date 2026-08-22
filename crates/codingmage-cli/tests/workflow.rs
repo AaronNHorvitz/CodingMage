@@ -2,6 +2,7 @@
 
 use std::{
     collections::BTreeMap,
+    fmt::Write as _,
     fs,
     panic::{AssertUnwindSafe, catch_unwind},
     path::{Path, PathBuf},
@@ -979,20 +980,40 @@ profiles = ["configured-gates"]
 
 #[test]
 #[allow(clippy::too_many_lines)]
-fn parallel_campaign_runs_two_pods_and_serializes_reviewed_integrations() {
+fn parallel_campaign_runs_five_pods_and_serializes_reviewed_integrations() {
     let fixture = Fixture::new();
     let target = fixture.root.join("target");
     fs::create_dir(target.join("src")).unwrap();
-    fs::write(target.join("src/a.rs"), "pub fn a() -> u8 { 1 }\n").unwrap();
-    fs::write(target.join("src/b.rs"), "pub fn b() -> u8 { 1 }\n").unwrap();
-    let task_source = "# Tasks\n\n## Sprint 0 - Start\n\n**Sprint goal:** Start safely.\n\n### Story 0.1 - Parallel work\n\n- [ ] **Task 0.1.1 - Work**\n  - [ ] **Sub-task 0.1.1.1:** Complete source A independently.\n  - [ ] **Sub-task 0.1.1.2:** Complete source B independently.\n";
+    let source_names = ["a", "b", "c", "d", "e"];
+    for name in source_names {
+        fs::write(
+            target.join(format!("src/{name}.rs")),
+            format!("pub fn {name}() -> u8 {{ 1 }}\n"),
+        )
+        .unwrap();
+    }
+    let mut task_items = String::new();
+    for (index, name) in source_names.iter().enumerate() {
+        writeln!(
+            task_items,
+            "  - [ ] **Sub-task 0.1.1.{}:** Complete source {} independently.",
+            index.saturating_add(1),
+            name.to_ascii_uppercase()
+        )
+        .unwrap();
+    }
+    let task_source = format!(
+        "# Tasks\n\n## Sprint 0 - Start\n\n**Sprint goal:** Start safely.\n\n### Story 0.1 - Parallel work\n\n- [ ] **Task 0.1.1 - Work**\n{task_items}"
+    );
     fs::write(target.join("TASKS.md"), task_source).unwrap();
-    git(&target, &["add", "TASKS.md", "src/a.rs", "src/b.rs"]);
+    git(&target, &["add", "TASKS.md", "src"]);
     git(&target, &["commit", "-m", "add parallel campaign fixture"]);
     let original_head = git_output(&target, &["rev-parse", "HEAD"]);
     let original_tasks = fs::read(target.join("TASKS.md")).unwrap();
-    let original_a = fs::read(target.join("src/a.rs")).unwrap();
-    let original_b = fs::read(target.join("src/b.rs")).unwrap();
+    let original_sources = source_names
+        .iter()
+        .map(|name| fs::read(target.join(format!("src/{name}.rs"))).unwrap())
+        .collect::<Vec<_>>();
 
     let claude = fixture.executable(
         "parallel-claude",
@@ -1007,7 +1028,8 @@ if "--help" in sys.argv:
     raise SystemExit(0)
 packet = sys.stdin.read()
 task = re.search(r"Task: ([0-9.]+)", packet).group(1)
-path = Path("src/a.rs" if task.endswith(".1") else "src/b.rs")
+name = chr(ord("a") + int(task.rsplit(".", 1)[1]) - 1)
+path = Path(f"src/{name}.rs")
 log = Path(__file__).with_name("parallel-pods.log")
 with log.open("a", encoding="utf-8") as stream:
     stream.write(f"{task} start {time.monotonic_ns()}\n")
@@ -1048,7 +1070,8 @@ if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
     tasks = re.findall(r"- id=([0-9.]+)", packet)
     proposals = []
     for task in tasks:
-        path = "src/a.rs" if task.endswith(".1") else "src/b.rs"
+        name = chr(ord("a") + int(task.rsplit(".", 1)[1]) - 1)
+        path = f"src/{name}.rs"
         proposals.append({
             "task_id": task, "dependencies": [], "owned_paths": [path],
             "gate_tiers": ["focused"], "test_resources": [f"fixture-{task}"],
@@ -1113,8 +1136,8 @@ print(json.dumps({"type": "turn.completed"}))
         initial_commit: diagnosis["head"].as_str().unwrap().to_owned(),
         task_source_sha256: diagnosis["task_source_sha256"].as_str().unwrap().to_owned(),
         operator_authorization_sha256: "a".repeat(64),
-        max_parallel_pods: 2,
-        max_units: 2,
+        max_parallel_pods: 5,
+        max_units: 5,
         limits: CampaignLimits {
             provider_attempts: 1_000,
             malformed_report_repairs: 100,
@@ -1146,10 +1169,10 @@ print(json.dumps({"type": "turn.completed"}))
             task_merge_strategy: TaskMergeStrategy::Squash,
             github: None,
             concurrency: CampaignConcurrency {
-                claude_implementers: 2,
+                claude_implementers: 5,
                 codex_team_leads: 1,
-                codex_reviewers: 2,
-                test_workers: 2,
+                codex_reviewers: 5,
+                test_workers: 5,
                 github_writers: 1,
                 integration_workers: 1,
             },
@@ -1196,7 +1219,7 @@ print(json.dumps({"type": "turn.completed"}))
     .unwrap()
     .unwrap();
     assert_eq!(status.state, "paused");
-    assert_eq!(status.outcomes.accepted, 2);
+    assert_eq!(status.outcomes.accepted, 5);
     assert_eq!(status.outcomes.completed, 0);
     let repeated = request_campaign_control(
         &config_value,
@@ -1226,36 +1249,43 @@ print(json.dumps({"type": "turn.completed"}))
     )
     .unwrap();
     assert_eq!(outcome.state, CampaignState::Complete);
-    assert_eq!(outcome.completed_units, 2);
+    assert_eq!(outcome.completed_units, 5);
     assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
     assert_eq!(git_output(&target, &["status", "--porcelain=v1"]), "");
     assert_eq!(fs::read(target.join("TASKS.md")).unwrap(), original_tasks);
-    assert_eq!(fs::read(target.join("src/a.rs")).unwrap(), original_a);
-    assert_eq!(fs::read(target.join("src/b.rs")).unwrap(), original_b);
+    for (name, original) in source_names.iter().zip(original_sources) {
+        assert_eq!(
+            fs::read(target.join(format!("src/{name}.rs"))).unwrap(),
+            original
+        );
+    }
     let completed = git_output(&target, &["show", &format!("{}:TASKS.md", outcome.branch)]);
-    assert!(completed.contains("- [x] **Sub-task 0.1.1.1:**"));
-    assert!(completed.contains("- [x] **Sub-task 0.1.1.2:**"));
-    assert_eq!(
-        git_output(&target, &["show", &format!("{}:src/a.rs", outcome.branch)]),
-        "pub fn a() -> u8 { 2 }"
-    );
-    assert_eq!(
-        git_output(&target, &["show", &format!("{}:src/b.rs", outcome.branch)]),
-        "pub fn b() -> u8 { 2 }"
-    );
+    for (index, name) in source_names.iter().enumerate() {
+        assert!(completed.contains(&format!(
+            "- [x] **Sub-task 0.1.1.{}:**",
+            index.saturating_add(1)
+        )));
+        assert_eq!(
+            git_output(
+                &target,
+                &["show", &format!("{}:src/{name}.rs", outcome.branch)]
+            ),
+            format!("pub fn {name}() -> u8 {{ 2 }}")
+        );
+    }
     assert_eq!(
         progress
             .iter()
             .filter(|event| event.stage == ProgressStage::Implementing)
             .count(),
-        2
+        5
     );
     assert_eq!(
         progress
             .iter()
             .filter(|event| event.stage == ProgressStage::Integrating)
             .count(),
-        2
+        5
     );
     let timings = fs::read_to_string(fixture.root.join("parallel-pods.log")).unwrap();
     let mut starts = BTreeMap::new();
@@ -1269,8 +1299,8 @@ print(json.dumps({"type": "turn.completed"}))
             ends.insert(fields[0], timestamp);
         }
     }
-    assert_eq!(starts.len(), 2);
-    assert_eq!(ends.len(), 2);
+    assert_eq!(starts.len(), 5);
+    assert_eq!(ends.len(), 5);
     assert!(starts.values().max().unwrap() < ends.values().min().unwrap());
     let complete_status = campaign_status(
         &config_value,
@@ -1280,7 +1310,7 @@ print(json.dumps({"type": "turn.completed"}))
     .unwrap()
     .unwrap();
     assert_eq!(complete_status.state, "complete");
-    assert_eq!(complete_status.outcomes.completed, 2);
+    assert_eq!(complete_status.outcomes.completed, 5);
     let report = team_campaign_report(
         &config_value,
         &spec,
@@ -1290,7 +1320,7 @@ print(json.dumps({"type": "turn.completed"}))
     .unwrap();
     assert_eq!(report.final_commit, outcome.head);
     assert_eq!(report.initial_commit, original_head);
-    assert_eq!(report.tasks.len(), 2);
+    assert_eq!(report.tasks.len(), 5);
     assert_eq!(report.final_gate_evidence_sha256.len(), 64);
     assert_eq!(report.final_review_evidence_sha256.len(), 64);
     let campaign_file = fixture.root.join("parallel-campaign.toml");
@@ -1305,7 +1335,7 @@ print(json.dumps({"type": "turn.completed"}))
     assert!(report_output.status.success());
     let reported: serde_json::Value = serde_json::from_slice(&report_output.stdout).unwrap();
     assert_eq!(reported["final_commit"], outcome.head);
-    assert_eq!(reported["tasks"].as_object().unwrap().len(), 2);
+    assert_eq!(reported["tasks"].as_object().unwrap().len(), 5);
 
     let codex_log = fixture.root.join("parallel-codex.log");
     let codex_before = fs::read(&codex_log).unwrap();
