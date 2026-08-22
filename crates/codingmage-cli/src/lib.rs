@@ -19,7 +19,7 @@ use codingmage_plan::TaskPlan;
 use codingmage_runtime::{
     RunProgress, RunSpec, RuntimeError, campaign_blocker_explanation, campaign_status,
     clear_campaign_blocker, observe_campaign_deferral_trigger, request_campaign_control,
-    run_one_with_progress, run_team_campaign_with_progress,
+    run_one_with_progress, run_team_campaign_with_progress, team_campaign_report,
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -43,6 +43,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "run" => execute(&arguments[1..]),
         "campaign" => execute_campaign(&arguments[1..]),
         "campaign-status" => inspect_campaign(&arguments[1..]),
+        "campaign-report" => inspect_campaign_report(&arguments[1..]),
         "campaign-explain-blocker" => explain_campaign_blocker(&arguments[1..]),
         "campaign-clear-blocker" => clear_blocker(&arguments[1..]),
         "campaign-observe-trigger" => observe_trigger(&arguments[1..]),
@@ -167,6 +168,16 @@ fn inspect_campaign(arguments: &[String]) -> Result<String, CliError> {
     let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
     let status = campaign_status(&config, &spec, &executable).map_err(CliError::Runtime)?;
     serde_json::to_string_pretty(&status).map_err(|_| CliError::Internal)
+}
+
+fn inspect_campaign_report(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "campaign"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let report = team_campaign_report(&config, &spec, &executable).map_err(CliError::Runtime)?;
+    serde_json::to_string_pretty(&report).map_err(|_| CliError::Internal)
 }
 
 fn explain_campaign_blocker(arguments: &[String]) -> Result<String, CliError> {

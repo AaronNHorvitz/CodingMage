@@ -19,7 +19,7 @@ use codingmage_campaign::{
 use codingmage_core::load_config;
 use codingmage_runtime::{
     CampaignState, ProgressStage, campaign_status, request_campaign_control,
-    run_serial_campaign_with_progress, run_team_campaign_with_progress,
+    run_serial_campaign_with_progress, run_team_campaign_with_progress, team_campaign_report,
 };
 
 struct Fixture {
@@ -1028,6 +1028,7 @@ print(json.dumps({
         "parallel-codex",
         r#"#!/usr/bin/python3
 import json, re, sys
+from pathlib import Path
 if "--version" in sys.argv:
     print("codex-cli 0.144.5")
     raise SystemExit(0)
@@ -1038,6 +1039,8 @@ if "--help" in sys.argv:
     print("Run Codex non-interactively --json --output-schema resume --model read-only --ignore-user-config")
     raise SystemExit(0)
 packet = sys.stdin.read()
+with Path(__file__).with_name("parallel-codex.log").open("a", encoding="utf-8") as stream:
+    stream.write("invoked\n")
 if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
     campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
     head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
@@ -1277,6 +1280,49 @@ print(json.dumps({"type": "turn.completed"}))
     .unwrap();
     assert_eq!(complete_status.state, "complete");
     assert_eq!(complete_status.outcomes.completed, 2);
+    let report = team_campaign_report(
+        &config_value,
+        &spec,
+        Path::new(env!("CARGO_BIN_EXE_codingmage")),
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(report.final_commit, outcome.head);
+    assert_eq!(report.initial_commit, original_head);
+    assert_eq!(report.tasks.len(), 2);
+    assert_eq!(report.final_gate_evidence_sha256.len(), 64);
+    assert_eq!(report.final_review_evidence_sha256.len(), 64);
+    let campaign_file = fixture.root.join("parallel-campaign.toml");
+    fs::write(&campaign_file, toml::to_string(&spec).unwrap()).unwrap();
+    let report_output = Fixture::command(&[
+        "campaign-report",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign_file.to_str().unwrap(),
+    ]);
+    assert!(report_output.status.success());
+    let reported: serde_json::Value = serde_json::from_slice(&report_output.stdout).unwrap();
+    assert_eq!(reported["final_commit"], outcome.head);
+    assert_eq!(reported["tasks"].as_object().unwrap().len(), 2);
+
+    let codex_log = fixture.root.join("parallel-codex.log");
+    let codex_before = fs::read(&codex_log).unwrap();
+    let claude_before = fs::read(fixture.root.join("parallel-pods.log")).unwrap();
+    let repeated = run_team_campaign_with_progress(
+        &config_value,
+        spec,
+        Path::new(env!("CARGO_BIN_EXE_codingmage")),
+        |_| {},
+    )
+    .unwrap();
+    assert_eq!(repeated.state, CampaignState::Complete);
+    assert_eq!(repeated.completed_units, 0);
+    assert_eq!(fs::read(codex_log).unwrap(), codex_before);
+    assert_eq!(
+        fs::read(fixture.root.join("parallel-pods.log")).unwrap(),
+        claude_before
+    );
 }
 
 #[test]

@@ -34,7 +34,7 @@ pub struct IntegrationVerification {
 }
 
 impl IntegrationVerification {
-    fn verify(&self) -> Result<(), RuntimeError> {
+    pub(crate) fn verify(&self) -> Result<(), RuntimeError> {
         if !valid_sha256(&self.gate_evidence_sha256) || !valid_sha256(&self.review_evidence_sha256)
         {
             return Err(RuntimeError::Verification);

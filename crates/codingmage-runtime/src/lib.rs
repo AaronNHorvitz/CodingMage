@@ -9,7 +9,10 @@ mod team_planning;
 mod team_runtime;
 mod team_state;
 
-pub use team_campaign::run_team_campaign_with_progress;
+pub use team_campaign::{
+    TeamCampaignReport, TeamTaskCompletionReport, run_team_campaign_with_progress,
+    team_campaign_report,
+};
 pub use team_integration::{
     IntegrationVerification, ProductionTeamIntegrationVerifier, TeamIntegrationOutcome,
     TeamIntegrationVerifier, enqueue_team_integration, integrate_team_queue_head,
