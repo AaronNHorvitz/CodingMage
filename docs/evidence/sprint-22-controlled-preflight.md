@@ -4,6 +4,7 @@
   open
 - **Implementation commit:** `061a604`
 - **Target-artifact boundary correction:** `35ce2b6`
+- **Stable approval-projection correction:** `174c320`
 - **Executed:** 2026-08-22 on Fedora Linux with Rust 1.95.0
 
 ## Implemented Boundary
@@ -19,7 +20,9 @@ The command hashes the exact provider executable bytes and operator-selected mod
 probes only version and help capability surfaces through the guarded process runtime, using the
 existing-login boundary. It also binds deterministic gate commands and tiers, gate executable bytes,
 the process guard, four operator controls, allowed and denied path projections, and available private
-state and scratch storage.
+state and scratch storage. Exact free-byte observations remain internal gate inputs; the report
+contains only stable per-root threshold results and the configured threshold so unchanged authority
+produces identical approval bytes.
 
 The successful report contains identities, hashes, counts, booleans, and closed role and authority
 codes. The binary fixture asserts that it contains no target or executable path, task prose,
@@ -45,12 +48,18 @@ Result: eight passed, zero failed. The tests prove report creation and permissio
 stop, exact-digest approval, acknowledgment enforcement, subprocess ordering, and refusal of a
 report destination inside the target tree.
 
+The first controlled-target launch attempt correctly refused before inference because schema version
+1 included volatile exact free-storage byte observations. Schema version 2 replaces those values with
+stable threshold booleans, and the binary fixture requires two consecutive preflight reports to be
+byte-for-byte identical. Evidence from the refused version 1 report is invalidated.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
 
-Result: one passed, zero failed in 14.40 seconds. Authorization-byte, dirty-repository,
-default-branch, and incorrect-ceiling mutations all fail before inference.
+Result: one passed, zero failed in 28.57 seconds. The fixture includes two byte-identical successful
+preflights. Authorization-byte, dirty-repository, default-branch, and incorrect-ceiling mutations all
+fail before inference.
 
 ```text
 cargo test -p codingmage-cli --test prescribed_campaign --locked --offline -- --nocapture
