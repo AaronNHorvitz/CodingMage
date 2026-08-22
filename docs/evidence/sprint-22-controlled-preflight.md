@@ -5,6 +5,7 @@
 - **Implementation commit:** `061a604`
 - **Target-artifact boundary correction:** `35ce2b6`
 - **Stable approval-projection correction:** `174c320`
+- **Provider-compatible lead-schema correction:** `56a1c19`
 - **Executed:** 2026-08-22 on Fedora Linux with Rust 1.95.0
 
 ## Implemented Boundary
@@ -52,6 +53,19 @@ The first controlled-target launch attempt correctly refused before inference be
 1 included volatile exact free-storage byte observations. Schema version 2 replaces those values with
 stable threshold booleans, and the binary fixture requires two consecutive preflight reports to be
 byte-for-byte identical. Evidence from the refused version 1 report is invalidated.
+
+After approval of the stable report, the first campaign lead process started but returned
+`codingmage.provider.codex.failed` before selecting a task or creating an implementation pod. A
+source-free profile diagnostic proved authentication and the configured model worked. A second
+diagnostic using the exact team-lead schema reproduced the provider's `invalid_json_schema` refusal:
+root-level `oneOf` was not accepted by the structured-output endpoint.
+
+Commit `56a1c19` removes conditional schema unions, makes the three disposition payloads nullable
+closed objects, and leaves their exact mutual-exclusion and binding rules in the deterministic Rust
+validator. A recursive unit assertion forbids `oneOf` anywhere in the provider schema. The corrected
+schema was accepted by the real configured Codex endpoint and produced a structured response. Eight
+Codex adapter tests, 89 runtime tests, the repeated binary preflight fixture, and strict Clippy pass.
+The failed campaign remains retained with zero accepted outcomes and is not resumed or rewritten.
 
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
