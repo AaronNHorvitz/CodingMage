@@ -277,6 +277,11 @@ ambiguous internal code. Each path clears the durable active-unit marker, releas
 preserves any candidate branch or scratch state needed for inspection, and never advances the
 campaign or active checkout.
 
+State failures at the provider-admission boundary are further separated:
+`unit_retained_state_observation_failure` identifies a failed campaign-tree measurement, while
+`unit_utilization_failure` identifies arithmetic or shared-accounting synchronization failure.
+Neither code grants another provider attempt.
+
 Resource release is always attempted after a unit result. If both the unit operation and cleanup
 fail, the coordinator returns the original operation failure and retains its typed provider,
 verification, repository, or limit diagnostic; cleanup cannot replace it with a less precise error.

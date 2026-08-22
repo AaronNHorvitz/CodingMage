@@ -1888,7 +1888,12 @@ fn classify_terminal(
             CampaignTaskState::Blocked,
             TaskTerminalReason::IntegrationConflict,
         ),
-        Err(RuntimeError::Repository | RuntimeError::State) => (
+        Err(
+            RuntimeError::Repository
+            | RuntimeError::State
+            | RuntimeError::RetainedStateObservation
+            | RuntimeError::Utilization,
+        ) => (
             CampaignTaskState::Blocked,
             TaskTerminalReason::StaleIdentity,
         ),

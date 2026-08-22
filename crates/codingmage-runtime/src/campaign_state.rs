@@ -174,7 +174,8 @@ impl CampaignUnitBudget {
         correction_rounds: u16,
         reservation: CampaignReservation,
     ) -> Result<Option<CampaignLimitKind>, RuntimeError> {
-        let retained = retained_tree_bytes(&self.campaign_root)?;
+        let retained = retained_tree_bytes(&self.campaign_root)
+            .map_err(|_| RuntimeError::RetainedStateObservation)?;
         self.exhausted_with_observations(unit, correction_rounds, reservation, retained)
     }
 

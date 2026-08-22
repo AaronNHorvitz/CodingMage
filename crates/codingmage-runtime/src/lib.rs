@@ -3005,6 +3005,12 @@ const fn campaign_unit_error(error: RuntimeError) -> CampaignUnitError {
         RuntimeError::Plan => blocked_unit_error("codingmage.campaign.unit_plan_failure"),
         RuntimeError::Process => blocked_unit_error("codingmage.campaign.unit_process_failure"),
         RuntimeError::State => blocked_unit_error("codingmage.campaign.unit_state_failure"),
+        RuntimeError::RetainedStateObservation => {
+            blocked_unit_error("codingmage.campaign.unit_retained_state_observation_failure")
+        }
+        RuntimeError::Utilization => {
+            blocked_unit_error("codingmage.campaign.unit_utilization_failure")
+        }
         RuntimeError::Orchestration => {
             blocked_unit_error("codingmage.campaign.unit_orchestration_failure")
         }
@@ -4104,17 +4110,23 @@ impl<'a> ProductionWorkflowPort<'a> {
             process_invocations: 1,
             ..CampaignReservation::default()
         })?;
-        self.utilization.provider_attempts = self
-            .utilization
-            .provider_attempts
-            .checked_add(1)
-            .ok_or(OrchestrationError::Port)?;
-        self.utilization.process_invocations = self
-            .utilization
-            .process_invocations
-            .checked_add(1)
-            .ok_or(OrchestrationError::Port)?;
-        self.sync_observed_usage()
+        let result = (|| {
+            self.utilization.provider_attempts = self
+                .utilization
+                .provider_attempts
+                .checked_add(1)
+                .ok_or(OrchestrationError::Port)?;
+            self.utilization.process_invocations = self
+                .utilization
+                .process_invocations
+                .checked_add(1)
+                .ok_or(OrchestrationError::Port)?;
+            self.sync_observed_usage()
+        })();
+        if result.is_err() {
+            self.failure = Some(RuntimeError::Utilization);
+        }
+        result
     }
 
     fn record_process_result(&mut self, result: &ProcessResult) -> Result<(), OrchestrationError> {
@@ -5373,6 +5385,10 @@ pub enum RuntimeError {
     Process,
     /// Durable state could not be created or verified.
     State,
+    /// Retained campaign state could not be observed safely before another effect.
+    RetainedStateObservation,
+    /// Aggregate unit utilization could not be updated or synchronized.
+    Utilization,
     /// One-unit orchestration failed closed.
     Orchestration,
     /// Campaign authority, proposal, or lease validation failed.
@@ -5400,6 +5416,8 @@ impl RuntimeError {
             Self::Plan => "codingmage.runtime.plan",
             Self::Process => "codingmage.runtime.process",
             Self::State => "codingmage.runtime.state",
+            Self::RetainedStateObservation => "codingmage.runtime.retained_state_observation",
+            Self::Utilization => "codingmage.runtime.utilization",
             Self::Orchestration => "codingmage.runtime.orchestration",
             Self::Campaign(error) => match error {
                 CampaignError::InvalidSpec => "codingmage.runtime.campaign.spec",
@@ -6183,6 +6201,14 @@ effort = "high"
             (
                 RuntimeError::State,
                 "codingmage.campaign.unit_state_failure",
+            ),
+            (
+                RuntimeError::RetainedStateObservation,
+                "codingmage.campaign.unit_retained_state_observation_failure",
+            ),
+            (
+                RuntimeError::Utilization,
+                "codingmage.campaign.unit_utilization_failure",
             ),
             (
                 RuntimeError::Orchestration,
