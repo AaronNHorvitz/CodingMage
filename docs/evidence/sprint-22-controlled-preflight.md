@@ -77,7 +77,7 @@ one-pod local-only campaign. The corrected lead schema was accepted, the lead se
 ready sub-task `5.2.1.1`, and the implementation provider produced candidate commit
 `381cd23e45049b882164f13122eea80321267aa0` on its isolated pod branch.
 
-The candidate passed focused `agentmage-kernel-contracts` tests and strict focused Clippy but failed
+The candidate passed its focused kernel-contract tests and strict focused Clippy but failed
 `cargo fmt --all -- --check` on two import layouts. The configured gate order had already run an
 expensive workspace build inside the task worktree. Live task and build state crossed the 1 GiB
 retained-state ceiling before bounded correction could begin, so the coordinator paused with

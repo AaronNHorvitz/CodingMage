@@ -1069,7 +1069,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.3.1.3:** Capture preflight repository, task-source, configuration, provider-capability, process, worktree, and storage baselines without recording sensitive content. See `docs/evidence/sprint-22-production-disposable.md`.
   - [x] **Sub-task 22.3.1.4:** Verify each prescribed completion, correction, blocker, deferral, malformed report, pause, interruption, control, and ceiling outcome against immutable evidence. See `docs/evidence/sprint-22-production-disposable.md`.
   - [x] **Sub-task 22.3.1.5:** Repeat the production schedule after every reliability correction and invalidate evidence from any earlier implementation commit. See `docs/evidence/sprint-22-production-disposable.md`.
-- [x] **Task 22.3.2 - Prepare the ten-task controlled-target campaign.** The exact AgentMage
+- [x] **Task 22.3.2 - Prepare the ten-task controlled-target campaign.** The exact downstream target
   replacement authorities, stable source-free reports, owner review, failed-run preservation, and
   revised gate-storage boundary are recorded in `docs/evidence/sprint-22-controlled-preflight.md`;
   execution and reconciliation remain open under Task 22.3.3.
