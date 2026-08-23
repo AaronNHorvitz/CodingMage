@@ -902,7 +902,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 19.2.1.2:** Add executable disposable example repositories and sanitized walkthroughs.
   - [x] **Sub-task 19.2.1.3:** Document every unsupported action and platform.
 - [ ] **Task 19.2.2 - Complete release review**
-  - [ ] **Sub-task 19.2.2.1:** Run all local unit, integration, security, recovery, performance, packaging, and documentation gates. Every currently implemented local gate passes at `bb17671`; this remains open because production `run` composition and the packaged user-service lifecycle are not implemented. See `docs/evidence/sprint-19-local.md`.
+  - [x] **Sub-task 19.2.2.1:** Run all local unit, integration, security, recovery, performance, packaging, and documentation gates. The complete currently implemented local gate set passes at `0730442`; the clean package installs, verifies, executes, and removes, and the packaged Fedora user-service lifecycle is independently exercised. This does not close the parent release review, the Sprint gate, the installed full-campaign requirement, or any external evidence requirement. See `docs/evidence/sprint-19-local.md`.
   - [ ] **Sub-task 19.2.2.2:** Complete an independent code and threat-model review.
   - [ ] **Sub-task 19.2.2.3:** Resolve or explicitly accept every open risk.
   - [ ] **Sub-task 19.2.2.4:** Create a signed release candidate without publishing it automatically.
