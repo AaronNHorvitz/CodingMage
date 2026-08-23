@@ -1087,17 +1087,17 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 **Story acceptance criteria**
 
-- [ ] **AC 22.1:** Given a disposable five-unit dependency graph with recoverable failures and one external blocker, when campaign mode runs, then all independently safe units complete in dependency order and the blocker remains truthful.
-- [ ] **AC 22.2:** Given interruption after every durable intent, when campaign mode restarts, then it resumes or reobserves without duplicate provider, commit, or completion effects.
-- [ ] **AC 22.3:** Given blocked, deferred, human-decision, rejected, and completed outcomes, when the campaign restarts, then every projection, trigger, counter, and canonical checkbox remains exact.
-- [ ] **AC 22.4:** Given authenticated repeated pause, resume, stop-after-unit, and cancel requests, when controls race with provider and Git transitions, then one exact effect occurs and only owned descendants are terminated.
-- [ ] **AC 22.5:** Given every configured limit boundary, when execution reaches that boundary, then no additional effect starts and no other safeguard is weakened.
+- [x] **AC 22.1:** Given a disposable five-unit dependency graph with recoverable failures and one external blocker, when campaign mode runs, then all independently safe units complete in dependency order and the blocker remains truthful. See `docs/evidence/sprint-22-serial-recovery.md`.
+- [x] **AC 22.2:** Given interruption after every durable intent, when campaign mode restarts, then it resumes or reobserves without duplicate provider, commit, or completion effects. See `docs/evidence/sprint-22-serial-recovery.md`.
+- [x] **AC 22.3:** Given blocked, deferred, human-decision, rejected, and completed outcomes, when the campaign restarts, then every projection, trigger, counter, and canonical checkbox remains exact. See `docs/evidence/sprint-22-serial-recovery.md`.
+- [x] **AC 22.4:** Given authenticated repeated pause, resume, stop-after-unit, and cancel requests, when controls race with provider and Git transitions, then one exact effect occurs and only owned descendants are terminated. See `docs/evidence/sprint-22-serial-recovery.md`.
+- [x] **AC 22.5:** Given every configured limit boundary, when execution reaches that boundary, then no additional effect starts and no other safeguard is weakened. See `docs/evidence/sprint-22-serial-recovery.md`.
 - [ ] **AC 22.6:** Given the production disposable schedule and a separately authorized ten-task target campaign, when each local-only one-pod run ends, then every outcome and residue check reconciles exactly before broader authority is considered.
 
 ### Sprint 22 Gate
 
-- [ ] **Gate 22.1:** Multi-unit, evolving-head, blocker-skip, quota-pause, cancellation, crash-recovery, and active-checkout preservation campaigns pass.
-- [ ] **Gate 22.2:** Checkpoint mutation, disposition projection, trigger reobservation, operator-control race, limit-boundary, privacy, and monitor noninterference suites pass.
+- [x] **Gate 22.1:** Multi-unit, evolving-head, blocker-skip, quota-pause, cancellation, crash-recovery, and active-checkout preservation campaigns pass. See `docs/evidence/sprint-22-serial-recovery.md`.
+- [x] **Gate 22.2:** Checkpoint mutation, disposition projection, trigger reobservation, operator-control race, limit-boundary, privacy, and monitor noninterference suites pass. See `docs/evidence/sprint-22-serial-recovery.md`.
 - [ ] **Gate 22.3:** Production ten-outcome disposable evidence and human-reviewed ten-task controlled-target evidence pass after the last serial-campaign reliability correction.
 
 ---
