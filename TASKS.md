@@ -1460,6 +1460,68 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ---
 
+## Sprint 28 - Windows First-Release Implementation and Native Qualification
+
+**Sprint goal:** Implement the Windows platform boundary and qualify the installed CodingMage
+candidate inside a genuine Windows 11 x86-64 guest without representing cross-compilation or
+compatibility-layer behavior as native evidence.
+
+### Story 28.1 - Native Windows Safety Boundary
+
+- [ ] **Task 28.1.1 - Implement Windows filesystem and repository identity**
+  - [ ] **Sub-task 28.1.1.1:** Implement volume, file, repository, and executable identity with replacement detection and fail-closed unsupported cases.
+  - [ ] **Sub-task 28.1.1.2:** Normalize drive-letter, separator, case, long-path, and supported UNC forms without collapsing distinct identities.
+  - [ ] **Sub-task 28.1.1.3:** Reject reserved device names, case collisions, unsafe symlinks, junctions, mount points, and reparse-point replacement.
+  - [ ] **Sub-task 28.1.1.4:** Exercise Git repositories, worktrees, alternates, replacement refs, hooks, filters, hostile configuration, locked files, and sharing violations on NTFS.
+- [ ] **Task 28.1.2 - Implement Windows process containment**
+  - [ ] **Sub-task 28.1.2.1:** Create owned processes in a constrained Job Object and bind the exact executable identity before use.
+  - [ ] **Sub-task 28.1.2.2:** Enforce cancellation, timeout, resource ceilings, descendant accounting, and exact process-tree cleanup.
+  - [ ] **Sub-task 28.1.2.3:** Isolate inherited environment, handles, console behavior, response files, temporary paths, and provider descendants.
+  - [ ] **Sub-task 28.1.2.4:** Exercise executable replacement, orphaning, cancellation races, output pressure, process pressure, and unrelated concurrent processes.
+- [ ] **Task 28.1.3 - Implement Windows durable state and background lifecycle**
+  - [ ] **Sub-task 28.1.3.1:** Implement private state directories, file locking, durable journals, atomic replacement, checkpoints, and corruption recovery using Windows semantics.
+  - [ ] **Sub-task 28.1.3.2:** Implement an unprivileged Windows background-execution lifecycle with explicit install, verify, start, stop, and remove actions.
+  - [ ] **Sub-task 28.1.3.3:** Preserve exact campaign ownership and recover after coordinator crash, service restart, user logoff/relogin where feasible, and guest restart.
+  - [ ] **Sub-task 28.1.3.4:** Test locked-state files, sharing violations, stale locks, interrupted replacement, process loss, and antivirus-like contention.
+
+**Story acceptance criteria**
+
+- [ ] **AC 28.1:** Given hostile Windows paths and repository state, when CodingMage validates or operates on them, then identities remain exact and linked or replaced paths fail closed without unowned mutation.
+- [ ] **AC 28.2:** Given owned and unrelated Windows processes, when execution is cancelled, limited, interrupted, or restarted, then every owned descendant is accounted for and unrelated processes remain untouched.
+- [ ] **AC 28.3:** Given an interrupted Windows background run, when the guest or service resumes, then locks, journals, checkpoints, branches, worktrees, and task state reconcile without uncertain-effect replay.
+
+### Story 28.2 - Windows Package and Workflow Qualification
+
+- [ ] **Task 28.2.1 - Build and verify the Windows package**
+  - [ ] **Sub-task 28.2.1.1:** Produce a deterministic Windows x86-64 archive and platform-specific install, verify, upgrade, rollback, remove, and retention operations.
+  - [ ] **Sub-task 28.2.1.2:** Generate and validate checksums, SBOM, dependency/license inventory, build manifest, provenance, and archive allowlist.
+  - [ ] **Sub-task 28.2.1.3:** Scan the package for credentials, private paths, runtime state, target source, unexpected executables, and undeclared files.
+  - [ ] **Sub-task 28.2.1.4:** Reinstall the same artifact and prove deterministic initialization and package verification.
+- [ ] **Task 28.2.2 - Execute the Windows native-guest matrix**
+  - [ ] **Sub-task 28.2.2.1:** Record the exact Windows 11 build, architecture, VM identity, source commit, package digest, and commands.
+  - [ ] **Sub-task 28.2.2.2:** Run doctor, planning, supervised execution, serial campaign, monitoring, controls, pause, recovery, and removal from the installed package.
+  - [ ] **Sub-task 28.2.2.3:** Run staged parallel campaigns and deterministic integration with collision, worker-failure, stall, cancellation, and completion-order cases.
+  - [ ] **Sub-task 28.2.2.4:** Run install, start, stop, upgrade, rollback, uninstall, retained-state, service restart, and guest restart workflows.
+  - [ ] **Sub-task 28.2.2.5:** Reconcile active checkout, branches, worktrees, processes, locks, journals, task state, and unrelated user state after every lifecycle transition.
+- [ ] **Task 28.2.3 - Reconcile Windows support claims**
+  - [ ] **Sub-task 28.2.3.1:** Verify every Windows command, path, package, service, recovery, and limitation statement against the frozen candidate.
+  - [ ] **Sub-task 28.2.3.2:** Keep unsupported Windows features explicit and reject the release if a required safe boundary is unavailable.
+  - [ ] **Sub-task 28.2.3.3:** Bind machine-readable and human-readable evidence to the exact guest, commit, package, and test identities.
+
+**Story acceptance criteria**
+
+- [ ] **AC 28.4:** Given two clean Windows package builds, when artifacts are compared and scanned, then required identities match and archive contents satisfy the declared allowlist.
+- [ ] **AC 28.5:** Given a clean Windows 11 x86-64 guest, when a new user follows the documented installed workflow, then supported execution, recovery, upgrade, rollback, and removal complete without undocumented authority.
+- [ ] **AC 28.6:** Given native Windows evidence and public documentation, when support claims are audited, then every claim binds to executed guest evidence and every limitation is explicit.
+
+### Sprint 28 Gate
+
+- [ ] **Gate 28.1:** Windows filesystem, repository, process, durable-state, and background-lifecycle unit and hostile-fixture suites pass.
+- [ ] **Gate 28.2:** The installed Windows 11 x86-64 package passes supervised, serial, parallel, integration, recovery, restart, upgrade, rollback, and removal qualification in a genuine guest.
+- [ ] **Gate 28.3:** Windows package, provenance, evidence, and documentation bind to the frozen release candidate and no macOS support is implied.
+
+---
+
 ## Remaining Dependency Order
 
 Sprint numbers remain stable identifiers for historical evidence. Complete the remaining work in
@@ -1474,16 +1536,17 @@ this dependency order; do not skip forward merely because a later sprint number 
 7. Complete Sprint 24 deterministic integration before enabling authenticated branch push or draft pull requests; remote effects remain draft-only and human-reviewed.
 8. Complete Sprint 25 adversarial, multi-pod, complete unit, integration, mutation, recovery, privacy, package, and traceability matrices from a clean clone.
 9. Complete the remaining Sprint 18 package-service lifecycle and Sprint 19 release-review work before freezing a candidate.
-10. Complete Sprint 26 source freeze, documentation reconciliation, reproducible artifacts, installed-package testing, deferred manual fuzzing, and independent human review.
-11. Obtain the explicit release authorization in `External 7`; no provider or coordinator may infer it from prior approvals.
-12. Complete Sprint 27 repository review, owner-authorized merge, signed tag, publication, independent download and installation verification, and post-publication response validation.
+10. Complete Sprint 28 Windows implementation and native Windows 11 x86-64 guest qualification.
+11. Complete Sprint 26 source freeze, documentation reconciliation, reproducible Linux and Windows artifacts, installed-package testing, deferred manual fuzzing, and independent human review.
+12. Obtain the explicit release authorization in `External 7`; no provider or coordinator may infer it from prior approvals.
+13. Complete Sprint 27 repository review, owner-authorized merge, signed tag, publication, independent download and installation verification, and post-publication response validation.
 
 ## External and Deferred Evidence Register
 
 These items must remain open until their prerequisites actually exist:
 
-- [ ] **External 1:** Native macOS implementation and execution evidence on supported Apple Silicon hardware.
-- [ ] **External 2:** Native Windows implementation and execution evidence on supported Windows hardware.
+- [ ] **External 1:** `DEFERRED_APPLE_SILICON_EVIDENCE` - native macOS implementation and execution evidence on supported Apple Silicon hardware.
+- [ ] **External 2:** Native Windows implementation and execution evidence inside a genuine Windows 11 x86-64 guest.
 - [ ] **External 3:** Authenticated GitHub issue and pull-request tests against an explicitly approved test repository.
 - [ ] **External 4:** Independent security and architecture review by a qualified human reviewer.
 - [ ] **External 5:** Manual fuzzing campaign after the deterministic attack corpus is stable.
@@ -1491,8 +1554,9 @@ These items must remain open until their prerequisites actually exist:
 - [ ] **External 7:** Explicit product-owner approval before any public release or package publication.
 - [ ] **External 8:** Operator-controlled signing identity and protected signing material for the frozen release candidate.
 
-Native macOS and Windows evidence does not block a truthfully scoped Linux-only release. Authenticated
-GitHub adapter evidence blocks only a release that claims those remote capabilities as supported.
+Apple Silicon evidence does not block the Linux and Windows first release. Windows evidence is a
+release gate under Decision 0010. Authenticated GitHub adapter evidence blocks any release that
+claims those remote capabilities as supported.
 Independent review, manual fuzzing, signing, and explicit release authorization are release gates.
 
 ## Immediate Next Unit

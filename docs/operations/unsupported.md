@@ -12,8 +12,11 @@ The current build does not claim:
   reconciliation.
 - Long-duration or authenticated-provider multi-pod soak qualification; the bounded two-cycle local
   harness is not represented as that broader evidence.
-- Native macOS process, filesystem, credential, lifecycle, packaging, or provider evidence.
-- Native Windows job-object, NTFS, credential, console, lifecycle, packaging, or provider evidence.
+- Native macOS process, filesystem, credential, lifecycle, packaging, or provider evidence. macOS
+  and Apple Silicon are deferred and unsupported for the first release.
+- Completed native Windows job-object, NTFS, credential, console, lifecycle, packaging, or provider
+  evidence. Windows 11 x86-64 is a required first-release target, but remains unsupported until the
+  Sprint 28 native-guest matrix passes.
 - Independent human security or architecture approval.
 - Manual fuzz execution.
 - Signed or published packages or releases.

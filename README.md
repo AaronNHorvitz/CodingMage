@@ -82,8 +82,10 @@ The router does not let a model choose its own authority or quietly downgrade a 
 > immutable review, exact task reconciliation, durable recovery, parallel pod scheduling, optional
 > task publication, serialized integration, and final campaign validation. Deterministic five-pod
 > and fake-publication evidence exists. Authenticated live-provider and GitHub evidence,
-> sustained-duration soak evidence, native macOS/Windows evidence, independent review, and release
-> publication remain open and are not implied by local tests.
+> sustained-duration soak evidence, Ubuntu and Windows native-guest qualification, independent
+> review, and release publication remain open and are not implied by local tests. The first release
+> targets Fedora and Ubuntu Linux x86-64 plus Windows 11 x86-64. macOS and Apple Silicon are
+> deferred and unsupported; see [Decision 0010](docs/decisions/0010-linux-windows-first-release.md).
 
 ## Why CodingMage Exists
 

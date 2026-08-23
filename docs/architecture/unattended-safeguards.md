@@ -164,7 +164,8 @@ checkout byte-for-byte where applicable.
 
 ## Release and Publication Gates
 
-The first public binary release is Linux-only unless native evidence expands that claim. Publication
+The first public binary release requires qualified Linux x86-64 and Windows 11 x86-64 artifacts
+under Decision 0010. Publication
 requires all of the following:
 
 - Every locally implementable task and gate required for the release is complete with immutable
