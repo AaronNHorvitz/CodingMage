@@ -4605,7 +4605,10 @@ impl<'a> ProductionWorkflowPort<'a> {
                         blocker_code: None,
                     });
                 }
-                Err(CommitError::Empty) => {}
+                // A provider may have written an incomplete correction before its session failed.
+                // The durable intent and exact worktree identity authorize resuming that session;
+                // commit_owned_changes still enforces the original path boundary afterwards.
+                Err(CommitError::Empty | CommitError::RepositoryState) => {}
                 Err(_) => {
                     self.failure = Some(RuntimeError::Repository);
                     return Err(OrchestrationError::Port);

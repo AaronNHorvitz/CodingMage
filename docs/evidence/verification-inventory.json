@@ -1730,227 +1730,227 @@
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateAssertion:65",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateAssertion:66",
       "status": "uncovered"
     },
     {
       "category": "unknown_field",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateAssertion:65",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateAssertion:66",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateAssertion:65",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateAssertion:66",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateEntry:153",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateEntry:154",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateError:590",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateError:591",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateOutcome:207",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateOutcome:208",
       "status": "uncovered"
     },
     {
       "category": "unknown_field",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateOutcome:207",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateOutcome:208",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateOutcome:207",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateOutcome:208",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateProgressKind:354",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateProgressKind:355",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateRequirement:41",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateRequirement:42",
       "status": "uncovered"
     },
     {
       "category": "unknown_field",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateRequirement:41",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateRequirement:42",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateRequirement:41",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateRequirement:42",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTier:25",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTier:26",
       "status": "uncovered"
     },
     {
       "category": "unknown_field",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTier:25",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTier:26",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTier:25",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTier:26",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTrigger:51",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTrigger:52",
       "status": "uncovered"
     },
     {
       "category": "unknown_field",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTrigger:51",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTrigger:52",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTrigger:51",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTrigger:52",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:entries:199",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:entries:200",
       "status": "uncovered"
     },
     {
       "category": "unknown_field",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:entries:199",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:entries:200",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:entries:199",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:entries:200",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:new:172",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:new:173",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:new:383",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:new:384",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run:395",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run:396",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_cancellation:414",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_cancellation:415",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_progress:437",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_progress:438",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_progress_and_cancellation:459",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_progress_and_cancellation:460",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:validate:118",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:validate:119",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:verify:308",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:verify:309",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDefinitionEvidence:249",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDefinitionEvidence:250",
       "status": "uncovered"
     },
     {
       "category": "unknown_field",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDefinitionEvidence:249",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDefinitionEvidence:250",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDefinitionEvidence:249",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDefinitionEvidence:250",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDiagnostic:336",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDiagnostic:337",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateEvidence:275",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateEvidence:276",
       "status": "uncovered"
     },
     {
       "category": "unknown_field",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateEvidence:275",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateEvidence:276",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateEvidence:275",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateEvidence:276",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProcessEvidence:221",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProcessEvidence:222",
       "status": "uncovered"
     },
     {
       "category": "unknown_field",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProcessEvidence:221",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProcessEvidence:222",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProcessEvidence:221",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProcessEvidence:222",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProgress:363",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProgress:364",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRegistry:162",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRegistry:163",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRun:325",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRun:326",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRunner:376",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRunner:377",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:TrustedGateDefinition:92",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:TrustedGateDefinition:93",
       "status": "uncovered"
     },
     {
       "category": "repeatability",
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:UnavailableGate:140",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:UnavailableGate:141",
       "status": "uncovered"
     },
     {
@@ -7008,7 +7008,7 @@
       ],
       "id": "error:codingmage.gate.duplicate",
       "kind": "error_code",
-      "line": 612,
+      "line": 613,
       "name": "codingmage.gate.duplicate",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "stable_error_code",
@@ -7032,7 +7032,7 @@
       ],
       "id": "error:codingmage.gate.evidence",
       "kind": "error_code",
-      "line": 616,
+      "line": 617,
       "name": "codingmage.gate.evidence",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "stable_error_code",
@@ -7056,7 +7056,7 @@
       ],
       "id": "error:codingmage.gate.invalid_definition",
       "kind": "error_code",
-      "line": 611,
+      "line": 612,
       "name": "codingmage.gate.invalid_definition",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "stable_error_code",
@@ -7080,7 +7080,7 @@
       ],
       "id": "error:codingmage.gate.invalid_registry",
       "kind": "error_code",
-      "line": 610,
+      "line": 611,
       "name": "codingmage.gate.invalid_registry",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "stable_error_code",
@@ -7104,7 +7104,7 @@
       ],
       "id": "error:codingmage.gate.invalid_skip",
       "kind": "error_code",
-      "line": 614,
+      "line": 615,
       "name": "codingmage.gate.invalid_skip",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "stable_error_code",
@@ -7128,7 +7128,7 @@
       ],
       "id": "error:codingmage.gate.invalid_source",
       "kind": "error_code",
-      "line": 613,
+      "line": 614,
       "name": "codingmage.gate.invalid_source",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "stable_error_code",
@@ -7152,7 +7152,7 @@
       ],
       "id": "error:codingmage.gate.process",
       "kind": "error_code",
-      "line": 615,
+      "line": 616,
       "name": "codingmage.gate.process",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "stable_error_code",
@@ -10788,7 +10788,7 @@
       ],
       "id": "error:codingmage.runtime.authority",
       "kind": "error_code",
-      "line": 5418,
+      "line": 5421,
       "name": "codingmage.runtime.authority",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -10833,7 +10833,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.authority",
       "kind": "error_code",
-      "line": 5428,
+      "line": 5431,
       "name": "codingmage.runtime.campaign.authority",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -10878,7 +10878,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.capacity",
       "kind": "error_code",
-      "line": 5432,
+      "line": 5435,
       "name": "codingmage.runtime.campaign.capacity",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -10923,7 +10923,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.conflict",
       "kind": "error_code",
-      "line": 5431,
+      "line": 5434,
       "name": "codingmage.runtime.campaign.conflict",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -10968,7 +10968,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.proposal",
       "kind": "error_code",
-      "line": 5429,
+      "line": 5432,
       "name": "codingmage.runtime.campaign.proposal",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11013,7 +11013,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.serialization",
       "kind": "error_code",
-      "line": 5434,
+      "line": 5437,
       "name": "codingmage.runtime.campaign.serialization",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11058,7 +11058,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.spec",
       "kind": "error_code",
-      "line": 5427,
+      "line": 5430,
       "name": "codingmage.runtime.campaign.spec",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11103,7 +11103,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.stale_proposal",
       "kind": "error_code",
-      "line": 5430,
+      "line": 5433,
       "name": "codingmage.runtime.campaign.stale_proposal",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11148,7 +11148,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.unknown_lease",
       "kind": "error_code",
-      "line": 5433,
+      "line": 5436,
       "name": "codingmage.runtime.campaign.unknown_lease",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11193,7 +11193,7 @@
       ],
       "id": "error:codingmage.runtime.integration",
       "kind": "error_code",
-      "line": 5436,
+      "line": 5439,
       "name": "codingmage.runtime.integration",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11238,7 +11238,7 @@
       ],
       "id": "error:codingmage.runtime.orchestration",
       "kind": "error_code",
-      "line": 5425,
+      "line": 5428,
       "name": "codingmage.runtime.orchestration",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11283,7 +11283,7 @@
       ],
       "id": "error:codingmage.runtime.plan",
       "kind": "error_code",
-      "line": 5420,
+      "line": 5423,
       "name": "codingmage.runtime.plan",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11328,7 +11328,7 @@
       ],
       "id": "error:codingmage.runtime.process",
       "kind": "error_code",
-      "line": 5421,
+      "line": 5424,
       "name": "codingmage.runtime.process",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11373,7 +11373,7 @@
       ],
       "id": "error:codingmage.runtime.repository",
       "kind": "error_code",
-      "line": 5419,
+      "line": 5422,
       "name": "codingmage.runtime.repository",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11418,7 +11418,7 @@
       ],
       "id": "error:codingmage.runtime.retained_state_observation",
       "kind": "error_code",
-      "line": 5423,
+      "line": 5426,
       "name": "codingmage.runtime.retained_state_observation",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11463,7 +11463,7 @@
       ],
       "id": "error:codingmage.runtime.spec",
       "kind": "error_code",
-      "line": 5417,
+      "line": 5420,
       "name": "codingmage.runtime.spec",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11508,7 +11508,7 @@
       ],
       "id": "error:codingmage.runtime.state",
       "kind": "error_code",
-      "line": 5422,
+      "line": 5425,
       "name": "codingmage.runtime.state",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11778,7 +11778,7 @@
       ],
       "id": "error:codingmage.runtime.utilization",
       "kind": "error_code",
-      "line": 5424,
+      "line": 5427,
       "name": "codingmage.runtime.utilization",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -11823,7 +11823,7 @@
       ],
       "id": "error:codingmage.runtime.verification",
       "kind": "error_code",
-      "line": 5439,
+      "line": 5442,
       "name": "codingmage.runtime.verification",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -22287,14 +22287,15 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateAssertion:65",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateAssertion:66",
       "kind": "enum",
-      "line": 65,
+      "line": 66,
       "name": "GateAssertion",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22315,9 +22316,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateEntry:153",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateEntry:154",
       "kind": "enum",
-      "line": 153,
+      "line": 154,
       "name": "GateEntry",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
@@ -22340,14 +22341,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateError:590",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateError:591",
       "kind": "enum",
-      "line": 590,
+      "line": 591,
       "name": "GateError",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22370,9 +22372,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateOutcome:207",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateOutcome:208",
       "kind": "enum",
-      "line": 207,
+      "line": 208,
       "name": "GateOutcome",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
@@ -22395,14 +22397,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateProgressKind:354",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateProgressKind:355",
       "kind": "enum",
-      "line": 354,
+      "line": 355,
       "name": "GateProgressKind",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22425,9 +22428,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateRequirement:41",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateRequirement:42",
       "kind": "enum",
-      "line": 41,
+      "line": 42,
       "name": "GateRequirement",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
@@ -22447,22 +22450,17 @@
       "applicable_categories": [
         "positive",
         "negative",
-        "boundary",
         "malformed_input",
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTier:25",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTier:26",
       "kind": "enum",
-      "line": 25,
+      "line": 26,
       "name": "GateTier",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
-        "boundary": [
-          "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
-          "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
-        ],
         "negative": [
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::required_failure_cancels_other_live_gate_and_blocks",
@@ -22483,14 +22481,15 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTrigger:51",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:enum:GateTrigger:52",
       "kind": "enum",
-      "line": 51,
+      "line": 52,
       "name": "GateTrigger",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22513,9 +22512,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:entries:199",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:entries:200",
       "kind": "fn",
-      "line": 199,
+      "line": 200,
       "name": "entries",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
@@ -22538,14 +22537,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:new:172",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:new:173",
       "kind": "fn",
-      "line": 172,
+      "line": 173,
       "name": "new",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22567,14 +22567,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:new:383",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:new:384",
       "kind": "fn",
-      "line": 383,
+      "line": 384,
       "name": "new",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22596,14 +22597,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run:395",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run:396",
       "kind": "fn",
-      "line": 395,
+      "line": 396,
       "name": "run",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22624,9 +22626,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_cancellation:414",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_cancellation:415",
       "kind": "fn",
-      "line": 414,
+      "line": 415,
       "name": "run_with_cancellation",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
@@ -22648,9 +22650,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_progress:437",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_progress:438",
       "kind": "fn",
-      "line": 437,
+      "line": 438,
       "name": "run_with_progress",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
@@ -22672,9 +22674,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_progress_and_cancellation:459",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:run_with_progress_and_cancellation:460",
       "kind": "fn",
-      "line": 459,
+      "line": 460,
       "name": "run_with_progress_and_cancellation",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
@@ -22697,14 +22699,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:validate:118",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:validate:119",
       "kind": "fn",
-      "line": 118,
+      "line": 119,
       "name": "validate",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22725,9 +22728,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:verify:308",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:fn:verify:309",
       "kind": "fn",
-      "line": 308,
+      "line": 309,
       "name": "verify",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
@@ -22752,14 +22755,15 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDefinitionEvidence:249",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDefinitionEvidence:250",
       "kind": "struct",
-      "line": 249,
+      "line": 250,
       "name": "GateDefinitionEvidence",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22781,14 +22785,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDiagnostic:336",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateDiagnostic:337",
       "kind": "struct",
-      "line": 336,
+      "line": 337,
       "name": "GateDiagnostic",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22812,14 +22817,15 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateEvidence:275",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateEvidence:276",
       "kind": "struct",
-      "line": 275,
+      "line": 276,
       "name": "GateEvidence",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22842,9 +22848,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProcessEvidence:221",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProcessEvidence:222",
       "kind": "struct",
-      "line": 221,
+      "line": 222,
       "name": "GateProcessEvidence",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
@@ -22867,14 +22873,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProgress:363",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateProgress:364",
       "kind": "struct",
-      "line": 363,
+      "line": 364,
       "name": "GateProgress",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22896,14 +22903,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRegistry:162",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRegistry:163",
       "kind": "struct",
-      "line": 162,
+      "line": 163,
       "name": "GateRegistry",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22925,14 +22933,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRun:325",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRun:326",
       "kind": "struct",
-      "line": 325,
+      "line": 326,
       "name": "GateRun",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22954,14 +22963,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRunner:376",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:GateRunner:377",
       "kind": "struct",
-      "line": 376,
+      "line": 377,
       "name": "GateRunner",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -22983,14 +22993,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:TrustedGateDefinition:92",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:TrustedGateDefinition:93",
       "kind": "struct",
-      "line": 92,
+      "line": 93,
       "name": "TrustedGateDefinition",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -23012,14 +23023,15 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:UnavailableGate:140",
+      "id": "rust:crates/codingmage-gate/src/lib.rs:struct:UnavailableGate:141",
       "kind": "struct",
-      "line": 140,
+      "line": 141,
       "name": "UnavailableGate",
       "path": "crates/codingmage-gate/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-gate/src/lib.rs::oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling",
           "crates/codingmage-gate/tests/runner.rs::pass_failure_timeout_and_output_limit_are_truthful",
           "crates/codingmage-gate/tests/runner.rs::progress_is_content_free_contiguous_and_bounded"
         ],
@@ -33408,9 +33420,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:RuntimeError:5379",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:RuntimeError:5382",
       "kind": "enum",
-      "line": 5379,
+      "line": 5382,
       "name": "RuntimeError",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -33857,9 +33869,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:code:5415",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:code:5418",
       "kind": "fn",
-      "line": 5415,
+      "line": 5418,
       "name": "code",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43617,6 +43629,6 @@
       }
     }
   ],
-  "items_sha256": "c9c075126f16811c6aa34c5f15375ab8b94d7383320d81aae7b81e988fecb73b",
+  "items_sha256": "481bdf525e5567daece13c55abd98adde9c9da10ac62ebdc2cf87bfacfb96909",
   "schema_version": 1
 }

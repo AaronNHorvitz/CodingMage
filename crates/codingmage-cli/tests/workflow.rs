@@ -1612,14 +1612,26 @@ root = Path(__file__).parent
 log = root / "recovery-claude.log"
 path = Path("src/lib.rs")
 source = path.read_text(encoding="utf-8")
-if "--resume" in sys.argv and "{ 2 }" in source:
+if "{ 2 }" in source:
+    path.write_text("pub fn value() -> u8 { 3 }\n", encoding="utf-8")
     with log.open("a", encoding="utf-8") as stream:
-        stream.write("resume-missing\n")
-    print(json.dumps({"type": "result", "is_error": True, "subtype": "session_not_found"}))
+        stream.write("correction-interrupted\n")
+    print(json.dumps({"type": "result", "is_error": True, "subtype": "provider_unavailable"}))
     raise SystemExit(0)
-value = 2 if "{ 1 }" in source else 3
+if "--resume" in sys.argv and "{ 3 }" in source:
+    with log.open("a", encoding="utf-8") as stream:
+        stream.write("correction-resumed\n")
+    print(json.dumps({
+        "type": "result", "is_error": False,
+        "structured_output": {
+            "changed_paths": ["src/lib.rs"], "tests": [], "commit": None,
+            "ready_for_commit": True, "limitations": [], "blocker_code": None
+        }
+    }))
+    raise SystemExit(0)
+value = 2
 with log.open("a", encoding="utf-8") as stream:
-    stream.write("implementation-start\n" if value == 2 else "correction-start\n")
+    stream.write("implementation-start\n")
 path.write_text(f"pub fn value() -> u8 {{ {value} }}\n", encoding="utf-8")
 print(json.dumps({
     "type": "result", "is_error": False,
@@ -1768,38 +1780,6 @@ profiles = ["configured-gates"]
     )
     .unwrap();
 
-    let config_value = load_config(&config).unwrap();
-    let campaign_value = CampaignSpec::load(&campaign).unwrap();
-    let interrupted = catch_unwind(AssertUnwindSafe(|| {
-        run_serial_campaign_with_progress(
-            &config_value,
-            campaign_value,
-            Path::new(env!("CARGO_BIN_EXE_codingmage")),
-            |progress| {
-                assert_ne!(
-                    progress.stage,
-                    ProgressStage::Correcting,
-                    "fixture interruption after correction identity and intent are durable"
-                );
-            },
-        )
-        .unwrap();
-    }));
-    assert!(interrupted.is_err());
-
-    let interrupted_status = Fixture::command(&[
-        "campaign-status",
-        "--config",
-        config.to_str().unwrap(),
-        "--campaign",
-        campaign.to_str().unwrap(),
-    ]);
-    assert!(interrupted_status.status.success());
-    let interrupted_status: serde_json::Value =
-        serde_json::from_slice(&interrupted_status.stdout).unwrap();
-    assert_eq!(interrupted_status["current_task_id"], "0.1.1.1");
-    assert_eq!(interrupted_status["current_round"], 0);
-
     let run = Fixture::command(&[
         "campaign",
         "--config",
@@ -1819,11 +1799,15 @@ profiles = ["configured-gates"]
     let calls = fs::read_to_string(fixture.root.join("recovery-claude.log")).unwrap();
     assert_eq!(
         calls.lines().collect::<Vec<_>>(),
-        ["implementation-start", "resume-missing", "correction-start"]
+        [
+            "implementation-start",
+            "correction-interrupted",
+            "correction-resumed"
+        ]
     );
     let progress = String::from_utf8(run.stderr).unwrap();
-    assert!(!progress.contains("codex-lead  proposing"));
-    assert!(!progress.contains("implementing the bounded task"));
+    assert_eq!(progress.matches("codex-lead  proposing").count(), 1);
+    assert_eq!(progress.matches("implementing the bounded task").count(), 1);
     assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
     assert_eq!(fs::read(target.join("TASKS.md")).unwrap(), original_tasks);
     assert_eq!(
