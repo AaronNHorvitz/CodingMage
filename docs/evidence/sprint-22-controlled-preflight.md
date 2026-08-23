@@ -1,12 +1,13 @@
 # Sprint 22 Controlled Campaign Preflight Evidence
 
 - **Status:** Controlled-target preparation and report review complete; executions so far stopped
-  safely with zero accepted outcomes, and the revised gate-storage authority
-  awaits a new exact-digest approval
+  safely with zero accepted outcomes, all retained evidence remains preserved, and a fresh isolated
+  replacement authority awaits exact-digest approval
 - **Implementation commit:** `061a604`
 - **Target-artifact boundary correction:** `35ce2b6`
 - **Stable approval-projection correction:** `174c320`
 - **Provider-compatible lead-schema correction:** `56a1c19`
+- **Retained-state observation retry correction:** `33e4c71`
 - **Executed:** 2026-08-22 on Fedora Linux with Rust 1.95.0
 
 ## Implemented Boundary
@@ -96,6 +97,33 @@ the dedicated clone is clean at `835049c9e943dade2f1d523708e84ee7e4a3d5d0` with 
 worktree, no campaign state exists, and no inference process is active. This changed gate registry is
 not authorized by either prior digest and must receive a new exact-digest approval before launch.
 
+That report was subsequently consumed by a guarded launch. The launch stopped with
+`codingmage.campaign.unit_internal_failure`, zero completed units, and zero accepted outcomes. Later
+replacement runs remained within the same one-pod, local-only boundary and exposed progressively
+narrower internal state-observation failures; every target clone, campaign branch, worktree,
+checkpoint, journal, and diagnostic remains preserved. The latest retained attempt selected one
+dependency-ready task and stopped with
+`codingmage.campaign.unit_retained_state_observation_failure`, again with zero accepted outcomes.
+Commit `33e4c71` adds bounded retries for transient retained-state scans while preserving the exact
+ownership, identity, cleanup, process, and evidence boundaries.
+
+The product owner's later approval of digest
+`009cf73129cf77677364440c8276bb66590e392a49f49157dd5957dbd0aa948b` cannot authorize another
+launch: recomputation against the consumed authority produced
+`29fee0436444e098579f324ad44c84f54c5e4ec4095454ab06a6323f644ec686` because the retained branch
+and worktree manifests and the current guarded binary identity differ. The launcher therefore
+refused to proceed before campaign execution.
+
+A fresh isolated replacement clone remains clean at
+`835049c9e943dade2f1d523708e84ee7e4a3d5d0` with exactly one worktree. Its tenth replacement
+authority preserves the same one-pod, ten-accepted-outcome ceiling, local-only publication,
+provider profiles, gate tiers, path policy, storage limit, protected branches, and denied external
+capabilities. Its new build cache is a reflinked private copy; no earlier campaign cache or retained
+state is mutable through the authority. Two independent schema-v2 preflight generations were
+byte-identical with digest
+`acbf8ca314d25b6bf91d12ad08bcd218318c66b2850c07c806ab7cd62fcb26e3`. Both reports are mode
+`0600`; no campaign state, implementation worktree, or inference process exists for this authority.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
@@ -130,8 +158,8 @@ without changing the controlled-target authority boundary.
 
 ## Open Boundary
 
-Controlled-target preparation and manual review are complete. The revised source-free digest still
-requires explicit approval before its first provider invocation. Task 22.3.3, ten accepted outcomes
+Controlled-target preparation and manual review are complete. The fresh source-free digest still
+requires explicit approval before its first implementation-provider invocation. Task 22.3.3, ten accepted outcomes
 or another exact terminal result, complete human reconciliation, external publication, parallel
 expansion, and Sprint 22 Gate 22.3 remain open. Neither failed execution is represented as controlled-
 target qualification evidence.
