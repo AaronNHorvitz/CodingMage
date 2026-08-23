@@ -1265,8 +1265,8 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 ### Story 25.2 - Complete Verification Matrix
 
 - [ ] **Task 25.2.1 - Complete crate-level unit and schema coverage**
-  - [ ] **Sub-task 25.2.1.1:** Inventory every public contract, enum, parser, validator, serializer, transition, limit, error code, and platform branch across all workspace crates.
-  - [ ] **Sub-task 25.2.1.2:** Map each inventory item to a positive, negative, exact-boundary, malformed-input, unknown-field, and deterministic-repeatability unit test where applicable.
+  - [x] **Sub-task 25.2.1.1:** Inventory every public contract, enum, parser, validator, serializer, transition, limit, error code, and platform branch across all workspace crates. The generated registry contains 1,109 current Rust public and stable-error surfaces; see `docs/evidence/sprint-25-verification-inventory.md`.
+  - [x] **Sub-task 25.2.1.2:** Map each inventory item to a positive, negative, exact-boundary, malformed-input, unknown-field, and deterministic-repeatability unit test where applicable. Missing mappings remain explicit `uncovered` records, so the parent coverage task stays open; see `docs/evidence/sprint-25-verification-inventory.md`.
   - [x] **Sub-task 25.2.1.3:** Add missing tests for campaign dispositions, reason codes, reconsideration triggers, starvation prevention, outcome counting, limit exhaustion, and operator controls.
   - [x] **Sub-task 25.2.1.4:** Add missing tests for provider capability and model identity, credential-environment rejection, process ownership, Git identity, path leases, evidence integrity, and publication grants.
   - [x] **Sub-task 25.2.1.5:** Run every crate test with all targets and no ignored required test; record justified platform or external skips separately rather than treating them as passes. The two ignored local tests are the guarded one-pod and five-pod sustained qualifications; both pass separately with their exact opt-in boundary.
