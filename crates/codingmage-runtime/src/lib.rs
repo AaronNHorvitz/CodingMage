@@ -2440,10 +2440,7 @@ pub fn run_serial_campaign_with_progress(
                 TeamLeadOutcome::Proposals(proposals) => proposals,
                 TeamLeadOutcome::Blocked(blocker) => {
                     let task_id = blocker.binding.task_id;
-                    if !checkpoint.blocked_task_ids.insert(task_id.clone()) {
-                        return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
-                    }
-                    checkpoint.blocked_reasons.insert(task_id, blocker.reason);
+                    record_campaign_task_blocker(&mut checkpoint, task_id, blocker.reason)?;
                     let blocker_code =
                         format!("codingmage.campaign.lead_blocked.{}", blocker.reason.code());
                     checkpoint.phase = CampaignPhase::Ready;
@@ -2766,7 +2763,11 @@ pub fn run_serial_campaign_with_progress(
             accepted_usage.correction_rounds,
         )?;
         if unit.state == TaskState::Blocked {
-            checkpoint.blocked_task_ids.insert(lease.task_id.clone());
+            record_campaign_task_blocker(
+                &mut checkpoint,
+                lease.task_id.clone(),
+                codingmage_contracts::LeadBlockedReason::ImplementationConditionOutsideAuthority,
+            )?;
             checkpoint.phase = CampaignPhase::Ready;
             checkpoint.active_unit = None;
             checkpoint.blocker_code = Some("codingmage.campaign.unit_blocked".to_owned());
@@ -2853,6 +2854,21 @@ struct CampaignQueueProjection {
     human_decision: BTreeSet<String>,
     rejected_proposal_count: usize,
     unavailable: BTreeSet<String>,
+}
+
+fn record_campaign_task_blocker(
+    checkpoint: &mut CampaignCheckpoint,
+    task_id: String,
+    reason: codingmage_contracts::LeadBlockedReason,
+) -> Result<(), RuntimeError> {
+    if checkpoint.blocked_task_ids.contains(&task_id)
+        || checkpoint.blocked_reasons.contains_key(&task_id)
+    {
+        return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
+    }
+    checkpoint.blocked_task_ids.insert(task_id.clone());
+    checkpoint.blocked_reasons.insert(task_id, reason);
+    Ok(())
 }
 
 fn campaign_queue_projection(
@@ -5856,10 +5872,19 @@ effort = "high"
             campaign_limits(),
         )
         .unwrap();
-        checkpoint.blocked_task_ids.insert("1.1.1.2".to_owned());
-        checkpoint.blocked_reasons.insert(
+        record_campaign_task_blocker(
+            &mut checkpoint,
             "1.1.1.2".to_owned(),
             codingmage_contracts::LeadBlockedReason::UnavailableExternalDependency,
+        )
+        .unwrap();
+        assert_eq!(
+            record_campaign_task_blocker(
+                &mut checkpoint,
+                "1.1.1.2".to_owned(),
+                codingmage_contracts::LeadBlockedReason::ImplementationConditionOutsideAuthority,
+            ),
+            Err(RuntimeError::Campaign(CampaignError::InvalidProposal))
         );
         checkpoint.deferred_tasks.insert(
             "1.1.1.3".to_owned(),
