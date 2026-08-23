@@ -69,7 +69,8 @@ Result: one passed, zero failed, completed in 168.81 seconds at commit `c8656c2`
 
 The same production fixture passed again after the serial accepted-outcome assertion correction at
 commit `3f2759c`: one passed, zero failed, completed in 167.14 seconds. The complete workspace test
-run also passed, with one separately guarded sustained qualification intentionally ignored.
+run also passed. Ordinary runs now intentionally ignore two separately guarded sustained
+qualifications, each of which passes through its explicit opt-in command.
 
 The focused compile, lint, formatting, and repository checks also pass:
 

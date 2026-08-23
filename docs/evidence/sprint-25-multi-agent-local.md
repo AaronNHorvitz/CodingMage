@@ -29,6 +29,7 @@ cargo test -p codingmage-campaign --lib
 cargo test -p codingmage-runtime --lib
 cargo test -p codingmage-cli --test workflow parallel_campaign_runs_five_pods_and_serializes_reviewed_integrations -- --exact --nocapture
 cargo test -p codingmage-cli --test workflow serial_campaign_advances_two_reviewed_tasks_without_touching_active_checkout -- --exact
+CODINGMAGE_SUSTAINED_SOAK=approved CODINGMAGE_SUSTAINED_SOAK_CYCLES=2 cargo test -p codingmage-cli --test workflow sustained_one_pod_campaign_qualification -- --exact --ignored --nocapture
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all -- --check
 python3 scripts/check_architecture.py
@@ -45,8 +46,9 @@ git diff --check
 
 | Command | Exit | Result |
 | --- | --- | --- |
-| `cargo test --workspace --all-targets` | `0` | 323 passed, 0 failed, 1 ignored guarded qualification. |
+| `cargo test --workspace --all-targets` | `0` | 323 passed, 0 failed, 2 ignored guarded qualifications; both pass separately. |
 | Exact process-backed five-pod workflow | `0` | 1 passed, 0 failed, 60.98 seconds. |
+| Guarded sustained one-pod workflow | `0` | 1 passed, 0 failed, 2 complete serial cycles, 152.01 seconds. |
 | Guarded sustained five-pod workflow | `0` | 1 passed, 0 failed, 2 complete internal cycles, 121.97 seconds. |
 | `cargo clippy --workspace --all-targets -- -D warnings` | `0` | No warnings. |
 | `cargo fmt --all -- --check` | `0` | No formatting drift. |
@@ -68,11 +70,24 @@ produced `codingmage-0.1.0-linux-x86_64.tar.gz` with SHA-256
 binary, checksums, source-bound build manifest, SPDX 2.3 SBOM, license, readme, and security policy.
 It is an unsigned local candidate, not a published release.
 
-The clean clone was unchanged after qualification. Strict Clippy produced no warnings. The ordinary
-workspace run ignored one credential-gated sustained qualification by design; that case was then
-run explicitly at its minimum two-cycle bound. Documentation checking covered local links, Mermaid
-declarations, unsupported claims, and configured secret patterns. Both required case-insensitive
-repository scans returned zero prohibited-name matches.
+The clean clone was unchanged after qualification. Strict Clippy produced no warnings. Ordinary
+workspace runs intentionally ignore the separately guarded one-pod and five-pod sustained
+qualifications; both were run explicitly at their minimum two-cycle bounds. Documentation checking
+covered local links, Mermaid declarations, unsupported claims, and configured secret patterns. Both
+required case-insensitive repository scans returned zero prohibited-name matches.
+
+The sustained one-pod qualification is separately guarded and ignored during ordinary test runs:
+
+```bash
+CODINGMAGE_SUSTAINED_SOAK=approved CODINGMAGE_SUSTAINED_SOAK_CYCLES=2 \
+  cargo test -p codingmage-cli --test workflow sustained_one_pod_campaign_qualification \
+  -- --exact --ignored --nocapture
+```
+
+The guarded command passed two complete process-backed serial campaign cycles in 152.01 seconds
+after the retained-state reliability corrections. Each cycle exercised durable interruption and
+recovery, exact reviewed commits, deterministic gates, integration, active-checkout preservation,
+and residue cleanup.
 
 The sustained five-pod qualification is separately guarded and ignored during ordinary test runs:
 
@@ -83,10 +98,9 @@ CODINGMAGE_SUSTAINED_SOAK=approved CODINGMAGE_SUSTAINED_SOAK_CYCLES=2 \
 ```
 
 The guarded command passed at its minimum two-cycle bound after the last local concurrency test
-correction. This is current local multi-pod soak evidence, not a claim of long-duration,
-authenticated-provider, native-platform, independently reviewed, or valuable-target qualification.
-A sustained one-pod production run remains open, so the combined sustained rollout gate remains
-open.
+correction. Together, the one-pod and five-pod runs are current local sustained-soak evidence. They
+are not a claim of long-duration, authenticated-provider, native-platform, independently reviewed,
+or valuable-target qualification.
 
 ## External Qualification
 
