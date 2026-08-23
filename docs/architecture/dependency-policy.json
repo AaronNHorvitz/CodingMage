@@ -24,6 +24,7 @@
     "codingmage-state": ["codingmage-contracts"]
   },
   "allowed_internal_dev_dependencies": {
+    "codingmage-cli": ["codingmage-soak"],
     "codingmage-soak": ["codingmage-contracts", "codingmage-orchestrator", "codingmage-plan"]
   }
 }
