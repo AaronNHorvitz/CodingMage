@@ -1640,7 +1640,8 @@ fn validate_private_control_entry(
     Ok(())
 }
 
-const RETAINED_SCAN_ATTEMPTS: usize = 3;
+const RETAINED_SCAN_ATTEMPTS: usize = 20;
+const RETAINED_SCAN_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(25);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum RetainedScanError {
@@ -1649,16 +1650,29 @@ enum RetainedScanError {
 }
 
 fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
+    retry_retained_scan(
+        || retained_tree_bytes_once(root, |_| {}),
+        || std::thread::sleep(RETAINED_SCAN_RETRY_DELAY),
+    )
+    .map_err(|_| RuntimeError::State)
+}
+
+fn retry_retained_scan(
+    mut scan: impl FnMut() -> Result<u64, RetainedScanError>,
+    mut wait: impl FnMut(),
+) -> Result<u64, RetainedScanError> {
     for attempt in 0..RETAINED_SCAN_ATTEMPTS {
-        match retained_tree_bytes_once(root, |_| {}) {
+        match scan() {
             Ok(total) => return Ok(total),
-            Err(RetainedScanError::Transient) if attempt + 1 < RETAINED_SCAN_ATTEMPTS => {}
-            Err(RetainedScanError::Transient | RetainedScanError::Unsafe) => {
-                return Err(RuntimeError::State);
+            Err(RetainedScanError::Transient) if attempt + 1 < RETAINED_SCAN_ATTEMPTS => {
+                wait();
+            }
+            Err(error @ (RetainedScanError::Transient | RetainedScanError::Unsafe)) => {
+                return Err(error);
             }
         }
     }
-    Err(RuntimeError::State)
+    Err(RetainedScanError::Transient)
 }
 
 fn retained_tree_bytes_once(
@@ -2754,6 +2768,52 @@ mod tests {
         assert_eq!(first, Err(RetainedScanError::Transient));
         assert_eq!(retained_tree_bytes(&root).unwrap(), 11);
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn retained_state_retry_is_bounded_and_never_retries_unsafe_state() {
+        let mut attempts = 0;
+        let mut waits = 0;
+        let recovered = retry_retained_scan(
+            || {
+                attempts += 1;
+                if attempts < 3 {
+                    Err(RetainedScanError::Transient)
+                } else {
+                    Ok(42)
+                }
+            },
+            || waits += 1,
+        );
+        assert_eq!(recovered, Ok(42));
+        assert_eq!(attempts, 3);
+        assert_eq!(waits, 2);
+
+        attempts = 0;
+        waits = 0;
+        let unsafe_result = retry_retained_scan(
+            || {
+                attempts += 1;
+                Err(RetainedScanError::Unsafe)
+            },
+            || waits += 1,
+        );
+        assert_eq!(unsafe_result, Err(RetainedScanError::Unsafe));
+        assert_eq!(attempts, 1);
+        assert_eq!(waits, 0);
+
+        attempts = 0;
+        waits = 0;
+        let exhausted = retry_retained_scan(
+            || {
+                attempts += 1;
+                Err(RetainedScanError::Transient)
+            },
+            || waits += 1,
+        );
+        assert_eq!(exhausted, Err(RetainedScanError::Transient));
+        assert_eq!(attempts, RETAINED_SCAN_ATTEMPTS);
+        assert_eq!(waits, RETAINED_SCAN_ATTEMPTS - 1);
     }
 
     #[test]
