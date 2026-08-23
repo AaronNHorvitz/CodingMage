@@ -1648,7 +1648,6 @@ enum RetainedScanError {
     TransientInterrupted,
     TransientNotDirectory,
     UnsafeIo,
-    UnsafeSymlink,
     UnsafeSpecialFile,
     UnsafeOverflow,
 }
@@ -1666,7 +1665,6 @@ impl RetainedScanError {
             Self::TransientInterrupted => "transient_interrupted",
             Self::TransientNotDirectory => "transient_not_directory",
             Self::UnsafeIo => "unsafe_io",
-            Self::UnsafeSymlink => "unsafe_symlink",
             Self::UnsafeSpecialFile => "unsafe_special_file",
             Self::UnsafeOverflow => "unsafe_overflow",
         }
@@ -1726,7 +1724,14 @@ fn retained_tree_bytes_once(
                 Err(error) => return Err(classify_scan_io_error(&error)),
             };
             if file_type.is_symlink() {
-                return Err(RetainedScanError::UnsafeSymlink);
+                let metadata = match fs::symlink_metadata(entry.path()) {
+                    Ok(metadata) => metadata,
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                    Err(error) => return Err(classify_scan_io_error(&error)),
+                };
+                total = checked_retained_total(total, metadata.len())
+                    .map_err(|_| RetainedScanError::UnsafeOverflow)?;
+                continue;
             }
             if file_type.is_dir() {
                 pending.push(entry.path());
@@ -2788,6 +2793,33 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn retained_state_scan_counts_symlink_objects_without_following_targets() {
+        use std::os::unix::fs::symlink;
+
+        let root = root("retained-symlink-objects");
+        let external = root.with_extension("external");
+        fs::create_dir_all(&root).unwrap();
+        fs::create_dir_all(&external).unwrap();
+        fs::write(external.join("large"), vec![b'x'; 16 * 1024]).unwrap();
+        let file_link = root.join("file-link");
+        let directory_link = root.join("directory-link");
+        let dangling_link = root.join("dangling-link");
+        symlink(external.join("large"), &file_link).unwrap();
+        symlink(&external, &directory_link).unwrap();
+        symlink(external.join("missing"), &dangling_link).unwrap();
+
+        let expected: u64 = [file_link, directory_link, dangling_link]
+            .into_iter()
+            .map(|path| fs::symlink_metadata(path).unwrap().len())
+            .sum();
+        assert_eq!(retained_tree_bytes(&root).unwrap(), expected);
+
+        fs::remove_dir_all(root).unwrap();
+        fs::remove_dir_all(external).unwrap();
+    }
+
     #[test]
     fn retained_state_retry_is_bounded_and_never_retries_unsafe_state() {
         let mut attempts = 0;
@@ -2812,11 +2844,11 @@ mod tests {
         let unsafe_result = retry_retained_scan(
             || {
                 attempts += 1;
-                Err(RetainedScanError::UnsafeSymlink)
+                Err(RetainedScanError::UnsafeIo)
             },
             || waits += 1,
         );
-        assert_eq!(unsafe_result, Err(RetainedScanError::UnsafeSymlink));
+        assert_eq!(unsafe_result, Err(RetainedScanError::UnsafeIo));
         assert_eq!(attempts, 1);
         assert_eq!(waits, 0);
 
