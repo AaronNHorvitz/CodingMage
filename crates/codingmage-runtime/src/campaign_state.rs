@@ -1645,8 +1645,32 @@ const RETAINED_SCAN_RETRY_DELAY: std::time::Duration = std::time::Duration::from
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum RetainedScanError {
-    Transient,
-    Unsafe,
+    TransientInterrupted,
+    TransientNotDirectory,
+    UnsafeIo,
+    UnsafeSymlink,
+    UnsafeSpecialFile,
+    UnsafeOverflow,
+}
+
+impl RetainedScanError {
+    const fn is_transient(self) -> bool {
+        matches!(
+            self,
+            Self::TransientInterrupted | Self::TransientNotDirectory
+        )
+    }
+
+    const fn code(self) -> &'static str {
+        match self {
+            Self::TransientInterrupted => "transient_interrupted",
+            Self::TransientNotDirectory => "transient_not_directory",
+            Self::UnsafeIo => "unsafe_io",
+            Self::UnsafeSymlink => "unsafe_symlink",
+            Self::UnsafeSpecialFile => "unsafe_special_file",
+            Self::UnsafeOverflow => "unsafe_overflow",
+        }
+    }
 }
 
 fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
@@ -1654,7 +1678,13 @@ fn retained_tree_bytes(root: &Path) -> Result<u64, RuntimeError> {
         || retained_tree_bytes_once(root, |_| {}),
         || std::thread::sleep(RETAINED_SCAN_RETRY_DELAY),
     )
-    .map_err(|_| RuntimeError::State)
+    .map_err(|error| {
+        eprintln!(
+            "[codingmage] retained-state observation failed: {}",
+            error.code()
+        );
+        RuntimeError::State
+    })
 }
 
 fn retry_retained_scan(
@@ -1664,15 +1694,13 @@ fn retry_retained_scan(
     for attempt in 0..RETAINED_SCAN_ATTEMPTS {
         match scan() {
             Ok(total) => return Ok(total),
-            Err(RetainedScanError::Transient) if attempt + 1 < RETAINED_SCAN_ATTEMPTS => {
+            Err(error) if error.is_transient() && attempt + 1 < RETAINED_SCAN_ATTEMPTS => {
                 wait();
             }
-            Err(error @ (RetainedScanError::Transient | RetainedScanError::Unsafe)) => {
-                return Err(error);
-            }
+            Err(error) => return Err(error),
         }
     }
-    Err(RetainedScanError::Transient)
+    Err(RetainedScanError::TransientInterrupted)
 }
 
 fn retained_tree_bytes_once(
@@ -1690,21 +1718,15 @@ fn retained_tree_bytes_once(
             let entry = match entry {
                 Ok(entry) => entry,
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
-                Err(error) if transient_scan_error(&error) => {
-                    return Err(RetainedScanError::Transient);
-                }
-                Err(_) => return Err(RetainedScanError::Unsafe),
+                Err(error) => return Err(classify_scan_io_error(&error)),
             };
             let file_type = match entry.file_type() {
                 Ok(file_type) => file_type,
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
-                Err(error) if transient_scan_error(&error) => {
-                    return Err(RetainedScanError::Transient);
-                }
-                Err(_) => return Err(RetainedScanError::Unsafe),
+                Err(error) => return Err(classify_scan_io_error(&error)),
             };
             if file_type.is_symlink() {
-                return Err(RetainedScanError::Unsafe);
+                return Err(RetainedScanError::UnsafeSymlink);
             }
             if file_type.is_dir() {
                 pending.push(entry.path());
@@ -1712,15 +1734,12 @@ fn retained_tree_bytes_once(
                 let metadata = match entry.metadata() {
                     Ok(metadata) => metadata,
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
-                    Err(error) if transient_scan_error(&error) => {
-                        return Err(RetainedScanError::Transient);
-                    }
-                    Err(_) => return Err(RetainedScanError::Unsafe),
+                    Err(error) => return Err(classify_scan_io_error(&error)),
                 };
                 total = checked_retained_total(total, metadata.len())
-                    .map_err(|_| RetainedScanError::Unsafe)?;
+                    .map_err(|_| RetainedScanError::UnsafeOverflow)?;
             } else {
-                return Err(RetainedScanError::Unsafe);
+                return Err(RetainedScanError::UnsafeSpecialFile);
             }
         }
     }
@@ -1734,18 +1753,17 @@ fn retained_directory_entries(
     match fs::read_dir(directory) {
         Ok(entries) => Ok(Some(entries)),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound && directory != root => Ok(None),
-        Err(error) if directory != root && transient_scan_error(&error) => {
-            Err(RetainedScanError::Transient)
-        }
-        Err(_) => Err(RetainedScanError::Unsafe),
+        Err(error) if directory != root => Err(classify_scan_io_error(&error)),
+        Err(_) => Err(RetainedScanError::UnsafeIo),
     }
 }
 
-fn transient_scan_error(error: &std::io::Error) -> bool {
-    matches!(
-        error.kind(),
-        std::io::ErrorKind::Interrupted | std::io::ErrorKind::NotADirectory
-    )
+fn classify_scan_io_error(error: &std::io::Error) -> RetainedScanError {
+    match error.kind() {
+        std::io::ErrorKind::Interrupted => RetainedScanError::TransientInterrupted,
+        std::io::ErrorKind::NotADirectory => RetainedScanError::TransientNotDirectory,
+        _ => RetainedScanError::UnsafeIo,
+    }
 }
 
 fn checked_retained_total(total: u64, next: u64) -> Result<u64, RuntimeError> {
@@ -2746,7 +2764,7 @@ mod tests {
         let missing_root = root.join("missing-root");
         assert_eq!(
             retained_directory_entries(&missing_root, &missing_root).err(),
-            Some(RetainedScanError::Unsafe)
+            Some(RetainedScanError::UnsafeIo)
         );
         fs::remove_dir_all(root).unwrap();
     }
@@ -2765,7 +2783,7 @@ mod tests {
                 replaced = true;
             }
         });
-        assert_eq!(first, Err(RetainedScanError::Transient));
+        assert_eq!(first, Err(RetainedScanError::TransientNotDirectory));
         assert_eq!(retained_tree_bytes(&root).unwrap(), 11);
         fs::remove_dir_all(root).unwrap();
     }
@@ -2778,7 +2796,7 @@ mod tests {
             || {
                 attempts += 1;
                 if attempts < 3 {
-                    Err(RetainedScanError::Transient)
+                    Err(RetainedScanError::TransientInterrupted)
                 } else {
                     Ok(42)
                 }
@@ -2794,11 +2812,11 @@ mod tests {
         let unsafe_result = retry_retained_scan(
             || {
                 attempts += 1;
-                Err(RetainedScanError::Unsafe)
+                Err(RetainedScanError::UnsafeSymlink)
             },
             || waits += 1,
         );
-        assert_eq!(unsafe_result, Err(RetainedScanError::Unsafe));
+        assert_eq!(unsafe_result, Err(RetainedScanError::UnsafeSymlink));
         assert_eq!(attempts, 1);
         assert_eq!(waits, 0);
 
@@ -2807,11 +2825,11 @@ mod tests {
         let exhausted = retry_retained_scan(
             || {
                 attempts += 1;
-                Err(RetainedScanError::Transient)
+                Err(RetainedScanError::TransientInterrupted)
             },
             || waits += 1,
         );
-        assert_eq!(exhausted, Err(RetainedScanError::Transient));
+        assert_eq!(exhausted, Err(RetainedScanError::TransientInterrupted));
         assert_eq!(attempts, RETAINED_SCAN_ATTEMPTS);
         assert_eq!(waits, RETAINED_SCAN_ATTEMPTS - 1);
     }
