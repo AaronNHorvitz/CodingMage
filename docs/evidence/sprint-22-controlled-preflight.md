@@ -151,6 +151,42 @@ bytes, and 2,206,304 milliseconds of execution. The active target checkout remai
 preserved at their exact recorded branches and commits; push, issue, pull-request, task-merge,
 destination-merge, release, network, and external-infrastructure authority remained denied.
 
+A later successor authority bound CodingMage commit `84cf534`, which retains a bounded head and
+tail for failed gate diagnostics, and started from preserved candidate
+`df1bed3b68cc1764e5bfea3505a9379a58fa0d81`. Its two source-free preflight generations were
+byte-identical with digest
+`da84d510a661cf550bbe41f1d09a0e195d50013cbd2c103d9a239c2af99ab3c5`. The one-pod local-only
+campaign selected `1.2.1.2`, produced candidate `e32e962db923a51777bed3773c3e39cf57fae897`,
+and passed formatting, documentation, schema, complete Rust workspace, strict Clippy, and diff
+gates. Immutable review requested a bounded correction; the provider wrote an in-progress
+correction and then failed transiently. The then-current recovery path treated that retained dirty
+worktree as a repository boundary and stopped. The preserved terminal status records seven provider
+attempts, three correction rounds, 29 guarded process invocations, 1,263,224 output bytes,
+436,687,037 retained-state bytes, zero completed units, and zero accepted outcomes. No preceding
+campaign state or active checkout was modified.
+
+Commit `4b73b80` corrects that recovery boundary. A durable prepared correction may now resume its
+already-bound provider session when its exact owned worktree contains incomplete edits; a clean
+coordinator commit is still adopted without replay, and every identity, lineage, command, and path-
+authority failure remains terminal. The eventual coordinator commit continues to enforce the
+original owned paths. A live CLI regression writes a correction, injects a transient provider
+failure, resumes the exact session and dirty worktree, and proves that lead selection and initial
+implementation each execute only once. Strict workspace Clippy, all workspace targets, the
+prescribed ten-outcome schedule, generated verification inventory, formatting, and diff integrity
+passed.
+
+The next successor bound that repaired binary and started from `e32e962d`. Its two source-free
+preflight reports were byte-identical with digest
+`92c66a48a1df689004954b32b167f4cf5890d5ed16fc447a12971e41c86e007a`. It selected `1.2.1.3`,
+completed eight bounded implementation, gate, correction, and immutable-review rounds, and retained
+clean fully gated candidate `166b19a7375941bfaf9d3e1d59280e5f878237d8`. The final review still
+required changes, so the exact configured correction ceiling paused the campaign with
+`codingmage.campaign.unit_recoverable_failure` instead of integrating the candidate. The terminal
+status records 14 provider attempts, eight correction rounds, 56 guarded process invocations,
+3,232,022 output bytes, 59,320 retained-state bytes, 4,512,526 milliseconds of execution, zero
+completed units, and zero accepted outcomes. Network, push, issues, pull requests, task merge,
+destination merge, protected-branch mutation, release, and external infrastructure remained denied.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
