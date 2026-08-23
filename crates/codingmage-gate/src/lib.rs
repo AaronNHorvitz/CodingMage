@@ -18,6 +18,7 @@ use sha2::{Digest, Sha256};
 const MAX_GATES: usize = 256;
 const MAX_ASSERTIONS: usize = 32;
 const MAX_DIAGNOSTIC_BYTES: usize = 64 * 1024;
+const DIAGNOSTIC_OMISSION_MARKER: &[u8] = b"\n...[middle of diagnostic omitted]...\n";
 
 /// Deterministic verification depth.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
@@ -691,7 +692,18 @@ fn execute_gate(
 }
 
 fn bounded_diagnostic(bytes: &[u8]) -> String {
-    String::from_utf8_lossy(&bytes[..bytes.len().min(MAX_DIAGNOSTIC_BYTES)]).into_owned()
+    if bytes.len() <= MAX_DIAGNOSTIC_BYTES {
+        return String::from_utf8_lossy(bytes).into_owned();
+    }
+
+    let retained_bytes = MAX_DIAGNOSTIC_BYTES - DIAGNOSTIC_OMISSION_MARKER.len();
+    let head_bytes = retained_bytes / 2;
+    let tail_bytes = retained_bytes - head_bytes;
+    let mut diagnostic = Vec::with_capacity(MAX_DIAGNOSTIC_BYTES);
+    diagnostic.extend_from_slice(&bytes[..head_bytes]);
+    diagnostic.extend_from_slice(DIAGNOSTIC_OMISSION_MARKER);
+    diagnostic.extend_from_slice(&bytes[bytes.len() - tail_bytes..]);
+    String::from_utf8_lossy(&diagnostic).into_owned()
 }
 
 fn unavailable_evidence(
@@ -857,4 +869,29 @@ fn sha256(bytes: &[u8]) -> String {
         encoded.push(char::from(HEX[usize::from(byte & 0x0f)]));
     }
     encoded
+}
+
+#[cfg(test)]
+mod diagnostic_tests {
+    use super::{DIAGNOSTIC_OMISSION_MARKER, MAX_DIAGNOSTIC_BYTES, bounded_diagnostic};
+
+    #[test]
+    fn oversized_diagnostic_retains_actionable_tail_within_the_byte_ceiling() {
+        let mut input = b"compiler-start\n".to_vec();
+        input.extend(std::iter::repeat_n(b'x', MAX_DIAGNOSTIC_BYTES));
+        input.extend_from_slice(b"\nerror: final actionable diagnostic\n");
+
+        let retained = bounded_diagnostic(&input);
+
+        assert!(retained.starts_with("compiler-start\n"));
+        assert!(retained.contains(String::from_utf8_lossy(DIAGNOSTIC_OMISSION_MARKER).as_ref()));
+        assert!(retained.ends_with("error: final actionable diagnostic\n"));
+        assert!(retained.len() <= MAX_DIAGNOSTIC_BYTES);
+    }
+
+    #[test]
+    fn short_diagnostic_is_preserved_exactly() {
+        let input = b"exact diagnostic\n";
+        assert_eq!(bounded_diagnostic(input).as_bytes(), input);
+    }
 }
