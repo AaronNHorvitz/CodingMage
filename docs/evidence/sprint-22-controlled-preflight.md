@@ -1,13 +1,16 @@
 # Sprint 22 Controlled Campaign Preflight Evidence
 
-- **Status:** Controlled-target preparation and report review complete; executions so far stopped
-  safely with zero accepted outcomes, all retained evidence remains preserved, and a fresh isolated
-  replacement authority awaits exact-digest approval
+- **Status:** Controlled-target preparation and report review complete; the latest approved
+  replacement execution stopped safely at an exact repository boundary with zero accepted outcomes,
+  and all retained evidence remains preserved
 - **Implementation commit:** `061a604`
 - **Target-artifact boundary correction:** `35ce2b6`
 - **Stable approval-projection correction:** `174c320`
 - **Provider-compatible lead-schema correction:** `56a1c19`
 - **Retained-state observation retry correction:** `33e4c71`
+- **Retained-state retry bound:** `7c665d7`
+- **Retained-state diagnostic taxonomy:** `6848b9b`
+- **Non-traversing symlink census:** `ee530b2`
 - **Executed:** 2026-08-22 on Fedora Linux with Rust 1.95.0
 
 ## Implemented Boundary
@@ -124,6 +127,30 @@ byte-identical with digest
 `acbf8ca314d25b6bf91d12ad08bcd218318c66b2850c07c806ab7cd62fcb26e3`. Both reports are mode
 `0600`; no campaign state, implementation worktree, or inference process exists for this authority.
 
+Additional isolated authorities followed after the retained-state scanner encountered transient
+directory replacement and then ordinary package-manager symlinks. Commit `7c665d7` bounds transient
+retries, commit `6848b9b` adds a content-free failure taxonomy, and commit `ee530b2` counts each
+symlink object's own metadata without following its target. Strict path, checkpoint, task-source,
+repository, and worktree validators continue to reject symlinks. Focused retained-state tests, all
+94 runtime tests, strict workspace Clippy, formatting, and diff integrity passed after the final
+correction.
+
+The standing owner authorization covered a fresh successor report with stable digest
+`06e7c2798c69542f23f0e7dbc375394ec219aec5f3c40fe1d107bac09f169ba2`.
+The guarded one-pod, local-only campaign selected dependency-ready task `1.2.1.1`. The first
+candidate required one local-gate correction, then passed the deterministic gates and entered
+immutable Codex review. Review requested a runtime-validator correction outside the task's exact
+owned paths. Claude refused to broaden its authority and returned
+`owned-paths-exclude-runtime-validator`; the coordinator stopped with
+`codingmage.campaign.unit_repository_boundary` rather than accepting or integrating the candidate.
+
+The terminal checkpoint records zero completed and zero accepted outcomes, five provider attempts,
+one correction round, 17 guarded process invocations, 619,068 output bytes, 436,644,152 retained-state
+bytes, and 2,206,304 milliseconds of execution. The active target checkout remains clean at
+`835049c9e943dade2f1d523708e84ee7e4a3d5d0`. Its campaign-owned root and failed pod worktrees remain
+preserved at their exact recorded branches and commits; push, issue, pull-request, task-merge,
+destination-merge, release, network, and external-infrastructure authority remained denied.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
@@ -158,8 +185,9 @@ without changing the controlled-target authority boundary.
 
 ## Open Boundary
 
-Controlled-target preparation and manual review are complete. The fresh source-free digest still
-requires explicit approval before its first implementation-provider invocation. Task 22.3.3, ten accepted outcomes
-or another exact terminal result, complete human reconciliation, external publication, parallel
-expansion, and Sprint 22 Gate 22.3 remain open. Neither failed execution is represented as controlled-
-target qualification evidence.
+Controlled-target preparation, approval, and one exact terminal execution are complete. The run
+proves fail-closed local execution and repository-boundary enforcement, but it does not prove ten
+accepted outcomes. Complete human review of the preserved candidate, a successor authority that
+correctly composes any dependency-ready task's required paths, ten accepted outcomes, external
+publication, parallel expansion, and Sprint 22 Gate 22.3 remain open. No failed execution is
+represented as successful controlled-target qualification evidence.
