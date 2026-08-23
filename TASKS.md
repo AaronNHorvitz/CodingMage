@@ -1253,7 +1253,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 - [ ] **Task 25.1.1 - Expand fault campaigns**
   - [x] **Sub-task 25.1.1.1:** Inject malformed lead plans, provider output, reviews, diagnostics, Git state, task-source changes, and checkpoint records.
-  - [ ] **Sub-task 25.1.1.2:** Interrupt every provider, gate, commit, integration, publication, and cleanup intent.
+  - [x] **Sub-task 25.1.1.2:** Interrupt every provider, gate, commit, integration, publication, and cleanup intent. Before-effect, after-effect, restart, idempotency, and ownership cases are bound in `docs/evidence/sprint-25-interruption-matrix.md`.
   - [ ] **Sub-task 25.1.1.3:** Exercise sleep, restart, logout, quota exhaustion, authentication expiration, network loss, disk pressure, and process loss.
   - [x] **Sub-task 25.1.1.4:** Prove bounded storage, output, process, retry, token, and provider-invocation growth.
 - [x] **Task 25.1.2 - Stage unattended rollout**
@@ -1278,7 +1278,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 25.2.2.5:** Run unrelated target repositories sequentially and concurrently and prove configuration, state, worktrees, sessions, models, evidence, and controls never cross ownership.
 - [ ] **Task 25.2.3 - Complete security, recovery, and mutation testing**
   - [ ] **Sub-task 25.2.3.1:** Mutate every authority, lead report, provider report, review, lease, journal, checkpoint, evidence, integration, publication, and package-manifest field and require fail-closed behavior.
-  - [ ] **Sub-task 25.2.3.2:** Interrupt every provider, process, gate, commit, integration, publication, control, snapshot, and cleanup intent before and after its effect.
+  - [x] **Sub-task 25.2.3.2:** Interrupt every provider, process, gate, commit, integration, publication, control, snapshot, and cleanup intent before and after its effect. See `docs/evidence/sprint-25-interruption-matrix.md`.
   - [x] **Sub-task 25.2.3.3:** Exercise hostile Git configuration, aliases, hooks, filters, signers, credential helpers, replacement refs, alternates, submodules, large-file metadata, symlinks, case collisions, and Unicode collisions.
   - [ ] **Sub-task 25.2.3.4:** Exercise process escape, descendant survival, executable replacement, response-file injection, output pressure, process pressure, storage pressure, sleep, logout, shutdown, and concurrent unrelated processes.
   - [x] **Sub-task 25.2.3.5:** Prove sensitive values, prompts, provider prose, source text, hidden reasoning, unrestricted environment data, and unnecessary target copies never enter durable state, logs, status, evidence, packages, or publication payloads.
