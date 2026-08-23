@@ -961,8 +961,8 @@ profiles = ["configured-gates"]
     assert_eq!(status["outcomes"]["blocked"], 0);
     assert_eq!(status["outcomes"]["deferred"], 0);
     assert_eq!(status["outcomes"]["pending_human_decision"], 0);
-    assert_eq!(status["outcomes"]["accepted"], 2);
-    assert!(status["outcomes"]["max_accepted"].as_u64().unwrap() >= 2);
+    assert_eq!(status["outcomes"]["accepted"], 3);
+    assert_eq!(status["outcomes"]["max_accepted"], 3);
     assert!(status["limits"]["provider_attempts"].as_u64().unwrap() > 0);
     assert!(status["limits"]["process_invocations"].as_u64().unwrap() > 0);
     assert!(status["limits"]["output_bytes"].as_u64().unwrap() > 0);
