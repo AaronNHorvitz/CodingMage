@@ -851,9 +851,9 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 18.1.1.2:** Build release artifacts from a clean checkout twice and compare outputs.
   - [x] **Sub-task 18.1.1.3:** Generate SBOM, checksums, build manifest, and installation layout.
   - [x] **Sub-task 18.1.1.4:** Verify no credentials, logs, target source, local paths, or debug-only authority enter the package.
-- [ ] **Task 18.1.2 - Installation and removal.** Binary lifecycle passes; packaged user-service lifecycle remains open. See `docs/evidence/sprint-18-linux-package.md`.
+- [x] **Task 18.1.2 - Installation and removal.** Binary and real Fedora user-service lifecycles pass through the packaged artifact. See `docs/evidence/sprint-18-linux-package.md`.
   - [x] **Sub-task 18.1.2.1:** Install under user-owned paths without root.
-  - [ ] **Sub-task 18.1.2.2:** Install, verify, start, stop, upgrade, rollback, and remove the user service.
+  - [x] **Sub-task 18.1.2.2:** Install, verify, start, stop, upgrade, rollback, and remove the user service. A real Fedora `systemd --user` manager completed the lifecycle against package digest `b452148a97bdf4b6d4580d0c7c247b100391328c46d440b0ee0a441f7f910f45`. See `docs/evidence/sprint-18-linux-package.md`.
   - [x] **Sub-task 18.1.2.3:** Preserve user configuration and state only according to explicit retention policy.
 
 ### Story 18.2 - macOS and Windows Design
@@ -875,7 +875,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 
 ### Sprint 18 Gate
 
-- [ ] **Gate 18.1:** Fedora package, install, upgrade, rollback, removal, SBOM, and provenance gates pass.
+- [x] **Gate 18.1:** Fedora package, install, upgrade, rollback, removal, SBOM, and provenance gates pass. See `docs/evidence/sprint-18-linux-package.md`.
 - [x] **Gate 18.2:** macOS and Windows claims remain blocked until native execution evidence exists.
 
 ---

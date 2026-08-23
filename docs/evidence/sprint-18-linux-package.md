@@ -2,7 +2,10 @@
 
 ## Scope
 
-This evidence covers a reproducible Linux x86-64 release candidate, SPDX dependency inventory, checksums, build provenance, rootless binary lifecycle, local-path rejection, and explicit platform contracts. It does not claim user-service lifecycle, artifact signing, native macOS execution, or native Windows implementation.
+This evidence covers a reproducible Linux x86-64 release candidate, SPDX dependency inventory,
+checksums, build provenance, rootless binary and Fedora user-service lifecycles, local-path rejection,
+and explicit platform contracts. It does not claim isolated logout survival, artifact signing, native
+macOS execution, or native Windows implementation.
 
 ## Reproducibility And Contents
 
@@ -56,15 +59,28 @@ cargo test -p codingmage-cli --all-targets
 3 passed; 0 failed
 ```
 
-## Open Evidence
+## Real Fedora User-Service Lifecycle
 
-The packaged installer now generates a campaign-bound user unit and exercises deterministic
-install, verification, start, stop, binary upgrade, rollback, drift refusal, and removal through a
-fake service controller. The Rust service contract and installer both render the production
-`campaign --config ... --campaign ...` entry point, and native `systemd-analyze --user verify`
-accepts the Rust-rendered unit. Sub-task `18.1.2.2` and `Gate 18.1` remain open until the same
-lifecycle runs through a real isolated user service manager and the resulting installed-package
-evidence is bound to a release candidate. Signing also remains a human release operation.
+At source commit `27a78b971e7cb14c9376ef514c3c4063ad7ac48c`, two locked release builds
+produced package digest `b452148a97bdf4b6d4580d0c7c247b100391328c46d440b0ee0a441f7f910f45`.
+The package was installed beneath a fresh user-owned temporary prefix. The installer verified the
+binary and generated an exact `codingmage.service` bound to synthetic configuration, campaign,
+state, and scratch paths that could not reach a repository or provider.
+
+Native `systemd-analyze --user verify` accepted the installed unit. A real Fedora user service
+manager loaded and started it; because the synthetic campaign was intentionally non-operational,
+the unit reached the expected `activating/auto-restart` state without repository or provider effects.
+The guarded installer then stopped it to `inactive/dead`, installed the packaged binary again as an
+upgrade, verified the service and binary, rolled the binary back, verified both again, removed the
+service, reloaded the manager, and removed the binary installation. The exact unit and service
+receipt were absent afterward, and `systemctl --user` reported that the unit could not be found.
+
+The fake-controller lifecycle and drift-refusal tests remain complementary deterministic evidence.
+The real lifecycle does not claim service survival across logout or a complete installed campaign;
+those remain separate Sprint 14 and Sprint 25 evidence boundaries. Signing remains a human release
+operation.
+
+## Open Evidence
 
 Sub-task `18.2.2.1`, `18.2.2.2`, and native macOS evidence remain open. The contract and literal launch/keychain plans do not substitute for native process, filesystem, launch-agent, credential, provider, monitoring, and recovery execution. Windows executable support remains intentionally unimplemented.
 
