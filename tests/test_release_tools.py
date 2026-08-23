@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import io
+import json
 import tarfile
 import tempfile
 import unittest
@@ -26,15 +27,40 @@ PACKAGER = importlib.util.module_from_spec(PACKAGE_SPEC)
 PACKAGE_SPEC.loader.exec_module(PACKAGER)
 
 
-def archive(root: Path, name: str, content: bytes) -> Path:
+def archive(
+    root: Path,
+    name: str,
+    content: bytes,
+    manifest_overrides: dict[str, object] | None = None,
+) -> Path:
     bundle = root / f"{name}.tar.gz"
     digest = hashlib.sha256(content).hexdigest()
+    build_manifest = {
+        "schema_version": 1,
+        "version": "0.1.0",
+        "source_commit": "a" * 40,
+        "source_date_epoch": 1,
+        "cargo_lock_sha256": "b" * 64,
+        "binary_sha256": digest,
+        "contains_credentials": False,
+        "contains_runtime_state": False,
+        "native_evidence": "linux-only",
+    }
+    if manifest_overrides:
+        build_manifest.update(manifest_overrides)
+    build_bytes = (json.dumps(build_manifest, sort_keys=True, indent=2) + "\n").encode()
+    build_digest = hashlib.sha256(build_bytes).hexdigest()
     with tarfile.open(bundle, "w:gz") as stream:
         binary = tarfile.TarInfo(f"codingmage-0.1.0/bin/codingmage")
         binary.mode = 0o755
         binary.size = len(content)
         stream.addfile(binary, io.BytesIO(content))
-        checksums = f"{digest}  bin/codingmage\n".encode()
+        build = tarfile.TarInfo("codingmage-0.1.0/BUILD-MANIFEST.json")
+        build.size = len(build_bytes)
+        stream.addfile(build, io.BytesIO(build_bytes))
+        checksums = (
+            f"{build_digest}  BUILD-MANIFEST.json\n{digest}  bin/codingmage\n"
+        ).encode()
         manifest = tarfile.TarInfo("codingmage-0.1.0/SHA256SUMS")
         manifest.size = len(checksums)
         stream.addfile(manifest, io.BytesIO(checksums))
@@ -113,6 +139,27 @@ class ReleaseToolsTest(unittest.TestCase):
             extract.mkdir()
             with self.assertRaises(ValueError):
                 INSTALLER.safe_extract(traversal, extract)
+
+    def test_every_build_manifest_field_mutation_fails_closed(self) -> None:
+        mutations: dict[str, object] = {
+            "schema_version": 2,
+            "version": "changed",
+            "source_commit": "x" * 40,
+            "source_date_epoch": -1,
+            "cargo_lock_sha256": "x" * 64,
+            "binary_sha256": "0" * 64,
+            "contains_credentials": True,
+            "contains_runtime_state": True,
+            "native_evidence": "changed",
+            "unknown_field": True,
+        }
+        with tempfile.TemporaryDirectory(prefix="codingmage-manifest-test-") as temporary:
+            root = Path(temporary)
+            for field, value in mutations.items():
+                with self.subTest(field=field):
+                    changed = archive(root, field, b"binary", {field: value})
+                    with self.assertRaisesRegex(ValueError, "build manifest"):
+                        INSTALLER.install(changed, root / f"prefix-{field}")
 
     def test_packaged_service_install_start_upgrade_rollback_stop_and_remove(self) -> None:
         with tempfile.TemporaryDirectory(prefix="codingmage-service-test-") as temporary:

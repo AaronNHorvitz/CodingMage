@@ -5,13 +5,30 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
+import re
 import shutil
 import subprocess
 import tarfile
 import tempfile
 import tomllib
 from pathlib import Path
+
+
+MANIFEST_FIELDS = {
+    "schema_version",
+    "version",
+    "source_commit",
+    "source_date_epoch",
+    "cargo_lock_sha256",
+    "binary_sha256",
+    "contains_credentials",
+    "contains_runtime_state",
+    "native_evidence",
+}
+SHA256 = re.compile(r"^[0-9a-f]{64}$")
+COMMIT = re.compile(r"^[0-9a-f]{40}$")
 
 
 def sha256(path: Path) -> str:
@@ -173,6 +190,32 @@ def safe_extract(archive: Path, destination: Path) -> Path:
     return roots[0]
 
 
+def validate_build_manifest(root: Path, binary: Path) -> None:
+    manifest_path = root / "BUILD-MANIFEST.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError("invalid build manifest") from error
+    if not isinstance(manifest, dict) or set(manifest) != MANIFEST_FIELDS:
+        raise ValueError("invalid build manifest")
+    if (
+        manifest["schema_version"] != 1
+        or manifest["version"] != "0.1.0"
+        or not isinstance(manifest["source_commit"], str)
+        or not COMMIT.fullmatch(manifest["source_commit"])
+        or not isinstance(manifest["source_date_epoch"], int)
+        or isinstance(manifest["source_date_epoch"], bool)
+        or manifest["source_date_epoch"] < 0
+        or not isinstance(manifest["cargo_lock_sha256"], str)
+        or not SHA256.fullmatch(manifest["cargo_lock_sha256"])
+        or manifest["binary_sha256"] != sha256(binary)
+        or manifest["contains_credentials"] is not False
+        or manifest["contains_runtime_state"] is not False
+        or manifest["native_evidence"] != "linux-only"
+    ):
+        raise ValueError("invalid build manifest")
+
+
 def install(archive: Path, prefix: Path) -> None:
     binary, previous, receipt = paths(prefix)
     with tempfile.TemporaryDirectory(prefix="codingmage-install-") as temporary:
@@ -180,9 +223,14 @@ def install(archive: Path, prefix: Path) -> None:
         source = root / "bin" / "codingmage"
         if not source.is_file():
             raise ValueError("binary missing")
+        validate_build_manifest(root, source)
         expected = None
+        declared: set[str] = set()
         for line in (root / "SHA256SUMS").read_text(encoding="ascii").splitlines():
             digest, name = line.split("  ", 1)
+            if name in declared or Path(name).is_absolute() or ".." in Path(name).parts:
+                raise ValueError("invalid checksum manifest")
+            declared.add(name)
             candidate = root / name
             if not candidate.is_file() or sha256(candidate) != digest:
                 raise ValueError("checksum mismatch")
@@ -190,6 +238,13 @@ def install(archive: Path, prefix: Path) -> None:
                 expected = digest
         if expected is None:
             raise ValueError("binary checksum missing")
+        actual = {
+            path.relative_to(root).as_posix()
+            for path in root.rglob("*")
+            if path.is_file() and path.name != "SHA256SUMS"
+        }
+        if declared != actual:
+            raise ValueError("checksum inventory mismatch")
         binary.parent.mkdir(parents=True, exist_ok=True)
         receipt.parent.mkdir(parents=True, exist_ok=True)
         if binary.exists():

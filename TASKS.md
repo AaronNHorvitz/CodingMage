@@ -1277,7 +1277,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 25.2.2.4:** Exercise package install, service start, campaign execution, monitor controls, stop, upgrade, rollback, removal, and retained-data policy as one installed-artifact workflow.
   - [x] **Sub-task 25.2.2.5:** Run unrelated target repositories sequentially and concurrently and prove configuration, state, worktrees, sessions, models, evidence, and controls never cross ownership.
 - [ ] **Task 25.2.3 - Complete security, recovery, and mutation testing**
-  - [ ] **Sub-task 25.2.3.1:** Mutate every authority, lead report, provider report, review, lease, journal, checkpoint, evidence, integration, publication, and package-manifest field and require fail-closed behavior.
+  - [x] **Sub-task 25.2.3.1:** Mutate every authority, lead report, provider report, review, lease, journal, checkpoint, evidence, integration, publication, and package-manifest field and require fail-closed behavior. See `docs/evidence/sprint-25-mutation-matrix.md`.
   - [x] **Sub-task 25.2.3.2:** Interrupt every provider, process, gate, commit, integration, publication, control, snapshot, and cleanup intent before and after its effect. See `docs/evidence/sprint-25-interruption-matrix.md`.
   - [x] **Sub-task 25.2.3.3:** Exercise hostile Git configuration, aliases, hooks, filters, signers, credential helpers, replacement refs, alternates, submodules, large-file metadata, symlinks, case collisions, and Unicode collisions.
   - [ ] **Sub-task 25.2.3.4:** Exercise process escape, descendant survival, executable replacement, response-file injection, output pressure, process pressure, storage pressure, sleep, logout, shutdown, and concurrent unrelated processes.
