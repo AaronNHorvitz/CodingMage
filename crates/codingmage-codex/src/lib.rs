@@ -1079,7 +1079,13 @@ fn render_lead_packet(binding: &CodexLeadBinding) -> Result<Vec<u8>, CodexError>
            current file. Inspect the bound read-only worktree before proposing; use only an exact\n\
            existing file or directory as an owned path. For a new file, own its exact existing\n\
            parent directory and put the new repository-root-relative file in expected_artifacts.\n\
-           Never infer or shorten a path shown elsewhere in repository content.\n\
+           Never infer or shorten a path shown elsewhere in repository content. Before proposing,\n\
+           trace the selected task's existing reverse references and integration surfaces. Include\n\
+           every exact path required to register, expose, validate, test, or document the bounded\n\
+           change, including existing module registries, runtime validators, schema manifests,\n\
+           schema-validation tests, and generated-artifact registries when they are affected. Do\n\
+           not omit a required integration path in the hope that correction authority can expand;\n\
+           the coordinator will reject any correction outside the original owned paths.\n\
          - gate_tiers must use only names from Available gate tiers.\n\
          - test_resources must be short identifier names, not paths or prose.\n\
          - expected_artifacts must contain only repository-relative artifact paths, each nested\n\
@@ -1620,6 +1626,9 @@ mod tests {
         assert!(packet.contains("dependencies must exactly reproduce"));
         assert!(packet.contains("relative to the repository root"));
         assert!(packet.contains("existing file or directory as an owned path"));
+        assert!(packet.contains("trace the selected task's existing reverse references"));
+        assert!(packet.contains("module registries, runtime validators, schema manifests"));
+        assert!(packet.contains("reject any correction outside the original owned paths"));
         assert!(packet.contains("return no more proposals than Maximum proposals"));
     }
 
