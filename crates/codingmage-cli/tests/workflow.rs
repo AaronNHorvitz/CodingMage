@@ -59,10 +59,9 @@ impl Fixture {
     }
 
     fn command(arguments: &[&str]) -> std::process::Output {
-        Command::new(env!("CARGO_BIN_EXE_codingmage"))
-            .args(arguments)
-            .output()
-            .unwrap()
+        let executable = std::env::var_os("CODINGMAGE_TEST_BINARY")
+            .unwrap_or_else(|| env!("CARGO_BIN_EXE_codingmage").into());
+        Command::new(executable).args(arguments).output().unwrap()
     }
 
     fn executable(&self, name: &str, content: &str) -> std::path::PathBuf {
