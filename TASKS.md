@@ -1499,4 +1499,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Complete Sprint 22 sub-task `22.3.1.1`: run the production campaign coordinator against the prescribed ten-outcome disposable schedule without broadening one-pod, local-only authority.
+- [ ] **Next 1:** Obtain separate approval for controlled-target preflight digest `009cf73129cf77677364440c8276bb66590e392a49f49157dd5957dbd0aa948b`, then execute and reconcile Sprint 22 Task `22.3.3` without broadening one-pod, local-only authority.

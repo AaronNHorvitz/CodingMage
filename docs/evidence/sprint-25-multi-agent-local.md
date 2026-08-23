@@ -20,8 +20,8 @@ Mutation tests prove that drift in each claim class fails closed.
 ## Local Commands
 
 The release and clean-clone qualification is bound to source commit
-`1673dfb92c8ca92fea1a8f82030b731d7c488cef`. The current evidence-binding implementation is commit
-`e80f25c4bc303a601cbf77d64d1a23d0af4e2afc`. The following commands were run locally:
+`51533f2ce59619a2e33b9570c85c3782190e47aa`. The current evidence-binding refresh is commit
+`4967f6d`. The following commands were run locally:
 
 ```bash
 python3 -m unittest tests.test_multi_agent_matrix
@@ -52,7 +52,7 @@ git diff --check
 | `cargo fmt --all -- --check` | `0` | No formatting drift. |
 | `python3 scripts/check_architecture.py` | `0` | Dependency policy passed from the clean clone. |
 | Clean-clone Python discovery | `0` | 20 passed, 0 failed at the package source commit. |
-| Current Python discovery | `0` | 22 passed, 0 failed after adding evidence-binding mutation coverage. |
+| Current Python discovery | `0` | 28 passed, 0 failed after the current package and policy refresh. |
 | `python3 -m unittest tests.test_multi_agent_matrix` | `0` | 5 passed, 0 failed. |
 | `python3 -m unittest tests.test_release_tools -v` | `0` | 3 passed, 0 failed. |
 | `python3 scripts/docs_check.py` | `0` | Documentation checks passed. |
@@ -64,7 +64,7 @@ git diff --check
 The scenario-matrix SHA-256 at this baseline is
 `02961fdbbae9995c350c1def63a2fb50f7e1a5399bb0611a319f01cb11cee499`. Both package invocations
 produced `codingmage-0.1.0-linux-x86_64.tar.gz` with SHA-256
-`7a4b6bf72d6cd96dec965abcbf3eb269c6b09219ade6f731715e68cd00d22af0`. The archive contains the
+`d3e38d513b03567af5d7bfc58cba16260650a9af9566b9a276745610a8696f4d`. The archive contains the
 binary, checksums, source-bound build manifest, SPDX 2.3 SBOM, license, readme, and security policy.
 It is an unsigned local candidate, not a published release.
 

@@ -115,24 +115,18 @@ Strict Clippy for the runtime and CLI all targets, workspace formatting, `git di
 case-insensitive downstream-name contamination scans passed. `python3 scripts/docs_check.py` and
 the ten documentation and architecture policy unit tests also passed.
 
-## Pre-existing Test Discrepancy
+## Reconciled Baseline Findings
 
-The broader CLI/runtime test command reached one unrelated existing workflow failure:
-`serial_campaign_advances_two_reviewed_tasks_without_touching_active_checkout` records three
-accepted outcomes while its assertion expects two. The exact isolated test fails identically in an
-untouched temporary worktree at baseline commit `b727b75`. No preflight diff changes integration,
-checkpoint, or accepted-outcome progression. This discrepancy remains separate work and is not
-presented as a passing gate here.
+Commit `3f2759c` corrected the serial workflow fixture to count its satisfied deferral plus two
+completed tasks as three accepted outcomes, matching the integrity-bound campaign contract. The
+exact recovery workflow then passed in 76.90 seconds, and the complete workspace run passed with
+the production prescribed campaign completing in 167.14 seconds.
 
-The standalone `python3 scripts/check_architecture.py` command reports the unchanged test-only
-`codingmage-cli -> codingmage-soak` development dependency. That edge is present at baseline commit
-`b727b75`; this preflight change adds no crate dependency in that direction. The standalone
-architecture command is therefore also not presented as passing evidence.
-
-The complete Python discovery suite also rejects the historical multi-agent evidence binding because
-this change updates its bound `Cargo.lock` and `README.md` inputs. The binding is intentionally left
-stale until its complete package, platform, architecture, and multi-agent evidence command set is
-rerun. No historical package digest or source-commit claim was rewritten for this bounded unit.
+Commit `51fe924` granted the existing `codingmage-cli -> codingmage-soak` edge only as an explicit
+development dependency. The production graph remains unchanged, and the architecture checker and
+mutation tests pass. Commit `4967f6d` refreshed the package binding after two clean builds produced
+byte-identical unsigned Linux archives. These corrections remove the prior local discrepancies
+without changing the controlled-target authority boundary.
 
 ## Open Boundary
 

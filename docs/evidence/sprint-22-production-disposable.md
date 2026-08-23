@@ -5,6 +5,7 @@
 - **Accepted-outcome correction commit:** `518d4e6`
 - **Production fixture commit:** `918b560`
 - **Final residue-assertion commit:** `c8656c2`
+- **Latest full revalidation commit:** `3f2759c`
 - **Executed:** 2026-08-21 on Fedora Linux with Rust 1.95.0
 
 ## Authority And Baseline
@@ -65,6 +66,10 @@ cargo test -p codingmage-cli --test prescribed_campaign --locked -- --nocapture
 ```
 
 Result: one passed, zero failed, completed in 168.81 seconds at commit `c8656c2`.
+
+The same production fixture passed again after the serial accepted-outcome assertion correction at
+commit `3f2759c`: one passed, zero failed, completed in 167.14 seconds. The complete workspace test
+run also passed, with one separately guarded sustained qualification intentionally ignored.
 
 The focused compile, lint, formatting, and repository checks also pass:
 
