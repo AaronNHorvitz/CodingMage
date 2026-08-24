@@ -257,11 +257,14 @@ environment values, credentials, and hidden reasoning are not copied into the jo
 Content-free transient provider and session failures are retried as fresh isolated whole-unit
 attempts, with a fixed maximum of three attempts. Exhaustion becomes a durable
 `codingmage.campaign.provider_unavailable` pause. Quota and authentication failures are classified
-separately and pause without consuming a transient retry attempt. These clean provider returns
-release the owned unit before pausing, so the same exact campaign can continue after access is
-restored. A process interruption during a correction keeps the active unit and resumes through
-exact-session reobservation. An interruption during the initial implementation session remains
-blocked from automatic replay.
+separately and pause without consuming a transient retry attempt. A transient failure outside a
+correction releases the owned unit before retry or pause. Once an integrity-verified correction
+checkpoint exists, CodingMage retains only its exact matched worktree, releases the coordinator
+lock, and retries the same run and provider-session lineage. This applies whether the provider left
+the correction worktree clean or with incomplete authorized edits. Recovery reobserves an existing
+coordinator commit or resumes the exact session; Git commit and path-authority checks remain
+unchanged. An interruption during the initial implementation session remains blocked from
+automatic replay.
 
 Claude completion reports must select exactly one ready, blocked, or committed disposition. An
 invalid or malformed report receives one resume of the same exact provider session with a

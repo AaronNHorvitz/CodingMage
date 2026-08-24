@@ -11,7 +11,8 @@
 - **Retained-state retry bound:** `7c665d7`
 - **Retained-state diagnostic taxonomy:** `6848b9b`
 - **Non-traversing symlink census:** `ee530b2`
-- **Executed:** 2026-08-22 on Fedora Linux with Rust 1.95.0
+- **Clean correction-retry retention:** `6fb216c`
+- **Executed:** 2026-08-22 through 2026-08-24 on Fedora Linux with Rust 1.95.0
 
 ## Implemented Boundary
 
@@ -242,6 +243,35 @@ preflight policy digest, composed before proposal sealing, and still enforced by
 verification. This addresses the measured Campaign U failure pattern without granting providers
 mid-session or repository-wide authority.
 
+Campaign V started from accepted head `1ad4759328fc253b718388131fb484ecdf2c4c25` under two
+byte-identical source-free preflight reports with digest
+`52541877f3397e5533680642481b551ce38fed4cb5d52b8f442131e7b502fb85` and authority-policy digest
+`37f82752989c64fb68dcf7c23593a8e921c0c2d40aa92fe8213208fead9dbd06`. Its eight sealed
+task-specific companion mappings were fixed before inference. Three tasks produced accepted typed
+`implementation_condition_outside_authority` blockers and one malformed lead proposal was rejected;
+the campaign head and active target checkout remained unchanged.
+
+Task `1.2.4.2` produced a candidate, failed deterministic gates, and entered correction. The
+correction provider then failed transiently without leaving dirty files. The durable checkpoint was
+still in `prepared` phase, but normal failure release removed its clean worktree. The campaign's
+same-run retry therefore could not load the checkpoint-bound worktree and stopped at
+`codingmage.campaign.unit_repository_boundary`. Campaign V remains preserved with three accepted
+blockers, one rejected proposal, zero completed units, and no integration. This was an internal
+recovery defect, not a downstream repository violation.
+
+Commit `6fb216c` retains a correction worktree for a campaign-level retry only when the transient
+implementer or reviewer failure, repository identity, run, task, worktree, branch, source commit,
+candidate lineage, correction phase, and integrity-checked checkpoint all agree. It releases the
+coordinator lock while preserving the exact worktree. Any mismatch keeps the prior fail-closed
+cleanup and repository-boundary behavior. The live CLI regression now injects a clean correction
+provider interruption followed by a dirty interruption in the same session lineage, resumes both,
+and proves that initial implementation runs exactly once.
+
+Post-fix verification passed 95 runtime tests, 10 active CLI workflow tests with only the two
+explicit sustained-soak tests intentionally ignored, and strict workspace Clippy with warnings
+denied. Campaign V is not resumed because its worktree was already removed before the correction;
+a fresh Campaign W must qualify the fixed binary from the unchanged accepted head.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
@@ -278,8 +308,9 @@ without changing the controlled-target authority boundary.
 
 Controlled-target preparation and several exact terminal executions are complete. Campaign U proves
 the corrected empty-implementation classification and atomic continuation through nine blockers,
-but it does not prove ten accepted outcomes or useful implementation throughput. A fresh successor
-must use operator-sealed task companion paths and the bounded correction deadline, then complete the
-ten-outcome reconciliation. External publication, parallel expansion, and Sprint 22 Gate 22.3
-remain open. No failed or cancelled execution is represented as successful controlled-target
-qualification evidence.
+while Campaign V proves the sealed companion authority and exposes the now-corrected clean
+correction-retry defect. Neither campaign proves ten accepted outcomes or useful implementation
+throughput. A fresh successor must use operator-sealed task companion paths, the bounded correction
+deadline, and commit `6fb216c`, then complete the ten-outcome reconciliation. External publication,
+parallel expansion, and Sprint 22 Gate 22.3 remain open. No failed or cancelled execution is
+represented as successful controlled-target qualification evidence.
