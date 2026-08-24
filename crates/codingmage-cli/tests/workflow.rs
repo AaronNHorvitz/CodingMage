@@ -128,6 +128,7 @@ if "--version" in sys.argv:
 if "--help" in sys.argv:
     print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
     raise SystemExit(0)
+packet = sys.stdin.read()
 counter = Path(__file__).with_suffix(".count")
 attempt = int(counter.read_text(encoding="utf-8")) if counter.exists() else 0
 counter.write_text(str(attempt + 1), encoding="utf-8")
@@ -135,6 +136,20 @@ if attempt == 0:
     print("x" * 65536)
     raise SystemExit(0)
 path = Path("src/lib.rs")
+if "CHANGED-PATH REPORT RETRY" in packet:
+    print(json.dumps({
+        "type": "result",
+        "is_error": False,
+        "structured_output": {
+            "changed_paths": ["src/lib.rs"],
+            "tests": [],
+            "commit": None,
+            "ready_for_commit": True,
+            "limitations": [],
+            "blocker_code": None
+        }
+    }))
+    raise SystemExit(0)
 prior = path.read_text(encoding="utf-8")
 value = 2 if "{ 1 }" in prior else 3 if "{ 2 }" in prior else 4
 path.write_text(f"pub fn value() -> u8 {{ {value} }}\n", encoding="utf-8")
@@ -142,7 +157,7 @@ print(json.dumps({
     "type": "result",
     "is_error": False,
     "structured_output": {
-        "changed_paths": ["src/lib.rs"],
+        "changed_paths": ["src/lib.rs", "src/missing.rs"] if attempt == 2 else ["src/lib.rs"],
         "tests": [],
         "commit": None,
         "ready_for_commit": True,
@@ -269,9 +284,9 @@ effort = "high"
     assert_eq!(outcome["state"], "complete");
     assert_eq!(outcome["review_verdict"], "pass");
     assert_eq!(outcome["correction_rounds"], 2);
-    assert_eq!(outcome["utilization"]["provider_attempts"], 6);
-    assert_eq!(outcome["utilization"]["malformed_report_repairs"], 1);
-    assert_eq!(outcome["utilization"]["process_invocations"], 15);
+    assert_eq!(outcome["utilization"]["provider_attempts"], 7);
+    assert_eq!(outcome["utilization"]["malformed_report_repairs"], 2);
+    assert_eq!(outcome["utilization"]["process_invocations"], 16);
     assert!(
         outcome["utilization"]["output_bytes"].as_u64().unwrap() > 65536,
         "the rejected provider process receipt must contribute its distinctive output"

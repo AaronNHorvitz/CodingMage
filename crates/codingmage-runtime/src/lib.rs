@@ -4072,8 +4072,16 @@ struct ProductionWorkflowPort<'a> {
     recovering_correction: bool,
     recovering_initial: bool,
     initial_checkpoint: Option<InitialCheckpoint>,
-    retain_blocked_worktree: bool,
+    worktree_retention: WorktreeRetention,
     failure: Option<RuntimeError>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+enum WorktreeRetention {
+    #[default]
+    None,
+    Blocked,
+    InvalidReport,
 }
 
 impl<'a> ProductionWorkflowPort<'a> {
@@ -4111,7 +4119,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             recovering_correction: false,
             recovering_initial: false,
             initial_checkpoint: None,
-            retain_blocked_worktree: false,
+            worktree_retention: WorktreeRetention::None,
             failure: None,
         }
     }
@@ -4158,8 +4166,90 @@ impl<'a> ProductionWorkflowPort<'a> {
             self.failure = Some(RuntimeError::Repository);
             return Err(OrchestrationError::Port);
         }
-        self.retain_blocked_worktree = !observed.is_empty();
+        self.worktree_retention = if observed.is_empty() {
+            WorktreeRetention::None
+        } else {
+            WorktreeRetention::Blocked
+        };
         Ok(())
+    }
+
+    fn observe_ready_report_paths(
+        &mut self,
+        report: &ClaudeCompletionReport,
+        expected_parent: &str,
+    ) -> Result<Option<Vec<PathBuf>>, OrchestrationError> {
+        let observed = observe_owned_changes(
+            &self.authorization,
+            self.worktree()?,
+            expected_parent,
+            &self.spec.owned_paths,
+        )
+        .map_err(|_| {
+            self.failure = Some(RuntimeError::Repository);
+            OrchestrationError::Port
+        })?;
+        if changed_path_sets_match(&report.changed_paths, &observed) {
+            Ok(None)
+        } else {
+            Ok(Some(observed))
+        }
+    }
+
+    fn prepare_ready_report_retry(
+        &mut self,
+        report: &ClaudeCompletionReport,
+        expected_parent: &str,
+        attempt: u8,
+        prior_inventory: &mut Option<Vec<PathBuf>>,
+        packet: &mut ClaudeWorkPacket,
+    ) -> Result<bool, OrchestrationError> {
+        let Some(observed) = self.observe_ready_report_paths(report, expected_parent)? else {
+            return Ok(false);
+        };
+        if prior_inventory
+            .as_ref()
+            .is_some_and(|inventory| inventory != &observed)
+            || attempt + 1 >= CLAUDE_REPORT_ATTEMPT_LIMIT
+        {
+            self.worktree_retention = WorktreeRetention::InvalidReport;
+            self.failure = Some(RuntimeError::Implementer(ClaudeError::InvalidReport));
+            return Err(OrchestrationError::Port);
+        }
+        self.authorize_campaign_effect(CampaignReservation {
+            malformed_report_repairs: 1,
+            ..CampaignReservation::default()
+        })?;
+        self.utilization.malformed_report_repairs = self
+            .utilization
+            .malformed_report_repairs
+            .checked_add(1)
+            .ok_or(OrchestrationError::Port)?;
+        self.sync_observed_usage()?;
+        let exact_paths = serde_json::to_string(&observed).map_err(|_| OrchestrationError::Port)?;
+        *prior_inventory = Some(observed);
+        packet.task_text.push_str(
+            "\n\nCHANGED-PATH REPORT RETRY\nThe prior ready report did not exactly match the authorized dirty inventory. Do not run commands, edit files, broaden scope, or change disposition. Return ready_for_commit=true with commit=null, blocker_code=null, limitations=[], tests=[], and changed_paths exactly equal to this JSON array: ",
+        );
+        packet.task_text.push_str(&exact_paths);
+        packet.task_text.push('.');
+        Ok(true)
+    }
+
+    fn claude_adapter_for_round(
+        &mut self,
+        correction_round: u16,
+    ) -> Result<ClaudeAdapter, OrchestrationError> {
+        let adapter = self.claude_adapter()?;
+        if correction_round == 0 {
+            return Ok(adapter);
+        }
+        adapter
+            .with_invocation_deadline_millis(CLAUDE_CORRECTION_DEADLINE_MILLIS)
+            .map_err(|error| {
+                self.failure = Some(RuntimeError::Implementer(error));
+                OrchestrationError::Port
+            })
     }
 
     fn recover_correction(
@@ -4629,21 +4719,9 @@ impl<'a> ProductionWorkflowPort<'a> {
             session_id: session.session_id.as_str().to_owned(),
             correction_round,
         })?;
-        let adapter = if correction_round == 0 {
-            self.claude_adapter()?
-        } else {
-            match self
-                .claude_adapter()?
-                .with_invocation_deadline_millis(CLAUDE_CORRECTION_DEADLINE_MILLIS)
-            {
-                Ok(adapter) => adapter,
-                Err(error) => {
-                    self.failure = Some(RuntimeError::Implementer(error));
-                    return Err(OrchestrationError::Port);
-                }
-            }
-        };
+        let adapter = self.claude_adapter_for_round(correction_round)?;
         let mut resume = resume_first;
+        let mut metadata_repair_inventory: Option<Vec<PathBuf>> = None;
         for attempt in 0..CLAUDE_REPORT_ATTEMPT_LIMIT {
             let plan = if resume {
                 adapter.plan_resume(session, &packet)
@@ -4667,8 +4745,33 @@ impl<'a> ProductionWorkflowPort<'a> {
                     }
                 };
             self.record_process_result(&execution.process)?;
+            if metadata_repair_inventory.is_some() {
+                self.worktree_retention = WorktreeRetention::InvalidReport;
+            }
             match execution.report {
-                Ok(report) => return Ok(report),
+                Ok(report) => {
+                    if metadata_repair_inventory.is_some()
+                        && (!report.ready_for_commit || report.blocker_code.is_some())
+                    {
+                        self.failure = Some(RuntimeError::Implementer(ClaudeError::InvalidReport));
+                        return Err(OrchestrationError::Port);
+                    }
+                    if report.ready_for_commit && report.blocker_code.is_none() {
+                        if !self.prepare_ready_report_retry(
+                            &report,
+                            session.source_commit.as_str(),
+                            attempt,
+                            &mut metadata_repair_inventory,
+                            &mut packet,
+                        )? {
+                            self.worktree_retention = WorktreeRetention::None;
+                            return Ok(report);
+                        }
+                        resume = true;
+                        continue;
+                    }
+                    return Ok(report);
+                }
                 Err(ClaudeError::Session)
                     if resume
                         && correction_round > 0
@@ -5190,6 +5293,15 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         {
             return Err(OrchestrationError::Port);
         }
+        let source_commit = self.source_commit.clone();
+        if self
+            .observe_ready_report_paths(&report, &source_commit)?
+            .is_some()
+        {
+            self.worktree_retention = WorktreeRetention::InvalidReport;
+            self.failure = Some(RuntimeError::Repository);
+            return Err(OrchestrationError::Port);
+        }
         let receipt = commit_owned_changes(
             &self.authorization,
             self.worktree()?,
@@ -5200,20 +5312,6 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             self.failure = Some(implementation_commit_error(error));
             OrchestrationError::Port
         })?;
-        let claimed = report
-            .changed_paths
-            .iter()
-            .cloned()
-            .collect::<BTreeSet<_>>();
-        let observed = receipt
-            .changed_paths
-            .iter()
-            .cloned()
-            .collect::<BTreeSet<_>>();
-        if claimed != observed {
-            self.failure = Some(RuntimeError::Repository);
-            return Err(OrchestrationError::Port);
-        }
         let evidence = evidence_id(&receipt.commit)?;
         let commit = receipt.commit.clone();
         self.implementation = Some(report);
@@ -5496,9 +5594,16 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             self.lock = None;
             return evidence_id("correction-worktree-retained-for-provider-retry");
         }
-        if self.retain_blocked_worktree {
-            self.lock = None;
-            return evidence_id("blocked-worktree-retained-for-reconciliation");
+        match self.worktree_retention {
+            WorktreeRetention::Blocked => {
+                self.lock = None;
+                return evidence_id("blocked-worktree-retained-for-reconciliation");
+            }
+            WorktreeRetention::InvalidReport => {
+                self.lock = None;
+                return evidence_id("invalid-report-worktree-retained-for-repair");
+            }
+            WorktreeRetention::None => {}
         }
         if let Some(mut owned) = self.worktree.take() {
             let worktree_id = owned.manifest().worktree_id.as_str().to_owned();
@@ -5514,6 +5619,10 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         self.lock = None;
         evidence_id("released")
     }
+}
+
+fn changed_path_sets_match(claimed: &[PathBuf], observed: &[PathBuf]) -> bool {
+    claimed.iter().collect::<BTreeSet<_>>() == observed.iter().collect::<BTreeSet<_>>()
 }
 
 const fn implementation_commit_error(error: CommitError) -> RuntimeError {
@@ -6535,6 +6644,26 @@ effort = "high"
                 RuntimeError::Repository
             );
         }
+    }
+
+    #[test]
+    fn ready_report_paths_require_exact_set_equality() {
+        let first = PathBuf::from("src/lib.rs");
+        let second = PathBuf::from("tests/lib.rs");
+        assert!(changed_path_sets_match(
+            &[second.clone(), first.clone()],
+            &[first.clone(), second.clone()]
+        ));
+        assert!(!changed_path_sets_match(
+            std::slice::from_ref(&first),
+            &[first.clone(), second.clone()]
+        ));
+        assert!(!changed_path_sets_match(
+            &[first.clone(), second],
+            std::slice::from_ref(&first)
+        ));
+        assert!(!changed_path_sets_match(std::slice::from_ref(&first), &[]));
+        assert!(changed_path_sets_match(&[], &[]));
     }
 
     #[test]
