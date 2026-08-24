@@ -1563,4 +1563,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Perform the required human review of the preserved `1.2.1.1` candidate and its repository-boundary evidence, then create a successor one-pod, local-only authority whose task proposal includes every path genuinely required by the dependency-ready unit without granting broader repository authority.
+- [ ] **Next 1:** Validate the empty-ready implementation classification correction, then create a successor one-pod, local-only authority from accepted head `1ad4759328fc253b718388131fb484ecdf2c4c25`. Prove that a no-change task returns a typed blocker or an invalid implementer report rather than a repository-boundary claim, and that every later task proposal includes only the paths genuinely required by that dependency-ready unit.

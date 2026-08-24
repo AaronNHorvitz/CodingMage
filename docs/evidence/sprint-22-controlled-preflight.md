@@ -187,6 +187,37 @@ status records 14 provider attempts, eight correction rounds, 56 guarded process
 completed units, and zero accepted outcomes. Network, push, issues, pull requests, task merge,
 destination merge, protected-branch mutation, release, and external infrastructure remained denied.
 
+Campaign S started from the fully gated preserved candidate `166b19a7` and accepted task `1.2.2.1`,
+advancing its reviewed campaign head to `1ad4759328fc253b718388131fb484ecdf2c4c25`. A later
+correction provider returned the bounded code `traceability_report_outside_owned_paths` for task
+`1.2.2.2`. The serial coordinator inserted the task into its blocked set without the required typed
+reason, so checkpoint integrity correctly rejected persistence. Cleanup then left the campaign with
+the secondary `codingmage.campaign.unit_repository_boundary` code. Campaign S remains preserved
+with one completed unit, four recorded provider attempts, 21 guarded process invocations, 1,184,216
+output bytes, and 64,835 retained-state bytes. The rejected candidate `6fcc16b3` was not integrated.
+
+Commit `eb09add` routes both lead-originated and correction-originated blockers through one atomic
+projection that records the exact task and closed reason together. Campaign T started from accepted
+head `1ad47593`; its two source-free preflight reports were byte-identical with digest
+`c81fecc150be35323079b9c8d079151b575eabcb7ce4a849afe397a88241cec4`. Task `1.2.2.2` and later
+task `1.2.4.2` each ended with a provider scope blocker. Both persisted as
+`implementation_condition_outside_authority`, all owned resources were released, and the campaign
+continued to independent work. This is the live end-to-end regression for the campaign S defect.
+
+Campaign T then selected `1.2.1.1`. The provider returned no committable change, the exact pod
+branch remained at `1ad47593`, and its owned worktree was removed cleanly. No candidate exists for
+that task. The then-current runtime mapped the empty ready result to
+`codingmage.campaign.unit_repository_boundary`; the terminal checkpoint truthfully retains two
+accepted blocked outcomes, zero completed units, ten provider attempts, one correction round, 37
+guarded process invocations, 914,998 output bytes, 34,458,633 retained-state bytes, and 2,914,065
+milliseconds of execution. The active target checkout and campaign head remained unchanged.
+
+The subsequent local correction requires implementers to return a blocker when an open task is
+already implemented or no authorized material change is possible, and maps an empty ready report to
+an invalid implementer report rather than repository corruption. Identity, path-authority,
+repository-state, and Git-command failures remain repository boundaries. This correction must be
+fully validated and exercised by a successor campaign before Gate 22.3 can close.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
@@ -221,9 +252,10 @@ without changing the controlled-target authority boundary.
 
 ## Open Boundary
 
-Controlled-target preparation, approval, and one exact terminal execution are complete. The run
-proves fail-closed local execution and repository-boundary enforcement, but it does not prove ten
-accepted outcomes. Complete human review of the preserved candidate, a successor authority that
-correctly composes any dependency-ready task's required paths, ten accepted outcomes, external
-publication, parallel expansion, and Sprint 22 Gate 22.3 remain open. No failed execution is
-represented as successful controlled-target qualification evidence.
+Controlled-target preparation and several exact terminal executions are complete. Campaign T proves
+that repeated provider blockers persist atomically and do not prevent independent work, but it does
+not prove ten accepted outcomes. A successor authority must exercise the empty-implementation
+classification, compose every genuinely required path without broad repository authority, and
+complete the ten-outcome reconciliation. External publication, parallel expansion, and Sprint 22
+Gate 22.3 remain open. No failed execution is represented as successful controlled-target
+qualification evidence.

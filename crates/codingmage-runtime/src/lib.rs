@@ -4325,6 +4325,8 @@ impl<'a> ProductionWorkflowPort<'a> {
                 "Do not merge, push, publish, release, access credentials, or use the network."
                     .to_owned(),
                 "Do not modify files outside the declared owned paths.".to_owned(),
+                "Do not report ready_for_commit=true without at least one material in-scope change. If the requested behavior is already present or no authorized change is possible, return ready_for_commit=false with blocker_code=implementation_requires_reconciliation."
+                    .to_owned(),
             ],
         }
     }
@@ -4793,8 +4795,8 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             &self.source_commit,
             &self.spec.owned_paths,
         )
-        .map_err(|_| {
-            self.failure = Some(RuntimeError::Repository);
+        .map_err(|error| {
+            self.failure = Some(implementation_commit_error(error));
             OrchestrationError::Port
         })?;
         let claimed = report
@@ -5092,6 +5094,16 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         }
         self.lock = None;
         evidence_id("released")
+    }
+}
+
+const fn implementation_commit_error(error: CommitError) -> RuntimeError {
+    match error {
+        CommitError::Empty => RuntimeError::Implementer(ClaudeError::InvalidReport),
+        CommitError::Identity
+        | CommitError::PathAuthority
+        | CommitError::RepositoryState
+        | CommitError::Command => RuntimeError::Repository,
     }
 }
 
@@ -6083,6 +6095,25 @@ effort = "high"
             ClaudeError::Timeout,
         ] {
             assert!(!retryable_claude_report_failure(terminal));
+        }
+    }
+
+    #[test]
+    fn empty_ready_implementation_is_not_a_repository_failure() {
+        assert_eq!(
+            implementation_commit_error(CommitError::Empty),
+            RuntimeError::Implementer(ClaudeError::InvalidReport)
+        );
+        for repository_failure in [
+            CommitError::Identity,
+            CommitError::PathAuthority,
+            CommitError::RepositoryState,
+            CommitError::Command,
+        ] {
+            assert_eq!(
+                implementation_commit_error(repository_failure),
+                RuntimeError::Repository
+            );
         }
     }
 
