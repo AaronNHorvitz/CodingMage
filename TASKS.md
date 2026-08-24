@@ -1087,6 +1087,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 22.3.3.6:** Have a human inspect the cumulative diff and evidence report before any branch push, pull request, merge, concurrency increase, or publication grant.
   - [x] **Sub-task 22.3.3.7:** Give correction-provider sessions a separate validated 15-minute process ceiling while retaining the existing initial-implementation ceiling and all fail-closed timeout behavior.
   - [x] **Sub-task 22.3.3.8:** Retain an exact integrity-verified correction worktree across a transient campaign-level provider retry even when the provider left no dirty files; release the coordinator lock, resume only the same run and session lineage, and preserve all repository and path-authority checks. See `docs/evidence/sprint-22-controlled-preflight.md`.
+  - [x] **Sub-task 22.3.3.9:** Recover correction round two and later by verifying the complete integrity-bound checkpoint and coordinator-commit chain one direct edge at a time, preserving cumulative path authority and rejecting any missing, reordered, or mismatched lineage. See `docs/evidence/sprint-22-controlled-preflight.md`.
 
 **Story acceptance criteria**
 
@@ -1566,4 +1567,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Build and install the correction-retention fix, then create fresh Campaign W from accepted head `1ad4759328fc253b718388131fb484ecdf2c4c25` with one pod, local-only publication, the existing task-specific companion authority, and the 15-minute correction deadline. Generate and compare two source-free preflights, then run to ten accepted outcomes or the next exact safety stop. Preserve Campaign U and V worktrees as diagnostic evidence; do not adopt or delete them manually.
+- [ ] **Next 1:** Build and install cumulative correction-lineage recovery commit `96275c2`, then create a fresh successor from accepted head `1ad4759328fc253b718388131fb484ecdf2c4c25` with one pod, local-only publication, the existing task-specific companion authority, and the 15-minute correction deadline. Generate and compare two source-free preflights, then run to ten accepted outcomes or the next exact safety stop. Preserve Campaign U, V, and W worktrees as diagnostic evidence; do not adopt or delete them manually.

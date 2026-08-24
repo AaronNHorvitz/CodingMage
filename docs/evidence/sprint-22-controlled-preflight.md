@@ -12,6 +12,7 @@
 - **Retained-state diagnostic taxonomy:** `6848b9b`
 - **Non-traversing symlink census:** `ee530b2`
 - **Clean correction-retry retention:** `6fb216c`
+- **Cumulative correction-lineage recovery:** `96275c2`
 - **Executed:** 2026-08-22 through 2026-08-24 on Fedora Linux with Rust 1.95.0
 
 ## Implemented Boundary
@@ -271,6 +272,24 @@ Post-fix verification passed 95 runtime tests, 10 active CLI workflow tests with
 explicit sustained-soak tests intentionally ignored, and strict workspace Clippy with warnings
 denied. Campaign V is not resumed because its worktree was already removed before the correction;
 a fresh Campaign W must qualify the fixed binary from the unchanged accepted head.
+
+Campaign W used two byte-identical source-free preflight reports with digest
+`bc0735ba695c10c03c793a3a5f0c2f5191d0ffb8054d24973e97d12f9ec7a56c`. It accepted four typed
+implementation blockers for `1.2.2.2`, `1.2.4.2`, `2.3.1.1`, and `1.2.1.1`, with zero completions
+and no integration. Task `1.2.3.1` completed one correction, failed gates again, and entered
+correction round two. A transient provider failure retained the exact clean worktree and prepared
+round-two checkpoint, proving commit `6fb216c`; retry then stopped at
+`codingmage.campaign.unit_repository_boundary` while reobserving the cumulative candidate.
+
+The defect was a direct-lineage assumption: recovery verified the round-two parent as though it
+were a direct child of the original source commit, although it was the first correction commit.
+Commit `96275c2` loads the complete integrity-checked correction chain, verifies each exact
+repository, run, task, worktree, branch, source, parent, round, phase, commit, metadata, and path
+boundary, and reobserves every direct coordinator-authored edge in order. Missing, malformed,
+noncontiguous, or unauthorized chains remain terminal. The process-backed campaign fixture now
+passes through a dirty round-one interruption, a completed first correction, a second gate failure,
+and a clean round-two interruption without replaying initial implementation. All 95 runtime tests,
+10 active CLI workflow tests, strict workspace Clippy, formatting, and diff integrity passed.
 
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
