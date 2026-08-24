@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "evidence_id": "codingmage.multi_agent.local.v1",
-  "source_commit": "51533f2ce59619a2e33b9570c85c3782190e47aa",
+  "source_commit": "319de727917928057c04d7da0a975706483623ef",
   "commands": [
     "cargo fmt --all -- --check",
     "cargo clippy --workspace --all-targets -- -D warnings",
@@ -18,17 +18,17 @@
     {
       "group": "implementation",
       "path": "crates/codingmage-campaign/src/team.rs",
-      "sha256": "22754656e62f01559a39501ad4baae36d00fb5dd04ae446ffc13d19a64d915ab"
+      "sha256": "cb0feacd0bbc0869f889d384bf9a7ee4b5757869df91ebbb5f7cf29541d35dc0"
     },
     {
       "group": "implementation",
       "path": "crates/codingmage-runtime/src/team_runtime.rs",
-      "sha256": "eaf723bef2d064af04c732311e62726a31a6ea8ece7343e06e208a7d896b147e"
+      "sha256": "6308c51003f5c6ff21959f9a0e421f81e5d7d40990c7f7e72c1a61cc3429f099"
     },
     {
       "group": "implementation",
       "path": "crates/codingmage-runtime/src/team_integration.rs",
-      "sha256": "5efb35f8af142e5e77309d4d3674aaa6bf0a34bf09033ef880d56dd822c82742"
+      "sha256": "1bf3be15316d619d26dbdbdbd357bf5c5b303fc6219dbd90ef4e3540af1e50e9"
     },
     {
       "group": "test",
@@ -73,10 +73,10 @@
   ],
   "package": {
     "archive": "codingmage-0.1.0-linux-x86_64.tar.gz",
-    "sha256": "d3e38d513b03567af5d7bfc58cba16260650a9af9566b9a276745610a8696f4d",
-    "source_commit": "51533f2ce59619a2e33b9570c85c3782190e47aa"
+    "sha256": "8031a62b89e01a35bf8b87291b00e3b7b7fa64b126d05e2229c42483a06b46ad",
+    "source_commit": "319de727917928057c04d7da0a975706483623ef"
   },
-  "package_claim_sha256": "91a8381833fde787ec44736ed471f403b7fd83a7f3fa5116c2834f62544b478c",
+  "package_claim_sha256": "68dd6f4cc4853e4876b5befb1d0f018cdddfbccaae137ef7cb3e4cea6d50dd9d",
   "platform": {
     "architecture": "x86_64",
     "operating_system": "linux"
