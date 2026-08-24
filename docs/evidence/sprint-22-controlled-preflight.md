@@ -337,6 +337,21 @@ and no integration. This proves that individual companion-file lists remain too 
 story-sized early tasks; a successor must bind bounded domain roots per task family without granting
 repository-wide or external authority.
 
+Campaign Z started from the same accepted head under two byte-identical source-free preflight
+reports with digest `f99715bdb418c9b85477db4f9155fe4daec3e7e08d9e222bb8ba0fd6fe86e87d`.
+It retained one pod, local-only publication, denied external capabilities, and replaced brittle
+individual companion-file lists with bounded domain roots for the selected early task families.
+It accepted typed `implementation_condition_outside_authority` blockers for `1.2.4.2` and
+`2.3.1.1`. The coordinator then selected `1.2.2.2`; repeated content-free transient implementer
+failures were released and retried without changing the target, accepting an outcome, or integrating
+a candidate. An operator interruption during the initial implementation session left the exact
+integrity-bound checkpoint recoverable but not replayable by the current implementation. Restart
+therefore failed closed as `codingmage.campaign.unit_state_failure`. Campaign Z ended with two
+accepted blockers, zero completions, zero integrations, and target head
+`1ad4759328fc253b718388131fb484ecdf2c4c25`. Its retained diagnostic state is not controlled-target
+qualification evidence. The result establishes the initial implementation session as the next
+recovery boundary; it does not justify broader path, publication, or concurrency authority.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
@@ -376,9 +391,10 @@ the corrected empty-implementation classification and atomic continuation throug
 Campaigns V and W expose and qualify the clean correction-retry and cumulative-lineage corrections;
 Campaign X proves durable initial-implementer pause behavior, live cumulative correction lineage,
 the corrected team-lead provider pause, and fail-closed task-path authority; Campaign Y proves that
-narrow generated-evidence additions alone do not resolve brittle companion-file selection. No
-campaign proves ten accepted outcomes or useful implementation throughput. A fresh Campaign Z must
-retain the same one-pod local-only boundary while binding bounded domain roots to each early task
-family, then complete the ten-outcome reconciliation. External publication,
+narrow generated-evidence additions alone do not resolve brittle companion-file selection; Campaign
+Z proves bounded domain-root admission, two further typed blockers, transient implementer retry, and
+fail-closed restart after initial-session interruption. No campaign proves ten accepted outcomes or
+useful implementation throughput. Initial implementation session recovery must be completed before a
+fresh one-pod local-only successor attempts the ten-outcome reconciliation. External publication,
 parallel expansion, and Sprint 22 Gate 22.3 remain open. No failed or cancelled execution is
 represented as successful controlled-target qualification evidence.
