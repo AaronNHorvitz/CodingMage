@@ -12,8 +12,8 @@ mod worktree;
 mod test_support;
 
 pub use commit::{
-    CommitError, CommitReceipt, commit_owned_changes, observe_owned_child_commit,
-    reobserve_owned_commit,
+    CommitError, CommitReceipt, commit_owned_changes, observe_owned_changes,
+    observe_owned_child_commit, reobserve_owned_commit,
 };
 pub use integration::{
     IntegrationError, IntegrationReceipt, IntegrationTransferReceipt, PreparedIntegration,

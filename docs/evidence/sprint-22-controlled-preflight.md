@@ -414,11 +414,14 @@ integrity-bound initial session and returned a validated report after changing e
 - `artifacts/sprints/sprint-2/story-2.1/fixture-security-scan-report.json`
 
 The third path is a deterministic dependency of the first: adding the fixture changed the security
-scan counts from 157 to 158 files and from 226 to 227 text payloads. Campaign authority already
-included `artifacts/sprints/sprint-2`, but the lead's narrower unit proposal omitted this generated
-evidence path. CodingMage therefore rejected the candidate as
-`codingmage.campaign.unit_repository_boundary`; it did not silently widen authority, create a
-candidate commit, run review, or integrate the work.
+scan counts from 157 to 158 files and from 226 to 227 text payloads. Campaign authority and the
+deterministically composed unit roots already included `artifacts/sprints/sprint-2`. The provider
+returned `implementation_requires_reconciliation` because the generated security-evidence map also
+needed a new digest and the write-only provider session could not execute the generator. The unit
+therefore entered its blocked release path with three dirty authorized files. Safe worktree removal
+refused to delete that dirty state, and the runtime conservatively mapped the cleanup refusal to
+`codingmage.campaign.unit_repository_boundary`; it did not create a candidate commit, run review,
+integrate the work, or discard the diagnostic state.
 
 Campaign AA stopped after 126 minutes with 12 provider attempts, one correction round, 49 process
 invocations, two accepted blockers, zero completions, and zero integrations. Its target remained
@@ -426,11 +429,13 @@ clean at the exact starting head. The terminal retained-state projection occupie
 and the campaign released its owned processes and locks while preserving the failed worktrees and
 integrity-bound run records. This is an exact safety stop, not ten-outcome qualification.
 
-The finding is narrower than campaign authority: team-lead planning needs a deterministic way to
-compose generator-coupled evidence paths that are already inside the sealed task ceiling into the
-unit proposal. Any path absent from that closed dependency set or outside sealed task authority must
-continue to fail before commit or integration. Campaign AA remains diagnostic evidence and must not
-be adopted into a successor.
+The finding is not missing campaign authority. A blocked provider may truthfully leave partial edits
+inside sealed authority, but the campaign currently treats safe cleanup's refusal to delete those
+edits as a terminal repository boundary. The next correction must compare the provider report with
+the observed dirty inventory, retain only an exact authorized diagnostic worktree, release its lock
+and processes, record one typed blocker, and continue. Missing, extra, unowned, or unobservable paths
+must remain terminal. Campaign AA remains diagnostic evidence and must not be adopted into a
+successor.
 
 ## Reconciled Baseline Findings
 
@@ -456,10 +461,10 @@ narrow generated-evidence additions alone do not resolve brittle companion-file 
 Z proves bounded domain-root admission, two further typed blockers, transient implementer retry, and
 fail-closed restart after initial-session interruption. Initial implementation session recovery is
 implemented, locally verified, and exercised by Campaign AA. Campaign AA proves exact session resume,
-two accepted blockers, and fail-closed rejection when a generated evidence dependency was within
-campaign authority but omitted from the narrower unit proposal. No successor campaign yet proves ten
-accepted outcomes or useful implementation throughput. Planning must first compose the closed set of
-generator-coupled evidence paths already inside sealed authority; a fresh one-pod local-only successor
-must then attempt the ten-outcome reconciliation. External publication,
+two accepted blockers, and fail-closed retention when an authorized blocked unit leaves dirty
+diagnostic state. No successor campaign yet proves ten accepted outcomes or useful implementation
+throughput. Dirty blocked-unit reconciliation must first retain and classify only an exact authorized
+inventory; a fresh one-pod local-only successor must then attempt the ten-outcome reconciliation.
+External publication,
 parallel expansion, and Sprint 22 Gate 22.3 remain open. No failed or cancelled execution is
 represented as successful controlled-target qualification evidence.

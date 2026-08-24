@@ -72,6 +72,43 @@ pub fn commit_owned_changes(
     commit_owned_changes_inner(authorization, owned, expected_parent, owned_paths, || {})
 }
 
+/// Observes the exact uncommitted paths in an owned worktree without staging or changing them.
+///
+/// The worktree identity and expected parent are revalidated, conflicts are rejected, and every
+/// observed path must remain under the supplied ownership roots. An empty worktree returns an empty
+/// vector so callers can distinguish a clean blocker from retained diagnostic edits.
+///
+/// # Errors
+///
+/// Returns [`CommitError`] when identity, repository state, path authority, or observation fails.
+pub fn observe_owned_changes(
+    authorization: &RepositoryAuthorization,
+    owned: &OwnedWorktree,
+    expected_parent: &str,
+    owned_paths: &[PathBuf],
+) -> Result<Vec<PathBuf>, CommitError> {
+    revalidate_active_worktree(authorization, owned, expected_parent)
+        .map_err(|_| CommitError::Identity)?;
+    if owned_paths.is_empty() || owned_paths.iter().any(|path| !safe_relative(path)) {
+        return Err(CommitError::PathAuthority);
+    }
+    let (_, condition) = condition_at(&owned.manifest().path).map_err(|_| CommitError::Command)?;
+    if condition.conflicted {
+        return Err(CommitError::RepositoryState);
+    }
+    let changed = changed_paths(&owned.manifest().path)?
+        .into_iter()
+        .collect::<Vec<_>>();
+    if changed.iter().any(|path| {
+        !owned_paths
+            .iter()
+            .any(|owned_path| path_is_owned(path, owned_path))
+    }) {
+        return Err(CommitError::PathAuthority);
+    }
+    Ok(changed)
+}
+
 /// Reobserves a possibly completed coordinator commit without creating or changing Git state.
 ///
 /// The current worktree head must be a clean direct child of `expected_parent`, and every changed
@@ -440,6 +477,70 @@ mod tests {
             .unwrap();
         assert!(index.status.success());
         assert!(index.stdout.is_empty());
+    }
+
+    #[test]
+    fn dirty_observation_is_exact_read_only_and_authority_bounded() {
+        let fixture = GitFixture::new();
+        let (authorization, owned, parent) = create(&fixture);
+        fs::write(owned.manifest().path.join("tracked-one.txt"), "changed\n").unwrap();
+        fs::create_dir(owned.manifest().path.join("diagnostics")).unwrap();
+        fs::write(
+            owned.manifest().path.join("diagnostics/report.json"),
+            "{}\n",
+        )
+        .unwrap();
+
+        let observed = observe_owned_changes(
+            &authorization,
+            &owned,
+            &parent,
+            &[
+                PathBuf::from("tracked-one.txt"),
+                PathBuf::from("diagnostics"),
+            ],
+        )
+        .unwrap();
+        assert_eq!(
+            observed,
+            [
+                PathBuf::from("diagnostics/report.json"),
+                PathBuf::from("tracked-one.txt")
+            ]
+        );
+        let index = std::process::Command::new("/usr/bin/git")
+            .current_dir(&owned.manifest().path)
+            .args(["diff", "--cached", "--name-only"])
+            .output()
+            .unwrap();
+        assert!(index.status.success());
+        assert!(index.stdout.is_empty());
+
+        assert_eq!(
+            observe_owned_changes(
+                &authorization,
+                &owned,
+                &parent,
+                &[PathBuf::from("diagnostics")],
+            ),
+            Err(CommitError::PathAuthority)
+        );
+    }
+
+    #[test]
+    fn clean_dirty_observation_returns_an_empty_inventory() {
+        let fixture = GitFixture::new();
+        let (authorization, owned, parent) = create(&fixture);
+        assert_eq!(
+            observe_owned_changes(
+                &authorization,
+                &owned,
+                &parent,
+                &[PathBuf::from("tracked-one.txt")],
+            )
+            .unwrap(),
+            Vec::<PathBuf>::new()
+        );
     }
 
     #[test]

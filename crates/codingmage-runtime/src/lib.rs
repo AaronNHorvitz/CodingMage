@@ -82,8 +82,8 @@ use codingmage_gate::{
 };
 use codingmage_git::{
     CommitError, CommitReceipt, OwnedWorktree, commit_owned_changes, create_owned_worktree,
-    integrate_reviewed_descendant, inventory_repository, observe_owned_child_commit,
-    remove_owned_worktree, reobserve_owned_commit,
+    integrate_reviewed_descendant, inventory_repository, observe_owned_changes,
+    observe_owned_child_commit, remove_owned_worktree, reobserve_owned_commit,
 };
 use codingmage_orchestrator::{
     DurableWorkflowPort, ImplementationOutcome, OneUnitCoordinator, OrchestrationError,
@@ -4072,6 +4072,7 @@ struct ProductionWorkflowPort<'a> {
     recovering_correction: bool,
     recovering_initial: bool,
     initial_checkpoint: Option<InitialCheckpoint>,
+    retain_blocked_worktree: bool,
     failure: Option<RuntimeError>,
 }
 
@@ -4110,6 +4111,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             recovering_correction: false,
             recovering_initial: false,
             initial_checkpoint: None,
+            retain_blocked_worktree: false,
             failure: None,
         }
     }
@@ -4122,6 +4124,41 @@ impl<'a> ProductionWorkflowPort<'a> {
             self.failure = Some(error);
             return Err(OrchestrationError::DurableState);
         }
+        Ok(())
+    }
+
+    fn reconcile_blocked_changes(
+        &mut self,
+        report: &ClaudeCompletionReport,
+    ) -> Result<(), OrchestrationError> {
+        let expected_parent = self
+            .candidate
+            .as_ref()
+            .map_or(self.source_commit.as_str(), |candidate| {
+                candidate.commit.as_str()
+            })
+            .to_owned();
+        let observed = observe_owned_changes(
+            &self.authorization,
+            self.worktree()?,
+            &expected_parent,
+            &self.spec.owned_paths,
+        )
+        .map_err(|_| {
+            self.failure = Some(RuntimeError::Repository);
+            OrchestrationError::Port
+        })?;
+        let claimed = report
+            .changed_paths
+            .iter()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        let observed = observed.into_iter().collect::<BTreeSet<_>>();
+        if claimed != observed {
+            self.failure = Some(RuntimeError::Repository);
+            return Err(OrchestrationError::Port);
+        }
+        self.retain_blocked_worktree = !observed.is_empty();
         Ok(())
     }
 
@@ -5137,6 +5174,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
                 .map_err(|_| OrchestrationError::DurableState)?;
         }
         if report.blocker_code.is_some() {
+            self.reconcile_blocked_changes(&report)?;
             self.implementation = Some(report);
             return Ok((
                 ImplementationOutcome::Blocked,
@@ -5323,6 +5361,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         let expected_parent = self.candidate()?.commit.clone();
         let report = self.execute_claude_correction()?;
         if report.blocker_code.is_some() {
+            self.reconcile_blocked_changes(&report)?;
             self.implementation = Some(report);
             return Ok((
                 ImplementationOutcome::Blocked,
@@ -5456,6 +5495,10 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         if self.retain_correction_worktree_for_provider_retry() {
             self.lock = None;
             return evidence_id("correction-worktree-retained-for-provider-retry");
+        }
+        if self.retain_blocked_worktree {
+            self.lock = None;
+            return evidence_id("blocked-worktree-retained-for-reconciliation");
         }
         if let Some(mut owned) = self.worktree.take() {
             let worktree_id = owned.manifest().worktree_id.as_str().to_owned();
