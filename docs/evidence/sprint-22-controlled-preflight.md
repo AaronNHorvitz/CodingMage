@@ -1,8 +1,8 @@
 # Sprint 22 Controlled Campaign Preflight Evidence
 
-- **Status:** Controlled-target preparation and report review complete; the latest approved
-  replacement execution stopped safely at an exact repository boundary with zero accepted outcomes,
-  and all retained evidence remains preserved
+- **Status:** Controlled-target preparation and report review complete; Campaign X stopped safely
+  after five accepted typed blockers and a terminal task-path-authority refusal, with zero
+  completions, no integration, an unchanged target head, and all retained evidence preserved
 - **Implementation commit:** `061a604`
 - **Target-artifact boundary correction:** `35ce2b6`
 - **Stable approval-projection correction:** `174c320`
@@ -307,9 +307,22 @@ Commit `39de9b2` classifies only Codex provider-transport and thread failures as
 campaign outcome with blocker `codingmage.campaign.provider_unavailable`. Quota, authentication,
 malformed output, timeout, process, and other terminal failures keep their existing stricter paths.
 The focused tests assert that closed classification, and 95 runtime tests, 10 active CLI workflow
-tests, strict workspace Clippy, formatting, and diff integrity pass. Campaign X remains preserved
-for restart after the corrected binary is installed; this evidence does not claim ten accepted
-outcomes or controlled-target qualification.
+tests, strict workspace Clippy, formatting, and diff integrity pass. After the corrected binary was
+installed with SHA-256 `fda4a3313a791c893e146d77095999987bb490352fd224c059009bbb5cc27d7d`,
+Campaign X resumed from its durable planning checkpoint. It added typed
+`implementation_condition_outside_authority` blockers for `1.2.3.2` and `1.2.2.2`, bringing the
+accepted outcome count to five. Task `1.2.2.2` exercised two real bounded correction rounds before
+the blocker was accepted, proving the cumulative correction lineage under live provider execution.
+
+The next selected unit, `1.2.3.1`, exhausted its bounded provider retry and paused as
+`codingmage.campaign.unit_provider_failure` without accepting an outcome. A restart returned to
+lead planning, where a proposed owned path outside the sealed task authority was refused before
+implementation as `codingmage.campaign.lead_invalid_owned_paths`. Campaign X is therefore terminal
+at five accepted blockers, zero completions, and zero integration. Its target head remains
+`1ad4759328fc253b718388131fb484ecdf2c4c25`. The selected early tasks require generated Sprint 1
+evidence under the campaign-denied `artifacts` root, so a fresh successor must grant only the exact
+task-bound generated evidence paths required by those tasks. This evidence does not claim ten
+accepted outcomes or controlled-target qualification.
 
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
@@ -348,9 +361,10 @@ without changing the controlled-target authority boundary.
 Controlled-target preparation and several exact terminal executions are complete. Campaign U proves
 the corrected empty-implementation classification and atomic continuation through nine blockers;
 Campaigns V and W expose and qualify the clean correction-retry and cumulative-lineage corrections;
-Campaign X proves durable initial-implementer pause behavior and exposes the now-corrected raw
-team-lead provider failure. No campaign proves ten accepted outcomes or useful implementation
-throughput. Campaign X must resume with operator-sealed task companion paths, the bounded correction
-deadline, and commit `39de9b2`, then complete the ten-outcome reconciliation. External publication,
+Campaign X proves durable initial-implementer pause behavior, live cumulative correction lineage,
+the corrected team-lead provider pause, and fail-closed task-path authority. No campaign proves ten
+accepted outcomes or useful implementation throughput. A fresh Campaign Y must retain the same
+one-pod local-only boundary while adding narrowly task-bound generated Sprint 1 evidence paths, then
+complete the ten-outcome reconciliation. External publication,
 parallel expansion, and Sprint 22 Gate 22.3 remain open. No failed or cancelled execution is
 represented as successful controlled-target qualification evidence.
