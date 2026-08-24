@@ -1,8 +1,8 @@
 # Sprint 22 Controlled Campaign Preflight Evidence
 
-- **Status:** Controlled-target preparation and report review complete; Campaign X stopped safely
-  after five accepted typed blockers and a terminal task-path-authority refusal, with zero
-  completions, no integration, an unchanged target head, and all retained evidence preserved
+- **Status:** Controlled-target preparation and report review complete; Campaigns X and Y each
+  stopped safely after five accepted typed blockers and a terminal task-path-authority refusal,
+  with zero completions, no integration, unchanged target heads, and all retained evidence preserved
 - **Implementation commit:** `061a604`
 - **Target-artifact boundary correction:** `35ce2b6`
 - **Stable approval-projection correction:** `174c320`
@@ -324,6 +324,19 @@ evidence under the campaign-denied `artifacts` root, so a fresh successor must g
 task-bound generated evidence paths required by those tasks. This evidence does not claim ten
 accepted outcomes or controlled-target qualification.
 
+Campaign Y started from the same accepted head under two byte-identical source-free preflight
+reports with digest `4e3a7340ba972fd5baf1417684cfb982db52b2a0b75a5a8a9d91555ab7a1f20e`.
+It retained one pod, local-only publication, denied external capabilities, and added only the
+generated Sprint 1 Story 1.1 evidence directory and exact generators to task-specific companion
+authority. It accepted five typed `implementation_condition_outside_authority` blockers for
+`1.2.1.1`, `1.2.1.2`, `1.2.1.3`, `1.2.2.2`, and `1.2.4.2`. Two candidates ran deterministic gates
+and bounded corrections before their blocker dispositions were accepted. The next lead proposal
+again exceeded its sealed task paths and stopped at `codingmage.campaign.lead_invalid_owned_paths`.
+The target remained clean at `1ad4759328fc253b718388131fb484ecdf2c4c25`, with zero completions
+and no integration. This proves that individual companion-file lists remain too brittle for the
+story-sized early tasks; a successor must bind bounded domain roots per task family without granting
+repository-wide or external authority.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
@@ -362,9 +375,10 @@ Controlled-target preparation and several exact terminal executions are complete
 the corrected empty-implementation classification and atomic continuation through nine blockers;
 Campaigns V and W expose and qualify the clean correction-retry and cumulative-lineage corrections;
 Campaign X proves durable initial-implementer pause behavior, live cumulative correction lineage,
-the corrected team-lead provider pause, and fail-closed task-path authority. No campaign proves ten
-accepted outcomes or useful implementation throughput. A fresh Campaign Y must retain the same
-one-pod local-only boundary while adding narrowly task-bound generated Sprint 1 evidence paths, then
-complete the ten-outcome reconciliation. External publication,
+the corrected team-lead provider pause, and fail-closed task-path authority; Campaign Y proves that
+narrow generated-evidence additions alone do not resolve brittle companion-file selection. No
+campaign proves ten accepted outcomes or useful implementation throughput. A fresh Campaign Z must
+retain the same one-pod local-only boundary while binding bounded domain roots to each early task
+family, then complete the ten-outcome reconciliation. External publication,
 parallel expansion, and Sprint 22 Gate 22.3 remain open. No failed or cancelled execution is
 represented as successful controlled-target qualification evidence.
