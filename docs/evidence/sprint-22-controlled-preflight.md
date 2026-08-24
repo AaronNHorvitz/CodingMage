@@ -392,6 +392,46 @@ Strict Clippy for the runtime and CLI all targets, workspace formatting, `git di
 case-insensitive downstream-name contamination scans passed. `python3 scripts/docs_check.py` and
 the ten documentation and architecture policy unit tests also passed.
 
+## Campaign AA Recovery Qualification
+
+Campaign AA started from the unchanged accepted target head
+`1ad4759328fc253b718388131fb484ecdf2c4c25` after the initial implementation recovery correction.
+The installed CodingMage binary had SHA-256
+`535704125aee66cdabb8ab97af0237b77411dcb7bc6d968c48a1e256a0b6f96b`. Two source-free preflight
+reports were byte-identical with file SHA-256
+`fbb6a4b1633b71eec76990681b1b4ca4c73830288c8b1d676beb64fe5734d442` and authority digest
+`1e6ed37f7eb30beb681d1f27c29c9feaec2f4db8af0292c7ca1fc25077554453`. The campaign retained one
+pod, local-only publication, denied network, push, issue, pull-request, merge, release, and external
+infrastructure capabilities, and did not alter Campaign U through Z state.
+
+The campaign accepted typed `implementation_condition_outside_authority` blockers for `1.2.2.2`
+and `1.2.4.2`. It then selected `2.3.1.1`. Two content-free transient implementer failures were
+released and retried without replaying an accepted effect. The final retry resumed the same
+integrity-bound initial session and returned a validated report after changing exactly these paths:
+
+- `fixtures/story-2.3/paste-boundary-fixtures-v1.json`
+- `scripts/paste_boundary_fixtures.py`
+- `artifacts/sprints/sprint-2/story-2.1/fixture-security-scan-report.json`
+
+The third path is a deterministic dependency of the first: adding the fixture changed the security
+scan counts from 157 to 158 files and from 226 to 227 text payloads. Campaign authority already
+included `artifacts/sprints/sprint-2`, but the lead's narrower unit proposal omitted this generated
+evidence path. CodingMage therefore rejected the candidate as
+`codingmage.campaign.unit_repository_boundary`; it did not silently widen authority, create a
+candidate commit, run review, or integrate the work.
+
+Campaign AA stopped after 126 minutes with 12 provider attempts, one correction round, 49 process
+invocations, two accepted blockers, zero completions, and zero integrations. Its target remained
+clean at the exact starting head. The terminal retained-state projection occupied 137,660,276 bytes,
+and the campaign released its owned processes and locks while preserving the failed worktrees and
+integrity-bound run records. This is an exact safety stop, not ten-outcome qualification.
+
+The finding is narrower than campaign authority: team-lead planning needs a deterministic way to
+compose generator-coupled evidence paths that are already inside the sealed task ceiling into the
+unit proposal. Any path absent from that closed dependency set or outside sealed task authority must
+continue to fail before commit or integration. Campaign AA remains diagnostic evidence and must not
+be adopted into a successor.
+
 ## Reconciled Baseline Findings
 
 Commit `3f2759c` corrected the serial workflow fixture to count its satisfied deferral plus two
@@ -415,8 +455,11 @@ the corrected team-lead provider pause, and fail-closed task-path authority; Cam
 narrow generated-evidence additions alone do not resolve brittle companion-file selection; Campaign
 Z proves bounded domain-root admission, two further typed blockers, transient implementer retry, and
 fail-closed restart after initial-session interruption. Initial implementation session recovery is
-now implemented and locally verified, but no successor campaign yet proves ten accepted outcomes or
-useful implementation throughput. A fresh one-pod local-only successor must attempt the ten-outcome
-reconciliation. External publication,
+implemented, locally verified, and exercised by Campaign AA. Campaign AA proves exact session resume,
+two accepted blockers, and fail-closed rejection when a generated evidence dependency was within
+campaign authority but omitted from the narrower unit proposal. No successor campaign yet proves ten
+accepted outcomes or useful implementation throughput. Planning must first compose the closed set of
+generator-coupled evidence paths already inside sealed authority; a fresh one-pod local-only successor
+must then attempt the ten-outcome reconciliation. External publication,
 parallel expansion, and Sprint 22 Gate 22.3 remain open. No failed or cancelled execution is
 represented as successful controlled-target qualification evidence.
