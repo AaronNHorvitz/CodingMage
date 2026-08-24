@@ -1613,10 +1613,16 @@ root = Path(__file__).parent
 log = root / "recovery-claude.log"
 path = Path("src/lib.rs")
 source = path.read_text(encoding="utf-8")
-if "{ 2 }" in source:
+calls = log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+if "{ 2 }" in source and "correction-clean-interrupted" not in calls:
+    with log.open("a", encoding="utf-8") as stream:
+        stream.write("correction-clean-interrupted\n")
+    print(json.dumps({"type": "result", "is_error": True, "subtype": "provider_unavailable"}))
+    raise SystemExit(0)
+if "--resume" in sys.argv and "{ 2 }" in source:
     path.write_text("pub fn value() -> u8 { 3 }\n", encoding="utf-8")
     with log.open("a", encoding="utf-8") as stream:
-        stream.write("correction-interrupted\n")
+        stream.write("correction-dirty-interrupted\n")
     print(json.dumps({"type": "result", "is_error": True, "subtype": "provider_unavailable"}))
     raise SystemExit(0)
 if "--resume" in sys.argv and "{ 3 }" in source:
@@ -1802,7 +1808,8 @@ profiles = ["configured-gates"]
         calls.lines().collect::<Vec<_>>(),
         [
             "implementation-start",
-            "correction-interrupted",
+            "correction-clean-interrupted",
+            "correction-dirty-interrupted",
             "correction-resumed"
         ]
     );

@@ -4727,6 +4727,44 @@ impl<'a> ProductionWorkflowPort<'a> {
             .collect::<Result<Vec<_>, _>>()?;
         GateRegistry::new(entries).map_err(|_| OrchestrationError::Port)
     }
+
+    fn retain_correction_worktree_for_provider_retry(&self) -> bool {
+        if !self
+            .failure
+            .is_some_and(retryable_campaign_provider_failure)
+        {
+            return false;
+        }
+        let (Some(owned), Some(candidate)) = (self.worktree.as_ref(), self.candidate.as_ref())
+        else {
+            return false;
+        };
+        let Ok(Some(checkpoint)) = CorrectionCheckpoint::latest(&self.run_root) else {
+            return false;
+        };
+        if checkpoint
+            .validate(
+                &self.authorization.identity().repository_id,
+                &self.run_id,
+                &self.task_id,
+                &owned.manifest().worktree_id,
+                &owned.manifest().branch,
+                &self.source_commit,
+                &checkpoint.parent_commit,
+                checkpoint.correction_round,
+            )
+            .is_err()
+        {
+            return false;
+        }
+        match checkpoint.phase {
+            CorrectionPhase::Prepared => checkpoint.parent_commit == candidate.commit,
+            CorrectionPhase::CommitObserved => {
+                checkpoint.correction_commit.as_deref() == Some(candidate.commit.as_str())
+            }
+            CorrectionPhase::ProviderBlocked => false,
+        }
+    }
 }
 
 impl WorkflowPort for ProductionWorkflowPort<'_> {
@@ -5101,6 +5139,10 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
     }
 
     fn release(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        if self.retain_correction_worktree_for_provider_retry() {
+            self.lock = None;
+            return evidence_id("correction-worktree-retained-for-provider-retry");
+        }
         if let Some(mut owned) = self.worktree.take() {
             let worktree_id = owned.manifest().worktree_id.as_str().to_owned();
             if remove_owned_worktree(&self.authorization, &mut owned).is_err() {
