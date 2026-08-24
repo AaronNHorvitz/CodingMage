@@ -3772,14 +3772,18 @@ fn run_one_observed_with_id(
     if let (Some(correction), Some(initial)) =
         (correction_recovery.as_ref(), initial_recovery.as_ref())
     {
+        let first_correction =
+            CorrectionCheckpoint::load(&run_root, 1)?.ok_or(RuntimeError::State)?;
         initial.validate(
             &authorization.identity().repository_id,
             &run_id,
             &task_id,
+            &initial.worktree_id,
+            &initial.branch,
             &inventory.head,
         )?;
         if initial.phase != InitialPhase::CandidateObserved
-            || initial.candidate_commit.as_deref() != Some(correction.parent_commit.as_str())
+            || initial.candidate_commit.as_deref() != Some(first_correction.parent_commit.as_str())
             || initial.worktree_id != correction.worktree_id
             || initial.branch != correction.branch
         {
@@ -4168,6 +4172,8 @@ impl<'a> ProductionWorkflowPort<'a> {
             &inputs.authorization.identity().repository_id,
             &inputs.run_id,
             &inputs.task_id,
+            &checkpoint.worktree_id,
+            &checkpoint.branch,
             &inputs.source_commit,
         )?;
         let worktree = OwnedWorktree::load(inputs.config, &checkpoint.worktree_id)

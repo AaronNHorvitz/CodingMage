@@ -172,12 +172,16 @@ impl InitialCheckpoint {
         repository_id: &RepositoryId,
         run_id: &RunId,
         task_id: &TaskId,
+        worktree_id: &WorktreeId,
+        branch: &str,
         source_commit: &str,
     ) -> Result<(), RuntimeError> {
         if self.schema_version != SCHEMA_VERSION
             || &self.repository_id != repository_id
             || &self.run_id != run_id
             || &self.task_id != task_id
+            || &self.worktree_id != worktree_id
+            || self.branch != branch
             || self.source_commit != source_commit
             || self.phase == InitialPhase::Prepared
                 && (self.session_id.is_some()
@@ -454,24 +458,55 @@ mod tests {
             InitialCheckpoint::load(&root).unwrap(),
             Some(checkpoint.clone())
         );
+        checkpoint.report = Some(ClaudeCompletionReport {
+            changed_paths: vec![PathBuf::from("src/lib.rs")],
+            tests: Vec::new(),
+            commit: None,
+            ready_for_commit: true,
+            limitations: Vec::new(),
+            blocker_code: None,
+        });
+        checkpoint.phase = InitialPhase::ReportObserved;
+        checkpoint.persist(&root).unwrap();
+        assert_eq!(
+            InitialCheckpoint::load(&root).unwrap(),
+            Some(checkpoint.clone())
+        );
+        checkpoint.candidate_commit = Some("b".repeat(40));
+        checkpoint.phase = InitialPhase::CandidateObserved;
+        checkpoint.persist(&root).unwrap();
+        assert_eq!(
+            InitialCheckpoint::load(&root).unwrap(),
+            Some(checkpoint.clone())
+        );
         checkpoint
             .validate(
                 &checkpoint.repository_id,
                 &checkpoint.run_id,
                 &checkpoint.task_id,
+                &checkpoint.worktree_id,
+                &checkpoint.branch,
                 &checkpoint.source_commit,
             )
             .unwrap();
 
-        for field in 0..7 {
+        for field in 0..12 {
             let mut changed = checkpoint.clone();
             match field {
                 0 => changed.repository_id = RepositoryId::new("repo-2").unwrap(),
                 1 => changed.run_id = RunId::new("run-2").unwrap(),
                 2 => changed.task_id = TaskId::new("20.1.3.5").unwrap(),
-                3 => changed.source_commit = "b".repeat(40),
-                4 => changed.session_id = None,
-                5 => changed.phase = InitialPhase::Prepared,
+                3 => changed.worktree_id = WorktreeId::new("worktree-2").unwrap(),
+                4 => changed.branch.push_str("-changed"),
+                5 => changed.source_commit = "c".repeat(40),
+                6 => changed.session_id = None,
+                7 => changed.phase = InitialPhase::Prepared,
+                8 => changed.report = None,
+                9 => changed.candidate_commit = None,
+                10 => {
+                    changed.report.as_mut().unwrap().changed_paths =
+                        vec![PathBuf::from("../escape")];
+                }
                 _ => changed.schema_version = 2,
             }
             assert!(
@@ -480,6 +515,8 @@ mod tests {
                         &checkpoint.repository_id,
                         &checkpoint.run_id,
                         &checkpoint.task_id,
+                        &checkpoint.worktree_id,
+                        &checkpoint.branch,
                         &checkpoint.source_commit,
                     )
                     .is_err()

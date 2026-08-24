@@ -1807,8 +1807,8 @@ profiles = ["configured-gates"]
         String::from_utf8_lossy(&run.stdout)
     );
     let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
-    assert_eq!(outcome["state"], "complete");
-    assert_eq!(outcome["completed_units"], 1);
+    assert_eq!(outcome["state"], "complete", "outcome={outcome}");
+    assert_eq!(outcome["completed_units"], 1, "outcome={outcome}");
     let calls = fs::read_to_string(fixture.root.join("recovery-claude.log")).unwrap();
     assert_eq!(
         calls.lines().collect::<Vec<_>>(),

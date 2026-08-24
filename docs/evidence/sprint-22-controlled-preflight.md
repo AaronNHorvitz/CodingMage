@@ -352,6 +352,27 @@ accepted blockers, zero completions, zero integrations, and target head
 qualification evidence. The result establishes the initial implementation session as the next
 recovery boundary; it does not justify broader path, publication, or concurrency authority.
 
+The subsequent recovery correction adds an integrity-bound initial checkpoint with four monotonic
+phases: `prepared`, `session_bound`, `report_observed`, and `candidate_observed`. The checkpoint
+binds repository, run, task, worktree, branch, source commit, exact provider session, validated
+structured completion report, and coordinator-created candidate commit as each value becomes
+available. Restart at a prepared checkpoint starts the first provider session once; restart at a
+session-bound checkpoint resumes only that session and never falls back to a fresh initial session;
+restart after report observation reuses the validated report without another provider call; restart
+after candidate observation reobserves the exact direct owned commit and continues at local
+verification without replaying claim, worktree creation, implementation, or commit creation.
+Correction recovery accepts the retained initial checkpoint only when correction round one's parent
+is that exact candidate and the complete later correction chain remains valid.
+
+Focused checkpoint tests round-trip every phase and reject schema, repository, run, task, worktree,
+branch, source, session, report, changed-path, candidate, envelope, and digest mutation. Orchestrator
+tests prove initial-session and initial-candidate recovery skip every prior effect. The existing
+two-round interrupted-correction CLI fixture caught and then verified the correction-round-one edge
+binding. Strict workspace Clippy, `cargo test --workspace --all-targets --locked --offline`, the
+production prescribed ten-outcome campaign, all ten active CLI workflow tests, documentation checks,
+and `git diff --check` pass. The two sustained qualification tests remain explicitly ignored and are
+not represented as executed evidence.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
@@ -393,8 +414,9 @@ Campaign X proves durable initial-implementer pause behavior, live cumulative co
 the corrected team-lead provider pause, and fail-closed task-path authority; Campaign Y proves that
 narrow generated-evidence additions alone do not resolve brittle companion-file selection; Campaign
 Z proves bounded domain-root admission, two further typed blockers, transient implementer retry, and
-fail-closed restart after initial-session interruption. No campaign proves ten accepted outcomes or
-useful implementation throughput. Initial implementation session recovery must be completed before a
-fresh one-pod local-only successor attempts the ten-outcome reconciliation. External publication,
+fail-closed restart after initial-session interruption. Initial implementation session recovery is
+now implemented and locally verified, but no successor campaign yet proves ten accepted outcomes or
+useful implementation throughput. A fresh one-pod local-only successor must attempt the ten-outcome
+reconciliation. External publication,
 parallel expansion, and Sprint 22 Gate 22.3 remain open. No failed or cancelled execution is
 represented as successful controlled-target qualification evidence.
