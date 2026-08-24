@@ -1857,6 +1857,7 @@ mod tests {
             }],
             campaign_branch: "codingmage/campaign-1".to_owned(),
             allowed_paths: vec![PathBuf::from("crates/public")],
+            task_path_authority: Vec::new(),
             denied_paths: vec![PathBuf::from("crates/private")],
             protected_branches: vec!["main".to_owned()],
             publication: CampaignPublication::LocalOnly,

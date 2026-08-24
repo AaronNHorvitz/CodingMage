@@ -960,6 +960,7 @@ mod tests {
             }],
             campaign_branch: "codingmage/promotion-fixture".to_owned(),
             allowed_paths: vec![PathBuf::from("src")],
+            task_path_authority: Vec::new(),
             denied_paths: Vec::new(),
             protected_branches: vec!["main".to_owned()],
             publication: CampaignPublication::DraftStoryPullRequests,

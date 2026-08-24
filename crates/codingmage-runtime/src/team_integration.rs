@@ -1310,6 +1310,7 @@ mod tests {
             }],
             campaign_branch: "codingmage/campaign".to_owned(),
             allowed_paths: vec![PathBuf::from("code.txt")],
+            task_path_authority: Vec::new(),
             denied_paths: Vec::new(),
             protected_branches: vec!["main".to_owned()],
             publication: CampaignPublication::LocalOnly,

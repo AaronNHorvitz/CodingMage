@@ -1160,6 +1160,7 @@ print(json.dumps({"type": "turn.completed"}))
         }],
         campaign_branch: "codingmage/parallel-fixture".to_owned(),
         allowed_paths: vec![PathBuf::from("src")],
+        task_path_authority: Vec::new(),
         denied_paths: vec![],
         protected_branches: vec!["main".to_owned()],
         publication: CampaignPublication::LocalOnly,

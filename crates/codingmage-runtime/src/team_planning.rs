@@ -471,6 +471,7 @@ mod tests {
             }],
             campaign_branch: "codingmage/campaign-planning".to_owned(),
             allowed_paths: vec![PathBuf::from("crates")],
+            task_path_authority: Vec::new(),
             denied_paths: Vec::new(),
             protected_branches: vec!["main".to_owned()],
             publication: CampaignPublication::LocalOnly,

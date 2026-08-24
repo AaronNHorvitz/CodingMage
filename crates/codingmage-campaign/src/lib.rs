@@ -80,6 +80,16 @@ pub enum CampaignPublication {
     DraftStoryPullRequests,
 }
 
+/// Operator-authored companion paths required whenever one exact task is leased.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CampaignTaskPathAuthority {
+    /// Exact canonical task identifier.
+    pub task_id: String,
+    /// Additional repository-relative paths composed into the sealed pod proposal.
+    pub companion_paths: Vec<PathBuf>,
+}
+
 /// Independent operator-authorized aggregate ceilings for one campaign.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -162,6 +172,9 @@ pub struct CampaignSpec {
     pub campaign_branch: String,
     /// Relative repository roots from which exact pod paths may be leased.
     pub allowed_paths: Vec<PathBuf>,
+    /// Task-specific companion paths authorized by the operator before model inference.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub task_path_authority: Vec<CampaignTaskPathAuthority>,
     /// Relative roots that no pod proposal may equal, contain, or enter.
     #[serde(default)]
     pub denied_paths: Vec<PathBuf>,
@@ -240,6 +253,7 @@ impl CampaignSpec {
             || !self.campaign_branch.starts_with("codingmage/")
             || self.allowed_paths.is_empty()
             || self.allowed_paths.len() > MAX_PATHS
+            || self.task_path_authority.len() > MAX_PATHS
             || self.denied_paths.len() > MAX_PATHS
             || self.protected_branches.is_empty()
             || self
@@ -253,6 +267,23 @@ impl CampaignSpec {
                 .any(|path| !safe_relative(path))
             || any_overlap(&self.allowed_paths)
             || any_overlap(&self.denied_paths)
+            || self
+                .task_path_authority
+                .iter()
+                .map(|authority| &authority.task_id)
+                .collect::<BTreeSet<_>>()
+                .len()
+                != self.task_path_authority.len()
+            || self.task_path_authority.iter().any(|authority| {
+                TaskId::new(authority.task_id.clone()).is_err()
+                    || authority.companion_paths.is_empty()
+                    || authority.companion_paths.len() > MAX_PATHS
+                    || authority
+                        .companion_paths
+                        .iter()
+                        .any(|path| !safe_relative(path) || !self.permits(path))
+                    || any_overlap(&authority.companion_paths)
+            })
             || self
                 .multi_agent
                 .as_ref()
@@ -394,12 +425,13 @@ pub fn validate_team_lead_report(
         if proposal.dependencies != selected.item.dependencies {
             return Err(CampaignError::InvalidProposal);
         }
+        let owned_paths = compose_task_paths(spec, &proposal.task_id, proposal.owned_paths);
         sealed.push(PodProposal::seal(
             PodProposal {
                 version: CAMPAIGN_VERSION,
                 task_id: proposal.task_id,
                 task_source_sha256: report.task_source_sha256.clone(),
-                owned_paths: proposal.owned_paths,
+                owned_paths,
                 dependencies: proposal.dependencies,
                 gate_tiers: proposal.gate_tiers,
                 test_resources: proposal.test_resources,
@@ -684,6 +716,39 @@ fn path_contains(parent: &Path, child: &Path) -> bool {
     parent == child || child.starts_with(parent)
 }
 
+fn minimal_path_roots(mut paths: Vec<PathBuf>) -> Vec<PathBuf> {
+    paths.sort();
+    paths.dedup();
+    paths
+        .iter()
+        .enumerate()
+        .filter(|(index, path)| {
+            !paths
+                .iter()
+                .enumerate()
+                .any(|(other, parent)| index != &other && path_contains(parent, path))
+        })
+        .map(|(_, path)| path.clone())
+        .collect()
+}
+
+fn compose_task_paths(
+    spec: &CampaignSpec,
+    task_id: &str,
+    mut proposed_paths: Vec<PathBuf>,
+) -> Vec<PathBuf> {
+    if let Some(authority) = spec
+        .task_path_authority
+        .iter()
+        .find(|authority| authority.task_id == task_id)
+    {
+        proposed_paths.extend(authority.companion_paths.iter().cloned());
+        minimal_path_roots(proposed_paths)
+    } else {
+        proposed_paths
+    }
+}
+
 fn valid_component(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 128
@@ -812,6 +877,7 @@ mod tests {
             }],
             campaign_branch: "codingmage/campaign-1".to_owned(),
             allowed_paths: vec![PathBuf::from("crates"), PathBuf::from("docs/public")],
+            task_path_authority: Vec::new(),
             denied_paths: vec![PathBuf::from("docs/private")],
             protected_branches: vec!["main".to_owned()],
             publication: CampaignPublication::LocalOnly,
@@ -1012,6 +1078,52 @@ mod tests {
             validate_team_lead_report(hostile, &matching, &ready),
             Err(CampaignError::InvalidProposal)
         );
+    }
+
+    #[test]
+    fn operator_companion_paths_are_composed_before_proposal_sealing() {
+        let mut authority = spec(1);
+        let selected = plan().select_exact("1.1.1.1").unwrap();
+        authority.task_source_sha256 = selected.source_sha256.clone();
+        authority.task_path_authority = vec![CampaignTaskPathAuthority {
+            task_id: selected.item.id.clone(),
+            companion_paths: vec![
+                PathBuf::from("docs/public/traceability.json"),
+                PathBuf::from("crates/engine/src"),
+            ],
+        }];
+        authority.verify().unwrap();
+        let report = TeamLeadReport {
+            campaign_id: authority.campaign_id.clone(),
+            campaign_head: authority.initial_commit.clone(),
+            task_source_sha256: authority.task_source_sha256.clone(),
+            disposition: LeadDispositionKind::Propose,
+            proposals: vec![lead_proposal(&selected, "crates/engine")],
+            blocked: None,
+            deferred: None,
+            human_decision: None,
+        };
+        let TeamLeadOutcome::Proposals(proposals) =
+            validate_team_lead_report(report, &authority, &[selected]).unwrap()
+        else {
+            panic!("expected proposal");
+        };
+        assert_eq!(
+            proposals[0].owned_paths,
+            vec![
+                PathBuf::from("crates/engine"),
+                PathBuf::from("docs/public/traceability.json")
+            ]
+        );
+        assert!(proposals[0].verify(&authority).is_ok());
+
+        let mut escaping = authority.clone();
+        escaping.task_path_authority[0].companion_paths = vec![PathBuf::from("../escape")];
+        assert_eq!(escaping.verify(), Err(CampaignError::InvalidAuthority));
+        let mut denied = authority;
+        denied.task_path_authority[0].companion_paths =
+            vec![PathBuf::from("docs/private/traceability.json")];
+        assert_eq!(denied.verify(), Err(CampaignError::InvalidAuthority));
     }
 
     #[test]
@@ -1289,6 +1401,12 @@ mod tests {
         let mut value = baseline.clone();
         value.allowed_paths = vec![PathBuf::from("src")];
         mutations.push(("allowed_paths", value));
+        let mut value = baseline.clone();
+        value.task_path_authority = vec![CampaignTaskPathAuthority {
+            task_id: "1.1.1.1".to_owned(),
+            companion_paths: vec![PathBuf::from("docs/public/traceability.json")],
+        }];
+        mutations.push(("task_path_authority", value));
         let mut value = baseline.clone();
         value.denied_paths = vec![PathBuf::from("secrets")];
         mutations.push(("denied_paths", value));

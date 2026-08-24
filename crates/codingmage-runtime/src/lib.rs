@@ -627,6 +627,10 @@ pub struct CampaignPreflightPolicy {
     pub allowed_path_count: usize,
     /// Digest of allowed path roots without exposing names.
     pub allowed_paths_sha256: String,
+    /// Number of exact task-specific companion-path authorities.
+    pub task_path_authority_count: usize,
+    /// Digest of task-specific companion-path authority without exposing path names.
+    pub task_path_authority_sha256: String,
     /// Number of explicitly denied path roots.
     pub denied_path_count: usize,
     /// Digest of denied path roots without exposing names.
@@ -1150,6 +1154,8 @@ pub fn campaign_preflight(
             default_branch_protected,
             allowed_path_count: spec.allowed_paths.len(),
             allowed_paths_sha256: serializable_sha256(&spec.allowed_paths)?,
+            task_path_authority_count: spec.task_path_authority.len(),
+            task_path_authority_sha256: serializable_sha256(&spec.task_path_authority)?,
             denied_path_count: spec.denied_paths.len(),
             denied_paths_sha256: serializable_sha256(&spec.denied_paths)?,
             external_capabilities_denied,
@@ -5542,6 +5548,7 @@ mod tests {
             }],
             campaign_branch: "codingmage/status-campaign".to_owned(),
             allowed_paths: vec![PathBuf::from("src")],
+            task_path_authority: Vec::new(),
             denied_paths: vec![PathBuf::from("private")],
             protected_branches: vec!["main".to_owned()],
             publication: CampaignPublication::LocalOnly,
