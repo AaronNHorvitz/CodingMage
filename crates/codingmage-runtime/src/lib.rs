@@ -4034,14 +4034,7 @@ impl<'a> ProductionWorkflowPort<'a> {
         {
             return Err(RuntimeError::Authority);
         }
-        let candidate = observe_owned_child_commit(
-            &inputs.authorization,
-            &worktree,
-            &checkpoint.source_commit,
-            &checkpoint.parent_commit,
-            &inputs.spec.owned_paths,
-        )
-        .map_err(|_| RuntimeError::Repository)?;
+        let candidate = recover_correction_candidate(&inputs, &worktree, checkpoint)?;
         let mut port = Self::new(inputs);
         port.lock = Some(
             CoordinatorLock::acquire(
@@ -4765,6 +4758,66 @@ impl<'a> ProductionWorkflowPort<'a> {
             CorrectionPhase::ProviderBlocked => false,
         }
     }
+}
+
+fn recover_correction_candidate(
+    inputs: &ProductionInputs<'_>,
+    worktree: &OwnedWorktree,
+    checkpoint: &CorrectionCheckpoint,
+) -> Result<CommitReceipt, RuntimeError> {
+    let first = CorrectionCheckpoint::load(&inputs.run_root, 1)?.ok_or(RuntimeError::State)?;
+    first.validate(
+        &inputs.authorization.identity().repository_id,
+        &inputs.run_id,
+        &inputs.task_id,
+        &worktree.manifest().worktree_id,
+        &worktree.manifest().branch,
+        &inputs.source_commit,
+        &first.parent_commit,
+        1,
+    )?;
+    let mut candidate = observe_owned_child_commit(
+        &inputs.authorization,
+        worktree,
+        &inputs.source_commit,
+        &first.parent_commit,
+        &inputs.spec.owned_paths,
+    )
+    .map_err(|_| RuntimeError::Repository)?;
+    for round in 1..checkpoint.correction_round {
+        let prior =
+            CorrectionCheckpoint::load(&inputs.run_root, round)?.ok_or(RuntimeError::State)?;
+        prior.validate(
+            &inputs.authorization.identity().repository_id,
+            &inputs.run_id,
+            &inputs.task_id,
+            &worktree.manifest().worktree_id,
+            &worktree.manifest().branch,
+            &inputs.source_commit,
+            &prior.parent_commit,
+            round,
+        )?;
+        let (CorrectionPhase::CommitObserved, Some(commit)) =
+            (prior.phase, prior.correction_commit.as_deref())
+        else {
+            return Err(RuntimeError::State);
+        };
+        if prior.parent_commit != candidate.commit {
+            return Err(RuntimeError::State);
+        }
+        candidate = observe_owned_child_commit(
+            &inputs.authorization,
+            worktree,
+            &candidate.commit,
+            commit,
+            &inputs.spec.owned_paths,
+        )
+        .map_err(|_| RuntimeError::Repository)?;
+    }
+    if candidate.commit != checkpoint.parent_commit {
+        return Err(RuntimeError::State);
+    }
+    Ok(candidate)
 }
 
 impl WorkflowPort for ProductionWorkflowPort<'_> {

@@ -1614,20 +1614,26 @@ log = root / "recovery-claude.log"
 path = Path("src/lib.rs")
 source = path.read_text(encoding="utf-8")
 calls = log.read_text(encoding="utf-8").splitlines() if log.exists() else []
-if "{ 2 }" in source and "correction-clean-interrupted" not in calls:
-    with log.open("a", encoding="utf-8") as stream:
-        stream.write("correction-clean-interrupted\n")
-    print(json.dumps({"type": "result", "is_error": True, "subtype": "provider_unavailable"}))
-    raise SystemExit(0)
-if "--resume" in sys.argv and "{ 2 }" in source:
+if "{ 2 }" in source:
     path.write_text("pub fn value() -> u8 { 3 }\n", encoding="utf-8")
     with log.open("a", encoding="utf-8") as stream:
         stream.write("correction-dirty-interrupted\n")
     print(json.dumps({"type": "result", "is_error": True, "subtype": "provider_unavailable"}))
     raise SystemExit(0)
-if "--resume" in sys.argv and "{ 3 }" in source:
-    with log.open("a", encoding="utf-8") as stream:
-        stream.write("correction-resumed\n")
+if "{ 3 }" in source:
+    if "correction-round-one-resumed" not in calls:
+        with log.open("a", encoding="utf-8") as stream:
+            stream.write("correction-round-one-resumed\n")
+    elif "correction-round-two-interrupted" not in calls:
+        with log.open("a", encoding="utf-8") as stream:
+            stream.write("correction-round-two-interrupted\n")
+        print(json.dumps({"type": "result", "is_error": True, "subtype": "provider_unavailable"}))
+        raise SystemExit(0)
+    else:
+        assert "--resume" in sys.argv
+        path.write_text("pub fn value() -> u8 { 4 }\n", encoding="utf-8")
+        with log.open("a", encoding="utf-8") as stream:
+            stream.write("correction-round-two-resumed\n")
     print(json.dumps({
         "type": "result", "is_error": False,
         "structured_output": {
@@ -1696,7 +1702,7 @@ print(json.dumps({"type": "turn.completed"}))
         r#"#!/usr/bin/python3
 from pathlib import Path
 import sys
-if "{ 2 }" in Path("src/lib.rs").read_text(encoding="utf-8"):
+if "{ 4 }" not in Path("src/lib.rs").read_text(encoding="utf-8"):
     print("fixture requires correction", file=sys.stderr)
     raise SystemExit(1)
 "#,
@@ -1808,9 +1814,10 @@ profiles = ["configured-gates"]
         calls.lines().collect::<Vec<_>>(),
         [
             "implementation-start",
-            "correction-clean-interrupted",
             "correction-dirty-interrupted",
-            "correction-resumed"
+            "correction-round-one-resumed",
+            "correction-round-two-interrupted",
+            "correction-round-two-resumed"
         ]
     );
     let progress = String::from_utf8(run.stderr).unwrap();
