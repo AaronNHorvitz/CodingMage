@@ -18,6 +18,9 @@ use sha2::{Digest, Sha256};
 const SUPPORTED_MAJOR: u64 = 2;
 const MINIMUM_MINOR: u64 = 1;
 const MAX_PACKET_BYTES: usize = 1024 * 1024;
+const DEFAULT_INVOCATION_DEADLINE_MILLIS: u64 = 60 * 60 * 1000;
+const MINIMUM_INVOCATION_DEADLINE_MILLIS: u64 = 60 * 1000;
+const MAXIMUM_INVOCATION_DEADLINE_MILLIS: u64 = 60 * 60 * 1000;
 
 /// Capability facts obtained from version and help output only.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -332,6 +335,7 @@ pub struct ClaudeAdapter {
     effort: String,
     authentication: ClaudeAuthentication,
     environment: BTreeMap<String, String>,
+    invocation_deadline_millis: u64,
 }
 
 /// Credential-discovery boundary used by a Claude invocation.
@@ -367,7 +371,27 @@ impl ClaudeAdapter {
             effort: effort.to_owned(),
             authentication: ClaudeAuthentication::Bare,
             environment: BTreeMap::new(),
+            invocation_deadline_millis: DEFAULT_INVOCATION_DEADLINE_MILLIS,
         })
+    }
+
+    /// Applies a bounded process deadline to implementation invocations.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ClaudeError::InvalidProfile`] when the deadline is shorter than one minute or
+    /// longer than the adapter's one-hour maximum.
+    pub fn with_invocation_deadline_millis(
+        mut self,
+        deadline_millis: u64,
+    ) -> Result<Self, ClaudeError> {
+        if !(MINIMUM_INVOCATION_DEADLINE_MILLIS..=MAXIMUM_INVOCATION_DEADLINE_MILLIS)
+            .contains(&deadline_millis)
+        {
+            return Err(ClaudeError::InvalidProfile);
+        }
+        self.invocation_deadline_millis = deadline_millis;
+        Ok(self)
     }
 
     /// Selects the credential-discovery boundary without accepting credential material.
@@ -633,7 +657,7 @@ impl ClaudeAdapter {
             environment: self.environment.clone(),
             stdin: plan.stdin.clone(),
             max_output_bytes: 4 * 1024 * 1024,
-            deadline_millis: 60 * 60 * 1000,
+            deadline_millis: self.invocation_deadline_millis,
             max_processes: 16,
             max_open_files: 256,
             expected_exit_codes: BTreeSet::from([0]),
@@ -1323,6 +1347,37 @@ mod tests {
         assert_eq!(
             missing.render(&fixture.session()),
             Err(ClaudeError::InvalidPacket)
+        );
+    }
+
+    #[test]
+    fn invocation_deadline_is_bounded_and_defaults_to_one_hour() {
+        let adapter = ClaudeAdapter::new(PathBuf::from("/usr/bin/claude"), "opus", "high")
+            .expect("valid adapter");
+        assert_eq!(
+            adapter.invocation_deadline_millis,
+            DEFAULT_INVOCATION_DEADLINE_MILLIS
+        );
+        assert_eq!(
+            adapter
+                .clone()
+                .with_invocation_deadline_millis(MINIMUM_INVOCATION_DEADLINE_MILLIS - 1)
+                .unwrap_err(),
+            ClaudeError::InvalidProfile
+        );
+        assert_eq!(
+            adapter
+                .clone()
+                .with_invocation_deadline_millis(MAXIMUM_INVOCATION_DEADLINE_MILLIS + 1)
+                .unwrap_err(),
+            ClaudeError::InvalidProfile
+        );
+        assert_eq!(
+            adapter
+                .with_invocation_deadline_millis(15 * 60 * 1000)
+                .expect("bounded correction deadline")
+                .invocation_deadline_millis,
+            15 * 60 * 1000
         );
     }
 

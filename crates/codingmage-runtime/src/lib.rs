@@ -115,6 +115,7 @@ const CAMPAIGN_PROVIDER_ATTEMPT_LIMIT: u8 = 3;
 const PROVIDER_RETRY_BASE_DELAY_MS: u64 = 25;
 const PROVIDER_RETRY_MAX_DELAY_MS: u64 = 400;
 const CLAUDE_REPORT_ATTEMPT_LIMIT: u8 = 2;
+const CLAUDE_CORRECTION_DEADLINE_MILLIS: u64 = 15 * 60 * 1000;
 const MAX_AUTHORIZATION_BYTES: u64 = 1024 * 1024;
 const MAX_IDENTITY_FILE_BYTES: u64 = 512 * 1024 * 1024;
 
@@ -4370,7 +4371,20 @@ impl<'a> ProductionWorkflowPort<'a> {
             session_id: session.session_id.as_str().to_owned(),
             correction_round,
         })?;
-        let adapter = self.claude_adapter()?;
+        let adapter = if correction_round == 0 {
+            self.claude_adapter()?
+        } else {
+            match self
+                .claude_adapter()?
+                .with_invocation_deadline_millis(CLAUDE_CORRECTION_DEADLINE_MILLIS)
+            {
+                Ok(adapter) => adapter,
+                Err(error) => {
+                    self.failure = Some(RuntimeError::Implementer(error));
+                    return Err(OrchestrationError::Port);
+                }
+            }
+        };
         let mut resume = resume_first;
         for attempt in 0..CLAUDE_REPORT_ATTEMPT_LIMIT {
             let plan = if resume {
