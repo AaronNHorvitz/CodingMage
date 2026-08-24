@@ -2389,6 +2389,24 @@ pub fn run_serial_campaign_with_progress(
                         LeadRejectionReason::MalformedOutput,
                     );
                 }
+                Err(error) if retryable_lead_provider_failure(error) => {
+                    let blocker_code = "codingmage.campaign.provider_unavailable".to_owned();
+                    checkpoint.phase = CampaignPhase::Paused;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        CampaignTermination::new(
+                            CampaignState::Paused,
+                            CampaignStopReason::AttemptLimit,
+                            Some(blocker_code),
+                        ),
+                    ));
+                }
                 Err(error) => return Err(RuntimeError::Reviewer(error)),
             };
             let lead_result = match lead_execution.report {
@@ -2423,6 +2441,24 @@ pub fn run_serial_campaign_with_progress(
                         last_task_id,
                         LeadRejectionReason::MalformedOutput,
                     );
+                }
+                Err(error) if retryable_lead_provider_failure(error) => {
+                    let blocker_code = "codingmage.campaign.provider_unavailable".to_owned();
+                    checkpoint.phase = CampaignPhase::Paused;
+                    checkpoint.blocker_code = Some(blocker_code.clone());
+                    checkpoint.persist(&campaign_root)?;
+                    return Ok(campaign_outcome(
+                        &spec,
+                        &campaign,
+                        head,
+                        completed_units,
+                        last_task_id,
+                        CampaignTermination::new(
+                            CampaignState::Paused,
+                            CampaignStopReason::AttemptLimit,
+                            Some(blocker_code),
+                        ),
+                    ));
                 }
                 Err(error) => return Err(RuntimeError::Reviewer(error)),
             };
@@ -3098,6 +3134,10 @@ const fn retryable_campaign_provider_failure(error: RuntimeError) -> bool {
         RuntimeError::Implementer(ClaudeError::Provider | ClaudeError::Session)
             | RuntimeError::Reviewer(CodexError::Provider | CodexError::Thread)
     )
+}
+
+const fn retryable_lead_provider_failure(error: CodexError) -> bool {
+    matches!(error, CodexError::Provider | CodexError::Thread)
 }
 
 fn provider_retry_delay(operation_id: &str, attempt: u8) -> Duration {
@@ -6235,6 +6275,17 @@ effort = "high"
 
     #[test]
     fn campaign_retries_only_content_free_transient_provider_failures() {
+        assert!(retryable_lead_provider_failure(CodexError::Provider));
+        assert!(retryable_lead_provider_failure(CodexError::Thread));
+        for terminal_lead in [
+            CodexError::Quota,
+            CodexError::Authentication,
+            CodexError::InvalidOutput,
+            CodexError::Timeout,
+            CodexError::Process,
+        ] {
+            assert!(!retryable_lead_provider_failure(terminal_lead));
+        }
         for transient in [
             RuntimeError::Implementer(ClaudeError::Provider),
             RuntimeError::Implementer(ClaudeError::Session),
