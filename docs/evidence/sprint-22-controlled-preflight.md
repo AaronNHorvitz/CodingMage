@@ -480,6 +480,56 @@ the same integrity-bound session. It must never accept a mismatch, expand
 authority, or integrate the candidate. Campaign AB remains preserved as
 diagnostic evidence and is not ten-outcome qualification.
 
+## Campaign AC Ten-Outcome Execution
+
+Campaign AC started from the unchanged accepted target head
+`1ad4759328fc253b718388131fb484ecdf2c4c25` with the ready-report metadata
+repair correction installed. The release binary and process guard had SHA-256
+`b335d0cdcfe772704604cf5519b400e93d4888520ad8e68fb6d66f66e7a7eb65`.
+Two source-free preflight reports were byte-identical with file SHA-256
+`283f7d36e5acfca2ccc7a4586bcb7115c8f2a4165f3aed863ad1f961aef2c4c5`
+and authority digest
+`da7138f07f11b95b37665e70a6650ecadec9face7a1e99c4727fbe491c2fc0e8`.
+The authority retained one pod, an exact ten-outcome ceiling, 42 allowed roots,
+26 task-specific path entries, local-only publication, and denied network,
+push, issue, pull-request, merge, release, and external-infrastructure effects.
+
+Before the live campaign, an end-to-end CLI fixture exercised the Campaign AB
+failure directly. Its initial ready report claimed `src/lib.rs` plus a
+nonexistent `src/missing.rs`. CodingMage observed the authorized dirty set
+before commit creation, resumed the same provider session with a metadata-only
+instruction, verified that the inventory had not changed, and accepted the
+corrected exact report. The fixture completed with seven provider attempts,
+two malformed-report repair reservations, 16 process invocations, and no
+commit containing or referring to the nonexistent path. Exact-set unit tests
+cover missing, extra, reordered, empty, and equal inventories.
+
+Campaign AC required three process invocations because it exercised two
+durable provider pauses. At nine accepted outcomes, a content-free lead
+provider failure paused as `codingmage.campaign.provider_unavailable` and
+resumed from the planning checkpoint. The first attempt at the tenth outcome
+paused as `codingmage.campaign.unit_provider_failure`; the successor invocation
+selected another dependency-ready unit and continued without replaying any of
+the nine accepted outcomes. The final run stopped exactly at
+`codingmage.campaign.unit_ceiling`.
+
+The terminal projection records ten accepted
+`implementation_condition_outside_authority` blockers for `1.2.1.1`,
+`1.2.1.2`, `1.2.1.3`, `1.2.2.2`, `1.2.3.1`, `1.2.3.2`, `1.2.3.3`,
+`1.2.4.2`, `2.3.1.1`, and `7.1.1.2`. It records zero completions, zero
+deferrals, zero human decisions, zero rejected proposals, and zero
+integrations. Aggregate utilization was 34 provider attempts, two correction
+rounds, 122 process invocations, 7,000,808 output bytes, and 13,974,458 ms of
+accounted execution time. The active target remained clean at the exact
+starting head. The campaign-root worktree remains an owned clean local
+worktree at that head; Campaign U through AB state was not adopted or altered.
+
+This satisfies the automated ten-accepted-outcome execution boundary, not the
+human review boundary and not useful implementation throughput. A human must
+still inspect the cumulative evidence and retained campaign-root state before
+AC 22.6 or Gate 22.3 can close. Blocker-only evidence does not authorize
+parallelism, publication, or broader repository paths.
+
 ## Reconciled Baseline Findings
 
 Commit `3f2759c` corrected the serial workflow fixture to count its satisfied deferral plus two
