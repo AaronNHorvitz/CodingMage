@@ -437,6 +437,49 @@ and processes, record one typed blocker, and continue. Missing, extra, unowned, 
 must remain terminal. Campaign AA remains diagnostic evidence and must not be adopted into a
 successor.
 
+## Campaign AB Dirty-Blocker Qualification
+
+Campaign AB started from the unchanged accepted target head
+`1ad4759328fc253b718388131fb484ecdf2c4c25` with the dirty blocked-worktree
+reconciliation correction installed. The release binary had SHA-256
+`245970c28324a509aebd5b4f40f58b8505bfc5cc786d377277272558f2fc9f78`.
+Two source-free preflight reports were byte-identical with file SHA-256
+`91eef49d241111947f3dd465a6b914b96073e15eae5d74497969789657fde51c`
+and authority digest
+`79bda41ad70ba42ecb6804094effd1b5bfc02f22ab1de682bae6b8ac8f31e2f0`.
+The campaign retained one pod, local-only publication, denied every external
+capability, and did not adopt or alter Campaign U through AA state.
+
+The first execution accepted a clean typed blocker for `1.2.1.1`. Task
+`1.2.2.2` then produced a candidate, failed deterministic gates, and reached
+its second correction session before the provider timed out. The campaign
+paused durably and restarted from that exact lineage. The restart selected and
+accepted clean typed blockers for `1.2.1.2` and `1.2.1.3`. Its resumed
+`1.2.2.2` correction returned a typed blocker after leaving authorized dirty
+files. The runtime compared the provider's claimed paths with the live dirty
+inventory, verified the exact worktree identity and sealed roots, retained the
+diagnostic worktree, released its lock and processes, accepted the blocker,
+and continued. This is the live qualification for Sub-task 22.3.3.12.
+
+The next task, `2.3.1.1`, returned `ready_for_commit=true` and claimed four
+changed paths. The resulting coordinator commit
+`4932b7069bcc5450ebae1648004f4309e04f7244` contained only three: the fixture,
+generator script, and test. The claimed generated artifact report was absent.
+Exact set comparison rejected the candidate and stopped at
+`codingmage.campaign.unit_repository_boundary`; no review or integration ran.
+The active target remained clean at `1ad4759328fc253b718388131fb484ecdf2c4c25`.
+
+Campaign AB ended with four accepted blockers, zero completions, zero
+integrations, 16 provider attempts, two correction rounds, and 54 process
+invocations. The result proves dirty-blocker retention and continuation, but
+it also shows that semantic changed-path validation occurs too late: an invalid
+ready report can cause an owned coordinator commit before being rejected. The
+next correction must compare ready-report metadata with the authorized dirty
+inventory before commit creation and permit only bounded metadata repair in
+the same integrity-bound session. It must never accept a mismatch, expand
+authority, or integrate the candidate. Campaign AB remains preserved as
+diagnostic evidence and is not ten-outcome qualification.
+
 ## Reconciled Baseline Findings
 
 Commit `3f2759c` corrected the serial workflow fixture to count its satisfied deferral plus two
