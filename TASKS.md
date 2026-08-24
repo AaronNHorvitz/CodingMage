@@ -1077,6 +1077,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.3.2.2:** Generate a versioned campaign authority with one pod, an exact ten-outcome ceiling, local-only publication, protected default branch, and the minimum necessary allowed paths. See `docs/evidence/sprint-22-controlled-preflight.md`.
   - [x] **Sub-task 22.3.2.3:** Verify provider executable identities, capability surfaces, existing-login boundaries, model profiles, deterministic gates, process guard, free storage, and operator controls. See `docs/evidence/sprint-22-controlled-preflight.md`.
   - [x] **Sub-task 22.3.2.4:** Produce and manually inspect a source-free preflight report before the first provider invocation. The owner approved the fresh successor digest `06e7c2798c69542f23f0e7dbc375394ec219aec5f3c40fe1d107bac09f169ba2`; every earlier zero-outcome stop and consumed digest remains preserved. See `docs/evidence/sprint-22-controlled-preflight.md`.
+  - [x] **Sub-task 22.3.2.5:** Bind task-specific companion paths into operator-approved campaign authority before inference, validate them against allowed and denied roots, include them in the preflight digest, and compose them into the sealed proposal without permitting correction-time expansion.
 - [ ] **Task 22.3.3 - Execute and reconcile the ten-task controlled-target campaign**
   - [x] **Sub-task 22.3.3.1:** Run unattended until ten accepted task outcomes, plan completion, an exact safety stop, or an authenticated operator control occurs. The approved successor stopped exactly at `codingmage.campaign.unit_repository_boundary`; zero outcomes were accepted. See `docs/evidence/sprint-22-controlled-preflight.md`.
   - [x] **Sub-task 22.3.3.2:** Keep all work on the isolated local campaign branch with push, issues, pull requests, merge, release, and external-infrastructure capabilities denied. See `docs/evidence/sprint-22-controlled-preflight.md`.
@@ -1084,6 +1085,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 22.3.3.4:** Reconcile every selected task, commit, correction, gate, review, checkpoint, control, process, worktree, branch, checkbox, blocker, deferral, and limit counter. See `docs/evidence/sprint-22-controlled-preflight.md`.
   - [x] **Sub-task 22.3.3.5:** Compare the active checkout and all unrelated Git state with their preflight manifests and require exact preservation. The active checkout remains clean at the exact starting commit; campaign-owned failed worktrees remain preserved as evidence. See `docs/evidence/sprint-22-controlled-preflight.md`.
   - [ ] **Sub-task 22.3.3.6:** Have a human inspect the cumulative diff and evidence report before any branch push, pull request, merge, concurrency increase, or publication grant.
+  - [x] **Sub-task 22.3.3.7:** Give correction-provider sessions a separate validated 15-minute process ceiling while retaining the existing initial-implementation ceiling and all fail-closed timeout behavior.
 
 **Story acceptance criteria**
 
@@ -1563,4 +1565,4 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 The first dependency-ready implementation unit is:
 
-- [ ] **Next 1:** Validate the empty-ready implementation classification correction, then create a successor one-pod, local-only authority from accepted head `1ad4759328fc253b718388131fb484ecdf2c4c25`. Prove that a no-change task returns a typed blocker or an invalid implementer report rather than a repository-boundary claim, and that every later task proposal includes only the paths genuinely required by that dependency-ready unit.
+- [ ] **Next 1:** Create a fresh successor one-pod, local-only authority from accepted head `1ad4759328fc253b718388131fb484ecdf2c4c25`. Pre-authorize only task-specific companion paths established by repository analysis, bind the 15-minute correction deadline into the installed binary, and run to ten accepted outcomes or the next exact safety stop. Reconcile every retained Campaign U worktree as diagnostic evidence; do not adopt or delete it manually.

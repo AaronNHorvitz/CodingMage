@@ -218,6 +218,30 @@ an invalid implementer report rather than repository corruption. Identity, path-
 repository-state, and Git-command failures remain repository boundaries. This correction must be
 fully validated and exercised by a successor campaign before Gate 22.3 can close.
 
+Campaign U started from accepted head `1ad4759328fc253b718388131fb484ecdf2c4c25` under source-free
+preflight digest `26ce4433eb13b6fdd95430ba9ba668c54569f03dc691b11f2e6363c67591e52c`.
+The no-change task `1.2.1.1` returned the required implementation blocker rather than a repository
+boundary, proving the empty-ready correction on the live path. Eight additional tasks ended with
+the same closed `implementation_condition_outside_authority` disposition, for nine accepted
+blocked outcomes and zero completed units. The checkpoint records 30 provider attempts, two
+correction rounds, 112 guarded process invocations, 3,256,552 output bytes, 34,618,448 retained
+bytes, and 10,189,509 milliseconds of observed provider and gate execution.
+
+The final correction remained active for more than 30 minutes under the adapter's former one-hour
+invocation ceiling. The operator used CodingMage's authenticated campaign cancellation control;
+the campaign terminated as `cancelled` with `codingmage.campaign.control.cancelled`, released its
+owned processes and locks, and left the target checkout clean at `1ad47593`. The campaign root and
+one dirty, campaign-owned pod worktree remain registered as diagnostic state. They are not accepted
+work, are not part of the target checkout, and have not been manually adopted or deleted.
+
+Commit `2f81e47` adds a validated per-invocation adapter deadline and applies a 15-minute ceiling
+only to correction sessions; initial implementations retain their existing one-hour maximum.
+Commit `8330528` adds operator-sealed task-specific companion-path authority. Each mapping is
+validated against allowed and denied roots, included in the campaign authority and source-free
+preflight policy digest, composed before proposal sealing, and still enforced by changed-path Git
+verification. This addresses the measured Campaign U failure pattern without granting providers
+mid-session or repository-wide authority.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
@@ -252,10 +276,10 @@ without changing the controlled-target authority boundary.
 
 ## Open Boundary
 
-Controlled-target preparation and several exact terminal executions are complete. Campaign T proves
-that repeated provider blockers persist atomically and do not prevent independent work, but it does
-not prove ten accepted outcomes. A successor authority must exercise the empty-implementation
-classification, compose every genuinely required path without broad repository authority, and
-complete the ten-outcome reconciliation. External publication, parallel expansion, and Sprint 22
-Gate 22.3 remain open. No failed execution is represented as successful controlled-target
+Controlled-target preparation and several exact terminal executions are complete. Campaign U proves
+the corrected empty-implementation classification and atomic continuation through nine blockers,
+but it does not prove ten accepted outcomes or useful implementation throughput. A fresh successor
+must use operator-sealed task companion paths and the bounded correction deadline, then complete the
+ten-outcome reconciliation. External publication, parallel expansion, and Sprint 22 Gate 22.3
+remain open. No failed or cancelled execution is represented as successful controlled-target
 qualification evidence.

@@ -49,6 +49,10 @@ denied_paths = ["private"]
 protected_branches = ["main"]
 publication = "local_only"
 
+[[task_path_authority]]
+task_id = "21.2.2.5"
+companion_paths = ["docs/evidence", "scripts/traceability.py", "tests/test_traceability.py"]
+
 [limits]
 provider_attempts = 1000
 malformed_report_repairs = 100
@@ -91,6 +95,18 @@ coordinator validates these rules before invoking Claude. Claude receives reposi
 access and Edit/Write permissions only for the validated ownership roots. Coordinator-side Git
 inventory remains authoritative and rejects any change outside those roots even if a provider-side
 permission control fails.
+
+When a bounded task necessarily updates known registries, generated evidence, or their validators,
+the operator may declare one `task_path_authority` entry before preflight. CodingMage validates
+each companion path against the same allowed and denied roots, binds the complete mapping into the
+campaign authority digest, and composes it into that task's proposal before sealing. A provider
+cannot request this authority during implementation or correction. Redundant descendants are
+reduced to the minimal already-authorized roots, and every resulting write remains subject to the
+coordinator's changed-path verification.
+
+Initial implementation invocations retain the adapter's one-hour maximum. Correction invocations
+have a separate 15-minute ceiling, so one stalled correction cannot occupy a campaign indefinitely;
+timeout remains a noncompletion and never weakens path, gate, or review requirements.
 
 ## Invocation
 
