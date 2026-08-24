@@ -13,6 +13,7 @@
 - **Non-traversing symlink census:** `ee530b2`
 - **Clean correction-retry retention:** `6fb216c`
 - **Cumulative correction-lineage recovery:** `96275c2`
+- **Transient lead-provider classification:** `39de9b2`
 - **Executed:** 2026-08-22 through 2026-08-24 on Fedora Linux with Rust 1.95.0
 
 ## Implemented Boundary
@@ -291,6 +292,25 @@ passes through a dirty round-one interruption, a completed first correction, a s
 and a clean round-two interruption without replaying initial implementation. All 95 runtime tests,
 10 active CLI workflow tests, strict workspace Clippy, formatting, and diff integrity passed.
 
+Campaign X started from the unchanged accepted head under two byte-identical source-free preflight
+reports with digest `2e4c726f3fec4258adc8accbfab0b2f9a25072c91e5a9acce655cb4a63db730c`.
+Its one-pod, ten-outcome, local-only authority sealed eight task-specific companion mappings and
+denied every external capability. The first invocation encountered three content-free transient
+Claude provider failures before implementation and paused at
+`codingmage.campaign.provider_unavailable` without accepting an outcome or mutating the target.
+
+On restart, Campaign X accepted typed implementation blockers for `1.2.1.1`, `2.3.1.1`, and
+`1.2.4.2`, with zero completions and no integration. A later content-free Codex team-lead provider
+failure escaped as the raw CLI error `codingmage.provider.codex.failed`, although the durable
+checkpoint remained in planning with no active unit and the accepted head remained unchanged.
+Commit `39de9b2` classifies only Codex provider-transport and thread failures as a durable paused
+campaign outcome with blocker `codingmage.campaign.provider_unavailable`. Quota, authentication,
+malformed output, timeout, process, and other terminal failures keep their existing stricter paths.
+The focused tests assert that closed classification, and 95 runtime tests, 10 active CLI workflow
+tests, strict workspace Clippy, formatting, and diff integrity pass. Campaign X remains preserved
+for restart after the corrected binary is installed; this evidence does not claim ten accepted
+outcomes or controlled-target qualification.
+
 ```text
 cargo test -p codingmage-cli --test campaign_preflight --locked --offline -- --nocapture
 ```
@@ -326,10 +346,11 @@ without changing the controlled-target authority boundary.
 ## Open Boundary
 
 Controlled-target preparation and several exact terminal executions are complete. Campaign U proves
-the corrected empty-implementation classification and atomic continuation through nine blockers,
-while Campaign V proves the sealed companion authority and exposes the now-corrected clean
-correction-retry defect. Neither campaign proves ten accepted outcomes or useful implementation
-throughput. A fresh successor must use operator-sealed task companion paths, the bounded correction
-deadline, and commit `6fb216c`, then complete the ten-outcome reconciliation. External publication,
+the corrected empty-implementation classification and atomic continuation through nine blockers;
+Campaigns V and W expose and qualify the clean correction-retry and cumulative-lineage corrections;
+Campaign X proves durable initial-implementer pause behavior and exposes the now-corrected raw
+team-lead provider failure. No campaign proves ten accepted outcomes or useful implementation
+throughput. Campaign X must resume with operator-sealed task companion paths, the bounded correction
+deadline, and commit `39de9b2`, then complete the ten-outcome reconciliation. External publication,
 parallel expansion, and Sprint 22 Gate 22.3 remain open. No failed or cancelled execution is
 represented as successful controlled-target qualification evidence.
