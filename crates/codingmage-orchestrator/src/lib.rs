@@ -557,6 +557,108 @@ impl OneUnitCoordinator {
         })
     }
 
+    /// Restores the coordinator projection for one integrity-checked initial implementation
+    /// session. The caller must reobserve the exact run, task, worktree, and provider session.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`OrchestrationError::Transition`] for an invalid correction limit.
+    pub fn recover_interrupted_implementation(
+        run_id: RunId,
+        task_id: TaskId,
+        correction_limit: u16,
+    ) -> Result<Self, OrchestrationError> {
+        if correction_limit == 0 || correction_limit > 100 {
+            return Err(OrchestrationError::Transition);
+        }
+        Ok(Self {
+            machine: TaskMachine::recovered(run_id, task_id, TaskState::Implementing),
+            correction_limit,
+            correction_count: 0,
+        })
+    }
+
+    /// Resumes one exact initial provider session without replaying claim or worktree creation.
+    ///
+    /// # Errors
+    ///
+    /// Returns a transition, port, verification, checkpoint, reconciliation, or release failure.
+    pub fn resume_interrupted_implementation<P: WorkflowPort>(
+        &mut self,
+        port: &mut DurableWorkflowPort<'_, P>,
+        reconcile: bool,
+    ) -> Result<TaskState, OrchestrationError> {
+        if self.state() != TaskState::Implementing {
+            return Err(OrchestrationError::Transition);
+        }
+        let result = (|| {
+            let (implementation, implemented) = port.finish_implementation()?;
+            if implementation == ImplementationOutcome::Blocked {
+                self.transition(
+                    TaskState::Blocked,
+                    SideEffectIntent::ReleaseOwnedResources,
+                    implemented,
+                )?;
+                return Ok(self.state());
+            }
+            self.transition(
+                TaskState::LocalVerification,
+                SideEffectIntent::RunLocalGates,
+                implemented,
+            )?;
+            self.run_verification(port, reconcile)
+        })();
+        let release = port.release();
+        match (result, release) {
+            (Err(primary), _) => Err(primary),
+            (Ok(state), Ok(_)) => Ok(state),
+            (Ok(_), Err(release)) => Err(release),
+        }
+    }
+
+    /// Restores an exact initial candidate and continues at local verification without replaying
+    /// implementation or commit creation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`OrchestrationError::Transition`] for an invalid correction limit.
+    pub fn recover_interrupted_initial_candidate(
+        run_id: RunId,
+        task_id: TaskId,
+        correction_limit: u16,
+    ) -> Result<Self, OrchestrationError> {
+        if correction_limit == 0 || correction_limit > 100 {
+            return Err(OrchestrationError::Transition);
+        }
+        Ok(Self {
+            machine: TaskMachine::recovered(run_id, task_id, TaskState::LocalVerification),
+            correction_limit,
+            correction_count: 0,
+        })
+    }
+
+    /// Reobserves an exact initial candidate and continues verification and completion.
+    ///
+    /// # Errors
+    ///
+    /// Returns a transition, port, verification, checkpoint, reconciliation, or release failure.
+    pub fn resume_interrupted_initial_candidate<P: WorkflowPort>(
+        &mut self,
+        port: &mut DurableWorkflowPort<'_, P>,
+        reconcile: bool,
+    ) -> Result<TaskState, OrchestrationError> {
+        if self.state() != TaskState::LocalVerification {
+            return Err(OrchestrationError::Transition);
+        }
+        let result = self.run_verification(port, reconcile);
+        let release = port.release();
+        match (result, release) {
+            (Err(primary), _) => Err(primary),
+            (Ok(state), Ok(_)) => Ok(state),
+            (Ok(_), Err(release)) => Err(release),
+        }
+    }
+
     /// Reobserves one exact interrupted correction and continues verification without replaying
     /// the correction intent, implementation, claim, or worktree creation.
     ///
@@ -1095,6 +1197,79 @@ mod tests {
 
     fn new_coordinator() -> OneUnitCoordinator {
         OneUnitCoordinator::new(RunId::new("run-1").unwrap(), TaskId::new("task-1").unwrap())
+    }
+
+    #[test]
+    fn interrupted_initial_session_and_candidate_resume_without_replaying_prior_effects() {
+        let run = RunId::new("run-initial-recovery").unwrap();
+        let task = TaskId::new("22.3.3.11").unwrap();
+
+        let root = state_root("initial-session");
+        let mut journal = Journal::open(&root, "initial-session-journal").unwrap();
+        let mut port = FakePort::default();
+        let mut durable = DurableWorkflowPort::new(
+            &mut port,
+            &mut journal,
+            RepositoryId::new("repo-initial").unwrap(),
+            run.clone(),
+            task.clone(),
+        );
+        let mut coordinator =
+            OneUnitCoordinator::recover_interrupted_implementation(run.clone(), task.clone(), 3)
+                .unwrap();
+        assert_eq!(
+            coordinator
+                .resume_interrupted_implementation(&mut durable, true)
+                .unwrap(),
+            TaskState::Complete
+        );
+        assert_eq!(
+            port.calls,
+            [
+                "implemented",
+                "local",
+                "review",
+                "final",
+                "checkpoint",
+                "complete",
+                "release"
+            ]
+        );
+        assert!(!port.calls.contains(&"claim"));
+        assert!(!port.calls.contains(&"start"));
+
+        let root = state_root("initial-candidate");
+        let mut journal = Journal::open(&root, "initial-candidate-journal").unwrap();
+        let mut port = FakePort::default();
+        let mut durable = DurableWorkflowPort::new(
+            &mut port,
+            &mut journal,
+            RepositoryId::new("repo-initial").unwrap(),
+            run.clone(),
+            task.clone(),
+        );
+        let mut coordinator =
+            OneUnitCoordinator::recover_interrupted_initial_candidate(run, task, 3).unwrap();
+        assert_eq!(
+            coordinator
+                .resume_interrupted_initial_candidate(&mut durable, true)
+                .unwrap(),
+            TaskState::Complete
+        );
+        assert_eq!(
+            port.calls,
+            [
+                "local",
+                "review",
+                "final",
+                "checkpoint",
+                "complete",
+                "release"
+            ]
+        );
+        assert!(!port.calls.contains(&"implemented"));
+        assert!(!port.calls.contains(&"claim"));
+        assert!(!port.calls.contains(&"start"));
     }
 
     fn state_root(label: &str) -> std::path::PathBuf {

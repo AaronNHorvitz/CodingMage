@@ -5,6 +5,7 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
+use codingmage_claude::ClaudeCompletionReport;
 use codingmage_contracts::{AttemptId, RepositoryId, RunId, TaskId, WorktreeId};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -21,6 +22,31 @@ pub(crate) enum CorrectionPhase {
     Prepared,
     ProviderBlocked,
     CommitObserved,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum InitialPhase {
+    Prepared,
+    SessionBound,
+    ReportObserved,
+    CandidateObserved,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct InitialCheckpoint {
+    pub schema_version: u16,
+    pub repository_id: RepositoryId,
+    pub run_id: RunId,
+    pub task_id: TaskId,
+    pub worktree_id: WorktreeId,
+    pub branch: String,
+    pub source_commit: String,
+    pub session_id: Option<AttemptId>,
+    pub phase: InitialPhase,
+    pub report: Option<ClaudeCompletionReport>,
+    pub candidate_commit: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -46,6 +72,138 @@ pub(crate) struct CorrectionCheckpoint {
 struct CheckpointEnvelope {
     checkpoint: CorrectionCheckpoint,
     checkpoint_sha256: String,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct InitialCheckpointEnvelope {
+    checkpoint: InitialCheckpoint,
+    checkpoint_sha256: String,
+}
+
+impl InitialCheckpoint {
+    pub(crate) fn new(
+        repository_id: RepositoryId,
+        run_id: RunId,
+        task_id: TaskId,
+        worktree_id: WorktreeId,
+        branch: String,
+        source_commit: String,
+    ) -> Self {
+        Self {
+            schema_version: SCHEMA_VERSION,
+            repository_id,
+            run_id,
+            task_id,
+            worktree_id,
+            branch,
+            source_commit,
+            session_id: None,
+            phase: InitialPhase::Prepared,
+            report: None,
+            candidate_commit: None,
+        }
+    }
+
+    pub(crate) fn path(run_root: &Path) -> PathBuf {
+        run_root.join("initial-checkpoint.json")
+    }
+
+    pub(crate) fn load(run_root: &Path) -> Result<Option<Self>, RuntimeError> {
+        let path = Self::path(run_root);
+        let metadata = match fs::symlink_metadata(&path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(_) => return Err(RuntimeError::State),
+        };
+        if !metadata.is_file()
+            || metadata.file_type().is_symlink()
+            || metadata.len() > MAX_CHECKPOINT_BYTES
+        {
+            return Err(RuntimeError::State);
+        }
+        let bytes = fs::read(path).map_err(|_| RuntimeError::State)?;
+        let envelope: InitialCheckpointEnvelope =
+            serde_json::from_slice(&bytes).map_err(|_| RuntimeError::State)?;
+        if envelope.checkpoint.schema_version != SCHEMA_VERSION {
+            return Err(RuntimeError::State);
+        }
+        let canonical =
+            serde_json::to_vec(&envelope.checkpoint).map_err(|_| RuntimeError::State)?;
+        if sha256_hex(&canonical) != envelope.checkpoint_sha256 {
+            return Err(RuntimeError::State);
+        }
+        Ok(Some(envelope.checkpoint))
+    }
+
+    pub(crate) fn persist(&self, run_root: &Path) -> Result<(), RuntimeError> {
+        private_directory(run_root)?;
+        let canonical = serde_json::to_vec(self).map_err(|_| RuntimeError::State)?;
+        let envelope = InitialCheckpointEnvelope {
+            checkpoint: self.clone(),
+            checkpoint_sha256: sha256_hex(&canonical),
+        };
+        let bytes = serde_json::to_vec_pretty(&envelope).map_err(|_| RuntimeError::State)?;
+        if u64::try_from(bytes.len()).map_err(|_| RuntimeError::State)? > MAX_CHECKPOINT_BYTES {
+            return Err(RuntimeError::State);
+        }
+        let temporary = run_root.join(format!(
+            ".initial-checkpoint.{}.{}.tmp",
+            std::process::id(),
+            NEXT_TEMPORARY.fetch_add(1, Ordering::Relaxed)
+        ));
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|_| RuntimeError::State)?;
+        set_file_private(&file)?;
+        file.write_all(&bytes)
+            .and_then(|()| file.sync_all())
+            .map_err(|_| RuntimeError::State)?;
+        fs::rename(temporary, Self::path(run_root)).map_err(|_| RuntimeError::State)?;
+        File::open(run_root)
+            .and_then(|directory| directory.sync_all())
+            .map_err(|_| RuntimeError::State)
+    }
+
+    pub(crate) fn validate(
+        &self,
+        repository_id: &RepositoryId,
+        run_id: &RunId,
+        task_id: &TaskId,
+        source_commit: &str,
+    ) -> Result<(), RuntimeError> {
+        if self.schema_version != SCHEMA_VERSION
+            || &self.repository_id != repository_id
+            || &self.run_id != run_id
+            || &self.task_id != task_id
+            || self.source_commit != source_commit
+            || self.phase == InitialPhase::Prepared
+                && (self.session_id.is_some()
+                    || self.report.is_some()
+                    || self.candidate_commit.is_some())
+            || self.phase == InitialPhase::SessionBound
+                && (self.session_id.is_none()
+                    || self.report.is_some()
+                    || self.candidate_commit.is_some())
+            || self.phase == InitialPhase::ReportObserved
+                && (self.session_id.is_none()
+                    || self.report.is_none()
+                    || self.candidate_commit.is_some())
+            || self.phase == InitialPhase::CandidateObserved
+                && (self.session_id.is_none()
+                    || self.report.is_none()
+                    || self.candidate_commit.is_none())
+            || self
+                .report
+                .as_ref()
+                .is_some_and(|report| report.validate().is_err())
+        {
+            return Err(RuntimeError::State);
+        }
+        Ok(())
+    }
 }
 
 impl CorrectionCheckpoint {
@@ -266,6 +424,76 @@ mod tests {
             AttemptId::new("123e4567-e89b-12d3-a456-426614174000").unwrap(),
             1,
         )
+    }
+
+    fn initial_checkpoint() -> InitialCheckpoint {
+        InitialCheckpoint::new(
+            RepositoryId::new("repo-1").unwrap(),
+            RunId::new("run-1").unwrap(),
+            TaskId::new("20.1.3.4").unwrap(),
+            WorktreeId::new("worktree-1").unwrap(),
+            "codingmage/task".to_owned(),
+            "a".repeat(40),
+        )
+    }
+
+    #[test]
+    fn initial_checkpoint_round_trips_and_every_identity_is_load_bearing() {
+        let root = root("initial-round-trip");
+        let mut checkpoint = initial_checkpoint();
+        checkpoint.persist(&root).unwrap();
+        assert_eq!(
+            InitialCheckpoint::load(&root).unwrap(),
+            Some(checkpoint.clone())
+        );
+        checkpoint.session_id =
+            Some(AttemptId::new("123e4567-e89b-12d3-a456-426614174000").unwrap());
+        checkpoint.phase = InitialPhase::SessionBound;
+        checkpoint.persist(&root).unwrap();
+        assert_eq!(
+            InitialCheckpoint::load(&root).unwrap(),
+            Some(checkpoint.clone())
+        );
+        checkpoint
+            .validate(
+                &checkpoint.repository_id,
+                &checkpoint.run_id,
+                &checkpoint.task_id,
+                &checkpoint.source_commit,
+            )
+            .unwrap();
+
+        for field in 0..7 {
+            let mut changed = checkpoint.clone();
+            match field {
+                0 => changed.repository_id = RepositoryId::new("repo-2").unwrap(),
+                1 => changed.run_id = RunId::new("run-2").unwrap(),
+                2 => changed.task_id = TaskId::new("20.1.3.5").unwrap(),
+                3 => changed.source_commit = "b".repeat(40),
+                4 => changed.session_id = None,
+                5 => changed.phase = InitialPhase::Prepared,
+                _ => changed.schema_version = 2,
+            }
+            assert!(
+                changed
+                    .validate(
+                        &checkpoint.repository_id,
+                        &checkpoint.run_id,
+                        &checkpoint.task_id,
+                        &checkpoint.source_commit,
+                    )
+                    .is_err()
+                    || changed.schema_version != SCHEMA_VERSION
+            );
+        }
+
+        let path = InitialCheckpoint::path(&root);
+        let mut bytes = fs::read(&path).unwrap();
+        let index = bytes.iter().position(|byte| *byte == b'a').unwrap();
+        bytes[index] = b'c';
+        fs::write(path, bytes).unwrap();
+        assert_eq!(InitialCheckpoint::load(&root), Err(RuntimeError::State));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

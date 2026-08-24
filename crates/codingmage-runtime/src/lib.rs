@@ -107,7 +107,7 @@ use campaign_state::{
     HumanDecisionProjectionReason, LeadRejectionReason, PendingIntegration,
     RejectedProposalProjection, ResumeValidationState, validate_private_campaign_state,
 };
-use correction_state::{CorrectionCheckpoint, CorrectionPhase};
+use correction_state::{CorrectionCheckpoint, CorrectionPhase, InitialCheckpoint, InitialPhase};
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 const MAX_SPEC_BYTES: u64 = 1024 * 1024;
@@ -3733,7 +3733,7 @@ fn run_one_with_progress_id_budget(
     result
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 fn run_one_observed_with_id(
     config: &Config,
     spec: RunSpec,
@@ -3768,7 +3768,26 @@ fn run_one_observed_with_id(
     let run_root_existed = run_root.exists();
     private_directory(&run_root)?;
     let correction_recovery = CorrectionCheckpoint::latest(&run_root)?;
-    if run_root_existed && correction_recovery.is_none() {
+    let mut initial_recovery = InitialCheckpoint::load(&run_root)?;
+    if let (Some(correction), Some(initial)) =
+        (correction_recovery.as_ref(), initial_recovery.as_ref())
+    {
+        initial.validate(
+            &authorization.identity().repository_id,
+            &run_id,
+            &task_id,
+            &inventory.head,
+        )?;
+        if initial.phase != InitialPhase::CandidateObserved
+            || initial.candidate_commit.as_deref() != Some(correction.parent_commit.as_str())
+            || initial.worktree_id != correction.worktree_id
+            || initial.branch != correction.branch
+        {
+            return Err(RuntimeError::State);
+        }
+        initial_recovery = None;
+    }
+    if run_root_existed && correction_recovery.is_none() && initial_recovery.is_none() {
         return Err(RuntimeError::State);
     }
     let process_root = run_root.join("processes");
@@ -3801,9 +3820,11 @@ fn run_one_observed_with_id(
         cancellation,
         external_context,
     };
-    let port = match correction_recovery.as_ref() {
-        Some(checkpoint) => ProductionWorkflowPort::recover_correction(inputs, checkpoint)?,
-        None => ProductionWorkflowPort::new(inputs),
+    let port = match (correction_recovery.as_ref(), initial_recovery.as_ref()) {
+        (Some(checkpoint), None) => ProductionWorkflowPort::recover_correction(inputs, checkpoint)?,
+        (None, Some(checkpoint)) => ProductionWorkflowPort::recover_initial(inputs, checkpoint)?,
+        (None, None) => ProductionWorkflowPort::new(inputs),
+        (Some(_), Some(_)) => return Err(RuntimeError::State),
     };
     let repository_id = port.authorization.identity().repository_id.clone();
     let completion_policy = port.spec.completion_policy;
@@ -3816,30 +3837,73 @@ fn run_one_observed_with_id(
             config.correction_limit,
         )
         .map_err(|_| RuntimeError::Orchestration)?
+    } else if initial_recovery
+        .as_ref()
+        .is_some_and(|checkpoint| checkpoint.phase == InitialPhase::CandidateObserved)
+    {
+        OneUnitCoordinator::recover_interrupted_initial_candidate(
+            run_id.clone(),
+            task_id.clone(),
+            config.correction_limit,
+        )
+        .map_err(|_| RuntimeError::Orchestration)?
+    } else if initial_recovery.is_some() {
+        OneUnitCoordinator::recover_interrupted_implementation(
+            run_id.clone(),
+            task_id.clone(),
+            config.correction_limit,
+        )
+        .map_err(|_| RuntimeError::Orchestration)?
     } else {
         OneUnitCoordinator::new(run_id.clone(), task_id.clone())
             .with_correction_limit(config.correction_limit)
             .map_err(|_| RuntimeError::Orchestration)?
     };
-    let result = {
-        let mut durable = DurableWorkflowPort::new(
-            &mut port,
-            &mut journal,
-            repository_id,
-            run_id.clone(),
-            task_id.clone(),
-        );
-        match (completion_policy, correction_recovery.is_some()) {
-            (CompletionPolicy::CandidateOnly, false) => coordinator.run_to_checkpoint(&mut durable),
-            (CompletionPolicy::CloseTask, false) => coordinator.run(&mut durable),
-            (CompletionPolicy::CandidateOnly, true) => {
-                coordinator.resume_interrupted_correction(&mut durable, false)
+    let result =
+        {
+            let mut durable = DurableWorkflowPort::new(
+                &mut port,
+                &mut journal,
+                repository_id,
+                run_id.clone(),
+                task_id.clone(),
+            );
+            match (
+                completion_policy,
+                correction_recovery.is_some(),
+                initial_recovery.is_some(),
+            ) {
+                (CompletionPolicy::CandidateOnly, false, false) => {
+                    coordinator.run_to_checkpoint(&mut durable)
+                }
+                (CompletionPolicy::CloseTask, false, false) => coordinator.run(&mut durable),
+                (CompletionPolicy::CandidateOnly, true, false) => {
+                    coordinator.resume_interrupted_correction(&mut durable, false)
+                }
+                (CompletionPolicy::CloseTask, true, false) => {
+                    coordinator.resume_interrupted_correction(&mut durable, true)
+                }
+                (CompletionPolicy::CandidateOnly, false, true) => {
+                    if initial_recovery.as_ref().is_some_and(|checkpoint| {
+                        checkpoint.phase == InitialPhase::CandidateObserved
+                    }) {
+                        coordinator.resume_interrupted_initial_candidate(&mut durable, false)
+                    } else {
+                        coordinator.resume_interrupted_implementation(&mut durable, false)
+                    }
+                }
+                (CompletionPolicy::CloseTask, false, true) => {
+                    if initial_recovery.as_ref().is_some_and(|checkpoint| {
+                        checkpoint.phase == InitialPhase::CandidateObserved
+                    }) {
+                        coordinator.resume_interrupted_initial_candidate(&mut durable, true)
+                    } else {
+                        coordinator.resume_interrupted_implementation(&mut durable, true)
+                    }
+                }
+                (_, true, true) => return Err(RuntimeError::State),
             }
-            (CompletionPolicy::CloseTask, true) => {
-                coordinator.resume_interrupted_correction(&mut durable, true)
-            }
-        }
-    };
+        };
     resolve_unit_outcome(result, port.inner.failure, |state| {
         port.inner.outcome(run_id, task_id, state)
     })
@@ -4002,6 +4066,8 @@ struct ProductionWorkflowPort<'a> {
     observed_correction_baseline: u16,
     utilization: RunUtilization,
     recovering_correction: bool,
+    recovering_initial: bool,
+    initial_checkpoint: Option<InitialCheckpoint>,
     failure: Option<RuntimeError>,
 }
 
@@ -4038,6 +4104,8 @@ impl<'a> ProductionWorkflowPort<'a> {
             observed_correction_baseline: 0,
             utilization: RunUtilization::default(),
             recovering_correction: false,
+            recovering_initial: false,
+            initial_checkpoint: None,
             failure: None,
         }
     }
@@ -4089,6 +4157,62 @@ impl<'a> ProductionWorkflowPort<'a> {
         port.correction_round = checkpoint.correction_round.saturating_sub(1);
         port.observed_correction_baseline = port.correction_round;
         port.recovering_correction = true;
+        Ok(port)
+    }
+
+    fn recover_initial(
+        inputs: ProductionInputs<'a>,
+        checkpoint: &InitialCheckpoint,
+    ) -> Result<Self, RuntimeError> {
+        checkpoint.validate(
+            &inputs.authorization.identity().repository_id,
+            &inputs.run_id,
+            &inputs.task_id,
+            &inputs.source_commit,
+        )?;
+        let worktree = OwnedWorktree::load(inputs.config, &checkpoint.worktree_id)
+            .map_err(|_| RuntimeError::Repository)?;
+        if worktree.manifest().branch != checkpoint.branch
+            || worktree.manifest().source_commit != checkpoint.source_commit
+        {
+            return Err(RuntimeError::Authority);
+        }
+        let mut port = Self::new(inputs);
+        port.lock = Some(
+            CoordinatorLock::acquire(
+                &port.config.state_root.join("locks"),
+                &port.authorization.identity().repository_id,
+                port.run_id.as_str(),
+            )
+            .map_err(|_| RuntimeError::Orchestration)?,
+        );
+        port.worktree = Some(worktree);
+        if checkpoint.phase == InitialPhase::CandidateObserved {
+            let commit = checkpoint
+                .candidate_commit
+                .as_deref()
+                .ok_or(RuntimeError::State)?;
+            port.candidate = Some(
+                reobserve_owned_commit(
+                    &port.authorization,
+                    port.worktree.as_ref().ok_or(RuntimeError::State)?,
+                    &port.source_commit,
+                    &port.spec.owned_paths,
+                )
+                .map_err(|_| RuntimeError::Repository)?,
+            );
+            if port
+                .candidate
+                .as_ref()
+                .map(|receipt| receipt.commit.as_str())
+                != Some(commit)
+            {
+                return Err(RuntimeError::State);
+            }
+            port.implementation.clone_from(&checkpoint.report);
+        }
+        port.recovering_initial = true;
+        port.initial_checkpoint = Some(checkpoint.clone());
         Ok(port)
     }
 
@@ -4383,16 +4507,68 @@ impl<'a> ProductionWorkflowPort<'a> {
                 owned.manifest().branch.clone(),
             )
         };
+        let agent_id = AgentId::new("claude-implementer").map_err(|_| OrchestrationError::Port)?;
+        if self.recovering_initial
+            && self
+                .initial_checkpoint
+                .as_ref()
+                .is_some_and(|checkpoint| checkpoint.phase == InitialPhase::ReportObserved)
+        {
+            return self
+                .initial_checkpoint
+                .as_ref()
+                .and_then(|checkpoint| checkpoint.report.clone())
+                .ok_or(OrchestrationError::DurableState);
+        }
+        let (session_id, resume) = if self.recovering_initial
+            && self
+                .initial_checkpoint
+                .as_ref()
+                .is_some_and(|checkpoint| checkpoint.phase == InitialPhase::SessionBound)
+        {
+            let checkpoint = self
+                .initial_checkpoint
+                .as_ref()
+                .ok_or(OrchestrationError::DurableState)?;
+            if checkpoint.phase != InitialPhase::SessionBound {
+                return Err(OrchestrationError::DurableState);
+            }
+            (
+                checkpoint
+                    .session_id
+                    .clone()
+                    .ok_or(OrchestrationError::DurableState)?,
+                true,
+            )
+        } else if self
+            .initial_checkpoint
+            .as_ref()
+            .is_some_and(|checkpoint| checkpoint.phase == InitialPhase::Prepared)
+        {
+            let session_id = generated_attempt_id().map_err(|_| OrchestrationError::Port)?;
+            let checkpoint = self
+                .initial_checkpoint
+                .as_mut()
+                .ok_or(OrchestrationError::DurableState)?;
+            checkpoint.session_id = Some(session_id.clone());
+            checkpoint.phase = InitialPhase::SessionBound;
+            checkpoint
+                .persist(&self.run_root)
+                .map_err(|_| OrchestrationError::DurableState)?;
+            (session_id, false)
+        } else {
+            return Err(OrchestrationError::DurableState);
+        };
         let session = ClaudeSession {
             run_id: self.run_id.clone(),
             task_id: self.task_id.clone(),
-            agent_id: AgentId::new("claude-implementer").map_err(|_| OrchestrationError::Port)?,
-            session_id: generated_attempt_id().map_err(|_| OrchestrationError::Port)?,
+            agent_id,
+            session_id,
             worktree,
             branch,
             source_commit,
         };
-        self.execute_claude_session(packet, &session, false)
+        self.execute_claude_session(packet, &session, resume)
     }
 
     fn execute_claude_session(
@@ -4451,7 +4627,9 @@ impl<'a> ProductionWorkflowPort<'a> {
             match execution.report {
                 Ok(report) => return Ok(report),
                 Err(ClaudeError::Session)
-                    if resume && attempt + 1 < CLAUDE_REPORT_ATTEMPT_LIMIT =>
+                    if resume
+                        && correction_round > 0
+                        && attempt + 1 < CLAUDE_REPORT_ATTEMPT_LIMIT =>
                 {
                     resume = false;
                 }
@@ -4916,6 +5094,19 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             self.failure = Some(RuntimeError::Reviewer(error));
             return Err(OrchestrationError::Port);
         }
+        let owned = self.worktree()?;
+        let checkpoint = InitialCheckpoint::new(
+            self.authorization.identity().repository_id.clone(),
+            self.run_id.clone(),
+            self.task_id.clone(),
+            owned.manifest().worktree_id.clone(),
+            owned.manifest().branch.clone(),
+            self.source_commit.clone(),
+        );
+        checkpoint
+            .persist(&self.run_root)
+            .map_err(|_| OrchestrationError::DurableState)?;
+        self.initial_checkpoint = Some(checkpoint);
         evidence_id("implementation-started")
     }
 
@@ -4924,6 +5115,21 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
     ) -> Result<(ImplementationOutcome, EvidenceId), OrchestrationError> {
         let report =
             self.execute_claude_packet(self.claude_packet(None), self.source_commit.clone())?;
+        if self
+            .initial_checkpoint
+            .as_ref()
+            .is_some_and(|checkpoint| checkpoint.phase != InitialPhase::ReportObserved)
+        {
+            let checkpoint = self
+                .initial_checkpoint
+                .as_mut()
+                .ok_or(OrchestrationError::DurableState)?;
+            checkpoint.phase = InitialPhase::ReportObserved;
+            checkpoint.report = Some(report.clone());
+            checkpoint
+                .persist(&self.run_root)
+                .map_err(|_| OrchestrationError::DurableState)?;
+        }
         if report.blocker_code.is_some() {
             self.implementation = Some(report);
             return Ok((
@@ -4968,6 +5174,15 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         let commit = receipt.commit.clone();
         self.implementation = Some(report);
         self.candidate = Some(receipt);
+        let checkpoint = self
+            .initial_checkpoint
+            .as_mut()
+            .ok_or(OrchestrationError::DurableState)?;
+        checkpoint.phase = InitialPhase::CandidateObserved;
+        checkpoint.candidate_commit = Some(commit.clone());
+        checkpoint
+            .persist(&self.run_root)
+            .map_err(|_| OrchestrationError::DurableState)?;
         self.observe_lifecycle(UnitLifecycleEvent::CandidateCommitted {
             commit,
             correction_round: 0,
