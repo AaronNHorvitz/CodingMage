@@ -1,7 +1,7 @@
 # Sprint 22 Campaign AC Human Review Packet
 
-Status: awaiting repository-owner inspection. This packet is source-free and does not constitute
-human approval.
+Status: approved by repository owner Aaron Horvitz on 2026-08-24. The approval is bound to the
+identities below and does not authorize publication, broader paths, or a public release.
 
 ## Review Boundary
 
@@ -61,13 +61,13 @@ same-session retry. It does not accept missing, extra, unowned, or changed repai
 The reviewer should confirm all of the following before closing Sub-task 22.3.3.6, AC 22.6, or
 Gate 22.3:
 
-- [ ] The hashes and target head above identify the reviewed execution.
-- [ ] Ten accepted blockers are not described as ten completed development tasks.
-- [ ] The active target and retained campaign-root worktree are clean and unchanged.
-- [ ] Provider pauses and retries did not duplicate an accepted outcome.
-- [ ] No candidate, task marker, protected branch, remote object, or publication effect changed.
-- [ ] Blocker-only evidence is acceptable for the serial campaign safety boundary.
-- [ ] This evidence does not by itself authorize parallelism, broader paths, remote publication, or
+- [x] The hashes and target head above identify the reviewed execution.
+- [x] Ten accepted blockers are not described as ten completed development tasks.
+- [x] The active target and retained campaign-root worktree are clean and unchanged.
+- [x] Provider pauses and retries did not duplicate an accepted outcome.
+- [x] No candidate, task marker, protected branch, remote object, or publication effect changed.
+- [x] Blocker-only evidence is acceptable for the serial campaign safety boundary.
+- [x] This evidence does not by itself authorize parallelism, broader paths, remote publication, or
   a public release.
 
 If any item is disputed, Gate 22.3 remains open and the discrepancy must be recorded before another
