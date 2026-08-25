@@ -48,4 +48,18 @@ Focused tests also passed for provider-timeout mapping, correction-checkpoint ro
 
 ## Limitations
 
-This record does not claim that the rebuilt installed binary or a fresh live controlled-target campaign has passed. Those claims remain open under Sub-task `26.1.3.6`. It also does not close the separately authorized sustained-soak, manual-fuzz, independent-review, package-signing, or external-platform gates.
+This record does not claim that a fresh live controlled-target campaign has passed. That claim remains open under Sub-task `26.1.3.6`. It also does not close the separately authorized sustained-soak, manual-fuzz, independent-review, package-signing, or external-platform gates.
+
+## Installed Candidate and Live Qualification Attempt
+
+After the implementation and evidence commits, the documented packager produced two matching locked release builds and installed the resulting archive through the rootless installer. Verification observed:
+
+- packaged source commit `3c2ac78e34684fa998be79798ce02191ea946639`;
+- archive SHA-256 `882c7deccd3d510064a6b13b2b205199ed7cea526c52a29c7eefd288a4d200d8`;
+- installed binary SHA-256 `7f12a9b512d1de47b2cb7e0d5a697db8cf9e73ff7a835a01a26346da030b4c53`;
+- `python3 scripts/install_release.py verify` and the installed `codingmage 0.1.0` version probe passed; and
+- the build manifest declared Linux-only evidence with credentials and runtime state absent.
+
+The installed candidate then passed `doctor` against a clean, exact controlled-target checkout with network, push, issues, pull requests, task merge, destination merge, and publication effects denied. Its supervised unit produced an isolated candidate, repaired one deterministic-gate finding, passed the complete configured gates, and reached independent immutable review. The subsequent review-correction provider invocation returned the closed local provider result `authentication_failed`; an exact retained-state rerun returned the same result before another repository effect. A separate fresh-state attempt using the newer installed provider executable also returned `authentication_failed` with zero input and output tokens.
+
+The active checkout remained clean at its original head, its task stayed open, and no controlled-target branch was integrated or published. The three-outcome unattended pilot was therefore not started. Reauthentication is an external operator prerequisite, so Sub-task `26.1.3.6`, Task `26.1.3`, and `AC 26.4` remain open.
