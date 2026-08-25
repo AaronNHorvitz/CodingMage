@@ -476,6 +476,14 @@ and the gates rerun. Codex review begins only after those gates pass. Gate and r
 share the configured correction limit; exhaustion retains the latest branch and returns a truthful
 `recoverable_failure` result.
 
+Correction-provider calls retain a 15-minute per-invocation deadline. If one times out after an
+exact correction checkpoint exists, CodingMage can resume only that same run, worktree, parent
+commit, correction round, and provider session, with no more than three bounded provider attempts.
+Every aggregate campaign limit remains in force. Exhaustion pauses as `provider_timeout`, leaves the
+task open, preserves the active checkout, and never advances the campaign head. Private correction
+checkpoints retain only content-minimized diagnostic identity and digest metadata; provider prose,
+source content, command output, credentials, and hidden reasoning are not persisted.
+
 The stream intentionally reports lifecycle activity rather than model prose or hidden reasoning.
 Paths, prompts, source text, changed filenames, command output, environment values, and credentials
 are never printed. This makes progress visible without turning the terminal into another source-code

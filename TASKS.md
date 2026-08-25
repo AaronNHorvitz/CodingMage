@@ -1383,6 +1383,13 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 26.1.2.3:** Add a complete first-run walkthrough from clean clone through local campaign, stop, resume, evidence inspection, and removal using synthetic data.
   - [ ] **Sub-task 26.1.2.4:** Verify every command, flag, configuration key, output example, link, Mermaid diagram, platform claim, and security statement against the release candidate.
   - [ ] **Sub-task 26.1.2.5:** Verify provenance, copyright, Apache-2.0 license, third-party notices, contribution policy, and private vulnerability-reporting instructions.
+- [ ] **Task 26.1.3 - Harden correction timeout recovery before source freeze**
+  - [ ] **Sub-task 26.1.3.1:** Classify bounded provider timeout separately from generic provider failure and attempt-limit exhaustion in campaign outcome, status, and recovery evidence.
+  - [ ] **Sub-task 26.1.3.2:** Resume only an integrity-verified prepared correction after timeout, using the same run, worktree, parent commit, correction round, and provider-session lineage while retaining the 15-minute per-invocation ceiling and the existing aggregate campaign limits.
+  - [ ] **Sub-task 26.1.3.3:** Persist a private content-minimized correction-diagnostic projection containing closed kind, bounded item identities, count, and digest without reviewer prose, source content, command output, credentials, or hidden reasoning.
+  - [ ] **Sub-task 26.1.3.4:** Bound each correction increment to at most four explicit findings, prohibit speculative redesign and temporary probe artifacts, and require a fresh cumulative review for any remaining finding.
+  - [ ] **Sub-task 26.1.3.5:** Verify timeout resume, repeated-timeout terminal classification, diagnostic mutation refusal, content minimization, exact task status, owned-process cleanup, active-checkout preservation, and retained-worktree recovery through focused and full local tests.
+  - [ ] **Sub-task 26.1.3.6:** Rebuild and install the verified binary, then pass a fresh supervised unit and three-outcome unattended AgentMage pilot before broader unattended operation.
 
 ### Story 26.2 - Reproducible Candidate and Installed Evidence
 
@@ -1408,6 +1415,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [ ] **AC 26.1:** Given the frozen source and evidence index, when release scope is reviewed, then every supported claim is implemented and tested and every unsupported claim is explicit.
 - [ ] **AC 26.2:** Given two clean builds and one installed artifact, when reproducibility and lifecycle tests run, then identities match and install, execution, upgrade, rollback, and removal behave exactly as documented.
 - [ ] **AC 26.3:** Given manual fuzzing and independent review, when findings are reconciled, then no blocking finding remains and every accepted residual risk is explicit.
+- [ ] **AC 26.4:** Given a correction-provider timeout, when campaign execution remains within its aggregate limits, then CodingMage resumes only the exact prepared correction or stops with a distinct timeout disposition while preserving repository and task truth.
 
 ### Sprint 26 Gate
 

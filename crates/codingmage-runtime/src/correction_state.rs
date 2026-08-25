@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeSet,
     fs::{self, File, OpenOptions},
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -22,6 +23,23 @@ pub(crate) enum CorrectionPhase {
     Prepared,
     ProviderBlocked,
     CommitObserved,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum CorrectionDiagnosticKind {
+    Gate,
+    Review,
+}
+
+/// Content-minimized identity of the diagnostics delegated to one correction increment.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct CorrectionDiagnosticProjection {
+    pub kind: CorrectionDiagnosticKind,
+    pub item_count: u16,
+    pub included_ids: Vec<String>,
+    pub content_sha256: String,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -62,6 +80,8 @@ pub(crate) struct CorrectionCheckpoint {
     pub parent_commit: String,
     pub session_id: AttemptId,
     pub correction_round: u16,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub diagnostic: Option<CorrectionDiagnosticProjection>,
     pub phase: CorrectionPhase,
     pub blocker_code: Option<String>,
     pub correction_commit: Option<String>,
@@ -234,6 +254,7 @@ impl CorrectionCheckpoint {
             parent_commit,
             session_id,
             correction_round,
+            diagnostic: None,
             phase: CorrectionPhase::Prepared,
             blocker_code: None,
             correction_commit: None,
@@ -312,6 +333,13 @@ impl CorrectionCheckpoint {
     }
 
     pub(crate) fn persist(&self, run_root: &Path) -> Result<(), RuntimeError> {
+        if self
+            .diagnostic
+            .as_ref()
+            .is_some_and(|diagnostic| diagnostic.validate().is_err())
+        {
+            return Err(RuntimeError::State);
+        }
         private_directory(run_root)?;
         let canonical = serde_json::to_vec(self).map_err(|_| RuntimeError::State)?;
         let envelope = CheckpointEnvelope {
@@ -363,6 +391,68 @@ impl CorrectionCheckpoint {
             || self.source_commit != source_commit
             || self.parent_commit != parent_commit
             || self.correction_round != correction_round
+            || self
+                .diagnostic
+                .as_ref()
+                .is_some_and(|diagnostic| diagnostic.validate().is_err())
+        {
+            return Err(RuntimeError::State);
+        }
+        Ok(())
+    }
+
+    pub(crate) fn bind_diagnostic(
+        &mut self,
+        diagnostic: CorrectionDiagnosticProjection,
+    ) -> Result<(), RuntimeError> {
+        diagnostic.validate()?;
+        match &self.diagnostic {
+            Some(existing) if existing != &diagnostic => Err(RuntimeError::State),
+            Some(_) => Ok(()),
+            None => {
+                self.diagnostic = Some(diagnostic);
+                Ok(())
+            }
+        }
+    }
+}
+
+impl CorrectionDiagnosticProjection {
+    pub(crate) fn new(
+        kind: CorrectionDiagnosticKind,
+        item_count: usize,
+        included_ids: Vec<String>,
+        content: &[u8],
+    ) -> Result<Self, RuntimeError> {
+        let projection = Self {
+            kind,
+            item_count: u16::try_from(item_count).map_err(|_| RuntimeError::State)?,
+            included_ids,
+            content_sha256: sha256_hex(content),
+        };
+        projection.validate()?;
+        Ok(projection)
+    }
+
+    fn validate(&self) -> Result<(), RuntimeError> {
+        let unique = self.included_ids.iter().collect::<BTreeSet<_>>();
+        if self.item_count == 0
+            || self.included_ids.is_empty()
+            || self.included_ids.len() > 4
+            || usize::from(self.item_count) < self.included_ids.len()
+            || unique.len() != self.included_ids.len()
+            || self.included_ids.iter().any(|id| {
+                id.is_empty()
+                    || id.len() > 128
+                    || !id.bytes().all(|byte| {
+                        byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.')
+                    })
+            })
+            || self.content_sha256.len() != 64
+            || !self
+                .content_sha256
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
         {
             return Err(RuntimeError::State);
         }
@@ -552,6 +642,56 @@ mod tests {
             CorrectionCheckpoint::load(&root, 1),
             Err(RuntimeError::State)
         );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn diagnostic_projection_is_private_content_minimized_and_load_bearing() {
+        let root = root("diagnostic-projection");
+        let secret_prose = b"SECRET reviewer prose and source content must not persist";
+        let projection = CorrectionDiagnosticProjection::new(
+            CorrectionDiagnosticKind::Review,
+            6,
+            vec![
+                "FIX-1".to_owned(),
+                "FIX-2".to_owned(),
+                "FIX-3".to_owned(),
+                "FIX-4".to_owned(),
+            ],
+            secret_prose,
+        )
+        .unwrap();
+        let mut checkpoint = checkpoint();
+        checkpoint.bind_diagnostic(projection.clone()).unwrap();
+        checkpoint.persist(&root).unwrap();
+
+        let bytes = fs::read(CorrectionCheckpoint::path(&root, 1)).unwrap();
+        assert!(
+            !bytes
+                .windows(secret_prose.len())
+                .any(|window| window == secret_prose)
+        );
+        let mut loaded = CorrectionCheckpoint::load(&root, 1).unwrap().unwrap();
+        assert_eq!(loaded.diagnostic, Some(projection.clone()));
+        assert_eq!(loaded.bind_diagnostic(projection.clone()), Ok(()));
+
+        let conflicting = CorrectionDiagnosticProjection::new(
+            CorrectionDiagnosticKind::Review,
+            1,
+            vec!["OTHER-1".to_owned()],
+            b"other",
+        )
+        .unwrap();
+        assert_eq!(
+            loaded.clone().bind_diagnostic(conflicting),
+            Err(RuntimeError::State)
+        );
+
+        let mut malformed = projection;
+        malformed.included_ids.push("FIX-1".to_owned());
+        let mut invalid = checkpoint;
+        invalid.diagnostic = Some(malformed);
+        assert_eq!(invalid.persist(&root), Err(RuntimeError::State));
         fs::remove_dir_all(root).unwrap();
     }
 

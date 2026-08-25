@@ -107,6 +107,21 @@ coordinator's changed-path verification.
 Initial implementation invocations retain the adapter's one-hour maximum. Correction invocations
 have a separate 15-minute ceiling, so one stalled correction cannot occupy a campaign indefinitely;
 timeout remains a noncompletion and never weakens path, gate, or review requirements.
+When that ceiling expires after an integrity-verified correction checkpoint exists, the campaign
+may resume only the same run, worktree, parent commit, correction round, and Claude session. Each
+resumed invocation retains the same 15-minute ceiling, the campaign provider-attempt limit remains
+three, and every aggregate process, output, storage, correction, and elapsed-time ceiling still
+applies. A timeout without that exact correction lineage, or exhaustion of the bounded retries,
+pauses with stop reason `provider_timeout` and blocker
+`codingmage.campaign.unit_provider_timeout`; it is not reported as generic attempt exhaustion.
+
+Every correction checkpoint may include a private content-minimized diagnostic projection. The
+projection records only `gate` or `review`, the total item count, at most four closed item IDs, and
+a digest of the delegated correction context. Reviewer prose, source content, command output,
+credentials, and hidden reasoning remain absent. One correction invocation receives no more than
+four review findings; a fresh cumulative review must surface any remaining finding. Correction
+instructions prohibit speculative redesign and require interrupted sessions to remove temporary
+probe or scratch artifacts before reporting readiness.
 
 ## Invocation
 
@@ -285,6 +300,8 @@ Invalid or ambiguous lead ownership roots pause before implementation with
 claimed-path mismatch blocks the campaign with `codingmage.campaign.unit_repository_boundary`.
 Deterministic verification and provider failures pause with
 `codingmage.campaign.unit_verification_failure` and `codingmage.campaign.unit_provider_failure`;
+an exhausted provider deadline instead pauses distinctly with
+`codingmage.campaign.unit_provider_timeout` and stop reason `provider_timeout`;
 invalid provider profiles, session or review bindings, and bounded work or review packets block with
 their role-specific `codingmage.campaign.unit_implementer_*` or
 `codingmage.campaign.unit_reviewer_*` diagnostic. These pre-spawn errors are retained before the

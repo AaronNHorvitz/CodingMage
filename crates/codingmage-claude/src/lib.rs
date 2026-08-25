@@ -823,6 +823,8 @@ fn classify_provider_error(subtype: &str, api_status: Option<u64>) -> ClaudeErro
         ClaudeError::Authentication
     } else if subtype.contains("context") || subtype.contains("max_turn") {
         ClaudeError::ContextExhausted
+    } else if subtype.contains("timeout") || subtype.contains("timed_out") {
+        ClaudeError::Timeout
     } else if subtype.contains("session") || subtype.contains("resume") {
         ClaudeError::Session
     } else {
@@ -1318,6 +1320,12 @@ mod tests {
         assert_eq!(
             parse_result(context.to_string().as_bytes()),
             Err(ClaudeError::ContextExhausted)
+        );
+        let timeout =
+            serde_json::json!({"type": "result", "is_error": true, "subtype": "request_timeout"});
+        assert_eq!(
+            parse_result(timeout.to_string().as_bytes()),
+            Err(ClaudeError::Timeout)
         );
         let session =
             serde_json::json!({"type": "result", "is_error": true, "subtype": "session_not_found"});

@@ -76,6 +76,12 @@ authorized implementation pod. Durable records retain hashes, outcomes, sizes, a
 the diagnostic text. A correction cannot change the task, path lease, provider authority, or
 completion policy. The total gate-and-review correction count is bounded per task.
 
+One correction increment contains at most four explicit review findings. Its private checkpoint
+stores only the diagnostic family, total count, included closed IDs, and context digest. A provider
+timeout may resume only when that checkpoint and its exact run, worktree, parent commit, correction
+round, and session lineage revalidate. The per-invocation deadline remains unchanged on resume;
+repeated timeout ends with a distinct timeout disposition and no task or campaign-head advancement.
+
 After every correction:
 
 1. CodingMage inventories changed paths.
