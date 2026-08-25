@@ -1850,6 +1850,241 @@ profiles = ["configured-gates"]
 
 #[test]
 #[allow(clippy::too_many_lines)]
+fn serial_campaign_retries_review_without_replaying_implementation() {
+    let fixture = Fixture::new();
+    let target = fixture.root.join("target");
+    fs::create_dir(target.join("src")).unwrap();
+    fs::write(target.join("src/lib.rs"), "pub fn value() -> u8 { 1 }\n").unwrap();
+    git(&target, &["add", "src/lib.rs"]);
+    git(&target, &["commit", "-m", "add review retry fixture"]);
+    let original_head = git_output(&target, &["rev-parse", "HEAD"]);
+    let original_tasks = fs::read(target.join("TASKS.md")).unwrap();
+    let original_source = fs::read(target.join("src/lib.rs")).unwrap();
+
+    let claude = fixture.executable(
+        "review-retry-claude",
+        r#"#!/usr/bin/python3
+import json, sys
+from pathlib import Path
+if "--version" in sys.argv:
+    print("2.1.136 (Claude Code)")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
+    raise SystemExit(0)
+log = Path(__file__).with_suffix(".log")
+with log.open("a", encoding="utf-8") as stream:
+    stream.write("implementation\n")
+path = Path("src/lib.rs")
+assert "{ 1 }" in path.read_text(encoding="utf-8")
+path.write_text("pub fn value() -> u8 { 2 }\n", encoding="utf-8")
+print(json.dumps({
+    "type": "result", "is_error": False,
+    "structured_output": {
+        "changed_paths": ["src/lib.rs"], "tests": [], "commit": None,
+        "ready_for_commit": True, "limitations": [], "blocker_code": None
+    }
+}))
+"#,
+    );
+    let codex = fixture.executable(
+        "review-retry-codex",
+        r#"#!/usr/bin/python3
+import json, re, sys
+from pathlib import Path
+if "--version" in sys.argv:
+    print("codex-cli 0.144.5")
+    raise SystemExit(0)
+if "--help" in sys.argv and "resume" in sys.argv:
+    print("SESSION_ID --json --output-schema --model --ignore-user-config")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print("Run Codex non-interactively --json --output-schema resume --model read-only --ignore-user-config")
+    raise SystemExit(0)
+packet = sys.stdin.read()
+if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
+    campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
+    head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
+    digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
+    task = re.search(r"- id=([0-9.]+)", packet).group(1)
+    report = {
+        "campaign_id": campaign_id, "campaign_head": head, "task_source_sha256": digest,
+        "disposition": "propose",
+        "proposals": [{
+            "task_id": task, "dependencies": [], "owned_paths": ["src"],
+            "gate_tiers": ["focused"], "test_resources": ["rust-tests"],
+            "expected_artifacts": ["src/lib.rs"], "risk": "routine",
+            "rationale_summary": "The supplied task is dependency-ready and path-bounded."
+        }],
+        "blocked": None, "deferred": None, "human_decision": None
+    }
+else:
+    target = re.search(r"Target commit: ([0-9a-f]{40,64})", packet).group(1)
+    log = Path(__file__).with_suffix(".log")
+    calls = log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+    with log.open("a", encoding="utf-8") as stream:
+        stream.write(target + "\n")
+    if not calls:
+        print(json.dumps({"type": "turn.failed", "error": {"message": "provider unavailable"}}))
+        raise SystemExit(0)
+    base = re.search(r"Base commit: ([0-9a-f]{40,64})", packet).group(1)
+    report = {
+        "verdict": "pass", "base_commit": base, "target_commit": target,
+        "findings": [], "blocker_code": None
+    }
+print(json.dumps({"type": "thread.started", "thread_id": "123e4567-e89b-12d3-a456-426614174000"}))
+print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps(report)}}))
+print(json.dumps({"type": "turn.completed"}))
+"#,
+    );
+    let gate = fixture.executable(
+        "review-retry-gate",
+        r#"#!/usr/bin/python3
+from pathlib import Path
+log = Path(__file__).with_suffix(".log")
+with log.open("a", encoding="utf-8") as stream:
+    stream.write("gate\n")
+assert "{ 2 }" in Path("src/lib.rs").read_text(encoding="utf-8")
+"#,
+    );
+    let config = fixture.root.join("config/review-retry-campaign.toml");
+    let scratch = fixture.root.join("review-retry-scratch");
+    let state = fixture.root.join("review-retry-state");
+    assert!(
+        Fixture::command(&[
+            "init",
+            "--repo",
+            target.to_str().unwrap(),
+            "--config",
+            config.to_str().unwrap(),
+            "--scratch",
+            scratch.to_str().unwrap(),
+            "--state",
+            state.to_str().unwrap(),
+        ])
+        .status
+        .success()
+    );
+    let configured = fs::read_to_string(&config).unwrap();
+    fs::write(
+        &config,
+        configured.replace("/usr/bin/git", gate.to_str().unwrap()),
+    )
+    .unwrap();
+    let doctor = Fixture::command(&["doctor", "--config", config.to_str().unwrap()]);
+    let diagnosis: serde_json::Value = serde_json::from_slice(&doctor.stdout).unwrap();
+    let campaign = fixture.root.join("review-retry-campaign.toml");
+    fs::write(
+        &campaign,
+        format!(
+            r#"version = 3
+campaign_id = "review-retry-campaign"
+repository_id = "{}"
+repository_path = "{}"
+initial_commit = "{}"
+task_source_sha256 = "{}"
+operator_authorization_sha256 = "{}"
+max_parallel_pods = 1
+max_units = 1
+implementer_authentication = "existing_login"
+campaign_branch = "codingmage/review-retry-campaign"
+allowed_paths = ["src"]
+denied_paths = []
+protected_branches = ["main"]
+publication = "local_only"
+
+[limits]
+provider_attempts = 1000
+malformed_report_repairs = 100
+correction_rounds = 100
+process_invocations = 10000
+output_bytes = 1073741824
+retained_state_bytes = 1073741824
+execution_elapsed_ms = 86400000
+
+[team_lead]
+executable = "{}"
+model = "fixture-lead"
+effort = "high"
+
+[implementer]
+executable = "{}"
+model = "fixture-implementer"
+effort = "high"
+
+[reviewer]
+executable = "{}"
+model = "fixture-reviewer"
+effort = "high"
+
+[[gate_tiers]]
+name = "focused"
+profiles = ["configured-gates"]
+"#,
+            diagnosis["repository_id"].as_str().unwrap(),
+            target.display(),
+            diagnosis["head"].as_str().unwrap(),
+            diagnosis["task_source_sha256"].as_str().unwrap(),
+            "a".repeat(64),
+            codex.display(),
+            claude.display(),
+            codex.display(),
+        ),
+    )
+    .unwrap();
+
+    let run = Fixture::command(&[
+        "campaign",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(
+        run.status.success(),
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&run.stderr),
+        String::from_utf8_lossy(&run.stdout)
+    );
+    let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
+    assert_eq!(outcome["state"], "complete", "outcome={outcome}");
+    assert_eq!(outcome["completed_units"], 1, "outcome={outcome}");
+    assert_eq!(
+        fs::read_to_string(fixture.root.join("review-retry-claude.log"))
+            .unwrap()
+            .lines()
+            .count(),
+        1
+    );
+    let reviews = fs::read_to_string(fixture.root.join("review-retry-codex.log")).unwrap();
+    let reviews = reviews.lines().collect::<Vec<_>>();
+    assert_eq!(reviews.len(), 2);
+    assert_eq!(reviews[0], reviews[1]);
+    assert_eq!(
+        fs::read_to_string(fixture.root.join("review-retry-gate.log"))
+            .unwrap()
+            .lines()
+            .count(),
+        3
+    );
+    let progress = String::from_utf8(run.stderr).unwrap();
+    assert_eq!(progress.matches("implementing the bounded task").count(), 1);
+    assert_eq!(
+        progress
+            .matches("reviewing the immutable candidate")
+            .count(),
+        2
+    );
+    assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
+    assert_eq!(fs::read(target.join("TASKS.md")).unwrap(), original_tasks);
+    assert_eq!(
+        fs::read(target.join("src/lib.rs")).unwrap(),
+        original_source
+    );
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
 fn serial_campaign_reports_repeated_correction_timeout_distinctly() {
     let fixture = Fixture::new();
     let target = fixture.root.join("target");

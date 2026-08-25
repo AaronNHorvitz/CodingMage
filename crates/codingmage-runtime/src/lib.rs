@@ -2751,7 +2751,13 @@ pub fn run_serial_campaign_with_progress(
                 {
                     provider_attempt = provider_attempt.saturating_add(1);
                     let failed_run_root = pod_state.join("runs").join(unit_run_id.as_str());
-                    if CorrectionCheckpoint::latest(&failed_run_root)?.is_none() {
+                    let correction_recovery =
+                        CorrectionCheckpoint::latest(&failed_run_root)?.is_some();
+                    let candidate_review_recovery = retryable_candidate_review_failure(error)
+                        && InitialCheckpoint::load(&failed_run_root)?.is_some_and(|checkpoint| {
+                            checkpoint.phase == InitialPhase::CandidateObserved
+                        });
+                    if !correction_recovery && !candidate_review_recovery {
                         unit_run_id = generated_run_id()?;
                         checkpoint
                             .active_unit
@@ -3190,7 +3196,16 @@ const fn retryable_campaign_provider_failure(error: RuntimeError) -> bool {
     matches!(
         error,
         RuntimeError::Implementer(ClaudeError::Provider | ClaudeError::Session)
-            | RuntimeError::Reviewer(CodexError::Provider | CodexError::Thread)
+            | RuntimeError::Reviewer(
+                CodexError::Provider | CodexError::Thread | CodexError::Timeout
+            )
+    )
+}
+
+const fn retryable_candidate_review_failure(error: RuntimeError) -> bool {
+    matches!(
+        error,
+        RuntimeError::Reviewer(CodexError::Provider | CodexError::Thread | CodexError::Timeout)
     )
 }
 
@@ -5207,7 +5222,7 @@ impl<'a> ProductionWorkflowPort<'a> {
         GateRegistry::new(entries).map_err(|_| OrchestrationError::Port)
     }
 
-    fn retain_correction_worktree_for_provider_retry(&self) -> bool {
+    fn retain_worktree_for_provider_retry(&self) -> bool {
         if !self.failure.is_some_and(|error| {
             retryable_campaign_provider_failure(error)
                 || error == RuntimeError::Implementer(ClaudeError::Timeout)
@@ -5218,10 +5233,41 @@ impl<'a> ProductionWorkflowPort<'a> {
         else {
             return false;
         };
-        let Ok(Some(checkpoint)) = CorrectionCheckpoint::latest(&self.run_root) else {
+        match CorrectionCheckpoint::latest(&self.run_root) {
+            Ok(Some(checkpoint)) => {
+                if checkpoint
+                    .validate(
+                        &self.authorization.identity().repository_id,
+                        &self.run_id,
+                        &self.task_id,
+                        &owned.manifest().worktree_id,
+                        &owned.manifest().branch,
+                        &self.source_commit,
+                        &checkpoint.parent_commit,
+                        checkpoint.correction_round,
+                    )
+                    .is_err()
+                {
+                    return false;
+                }
+                return match checkpoint.phase {
+                    CorrectionPhase::Prepared => checkpoint.parent_commit == candidate.commit,
+                    CorrectionPhase::CommitObserved => {
+                        checkpoint.correction_commit.as_deref() == Some(candidate.commit.as_str())
+                    }
+                    CorrectionPhase::ProviderBlocked => false,
+                };
+            }
+            Ok(None) => {}
+            Err(_) => return false,
+        }
+        if !self.failure.is_some_and(retryable_candidate_review_failure) {
+            return false;
+        }
+        let Ok(Some(checkpoint)) = InitialCheckpoint::load(&self.run_root) else {
             return false;
         };
-        if checkpoint
+        checkpoint
             .validate(
                 &self.authorization.identity().repository_id,
                 &self.run_id,
@@ -5229,20 +5275,10 @@ impl<'a> ProductionWorkflowPort<'a> {
                 &owned.manifest().worktree_id,
                 &owned.manifest().branch,
                 &self.source_commit,
-                &checkpoint.parent_commit,
-                checkpoint.correction_round,
             )
-            .is_err()
-        {
-            return false;
-        }
-        match checkpoint.phase {
-            CorrectionPhase::Prepared => checkpoint.parent_commit == candidate.commit,
-            CorrectionPhase::CommitObserved => {
-                checkpoint.correction_commit.as_deref() == Some(candidate.commit.as_str())
-            }
-            CorrectionPhase::ProviderBlocked => false,
-        }
+            .is_ok()
+            && checkpoint.phase == InitialPhase::CandidateObserved
+            && checkpoint.candidate_commit.as_deref() == Some(candidate.commit.as_str())
     }
 }
 
@@ -5712,9 +5748,9 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
     }
 
     fn release(&mut self) -> Result<EvidenceId, OrchestrationError> {
-        if self.retain_correction_worktree_for_provider_retry() {
+        if self.retain_worktree_for_provider_retry() {
             self.lock = None;
-            return evidence_id("correction-worktree-retained-for-provider-retry");
+            return evidence_id("worktree-retained-for-provider-retry");
         }
         match self.worktree_retention {
             WorktreeRetention::Blocked => {
@@ -6807,8 +6843,16 @@ effort = "high"
             RuntimeError::Implementer(ClaudeError::Session),
             RuntimeError::Reviewer(CodexError::Provider),
             RuntimeError::Reviewer(CodexError::Thread),
+            RuntimeError::Reviewer(CodexError::Timeout),
         ] {
             assert!(retryable_campaign_provider_failure(transient));
+        }
+        for retryable_review in [
+            RuntimeError::Reviewer(CodexError::Provider),
+            RuntimeError::Reviewer(CodexError::Thread),
+            RuntimeError::Reviewer(CodexError::Timeout),
+        ] {
+            assert!(retryable_candidate_review_failure(retryable_review));
         }
         for terminal in [
             RuntimeError::Implementer(ClaudeError::Quota),
