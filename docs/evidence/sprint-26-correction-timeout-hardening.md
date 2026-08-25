@@ -2,9 +2,9 @@
 
 **Date:** 2026-08-25
 
-**Implementation commits:** `b5d06ce999e1a337dc396a42e341e17d8350729c`, `300822f8c83ee5144150848a15227c2eae9f96dc`
+**Implementation commits:** `b5d06ce999e1a337dc396a42e341e17d8350729c`, `300822f8c83ee5144150848a15227c2eae9f96dc`, `9b21b2f32012bf04a8b71a83c0087f6555aba2f6`
 
-**Scope:** Sub-tasks `26.1.3.1` through `26.1.3.5` and `26.1.3.7`
+**Scope:** Sub-tasks `26.1.3.1` through `26.1.3.5`, `26.1.3.7`, and `26.1.3.8`
 
 ## Claim
 
@@ -13,6 +13,8 @@ CodingMage now distinguishes a bounded correction-provider timeout from generic 
 The durable checkpoint stores only a closed diagnostic kind, the total item count, at most four bounded item identities, and a SHA-256 digest. It excludes reviewer prose, repository content, command output, credentials, and model reasoning. Correction prompts limit each increment to four explicit findings and prohibit speculative redesign, new dependencies, and temporary probe artifacts.
 
 CodingMage also preserves an integrity-verified initial candidate when a fresh read-only senior review returns a transient provider, thread, or timeout failure. A bounded retry keeps the same run and owned worktree, validates the initial checkpoint and candidate identity, reruns deterministic gates, and starts a fresh review against the same immutable commit. It does not replay the implementation provider. A malformed correction checkpoint prevents retention rather than falling through to initial-candidate recovery.
+
+Provider retry accounting is scoped by durable stage identity. Initial implementation, one exact correction checkpoint, and one exact immutable review candidate each retain an independent three-attempt ceiling. Correction scope binds run, round, and parent commit; review scope binds run and candidate commit. Moving to another scope resets only that local three-attempt counter. Persisted aggregate provider-attempt, correction-round, process, output, retained-state, and elapsed-time limits remain unchanged and continue to cap the complete campaign.
 
 ## Verification
 
@@ -39,7 +41,7 @@ Observed results:
 
 Focused tests also passed for provider-timeout mapping, correction-checkpoint round trips and mutation refusal, content minimization, exact correction resume without implementation replay, and terminal classification after three repeated correction timeouts.
 
-The binary-level `serial_campaign_retries_review_without_replaying_implementation` fixture additionally proved one implementation invocation, two senior reviews bound to the identical candidate commit, deterministic gates before both reviews, final integration verification, one completed isolated campaign unit, and byte-for-byte preservation of the active checkout and task source.
+The binary-level `serial_campaign_scopes_provider_retries_without_replaying_implementation` fixture additionally proved one failed initial provider call, one successful implementation, two failed senior reviews, a third successful review bound to the identical candidate commit, deterministic gates before every review, final integration verification, one completed isolated campaign unit, and byte-for-byte preservation of the active checkout and task source.
 
 ## Proven Boundaries
 
@@ -52,6 +54,7 @@ The binary-level `serial_campaign_retries_review_without_replaying_implementatio
 - Transient initial-candidate review recovery applies only to provider, thread, and timeout failures after a valid `CandidateObserved` checkpoint exists.
 - Each retry revalidates the durable identities and immutable candidate and reruns gates before opening a fresh read-only reviewer session.
 - Implementer provider failures without a valid correction checkpoint continue to restart the unit with a fresh run rather than adopting partial state.
+- One stage cannot consume another stage's local retry allowance, but all attempts still count against persisted aggregate campaign limits.
 
 ## Limitations
 
@@ -70,3 +73,20 @@ After the implementation and evidence commits, the documented packager produced 
 The installed candidate then passed `doctor` against a clean, exact controlled-target checkout with network, push, issues, pull requests, task merge, destination merge, and publication effects denied. Its supervised unit produced an isolated candidate, repaired one deterministic-gate finding, passed the complete configured gates, and reached independent immutable review. The subsequent review-correction provider invocation returned the closed local provider result `authentication_failed`; an exact retained-state rerun returned the same result before another repository effect. A separate fresh-state attempt using the newer installed provider executable also returned `authentication_failed` with zero input and output tokens.
 
 The active checkout remained clean at its original head, its task stayed open, and no controlled-target branch was integrated or published. The three-outcome unattended pilot was therefore not started. Reauthentication is an external operator prerequisite, so Sub-task `26.1.3.6`, Task `26.1.3`, and `AC 26.4` remain open.
+
+## Authenticated Reviewer-Recovery Qualification
+
+After provider authentication was restored, the package from source commit `df6ae38f77fd24fc59ad261cb27c939be44bc385` installed and verified with archive SHA-256 `fed7f927f2c47581e83437af3ebb9e6cd479d28cb0f1828a89986771283867c9` and installed-binary SHA-256 `749f0c2a51d3d97da37c1a72104a7d43cf638e2017b49f9af8f3e504976d2724`.
+
+A fresh supervised `1.2.1.2` unit completed initial implementation, repaired a deterministic-gate finding, passed all configured gates, received a valid changes-required senior review, and then stopped safely when the review-correction provider returned a transient failure. The active checkout remained unchanged and the task remained open.
+
+Two byte-identical source-free campaign preflights then passed with SHA-256 `2ccc9fe1710305738ecbc85b53f241d6f23e881cc4ca35dac973247c449bf007`. The fresh one-pod local-only campaign observed:
+
+- one transient initial-implementation failure followed by a clean whole-unit restart;
+- one valid candidate after the second implementation, two deterministic-gate corrections, and a fully green gate set;
+- one transient senior-review failure after the immutable candidate was green;
+- retention and integrity revalidation of the same run, worktree, correction lineage, and candidate without implementation replay;
+- a complete deterministic-gate rerun followed by a fresh read-only senior review; and
+- a second transient senior-review failure, after which the campaign paused with `attempt_limit` and `codingmage.campaign.provider_unavailable`, zero accepted units, unchanged campaign head, unchanged active checkout, and an open task.
+
+That run proved Sub-task `26.1.3.7` but also showed that one initial-stage failure consumed one of the unit-wide three provider attempts, leaving only two review attempts. Commit `9b21b2f32012bf04a8b71a83c0087f6555aba2f6` corrects that limitation with checkpoint-scoped local ceilings while preserving aggregate campaign limits. A new installed-candidate campaign remains required before Sub-task `26.1.3.6` can close.
