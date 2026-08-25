@@ -1390,6 +1390,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 26.1.3.4:** Bound each correction increment to at most four explicit findings, prohibit speculative redesign and temporary probe artifacts, and require a fresh cumulative review for any remaining finding. See `docs/evidence/sprint-26-correction-timeout-hardening.md`.
   - [x] **Sub-task 26.1.3.5:** Verify timeout resume, repeated-timeout terminal classification, diagnostic mutation refusal, content minimization, exact task status, owned-process cleanup, active-checkout preservation, and retained-worktree recovery through focused and full local tests. See `docs/evidence/sprint-26-correction-timeout-hardening.md`.
   - [ ] **Sub-task 26.1.3.6:** Rebuild and install the verified binary, then pass a fresh supervised unit and three-outcome unattended controlled-target pilot before broader unattended operation.
+  - [x] **Sub-task 26.1.3.7:** Preserve an integrity-verified immutable candidate across a transient senior-review provider, thread, or timeout failure; rerun deterministic gates and retry a fresh read-only review against the exact candidate without replaying implementation, changing the active checkout, or advancing task state before review passes. See `docs/evidence/sprint-26-correction-timeout-hardening.md`.
 
 ### Story 26.2 - Reproducible Candidate and Installed Evidence
 

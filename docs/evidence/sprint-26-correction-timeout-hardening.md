@@ -2,15 +2,17 @@
 
 **Date:** 2026-08-25
 
-**Implementation commit:** `b5d06ce999e1a337dc396a42e341e17d8350729c`
+**Implementation commits:** `b5d06ce999e1a337dc396a42e341e17d8350729c`, `300822f8c83ee5144150848a15227c2eae9f96dc`
 
-**Scope:** Sub-tasks `26.1.3.1` through `26.1.3.5`
+**Scope:** Sub-tasks `26.1.3.1` through `26.1.3.5` and `26.1.3.7`
 
 ## Claim
 
 CodingMage now distinguishes a bounded correction-provider timeout from generic provider failure and attempt-limit exhaustion. While campaign authority remains available, it may resume only the latest integrity-verified prepared correction with the same run, worktree, parent commit, correction round, and provider-session lineage. Repeated timeouts stop with `provider_timeout` and blocker `codingmage.campaign.unit_provider_timeout`.
 
 The durable checkpoint stores only a closed diagnostic kind, the total item count, at most four bounded item identities, and a SHA-256 digest. It excludes reviewer prose, repository content, command output, credentials, and model reasoning. Correction prompts limit each increment to four explicit findings and prohibit speculative redesign, new dependencies, and temporary probe artifacts.
+
+CodingMage also preserves an integrity-verified initial candidate when a fresh read-only senior review returns a transient provider, thread, or timeout failure. A bounded retry keeps the same run and owned worktree, validates the initial checkpoint and candidate identity, reruns deterministic gates, and starts a fresh review against the same immutable commit. It does not replay the implementation provider. A malformed correction checkpoint prevents retention rather than falling through to initial-candidate recovery.
 
 ## Verification
 
@@ -37,6 +39,8 @@ Observed results:
 
 Focused tests also passed for provider-timeout mapping, correction-checkpoint round trips and mutation refusal, content minimization, exact correction resume without implementation replay, and terminal classification after three repeated correction timeouts.
 
+The binary-level `serial_campaign_retries_review_without_replaying_implementation` fixture additionally proved one implementation invocation, two senior reviews bound to the identical candidate commit, deterministic gates before both reviews, final integration verification, one completed isolated campaign unit, and byte-for-byte preservation of the active checkout and task source.
+
 ## Proven Boundaries
 
 - Each provider invocation retains the existing 15-minute deadline.
@@ -45,6 +49,9 @@ Focused tests also passed for provider-timeout mapping, correction-checkpoint ro
 - The active checkout and task source remain outside candidate-worktree mutation.
 - Terminal timeout produces no completion commit and does not mark the target task complete.
 - Owned candidate state remains available for exact recovery; unrelated repository state is not adopted.
+- Transient initial-candidate review recovery applies only to provider, thread, and timeout failures after a valid `CandidateObserved` checkpoint exists.
+- Each retry revalidates the durable identities and immutable candidate and reruns gates before opening a fresh read-only reviewer session.
+- Implementer provider failures without a valid correction checkpoint continue to restart the unit with a fresh run rather than adopting partial state.
 
 ## Limitations
 
