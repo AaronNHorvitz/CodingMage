@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 use sha2::Digest;
 
 use super::{
-    CampaignError, CampaignSpec, PodProposal, canonical_sha256, paths_overlap, safe_relative,
-    valid_branch, valid_commit, valid_component, valid_sha256,
+    CampaignError, CampaignSpec, PodProposal, ReviewStrength, canonical_sha256, paths_overlap,
+    safe_relative, valid_branch, valid_commit, valid_component, valid_sha256,
 };
 
 const TEAM_POLICY_VERSION: u16 = 1;
@@ -888,7 +888,7 @@ impl TeamResourceController {
             memory_bytes: self.snapshot.policy.implementation_memory_bytes,
             disk_bytes: self.snapshot.policy.implementation_disk_bytes,
             process_slots: self.snapshot.policy.implementation_processes,
-            exclusive_resources: lease.test_resources.clone(),
+            exclusive_resources: lease.test_resources.as_ref().clone(),
             started_at_ms,
             deadline_ms: started_at_ms
                 .checked_add(self.snapshot.policy.pod_timeout_ms)
@@ -1167,6 +1167,12 @@ pub struct CampaignTaskRecord {
     pub owned_paths: Vec<PathBuf>,
     /// Exact shared-resource leases.
     pub test_resources: Vec<String>,
+    /// Deterministically resolved minimum review strength, absent before leasing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required_review_strength: Option<ReviewStrength>,
+    /// Exact operator-selected reviewer profile bound at admission.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reviewer_profile_sha256: Option<String>,
     /// Current task lifecycle state.
     pub state: CampaignTaskState,
     /// Required next transition sequence.
@@ -1219,6 +1225,8 @@ impl CampaignTaskRecord {
             ci_evidence_sha256: Vec::new(),
             owned_paths: Vec::new(),
             test_resources: Vec::new(),
+            required_review_strength: None,
+            reviewer_profile_sha256: None,
             state: CampaignTaskState::Planned,
             next_transition: 0,
             heartbeat_sequence: 0,
@@ -1307,6 +1315,11 @@ impl CampaignTaskRecord {
             || self.test_resources.iter().any(|v| !valid_component(v))
             || self.test_resources.iter().collect::<BTreeSet<_>>().len()
                 != self.test_resources.len()
+            || self
+                .reviewer_profile_sha256
+                .as_ref()
+                .is_some_and(|value| !valid_sha256(value))
+            || self.required_review_strength.is_some() != self.reviewer_profile_sha256.is_some()
             || self
                 .last_evidence_sha256
                 .as_ref()
@@ -1525,7 +1538,11 @@ impl CampaignTaskRecord {
         candidate.pod_id = Some(lease.pod_id.clone());
         candidate.lease_id = Some(lease.lease_id.clone());
         candidate.owned_paths.clone_from(&lease.owned_paths);
-        candidate.test_resources.clone_from(&lease.test_resources);
+        candidate
+            .test_resources
+            .clone_from(lease.test_resources.as_ref());
+        candidate.required_review_strength = Some(lease.review.strength);
+        candidate.reviewer_profile_sha256 = Some(lease.review.reviewer_profile_sha256.clone());
         candidate.state = CampaignTaskState::Leased;
         candidate.next_transition = candidate.next_transition.saturating_add(1);
         candidate.last_evidence_sha256 = Some(evidence_sha256);
@@ -1826,7 +1843,7 @@ impl TeamCampaignSnapshot {
                             lease.task_id != record.task_id
                                 || record.pod_id.as_ref() != Some(&lease.pod_id)
                                 || record.owned_paths != lease.owned_paths
-                                || record.test_resources != lease.test_resources
+                                || record.test_resources != *lease.test_resources
                         })
                         || (record.state.is_terminal()
                             && !self.scheduler.released.contains(lease_id))
@@ -2083,6 +2100,16 @@ impl TeamCampaignSnapshot {
     }
 }
 
+/// Immutable independent-review authority bound to one lease.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReviewRequirement {
+    /// Minimum independent-review strength resolved from risk and path authority.
+    pub strength: ReviewStrength,
+    /// Digest of the exact operator-selected reviewer profile authorized for this task.
+    pub reviewer_profile_sha256: String,
+}
+
 /// Exact active lease retained by the campaign scheduler.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -2104,7 +2131,9 @@ pub struct DurablePodLease {
     /// Exact path authority.
     pub owned_paths: Vec<PathBuf>,
     /// Exact shared-resource authority.
-    pub test_resources: Vec<String>,
+    pub test_resources: Box<Vec<String>>,
+    /// Boxed immutable review authority keeps scheduler decisions compact.
+    pub review: Box<ReviewRequirement>,
     /// Latest heartbeat sequence observed by the scheduler.
     pub heartbeat_sequence: u64,
     /// Latest heartbeat time observed by the scheduler.
@@ -2123,6 +2152,7 @@ impl DurablePodLease {
             || self.owned_paths.is_empty()
             || self.owned_paths.iter().any(|path| !safe_relative(path))
             || self.test_resources.iter().any(|v| !valid_component(v))
+            || !valid_sha256(&self.review.reviewer_profile_sha256)
         {
             return Err(TeamStateError::InvalidLease);
         }
@@ -2404,10 +2434,18 @@ impl DurablePodScheduler {
             task_source_sha256: proposal.task_source_sha256.clone(),
             proposal_sha256: proposal.proposal_sha256.clone(),
             owned_paths: proposal.owned_paths.clone(),
-            test_resources: proposal.test_resources.clone(),
+            test_resources: Box::new(proposal.test_resources.clone()),
+            review: Box::new(ReviewRequirement {
+                strength: ReviewStrength::resolve(proposal.risk, &proposal.owned_paths),
+                reviewer_profile_sha256: super::provider_profile_sha256(&spec.reviewer)
+                    .map_err(|_| TeamStateError::Authority)?,
+            }),
             heartbeat_sequence: 0,
             heartbeat_timestamp_ms: None,
         };
+        if !lease.review.strength.permits(&spec.reviewer) {
+            return Err(TeamStateError::Authority);
+        }
         lease.verify()?;
         self.snapshot.active.insert(lease_id, lease.clone());
         self.snapshot.verify()?;
@@ -2798,6 +2836,75 @@ mod tests {
             model: "model".to_owned(),
             effort: "high".to_owned(),
         }
+    }
+
+    #[test]
+    fn stronger_review_is_resolved_bound_and_recovered_without_cross_task_leakage() {
+        let mut weak = spec(CampaignExecutionMode::Parallel, 2);
+        let tasks = vec!["24.1.2.3".to_owned()];
+        let mut scheduler = DurablePodScheduler::new(&weak).unwrap();
+        let generation = scheduler.begin_generation(&tasks).unwrap();
+        assert_eq!(
+            scheduler.admit(
+                &weak,
+                generation,
+                &weak.initial_commit,
+                &proposal(&weak, "24.1.2.3", "docs/architecture/review.md", "review")
+            ),
+            Err(TeamStateError::Authority)
+        );
+
+        weak.reviewer.effort = "xhigh".to_owned();
+        let mut scheduler = DurablePodScheduler::new(&weak).unwrap();
+        let task_ids = vec!["24.1.2.3".to_owned(), "24.1.2.4".to_owned()];
+        let generation = scheduler.begin_generation(&task_ids).unwrap();
+        let AdmissionDecision::Admitted(strong) = scheduler
+            .admit(
+                &weak,
+                generation,
+                &weak.initial_commit,
+                &proposal(
+                    &weak,
+                    "24.1.2.3",
+                    "crates/codingmage-contracts/src/campaign.rs",
+                    "strong-review",
+                ),
+            )
+            .unwrap()
+        else {
+            panic!("strong review must be admitted");
+        };
+        let AdmissionDecision::Admitted(standard) = scheduler
+            .admit(
+                &weak,
+                generation,
+                &weak.initial_commit,
+                &proposal(
+                    &weak,
+                    "24.1.2.4",
+                    "crates/isolated-worker",
+                    "standard-review",
+                ),
+            )
+            .unwrap()
+        else {
+            panic!("ordinary review must be admitted");
+        };
+        assert_eq!(strong.review.strength, ReviewStrength::Strong);
+        assert_eq!(standard.review.strength, ReviewStrength::Standard);
+        assert_eq!(
+            strong.review.reviewer_profile_sha256,
+            crate::provider_profile_sha256(&weak.reviewer).unwrap()
+        );
+
+        let encoded = serde_json::to_vec(scheduler.snapshot()).unwrap();
+        let recovered: DurableSchedulerSnapshot = serde_json::from_slice(&encoded).unwrap();
+        recovered.verify().unwrap();
+        assert_eq!(recovered.active[&strong.lease_id], strong);
+
+        let mut mutated = strong.clone();
+        mutated.review.reviewer_profile_sha256 = "not-a-digest".to_owned();
+        assert_eq!(mutated.verify(), Err(TeamStateError::InvalidLease));
     }
 
     #[test]

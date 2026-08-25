@@ -6,10 +6,10 @@ pub use team::{
     ActorClass, AdmissionDecision, AdmissionReason, CampaignConcurrency, CampaignExecutionMode,
     CampaignTaskRecord, CampaignTaskState, CampaignTaskTransition, DestinationPromotionPolicy,
     DurablePodLease, DurablePodScheduler, DurableSchedulerSnapshot, GitHubCampaignPolicy,
-    MultiAgentPolicy, ProviderCircuit, ProviderCircuitStatus, TEAM_STATE_SCHEMA_VERSION,
-    TaskIntegrationPolicy, TaskMergeStrategy, TaskPublicationMode, TaskResourceReservation,
-    TaskTerminalReason, TaskUtilization, TeamCampaignSnapshot, TeamResourceController,
-    TeamResourcePolicy, TeamResourceSnapshot, TeamStateError,
+    MultiAgentPolicy, ProviderCircuit, ProviderCircuitStatus, ReviewRequirement,
+    TEAM_STATE_SCHEMA_VERSION, TaskIntegrationPolicy, TaskMergeStrategy, TaskPublicationMode,
+    TaskResourceReservation, TaskTerminalReason, TaskUtilization, TeamCampaignSnapshot,
+    TeamResourceController, TeamResourcePolicy, TeamResourceSnapshot, TeamStateError,
 };
 
 use std::{
@@ -48,6 +48,44 @@ pub struct CampaignProvider {
     pub model: String,
     /// Exact effort selector.
     pub effort: String,
+}
+
+/// Closed minimum independent-review strength resolved before implementation begins.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReviewStrength {
+    /// The operator-selected reviewer profile is sufficient for ordinary isolated work.
+    Standard,
+    /// Shared contracts, security boundaries, and architecture require elevated reasoning.
+    Strong,
+}
+
+impl ReviewStrength {
+    fn resolve(risk: PodRisk, paths: &[PathBuf]) -> Self {
+        if risk == PodRisk::High || paths.iter().any(|path| sensitive_review_path(path)) {
+            Self::Strong
+        } else {
+            Self::Standard
+        }
+    }
+
+    /// Returns whether an exact provider profile satisfies this minimum.
+    #[must_use]
+    pub fn permits(self, provider: &CampaignProvider) -> bool {
+        self == Self::Standard || matches!(provider.effort.as_str(), "xhigh" | "max")
+    }
+}
+
+/// Returns the canonical identity of one validated operator-selected provider profile.
+///
+/// # Errors
+///
+/// Returns [`CampaignError::InvalidAuthority`] for a malformed provider profile.
+pub fn provider_profile_sha256(provider: &CampaignProvider) -> Result<String, CampaignError> {
+    if !valid_provider(provider) {
+        return Err(CampaignError::InvalidAuthority);
+    }
+    canonical_sha256(provider)
 }
 
 /// Credential discovery available to the implementation provider.
@@ -776,6 +814,18 @@ fn valid_provider(provider: &CampaignProvider) -> bool {
             provider.effort.as_str(),
             "low" | "medium" | "high" | "xhigh" | "max"
         )
+}
+
+fn sensitive_review_path(path: &Path) -> bool {
+    path.components().any(|component| {
+        component.as_os_str().to_str().is_some_and(|value| {
+            matches!(
+                value.to_ascii_lowercase().as_str(),
+                "architecture" | "architecture.md" | "security" | "security.md" | "schemas"
+            ) || value.to_ascii_lowercase().ends_with("contracts")
+                || value.to_ascii_lowercase().ends_with("schema.json")
+        })
+    })
 }
 
 fn valid_commit(value: &str) -> bool {

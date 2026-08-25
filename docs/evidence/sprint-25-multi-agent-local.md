@@ -131,3 +131,19 @@ they do not read or persist credential values.
 Authenticated provider, GitHub, CI, and integration evidence remains open until an operator supplies
 an authorized disposable target and executes the guarded command. No ordinary unit, integration, or
 CI command can cross that boundary accidentally.
+
+## Stronger Review Qualification
+
+Sub-task 24.1.2.3 resolves a closed `standard` or `strong` review requirement before any
+implementation effect. High-risk proposals and paths under architecture, security, schema, or
+shared-contract boundaries require an `xhigh` or `max` reviewer. Admission refuses a weaker profile.
+The durable lease and task record bind both the resolved strength and the canonical SHA-256 identity
+of the complete operator-selected reviewer profile.
+
+Focused fixtures prove weak-profile refusal, strong-profile admission, ordinary-task isolation,
+durable scheduler round-trip recovery, reviewer-digest mutation rejection, and integration-time
+profile mismatch refusal before campaign-head mutation. Strict workspace Clippy and the complete
+workspace test suite passed on the resulting source; the two explicitly guarded sustained
+qualifications remained intentionally ignored during the ordinary workspace run. This evidence does
+not claim that a model-selected risk label can weaken the deterministic path escalation, nor does it
+grant publication or destination-promotion authority.

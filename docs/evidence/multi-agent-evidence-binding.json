@@ -18,17 +18,17 @@
     {
       "group": "implementation",
       "path": "crates/codingmage-campaign/src/team.rs",
-      "sha256": "cb0feacd0bbc0869f889d384bf9a7ee4b5757869df91ebbb5f7cf29541d35dc0"
+      "sha256": "c3cd11a80d9033834f4f15fd927503a756608bc766385ba9140ed4eee90c120a"
     },
     {
       "group": "implementation",
       "path": "crates/codingmage-runtime/src/team_runtime.rs",
-      "sha256": "6308c51003f5c6ff21959f9a0e421f81e5d7d40990c7f7e72c1a61cc3429f099"
+      "sha256": "2945237c57998c5cff783b7964bb21acb89427855c12c25420ce8cc52a8e4063"
     },
     {
       "group": "implementation",
       "path": "crates/codingmage-runtime/src/team_integration.rs",
-      "sha256": "1bf3be15316d619d26dbdbdbd357bf5c5b303fc6219dbd90ef4e3540af1e50e9"
+      "sha256": "fedcebe868fdc34e9876abc305e3dc2af9f316b1cd25db02362ed576fd5d863f"
     },
     {
       "group": "test",

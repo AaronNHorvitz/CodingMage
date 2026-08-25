@@ -2,7 +2,10 @@
 
 use std::{collections::BTreeMap, collections::BTreeSet, fmt::Write as _, fs, path::PathBuf};
 
-use codingmage_campaign::{CampaignTaskState, TaskMergeStrategy, TeamCampaignSnapshot};
+use codingmage_campaign::{
+    CampaignProvider, CampaignTaskState, TaskMergeStrategy, TeamCampaignSnapshot,
+    provider_profile_sha256,
+};
 use codingmage_codex::{CodexAdapter, CodexReviewBinding, ReviewVerdict, codex_review_schema};
 use codingmage_contracts::{AgentId, EvidenceId, TaskId};
 use codingmage_core::{Config, RepositoryAuthorization};
@@ -32,11 +35,15 @@ pub struct IntegrationVerification {
     pub gate_evidence_sha256: String,
     /// Digest of a fresh review of the effective prepared cumulative diff.
     pub review_evidence_sha256: String,
+    /// Exact operator-selected reviewer profile that produced the review.
+    pub reviewer_profile_sha256: String,
 }
 
 impl IntegrationVerification {
     pub(crate) fn verify(&self) -> Result<(), RuntimeError> {
-        if !valid_sha256(&self.gate_evidence_sha256) || !valid_sha256(&self.review_evidence_sha256)
+        if !valid_sha256(&self.gate_evidence_sha256)
+            || !valid_sha256(&self.review_evidence_sha256)
+            || !valid_sha256(&self.reviewer_profile_sha256)
         {
             return Err(RuntimeError::Verification);
         }
@@ -244,6 +251,12 @@ impl ProductionTeamIntegrationVerifier {
                 "{}\0{}\0{}\0pass",
                 result.thread_id, result.report.base_commit, result.report.target_commit
             )),
+            reviewer_profile_sha256: provider_profile_sha256(&CampaignProvider {
+                executable: self.reviewer.executable.clone(),
+                model: self.reviewer.model.clone(),
+                effort: self.reviewer.effort.clone(),
+            })
+            .map_err(RuntimeError::Campaign)?,
         })
     }
 }
@@ -476,6 +489,11 @@ where
                 cumulative_validation,
             )?,
         };
+        if record.reviewer_profile_sha256.as_deref()
+            != Some(verification.reviewer_profile_sha256.as_str())
+        {
+            return Err(RuntimeError::Verification);
+        }
         let evidence = integration_evidence(
             &task_id,
             &integration_commit,
@@ -681,6 +699,13 @@ fn combined_verification(
             "{}\0{}",
             task.review_evidence_sha256, cumulative.review_evidence_sha256
         )),
+        reviewer_profile_sha256: if task.reviewer_profile_sha256
+            == cumulative.reviewer_profile_sha256
+        {
+            task.reviewer_profile_sha256.clone()
+        } else {
+            return Err(RuntimeError::Verification);
+        },
     })
 }
 
@@ -1042,6 +1067,7 @@ mod tests {
             Ok(IntegrationVerification {
                 gate_evidence_sha256: "d".repeat(64),
                 review_evidence_sha256: "e".repeat(64),
+                reviewer_profile_sha256: provider_profile_sha256(&provider("codex")).unwrap(),
             })
         }
     }
@@ -1073,6 +1099,7 @@ mod tests {
             Ok(IntegrationVerification {
                 gate_evidence_sha256: "d".repeat(64),
                 review_evidence_sha256: "e".repeat(64),
+                reviewer_profile_sha256: provider_profile_sha256(&provider("codex")).unwrap(),
             })
         }
 
@@ -1237,6 +1264,42 @@ mod tests {
             Err(RuntimeError::Integration)
         );
         assert_eq!(verifier.0.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn integration_refuses_a_mismatched_reviewer_profile_before_head_mutation() {
+        let mut fixture = Fixture::new();
+        enqueue_team_integration(&mut fixture.snapshot, TASK_ID, |_| Ok(())).unwrap();
+        fixture
+            .snapshot
+            .tasks
+            .get_mut(TASK_ID)
+            .unwrap()
+            .reviewer_profile_sha256 = Some("f".repeat(64));
+        fixture.snapshot.verify().unwrap();
+        let before = fixture
+            .campaign
+            .observe_head(&fixture.authorization)
+            .unwrap();
+        let mut verifier = ManifestVerifier(AtomicUsize::new(0));
+        assert!(matches!(
+            integrate_team_queue_head(
+                &fixture.config,
+                &fixture.authorization,
+                &fixture.campaign,
+                &mut fixture.snapshot,
+                &mut verifier,
+                |_| Ok(()),
+            ),
+            Err(RuntimeError::Verification)
+        ));
+        assert_eq!(
+            fixture
+                .campaign
+                .observe_head(&fixture.authorization)
+                .unwrap(),
+            before
+        );
     }
 
     #[test]

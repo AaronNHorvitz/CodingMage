@@ -95,7 +95,7 @@ impl TeamBatchJob {
                 != snapshot.resources.policy.implementation_memory_bytes
             || self.reservation.disk_bytes != snapshot.resources.policy.implementation_disk_bytes
             || self.reservation.process_slots != snapshot.resources.policy.implementation_processes
-            || self.reservation.exclusive_resources != self.lease.test_resources
+            || self.reservation.exclusive_resources != *self.lease.test_resources
             || self.reservation.deadline_ms
                 != self
                     .reservation
