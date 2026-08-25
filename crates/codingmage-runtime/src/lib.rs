@@ -2628,7 +2628,7 @@ pub fn run_serial_campaign_with_progress(
             },
             reviewer: provider_spec(&spec.reviewer),
         };
-        let mut provider_attempt = 1_u8;
+        let mut provider_retry_budget = ProviderRetryBudget::default();
         let (unit, accepted_usage) = loop {
             let observed_usage = Arc::new(Mutex::new(ObservedUnitUsage::default()));
             let unit_cancellation = CancellationToken::default();
@@ -2708,9 +2708,10 @@ pub fn run_serial_campaign_with_progress(
                 }
                 Err(error @ RuntimeError::Implementer(ClaudeError::Timeout)) => {
                     let failed_run_root = pod_state.join("runs").join(unit_run_id.as_str());
-                    let resumable = CorrectionCheckpoint::latest(&failed_run_root)?.is_some();
-                    if resumable && provider_attempt < CAMPAIGN_PROVIDER_ATTEMPT_LIMIT {
-                        provider_attempt = provider_attempt.saturating_add(1);
+                    let retry_scope = provider_retry_scope(error, &failed_run_root)?;
+                    if matches!(retry_scope, ProviderRetryScope::Correction { .. })
+                        && let Some(provider_attempt) = provider_retry_budget.reserve(retry_scope)
+                    {
                         checkpoint.blocker_code =
                             Some("codingmage.campaign.correction_timeout_retry".to_owned());
                         checkpoint.persist(&campaign_root)?;
@@ -2745,19 +2746,36 @@ pub fn run_serial_campaign_with_progress(
                         ),
                     ));
                 }
-                Err(error)
-                    if retryable_campaign_provider_failure(error)
-                        && provider_attempt < CAMPAIGN_PROVIDER_ATTEMPT_LIMIT =>
-                {
-                    provider_attempt = provider_attempt.saturating_add(1);
+                Err(error) if retryable_campaign_provider_failure(error) => {
                     let failed_run_root = pod_state.join("runs").join(unit_run_id.as_str());
-                    let correction_recovery =
-                        CorrectionCheckpoint::latest(&failed_run_root)?.is_some();
-                    let candidate_review_recovery = retryable_candidate_review_failure(error)
-                        && InitialCheckpoint::load(&failed_run_root)?.is_some_and(|checkpoint| {
-                            checkpoint.phase == InitialPhase::CandidateObserved
-                        });
-                    if !correction_recovery && !candidate_review_recovery {
+                    let retry_scope = provider_retry_scope(error, &failed_run_root)?;
+                    let restart_implementation =
+                        retry_scope == ProviderRetryScope::InitialImplementation;
+                    let Some(provider_attempt) = provider_retry_budget.reserve(retry_scope) else {
+                        let blocker_code = "codingmage.campaign.provider_unavailable".to_owned();
+                        checkpoint.phase = CampaignPhase::Paused;
+                        checkpoint.active_unit = None;
+                        checkpoint.blocker_code = Some(blocker_code.clone());
+                        checkpoint.persist(&campaign_root)?;
+                        if lease_registered {
+                            scheduler
+                                .release(&lease.pod_id)
+                                .map_err(RuntimeError::Campaign)?;
+                        }
+                        return Ok(campaign_outcome(
+                            &spec,
+                            &campaign,
+                            head,
+                            completed_units,
+                            last_task_id,
+                            CampaignTermination::new(
+                                CampaignState::Paused,
+                                CampaignStopReason::AttemptLimit,
+                                Some(blocker_code),
+                            ),
+                        ));
+                    };
+                    if restart_implementation {
                         unit_run_id = generated_run_id()?;
                         checkpoint
                             .active_unit
@@ -2797,30 +2815,6 @@ pub fn run_serial_campaign_with_progress(
                         CampaignTermination::new(
                             CampaignState::Paused,
                             stop_reason,
-                            Some(blocker_code),
-                        ),
-                    ));
-                }
-                Err(error) if retryable_campaign_provider_failure(error) => {
-                    let blocker_code = "codingmage.campaign.provider_unavailable".to_owned();
-                    checkpoint.phase = CampaignPhase::Paused;
-                    checkpoint.active_unit = None;
-                    checkpoint.blocker_code = Some(blocker_code.clone());
-                    checkpoint.persist(&campaign_root)?;
-                    if lease_registered {
-                        scheduler
-                            .release(&lease.pod_id)
-                            .map_err(RuntimeError::Campaign)?;
-                    }
-                    return Ok(campaign_outcome(
-                        &spec,
-                        &campaign,
-                        head,
-                        completed_units,
-                        last_task_id,
-                        CampaignTermination::new(
-                            CampaignState::Paused,
-                            CampaignStopReason::AttemptLimit,
                             Some(blocker_code),
                         ),
                     ));
@@ -3190,6 +3184,82 @@ const fn retryable_claude_report_failure(error: ClaudeError) -> bool {
         error,
         ClaudeError::InvalidReport | ClaudeError::InvalidOutput
     )
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum ProviderRetryScope {
+    InitialImplementation,
+    Correction {
+        run_id: RunId,
+        round: u16,
+        parent_commit: String,
+    },
+    Review {
+        run_id: RunId,
+        candidate_commit: String,
+    },
+}
+
+#[derive(Default)]
+struct ProviderRetryBudget {
+    scope: Option<ProviderRetryScope>,
+    attempts: u8,
+}
+
+impl ProviderRetryBudget {
+    fn reserve(&mut self, scope: ProviderRetryScope) -> Option<u8> {
+        if self.scope.as_ref() != Some(&scope) {
+            self.scope = Some(scope);
+            self.attempts = 1;
+        }
+        if self.attempts >= CAMPAIGN_PROVIDER_ATTEMPT_LIMIT {
+            return None;
+        }
+        self.attempts = self.attempts.saturating_add(1);
+        Some(self.attempts)
+    }
+}
+
+fn provider_retry_scope(
+    error: RuntimeError,
+    run_root: &Path,
+) -> Result<ProviderRetryScope, RuntimeError> {
+    match error {
+        RuntimeError::Implementer(_) => {
+            let Some(checkpoint) = CorrectionCheckpoint::latest(run_root)? else {
+                return Ok(ProviderRetryScope::InitialImplementation);
+            };
+            Ok(ProviderRetryScope::Correction {
+                run_id: checkpoint.run_id,
+                round: checkpoint.correction_round,
+                parent_commit: checkpoint.parent_commit,
+            })
+        }
+        RuntimeError::Reviewer(_) => {
+            if let Some(checkpoint) = CorrectionCheckpoint::latest(run_root)? {
+                let candidate_commit = match checkpoint.phase {
+                    CorrectionPhase::Prepared => checkpoint.parent_commit,
+                    CorrectionPhase::CommitObserved => {
+                        checkpoint.correction_commit.ok_or(RuntimeError::State)?
+                    }
+                    CorrectionPhase::ProviderBlocked => return Err(RuntimeError::State),
+                };
+                return Ok(ProviderRetryScope::Review {
+                    run_id: checkpoint.run_id,
+                    candidate_commit,
+                });
+            }
+            let checkpoint = InitialCheckpoint::load(run_root)?.ok_or(RuntimeError::State)?;
+            if checkpoint.phase != InitialPhase::CandidateObserved {
+                return Err(RuntimeError::State);
+            }
+            Ok(ProviderRetryScope::Review {
+                run_id: checkpoint.run_id,
+                candidate_commit: checkpoint.candidate_commit.ok_or(RuntimeError::State)?,
+            })
+        }
+        _ => Err(RuntimeError::State),
+    }
 }
 
 const fn retryable_campaign_provider_failure(error: RuntimeError) -> bool {
@@ -6865,6 +6935,40 @@ effort = "high"
         ] {
             assert!(!retryable_campaign_provider_failure(terminal));
         }
+    }
+
+    #[test]
+    fn provider_retry_budget_is_bounded_per_durable_stage_identity() {
+        let mut budget = ProviderRetryBudget::default();
+        assert_eq!(
+            budget.reserve(ProviderRetryScope::InitialImplementation),
+            Some(2)
+        );
+        assert_eq!(
+            budget.reserve(ProviderRetryScope::InitialImplementation),
+            Some(3)
+        );
+        assert_eq!(
+            budget.reserve(ProviderRetryScope::InitialImplementation),
+            None
+        );
+
+        let run_id = RunId::new("run-0123456789abcdef0123456789abcdef").unwrap();
+        let review = ProviderRetryScope::Review {
+            run_id: run_id.clone(),
+            candidate_commit: "a".repeat(40),
+        };
+        assert_eq!(budget.reserve(review.clone()), Some(2));
+        assert_eq!(budget.reserve(review.clone()), Some(3));
+        assert_eq!(budget.reserve(review), None);
+
+        let correction = ProviderRetryScope::Correction {
+            run_id,
+            round: 1,
+            parent_commit: "a".repeat(40),
+        };
+        assert_eq!(budget.reserve(correction.clone()), Some(2));
+        assert_eq!(budget.reserve(correction), Some(3));
     }
 
     #[test]

@@ -1850,7 +1850,7 @@ profiles = ["configured-gates"]
 
 #[test]
 #[allow(clippy::too_many_lines)]
-fn serial_campaign_retries_review_without_replaying_implementation() {
+fn serial_campaign_scopes_provider_retries_without_replaying_implementation() {
     let fixture = Fixture::new();
     let target = fixture.root.join("target");
     fs::create_dir(target.join("src")).unwrap();
@@ -1873,6 +1873,12 @@ if "--help" in sys.argv:
     print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
     raise SystemExit(0)
 log = Path(__file__).with_suffix(".log")
+calls = log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+if not calls:
+    with log.open("a", encoding="utf-8") as stream:
+        stream.write("initial-provider-failure\n")
+    print(json.dumps({"type": "result", "is_error": True, "subtype": "provider_unavailable"}))
+    raise SystemExit(0)
 with log.open("a", encoding="utf-8") as stream:
     stream.write("implementation\n")
 path = Path("src/lib.rs")
@@ -1924,7 +1930,7 @@ else:
     calls = log.read_text(encoding="utf-8").splitlines() if log.exists() else []
     with log.open("a", encoding="utf-8") as stream:
         stream.write(target + "\n")
-    if not calls:
+    if len(calls) < 2:
         print(json.dumps({"type": "turn.failed", "error": {"message": "provider unavailable"}}))
         raise SystemExit(0)
     base = re.search(r"Base commit: ([0-9a-f]{40,64})", packet).group(1)
@@ -2049,31 +2055,30 @@ profiles = ["configured-gates"]
     let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
     assert_eq!(outcome["state"], "complete", "outcome={outcome}");
     assert_eq!(outcome["completed_units"], 1, "outcome={outcome}");
+    let implementations = fs::read_to_string(fixture.root.join("review-retry-claude.log")).unwrap();
     assert_eq!(
-        fs::read_to_string(fixture.root.join("review-retry-claude.log"))
-            .unwrap()
-            .lines()
-            .count(),
-        1
+        implementations.lines().collect::<Vec<_>>(),
+        ["initial-provider-failure", "implementation"]
     );
     let reviews = fs::read_to_string(fixture.root.join("review-retry-codex.log")).unwrap();
     let reviews = reviews.lines().collect::<Vec<_>>();
-    assert_eq!(reviews.len(), 2);
+    assert_eq!(reviews.len(), 3);
     assert_eq!(reviews[0], reviews[1]);
+    assert_eq!(reviews[1], reviews[2]);
     assert_eq!(
         fs::read_to_string(fixture.root.join("review-retry-gate.log"))
             .unwrap()
             .lines()
             .count(),
-        3
+        4
     );
     let progress = String::from_utf8(run.stderr).unwrap();
-    assert_eq!(progress.matches("implementing the bounded task").count(), 1);
+    assert_eq!(progress.matches("implementing the bounded task").count(), 2);
     assert_eq!(
         progress
             .matches("reviewing the immutable candidate")
             .count(),
-        2
+        3
     );
     assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
     assert_eq!(fs::read(target.join("TASKS.md")).unwrap(), original_tasks);
