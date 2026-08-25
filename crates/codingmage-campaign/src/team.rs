@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 use sha2::Digest;
 
 use super::{
-    CampaignError, CampaignSpec, PodProposal, ReviewStrength, canonical_sha256, paths_overlap,
-    safe_relative, valid_branch, valid_commit, valid_component, valid_sha256,
+    CampaignError, CampaignSpec, PodProposal, ReviewStrength, canonical_sha256, path_contains,
+    paths_overlap, safe_relative, valid_branch, valid_commit, valid_component, valid_sha256,
 };
 
 const TEAM_POLICY_VERSION: u16 = 1;
@@ -1884,6 +1884,32 @@ impl TeamCampaignSnapshot {
         Ok(())
     }
 
+    /// Atomically registers one follow-up against a source task retained in this snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] when the source is absent, authority broadens, evidence is not
+    /// retained, the request replays, or the campaign-lifetime ceiling is exhausted.
+    pub fn authorize_follow_up(
+        &mut self,
+        spec: &CampaignSpec,
+        binding: FollowUpTaskBinding,
+    ) -> Result<(), TeamStateError> {
+        self.verify()?;
+        let mut candidate = self.clone();
+        let source = candidate
+            .tasks
+            .get(&binding.source_task_id)
+            .cloned()
+            .ok_or(TeamStateError::Authority)?;
+        let mut scheduler = DurablePodScheduler::from_snapshot(candidate.scheduler.clone())?;
+        scheduler.authorize_follow_up(spec, &source, binding)?;
+        candidate.scheduler = scheduler.snapshot;
+        candidate.verify()?;
+        *self = candidate;
+        Ok(())
+    }
+
     /// Enqueues one publication-ready task in canonical task order.
     ///
     /// # Errors
@@ -2187,6 +2213,88 @@ pub enum AdmissionDecision {
     },
 }
 
+/// Closed authority source for one bounded follow-up task.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case", tag = "kind")]
+pub enum FollowUpCause {
+    /// Additional work remains wholly inside one original task's authority.
+    OriginalAuthority,
+    /// A specific retained integration observation requires repair.
+    IntegrationDefect {
+        /// Exact retained evidence identity that justifies the repair.
+        evidence_sha256: String,
+    },
+}
+
+/// Sealed durable authority for one follow-up task.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct FollowUpTaskBinding {
+    /// Closed binding schema version.
+    pub version: u16,
+    /// Exact follow-up task identity.
+    pub task_id: String,
+    /// Original task whose authority and evidence bound the follow-up.
+    pub source_task_id: String,
+    /// Exact repository-relative path authority, never broader than the source task.
+    pub owned_paths: Vec<PathBuf>,
+    /// Closed reason the follow-up may exist.
+    pub cause: FollowUpCause,
+    /// Canonical SHA-256 over every preceding field.
+    pub binding_sha256: String,
+}
+
+impl FollowUpTaskBinding {
+    /// Validates and seals one coordinator-authored follow-up binding.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError::Authority`] for malformed or self-referential authority.
+    pub fn seal(mut self) -> Result<Self, TeamStateError> {
+        self.version = TEAM_STATE_VERSION;
+        self.binding_sha256 = "0".repeat(64);
+        self.verify_shape()?;
+        self.binding_sha256 = canonical_sha256(&self).map_err(|_| TeamStateError::Authority)?;
+        Ok(self)
+    }
+
+    fn verify(&self) -> Result<(), TeamStateError> {
+        let mut unsigned = self.clone();
+        unsigned.binding_sha256 = "0".repeat(64);
+        self.verify_shape()?;
+        if canonical_sha256(&unsigned).map_err(|_| TeamStateError::Authority)?
+            != self.binding_sha256
+        {
+            return Err(TeamStateError::Authority);
+        }
+        Ok(())
+    }
+
+    fn verify_shape(&self) -> Result<(), TeamStateError> {
+        if self.version != TEAM_STATE_VERSION
+            || codingmage_contracts::TaskId::new(self.task_id.clone()).is_err()
+            || codingmage_contracts::TaskId::new(self.source_task_id.clone()).is_err()
+            || self.task_id == self.source_task_id
+            || self.owned_paths.is_empty()
+            || self.owned_paths.len() > 256
+            || self.owned_paths.iter().any(|path| !safe_relative(path))
+            || self.owned_paths.iter().enumerate().any(|(index, left)| {
+                self.owned_paths[index + 1..]
+                    .iter()
+                    .any(|right| paths_overlap(left, right))
+            })
+            || matches!(
+                &self.cause,
+                FollowUpCause::IntegrationDefect { evidence_sha256 }
+                    if !valid_sha256(evidence_sha256)
+            )
+        {
+            return Err(TeamStateError::Authority);
+        }
+        Ok(())
+    }
+}
+
 /// Integrity-validatable scheduler snapshot for one campaign lifetime.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -2207,6 +2315,12 @@ pub struct DurableSchedulerSnapshot {
     pub released: BTreeSet<String>,
     /// Ready-task age in planning generations.
     pub ready_age: BTreeMap<String, u64>,
+    /// Persisted follow-up ceiling; absent only in a legacy checkpoint before first use.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub follow_up_limit: Option<u16>,
+    /// Sealed follow-up authorities indexed by exact follow-up task identity.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub follow_up_bindings: BTreeMap<String, FollowUpTaskBinding>,
 }
 
 impl DurableSchedulerSnapshot {
@@ -2228,8 +2342,15 @@ impl DurableSchedulerSnapshot {
                 .ready_age
                 .iter()
                 .any(|(task, _)| codingmage_contracts::TaskId::new(task.clone()).is_err())
+            || self.follow_up_bindings.len() > usize::from(self.follow_up_limit.unwrap_or_default())
         {
             return Err(TeamStateError::InvalidScheduler);
+        }
+        for (task_id, binding) in &self.follow_up_bindings {
+            binding.verify()?;
+            if task_id != &binding.task_id {
+                return Err(TeamStateError::InvalidScheduler);
+            }
         }
         let leases = self.active.values().collect::<Vec<_>>();
         for (index, lease) in leases.iter().enumerate() {
@@ -2286,6 +2407,11 @@ impl DurablePodScheduler {
             active: BTreeMap::new(),
             released: BTreeSet::new(),
             ready_age: BTreeMap::new(),
+            follow_up_limit: spec
+                .multi_agent
+                .as_ref()
+                .map(|policy| policy.max_follow_up_tasks),
+            follow_up_bindings: BTreeMap::new(),
         };
         snapshot.verify()?;
         Ok(Self { snapshot })
@@ -2305,6 +2431,69 @@ impl DurablePodScheduler {
     #[must_use]
     pub const fn snapshot(&self) -> &DurableSchedulerSnapshot {
         &self.snapshot
+    }
+
+    /// Registers one sealed follow-up inside an original task's retained authority.
+    ///
+    /// Registration is create-once. The configured ceiling, source path authority, and any defect
+    /// evidence are checked before the scheduler state changes.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError::Authority`] for absent, broadened, duplicate, replayed, or
+    /// unevidenced authority and [`TeamStateError::ResourceCapacity`] at the configured ceiling.
+    fn authorize_follow_up(
+        &mut self,
+        spec: &CampaignSpec,
+        source: &CampaignTaskRecord,
+        binding: FollowUpTaskBinding,
+    ) -> Result<(), TeamStateError> {
+        spec.verify().map_err(|_| TeamStateError::Authority)?;
+        source.verify()?;
+        binding.verify()?;
+        let configured_limit = spec
+            .multi_agent
+            .as_ref()
+            .map_or(0, |policy| policy.max_follow_up_tasks);
+        if self.snapshot.campaign_id != spec.campaign_id
+            || source.campaign_id != spec.campaign_id
+            || source.task_id != binding.source_task_id
+            || source.owned_paths.is_empty()
+            || self
+                .snapshot
+                .follow_up_bindings
+                .contains_key(&binding.task_id)
+            || self
+                .snapshot
+                .active
+                .values()
+                .any(|lease| lease.task_id == binding.task_id)
+            || self
+                .snapshot
+                .follow_up_limit
+                .is_some_and(|limit| limit != configured_limit)
+            || binding.owned_paths.iter().any(|path| !spec.permits(path))
+            || binding.owned_paths.iter().any(|path| {
+                !source
+                    .owned_paths
+                    .iter()
+                    .any(|root| path_contains(root, path))
+            })
+            || !follow_up_cause_is_evidenced(source, &binding.cause)
+        {
+            return Err(TeamStateError::Authority);
+        }
+        if self.snapshot.follow_up_bindings.len() >= usize::from(configured_limit) {
+            return Err(TeamStateError::ResourceCapacity);
+        }
+        let mut candidate = self.snapshot.clone();
+        candidate.follow_up_limit = Some(configured_limit);
+        candidate
+            .follow_up_bindings
+            .insert(binding.task_id.clone(), binding);
+        candidate.verify()?;
+        self.snapshot = candidate;
+        Ok(())
     }
 
     /// Starts one planning generation and updates ready-task age deterministically.
@@ -2386,6 +2575,11 @@ impl DurablePodScheduler {
             || !self.snapshot.ready_age.contains_key(&proposal.task_id)
         {
             return Err(TeamStateError::StaleGeneration);
+        }
+        if let Some(binding) = self.snapshot.follow_up_bindings.get(&proposal.task_id)
+            && proposal.owned_paths != binding.owned_paths
+        {
+            return Err(TeamStateError::Authority);
         }
         let reason = if self
             .snapshot
@@ -2737,6 +2931,19 @@ fn leases_conflict(left: &DurablePodLease, right: &DurablePodLease) -> bool {
     })
 }
 
+fn follow_up_cause_is_evidenced(source: &CampaignTaskRecord, cause: &FollowUpCause) -> bool {
+    match cause {
+        FollowUpCause::OriginalAuthority => true,
+        FollowUpCause::IntegrationDefect { evidence_sha256 } => {
+            source.integration_commit.is_some()
+                && (source.last_evidence_sha256.as_ref() == Some(evidence_sha256)
+                    || source.gate_evidence_sha256.contains(evidence_sha256)
+                    || source.review_evidence_sha256.contains(evidence_sha256)
+                    || source.ci_evidence_sha256.contains(evidence_sha256))
+        }
+    }
+}
+
 fn actor_count(counts: &BTreeMap<ActorClass, usize>, actor: ActorClass) -> usize {
     counts.get(&actor).copied().unwrap_or_default()
 }
@@ -2905,6 +3112,160 @@ mod tests {
         let mut mutated = strong.clone();
         mutated.review.reviewer_profile_sha256 = "not-a-digest".to_owned();
         assert_eq!(mutated.verify(), Err(TeamStateError::InvalidLease));
+    }
+
+    fn follow_up_binding(
+        task_id: &str,
+        source_task_id: &str,
+        path: &str,
+        cause: FollowUpCause,
+    ) -> FollowUpTaskBinding {
+        FollowUpTaskBinding {
+            version: TEAM_STATE_SCHEMA_VERSION,
+            task_id: task_id.to_owned(),
+            source_task_id: source_task_id.to_owned(),
+            owned_paths: vec![PathBuf::from(path)],
+            cause,
+            binding_sha256: "0".repeat(64),
+        }
+        .seal()
+        .unwrap()
+    }
+
+    #[test]
+    fn follow_up_authority_is_bounded_replay_safe_recoverable_and_schedulable() {
+        let mut authority = spec(CampaignExecutionMode::Parallel, 1);
+        authority.multi_agent.as_mut().unwrap().max_follow_up_tasks = 2;
+        let source_task_id = "24.3.2.4";
+        let mut snapshot = publication_ready_snapshot(&[source_task_id]);
+        snapshot.scheduler.follow_up_limit = Some(2);
+        let source_lease_id = snapshot.tasks[source_task_id].lease_id.clone().unwrap();
+
+        let first = follow_up_binding(
+            "24.3.2.5",
+            source_task_id,
+            "crates/queue-0/src",
+            FollowUpCause::OriginalAuthority,
+        );
+        snapshot
+            .authorize_follow_up(&authority, first.clone())
+            .unwrap();
+        assert_eq!(
+            snapshot.authorize_follow_up(&authority, first.clone()),
+            Err(TeamStateError::Authority)
+        );
+
+        let broadened = follow_up_binding(
+            "24.3.2.6",
+            source_task_id,
+            "crates",
+            FollowUpCause::OriginalAuthority,
+        );
+        assert_eq!(
+            snapshot.authorize_follow_up(&authority, broadened),
+            Err(TeamStateError::Authority)
+        );
+
+        let second = follow_up_binding(
+            "24.3.2.6",
+            source_task_id,
+            "crates/queue-0/tests",
+            FollowUpCause::OriginalAuthority,
+        );
+        snapshot
+            .authorize_follow_up(&authority, second.clone())
+            .unwrap();
+        let ceiling = follow_up_binding(
+            "24.3.2.7",
+            source_task_id,
+            "crates/queue-0/examples",
+            FollowUpCause::OriginalAuthority,
+        );
+        assert_eq!(
+            snapshot.authorize_follow_up(&authority, ceiling),
+            Err(TeamStateError::ResourceCapacity)
+        );
+
+        let encoded = serde_json::to_vec(&snapshot.scheduler).unwrap();
+        let recovered: DurableSchedulerSnapshot = serde_json::from_slice(&encoded).unwrap();
+        let mut scheduler = DurablePodScheduler::from_snapshot(recovered).unwrap();
+        scheduler.release(&source_lease_id).unwrap();
+        assert_eq!(scheduler.snapshot().follow_up_limit, Some(2));
+        assert_eq!(scheduler.snapshot().follow_up_bindings.len(), 2);
+
+        let generation = scheduler
+            .begin_generation(&[first.task_id.clone(), second.task_id.clone()])
+            .unwrap();
+        let mut exact = proposal(
+            &authority,
+            &first.task_id,
+            "crates/queue-0/src",
+            "follow-up-one",
+        );
+        let AdmissionDecision::Admitted(lease) = scheduler
+            .admit(&authority, generation, &authority.initial_commit, &exact)
+            .unwrap()
+        else {
+            panic!("exact follow-up must be admitted");
+        };
+        assert_eq!(lease.owned_paths, first.owned_paths);
+
+        exact.owned_paths = vec![PathBuf::from("crates/queue-0")];
+        exact.proposal_sha256 = "0".repeat(64);
+        let changed = PodProposal::seal(exact, &authority).unwrap();
+        assert_eq!(
+            scheduler.admit(&authority, generation, &authority.initial_commit, &changed),
+            Err(TeamStateError::Authority)
+        );
+
+        let mut mutated = scheduler.snapshot().clone();
+        mutated
+            .follow_up_bindings
+            .get_mut(&second.task_id)
+            .unwrap()
+            .binding_sha256 = "f".repeat(64);
+        assert_eq!(mutated.verify(), Err(TeamStateError::Authority));
+    }
+
+    #[test]
+    fn integration_defect_follow_up_requires_exact_retained_evidence() {
+        let authority = spec(CampaignExecutionMode::Parallel, 1);
+        let source_task_id = "24.3.2.4";
+        let mut snapshot = publication_ready_snapshot(&[source_task_id]);
+        snapshot
+            .enqueue_integration(source_task_id, "9".repeat(64))
+            .unwrap();
+        snapshot
+            .mark_merge_ready(source_task_id, "a".repeat(64))
+            .unwrap();
+        snapshot
+            .begin_integration(source_task_id, "b".repeat(64))
+            .unwrap();
+        snapshot
+            .bind_integration_commit(source_task_id, "c".repeat(40), "d".repeat(64))
+            .unwrap();
+        let evidenced = follow_up_binding(
+            "24.3.2.5",
+            source_task_id,
+            "crates/queue-0/src",
+            FollowUpCause::IntegrationDefect {
+                evidence_sha256: "d".repeat(64),
+            },
+        );
+        snapshot.authorize_follow_up(&authority, evidenced).unwrap();
+
+        let missing = follow_up_binding(
+            "24.3.2.6",
+            source_task_id,
+            "crates/queue-0/tests",
+            FollowUpCause::IntegrationDefect {
+                evidence_sha256: "e".repeat(64),
+            },
+        );
+        assert_eq!(
+            snapshot.authorize_follow_up(&authority, missing),
+            Err(TeamStateError::Authority)
+        );
     }
 
     #[test]

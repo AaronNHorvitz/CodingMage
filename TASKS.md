@@ -1228,11 +1228,11 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 24.3.1.3:** Default task integration to the isolated campaign branch and default destination promotion to human-required.
   - [x] **Sub-task 24.3.1.4:** Bind every operator decision to campaign, destination, expected heads, reviewed commits, policy digest, and one create-once request ID.
   - [x] **Sub-task 24.3.1.5:** Reject model-authored policy changes, stale authorization, missing branch protection, incomplete tasks, blocking findings, failed checks, or changed SHAs.
-- [ ] **Task 24.3.2 - Complete the campaign deterministically**
+- [x] **Task 24.3.2 - Complete the campaign deterministically**
   - [x] **Sub-task 24.3.2.1:** Continue replanning until every authorized task is merged, truthfully blocked, disputed, cancelled, or stopped by an exact limit.
   - [x] **Sub-task 24.3.2.2:** Run configurable batch gates after an integration count or logical story boundary.
   - [x] **Sub-task 24.3.2.3:** Run final complete gates and a fresh Codex integration review over the cumulative campaign diff.
-  - [ ] **Sub-task 24.3.2.4:** Permit follow-up tasks only when they map to the original authority or repair an evidenced integration defect, with a bounded follow-up ceiling.
+  - [x] **Sub-task 24.3.2.4:** Permit follow-up tasks only when they map to the original authority or repair an evidenced integration defect, with a bounded follow-up ceiling. See `docs/evidence/sprint-25-multi-agent-local.md`.
   - [x] **Sub-task 24.3.2.5:** Produce a content-minimized campaign report and optional final draft PR to the configured destination without promoting it.
 
 **Story acceptance criteria**
@@ -1578,4 +1578,4 @@ The first dependency-ready implementation unit is:
 - [x] **Next 5:** Repository owner Aaron Horvitz inspected and approved all seven conditions in `docs/evidence/sprint-22-campaign-ac-human-review.md` on 2026-08-24. Sub-task 22.3.3.6, AC 22.6, and Gate 22.3 are closed without describing blocker-only evidence as useful implementation throughput or granting publication authority.
 - [x] **Next 6:** Execute Sub-task 23.1.2.4 in stages. Current-source deterministic fixtures passed capacities one through five, completion rotations, two-pod timeout isolation, sibling survival, five-pod cancellation, and process-backed five-pod serialized integration after Gate 22.3 closed. The controlled downstream target was not used for rollout evidence. See `docs/evidence/sprint-25-multi-agent-local.md`.
 - [x] **Next 7:** Implement Sub-task 24.1.2.3 by deriving a closed stronger-review requirement from task risk and changed ownership boundaries, binding the resolved reviewer profile into durable task and integration identity, and refusing shared-contract, security-boundary, or architecture integration when the required stronger profile is unavailable or mismatched. Positive, negative, mutation, recovery, cross-task isolation, and pre-mutation integration-refusal fixtures pass. See `docs/evidence/sprint-25-multi-agent-local.md`.
-- [ ] **Next 8:** Implement Sub-task 24.3.2.4 by binding every follow-up task to either original task/path authority or an exact integration-defect evidence identity, enforcing the configured follow-up ceiling across restart, and rejecting unrelated, broadened, replayed, or unevidenced follow-up work before scheduling.
+- [x] **Next 8:** Implement Sub-task 24.3.2.4 by binding every follow-up task to either original task/path authority or an exact integration-defect evidence identity, enforcing the configured follow-up ceiling across restart, and rejecting unrelated, broadened, replayed, or unevidenced follow-up work before scheduling. Sealing, exact-path scheduling, ceiling, replay, mutation, recovery, defect-evidence, and isolation fixtures pass. See `docs/evidence/sprint-25-multi-agent-local.md`.

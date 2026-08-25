@@ -289,6 +289,8 @@ mod tests {
                 active: BTreeMap::new(),
                 released: BTreeSet::new(),
                 ready_age: BTreeMap::new(),
+                follow_up_limit: Some(0),
+                follow_up_bindings: BTreeMap::new(),
             },
             resources: TeamResourceSnapshot {
                 version: TEAM_STATE_SCHEMA_VERSION,

@@ -34,7 +34,7 @@ are:
 | `max_campaign_tokens` | Aggregate observed provider-token ceiling. |
 | `max_task_tokens` | Per-task observed provider-token ceiling. |
 | `max_task_correction_cycles` | Bounded gate, review, and CI correction count. |
-| `max_follow_up_tasks` | Maximum follow-up work admitted inside original authority. |
+| `max_follow_up_tasks` | Campaign-lifetime ceiling for sealed follow-up work admitted inside one source task's original path authority. |
 | `integration_validation_interval` | Number of task integrations between cumulative gates and independent review; `1` validates every integration. |
 
 For five local pods, use `max_parallel_pods = 5`, `execution_mode = "parallel"`, five Claude

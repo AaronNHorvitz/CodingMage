@@ -147,3 +147,20 @@ workspace test suite passed on the resulting source; the two explicitly guarded 
 qualifications remained intentionally ignored during the ordinary workspace run. This evidence does
 not claim that a model-selected risk label can weaken the deterministic path escalation, nor does it
 grant publication or destination-promotion authority.
+
+## Follow-Up Authority Qualification
+
+Sub-task 24.3.2.4 adds a sealed durable follow-up binding to the campaign scheduler. Each binding
+names one new task, one retained source task, exact repository-relative paths no broader than the
+source task, and one closed cause: original authority or a retained integration-defect evidence
+digest. The campaign-lifetime `max_follow_up_tasks` ceiling and every accepted binding survive
+serialization and restart. A legacy checkpoint with no follow-up projection initializes the ceiling
+from current operator authority before its first follow-up effect.
+
+Admission requires exact equality with the sealed follow-up paths. Focused fixtures cover original
+authority, exact retained defect evidence, duplicate replay, unrelated and broadened paths,
+unevidenced defects, canonical-digest mutation, ceiling exhaustion, restart recovery, exact-path
+scheduling, and isolation between separate bindings. Strict workspace Clippy and the complete
+workspace test suite passed; the two separately guarded sustained qualifications remained
+intentionally ignored. This does not synthesize authority for arbitrary model-created tasks or
+permit publication, merge, or destination promotion.

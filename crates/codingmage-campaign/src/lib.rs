@@ -5,11 +5,12 @@ mod team;
 pub use team::{
     ActorClass, AdmissionDecision, AdmissionReason, CampaignConcurrency, CampaignExecutionMode,
     CampaignTaskRecord, CampaignTaskState, CampaignTaskTransition, DestinationPromotionPolicy,
-    DurablePodLease, DurablePodScheduler, DurableSchedulerSnapshot, GitHubCampaignPolicy,
-    MultiAgentPolicy, ProviderCircuit, ProviderCircuitStatus, ReviewRequirement,
-    TEAM_STATE_SCHEMA_VERSION, TaskIntegrationPolicy, TaskMergeStrategy, TaskPublicationMode,
-    TaskResourceReservation, TaskTerminalReason, TaskUtilization, TeamCampaignSnapshot,
-    TeamResourceController, TeamResourcePolicy, TeamResourceSnapshot, TeamStateError,
+    DurablePodLease, DurablePodScheduler, DurableSchedulerSnapshot, FollowUpCause,
+    FollowUpTaskBinding, GitHubCampaignPolicy, MultiAgentPolicy, ProviderCircuit,
+    ProviderCircuitStatus, ReviewRequirement, TEAM_STATE_SCHEMA_VERSION, TaskIntegrationPolicy,
+    TaskMergeStrategy, TaskPublicationMode, TaskResourceReservation, TaskTerminalReason,
+    TaskUtilization, TeamCampaignSnapshot, TeamResourceController, TeamResourcePolicy,
+    TeamResourceSnapshot, TeamStateError,
 };
 
 use std::{

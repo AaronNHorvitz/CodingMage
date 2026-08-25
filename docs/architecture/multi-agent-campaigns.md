@@ -239,7 +239,10 @@ The architecture above is implemented on the current feature branch for determin
 fake-adapter execution. Local coverage includes one through five workers, sibling failure isolation,
 durable liveness and resource reservations, bounded provider retry and circuit behavior, initial
 batch recovery, assigned-issue ordering, exact task PR bases, CI correction lineage, serialized
-integration, configurable cumulative validation, final reporting, and separate promotion grants.
+integration, configurable cumulative validation, sealed authority-bound follow-up work, final
+reporting, and separate promotion grants. Follow-up registration is create-once and durable: it
+binds an exact source task, path subset, and either original authority or retained integration-defect
+evidence before the scheduler may admit the task.
 
 The process-backed five-pod fixture executes real local worktrees, commits, gates, reviews,
 controls, integration, and final reporting using fake provider executables. The accelerated soak

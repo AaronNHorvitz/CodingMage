@@ -46,8 +46,10 @@ The required 44-scenario mapping is machine checked in
 - Serial mode remains the compatibility default when `multi_agent` is absent.
 - Arbitrary semantic coupling cannot be proven mechanically. Operators declare shared contracts and
   resources; cumulative gates, Codex review, or a human decision cover residual judgment.
-- Follow-up work is count-bounded and must remain inside original authority. Model output cannot
-  expand scope.
+- Follow-up work is sealed, restart-persistent, and count-bounded. It must remain inside one source
+  task's path authority and either map to that original authority or cite exact retained
+  integration-defect evidence. Replays, evidence mutation, path broadening, and model-authored scope
+  expansion fail before scheduling.
 - Remote publication is optional. Local state stays canonical and remote text never grants
   authority.
 - Automatic task integration and destination promotion are different permissions. Destination
