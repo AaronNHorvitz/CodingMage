@@ -102,6 +102,22 @@ correction. Together, the one-pod and five-pod runs are current local sustained-
 are not a claim of long-duration, authenticated-provider, native-platform, independently reviewed,
 or valuable-target qualification.
 
+## Post-Serial-Gate Staged Rollout
+
+After Campaign AC and the repository-owner review closed Gate 22.3, the staged parallel fixtures
+were rerun against CodingMage commit `dfa3194`. The accelerated scheduler campaign passed capacities
+one through five over ten completion-order rotations per capacity. The two-pod timeout fixture
+cancelled only the expired worker and preserved its successful sibling. The worker-panic fixture
+recorded one exact failed task while every independent sibling completed. The five-pod cancellation
+fixture reconciled all owned workers, leases, and resources without residue.
+
+The process-backed five-pod CLI campaign also passed in 64.43 seconds. All five implementations
+overlapped, retained distinct task, pod, branch, worktree, process, and state identities, completed
+in deterministic result order, serialized reviewed integration, preserved the active checkout, and
+replayed idempotently without another provider effect. This closes the staged local rollout
+evidence for Sub-task 23.1.2.4. It does not grant authenticated-provider, valuable-target, remote
+publication, destination-promotion, or release authority.
+
 ## External Qualification
 
 [`qualify_campaign.py`](../../scripts/qualify_campaign.py) provides a guarded live runner. It
