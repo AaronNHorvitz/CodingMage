@@ -1,6 +1,7 @@
 //! Production-coordinator qualification against the prescribed disposable schedule.
 
 use std::{
+    ffi::OsStr,
     fmt::Write as _,
     fs,
     panic::{AssertUnwindSafe, catch_unwind},
@@ -14,6 +15,62 @@ use codingmage_runtime::{
     CampaignState, ProgressStage, campaign_status, run_serial_campaign_with_progress,
 };
 use codingmage_soak::{PRESCRIBED_OUTCOME_COUNT, prescribed_ten_outcome_schedule};
+
+const INSTALLED_QUALIFICATION_APPROVAL: &str = "approved";
+const INSTALLED_QUALIFICATION_APPROVAL_ENV: &str = "CODINGMAGE_INSTALLED_QUALIFICATION";
+const INSTALLED_QUALIFICATION_BINARY_ENV: &str = "CODINGMAGE_INSTALLED_BINARY";
+
+fn select_coordinator_binary(
+    approval: Option<&OsStr>,
+    installed_binary: Option<&OsStr>,
+) -> Result<PathBuf, String> {
+    match (approval, installed_binary) {
+        (None, None) => Ok(PathBuf::from(env!("CARGO_BIN_EXE_codingmage"))),
+        (Some(value), Some(path)) if value == INSTALLED_QUALIFICATION_APPROVAL => {
+            let path = PathBuf::from(path);
+            if !path.is_absolute() {
+                return Err(format!(
+                    "{INSTALLED_QUALIFICATION_BINARY_ENV} must be absolute"
+                ));
+            }
+            let metadata = fs::symlink_metadata(&path).map_err(|error| {
+                format!(
+                    "cannot inspect {INSTALLED_QUALIFICATION_BINARY_ENV} {}: {error}",
+                    path.display()
+                )
+            })?;
+            if !metadata.file_type().is_file() || metadata.file_type().is_symlink() {
+                return Err(format!(
+                    "{INSTALLED_QUALIFICATION_BINARY_ENV} must name an ordinary file"
+                ));
+            }
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt as _;
+                if metadata.permissions().mode() & 0o111 == 0 {
+                    return Err(format!(
+                        "{INSTALLED_QUALIFICATION_BINARY_ENV} must be executable"
+                    ));
+                }
+            }
+            Ok(path)
+        }
+        (Some(_), Some(_)) => Err(format!(
+            "{INSTALLED_QUALIFICATION_APPROVAL_ENV} must equal {INSTALLED_QUALIFICATION_APPROVAL:?}"
+        )),
+        _ => Err(format!(
+            "{INSTALLED_QUALIFICATION_APPROVAL_ENV} and {INSTALLED_QUALIFICATION_BINARY_ENV} must be set together"
+        )),
+    }
+}
+
+fn coordinator_binary() -> PathBuf {
+    select_coordinator_binary(
+        std::env::var_os(INSTALLED_QUALIFICATION_APPROVAL_ENV).as_deref(),
+        std::env::var_os(INSTALLED_QUALIFICATION_BINARY_ENV).as_deref(),
+    )
+    .unwrap_or_else(|error| panic!("installed-candidate qualification refused: {error}"))
+}
 
 struct Fixture {
     root: PathBuf,
@@ -53,7 +110,7 @@ impl Fixture {
     }
 
     fn command(arguments: &[&str]) -> Output {
-        Command::new(env!("CARGO_BIN_EXE_codingmage"))
+        Command::new(coordinator_binary())
             .args(arguments)
             .output()
             .unwrap()
@@ -107,6 +164,60 @@ fn json(output: &Output) -> serde_json::Value {
         String::from_utf8_lossy(&output.stdout)
     );
     serde_json::from_slice(&output.stdout).unwrap()
+}
+
+#[test]
+fn installed_candidate_selection_requires_explicit_exact_authority() {
+    let fixture = Fixture::new();
+    let executable = fixture.executable("installed-candidate", "#!/bin/sh\nexit 0\n");
+
+    assert_eq!(
+        select_coordinator_binary(None, None).unwrap(),
+        PathBuf::from(env!("CARGO_BIN_EXE_codingmage"))
+    );
+    assert!(
+        select_coordinator_binary(
+            Some(OsStr::new(INSTALLED_QUALIFICATION_APPROVAL)),
+            Some(executable.as_os_str())
+        )
+        .is_ok()
+    );
+    assert!(
+        select_coordinator_binary(Some(OsStr::new("yes")), Some(executable.as_os_str()))
+            .unwrap_err()
+            .contains("must equal")
+    );
+    assert!(
+        select_coordinator_binary(
+            Some(OsStr::new(INSTALLED_QUALIFICATION_APPROVAL)),
+            Some(OsStr::new("relative-candidate"))
+        )
+        .unwrap_err()
+        .contains("must be absolute")
+    );
+    assert!(
+        select_coordinator_binary(Some(OsStr::new(INSTALLED_QUALIFICATION_APPROVAL)), None)
+            .unwrap_err()
+            .contains("must be set together")
+    );
+    assert!(
+        select_coordinator_binary(None, Some(executable.as_os_str()))
+            .unwrap_err()
+            .contains("must be set together")
+    );
+
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(&executable, fixture.root.join("candidate-link")).unwrap();
+        assert!(
+            select_coordinator_binary(
+                Some(OsStr::new(INSTALLED_QUALIFICATION_APPROVAL)),
+                Some(fixture.root.join("candidate-link").as_os_str())
+            )
+            .unwrap_err()
+            .contains("ordinary file")
+        );
+    }
 }
 
 #[test]
@@ -372,13 +483,13 @@ profiles = ["configured-gates"]
         run_serial_campaign_with_progress(
             &config_value,
             campaign_value,
-            Path::new(env!("CARGO_BIN_EXE_codingmage")),
+            &coordinator_binary(),
             |progress| {
                 if progress.stage == ProgressStage::Integrating {
                     let status = campaign_status(
                         &config_value,
                         &CampaignSpec::load(&campaign).unwrap(),
-                        Path::new(env!("CARGO_BIN_EXE_codingmage")),
+                        &coordinator_binary(),
                     )
                     .unwrap()
                     .unwrap();
@@ -400,13 +511,13 @@ profiles = ["configured-gates"]
     let stopped = run_serial_campaign_with_progress(
         &config_value,
         campaign_value,
-        Path::new(env!("CARGO_BIN_EXE_codingmage")),
+        &coordinator_binary(),
         |progress| {
             if progress.stage == ProgressStage::Implementing && !stop_requested {
                 let status = campaign_status(
                     &config_value,
                     &CampaignSpec::load(&campaign).unwrap(),
-                    Path::new(env!("CARGO_BIN_EXE_codingmage")),
+                    &coordinator_binary(),
                 )
                 .unwrap()
                 .unwrap();
