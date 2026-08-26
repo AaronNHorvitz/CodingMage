@@ -2099,7 +2099,7 @@ fn classify_terminal(
             CampaignTaskState::Blocked,
             TaskTerminalReason::StaleIdentity,
         ),
-        Err(RuntimeError::CampaignLimit(_)) => {
+        Err(RuntimeError::CampaignLimit(_) | RuntimeError::ProviderAttemptLimit) => {
             (CampaignTaskState::Failed, TaskTerminalReason::LimitExceeded)
         }
         Err(RuntimeError::Implementer(_)) => (

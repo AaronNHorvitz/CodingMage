@@ -15,6 +15,7 @@ use crate::RuntimeError;
 
 const SCHEMA_VERSION: u16 = 1;
 const MAX_CHECKPOINT_BYTES: u64 = 64 * 1024;
+const MAX_PROVIDER_ATTEMPT_SCOPES: usize = 256;
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -99,6 +100,159 @@ struct CheckpointEnvelope {
 struct InitialCheckpointEnvelope {
     checkpoint: InitialCheckpoint,
     checkpoint_sha256: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case", tag = "stage")]
+pub(crate) enum ProviderAttemptScope {
+    InitialImplementation {
+        run_id: RunId,
+        source_commit: String,
+        session_id: AttemptId,
+    },
+    Correction {
+        run_id: RunId,
+        correction_round: u16,
+        parent_commit: String,
+        session_id: AttemptId,
+    },
+    Review {
+        run_id: RunId,
+        candidate_commit: String,
+    },
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ProviderAttemptEntry {
+    scope: ProviderAttemptScope,
+    attempts: u8,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ProviderAttemptLedger {
+    schema_version: u16,
+    entries: Vec<ProviderAttemptEntry>,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ProviderAttemptLedgerEnvelope {
+    ledger: ProviderAttemptLedger,
+    ledger_sha256: String,
+}
+
+impl ProviderAttemptLedger {
+    fn path(run_root: &Path) -> PathBuf {
+        run_root.join("provider-attempts.json")
+    }
+
+    fn load(run_root: &Path) -> Result<Self, RuntimeError> {
+        let path = Self::path(run_root);
+        let metadata = match fs::symlink_metadata(&path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return Ok(Self {
+                    schema_version: SCHEMA_VERSION,
+                    entries: Vec::new(),
+                });
+            }
+            Err(_) => return Err(RuntimeError::State),
+        };
+        if !metadata.is_file()
+            || metadata.file_type().is_symlink()
+            || metadata.len() > MAX_CHECKPOINT_BYTES
+        {
+            return Err(RuntimeError::State);
+        }
+        let bytes = fs::read(path).map_err(|_| RuntimeError::State)?;
+        let envelope: ProviderAttemptLedgerEnvelope =
+            serde_json::from_slice(&bytes).map_err(|_| RuntimeError::State)?;
+        let canonical = serde_json::to_vec(&envelope.ledger).map_err(|_| RuntimeError::State)?;
+        if envelope.ledger.validate().is_err() || sha256_hex(&canonical) != envelope.ledger_sha256 {
+            return Err(RuntimeError::State);
+        }
+        Ok(envelope.ledger)
+    }
+
+    fn validate(&self) -> Result<(), RuntimeError> {
+        if self.schema_version != SCHEMA_VERSION
+            || self.entries.len() > MAX_PROVIDER_ATTEMPT_SCOPES
+            || self.entries.iter().any(|entry| entry.attempts == 0)
+        {
+            return Err(RuntimeError::State);
+        }
+        for (index, entry) in self.entries.iter().enumerate() {
+            if self.entries[..index]
+                .iter()
+                .any(|prior| prior.scope == entry.scope)
+            {
+                return Err(RuntimeError::State);
+            }
+        }
+        Ok(())
+    }
+
+    fn persist(&self, run_root: &Path) -> Result<(), RuntimeError> {
+        self.validate()?;
+        private_directory(run_root)?;
+        let canonical = serde_json::to_vec(self).map_err(|_| RuntimeError::State)?;
+        let envelope = ProviderAttemptLedgerEnvelope {
+            ledger: self.clone(),
+            ledger_sha256: sha256_hex(&canonical),
+        };
+        let bytes = serde_json::to_vec_pretty(&envelope).map_err(|_| RuntimeError::State)?;
+        if u64::try_from(bytes.len()).map_err(|_| RuntimeError::State)? > MAX_CHECKPOINT_BYTES {
+            return Err(RuntimeError::State);
+        }
+        let temporary = run_root.join(format!(
+            ".provider-attempts.{}.{}.tmp",
+            std::process::id(),
+            NEXT_TEMPORARY.fetch_add(1, Ordering::Relaxed)
+        ));
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|_| RuntimeError::State)?;
+        set_file_private(&file)?;
+        file.write_all(&bytes)
+            .and_then(|()| file.sync_all())
+            .map_err(|_| RuntimeError::State)?;
+        fs::rename(temporary, Self::path(run_root)).map_err(|_| RuntimeError::State)?;
+        File::open(run_root)
+            .and_then(|directory| directory.sync_all())
+            .map_err(|_| RuntimeError::State)
+    }
+
+    pub(crate) fn reserve(
+        run_root: &Path,
+        scope: ProviderAttemptScope,
+        limit: u8,
+    ) -> Result<u8, RuntimeError> {
+        if limit == 0 {
+            return Err(RuntimeError::State);
+        }
+        let mut ledger = Self::load(run_root)?;
+        if let Some(entry) = ledger.entries.iter_mut().find(|entry| entry.scope == scope) {
+            if entry.attempts >= limit {
+                return Err(RuntimeError::ProviderAttemptLimit);
+            }
+            entry.attempts = entry.attempts.checked_add(1).ok_or(RuntimeError::State)?;
+            let attempts = entry.attempts;
+            ledger.persist(run_root)?;
+            return Ok(attempts);
+        }
+        if ledger.entries.len() >= MAX_PROVIDER_ATTEMPT_SCOPES {
+            return Err(RuntimeError::State);
+        }
+        ledger
+            .entries
+            .push(ProviderAttemptEntry { scope, attempts: 1 });
+        ledger.persist(run_root)?;
+        Ok(1)
+    }
 }
 
 impl InitialCheckpoint {
@@ -692,6 +846,48 @@ mod tests {
         let mut invalid = checkpoint;
         invalid.diagnostic = Some(malformed);
         assert_eq!(invalid.persist(&root), Err(RuntimeError::State));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn provider_attempts_are_durable_bounded_and_scoped() {
+        let root = root("provider-attempts");
+        let run_id = RunId::new("run-1").unwrap();
+        let correction = ProviderAttemptScope::Correction {
+            run_id: run_id.clone(),
+            correction_round: 2,
+            parent_commit: "b".repeat(40),
+            session_id: AttemptId::new("123e4567-e89b-12d3-a456-426614174000").unwrap(),
+        };
+        assert_eq!(
+            ProviderAttemptLedger::reserve(&root, correction.clone(), 3),
+            Ok(1)
+        );
+        assert_eq!(
+            ProviderAttemptLedger::reserve(&root, correction.clone(), 3),
+            Ok(2)
+        );
+        assert_eq!(
+            ProviderAttemptLedger::reserve(&root, correction.clone(), 3),
+            Ok(3)
+        );
+        assert_eq!(
+            ProviderAttemptLedger::reserve(&root, correction, 3),
+            Err(RuntimeError::ProviderAttemptLimit)
+        );
+
+        let review = ProviderAttemptScope::Review {
+            run_id,
+            candidate_commit: "c".repeat(40),
+        };
+        assert_eq!(ProviderAttemptLedger::reserve(&root, review, 3), Ok(1));
+
+        let path = ProviderAttemptLedger::path(&root);
+        let mut bytes = fs::read(&path).unwrap();
+        let index = bytes.iter().position(|byte| *byte == b'c').unwrap();
+        bytes[index] = b'd';
+        fs::write(path, bytes).unwrap();
+        assert_eq!(ProviderAttemptLedger::load(&root), Err(RuntimeError::State));
         fs::remove_dir_all(root).unwrap();
     }
 

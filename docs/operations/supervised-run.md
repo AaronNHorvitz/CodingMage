@@ -72,6 +72,11 @@ requires retained state to match the same repository, source commit, task, branc
 correction round, candidate, and provider session. A malformed identity or any binding mismatch
 fails before work can be resumed. Omitting the option always begins a distinct run.
 
+Provider attempts are reserved in a private integrity-bound ledger before each process starts.
+Initial implementation, each exact correction round and parent session, and each immutable review
+candidate have separate three-attempt ceilings that survive independent CLI restarts. Exhaustion
+returns `codingmage.provider.attempt_limit` without spawning another provider.
+
 The terminal JSON identifies the run, task, terminal state, retained branch, candidate commit, completion commit, and review verdict. Provider output, prompts, source text, file names, paths, credentials, and hidden reasoning are not emitted.
 
 `existing_login` passes only `HOME` and any present `XDG_RUNTIME_DIR`, `XDG_CONFIG_HOME`, and `DBUS_SESSION_BUS_ADDRESS` references to the provider processes. CodingMage adds the compiled literal `PATH=/usr/bin:/bin` so installed sandbox dependencies can be found; it never inherits ambient `PATH`. Login-discovery values remain in memory and are not emitted or journaled. API keys, tokens, and arbitrary configuration variables are never accepted through this boundary.

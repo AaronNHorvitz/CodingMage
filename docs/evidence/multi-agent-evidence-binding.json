@@ -23,7 +23,7 @@
     {
       "group": "implementation",
       "path": "crates/codingmage-runtime/src/team_runtime.rs",
-      "sha256": "984050712f81fd36c4be12f443fbacceeb7e6ec95b1dfc9b6a707be1241924fa"
+      "sha256": "d5508b007fd38db3e90ad5c66c6b0523b278ba42661d9e1824ceb8264708f472"
     },
     {
       "group": "implementation",

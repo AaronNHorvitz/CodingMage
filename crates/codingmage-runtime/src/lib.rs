@@ -116,7 +116,7 @@ use campaign_state::{
 };
 use correction_state::{
     CorrectionCheckpoint, CorrectionDiagnosticKind, CorrectionDiagnosticProjection,
-    CorrectionPhase, InitialCheckpoint, InitialPhase,
+    CorrectionPhase, InitialCheckpoint, InitialPhase, ProviderAttemptLedger, ProviderAttemptScope,
 };
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
@@ -3292,6 +3292,9 @@ const fn campaign_unit_error(error: RuntimeError) -> CampaignUnitError {
         RuntimeError::Utilization => {
             blocked_unit_error("codingmage.campaign.unit_utilization_failure")
         }
+        RuntimeError::ProviderAttemptLimit => {
+            paused_unit_error("codingmage.campaign.unit_provider_attempt_limit")
+        }
         RuntimeError::Orchestration => {
             blocked_unit_error("codingmage.campaign.unit_orchestration_failure")
         }
@@ -4848,6 +4851,20 @@ impl<'a> ProductionWorkflowPort<'a> {
         result
     }
 
+    fn reserve_provider_attempt(
+        &mut self,
+        scope: ProviderAttemptScope,
+    ) -> Result<(), OrchestrationError> {
+        self.record_provider_attempt()?;
+        if let Err(error) =
+            ProviderAttemptLedger::reserve(&self.run_root, scope, CAMPAIGN_PROVIDER_ATTEMPT_LIMIT)
+        {
+            self.failure = Some(error);
+            return Err(OrchestrationError::Port);
+        }
+        Ok(())
+    }
+
     fn record_process_result(&mut self, result: &ProcessResult) -> Result<(), OrchestrationError> {
         let output = result
             .stdout
@@ -5251,6 +5268,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             session_id: session.session_id.as_str().to_owned(),
             correction_round,
         })?;
+        let provider_attempt_scope = self.implementation_provider_scope(session, correction_round);
         let adapter = self.claude_adapter_for_round(correction_round)?;
         let mut resume = resume_first;
         let mut metadata_repair_inventory: Option<Vec<PathBuf>> = None;
@@ -5267,7 +5285,7 @@ impl<'a> ProductionWorkflowPort<'a> {
                     return Err(OrchestrationError::Port);
                 }
             };
-            self.record_provider_attempt()?;
+            self.reserve_provider_attempt(provider_attempt_scope.clone())?;
             let execution =
                 match adapter.execute_observed(&self.executor, &plan, &self.cancellation) {
                     Ok(execution) => execution,
@@ -5337,6 +5355,27 @@ impl<'a> ProductionWorkflowPort<'a> {
             }
         }
         Err(OrchestrationError::Port)
+    }
+
+    fn implementation_provider_scope(
+        &self,
+        session: &ClaudeSession,
+        correction_round: u16,
+    ) -> ProviderAttemptScope {
+        if correction_round == 0 {
+            ProviderAttemptScope::InitialImplementation {
+                run_id: self.run_id.clone(),
+                source_commit: session.source_commit.clone(),
+                session_id: session.session_id.clone(),
+            }
+        } else {
+            ProviderAttemptScope::Correction {
+                run_id: self.run_id.clone(),
+                correction_round,
+                parent_commit: session.source_commit.clone(),
+                session_id: session.session_id.clone(),
+            }
+        }
     }
 
     fn run_gates(&mut self) -> Result<VerificationOutcome, OrchestrationError> {
@@ -5984,6 +6023,10 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             target_commit,
             evidence: self.gate_evidence.clone(),
         };
+        let provider_attempt_scope = ProviderAttemptScope::Review {
+            run_id: self.run_id.clone(),
+            candidate_commit: binding.target_commit.clone(),
+        };
         let adapter = self.codex_adapter()?;
         let plan = match adapter.plan_start(&binding, &self.selected.item.title) {
             Ok(plan) => plan,
@@ -5993,7 +6036,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             }
         };
         self.failure = Some(RuntimeError::State);
-        self.record_provider_attempt()?;
+        self.reserve_provider_attempt(provider_attempt_scope)?;
         self.failure = Some(RuntimeError::Reviewer(CodexError::Process));
         let execution =
             adapter.execute_observed(&self.executor, &plan, &binding, &self.cancellation);
@@ -6633,6 +6676,8 @@ pub enum RuntimeError {
     RetainedStateObservation,
     /// Aggregate unit utilization could not be updated or synchronized.
     Utilization,
+    /// The durable provider-attempt ceiling for one exact stage was reached.
+    ProviderAttemptLimit,
     /// One-unit orchestration failed closed.
     Orchestration,
     /// Campaign authority, proposal, or lease validation failed.
@@ -6662,6 +6707,7 @@ impl RuntimeError {
             Self::State => "codingmage.runtime.state",
             Self::RetainedStateObservation => "codingmage.runtime.retained_state_observation",
             Self::Utilization => "codingmage.runtime.utilization",
+            Self::ProviderAttemptLimit => "codingmage.provider.attempt_limit",
             Self::Orchestration => "codingmage.runtime.orchestration",
             Self::Campaign(error) => match error {
                 CampaignError::InvalidSpec => "codingmage.runtime.campaign.spec",

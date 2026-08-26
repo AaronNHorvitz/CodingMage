@@ -368,6 +368,143 @@ effort = "high"
 
 #[test]
 #[allow(clippy::too_many_lines)]
+fn supervised_restart_refuses_a_fourth_exact_correction_provider_attempt() {
+    let fixture = Fixture::new();
+    let target = fixture.root.join("target");
+    fs::create_dir(target.join("src")).unwrap();
+    fs::write(target.join("src/lib.rs"), "pub fn value() -> u8 { 1 }\n").unwrap();
+    git(&target, &["add", "src/lib.rs"]);
+    git(&target, &["commit", "-m", "add durable attempt fixture"]);
+
+    let claude = fixture.executable(
+        "attempt-claude",
+        r#"#!/usr/bin/python3
+import json, sys
+from pathlib import Path
+if "--version" in sys.argv:
+    print("2.1.136 (Claude Code)")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
+    raise SystemExit(0)
+path = Path("src/lib.rs")
+if "{ 1 }" in path.read_text(encoding="utf-8"):
+    path.write_text("pub fn value() -> u8 { 2 }\n", encoding="utf-8")
+    print(json.dumps({
+        "type": "result", "is_error": False,
+        "structured_output": {
+            "changed_paths": ["src/lib.rs"], "tests": [], "commit": None,
+            "ready_for_commit": True, "limitations": [], "blocker_code": None
+        }
+    }))
+    raise SystemExit(0)
+log = Path(__file__).with_suffix(".log")
+with log.open("a", encoding="utf-8") as stream:
+    stream.write("correction-provider-attempt\n")
+print(json.dumps({"type": "result", "is_error": True, "subtype": "provider_unavailable"}))
+"#,
+    );
+    let codex = fixture.executable(
+        "attempt-codex",
+        r#"#!/usr/bin/python3
+import sys
+if "--version" in sys.argv:
+    print("codex-cli 0.144.5")
+    raise SystemExit(0)
+if "--help" in sys.argv and "resume" in sys.argv:
+    print("SESSION_ID --json --output-schema --model --ignore-user-config")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print("Run Codex non-interactively --json --output-schema resume --model read-only --ignore-user-config")
+    raise SystemExit(0)
+raise SystemExit(1)
+"#,
+    );
+    let config = fixture.root.join("config/attempts.toml");
+    let scratch = fixture.root.join("attempt-scratch");
+    let state = fixture.root.join("attempt-state");
+    assert!(
+        Fixture::command(&[
+            "init",
+            "--repo",
+            target.to_str().unwrap(),
+            "--config",
+            config.to_str().unwrap(),
+            "--scratch",
+            scratch.to_str().unwrap(),
+            "--state",
+            state.to_str().unwrap(),
+        ])
+        .status
+        .success()
+    );
+    let configured = fs::read_to_string(&config).unwrap();
+    fs::write(
+        &config,
+        configured.replace("/usr/bin/git", "/usr/bin/false"),
+    )
+    .unwrap();
+    let spec = fixture.root.join("attempt-run.toml");
+    fs::write(
+        &spec,
+        format!(
+            r#"version = 2
+task_id = "0.1.1.1"
+owned_paths = ["src"]
+completion_policy = "close_task"
+
+[implementer]
+executable = "{}"
+model = "fixture-implementer"
+effort = "high"
+authentication = "existing_login"
+
+[reviewer]
+executable = "{}"
+model = "fixture-reviewer"
+effort = "high"
+"#,
+            claude.display(),
+            codex.display()
+        ),
+    )
+    .unwrap();
+    let arguments = [
+        "run",
+        "--config",
+        config.to_str().unwrap(),
+        "--spec",
+        spec.to_str().unwrap(),
+        "--run-id",
+        "run-durable-attempt-limit",
+    ];
+    for expected_attempt in 1..=3 {
+        let outcome = Fixture::command(&arguments);
+        assert!(!outcome.status.success());
+        assert_eq!(
+            fs::read_to_string(claude.with_extension("log"))
+                .unwrap()
+                .lines()
+                .count(),
+            expected_attempt
+        );
+    }
+    let exhausted = Fixture::command(&arguments);
+    assert!(!exhausted.status.success());
+    assert!(
+        String::from_utf8_lossy(&exhausted.stderr).contains("codingmage.provider.attempt_limit")
+    );
+    assert_eq!(
+        fs::read_to_string(claude.with_extension("log"))
+            .unwrap()
+            .lines()
+            .count(),
+        3
+    );
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
 fn serial_campaign_advances_two_reviewed_tasks_without_touching_active_checkout() {
     let fixture = Fixture::new();
     let target = fixture.root.join("target");
