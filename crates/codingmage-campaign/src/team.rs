@@ -10,8 +10,9 @@ use serde::{Deserialize, Serialize};
 use sha2::Digest;
 
 use super::{
-    CampaignError, CampaignSpec, PodProposal, ReviewStrength, canonical_sha256, path_contains,
-    paths_overlap, safe_relative, valid_branch, valid_commit, valid_component, valid_sha256,
+    CampaignError, CampaignProvider, CampaignSpec, PodProposal, ReviewStrength, canonical_sha256,
+    path_contains, paths_overlap, safe_relative, valid_branch, valid_commit, valid_component,
+    valid_provider, valid_sha256,
 };
 
 const TEAM_POLICY_VERSION: u16 = 1;
@@ -331,6 +332,9 @@ pub struct MultiAgentPolicy {
     /// Number of task integrations between cumulative campaign validation checkpoints.
     #[serde(default = "default_integration_validation_interval")]
     pub integration_validation_interval: u16,
+    /// Optional operator-authored stronger profiles and deterministic escalation threshold.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider_routing: Option<ProviderRoutingPolicy>,
 }
 
 const fn default_integration_validation_interval() -> u16 {
@@ -366,6 +370,46 @@ impl MultiAgentPolicy {
                 .github
                 .as_ref()
                 .is_some_and(|github| github.verify(spec).is_err())
+            || self
+                .provider_routing
+                .as_ref()
+                .is_some_and(|routing| routing.verify().is_err())
+        {
+            return Err(CampaignError::InvalidAuthority);
+        }
+        Ok(())
+    }
+}
+
+/// Operator-authored stronger provider profiles available to deterministic routing.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProviderRoutingPolicy {
+    /// Closed routing-policy schema version.
+    pub version: u16,
+    /// Stronger Claude profile for high-risk or repeatedly failing implementation work.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub elevated_implementer: Option<CampaignProvider>,
+    /// Stronger Codex profile for high-risk or repeatedly failing independent review.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub elevated_reviewer: Option<CampaignProvider>,
+    /// Exact prior-failure count that requires elevated profiles.
+    pub failure_escalation_threshold: u16,
+}
+
+impl ProviderRoutingPolicy {
+    fn verify(&self) -> Result<(), CampaignError> {
+        if self.version != 1
+            || self.failure_escalation_threshold == 0
+            || self.failure_escalation_threshold > 100
+            || self
+                .elevated_implementer
+                .as_ref()
+                .is_some_and(|provider| !valid_provider(provider) || !strong_provider(provider))
+            || self
+                .elevated_reviewer
+                .as_ref()
+                .is_some_and(|provider| !valid_provider(provider) || !strong_provider(provider))
         {
             return Err(CampaignError::InvalidAuthority);
         }
@@ -382,6 +426,80 @@ fn valid_external_name(value: &str) -> bool {
         && value.len() <= 256
         && !value.chars().any(char::is_control)
         && !value.contains(['\0', '\n', '\r'])
+}
+
+fn strong_provider(provider: &CampaignProvider) -> bool {
+    matches!(provider.effort.as_str(), "xhigh" | "max")
+}
+
+fn resolve_provider_route(
+    spec: &CampaignSpec,
+    proposal: &PodProposal,
+    prior_failures: u16,
+) -> Result<(ImplementationRequirement, ReviewRequirement, Vec<String>), TeamStateError> {
+    let review_strength = ReviewStrength::resolve(proposal.risk, &proposal.owned_paths);
+    let routing = spec
+        .multi_agent
+        .as_ref()
+        .and_then(|policy| policy.provider_routing.as_ref());
+    let failure_escalated =
+        routing.is_some_and(|policy| prior_failures >= policy.failure_escalation_threshold);
+    let implementation_strength =
+        if routing.is_some() && (review_strength == ReviewStrength::Strong || failure_escalated) {
+            ReviewStrength::Strong
+        } else {
+            ReviewStrength::Standard
+        };
+    let implementation_provider = if implementation_strength == ReviewStrength::Strong {
+        routing
+            .and_then(|policy| policy.elevated_implementer.as_ref())
+            .unwrap_or(&spec.implementer)
+    } else {
+        &spec.implementer
+    };
+    let reviewer_provider = if review_strength == ReviewStrength::Strong || failure_escalated {
+        routing
+            .and_then(|policy| policy.elevated_reviewer.as_ref())
+            .unwrap_or(&spec.reviewer)
+    } else {
+        &spec.reviewer
+    };
+    let review_strength = if failure_escalated {
+        ReviewStrength::Strong
+    } else {
+        review_strength
+    };
+    if !implementation_strength.permits(implementation_provider)
+        || !review_strength.permits(reviewer_provider)
+    {
+        return Err(TeamStateError::Authority);
+    }
+    let mut reasons = BTreeSet::new();
+    if proposal.risk == codingmage_contracts::PodRisk::High {
+        reasons.insert("high-risk".to_owned());
+    }
+    if ReviewStrength::resolve(proposal.risk, &proposal.owned_paths) == ReviewStrength::Strong {
+        reasons.insert("sensitive-boundary".to_owned());
+    }
+    if failure_escalated {
+        reasons.insert("failure-history".to_owned());
+    }
+    if reasons.is_empty() {
+        reasons.insert("routine".to_owned());
+    }
+    Ok((
+        ImplementationRequirement {
+            strength: implementation_strength,
+            profile_sha256: super::provider_profile_sha256(implementation_provider)
+                .map_err(|_| TeamStateError::Authority)?,
+        },
+        ReviewRequirement {
+            strength: review_strength,
+            reviewer_profile_sha256: super::provider_profile_sha256(reviewer_provider)
+                .map_err(|_| TeamStateError::Authority)?,
+        },
+        reasons.into_iter().collect(),
+    ))
 }
 
 /// Durable campaign-level lifecycle for one authorized task.
@@ -1167,6 +1285,15 @@ pub struct CampaignTaskRecord {
     pub owned_paths: Vec<PathBuf>,
     /// Exact shared-resource leases.
     pub test_resources: Vec<String>,
+    /// Exact operator-selected implementation profile bound at admission.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub implementation_profile_sha256: Option<String>,
+    /// Exact prior-failure count used by deterministic routing.
+    #[serde(default)]
+    pub routing_prior_failures: u16,
+    /// Closed content-free reasons for the selected provider strengths.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub routing_reason_codes: Vec<String>,
     /// Deterministically resolved minimum review strength, absent before leasing.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub required_review_strength: Option<ReviewStrength>,
@@ -1225,6 +1352,9 @@ impl CampaignTaskRecord {
             ci_evidence_sha256: Vec::new(),
             owned_paths: Vec::new(),
             test_resources: Vec::new(),
+            implementation_profile_sha256: None,
+            routing_prior_failures: 0,
+            routing_reason_codes: Vec::new(),
             required_review_strength: None,
             reviewer_profile_sha256: None,
             state: CampaignTaskState::Planned,
@@ -1315,11 +1445,14 @@ impl CampaignTaskRecord {
             || self.test_resources.iter().any(|v| !valid_component(v))
             || self.test_resources.iter().collect::<BTreeSet<_>>().len()
                 != self.test_resources.len()
+            || !valid_record_routing(self)
             || self
                 .reviewer_profile_sha256
                 .as_ref()
                 .is_some_and(|value| !valid_sha256(value))
             || self.required_review_strength.is_some() != self.reviewer_profile_sha256.is_some()
+            || self.implementation_profile_sha256.is_some()
+                != self.reviewer_profile_sha256.is_some()
             || self
                 .last_evidence_sha256
                 .as_ref()
@@ -1541,6 +1674,11 @@ impl CampaignTaskRecord {
         candidate
             .test_resources
             .clone_from(lease.test_resources.as_ref());
+        candidate.implementation_profile_sha256 = Some(lease.implementation.profile_sha256.clone());
+        candidate.routing_prior_failures = lease.prior_failures;
+        candidate
+            .routing_reason_codes
+            .clone_from(&lease.routing_reason_codes);
         candidate.required_review_strength = Some(lease.review.strength);
         candidate.reviewer_profile_sha256 = Some(lease.review.reviewer_profile_sha256.clone());
         candidate.state = CampaignTaskState::Leased;
@@ -2136,6 +2274,16 @@ pub struct ReviewRequirement {
     pub reviewer_profile_sha256: String,
 }
 
+/// Immutable implementation-provider authority bound to one lease.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ImplementationRequirement {
+    /// Whether deterministic routing requires the stronger configured profile.
+    pub strength: ReviewStrength,
+    /// Digest of the exact operator-selected implementation profile authorized for this task.
+    pub profile_sha256: String,
+}
+
 /// Exact active lease retained by the campaign scheduler.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -2158,8 +2306,14 @@ pub struct DurablePodLease {
     pub owned_paths: Vec<PathBuf>,
     /// Exact shared-resource authority.
     pub test_resources: Box<Vec<String>>,
+    /// Boxed immutable implementation-provider authority.
+    pub implementation: Box<ImplementationRequirement>,
     /// Boxed immutable review authority keeps scheduler decisions compact.
     pub review: Box<ReviewRequirement>,
+    /// Exact prior-failure count used for this route.
+    pub prior_failures: u16,
+    /// Closed content-free reasons for the route in deterministic order.
+    pub routing_reason_codes: Vec<String>,
     /// Latest heartbeat sequence observed by the scheduler.
     pub heartbeat_sequence: u64,
     /// Latest heartbeat time observed by the scheduler.
@@ -2178,7 +2332,21 @@ impl DurablePodLease {
             || self.owned_paths.is_empty()
             || self.owned_paths.iter().any(|path| !safe_relative(path))
             || self.test_resources.iter().any(|v| !valid_component(v))
+            || !valid_sha256(&self.implementation.profile_sha256)
             || !valid_sha256(&self.review.reviewer_profile_sha256)
+            || self.prior_failures > 100
+            || self.routing_reason_codes.is_empty()
+            || self.routing_reason_codes.len() > 16
+            || self
+                .routing_reason_codes
+                .iter()
+                .any(|value| !valid_component(value))
+            || self
+                .routing_reason_codes
+                .iter()
+                .collect::<BTreeSet<_>>()
+                .len()
+                != self.routing_reason_codes.len()
         {
             return Err(TeamStateError::InvalidLease);
         }
@@ -2203,7 +2371,7 @@ pub enum AdmissionReason {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AdmissionDecision {
     /// Proposal received one exact active lease.
-    Admitted(DurablePodLease),
+    Admitted(Box<DurablePodLease>),
     /// Proposal was not admitted and created no lease.
     Deferred {
         /// Exact task that was not admitted.
@@ -2564,6 +2732,23 @@ impl DurablePodScheduler {
         source_head: &str,
         proposal: &PodProposal,
     ) -> Result<AdmissionDecision, TeamStateError> {
+        self.admit_with_failure_history(spec, generation, source_head, proposal, 0)
+    }
+
+    /// Admits one proposal after binding deterministic provider routes to exact failure history.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TeamStateError`] for stale authority, malformed history, or unavailable required
+    /// provider strength. No weaker profile is substituted.
+    pub fn admit_with_failure_history(
+        &mut self,
+        spec: &CampaignSpec,
+        generation: u64,
+        source_head: &str,
+        proposal: &PodProposal,
+        prior_failures: u16,
+    ) -> Result<AdmissionDecision, TeamStateError> {
         spec.verify().map_err(|_| TeamStateError::Authority)?;
         proposal
             .verify(spec)
@@ -2619,6 +2804,8 @@ impl DurablePodScheduler {
         let pod_id = bounded_identity("pod", &spec.campaign_id, &proposal.task_id, sequence);
         let lease_id = bounded_identity("lease", &spec.campaign_id, &proposal.task_id, sequence);
         self.snapshot.next_sequence = sequence.saturating_add(1);
+        let (implementation, review, routing_reason_codes) =
+            resolve_provider_route(spec, proposal, prior_failures)?;
         let lease = DurablePodLease {
             lease_id: lease_id.clone(),
             pod_id,
@@ -2629,21 +2816,17 @@ impl DurablePodScheduler {
             proposal_sha256: proposal.proposal_sha256.clone(),
             owned_paths: proposal.owned_paths.clone(),
             test_resources: Box::new(proposal.test_resources.clone()),
-            review: Box::new(ReviewRequirement {
-                strength: ReviewStrength::resolve(proposal.risk, &proposal.owned_paths),
-                reviewer_profile_sha256: super::provider_profile_sha256(&spec.reviewer)
-                    .map_err(|_| TeamStateError::Authority)?,
-            }),
+            implementation: Box::new(implementation),
+            review: Box::new(review),
+            prior_failures,
+            routing_reason_codes,
             heartbeat_sequence: 0,
             heartbeat_timestamp_ms: None,
         };
-        if !lease.review.strength.permits(&spec.reviewer) {
-            return Err(TeamStateError::Authority);
-        }
         lease.verify()?;
         self.snapshot.active.insert(lease_id, lease.clone());
         self.snapshot.verify()?;
-        Ok(AdmissionDecision::Admitted(lease))
+        Ok(AdmissionDecision::Admitted(Box::new(lease)))
     }
 
     /// Records one strictly increasing scheduler heartbeat for an exact active lease.
@@ -2826,6 +3009,25 @@ fn runtime_identity_shape(record: &CampaignTaskRecord) -> bool {
         | CampaignTaskState::Cancelled => assigned || leased || unassigned,
         _ => assigned,
     }
+}
+
+fn valid_record_routing(record: &CampaignTaskRecord) -> bool {
+    record
+        .implementation_profile_sha256
+        .as_ref()
+        .is_none_or(|value| valid_sha256(value))
+        && record.routing_prior_failures <= 100
+        && record.routing_reason_codes.len() <= 16
+        && record
+            .routing_reason_codes
+            .iter()
+            .all(|value| valid_component(value))
+        && record
+            .routing_reason_codes
+            .iter()
+            .collect::<BTreeSet<_>>()
+            .len()
+            == record.routing_reason_codes.len()
 }
 
 const fn publication_identity_state(state: CampaignTaskState) -> bool {
@@ -3033,6 +3235,7 @@ mod tests {
                 max_task_correction_cycles: 3,
                 max_follow_up_tasks: 10,
                 integration_validation_interval: 1,
+                provider_routing: None,
             }),
         }
     }
@@ -3107,10 +3310,159 @@ mod tests {
         let encoded = serde_json::to_vec(scheduler.snapshot()).unwrap();
         let recovered: DurableSchedulerSnapshot = serde_json::from_slice(&encoded).unwrap();
         recovered.verify().unwrap();
-        assert_eq!(recovered.active[&strong.lease_id], strong);
+        assert_eq!(recovered.active[&strong.lease_id], *strong);
 
         let mut mutated = strong.clone();
         mutated.review.reviewer_profile_sha256 = "not-a-digest".to_owned();
+        assert_eq!(mutated.verify(), Err(TeamStateError::InvalidLease));
+    }
+
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    fn provider_routes_are_risk_failure_capability_and_independence_bound() {
+        let mut authority = spec(CampaignExecutionMode::Parallel, 3);
+        authority.reviewer.effort = "xhigh".to_owned();
+        let mut elevated_implementer = provider("claude");
+        elevated_implementer.model = "elevated-implementation".to_owned();
+        elevated_implementer.effort = "xhigh".to_owned();
+        let mut elevated_reviewer = provider("codex");
+        elevated_reviewer.model = "elevated-review".to_owned();
+        elevated_reviewer.effort = "xhigh".to_owned();
+        authority.multi_agent.as_mut().unwrap().provider_routing = Some(ProviderRoutingPolicy {
+            version: 1,
+            elevated_implementer: Some(elevated_implementer.clone()),
+            elevated_reviewer: Some(elevated_reviewer.clone()),
+            failure_escalation_threshold: 2,
+        });
+        authority.verify().unwrap();
+
+        let tasks = vec![
+            "26.1.6.1".to_owned(),
+            "26.1.6.2".to_owned(),
+            "26.1.6.3".to_owned(),
+        ];
+        let mut scheduler = DurablePodScheduler::new(&authority).unwrap();
+        let generation = scheduler.begin_generation(&tasks).unwrap();
+        let AdmissionDecision::Admitted(routine) = scheduler
+            .admit_with_failure_history(
+                &authority,
+                generation,
+                &authority.initial_commit,
+                &proposal(&authority, "26.1.6.1", "crates/ordinary", "ordinary"),
+                0,
+            )
+            .unwrap()
+        else {
+            panic!("routine route must be admitted");
+        };
+        assert_eq!(routine.implementation.strength, ReviewStrength::Standard);
+        assert_eq!(
+            routine.implementation.profile_sha256,
+            crate::provider_profile_sha256(&authority.implementer).unwrap()
+        );
+        assert_eq!(routine.routing_reason_codes, vec!["routine"]);
+
+        let high = PodProposal::seal(
+            PodProposal {
+                risk: PodRisk::High,
+                ..proposal(
+                    &authority,
+                    "26.1.6.2",
+                    "crates/ordinary-two",
+                    "ordinary-two",
+                )
+            },
+            &authority,
+        )
+        .unwrap();
+        let AdmissionDecision::Admitted(high) = scheduler
+            .admit_with_failure_history(&authority, generation, &authority.initial_commit, &high, 0)
+            .unwrap()
+        else {
+            panic!("high-risk route must be admitted");
+        };
+        assert_eq!(high.implementation.strength, ReviewStrength::Strong);
+        assert_eq!(
+            high.implementation.profile_sha256,
+            crate::provider_profile_sha256(&elevated_implementer).unwrap()
+        );
+        assert_eq!(
+            high.review.reviewer_profile_sha256,
+            crate::provider_profile_sha256(&elevated_reviewer).unwrap()
+        );
+        assert_ne!(
+            high.implementation.profile_sha256,
+            high.review.reviewer_profile_sha256
+        );
+
+        let AdmissionDecision::Admitted(failure_escalated) = scheduler
+            .admit_with_failure_history(
+                &authority,
+                generation,
+                &authority.initial_commit,
+                &proposal(
+                    &authority,
+                    "26.1.6.3",
+                    "crates/ordinary-three",
+                    "ordinary-three",
+                ),
+                2,
+            )
+            .unwrap()
+        else {
+            panic!("failure-escalated route must be admitted");
+        };
+        assert_eq!(failure_escalated.prior_failures, 2);
+        assert_eq!(
+            failure_escalated.routing_reason_codes,
+            vec!["failure-history"]
+        );
+        assert_eq!(
+            failure_escalated.implementation.profile_sha256,
+            crate::provider_profile_sha256(&elevated_implementer).unwrap()
+        );
+
+        let mut unavailable = authority.clone();
+        let unavailable_policy = unavailable
+            .multi_agent
+            .as_mut()
+            .unwrap()
+            .provider_routing
+            .as_mut()
+            .unwrap();
+        unavailable_policy.elevated_implementer = None;
+        unavailable.implementer.effort = "high".to_owned();
+        let mut unavailable_scheduler = DurablePodScheduler::new(&unavailable).unwrap();
+        let unavailable_generation = unavailable_scheduler
+            .begin_generation(&["26.1.6.2".to_owned()])
+            .unwrap();
+        assert_eq!(
+            unavailable_scheduler.admit_with_failure_history(
+                &unavailable,
+                unavailable_generation,
+                &unavailable.initial_commit,
+                &PodProposal::seal(
+                    PodProposal {
+                        risk: PodRisk::High,
+                        ..proposal(
+                            &unavailable,
+                            "26.1.6.2",
+                            "crates/unavailable",
+                            "unavailable",
+                        )
+                    },
+                    &unavailable,
+                )
+                .unwrap(),
+                0,
+            ),
+            Err(TeamStateError::Authority)
+        );
+
+        let mut mutated = failure_escalated;
+        mutated
+            .routing_reason_codes
+            .push("failure-history".to_owned());
         assert_eq!(mutated.verify(), Err(TeamStateError::InvalidLease));
     }
 

@@ -1207,6 +1207,7 @@ print(json.dumps({"type": "turn.completed"}))
             max_task_correction_cycles: 3,
             max_follow_up_tasks: 0,
             integration_validation_interval: 1,
+            provider_routing: None,
         }),
     };
     spec.verify().unwrap();

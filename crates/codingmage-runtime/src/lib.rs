@@ -1097,9 +1097,70 @@ pub fn campaign_preflight(
         capability_verified: true,
     }];
 
+    if let Some(elevated) = spec
+        .multi_agent
+        .as_ref()
+        .and_then(|policy| policy.provider_routing.as_ref())
+        .and_then(|routing| routing.elevated_implementer.as_ref())
+    {
+        let claude = ClaudeAdapter::new(
+            elevated.executable.clone(),
+            &elevated.model,
+            &elevated.effort,
+        )
+        .map(|adapter| adapter.with_authentication(authentication))
+        .and_then(|adapter| match authentication {
+            ClaudeAuthentication::Bare => Ok(adapter),
+            ClaudeAuthentication::ExistingLogin => {
+                adapter.with_login_environment(login_environment.clone())
+            }
+        })
+        .map_err(RuntimeError::Implementer)?;
+        let (capabilities, processes) = claude
+            .probe(&executor, config.target_path.clone(), &cancellation)
+            .map_err(RuntimeError::Implementer)?;
+        providers.push(CampaignPreflightProvider {
+            role: "elevated_implementer".to_owned(),
+            executable_sha256: bounded_file_sha256(
+                &elevated.executable,
+                MAX_IDENTITY_FILE_BYTES,
+                RuntimeError::Implementer(ClaudeError::InvalidProfile),
+            )?,
+            profile_sha256: serializable_sha256(elevated)?,
+            capabilities_sha256: serializable_sha256(&serde_json::json!({
+                "version_sha256": bytes_sha256(capabilities.version.as_bytes()),
+                "print": capabilities.print,
+                "json": capabilities.json,
+                "stream_json": capabilities.stream_json,
+                "json_schema": capabilities.json_schema,
+                "session_resume": capabilities.session_resume,
+                "model": capabilities.model,
+                "effort": capabilities.effort,
+                "permission_mode": capabilities.permission_mode,
+                "bare": capabilities.bare,
+            }))?,
+            authentication: match spec.implementer_authentication {
+                CampaignAuthentication::Bare => "bare",
+                CampaignAuthentication::ExistingLogin => "existing_login",
+            }
+            .to_owned(),
+            probe_process_count: u32::try_from(processes.len()).map_err(|_| RuntimeError::State)?,
+            capability_verified: true,
+        });
+    }
+
     let review_schema = preflight_root.join("codex-review.schema.json");
     write_private_idempotent(&review_schema, codex_review_schema().as_bytes())?;
-    for (role, provider) in [("team_lead", &spec.team_lead), ("reviewer", &spec.reviewer)] {
+    let mut review_profiles = vec![("team_lead", &spec.team_lead), ("reviewer", &spec.reviewer)];
+    if let Some(elevated) = spec
+        .multi_agent
+        .as_ref()
+        .and_then(|policy| policy.provider_routing.as_ref())
+        .and_then(|routing| routing.elevated_reviewer.as_ref())
+    {
+        review_profiles.push(("elevated_reviewer", elevated));
+    }
+    for (role, provider) in review_profiles {
         let codex = CodexAdapter::new(
             provider.executable.clone(),
             &provider.model,

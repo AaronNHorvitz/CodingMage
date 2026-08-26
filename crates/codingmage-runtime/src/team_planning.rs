@@ -288,12 +288,14 @@ where
         record
             .propose(generation, planning_evidence(record, "proposed"))
             .map_err(|_| RuntimeError::State)?;
+        let prior_failures = u16::try_from(record.correction_sessions.len()).unwrap_or(u16::MAX);
         match scheduler
-            .admit(
+            .admit_with_failure_history(
                 &current_spec,
                 generation,
                 &candidate.campaign_head,
                 &proposal,
+                prior_failures,
             )
             .map_err(|_| RuntimeError::State)?
         {
@@ -307,7 +309,7 @@ where
                 jobs.push(TeamBatchJob {
                     sequence: u64::try_from(sequence).map_err(|_| RuntimeError::State)?,
                     run_id: generated_run_id()?,
-                    lease,
+                    lease: *lease,
                     reservation,
                 });
             }
@@ -560,6 +562,7 @@ mod tests {
                 max_task_correction_cycles: 3,
                 max_follow_up_tasks: 10,
                 integration_validation_interval: 1,
+                provider_routing: None,
             }),
         }
     }

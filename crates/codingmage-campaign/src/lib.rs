@@ -6,11 +6,11 @@ pub use team::{
     ActorClass, AdmissionDecision, AdmissionReason, CampaignConcurrency, CampaignExecutionMode,
     CampaignTaskRecord, CampaignTaskState, CampaignTaskTransition, DestinationPromotionPolicy,
     DurablePodLease, DurablePodScheduler, DurableSchedulerSnapshot, FollowUpCause,
-    FollowUpTaskBinding, GitHubCampaignPolicy, MultiAgentPolicy, ProviderCircuit,
-    ProviderCircuitStatus, ReviewRequirement, TEAM_STATE_SCHEMA_VERSION, TaskIntegrationPolicy,
-    TaskMergeStrategy, TaskPublicationMode, TaskResourceReservation, TaskTerminalReason,
-    TaskUtilization, TeamCampaignSnapshot, TeamResourceController, TeamResourcePolicy,
-    TeamResourceSnapshot, TeamStateError,
+    FollowUpTaskBinding, GitHubCampaignPolicy, ImplementationRequirement, MultiAgentPolicy,
+    ProviderCircuit, ProviderCircuitStatus, ProviderRoutingPolicy, ReviewRequirement,
+    TEAM_STATE_SCHEMA_VERSION, TaskIntegrationPolicy, TaskMergeStrategy, TaskPublicationMode,
+    TaskResourceReservation, TaskTerminalReason, TaskUtilization, TeamCampaignSnapshot,
+    TeamResourceController, TeamResourcePolicy, TeamResourceSnapshot, TeamStateError,
 };
 
 use std::{
@@ -808,7 +808,7 @@ fn valid_branch(value: &str) -> bool {
             .any(|character| character.is_control() || " ~^:?*[\\".contains(character))
 }
 
-fn valid_provider(provider: &CampaignProvider) -> bool {
+pub(crate) fn valid_provider(provider: &CampaignProvider) -> bool {
     provider.executable.is_absolute()
         && valid_component(&provider.model)
         && matches!(

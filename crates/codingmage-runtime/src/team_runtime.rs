@@ -14,9 +14,10 @@ use std::{
 };
 
 use codingmage_campaign::{
-    ActorClass, CampaignAuthentication, CampaignSpec, CampaignTaskRecord, CampaignTaskState,
-    CampaignTaskTransition, DurablePodLease, DurablePodScheduler, TaskResourceReservation,
-    TaskTerminalReason, TaskUtilization, TeamCampaignSnapshot, TeamResourceController,
+    ActorClass, CampaignAuthentication, CampaignProvider, CampaignSpec, CampaignTaskRecord,
+    CampaignTaskState, CampaignTaskTransition, DurablePodLease, DurablePodScheduler,
+    TaskResourceReservation, TaskTerminalReason, TaskUtilization, TeamCampaignSnapshot,
+    TeamResourceController, provider_profile_sha256,
 };
 use codingmage_contracts::{RunId, WorktreeId};
 use codingmage_core::{Config, RepositoryAuthorization};
@@ -275,6 +276,12 @@ pub struct ProductionTeamUnitRunner {
     actor_permits: ActorPermitPool,
 }
 
+#[derive(Clone, Copy)]
+enum ProviderRole {
+    Implementer,
+    Reviewer,
+}
+
 impl ProductionTeamUnitRunner {
     /// Creates a production runner for one isolated campaign repository.
     ///
@@ -339,21 +346,66 @@ impl ProductionTeamUnitRunner {
         Ok(config)
     }
 
-    fn run_spec_for(&self, job: &TeamBatchJob) -> RunSpec {
-        RunSpec {
+    fn run_spec_for(&self, job: &TeamBatchJob) -> Result<RunSpec, RuntimeError> {
+        self.routed_run_spec(
+            &job.lease.task_id,
+            &job.lease.owned_paths,
+            &job.lease.implementation.profile_sha256,
+            &job.lease.review.reviewer_profile_sha256,
+        )
+    }
+
+    fn routed_run_spec(
+        &self,
+        task_id: &str,
+        owned_paths: &[PathBuf],
+        implementer_sha256: &str,
+        reviewer_sha256: &str,
+    ) -> Result<RunSpec, RuntimeError> {
+        let implementer =
+            self.provider_for_digest(implementer_sha256, ProviderRole::Implementer)?;
+        let reviewer = self.provider_for_digest(reviewer_sha256, ProviderRole::Reviewer)?;
+        Ok(RunSpec {
             version: 2,
-            task_id: job.lease.task_id.clone(),
-            owned_paths: job.lease.owned_paths.clone(),
+            task_id: task_id.to_owned(),
+            owned_paths: owned_paths.to_vec(),
             completion_policy: CompletionPolicy::CandidateOnly,
             implementer: ImplementerSpec {
-                provider: provider_spec(&self.campaign_spec.implementer),
+                provider: provider_spec(implementer),
                 authentication: match self.campaign_spec.implementer_authentication {
                     CampaignAuthentication::Bare => AuthenticationMode::Bare,
                     CampaignAuthentication::ExistingLogin => AuthenticationMode::ExistingLogin,
                 },
             },
-            reviewer: provider_spec(&self.campaign_spec.reviewer),
-        }
+            reviewer: provider_spec(reviewer),
+        })
+    }
+
+    fn provider_for_digest(
+        &self,
+        expected_sha256: &str,
+        role: ProviderRole,
+    ) -> Result<&CampaignProvider, RuntimeError> {
+        let routing = self
+            .campaign_spec
+            .multi_agent
+            .as_ref()
+            .and_then(|policy| policy.provider_routing.as_ref());
+        let (base, elevated) = match role {
+            ProviderRole::Implementer => (
+                &self.campaign_spec.implementer,
+                routing.and_then(|policy| policy.elevated_implementer.as_ref()),
+            ),
+            ProviderRole::Reviewer => (
+                &self.campaign_spec.reviewer,
+                routing.and_then(|policy| policy.elevated_reviewer.as_ref()),
+            ),
+        };
+        [Some(base), elevated]
+            .into_iter()
+            .flatten()
+            .find(|provider| provider_profile_sha256(provider).as_deref() == Ok(expected_sha256))
+            .ok_or(RuntimeError::Authority)
     }
 
     fn run_ci_correction(
@@ -444,20 +496,20 @@ impl ProductionTeamUnitRunner {
         correction_config.correction_limit = remaining;
         private_directory(&correction_config.scratch_root)?;
         private_directory(&correction_config.state_root)?;
-        let spec = RunSpec {
-            version: 2,
-            task_id: record.task_id.clone(),
-            owned_paths: record.owned_paths.clone(),
-            completion_policy: CompletionPolicy::CandidateOnly,
-            implementer: ImplementerSpec {
-                provider: provider_spec(&self.campaign_spec.implementer),
-                authentication: match self.campaign_spec.implementer_authentication {
-                    CampaignAuthentication::Bare => AuthenticationMode::Bare,
-                    CampaignAuthentication::ExistingLogin => AuthenticationMode::ExistingLogin,
-                },
-            },
-            reviewer: provider_spec(&self.campaign_spec.reviewer),
-        };
+        let implementer_sha256 = record
+            .implementation_profile_sha256
+            .as_deref()
+            .ok_or(RuntimeError::State)?;
+        let reviewer_sha256 = record
+            .reviewer_profile_sha256
+            .as_deref()
+            .ok_or(RuntimeError::State)?;
+        let spec = self.routed_run_spec(
+            &record.task_id,
+            &record.owned_paths,
+            implementer_sha256,
+            reviewer_sha256,
+        )?;
         let external_context = format!(
             "REMOTE CI CORRECTION\nThe configured remote checks failed for reviewed commit {prior_commit}. The failure observation is bound by SHA-256 evidence {ci_evidence}. Re-run every authorized local gate, inspect task-scoped platform or integration assumptions, make only necessary changes within the declared owned paths, and return a complete candidate for fresh independent review. Do not access the network or alter publication policy."
         );
@@ -732,7 +784,7 @@ impl TeamUnitRunner for ProductionTeamUnitRunner {
         events: TeamEventSink,
     ) -> Result<RunOutcome, RuntimeError> {
         let config = self.config_for(job)?;
-        let spec = self.run_spec_for(job);
+        let spec = self.run_spec_for(job)?;
         let progress_sink = events.clone();
         let sink_cancellation = cancellation.clone();
         let sink_observer = move |event| {
@@ -2435,7 +2487,7 @@ mod tests {
             jobs.push(TeamBatchJob {
                 sequence: u64::try_from(sequence).expect("sequence"),
                 run_id: RunId::new(format!("run-team-{sequence}")).expect("valid run identity"),
-                lease,
+                lease: *lease,
                 reservation,
             });
         }
@@ -2520,6 +2572,7 @@ mod tests {
                 max_task_correction_cycles: 3,
                 max_follow_up_tasks: 10,
                 integration_validation_interval: 1,
+                provider_routing: None,
             }),
         }
     }
