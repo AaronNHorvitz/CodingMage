@@ -41,8 +41,8 @@ pub use team_publication::{
 };
 pub use team_runtime::{
     ProductionTeamUnitRunner, TeamBatchJob, TeamBatchObservation, TeamBatchOutcome,
-    TeamCiCorrectionOutcome, TeamEventSink, TeamTaskOutcome, TeamUnitRunner, execute_team_batch,
-    execute_team_ci_correction, recoverable_team_jobs,
+    TeamCiCorrectionOutcome, TeamEventSink, TeamTaskOutcome, TeamUnitRunner, TeamWatchdogReport,
+    execute_team_batch, execute_team_ci_correction, observe_team_watchdog, recoverable_team_jobs,
 };
 pub use team_state::{TeamStateStore, TeamStateStoreError};
 
@@ -752,6 +752,10 @@ pub struct CampaignStatus {
     pub identical_planning_generations: u16,
     /// Closed trigger codes waiting to cause the next planning generation.
     pub pending_planning_triggers: Vec<String>,
+    /// Closed liveness state from exact owned task, lease, execution, and reservation observations.
+    pub watchdog_state: String,
+    /// Closed state of canonical task, Git, evidence, and durable checkpoint reconciliation.
+    pub reconciliation_state: String,
     /// Independent durable outcome counters and their accepted-outcome ceiling.
     pub outcomes: CampaignStatusOutcomes,
     /// Current aggregate campaign resource utilization.
@@ -1420,8 +1424,22 @@ fn project_campaign_status(
         });
     let (planning_generation, identical_planning_generations, pending_planning_triggers) =
         serial_planning_status(&checkpoint)?;
+    let watchdog_state = if checkpoint.active_unit.is_some() {
+        "healthy"
+    } else {
+        "idle"
+    };
+    let reconciliation_state = match checkpoint.phase {
+        CampaignPhase::Complete => "consistent",
+        CampaignPhase::Integrating => "active",
+        CampaignPhase::Blocked | CampaignPhase::Cancelled => "blocked",
+        CampaignPhase::Ready
+        | CampaignPhase::Planning
+        | CampaignPhase::RunningUnit
+        | CampaignPhase::Paused => "pending",
+    };
     Ok(CampaignStatus {
-        schema_version: 4,
+        schema_version: 5,
         campaign_id: checkpoint.campaign_id,
         state: checkpoint.phase.label().to_owned(),
         actor: checkpoint.phase.actor().to_owned(),
@@ -1437,6 +1455,8 @@ fn project_campaign_status(
         planning_generation,
         identical_planning_generations,
         pending_planning_triggers,
+        watchdog_state: watchdog_state.to_owned(),
+        reconciliation_state: reconciliation_state.to_owned(),
         outcomes: CampaignStatusOutcomes {
             completed: checkpoint.outcomes.completed,
             blocked: checkpoint.outcomes.blocked,

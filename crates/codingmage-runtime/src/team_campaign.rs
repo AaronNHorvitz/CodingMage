@@ -23,9 +23,9 @@ use crate::{
     TeamPublicationOutcome, TeamStateStore, admit_team_lead_report, build_team_lead_binding,
     enqueue_team_integration, execute_team_batch, execute_team_ci_correction, generated_run_id,
     initialize_team_campaign, integrate_team_queue_head_with_validation,
-    login_discovery_environment, private_directory, recoverable_team_jobs, refresh_team_readiness,
-    synchronize_campaign_branch, synchronize_task_completion, synchronize_task_issue,
-    synchronize_task_publication,
+    login_discovery_environment, observe_team_watchdog, private_directory, recoverable_team_jobs,
+    refresh_team_readiness, synchronize_campaign_branch, synchronize_task_completion,
+    synchronize_task_issue, synchronize_task_publication,
     team_control::{
         TeamCancellationWatcher, observe_team_control, observe_team_destination_approval,
         observe_team_integration_approval,
@@ -279,7 +279,20 @@ pub fn run_team_campaign_with_progress(
     let mut last_task_id = None;
     let mut publication_port = None;
 
-    let recovery_jobs = recoverable_team_jobs(&spec, &snapshot, now_ms())?;
+    observer(RunProgress::new(
+        ProgressActor::Coordinator,
+        ProgressStage::Reconciling,
+    ));
+    let recovery_timestamp = now_ms();
+    let watchdog = observe_team_watchdog(&spec, &snapshot, recovery_timestamp)?;
+    let recovery_jobs = recoverable_team_jobs(&spec, &snapshot, recovery_timestamp)?;
+    let recovery_task_ids = recovery_jobs
+        .iter()
+        .map(|job| job.lease.task_id.clone())
+        .collect::<Vec<_>>();
+    if recovery_task_ids != watchdog.recoverable_task_ids {
+        return Err(RuntimeError::State);
+    }
     if !recovery_jobs.is_empty() {
         let batch = execute_team_batch(
             &spec,

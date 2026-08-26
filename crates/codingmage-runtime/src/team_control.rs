@@ -25,6 +25,7 @@ use crate::{
     CampaignActiveTaskStatus, CampaignControlOutcome, CampaignPromotionApprovalBinding,
     CampaignStatus, CampaignStatusDeferral, CampaignStatusOutcomes, CampaignStatusTaskReason,
     CampaignStatusUtilization, RuntimeError, canonical_file, generated_run_id,
+    observe_team_watchdog,
     team_campaign::{MANIFEST_NAME, TeamCampaignManifest},
     team_promotion::campaign_promotion_approval_binding,
 };
@@ -762,6 +763,7 @@ pub(crate) fn team_campaign_status(
         || modified_ms(&campaign_root.join(MANIFEST_NAME)),
         |value| value.created_at_ms,
     );
+    let watchdog = observe_team_watchdog(spec, &snapshot, now_ms()?)?;
     Ok(Some(project_status(
         spec,
         manifest,
@@ -769,6 +771,7 @@ pub(crate) fn team_campaign_status(
         control.as_ref(),
         started_at_ms,
         updated_at_ms,
+        &watchdog,
     )?))
 }
 
@@ -939,6 +942,7 @@ fn project_status(
     control: Option<&TeamControlState>,
     started_at_ms: u64,
     updated_at_ms: u64,
+    watchdog: &crate::TeamWatchdogReport,
 ) -> Result<CampaignStatus, RuntimeError> {
     let active = snapshot.tasks.values().find(|record| {
         matches!(
@@ -1034,8 +1038,17 @@ fn project_status(
             }
         })
         .collect();
+    let reconciliation_state = if complete {
+        "consistent"
+    } else if matches!(watchdog.state(), "stale" | "expired") {
+        "recovery_required"
+    } else if active.is_some() {
+        "active"
+    } else {
+        "pending"
+    };
     Ok(CampaignStatus {
-        schema_version: 4,
+        schema_version: 5,
         campaign_id: snapshot.campaign_id,
         state: state.to_owned(),
         actor: actor.to_owned(),
@@ -1057,6 +1070,8 @@ fn project_status(
         planning_generation: u32::try_from(snapshot.generation).map_err(|_| RuntimeError::State)?,
         identical_planning_generations: 0,
         pending_planning_triggers: Vec::new(),
+        watchdog_state: watchdog.state().to_owned(),
+        reconciliation_state: reconciliation_state.to_owned(),
         outcomes: CampaignStatusOutcomes {
             completed,
             blocked,

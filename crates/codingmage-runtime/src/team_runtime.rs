@@ -53,6 +53,156 @@ pub struct TeamBatchJob {
     pub reservation: TaskResourceReservation,
 }
 
+/// Content-minimized exact-identity watchdog observation for one durable team campaign.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TeamWatchdogReport {
+    /// Trusted observation time supplied by the coordinator.
+    pub observed_at_ms: u64,
+    /// Active task identities in canonical order.
+    pub active_task_ids: Vec<String>,
+    /// Active tasks whose exact durable job can be reconstructed.
+    pub recoverable_task_ids: Vec<String>,
+    /// Exact tasks whose latest durable heartbeat is stale.
+    pub stale_task_ids: Vec<String>,
+    /// Exact tasks whose resource deadline has elapsed.
+    pub expired_task_ids: Vec<String>,
+}
+
+impl TeamWatchdogReport {
+    /// Returns the closed content-free watchdog state.
+    #[must_use]
+    pub fn state(&self) -> &'static str {
+        if !self.expired_task_ids.is_empty() {
+            "expired"
+        } else if !self.stale_task_ids.is_empty() {
+            "stale"
+        } else if self.active_task_ids.is_empty() {
+            "idle"
+        } else {
+            "healthy"
+        }
+    }
+}
+
+/// Reconciles every active task to one exact lease and optional implementation reservation.
+///
+/// This observation never discovers by process name, branch prefix, or filesystem pattern. It
+/// refuses orphaned or cross-task state and returns only canonical task identities and closed
+/// liveness classifications.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError::State`] for malformed time, orphaned leases or reservations, partial
+/// runtime identity, or any cross-task ownership mismatch.
+pub fn observe_team_watchdog(
+    spec: &CampaignSpec,
+    snapshot: &TeamCampaignSnapshot,
+    observed_at_ms: u64,
+) -> Result<TeamWatchdogReport, RuntimeError> {
+    if observed_at_ms == 0 {
+        return Err(RuntimeError::State);
+    }
+    snapshot.verify().map_err(|_| RuntimeError::State)?;
+    let resources = TeamResourceController::from_snapshot(spec, snapshot.resources.clone())
+        .map_err(|_| RuntimeError::State)?;
+    let stale_reservations = resources
+        .stale_at(observed_at_ms)
+        .into_iter()
+        .collect::<BTreeSet<_>>();
+    let mut active_task_ids = Vec::new();
+    let mut recoverable_task_ids = Vec::new();
+    let mut stale_task_ids = Vec::new();
+    let mut expired_task_ids = Vec::new();
+    let mut observed_leases = BTreeSet::new();
+    let mut observed_reservations = BTreeSet::new();
+    for (task_id, record) in &snapshot.tasks {
+        if !lease_watchdog_state(record.state) {
+            continue;
+        }
+        active_task_ids.push(task_id.clone());
+        let lease_id = record.lease_id.as_ref().ok_or(RuntimeError::State)?;
+        let lease = snapshot
+            .scheduler
+            .active
+            .get(lease_id)
+            .ok_or(RuntimeError::State)?;
+        if lease.task_id != *task_id || !observed_leases.insert(lease_id.clone()) {
+            return Err(RuntimeError::State);
+        }
+        let matching = snapshot
+            .resources
+            .active
+            .values()
+            .filter(|reservation| {
+                reservation.task_id == *task_id
+                    && reservation.lease_id == *lease_id
+                    && reservation.actor == ActorClass::Implementer
+            })
+            .collect::<Vec<_>>();
+        match (
+            active_watchdog_state(record.state),
+            record.run_id.is_some(),
+            matching.as_slice(),
+        ) {
+            (true, false, []) if record.state == CampaignTaskState::Leased => {
+                recoverable_task_ids.push(task_id.clone());
+            }
+            (true, true, [reservation]) => {
+                observed_reservations.insert(reservation.reservation_id.clone());
+                recoverable_task_ids.push(task_id.clone());
+                if stale_reservations.contains(&reservation.reservation_id) {
+                    stale_task_ids.push(task_id.clone());
+                }
+                if observed_at_ms >= reservation.deadline_ms {
+                    expired_task_ids.push(task_id.clone());
+                }
+            }
+            (false, _, []) => {}
+            _ => return Err(RuntimeError::State),
+        }
+    }
+    if observed_leases.len() != snapshot.scheduler.active.len()
+        || observed_reservations.len() != snapshot.resources.active.len()
+    {
+        return Err(RuntimeError::State);
+    }
+    Ok(TeamWatchdogReport {
+        observed_at_ms,
+        active_task_ids,
+        recoverable_task_ids,
+        stale_task_ids,
+        expired_task_ids,
+    })
+}
+
+const fn active_watchdog_state(state: CampaignTaskState) -> bool {
+    matches!(
+        state,
+        CampaignTaskState::Leased
+            | CampaignTaskState::Implementing
+            | CampaignTaskState::LocalGates
+            | CampaignTaskState::Reviewing
+            | CampaignTaskState::Correcting
+    )
+}
+
+const fn lease_watchdog_state(state: CampaignTaskState) -> bool {
+    matches!(
+        state,
+        CampaignTaskState::Leased
+            | CampaignTaskState::Implementing
+            | CampaignTaskState::LocalGates
+            | CampaignTaskState::Reviewing
+            | CampaignTaskState::Correcting
+            | CampaignTaskState::PublicationReady
+            | CampaignTaskState::PullRequestOpen
+            | CampaignTaskState::CiWaiting
+            | CampaignTaskState::IntegrationQueued
+            | CampaignTaskState::MergeReady
+            | CampaignTaskState::Integrating
+    )
+}
+
 impl TeamBatchJob {
     fn verify(&self, snapshot: &TeamCampaignSnapshot) -> Result<(), RuntimeError> {
         let record = snapshot
@@ -2861,6 +3011,44 @@ mod tests {
         assert_eq!(calls.load(Ordering::SeqCst), 0);
         assert_eq!(persists.load(Ordering::SeqCst), 0);
         assert!(snapshot.resources.active.is_empty());
+    }
+
+    #[test]
+    fn watchdog_classifies_exact_stalls_and_refuses_unowned_reservations() {
+        let (spec, mut snapshot, jobs) = fixture(2, 2, 2_000);
+        let before = observe_team_watchdog(&spec, &snapshot, now_ms()).unwrap();
+        assert_eq!(before.state(), "healthy");
+        assert_eq!(before.active_task_ids, before.recoverable_task_ids);
+        assert!(before.stale_task_ids.is_empty());
+
+        prepare_batch(&spec, &mut snapshot, &jobs, &mut |_| Ok(())).unwrap();
+        let stale_at = jobs[0]
+            .reservation
+            .started_at_ms
+            .saturating_add(snapshot.resources.policy.stale_after_ms);
+        let stale = observe_team_watchdog(&spec, &snapshot, stale_at).unwrap();
+        assert_eq!(stale.state(), "stale");
+        assert_eq!(stale.stale_task_ids, stale.active_task_ids);
+        assert!(stale.expired_task_ids.is_empty());
+
+        let expired =
+            observe_team_watchdog(&spec, &snapshot, jobs[0].reservation.deadline_ms).unwrap();
+        assert_eq!(expired.state(), "expired");
+        assert_eq!(expired.expired_task_ids, expired.active_task_ids);
+
+        let mut orphaned = snapshot;
+        let mut unrelated = jobs[0].reservation.clone();
+        unrelated.reservation_id = "reservation-unrelated".to_owned();
+        unrelated.task_id = "26.9.9.9".to_owned();
+        unrelated.lease_id = "lease-unrelated".to_owned();
+        orphaned
+            .resources
+            .active
+            .insert(unrelated.reservation_id.clone(), unrelated);
+        assert_eq!(
+            observe_team_watchdog(&spec, &orphaned, stale_at),
+            Err(RuntimeError::State)
+        );
     }
 
     #[test]
