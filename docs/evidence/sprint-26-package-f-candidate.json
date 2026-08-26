@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "evidence_id": "codingmage.sprint_26.package_f.v1",
+  "source_commit": "a6546c6f482d6159857b96e106e804bfb92036f3",
+  "review_record_sha256": "766b2f1cbff63d6818bc181bdee36c0580275d291b6ef9b04a3b2d10a33d30e3",
+  "artifacts": {
+    "linux_x86_64_archive_sha256": "8674091a421f6c979709122fd3c1b1b88f69b951fb43f2294bdc7846f5dc33f4",
+    "source_archive_sha256": "39a0350ad473f0c7bbf92b7f83ce401975920f428bbe9b577f4d3191d9795685",
+    "installed_binary_sha256": "47324d665a4a8ece63ef7abbed047057f8757fd6ea8f42dafd41ce2d8ecd5296",
+    "reproducible_clean_clone_builds": 3,
+    "signed": false,
+    "published": false
+  },
+  "scan": {
+    "binary_file_count": 12,
+    "source_file_count": 216,
+    "binary_executables": [
+      "bin/codingmage"
+    ],
+    "credential_signatures_found": 0,
+    "private_local_paths_found": 0,
+    "runtime_or_build_residue_found": 0,
+    "undeclared_files_found": 0
+  },
+  "installed_qualification": {
+    "all_command_help_surfaces_passed": 15,
+    "doctor_passed": true,
+    "plan_passed": true,
+    "status_passed": true,
+    "prescribed_outcomes_accepted": 10,
+    "prescribed_tasks_completed": 8,
+    "prescribed_external_blockers": 1,
+    "prescribed_satisfied_deferrals": 1,
+    "prescribed_elapsed_seconds": 17.11,
+    "active_checkout_changed": false,
+    "destination_branch_changed": false
+  },
+  "lifecycle": {
+    "rootless_install": "passed",
+    "verify": "passed",
+    "same_artifact_upgrade": "passed",
+    "rollback": "passed",
+    "remove_preserving_unrelated_data": "passed",
+    "deterministic_reinstall": "passed",
+    "native_user_service_execution": "not_run_private_boundary"
+  },
+  "limitations": [
+    "the final source and evidence commit is not frozen",
+    "the frozen-target supervised, pilot, and controlled-soak matrix remains open",
+    "native user-service start and stop were not run outside private qualification roots",
+    "operator signing was not performed",
+    "manual fuzzing remains deferred",
+    "independent human review remains external",
+    "native Ubuntu and Windows evidence remains external",
+    "no release, tag, merge, or publication was performed"
+  ]
+}

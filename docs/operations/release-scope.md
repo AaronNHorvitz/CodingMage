@@ -42,7 +42,7 @@ The complete command and authority surfaces are described by the [operations ind
 | --- | --- | --- | --- |
 | R26-01 | Two installed Package C supervised units did not reach a passing final review | Superseded by the bounded Package D supervised pass; failure evidence remains retained | Blocking until the final candidate repeats the pass |
 | R26-02 | Package D passed the controlled live-completion, external-blocker, and quota-pause pilot; the final frozen-target run remains open | Controlled pilot resolved | Blocking until the final frozen-target matrix passes |
-| R26-03 | The required controlled approximately ten-task soak has not passed | Open | Blocking |
+| R26-03 | Package F passed the installed disposable ten-outcome campaign, but the separate frozen-target controlled approximately ten-task soak has not passed | Disposable gate resolved; frozen-target soak open | Blocking |
 | R26-04 | Ubuntu native evidence has not run | Open external platform evidence | Blocking for an Ubuntu claim |
 | R26-05 | Windows 11 native evidence has not run | Open external platform evidence | Blocking for a Windows claim |
 | R26-06 | Authenticated GitHub behavior has not completed its disposable-repository matrix | Open external-service evidence | Blocking for a GitHub support claim |

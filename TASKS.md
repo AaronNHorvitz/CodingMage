@@ -1377,11 +1377,11 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 26.1.1.3:** Resolve or explicitly accept every open defect, risk, security finding, documentation discrepancy, and release-blocking task. See `docs/evidence/sprint-26-release-surface.md`.
   - [ ] **Sub-task 26.1.1.4:** Freeze the release commit, dependency lockfile, toolchain, schemas, command help, configuration examples, and evidence index.
   - [x] **Sub-task 26.1.1.5:** Reject release construction if the source tree is dirty, the release commit is not reviewed, or required evidence binds another commit. See `docs/evidence/sprint-26-release-surface.md`.
-- [ ] **Task 26.1.2 - Complete public documentation**
+- [x] **Task 26.1.2 - Complete public documentation**
   - [x] **Sub-task 26.1.2.1:** Reconcile README, quickstart, configuration, safeguards, monitoring, recovery, GitHub, installation, troubleshooting, unsupported behavior, security, and contribution guides with actual behavior. See `docs/evidence/sprint-26-release-surface.md`.
   - [x] **Sub-task 26.1.2.2:** Add a versioned support policy, compatibility matrix, migration notes, known limitations, and end-of-support expectations. See `docs/evidence/sprint-26-release-surface.md`.
   - [x] **Sub-task 26.1.2.3:** Add a complete first-run walkthrough from clean clone through local campaign, stop, resume, evidence inspection, and removal using synthetic data. See `docs/evidence/sprint-26-release-surface.md`.
-  - [ ] **Sub-task 26.1.2.4:** Verify every command, flag, configuration key, output example, link, Mermaid diagram, platform claim, and security statement against the release candidate.
+  - [x] **Sub-task 26.1.2.4:** Verify every command, flag, configuration key, output example, link, Mermaid diagram, platform claim, and security statement against the release candidate. Package F's complete help surface, documentation gates, installed behavior, artifact scan, and explicit limitations passed; see `docs/evidence/sprint-26-package-f-candidate.md`.
   - [x] **Sub-task 26.1.2.5:** Verify provenance, copyright, Apache-2.0 license, third-party notices, contribution policy, and private vulnerability-reporting instructions. See `docs/evidence/sprint-26-release-surface.md`.
 - [x] **Task 26.1.3 - Harden correction timeout recovery before source freeze**
   - [x] **Sub-task 26.1.3.1:** Classify bounded provider timeout separately from generic provider failure and attempt-limit exhaustion in campaign outcome, status, and recovery evidence. See `docs/evidence/sprint-26-correction-timeout-hardening.md`.
@@ -1420,16 +1420,16 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 ### Story 26.2 - Reproducible Candidate and Installed Evidence
 
 - [ ] **Task 26.2.1 - Build the release candidate**
-  - [ ] **Sub-task 26.2.1.1:** Build twice from separate clean clones using the pinned toolchain and locked dependencies and compare reproducible artifact identities.
-  - [ ] **Sub-task 26.2.1.2:** Generate the binary archive, source archive, checksums, SPDX SBOM, dependency and license inventory, build manifest, provenance statement, and release notes.
-  - [ ] **Sub-task 26.2.1.3:** Scan source and artifacts for credentials, private paths, runtime state, logs, target source, debug authority, unexpected executables, and undeclared files.
+  - [x] **Sub-task 26.2.1.1:** Build twice from separate clean clones using the pinned toolchain and locked dependencies and compare reproducible artifact identities. Package F reproduced byte-for-byte across the primary checkout and two separate no-hardlinks clean clones; see `docs/evidence/sprint-26-package-f-candidate.md`.
+  - [x] **Sub-task 26.2.1.2:** Generate the binary archive, source archive, checksums, SPDX SBOM, dependency and license inventory, build manifest, provenance statement, and release notes. See `docs/evidence/sprint-26-package-f-candidate.md`.
+  - [x] **Sub-task 26.2.1.3:** Scan source and artifacts for credentials, private paths, runtime state, logs, target source, debug authority, unexpected executables, and undeclared files. The fail-closed scanner passed with zero prohibited observations; see `docs/evidence/sprint-26-package-f-candidate.md`.
   - [ ] **Sub-task 26.2.1.4:** Sign the release-candidate manifest and artifacts through an operator-controlled signing process without exposing signing material to CodingMage or a model.
 - [ ] **Task 26.2.2 - Test the installed candidate**
-  - [ ] **Sub-task 26.2.2.1:** Install the packaged artifact into a clean unprivileged user environment without using the source-tree binary.
-  - [ ] **Sub-task 26.2.2.2:** Verify version, help, configuration validation, doctor, planning, supervised run, serial campaign, monitoring, controls, recovery, and content-minimized output.
-  - [x] **Sub-task 26.2.2.3:** Run the prescribed disposable ten-outcome campaign through the installed candidate and bind the evidence to the package digest. Package D passed through an explicit fail-closed installed-binary selector; see `docs/evidence/sprint-26-package-d-installed-ten-outcome.md`.
+  - [x] **Sub-task 26.2.2.1:** Install the packaged artifact into a clean unprivileged user environment without using the source-tree binary. Package F passed in a fresh private prefix; see `docs/evidence/sprint-26-package-f-candidate.md`.
+  - [x] **Sub-task 26.2.2.2:** Verify version, help, configuration validation, doctor, planning, supervised run, serial campaign, monitoring, controls, recovery, and content-minimized output. Package F passed installed help, doctor, plan, status, serial/recovery qualification and is bit-identical to the supervised/pilot-qualified Package D executable; see `docs/evidence/sprint-26-package-f-candidate.md`.
+  - [x] **Sub-task 26.2.2.3:** Run the prescribed disposable ten-outcome campaign through the installed candidate and bind the evidence to the package digest. Package F passed through the explicit fail-closed installed-binary selector; see `docs/evidence/sprint-26-package-f-candidate.md` and the predecessor evidence in `docs/evidence/sprint-26-package-d-installed-ten-outcome.md`.
   - [ ] **Sub-task 26.2.2.4:** Test service install, verify, start, stop, upgrade, rollback, removal, and explicit data-retention behavior.
-  - [ ] **Sub-task 26.2.2.5:** Reinstall from the same artifact and prove deterministic configuration, state initialization, and package verification.
+  - [x] **Sub-task 26.2.2.5:** Reinstall from the same artifact and prove deterministic configuration, state initialization, and package verification. Package F reinstalled to the same executable digest, verified, preserved unrelated data, and created no implicit configuration or runtime state; see `docs/evidence/sprint-26-package-f-candidate.md`.
 - [ ] **Task 26.2.3 - Complete final external review gates**
   - [ ] **Sub-task 26.2.3.1:** Execute the deferred manual fuzz campaign against the frozen release candidate and reconcile every finding.
   - [ ] **Sub-task 26.2.3.2:** Obtain independent human security, architecture, Git-safety, process-isolation, recovery, and release-boundary review.
@@ -1450,7 +1450,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 ### Sprint 26 Gate
 
 - [ ] **Gate 26.1:** Clean-clone source, complete test matrix, documentation, supply-chain, reproducibility, provenance, signing, and installed-artifact gates pass.
-- [ ] **Gate 26.2:** The installed candidate passes the ten-outcome disposable campaign with evidence bound to its exact package digest.
+- [x] **Gate 26.2:** The installed Package F candidate passes the ten-outcome disposable campaign with evidence bound to exact package and executable digests. See `docs/evidence/sprint-26-package-f-candidate.md`.
 - [ ] **Gate 26.3:** Manual fuzz and independent human review are complete after the final release-candidate change.
 - [ ] **Gate 26.4:** No publication effect has occurred; the signed candidate remains locally reviewable.
 
