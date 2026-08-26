@@ -9,7 +9,10 @@ use codingmage_campaign::{
 };
 use codingmage_codex::{CodexLeadBinding, CodexLeadTask};
 use codingmage_contracts::TeamLeadReport;
-use codingmage_plan::{PlanError, PlanItemKind, SelectedWork, TaskPlan};
+use codingmage_plan::{
+    PlanError, PlanItemKind, ReadinessClass, ReadinessContext, ReadinessOverride, SelectedWork,
+    TaskPlan,
+};
 use sha2::{Digest, Sha256};
 
 use crate::{RuntimeError, TeamBatchJob, generated_run_id};
@@ -156,12 +159,14 @@ pub fn build_team_lead_binding(
             dependencies: selected.item.dependencies,
         })
         .collect();
+    let readiness_census_sha256 = readiness_census(spec, plan, snapshot)?.body_sha256;
     Ok(CodexLeadBinding {
         campaign_id: snapshot.campaign_id.clone(),
         repository_id: spec.repository_id.clone(),
         worktree: campaign_worktree.to_path_buf(),
         campaign_head: snapshot.campaign_head.clone(),
         task_source_sha256: snapshot.task_source_sha256.clone(),
+        readiness_census_sha256,
         maximum_proposals: u16::try_from(maximum).map_err(|_| RuntimeError::State)?,
         allowed_paths: spec.allowed_paths.clone(),
         denied_paths: spec.denied_paths.clone(),
@@ -172,6 +177,60 @@ pub fn build_team_lead_binding(
             .collect(),
         ready_tasks,
     })
+}
+
+fn readiness_census(
+    spec: &CampaignSpec,
+    plan: &TaskPlan,
+    snapshot: &TeamCampaignSnapshot,
+) -> Result<codingmage_plan::ReadinessCensus, RuntimeError> {
+    let mut overrides = BTreeMap::new();
+    for (task_id, record) in &snapshot.tasks {
+        let observed = match record.state {
+            CampaignTaskState::Blocked | CampaignTaskState::Failed => Some(ReadinessOverride {
+                class: ReadinessClass::BlockedExternal,
+                reason_code: "durable_task_noncompletion".to_owned(),
+            }),
+            CampaignTaskState::Disputed => Some(ReadinessOverride {
+                class: ReadinessClass::HumanDecisionRequired,
+                reason_code: "durable_task_disputed".to_owned(),
+            }),
+            CampaignTaskState::Cancelled => Some(ReadinessOverride {
+                class: ReadinessClass::DeferredResource,
+                reason_code: "durable_task_cancelled".to_owned(),
+            }),
+            _ => None,
+        };
+        if let Some(observed) = observed {
+            overrides.insert(task_id.clone(), observed);
+        }
+    }
+    let policy_sha256 = spec
+        .authority_sha256()
+        .map_err(|_| RuntimeError::Authority)?;
+    let platform_sha256 = digest_bytes(b"local-platform-policy-v1");
+    let provider_capabilities_sha256 = digest_bytes(
+        serde_json::to_vec(&(&spec.team_lead, &spec.implementer, &spec.reviewer))
+            .map_err(|_| RuntimeError::State)?
+            .as_slice(),
+    );
+    plan.readiness_census(&ReadinessContext {
+        campaign_head: snapshot.campaign_head.clone(),
+        policy_sha256,
+        platform_sha256,
+        provider_capabilities_sha256,
+        overrides,
+    })
+    .map_err(|_| RuntimeError::Plan)
+}
+
+fn digest_bytes(bytes: &[u8]) -> String {
+    let digest = Sha256::digest(bytes);
+    let mut encoded = String::with_capacity(64);
+    for byte in digest {
+        let _ = write!(encoded, "{byte:02x}");
+    }
+    encoded
 }
 
 /// Validates one untrusted lead report and durably admits every nonconflicting proposal.

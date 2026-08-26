@@ -89,7 +89,11 @@ use codingmage_orchestrator::{
     DurableWorkflowPort, ImplementationOutcome, OneUnitCoordinator, OrchestrationError,
     ReviewOutcome, TaskState, VerificationOutcome, WorkflowPort, reconcile_and_select_next,
 };
-use codingmage_plan::{CheckState, PlanError, PlanItemKind, SelectedWork, TaskPlan};
+use codingmage_plan::{
+    CheckState, CompletionPredicate as PlanCompletionPredicate, PlanError, PlanItemKind,
+    ReadinessClass, ReadinessContext, ReadinessOverride, SelectedWork, TaskAuthorityEnvelope,
+    TaskAuthorityEnvelopeBody, TaskPlan, WorkPacket, WorkPacketBody,
+};
 use codingmage_process::{
     CancellationToken, ProcessExecutor, ProcessProfile, ProcessRequest, ProcessResult,
 };
@@ -2326,7 +2330,8 @@ pub fn run_serial_campaign_with_progress(
             };
             spec.initial_commit.clone_from(&head);
             spec.task_source_sha256.clone_from(&plan.source_sha256);
-            let binding = lead_binding(&spec, &campaign, &ready);
+            let census = serial_readiness_census(&spec, &plan, &checkpoint)?;
+            let binding = lead_binding(&spec, &campaign, &ready, &census.body_sha256);
             checkpoint.phase = CampaignPhase::Planning;
             checkpoint.blocker_code = None;
             checkpoint.record_provider_attempt()?;
@@ -3473,6 +3478,7 @@ fn lead_binding(
     spec: &CampaignSpec,
     campaign: &OwnedWorktree,
     ready: &[SelectedWork],
+    readiness_census_sha256: &str,
 ) -> CodexLeadBinding {
     let ready_tasks = ready
         .iter()
@@ -3488,6 +3494,7 @@ fn lead_binding(
         worktree: campaign.manifest().path.clone(),
         campaign_head: spec.initial_commit.clone(),
         task_source_sha256: spec.task_source_sha256.clone(),
+        readiness_census_sha256: readiness_census_sha256.to_owned(),
         maximum_proposals: 1,
         allowed_paths: spec.allowed_paths.clone(),
         denied_paths: spec.denied_paths.clone(),
@@ -3498,6 +3505,55 @@ fn lead_binding(
             .collect(),
         ready_tasks,
     }
+}
+
+fn serial_readiness_census(
+    spec: &CampaignSpec,
+    plan: &TaskPlan,
+    checkpoint: &CampaignCheckpoint,
+) -> Result<codingmage_plan::ReadinessCensus, RuntimeError> {
+    let mut overrides = BTreeMap::new();
+    for task_id in &checkpoint.blocked_task_ids {
+        let reason_code = checkpoint
+            .blocked_reasons
+            .get(task_id)
+            .map_or("durable_task_blocked", |reason| reason.code());
+        overrides.insert(
+            task_id.clone(),
+            ReadinessOverride {
+                class: ReadinessClass::BlockedExternal,
+                reason_code: reason_code.to_owned(),
+            },
+        );
+    }
+    for task_id in checkpoint.deferred_tasks.keys() {
+        overrides.insert(
+            task_id.clone(),
+            ReadinessOverride {
+                class: ReadinessClass::DeferredResource,
+                reason_code: "durable_task_deferred".to_owned(),
+            },
+        );
+    }
+    for task_id in checkpoint.human_decisions.keys() {
+        overrides.insert(
+            task_id.clone(),
+            ReadinessOverride {
+                class: ReadinessClass::HumanDecisionRequired,
+                reason_code: "durable_human_decision".to_owned(),
+            },
+        );
+    }
+    let provider_capabilities_sha256 =
+        serializable_sha256(&(&spec.team_lead, &spec.implementer, &spec.reviewer))?;
+    plan.readiness_census(&ReadinessContext {
+        campaign_head: spec.initial_commit.clone(),
+        policy_sha256: spec.authority_sha256().map_err(RuntimeError::Campaign)?,
+        platform_sha256: bytes_sha256(b"local-platform-policy-v1"),
+        provider_capabilities_sha256,
+        overrides,
+    })
+    .map_err(|_| RuntimeError::Plan)
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -4200,6 +4256,7 @@ struct ProductionWorkflowPort<'a> {
     lifecycle_observer: Option<LifecycleObserver>,
     cancellation: CancellationToken,
     external_context: Option<String>,
+    authority_envelope_sha256: Option<String>,
     lock: Option<CoordinatorLock>,
     worktree: Option<OwnedWorktree>,
     implementation: Option<ClaudeCompletionReport>,
@@ -4247,6 +4304,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             lifecycle_observer: inputs.lifecycle_observer,
             cancellation: inputs.cancellation,
             external_context: inputs.external_context,
+            authority_envelope_sha256: None,
             lock: None,
             worktree: None,
             implementation: None,
@@ -4686,6 +4744,108 @@ impl<'a> ProductionWorkflowPort<'a> {
         }
     }
 
+    fn acceptance_criteria_map(&self) -> BTreeMap<String, String> {
+        let task = self.selected.item.parent_id.as_str();
+        let story = task.rsplit_once('.').map_or(task, |(parent, _)| parent);
+        let plan = TaskPlan::parse(&self.source).expect("validated task source");
+        let criteria = plan
+            .items
+            .iter()
+            .filter(|item| {
+                item.kind == PlanItemKind::AcceptanceCriterion && item.parent_id == story
+            })
+            .map(|item| (item.id.clone(), item.title.clone()))
+            .collect::<BTreeMap<_, _>>();
+        if criteria.is_empty() {
+            BTreeMap::from([(
+                format!("{}.completion", self.task_id),
+                "The exact sub-task is implemented and all configured gates pass.".to_owned(),
+            )])
+        } else {
+            criteria
+        }
+    }
+
+    fn task_authority_envelope(&self) -> Result<TaskAuthorityEnvelope, OrchestrationError> {
+        let owned = self.worktree()?;
+        let commands = self
+            .config
+            .gate_commands
+            .iter()
+            .map(|command| {
+                let mut parts = vec![command.executable.display().to_string()];
+                parts.extend(command.args.clone());
+                parts
+            })
+            .collect::<Vec<_>>();
+        let packet = WorkPacket::build(WorkPacketBody {
+            version: 1,
+            run_id: self.run_id.clone(),
+            task_id: self.task_id.clone(),
+            repository_id: self.authorization.identity().repository_id.clone(),
+            worktree_id: owned.manifest().worktree_id.clone(),
+            source_anchor: self.selected.item.anchor.clone(),
+            source_sha256: self.selected.source_sha256.clone(),
+            base_commit: self.source_commit.clone(),
+            branch: owned.manifest().branch.clone(),
+            worktree: owned.manifest().path.clone(),
+            dependencies: self.selected.item.dependencies.clone(),
+            scope: self.selected.item.title.clone(),
+            owned_paths: self.spec.owned_paths.clone(),
+            commands,
+            acceptance_criteria: self.acceptance_criteria_map(),
+            risks: vec!["coordinator_classified".to_owned()],
+            limits: BTreeMap::from([
+                (
+                    "correction_rounds".to_owned(),
+                    u64::from(self.config.correction_limit),
+                ),
+                ("owned_paths".to_owned(), self.spec.owned_paths.len() as u64),
+            ]),
+            prohibited_actions: vec![
+                "destructive_git".to_owned(),
+                "destination_promotion".to_owned(),
+                "external_effect".to_owned(),
+                "task_authority_expansion".to_owned(),
+            ],
+            expected_artifacts: Vec::new(),
+            blocker_namespace: "codingmage.task".to_owned(),
+        })
+        .map_err(|_| OrchestrationError::Port)?;
+        TaskAuthorityEnvelope::build(TaskAuthorityEnvelopeBody {
+            version: 1,
+            parent_task_id: self.selected.item.parent_id.clone(),
+            packet,
+            completion_predicate: match self.spec.completion_policy {
+                CompletionPolicy::CandidateOnly => PlanCompletionPredicate::CandidateOnly,
+                CompletionPolicy::CloseTask => PlanCompletionPredicate::CanonicalTask,
+            },
+            risk_sha256: serializable_sha256(&(
+                &self.selected.item.id,
+                &self.spec.owned_paths,
+                &self.spec.completion_policy,
+            ))
+            .map_err(|_| OrchestrationError::Port)?,
+        })
+        .map_err(|_| OrchestrationError::Port)
+    }
+
+    fn revalidate_task_authority(&mut self) -> Result<(), OrchestrationError> {
+        let envelope = self.task_authority_envelope()?;
+        envelope.verify().map_err(|_| OrchestrationError::Port)?;
+        match &self.authority_envelope_sha256 {
+            Some(expected) if expected != &envelope.body_sha256 => {
+                self.failure = Some(RuntimeError::Authority);
+                Err(OrchestrationError::Port)
+            }
+            Some(_) => Ok(()),
+            None => {
+                self.authority_envelope_sha256 = Some(envelope.body_sha256);
+                Ok(())
+            }
+        }
+    }
+
     fn claude_adapter(&mut self) -> Result<ClaudeAdapter, OrchestrationError> {
         let authentication = match self.spec.implementer.authentication {
             AuthenticationMode::Bare => ClaudeAuthentication::Bare,
@@ -4776,6 +4936,7 @@ impl<'a> ProductionWorkflowPort<'a> {
         packet: ClaudeWorkPacket,
         source_commit: String,
     ) -> Result<ClaudeCompletionReport, OrchestrationError> {
+        self.revalidate_task_authority()?;
         let (worktree, branch) = {
             let owned = self.worktree()?;
             (
@@ -5446,6 +5607,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             self.failure = Some(RuntimeError::Verification);
             return Err(OrchestrationError::Port);
         }
+        self.revalidate_task_authority()?;
         let claude = self.claude_adapter()?;
         self.authorize_campaign_effect(CampaignReservation {
             process_invocations: 2,

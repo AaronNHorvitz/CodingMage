@@ -445,6 +445,374 @@ pub struct SelectedWork {
     pub source_sha256: String,
 }
 
+/// Closed deterministic classification for one open canonical sub-task.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReadinessClass {
+    /// Dependencies and current local authority permit admission.
+    ReadyLocal,
+    /// At least one canonical dependency remains incomplete.
+    WaitingDependency,
+    /// A closed external prerequisite is unavailable.
+    BlockedExternal,
+    /// A temporary resource or provider trigger is pending.
+    DeferredResource,
+    /// The task must be split before provider execution.
+    NeedsDecomposition,
+    /// Material scope or authority remains ambiguous.
+    HumanDecisionRequired,
+    /// The current platform or adapter cannot satisfy the task.
+    Unsupported,
+}
+
+/// Coordinator-owned classification override for one exact open task.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReadinessOverride {
+    /// Closed non-ready classification.
+    pub class: ReadinessClass,
+    /// Stable content-free reason code.
+    pub reason_code: String,
+}
+
+/// Immutable context used to classify the complete open roadmap.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReadinessContext {
+    /// Exact campaign head.
+    pub campaign_head: String,
+    /// Digest of deterministic planning policy.
+    pub policy_sha256: String,
+    /// Digest of the observed platform capability projection.
+    pub platform_sha256: String,
+    /// Digest of configured provider capability observations.
+    pub provider_capabilities_sha256: String,
+    /// Exact coordinator-owned non-ready observations by task.
+    pub overrides: BTreeMap<String, ReadinessOverride>,
+}
+
+/// One content-minimized task classification.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReadinessEntry {
+    /// Exact canonical task identifier.
+    pub task_id: String,
+    /// Canonical dependency identifiers.
+    pub dependencies: Vec<String>,
+    /// Deterministic classification.
+    pub class: ReadinessClass,
+    /// Stable reason for non-ready work.
+    pub reason_code: Option<String>,
+}
+
+/// Canonical body of one complete open-roadmap census.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReadinessCensusBody {
+    /// Closed schema version.
+    pub version: u16,
+    /// Exact canonical task-source digest.
+    pub task_source_sha256: String,
+    /// Exact campaign head.
+    pub campaign_head: String,
+    /// Digest of deterministic planning policy.
+    pub policy_sha256: String,
+    /// Digest of the observed platform capability projection.
+    pub platform_sha256: String,
+    /// Digest of configured provider capability observations.
+    pub provider_capabilities_sha256: String,
+    /// Every open canonical sub-task in source order.
+    pub entries: Vec<ReadinessEntry>,
+}
+
+/// Integrity-bound deterministic roadmap census.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReadinessCensus {
+    /// Canonical census body.
+    pub body: ReadinessCensusBody,
+    /// SHA-256 of the canonical body.
+    pub body_sha256: String,
+}
+
+impl TaskPlan {
+    /// Classifies every open canonical sub-task without provider judgment.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanError::InvalidCensus`] for stale identities, unknown tasks, contradictory
+    /// dependency state, malformed reasons, or a ready override.
+    pub fn readiness_census(
+        &self,
+        context: &ReadinessContext,
+    ) -> Result<ReadinessCensus, PlanError> {
+        if !valid_commit(&context.campaign_head)
+            || !valid_sha256(&context.policy_sha256)
+            || !valid_sha256(&context.platform_sha256)
+            || !valid_sha256(&context.provider_capabilities_sha256)
+        {
+            return Err(PlanError::InvalidCensus);
+        }
+        let by_id = self
+            .items
+            .iter()
+            .map(|item| (item.id.as_str(), item))
+            .collect::<BTreeMap<_, _>>();
+        if context.overrides.iter().any(|(id, observed)| {
+            !by_id.get(id.as_str()).is_some_and(|item| {
+                item.kind == PlanItemKind::SubTask && item.state == CheckState::Open
+            }) || observed.class == ReadinessClass::ReadyLocal
+                || !valid_reason_code(&observed.reason_code)
+        }) {
+            return Err(PlanError::InvalidCensus);
+        }
+        let mut entries = Vec::new();
+        for item in &self.items {
+            if item.kind != PlanItemKind::SubTask || item.state != CheckState::Open {
+                continue;
+            }
+            let dependencies_complete = item.dependencies.iter().all(|dependency| {
+                by_id
+                    .get(dependency.as_str())
+                    .is_some_and(|candidate| candidate.state == CheckState::Checked)
+            });
+            let observed = context.overrides.get(&item.id);
+            if dependencies_complete
+                && observed.is_some_and(|value| value.class == ReadinessClass::WaitingDependency)
+            {
+                return Err(PlanError::InvalidCensus);
+            }
+            let (class, reason_code) = if let Some(observed) = observed {
+                (observed.class, Some(observed.reason_code.clone()))
+            } else if dependencies_complete {
+                (ReadinessClass::ReadyLocal, None)
+            } else {
+                (
+                    ReadinessClass::WaitingDependency,
+                    Some("canonical_dependency_incomplete".to_owned()),
+                )
+            };
+            entries.push(ReadinessEntry {
+                task_id: item.id.clone(),
+                dependencies: item.dependencies.clone(),
+                class,
+                reason_code,
+            });
+        }
+        if entries.is_empty() {
+            return Err(PlanError::InvalidCensus);
+        }
+        let body = ReadinessCensusBody {
+            version: 1,
+            task_source_sha256: self.source_sha256.clone(),
+            campaign_head: context.campaign_head.clone(),
+            policy_sha256: context.policy_sha256.clone(),
+            platform_sha256: context.platform_sha256.clone(),
+            provider_capabilities_sha256: context.provider_capabilities_sha256.clone(),
+            entries,
+        };
+        ReadinessCensus::build(body)
+    }
+}
+
+impl ReadinessCensus {
+    fn build(body: ReadinessCensusBody) -> Result<Self, PlanError> {
+        if body.version != 1
+            || !valid_sha256(&body.task_source_sha256)
+            || !valid_commit(&body.campaign_head)
+            || !valid_sha256(&body.policy_sha256)
+            || !valid_sha256(&body.platform_sha256)
+            || !valid_sha256(&body.provider_capabilities_sha256)
+            || body.entries.is_empty()
+            || body.entries.len() > MAX_ITEMS
+        {
+            return Err(PlanError::InvalidCensus);
+        }
+        let encoded = serde_json::to_vec(&body).map_err(|_| PlanError::InvalidCensus)?;
+        Ok(Self {
+            body,
+            body_sha256: sha256(&encoded),
+        })
+    }
+
+    /// Revalidates every field and the canonical digest.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanError::InvalidCensus`] or [`PlanError::StaleSource`] after mutation.
+    pub fn verify(&self) -> Result<(), PlanError> {
+        let rebuilt = Self::build(self.body.clone())?;
+        if rebuilt.body_sha256 == self.body_sha256 {
+            Ok(())
+        } else {
+            Err(PlanError::StaleSource)
+        }
+    }
+}
+
+/// Closed completion boundary for an autonomous work envelope.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CompletionPredicate {
+    /// Retain a verified candidate while the canonical task remains open.
+    CandidateOnly,
+    /// Permit mechanical canonical completion after every bound condition passes.
+    CanonicalTask,
+}
+
+/// Coordinator-derived authority around one existing work packet.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TaskAuthorityEnvelopeBody {
+    /// Closed schema version.
+    pub version: u16,
+    /// Exact parent task identifier.
+    pub parent_task_id: String,
+    /// Integrity-bound work packet.
+    pub packet: WorkPacket,
+    /// Closed completion predicate.
+    pub completion_predicate: CompletionPredicate,
+    /// Digest of deterministic risk classification.
+    pub risk_sha256: String,
+}
+
+/// Integrity-bound authority consumed before any effect.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TaskAuthorityEnvelope {
+    /// Canonical envelope body.
+    pub body: TaskAuthorityEnvelopeBody,
+    /// SHA-256 of the canonical body.
+    pub body_sha256: String,
+}
+
+impl TaskAuthorityEnvelope {
+    /// Builds one exact effect authority from coordinator-owned inputs.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanError::InvalidAuthorityEnvelope`] for malformed, stale, or cross-task data.
+    pub fn build(body: TaskAuthorityEnvelopeBody) -> Result<Self, PlanError> {
+        if body.version != 1
+            || !valid_id(&body.parent_task_id)
+            || dotted_parent(body.packet.body.task_id.as_str())
+                != Some(body.parent_task_id.as_str())
+            || !valid_sha256(&body.risk_sha256)
+            || body.packet.verify().is_err()
+        {
+            return Err(PlanError::InvalidAuthorityEnvelope);
+        }
+        let encoded = serde_json::to_vec(&body).map_err(|_| PlanError::InvalidAuthorityEnvelope)?;
+        Ok(Self {
+            body,
+            body_sha256: sha256(&encoded),
+        })
+    }
+
+    /// Revalidates the canonical envelope digest.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanError::StaleSource`] after any field mutation.
+    pub fn verify(&self) -> Result<(), PlanError> {
+        let rebuilt = Self::build(self.body.clone())?;
+        if rebuilt.body_sha256 == self.body_sha256 {
+            Ok(())
+        } else {
+            Err(PlanError::StaleSource)
+        }
+    }
+}
+
+/// Closed class of routine implementation choice.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RoutineDecisionClass {
+    /// Follow an existing repository-local implementation pattern.
+    ExistingPattern,
+    /// Use an already available standard-library capability.
+    StandardLibrary,
+    /// Use an already declared dependency without changing its version or features.
+    ExistingDependency,
+    /// Add or adjust a bounded deterministic test fixture.
+    TestFixture,
+    /// Reconcile documentation with implemented behavior.
+    Documentation,
+}
+
+/// Material effect that prevents a choice from remaining routine local work.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MaterialChange {
+    /// Add or modify a dependency, version, or feature.
+    Dependency,
+    /// Change a public contract or schema.
+    PublicContract,
+    /// Change an accepted architecture boundary.
+    Architecture,
+    /// Remove or weaken required verification.
+    VerificationWeakening,
+    /// Create a network, publication, credential, or other external effect.
+    ExternalEffect,
+}
+
+/// Untrusted proposed local choice validated against one envelope.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RoutineDecision {
+    /// Closed decision class.
+    pub class: RoutineDecisionClass,
+    /// Exact affected paths.
+    pub paths: Vec<PathBuf>,
+    /// Acceptance criteria advanced by the choice.
+    pub acceptance_criteria: Vec<String>,
+    /// Material changes declared by the proposal; routine authority requires this to be empty.
+    pub material_changes: BTreeSet<MaterialChange>,
+}
+
+/// Validates that a routine choice remains inside an exact task envelope.
+///
+/// # Errors
+///
+/// Returns [`PlanError::DecisionOutsideAuthority`] for broadened or material choices.
+pub fn validate_routine_decision(
+    envelope: &TaskAuthorityEnvelope,
+    decision: &RoutineDecision,
+) -> Result<(), PlanError> {
+    envelope.verify()?;
+    let owned = envelope
+        .body
+        .packet
+        .body
+        .owned_paths
+        .iter()
+        .map(PathBuf::as_path)
+        .collect::<BTreeSet<_>>();
+    let criteria = envelope
+        .body
+        .packet
+        .body
+        .acceptance_criteria
+        .keys()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    if decision.paths.is_empty()
+        || decision.acceptance_criteria.is_empty()
+        || decision
+            .paths
+            .iter()
+            .any(|path| !safe_relative(path) || !owned.iter().any(|root| path_contains(root, path)))
+        || decision
+            .acceptance_criteria
+            .iter()
+            .any(|criterion| !criteria.contains(criterion.as_str()))
+        || !decision.material_changes.is_empty()
+    {
+        return Err(PlanError::DecisionOutsideAuthority);
+    }
+    Ok(())
+}
+
 impl SelectedWork {
     /// Confirms that the canonical source has not changed since selection.
     ///
@@ -562,6 +930,62 @@ pub struct DerivedUnit {
     pub owned_paths: Vec<PathBuf>,
     /// Original acceptance-criterion identifiers covered by this child.
     pub acceptance_criteria: Vec<String>,
+    /// Earlier child identifiers that must complete first.
+    pub dependencies: Vec<String>,
+    /// Whether this child runs cumulative parent verification.
+    pub cumulative_verification: bool,
+    /// Whether this child alone is permitted to reconcile parent completion.
+    pub completes_parent: bool,
+}
+
+/// Integrity-bound decomposition of one exact parent packet.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct DecompositionPlan {
+    /// Closed schema version.
+    pub version: u16,
+    /// Exact parent work-packet digest.
+    pub parent_packet_sha256: String,
+    /// Ordered bounded child units.
+    pub units: Vec<DerivedUnit>,
+    /// SHA-256 of the canonical version, parent, and units projection.
+    pub body_sha256: String,
+}
+
+impl DecompositionPlan {
+    /// Builds and seals one dependency-ordered child plan.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanError::InvalidDecomposition`] for authority expansion or incomplete coverage.
+    pub fn build(packet: &WorkPacket, units: Vec<DerivedUnit>) -> Result<Self, PlanError> {
+        validate_decomposition(packet, &units, false)?;
+        let body = (1_u16, packet.body_sha256.as_str(), units.as_slice());
+        let encoded = serde_json::to_vec(&body).map_err(|_| PlanError::InvalidDecomposition)?;
+        Ok(Self {
+            version: 1,
+            parent_packet_sha256: packet.body_sha256.clone(),
+            units,
+            body_sha256: sha256(&encoded),
+        })
+    }
+
+    /// Revalidates the parent binding, child authority, and canonical digest.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanError::StaleSource`] after mutation.
+    pub fn verify(&self, packet: &WorkPacket) -> Result<(), PlanError> {
+        if self.version != 1 || self.parent_packet_sha256 != packet.body_sha256 {
+            return Err(PlanError::InvalidDecomposition);
+        }
+        let rebuilt = Self::build(packet, self.units.clone())?;
+        if rebuilt.body_sha256 == self.body_sha256 {
+            Ok(())
+        } else {
+            Err(PlanError::StaleSource)
+        }
+    }
 }
 
 /// Validates that decomposition preserves requirements and cannot expand authority silently.
@@ -592,7 +1016,7 @@ pub fn validate_decomposition(
         .collect();
     let mut ids = BTreeSet::new();
     let mut mapped = BTreeSet::new();
-    for unit in units {
+    for (index, unit) in units.iter().enumerate() {
         if !valid_id(&unit.id) || !ids.insert(unit.id.as_str()) || unit.scope.trim().is_empty() {
             return Err(PlanError::InvalidDecomposition);
         }
@@ -608,8 +1032,29 @@ pub fn validate_decomposition(
             }
             mapped.insert(criterion.as_str());
         }
+        let earlier = units[..index]
+            .iter()
+            .map(|candidate| candidate.id.as_str())
+            .collect::<BTreeSet<_>>();
+        if unit.dependencies.iter().collect::<BTreeSet<_>>().len() != unit.dependencies.len()
+            || unit
+                .dependencies
+                .iter()
+                .any(|dependency| !earlier.contains(dependency.as_str()))
+            || (unit.completes_parent
+                && (index + 1 != units.len() || !unit.cumulative_verification))
+            || (index + 1 != units.len() && unit.completes_parent)
+        {
+            return Err(PlanError::InvalidDecomposition);
+        }
     }
-    if mapped != original_criteria {
+    if mapped != original_criteria
+        || !units.last().is_some_and(|unit| {
+            unit.completes_parent
+                && unit.cumulative_verification
+                && unit.dependencies.len() == units.len().saturating_sub(1)
+        })
+    {
         return Err(PlanError::InvalidDecomposition);
     }
     Ok(())
@@ -642,6 +1087,12 @@ pub enum PlanError {
     InvalidPacket,
     /// Decomposition loses requirements or expands authority.
     InvalidDecomposition,
+    /// Readiness census is stale, contradictory, or malformed.
+    InvalidCensus,
+    /// Task authority envelope is stale, broadened, or malformed.
+    InvalidAuthorityEnvelope,
+    /// Routine engineering choice exceeds the exact task envelope.
+    DecisionOutsideAuthority,
 }
 
 impl fmt::Display for PlanError {
@@ -659,6 +1110,9 @@ impl fmt::Display for PlanError {
             Self::StaleSource => "codingmage.plan.stale_source",
             Self::InvalidPacket => "codingmage.plan.invalid_packet",
             Self::InvalidDecomposition => "codingmage.plan.invalid_decomposition",
+            Self::InvalidCensus => "codingmage.plan.invalid_census",
+            Self::InvalidAuthorityEnvelope => "codingmage.plan.invalid_authority_envelope",
+            Self::DecisionOutsideAuthority => "codingmage.plan.decision_outside_authority",
         })
     }
 }
@@ -829,6 +1283,22 @@ fn valid_commit(value: &str) -> bool {
     matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
+fn valid_sha256(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn valid_reason_code(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value.bytes().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'_' | b'.')
+        })
+}
+
+fn path_contains(root: &Path, candidate: &Path) -> bool {
+    candidate == root || candidate.starts_with(root)
+}
+
 fn anchor(line: usize, exact: &str) -> SourceAnchor {
     SourceAnchor {
         line,
@@ -869,7 +1339,7 @@ mod tests {
         WorkPacketBody {
             version: 1,
             run_id: RunId::new("run-1").unwrap(),
-            task_id: TaskId::new("task-1").unwrap(),
+            task_id: TaskId::new("0.1.1.2").unwrap(),
             repository_id: RepositoryId::new("repo-1").unwrap(),
             worktree_id: WorktreeId::new("worktree-1").unwrap(),
             source_anchor: SourceAnchor {
@@ -1009,20 +1479,105 @@ mod tests {
                 scope: "Implement".to_owned(),
                 owned_paths: vec![PathBuf::from("src/lib.rs")],
                 acceptance_criteria: vec!["AC-1".to_owned()],
+                dependencies: vec![],
+                cumulative_verification: false,
+                completes_parent: false,
             },
             DerivedUnit {
                 id: "2".to_owned(),
                 scope: "Verify".to_owned(),
                 owned_paths: vec![],
                 acceptance_criteria: vec!["AC-1".to_owned()],
+                dependencies: vec!["1".to_owned()],
+                cumulative_verification: true,
+                completes_parent: true,
             },
         ];
         assert_eq!(validate_decomposition(&packet, &units, false), Ok(()));
+        let sealed = DecompositionPlan::build(&packet, units.clone()).unwrap();
+        assert_eq!(sealed.verify(&packet), Ok(()));
+        let mut replay = sealed;
+        replay.units.swap(0, 1);
+        assert!(replay.verify(&packet).is_err());
         let mut escaping = units;
         escaping[1].owned_paths = vec![PathBuf::from("../outside")];
         assert_eq!(
             validate_decomposition(&packet, &escaping, true),
             Err(PlanError::InvalidDecomposition)
+        );
+    }
+
+    #[test]
+    fn readiness_census_is_complete_deterministic_and_mutation_bound() {
+        let plan = TaskPlan::parse(PLAN.as_bytes()).unwrap();
+        let context = ReadinessContext {
+            campaign_head: "a".repeat(40),
+            policy_sha256: "b".repeat(64),
+            platform_sha256: "c".repeat(64),
+            provider_capabilities_sha256: "d".repeat(64),
+            overrides: BTreeMap::new(),
+        };
+        let census = plan.readiness_census(&context).unwrap();
+        assert_eq!(census.body.entries.len(), 1);
+        assert_eq!(census.body.entries[0].task_id, "0.1.1.2");
+        assert_eq!(census.body.entries[0].class, ReadinessClass::ReadyLocal);
+        assert_eq!(census.verify(), Ok(()));
+        assert_eq!(
+            census.body_sha256,
+            plan.readiness_census(&context).unwrap().body_sha256
+        );
+
+        let mut changed = census;
+        changed.body.entries[0].class = ReadinessClass::BlockedExternal;
+        assert_eq!(changed.verify(), Err(PlanError::StaleSource));
+
+        let mut invalid = context;
+        invalid.overrides.insert(
+            "0.1.1.2".to_owned(),
+            ReadinessOverride {
+                class: ReadinessClass::ReadyLocal,
+                reason_code: "provider_claim".to_owned(),
+            },
+        );
+        assert_eq!(
+            plan.readiness_census(&invalid),
+            Err(PlanError::InvalidCensus)
+        );
+    }
+
+    #[test]
+    fn task_envelope_rejects_cross_task_and_material_decisions() {
+        let packet = WorkPacket::build(body()).unwrap();
+        let envelope = TaskAuthorityEnvelope::build(TaskAuthorityEnvelopeBody {
+            version: 1,
+            parent_task_id: "0.1.1".to_owned(),
+            packet,
+            completion_predicate: CompletionPredicate::CanonicalTask,
+            risk_sha256: "e".repeat(64),
+        })
+        .unwrap();
+        assert_eq!(envelope.verify(), Ok(()));
+        let routine = RoutineDecision {
+            class: RoutineDecisionClass::ExistingPattern,
+            paths: vec![PathBuf::from("src/lib.rs")],
+            acceptance_criteria: vec!["AC-1".to_owned()],
+            material_changes: BTreeSet::new(),
+        };
+        assert_eq!(validate_routine_decision(&envelope, &routine), Ok(()));
+        let mut material = routine;
+        material
+            .material_changes
+            .insert(MaterialChange::Architecture);
+        assert_eq!(
+            validate_routine_decision(&envelope, &material),
+            Err(PlanError::DecisionOutsideAuthority)
+        );
+
+        let mut cross_task = envelope.body.clone();
+        cross_task.parent_task_id = "0.1.2".to_owned();
+        assert_eq!(
+            TaskAuthorityEnvelope::build(cross_task),
+            Err(PlanError::InvalidAuthorityEnvelope)
         );
     }
 

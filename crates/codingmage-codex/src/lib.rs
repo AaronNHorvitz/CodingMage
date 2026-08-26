@@ -322,6 +322,8 @@ pub struct CodexLeadBinding {
     pub campaign_head: String,
     /// Exact canonical task-source digest.
     pub task_source_sha256: String,
+    /// Exact coordinator-derived open-roadmap census digest.
+    pub readiness_census_sha256: String,
     /// Maximum proposals accepted from this turn.
     pub maximum_proposals: u16,
     /// Preapproved repository-relative roots.
@@ -342,6 +344,7 @@ impl CodexLeadBinding {
             || !self.worktree.is_dir()
             || !valid_commit(&self.campaign_head)
             || !valid_sha256(&self.task_source_sha256)
+            || !valid_sha256(&self.readiness_census_sha256)
             || !(1..=16).contains(&self.maximum_proposals)
             || self.allowed_paths.is_empty()
             || self.gate_tiers.is_empty()
@@ -1042,11 +1045,12 @@ fn render_lead_packet(binding: &CodexLeadBinding) -> Result<Vec<u8>, CodexError>
     );
     let _ = writeln!(
         packet,
-        "Campaign: {}\nRepository: {}\nHead: {}\nTask source SHA-256: {}\nMaximum proposals: {}",
+        "Campaign: {}\nRepository: {}\nHead: {}\nTask source SHA-256: {}\nReadiness census SHA-256: {}\nMaximum proposals: {}",
         binding.campaign_id,
         binding.repository_id,
         binding.campaign_head,
         binding.task_source_sha256,
+        binding.readiness_census_sha256,
         binding.maximum_proposals
     );
     packet.push_str("Allowed roots:\n");
@@ -1406,6 +1410,7 @@ mod tests {
                 worktree: self.root.clone(),
                 campaign_head: "a".repeat(40),
                 task_source_sha256: source_sha256.to_owned(),
+                readiness_census_sha256: "d".repeat(64),
                 maximum_proposals: 1,
                 allowed_paths: vec![PathBuf::from("crates")],
                 denied_paths: Vec::new(),
