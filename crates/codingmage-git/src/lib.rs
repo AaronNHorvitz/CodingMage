@@ -16,9 +16,10 @@ pub use commit::{
     observe_owned_child_commit, reobserve_owned_commit,
 };
 pub use integration::{
-    IntegrationError, IntegrationReceipt, IntegrationTransferReceipt, PreparedIntegration,
-    PreparedIntegrationReceipt, install_prepared_integration, integrate_reviewed_delta,
-    integrate_reviewed_descendant, prepare_reviewed_delta, release_prepared_integration,
+    BranchPublicationReceipt, IntegrationError, IntegrationReceipt, IntegrationTransferReceipt,
+    PreparedIntegration, PreparedIntegrationReceipt, install_prepared_integration,
+    integrate_reviewed_delta, integrate_reviewed_descendant, prepare_reviewed_delta,
+    publish_isolated_branch, release_prepared_integration,
 };
 pub use inventory::{
     Inventory, InventoryError, OperationState, RepositoryCondition, inventory_repository,

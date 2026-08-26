@@ -57,6 +57,16 @@ pub(crate) enum GitCommand<'a> {
     FastForward {
         target: &'a str,
     },
+    RemoteBranch {
+        remote: &'a str,
+        branch: &'a str,
+    },
+    PushBranch {
+        remote: &'a str,
+        branch: &'a str,
+        commit: &'a str,
+        expected_remote: Option<&'a str>,
+    },
     AddWorktree {
         destination: &'a Path,
         branch: &'a str,
@@ -241,6 +251,30 @@ fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
             .into_iter()
             .map(OsString::from)
             .collect(),
+        GitCommand::RemoteBranch { remote, branch } => vec![
+            OsString::from("ls-remote"),
+            OsString::from("--heads"),
+            OsString::from(remote),
+            OsString::from(format!("refs/heads/{branch}")),
+        ],
+        GitCommand::PushBranch {
+            remote,
+            branch,
+            commit,
+            expected_remote,
+        } => {
+            let lease = expected_remote.map_or_else(
+                || format!("--force-with-lease=refs/heads/{branch}:"),
+                |expected| format!("--force-with-lease=refs/heads/{branch}:{expected}"),
+            );
+            vec![
+                OsString::from("push"),
+                OsString::from("--porcelain"),
+                OsString::from(lease),
+                OsString::from(remote),
+                OsString::from(format!("{commit}:refs/heads/{branch}")),
+            ]
+        }
         GitCommand::TrackedPaths => ["ls-files", "-z"].into_iter().map(OsString::from).collect(),
         GitCommand::ChangedTrackedPaths => ["diff", "--name-only", "-z", "HEAD", "--"]
             .into_iter()

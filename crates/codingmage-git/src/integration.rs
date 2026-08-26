@@ -27,6 +27,21 @@ pub struct IntegrationReceipt {
     pub stdout_sha256: String,
 }
 
+/// Exact receipt for compare-and-swap publication of one isolated campaign branch.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BranchPublicationReceipt {
+    /// Exact remote selected by trusted configuration.
+    pub remote: String,
+    /// Exact coordinator-owned campaign branch.
+    pub branch: String,
+    /// Remote head observed before publication, absent on first publication.
+    pub previous_remote_head: Option<String>,
+    /// Exact locally reconciled campaign head published remotely.
+    pub published_head: String,
+    /// Whether re-observation reconciled a failed or uncertain push result.
+    pub reconciled_after_error: bool,
+}
+
 /// Exact receipt for a reviewed stale-base delta transferred onto the current campaign head.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IntegrationTransferReceipt {
@@ -180,6 +195,115 @@ pub fn integrate_reviewed_descendant(
         changed_path_count: paths.len(),
         stdout_sha256: result.stdout_sha256,
     })
+}
+
+/// Publishes the exact owned campaign branch through an ancestry-checked compare-and-swap.
+///
+/// The remote name is trusted configuration, the destination branch is taken only from the owned
+/// worktree manifest, and the local head must match `expected_head`. Existing remote history must
+/// be an ancestor of that head. A lease binds the push to the observed remote value; afterward the
+/// remote is always re-observed, so a lost command result can be reconciled without replay.
+///
+/// # Errors
+///
+/// Returns [`IntegrationError`] before publication for stale identity, malformed remote authority,
+/// or non-fast-forward history, and returns an uncertain result when re-observation cannot prove
+/// the exact terminal remote head.
+pub fn publish_isolated_branch(
+    authorization: &RepositoryAuthorization,
+    campaign: &OwnedWorktree,
+    remote: &str,
+    expected_head: &str,
+) -> Result<BranchPublicationReceipt, IntegrationError> {
+    publish_isolated_branch_with(authorization, campaign, remote, expected_head, |command| {
+        run_git(&campaign.manifest().path, command)
+            .map(|_| ())
+            .map_err(|_| IntegrationError::Command)
+    })
+}
+
+fn publish_isolated_branch_with(
+    authorization: &RepositoryAuthorization,
+    campaign: &OwnedWorktree,
+    remote: &str,
+    expected_head: &str,
+    push: impl FnOnce(GitCommand<'_>) -> Result<(), IntegrationError>,
+) -> Result<BranchPublicationReceipt, IntegrationError> {
+    revalidate_active_worktree(authorization, campaign, expected_head)
+        .map_err(|_| IntegrationError::Identity)?;
+    if !valid_remote(remote) || !valid_object_id(expected_head) {
+        return Err(IntegrationError::Authority);
+    }
+    let branch = campaign.manifest().branch.as_str();
+    let previous_remote_head = observe_remote_branch(&campaign.manifest().path, remote, branch)?;
+    if previous_remote_head.as_deref() == Some(expected_head) {
+        return Ok(BranchPublicationReceipt {
+            remote: remote.to_owned(),
+            branch: branch.to_owned(),
+            previous_remote_head,
+            published_head: expected_head.to_owned(),
+            reconciled_after_error: false,
+        });
+    }
+    if let Some(previous) = previous_remote_head.as_deref() {
+        let ancestry = run_git_with_codes(
+            &campaign.manifest().path,
+            GitCommand::IsAncestor {
+                ancestor: previous,
+                child: expected_head,
+            },
+            &[0, 1],
+        )
+        .map_err(|_| IntegrationError::Command)?;
+        if ancestry.exit_code != 0 {
+            return Err(IntegrationError::NonDescendant);
+        }
+    }
+    revalidate_active_worktree(authorization, campaign, expected_head)
+        .map_err(|_| IntegrationError::Identity)?;
+    let push_result = push(GitCommand::PushBranch {
+        remote,
+        branch,
+        commit: expected_head,
+        expected_remote: previous_remote_head.as_deref(),
+    });
+    let observed = observe_remote_branch(&campaign.manifest().path, remote, branch)?;
+    if observed.as_deref() != Some(expected_head) {
+        return Err(if push_result.is_err() {
+            IntegrationError::Uncertain
+        } else {
+            IntegrationError::Identity
+        });
+    }
+    Ok(BranchPublicationReceipt {
+        remote: remote.to_owned(),
+        branch: branch.to_owned(),
+        previous_remote_head,
+        published_head: expected_head.to_owned(),
+        reconciled_after_error: push_result.is_err(),
+    })
+}
+
+fn observe_remote_branch(
+    repository: &std::path::Path,
+    remote: &str,
+    branch: &str,
+) -> Result<Option<String>, IntegrationError> {
+    let output = run_git(repository, GitCommand::RemoteBranch { remote, branch })
+        .map_err(|_| IntegrationError::Command)?;
+    if output.stdout.is_empty() {
+        return Ok(None);
+    }
+    let text = std::str::from_utf8(&output.stdout).map_err(|_| IntegrationError::InvalidOutput)?;
+    let expected_ref = format!("refs/heads/{branch}");
+    let mut lines = text.lines();
+    let Some((commit, reference)) = lines.next().and_then(|line| line.split_once('\t')) else {
+        return Err(IntegrationError::InvalidOutput);
+    };
+    if lines.next().is_some() || reference != expected_ref || !valid_object_id(commit) {
+        return Err(IntegrationError::InvalidOutput);
+    }
+    Ok(Some(commit.to_owned()))
 }
 
 /// Transfers one reviewed stale-base delta onto the exact current campaign head.
@@ -431,6 +555,15 @@ fn valid_object_id(value: &str) -> bool {
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
+fn valid_remote(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value.as_bytes()[0].is_ascii_alphanumeric()
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
+}
+
 /// Content-free deterministic integration failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum IntegrationError {
@@ -474,7 +607,135 @@ mod tests {
     use std::fs;
 
     use super::*;
-    use crate::{commit_owned_changes, create_owned_worktree, test_support::GitFixture};
+    use crate::{
+        commit_owned_changes, create_owned_worktree,
+        test_support::{GitFixture, output, run},
+    };
+
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    fn isolated_branch_publication_reconciles_uncertainty_and_refuses_divergence() {
+        let fixture = GitFixture::new();
+        let active_before = fixture.status();
+        let authorization = fixture.authorization();
+        let parent = fixture.head();
+        let remote = fixture.root.join("qualification.git");
+        let remote_text = remote.to_str().unwrap();
+        run(&fixture.root, &["init", "--bare", remote_text]);
+        run(
+            &fixture.target,
+            &["remote", "add", "qualification", remote_text],
+        );
+        let campaign = create_owned_worktree(
+            &authorization,
+            &fixture.config(),
+            RunId::new("run-publication-campaign").unwrap(),
+            TaskId::new("task-publication-campaign").unwrap(),
+            &parent,
+        )
+        .unwrap();
+        let branch = campaign.manifest().branch.clone();
+        let campaign_path = campaign.manifest().path.clone();
+        let first = publish_isolated_branch_with(
+            &authorization,
+            &campaign,
+            "qualification",
+            &parent,
+            |command| {
+                run_git(&campaign_path, command).unwrap();
+                Err(IntegrationError::Command)
+            },
+        )
+        .unwrap();
+        assert!(first.previous_remote_head.is_none());
+        assert!(first.reconciled_after_error);
+
+        let candidate = create_owned_worktree(
+            &authorization,
+            &fixture.config(),
+            RunId::new("run-publication-candidate").unwrap(),
+            TaskId::new("task-publication-candidate").unwrap(),
+            &parent,
+        )
+        .unwrap();
+        fs::write(
+            candidate.manifest().path.join("tracked-one.txt"),
+            "published\n",
+        )
+        .unwrap();
+        let reviewed = commit_owned_changes(
+            &authorization,
+            &candidate,
+            &parent,
+            &[PathBuf::from("tracked-one.txt")],
+        )
+        .unwrap();
+        integrate_reviewed_descendant(
+            &authorization,
+            &campaign,
+            &parent,
+            &reviewed.commit,
+            &[PathBuf::from("tracked-one.txt")],
+        )
+        .unwrap();
+        let second =
+            publish_isolated_branch(&authorization, &campaign, "qualification", &reviewed.commit)
+                .unwrap();
+        assert_eq!(
+            second.previous_remote_head.as_deref(),
+            Some(parent.as_str())
+        );
+        assert!(!second.reconciled_after_error);
+
+        let divergent = create_owned_worktree(
+            &authorization,
+            &fixture.config(),
+            RunId::new("run-publication-divergent").unwrap(),
+            TaskId::new("task-publication-divergent").unwrap(),
+            &parent,
+        )
+        .unwrap();
+        fs::write(
+            divergent.manifest().path.join("tracked-two.txt"),
+            "divergent\n",
+        )
+        .unwrap();
+        let divergent_commit = commit_owned_changes(
+            &authorization,
+            &divergent,
+            &parent,
+            &[PathBuf::from("tracked-two.txt")],
+        )
+        .unwrap();
+        run(
+            &divergent.manifest().path,
+            &[
+                "push",
+                "--force",
+                "qualification",
+                &format!("{}:refs/heads/{branch}", divergent_commit.commit),
+            ],
+        );
+        assert_eq!(
+            publish_isolated_branch(&authorization, &campaign, "qualification", &reviewed.commit,),
+            Err(IntegrationError::NonDescendant)
+        );
+        assert_eq!(
+            output(
+                &fixture.target,
+                &[
+                    "ls-remote",
+                    "--heads",
+                    "qualification",
+                    &format!("refs/heads/{branch}")
+                ],
+            )
+            .split_whitespace()
+            .next(),
+            Some(divergent_commit.commit.as_str())
+        );
+        assert_eq!(fixture.status(), active_before);
+    }
 
     #[test]
     fn exact_reviewed_descendant_fast_forwards_campaign_only() {
