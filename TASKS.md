@@ -1372,17 +1372,17 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 ### Story 26.1 - Release Scope and Source Freeze
 
 - [ ] **Task 26.1.1 - Reconcile the release scope**
-  - [ ] **Sub-task 26.1.1.1:** Enumerate supported Linux platforms, provider adapters, task sources, project profiles, campaign modes, operator controls, GitHub capabilities, and package lifecycle behavior.
-  - [ ] **Sub-task 26.1.1.2:** Enumerate unsupported platforms, adapters, authority, external services, and evidence without implying future work is present.
-  - [ ] **Sub-task 26.1.1.3:** Resolve or explicitly accept every open defect, risk, security finding, documentation discrepancy, and release-blocking task.
+  - [x] **Sub-task 26.1.1.1:** Enumerate supported Linux platforms, provider adapters, task sources, project profiles, campaign modes, operator controls, GitHub capabilities, and package lifecycle behavior. See `docs/evidence/sprint-26-release-surface.md`.
+  - [x] **Sub-task 26.1.1.2:** Enumerate unsupported platforms, adapters, authority, external services, and evidence without implying future work is present. See `docs/evidence/sprint-26-release-surface.md`.
+  - [x] **Sub-task 26.1.1.3:** Resolve or explicitly accept every open defect, risk, security finding, documentation discrepancy, and release-blocking task. See `docs/evidence/sprint-26-release-surface.md`.
   - [ ] **Sub-task 26.1.1.4:** Freeze the release commit, dependency lockfile, toolchain, schemas, command help, configuration examples, and evidence index.
-  - [ ] **Sub-task 26.1.1.5:** Reject release construction if the source tree is dirty, the release commit is not reviewed, or required evidence binds another commit.
+  - [x] **Sub-task 26.1.1.5:** Reject release construction if the source tree is dirty, the release commit is not reviewed, or required evidence binds another commit. See `docs/evidence/sprint-26-release-surface.md`.
 - [ ] **Task 26.1.2 - Complete public documentation**
-  - [ ] **Sub-task 26.1.2.1:** Reconcile README, quickstart, configuration, safeguards, monitoring, recovery, GitHub, installation, troubleshooting, unsupported behavior, security, and contribution guides with actual behavior.
-  - [ ] **Sub-task 26.1.2.2:** Add a versioned support policy, compatibility matrix, migration notes, known limitations, and end-of-support expectations.
-  - [ ] **Sub-task 26.1.2.3:** Add a complete first-run walkthrough from clean clone through local campaign, stop, resume, evidence inspection, and removal using synthetic data.
+  - [x] **Sub-task 26.1.2.1:** Reconcile README, quickstart, configuration, safeguards, monitoring, recovery, GitHub, installation, troubleshooting, unsupported behavior, security, and contribution guides with actual behavior. See `docs/evidence/sprint-26-release-surface.md`.
+  - [x] **Sub-task 26.1.2.2:** Add a versioned support policy, compatibility matrix, migration notes, known limitations, and end-of-support expectations. See `docs/evidence/sprint-26-release-surface.md`.
+  - [x] **Sub-task 26.1.2.3:** Add a complete first-run walkthrough from clean clone through local campaign, stop, resume, evidence inspection, and removal using synthetic data. See `docs/evidence/sprint-26-release-surface.md`.
   - [ ] **Sub-task 26.1.2.4:** Verify every command, flag, configuration key, output example, link, Mermaid diagram, platform claim, and security statement against the release candidate.
-  - [ ] **Sub-task 26.1.2.5:** Verify provenance, copyright, Apache-2.0 license, third-party notices, contribution policy, and private vulnerability-reporting instructions.
+  - [x] **Sub-task 26.1.2.5:** Verify provenance, copyright, Apache-2.0 license, third-party notices, contribution policy, and private vulnerability-reporting instructions. See `docs/evidence/sprint-26-release-surface.md`.
 - [ ] **Task 26.1.3 - Harden correction timeout recovery before source freeze**
   - [x] **Sub-task 26.1.3.1:** Classify bounded provider timeout separately from generic provider failure and attempt-limit exhaustion in campaign outcome, status, and recovery evidence. See `docs/evidence/sprint-26-correction-timeout-hardening.md`.
   - [x] **Sub-task 26.1.3.2:** Resume only an integrity-verified prepared correction after timeout, using the same run, worktree, parent commit, correction round, and provider-session lineage while retaining the 15-minute per-invocation ceiling and the existing aggregate campaign limits. See `docs/evidence/sprint-26-correction-timeout-hardening.md`.
