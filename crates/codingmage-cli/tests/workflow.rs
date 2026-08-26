@@ -3410,7 +3410,6 @@ profiles = ["configured-gates"]
     for (expected_rejections, expected_code) in [
         (1, "codingmage.campaign.lead_rejected.invalid_proposal"),
         (2, "codingmage.campaign.lead_rejected.malformed_output"),
-        (3, "codingmage.campaign.lead_rejected.malformed_output"),
     ] {
         let run = Fixture::command(&[
             "campaign",
@@ -3445,13 +3444,40 @@ profiles = ["configured-gates"]
         );
     }
 
+    let stopped = Fixture::command(&[
+        "campaign",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign.to_str().unwrap(),
+    ]);
+    assert!(stopped.status.success());
+    let stopped: serde_json::Value = serde_json::from_slice(&stopped.stdout).unwrap();
+    assert_eq!(stopped["state"], "blocked");
+    assert_eq!(stopped["stop_reason"], "no_independent_ready_work");
+    assert_eq!(
+        stopped["blocker_code"],
+        "codingmage.campaign.no_progress_limit"
+    );
+    let checkpoint: serde_json::Value = serde_json::from_slice(
+        &fs::read(state.join("campaigns/rejected-campaign/checkpoint.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        checkpoint["checkpoint"]["rejected_proposals"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
+
     assert!(!fixture.root.join("rejected-claude-called").exists());
     assert_eq!(
         fs::read_to_string(fixture.root.join("rejected-lead.log"))
             .unwrap()
             .lines()
             .count(),
-        3
+        2
     );
     assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
     assert_eq!(fs::read(target.join("TASKS.md")).unwrap(), original_tasks);

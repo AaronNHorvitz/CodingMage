@@ -932,9 +932,20 @@ impl CampaignCheckpoint {
             readiness_census_sha256,
             ready_task_ids,
         ))?;
-        let unchanged = self.planning_generations.last().is_some_and(|previous| {
-            previous.body.state_fingerprint_sha256 == state_fingerprint_sha256
+        let logical_no_progress_trigger = triggers.iter().any(|trigger| {
+            matches!(
+                trigger,
+                PlanningTrigger::Blocker
+                    | PlanningTrigger::Deferral
+                    | PlanningTrigger::DeferralSatisfied
+                    | PlanningTrigger::ProposalRejected
+                    | PlanningTrigger::HumanDecision
+            )
         });
+        let unchanged = logical_no_progress_trigger
+            && self.planning_generations.last().is_some_and(|previous| {
+                previous.body.state_fingerprint_sha256 == state_fingerprint_sha256
+            });
         self.identical_planning_generations = if unchanged {
             self.identical_planning_generations
                 .checked_add(1)
@@ -2299,6 +2310,19 @@ mod tests {
                 .unwrap(),
             PlanningProgress::Progressed
         );
+        checkpoint.schedule_planning(PlanningTrigger::RecoverableFailure);
+        assert_eq!(
+            checkpoint
+                .record_planning_generation(
+                    &"b".repeat(40),
+                    &"c".repeat(64),
+                    &"d".repeat(64),
+                    &ready
+                )
+                .unwrap(),
+            PlanningProgress::Progressed
+        );
+        assert_eq!(checkpoint.identical_planning_generations, 0);
         checkpoint.schedule_planning(PlanningTrigger::ProposalRejected);
         assert_eq!(
             checkpoint
@@ -2311,7 +2335,7 @@ mod tests {
                 .unwrap(),
             PlanningProgress::Progressed
         );
-        checkpoint.schedule_planning(PlanningTrigger::RecoverableFailure);
+        checkpoint.schedule_planning(PlanningTrigger::ProposalRejected);
         assert_eq!(
             checkpoint
                 .record_planning_generation(
