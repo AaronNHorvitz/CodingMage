@@ -12,7 +12,7 @@ use std::{
 
 use codingmage_process::{
     CancellationToken, DescendantCleanup, ProcessError, ProcessExecutor, ProcessOutcome,
-    ProcessProfile, ProcessRequest, observe_control_residue,
+    ProcessProfile, ProcessRequest, observe_control_residue, recover_orphaned_controls,
 };
 use nix::{
     sys::signal::{Signal, kill},
@@ -89,6 +89,22 @@ fn residue_observation_counts_every_exact_control_entry() {
         observe_control_residue(&linked_root),
         Err(ProcessError::Control)
     );
+}
+
+#[test]
+fn orphan_recovery_refuses_unbound_or_unexpected_controls() {
+    let fixture = Fixture::new();
+    let control = fixture.root.join("control");
+    let _executor = fixture.executor();
+    let unbound = control.join(format!("run-{}", "a".repeat(32)));
+    fs::create_dir(&unbound).unwrap();
+    fs::write(unbound.join("unexpected"), b"not-owned").unwrap();
+
+    assert_eq!(
+        recover_orphaned_controls(&control),
+        Err(ProcessError::Control)
+    );
+    assert!(unbound.join("unexpected").exists());
 }
 
 fn wait_for(path: &Path) {
@@ -399,6 +415,9 @@ fn parent_failure_guard_reaps_the_descendant_group() {
     .unwrap();
     let _ = parent.wait();
     wait_absent(child_pid);
+    let control = fixture.root.join("driver-control");
+    assert_eq!(recover_orphaned_controls(&control).unwrap(), 1);
+    assert_eq!(observe_control_residue(&control).unwrap(), 0);
 }
 
 #[test]

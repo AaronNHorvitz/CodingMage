@@ -1,6 +1,13 @@
 //! Durable production loop for parallel multi-agent campaigns.
 
-use std::{collections::BTreeMap, fmt::Write as _, fs, path::Path, sync::Arc, time::SystemTime};
+use std::{
+    collections::BTreeMap,
+    fmt::Write as _,
+    fs,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::SystemTime,
+};
 
 use codingmage_campaign::{
     CampaignExecutionMode, CampaignSpec, CampaignTaskState, TaskIntegrationPolicy,
@@ -11,7 +18,9 @@ use codingmage_contracts::{RunId, TaskId, WorktreeId};
 use codingmage_core::{CapabilityGrant, Config, RepositoryAuthorization};
 use codingmage_git::{OwnedWorktree, WorktreeStatus, create_owned_worktree, inventory_repository};
 use codingmage_plan::{CheckState, TaskPlan};
-use codingmage_process::{CancellationToken, ProcessExecutor, observe_control_residue};
+use codingmage_process::{
+    CancellationToken, ProcessExecutor, observe_control_residue, recover_orphaned_controls,
+};
 use codingmage_service::CoordinatorLock;
 use codingmage_state::IntegrityDocument;
 use serde::{Deserialize, Serialize};
@@ -358,6 +367,9 @@ pub fn run_team_campaign_with_progress(
         ProgressActor::Coordinator,
         ProgressStage::Reconciling,
     ));
+    for process_root in team_process_control_roots(&campaign_root, &snapshot) {
+        recover_orphaned_controls(&process_root).map_err(|_| RuntimeError::Process)?;
+    }
     let recovery_timestamp = now_ms();
     let watchdog = observe_team_watchdog(&spec, &snapshot, recovery_timestamp)?;
     let recovery_jobs = recoverable_team_jobs(&spec, &snapshot, recovery_timestamp)?;
@@ -1129,18 +1141,7 @@ fn reconcile_team_completion(
     })?;
 
     let mut removed_worktree_ids = Vec::new();
-    let mut process_roots = vec![
-        campaign_root.join("lead-processes"),
-        campaign_root
-            .join("integration-verification")
-            .join("integration-processes"),
-    ];
-    let publication_root = campaign_root
-        .join("publication-processes")
-        .join("processes");
-    if fs::symlink_metadata(&publication_root).is_ok() {
-        process_roots.push(publication_root);
-    }
+    let process_roots = team_process_control_roots(campaign_root, snapshot);
     for (task_id, record) in &snapshot.tasks {
         let lease_id = record.lease_id.as_deref().ok_or(RuntimeError::State)?;
         let pod_id = record.pod_id.as_deref().ok_or(RuntimeError::State)?;
@@ -1166,13 +1167,6 @@ fn reconcile_team_completion(
             return Err(RuntimeError::State);
         }
         removed_worktree_ids.push(worktree_id.as_str().to_owned());
-        process_roots.push(
-            pod_config
-                .state_root
-                .join("runs")
-                .join(run_id)
-                .join("processes"),
-        );
     }
     let process_control_residue_count = process_roots.iter().try_fold(0_u64, |total, root| {
         let observed = observe_control_residue(root).map_err(|_| RuntimeError::Process)?;
@@ -1222,6 +1216,37 @@ fn reconcile_team_completion(
         return Err(RuntimeError::State);
     }
     Ok(reconciliation)
+}
+
+fn team_process_control_roots(
+    campaign_root: &Path,
+    snapshot: &codingmage_campaign::TeamCampaignSnapshot,
+) -> Vec<PathBuf> {
+    let mut roots = vec![
+        campaign_root.join("lead-processes"),
+        campaign_root
+            .join("integration-verification")
+            .join("integration-processes"),
+    ];
+    let publication_root = campaign_root
+        .join("publication-processes")
+        .join("processes");
+    if fs::symlink_metadata(&publication_root).is_ok() {
+        roots.push(publication_root);
+    }
+    roots.extend(snapshot.tasks.values().filter_map(|record| {
+        Some(
+            campaign_root
+                .join("execution")
+                .join("pods")
+                .join(record.lease_id.as_deref()?)
+                .join("state")
+                .join("runs")
+                .join(record.run_id.as_deref()?)
+                .join("processes"),
+        )
+    }));
+    roots
 }
 
 fn load_or_initialize(

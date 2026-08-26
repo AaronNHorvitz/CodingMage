@@ -33,6 +33,7 @@ const MAX_OUTPUT_BOUND: u64 = 64 * 1024 * 1024;
 const MAX_DEADLINE_MILLIS: u64 = 24 * 60 * 60 * 1000;
 const MAX_OPEN_FILES: u64 = 1024;
 const MAX_PROCESSES: u32 = 64;
+const MAX_CONTROL_RESIDUE: usize = 4_096;
 const GUARD_TIMEOUT_EXIT: i32 = 120;
 const GUARD_CANCEL_EXIT: i32 = 121;
 const GUARD_PARENT_EXIT: i32 = 122;
@@ -327,6 +328,7 @@ impl ProcessExecutor {
         let parent_start = process_start_time(parent_pid).ok_or(ProcessError::Control)?;
         let control = create_control_directory(&self.control_root)?;
         let cancel_path = control.join("cancel");
+        let guard_identity_path = control.join("guard-identity.json");
         let target_pid_path = control.join("target-pid");
         let terminal_path = control.join("terminal");
         let envelope = LaunchEnvelope {
@@ -363,6 +365,16 @@ impl ProcessExecutor {
         let started = Instant::now();
         let mut guard = command.spawn().map_err(|_| ProcessError::Spawn)?;
         let guard_pid = guard.id();
+        let guard_identity = process_start_time(guard_pid)
+            .ok_or(ProcessError::Control)
+            .and_then(|start| write_guard_identity(&guard_identity_path, guard_pid, start));
+        if let Err(error) = guard_identity {
+            let _ = signal_group(guard_pid, Signal::SIGKILL);
+            let _ = guard.wait();
+            let _ = fs::remove_file(&guard_identity_path);
+            let _ = fs::remove_dir(&control);
+            return Err(error);
+        }
         let mut guard_stdin = guard.stdin.take().ok_or(ProcessError::Spawn)?;
         let encoded = serde_json::to_vec(&envelope).map_err(|_| ProcessError::Spawn)?;
         if encoded.len() > 2 * MAX_STDIN_BYTES {
@@ -439,6 +451,7 @@ impl ProcessExecutor {
             DescendantCleanup::NotRequired
         };
         let _ = fs::remove_file(cancel_path);
+        let _ = fs::remove_file(guard_identity_path);
         let _ = fs::remove_file(target_pid_path);
         let _ = fs::remove_file(terminal_path);
         let _ = fs::remove_dir(control);
@@ -479,6 +492,141 @@ pub fn observe_control_residue(control_root: &Path) -> Result<u64, ProcessError>
             entry.map_err(|_| ProcessError::Control)?;
             count.checked_add(1).ok_or(ProcessError::Control)
         })
+}
+
+/// Reclaims dead exact-owned guard controls left by an interrupted executor parent.
+///
+/// Recovery refuses live guards, live target groups, symbolic links, malformed identities,
+/// unexpected entries, and roots larger than the fixed inspection ceiling. It never discovers or
+/// signals processes by executable name and never removes anything outside the selected root.
+///
+/// # Errors
+///
+/// Returns [`ProcessError::Control`] when ownership or terminal process state cannot be proven.
+pub fn recover_orphaned_controls(control_root: &Path) -> Result<u64, ProcessError> {
+    if !control_root.is_absolute() {
+        return Err(ProcessError::Control);
+    }
+    let metadata = match fs::symlink_metadata(control_root) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+        Err(_) => return Err(ProcessError::Control),
+    };
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err(ProcessError::Control);
+    }
+    let entries = fs::read_dir(control_root)
+        .map_err(|_| ProcessError::Control)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| ProcessError::Control)?;
+    if entries.len() > MAX_CONTROL_RESIDUE {
+        return Err(ProcessError::Control);
+    }
+    let mut recovered = 0_u64;
+    for entry in entries {
+        recover_control_entry(&entry.path())?;
+        recovered = recovered.checked_add(1).ok_or(ProcessError::Control)?;
+    }
+    Ok(recovered)
+}
+
+#[allow(clippy::too_many_lines)]
+fn recover_control_entry(control: &Path) -> Result<(), ProcessError> {
+    let metadata = fs::symlink_metadata(control).map_err(|_| ProcessError::Control)?;
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err(ProcessError::Control);
+    }
+    let name = control
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or(ProcessError::Control)?;
+    if name.len() != 36
+        || !name.starts_with("run-")
+        || !name[4..].bytes().all(|byte| byte.is_ascii_hexdigit())
+    {
+        return Err(ProcessError::Control);
+    }
+    let identity_path = control.join("guard-identity.json");
+    let identity_metadata =
+        fs::symlink_metadata(&identity_path).map_err(|_| ProcessError::Control)?;
+    if identity_metadata.file_type().is_symlink()
+        || !identity_metadata.is_file()
+        || identity_metadata.len() > 1_024
+    {
+        return Err(ProcessError::Control);
+    }
+    let identity: GuardIdentity =
+        serde_json::from_slice(&fs::read(&identity_path).map_err(|_| ProcessError::Control)?)
+            .map_err(|_| ProcessError::Control)?;
+    if identity.version != 1 || identity.pid == 0 || identity.start == 0 {
+        return Err(ProcessError::Control);
+    }
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while process_start_time(identity.pid) == Some(identity.start) && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(5));
+    }
+    if process_start_time(identity.pid) == Some(identity.start) {
+        return Err(ProcessError::Control);
+    }
+    let allowed = BTreeSet::from(["cancel", "guard-identity.json", "target-pid", "terminal"]);
+    let entries = fs::read_dir(control)
+        .map_err(|_| ProcessError::Control)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| ProcessError::Control)?;
+    for entry in &entries {
+        let entry_name = entry
+            .file_name()
+            .into_string()
+            .map_err(|_| ProcessError::Control)?;
+        let entry_metadata =
+            fs::symlink_metadata(entry.path()).map_err(|_| ProcessError::Control)?;
+        if !allowed.contains(entry_name.as_str())
+            || entry_metadata.file_type().is_symlink()
+            || !entry_metadata.is_file()
+        {
+            return Err(ProcessError::Control);
+        }
+    }
+    let target_path = control.join("target-pid");
+    if target_path.exists() {
+        let target = fs::read_to_string(&target_path)
+            .ok()
+            .and_then(|value| value.parse::<u32>().ok())
+            .filter(|value| *value > 0)
+            .ok_or(ProcessError::Control)?;
+        if !process_group_empty(target) {
+            return Err(ProcessError::Control);
+        }
+    }
+    for entry in entries {
+        fs::remove_file(entry.path()).map_err(|_| ProcessError::Control)?;
+    }
+    fs::remove_dir(control).map_err(|_| ProcessError::Control)
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct GuardIdentity {
+    version: u16,
+    pid: u32,
+    start: u64,
+}
+
+fn write_guard_identity(path: &Path, pid: u32, start: u64) -> Result<(), ProcessError> {
+    let encoded = serde_json::to_vec(&GuardIdentity {
+        version: 1,
+        pid,
+        start,
+    })
+    .map_err(|_| ProcessError::Control)?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .map_err(|_| ProcessError::Control)?;
+    file.write_all(&encoded)
+        .and_then(|()| file.sync_all())
+        .map_err(|_| ProcessError::Control)
 }
 
 #[derive(Deserialize, Serialize)]
