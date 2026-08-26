@@ -72,7 +72,7 @@ The prescribed ten-outcome campaign passed. All 32 Python governance and evidenc
 sustained qualification tests remained explicitly ignored because the controlled soak was not
 authorized for that run; this evidence makes no soak claim.
 
-The active AgentMage checkout remained at
+The active downstream checkout remained at
 `626a92146ff9769f83d36a599a813befb98c819c` with an empty porcelain-status SHA-256 of
 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` during this reconciliation.
 
