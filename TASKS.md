@@ -1399,9 +1399,9 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 26.1.4.4:** Permit routine local engineering decisions only when they remain inside the exact envelope and do not add dependencies, change public contracts or architecture, weaken verification, or create external effects. See `docs/evidence/sprint-26-autonomous-authority.md`.
 - [ ] **Task 26.1.5 - Decompose, defer, and replan safely**
   - [ ] **Sub-task 26.1.5.1:** Seal bounded child packets for oversized work with unique identities, acyclic dependencies, parent-path subsets, complete acceptance coverage, cumulative completion, and restart-persistent integrity.
-  - [ ] **Sub-task 26.1.5.2:** Continue independent work after an exact external blocker while leaving the blocked task and dependency descendants unchecked and visible.
-  - [ ] **Sub-task 26.1.5.3:** Advance an immutable planning generation after completion, blocker, satisfied deferral, rejected proposal, recoverable failure, dependency change, or integration outcome.
-  - [ ] **Sub-task 26.1.5.4:** Bound no-progress detection and prohibit repeated identical blockers, already-satisfied deferrals, decomposition replay, speculative redesign, and model-created authority.
+  - [x] **Sub-task 26.1.5.2:** Continue independent work after an exact external blocker while leaving the blocked task and dependency descendants unchecked and visible. See `docs/evidence/sprint-26-safe-replanning.md`.
+  - [x] **Sub-task 26.1.5.3:** Advance an immutable planning generation after completion, blocker, satisfied deferral, rejected proposal, recoverable failure, dependency change, or integration outcome. See `docs/evidence/sprint-26-safe-replanning.md`.
+  - [x] **Sub-task 26.1.5.4:** Bound no-progress detection and prohibit repeated identical blockers, already-satisfied deferrals, decomposition replay, speculative redesign, and model-created authority. See `docs/evidence/sprint-26-safe-replanning.md`.
 - [ ] **Task 26.1.6 - Harden routing, watchdog, integration, and reconciliation**
   - [ ] **Sub-task 26.1.6.1:** Route implementation and review by deterministic risk, ownership boundary, required strength, provider capability and availability, and exact failure history without weakening reviewer independence.
   - [ ] **Sub-task 26.1.6.2:** Recover or stop stalled coordinators, processes, leases, worktrees, provider sessions, and effect intents through exact watchdog observations without adopting unrelated state.
