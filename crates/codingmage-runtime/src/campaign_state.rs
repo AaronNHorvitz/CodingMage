@@ -13,6 +13,7 @@ use codingmage_contracts::{
     EvidenceId, LeadBlockedReason, LeadDeferredReason, LeadHumanDecisionReason,
     LeadReconsiderationTrigger, RepositoryId, RunId, TaskId, WorktreeId,
 };
+use codingmage_plan::{DecompositionPlan, WorkPacket};
 use codingmage_state::{
     CampaignCheckpointProjection, DurableIdentities, EventKind, EventOutcome, Journal,
     JournalEvent, RedactedField,
@@ -24,6 +25,7 @@ use crate::{CampaignLimitKind, RunUtilization, RuntimeError};
 
 const SCHEMA_VERSION: u16 = 7;
 const MAX_CHECKPOINT_BYTES: usize = 1024 * 1024;
+const MAX_DECOMPOSITION_BYTES: usize = 1024 * 1024;
 const CLEARANCE_SCHEMA_VERSION: u16 = 1;
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
 
@@ -297,6 +299,126 @@ pub(crate) struct CampaignCheckpoint {
     pub pending_integration: Option<PendingIntegration>,
     pub started_at_ms: u64,
     pub updated_at_ms: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct DecompositionCheckpointBody {
+    pub schema_version: u16,
+    pub campaign_id: String,
+    pub task_id: TaskId,
+    pub parent_packet_sha256: String,
+    pub plan: DecompositionPlan,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct DecompositionCheckpoint {
+    pub body: DecompositionCheckpointBody,
+    pub body_sha256: String,
+}
+
+impl DecompositionCheckpoint {
+    pub(crate) fn new(
+        campaign_id: String,
+        task_id: TaskId,
+        parent: &WorkPacket,
+        plan: DecompositionPlan,
+    ) -> Result<Self, RuntimeError> {
+        if campaign_id.is_empty()
+            || campaign_id.len() > 128
+            || campaign_id.chars().any(char::is_control)
+            || task_id != parent.body.task_id
+            || plan.verify(parent).is_err()
+        {
+            return Err(RuntimeError::Authority);
+        }
+        let body = DecompositionCheckpointBody {
+            schema_version: 1,
+            campaign_id,
+            task_id,
+            parent_packet_sha256: parent.body_sha256.clone(),
+            plan,
+        };
+        let canonical = serde_json::to_vec(&body).map_err(|_| RuntimeError::State)?;
+        Ok(Self {
+            body,
+            body_sha256: sha256_hex(&canonical),
+        })
+    }
+
+    pub(crate) fn validate(&self, parent: &WorkPacket) -> Result<(), RuntimeError> {
+        let rebuilt = Self::new(
+            self.body.campaign_id.clone(),
+            self.body.task_id.clone(),
+            parent,
+            self.body.plan.clone(),
+        )?;
+        if self.body.schema_version != 1
+            || self.body.parent_packet_sha256 != parent.body_sha256
+            || rebuilt != *self
+        {
+            return Err(RuntimeError::State);
+        }
+        Ok(())
+    }
+
+    pub(crate) fn persist(&self, root: &Path, parent: &WorkPacket) -> Result<(), RuntimeError> {
+        self.validate(parent)?;
+        let directory = root.join("decompositions");
+        private_directory(&directory)?;
+        let bytes = serde_json::to_vec_pretty(self).map_err(|_| RuntimeError::State)?;
+        if bytes.len() > MAX_DECOMPOSITION_BYTES {
+            return Err(RuntimeError::State);
+        }
+        let temporary = directory.join(format!(
+            ".{}.{}.{}.tmp",
+            self.body.task_id,
+            std::process::id(),
+            NEXT_TEMPORARY.fetch_add(1, Ordering::Relaxed)
+        ));
+        let current = directory.join(format!("{}.json", self.body.task_id));
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|_| RuntimeError::State)?;
+        set_file_private(&file)?;
+        file.write_all(&bytes)
+            .and_then(|()| file.sync_all())
+            .map_err(|_| RuntimeError::State)?;
+        fs::rename(&temporary, &current).map_err(|_| RuntimeError::State)?;
+        File::open(&directory)
+            .and_then(|directory| directory.sync_all())
+            .map_err(|_| RuntimeError::State)
+    }
+
+    pub(crate) fn load(
+        root: &Path,
+        campaign_id: &str,
+        task_id: &TaskId,
+        parent: &WorkPacket,
+    ) -> Result<Option<Self>, RuntimeError> {
+        let path = root.join("decompositions").join(format!("{task_id}.json"));
+        let metadata = match fs::symlink_metadata(&path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(_) => return Err(RuntimeError::State),
+        };
+        if !metadata.is_file()
+            || metadata.file_type().is_symlink()
+            || metadata.len() > MAX_DECOMPOSITION_BYTES as u64
+        {
+            return Err(RuntimeError::State);
+        }
+        let bytes = fs::read(path).map_err(|_| RuntimeError::State)?;
+        let checkpoint: Self = serde_json::from_slice(&bytes).map_err(|_| RuntimeError::State)?;
+        if checkpoint.body.campaign_id != campaign_id || &checkpoint.body.task_id != task_id {
+            return Err(RuntimeError::State);
+        }
+        checkpoint.validate(parent)?;
+        Ok(Some(checkpoint))
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -1794,6 +1916,8 @@ mod tests {
         CampaignAuthentication, CampaignGateTier, CampaignProvider, CampaignPublication,
         CampaignSpec,
     };
+    use codingmage_contracts::RepositoryId;
+    use codingmage_plan::{DerivedUnit, SourceAnchor, WorkPacketBody};
 
     fn campaign_limits() -> CampaignLimits {
         CampaignLimits {
@@ -1828,6 +1952,122 @@ mod tests {
             campaign_limits(),
         )
         .unwrap()
+    }
+
+    fn decomposition_parent() -> WorkPacket {
+        WorkPacket::build(WorkPacketBody {
+            version: 1,
+            run_id: RunId::new("run-decomposition").unwrap(),
+            task_id: TaskId::new("26.1.5.1").unwrap(),
+            repository_id: RepositoryId::new("repo-1").unwrap(),
+            worktree_id: WorktreeId::new("wt-decomposition").unwrap(),
+            source_anchor: SourceAnchor {
+                line: 100,
+                line_sha256: "a".repeat(64),
+            },
+            source_sha256: "b".repeat(64),
+            base_commit: "c".repeat(40),
+            branch: "codingmage/decomposition".to_owned(),
+            worktree: PathBuf::from("/tmp/codingmage-decomposition"),
+            dependencies: Vec::new(),
+            scope: "Implement one oversized bounded task.".to_owned(),
+            owned_paths: vec![PathBuf::from("src")],
+            commands: vec![vec!["cargo".to_owned(), "test".to_owned()]],
+            acceptance_criteria: BTreeMap::from([
+                ("AC-1".to_owned(), "The implementation passes.".to_owned()),
+                ("AC-2".to_owned(), "The cumulative gate passes.".to_owned()),
+            ]),
+            risks: vec!["oversized".to_owned()],
+            limits: BTreeMap::from([("children".to_owned(), 2)]),
+            prohibited_actions: vec!["Do not broaden authority.".to_owned()],
+            expected_artifacts: Vec::new(),
+            blocker_namespace: "codingmage.decomposition".to_owned(),
+        })
+        .unwrap()
+    }
+
+    fn decomposition_plan(parent: &WorkPacket) -> DecompositionPlan {
+        DecompositionPlan::build(
+            parent,
+            vec![
+                DerivedUnit {
+                    id: "1".to_owned(),
+                    scope: "Implement the bounded internal module.".to_owned(),
+                    owned_paths: vec![PathBuf::from("src/internal")],
+                    acceptance_criteria: vec!["AC-1".to_owned()],
+                    dependencies: Vec::new(),
+                    cumulative_verification: false,
+                    completes_parent: false,
+                },
+                DerivedUnit {
+                    id: "2".to_owned(),
+                    scope: "Run cumulative parent verification.".to_owned(),
+                    owned_paths: Vec::new(),
+                    acceptance_criteria: vec!["AC-2".to_owned()],
+                    dependencies: vec!["1".to_owned()],
+                    cumulative_verification: true,
+                    completes_parent: true,
+                },
+            ],
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn decomposition_checkpoint_survives_restart_and_rejects_drift() {
+        let root = root("decomposition");
+        let parent = decomposition_parent();
+        let checkpoint = DecompositionCheckpoint::new(
+            "campaign-decomposition".to_owned(),
+            parent.body.task_id.clone(),
+            &parent,
+            decomposition_plan(&parent),
+        )
+        .unwrap();
+        checkpoint.persist(&root, &parent).unwrap();
+        assert_eq!(
+            DecompositionCheckpoint::load(
+                &root,
+                "campaign-decomposition",
+                &parent.body.task_id,
+                &parent,
+            )
+            .unwrap()
+            .unwrap(),
+            checkpoint
+        );
+
+        let path = root
+            .join("decompositions")
+            .join(format!("{}.json", parent.body.task_id));
+        let original = fs::read(&path).unwrap();
+        let mut changed: DecompositionCheckpoint = serde_json::from_slice(&original).unwrap();
+        changed.body.plan.units.swap(0, 1);
+        fs::write(&path, serde_json::to_vec_pretty(&changed).unwrap()).unwrap();
+        assert_eq!(
+            DecompositionCheckpoint::load(
+                &root,
+                "campaign-decomposition",
+                &parent.body.task_id,
+                &parent,
+            ),
+            Err(RuntimeError::Authority)
+        );
+
+        fs::write(&path, original).unwrap();
+        let mut changed_parent_body = parent.body.clone();
+        changed_parent_body.scope.push_str(" changed");
+        let changed_parent = WorkPacket::build(changed_parent_body).unwrap();
+        assert!(
+            DecompositionCheckpoint::load(
+                &root,
+                "campaign-decomposition",
+                &parent.body.task_id,
+                &changed_parent,
+            )
+            .is_err()
+        );
+        fs::remove_dir_all(root).unwrap();
     }
 
     fn campaign_policy_spec() -> CampaignSpec {

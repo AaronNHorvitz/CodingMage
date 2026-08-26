@@ -91,9 +91,10 @@ use codingmage_orchestrator::{
     ReviewOutcome, TaskState, VerificationOutcome, WorkflowPort, reconcile_and_select_next,
 };
 use codingmage_plan::{
-    CheckState, CompletionPredicate as PlanCompletionPredicate, ObservedDecision, PlanError,
-    PlanItemKind, ReadinessClass, ReadinessContext, ReadinessOverride, SelectedWork,
-    TaskAuthorityEnvelope, TaskAuthorityEnvelopeBody, TaskPlan, WorkPacket, WorkPacketBody,
+    CheckState, CompletionPredicate as PlanCompletionPredicate, DecompositionPlan,
+    ObservedDecision, PlanError, PlanItemKind, ReadinessClass, ReadinessContext, ReadinessOverride,
+    SelectedWork, TaskAuthorityEnvelope, TaskAuthorityEnvelopeBody, TaskPlan, WorkPacket,
+    WorkPacketBody,
 };
 use codingmage_process::{
     CancellationToken, ProcessExecutor, ProcessProfile, ProcessRequest, ProcessResult,
@@ -6389,6 +6390,56 @@ const fn verdict_name(verdict: ReviewVerdict) -> &'static str {
         ReviewVerdict::Disputed => "disputed",
         ReviewVerdict::Blocked => "blocked",
     }
+}
+
+/// Persists one exact sealed decomposition under a private autonomous-campaign state root.
+///
+/// The returned digest identifies the complete campaign, parent packet, and child plan projection.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] for relative roots, stale or broadened plans, cross-task identity, or
+/// private-state persistence failure.
+pub fn persist_decomposition_checkpoint(
+    state_root: &Path,
+    campaign_id: &str,
+    parent: &WorkPacket,
+    plan: DecompositionPlan,
+) -> Result<String, RuntimeError> {
+    if !state_root.is_absolute() {
+        return Err(RuntimeError::Authority);
+    }
+    let checkpoint = campaign_state::DecompositionCheckpoint::new(
+        campaign_id.to_owned(),
+        parent.body.task_id.clone(),
+        parent,
+        plan,
+    )?;
+    checkpoint.persist(state_root, parent)?;
+    Ok(checkpoint.body_sha256)
+}
+
+/// Loads and revalidates one exact decomposition after restart.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] for relative roots, malformed private state, cross-campaign identity,
+/// or a stale parent packet.
+pub fn load_decomposition_checkpoint(
+    state_root: &Path,
+    campaign_id: &str,
+    parent: &WorkPacket,
+) -> Result<Option<DecompositionPlan>, RuntimeError> {
+    if !state_root.is_absolute() {
+        return Err(RuntimeError::Authority);
+    }
+    Ok(campaign_state::DecompositionCheckpoint::load(
+        state_root,
+        campaign_id,
+        &parent.body.task_id,
+        parent,
+    )?
+    .map(|checkpoint| checkpoint.body.plan))
 }
 
 /// Stable content-free runtime failure.

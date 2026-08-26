@@ -1194,7 +1194,10 @@ pub fn validate_decomposition(
         }
         if unit.owned_paths.iter().any(|path| {
             !safe_relative(path)
-                || (!original_paths.contains(path.as_path()) && !material_scope_change_approved)
+                || (!original_paths
+                    .iter()
+                    .any(|root| path_contains(root, path.as_path()))
+                    && !material_scope_change_approved)
         }) {
             return Err(PlanError::InvalidDecomposition);
         }
@@ -1644,12 +1647,14 @@ mod tests {
 
     #[test]
     fn decomposition_preserves_criteria_and_authority() {
-        let packet = WorkPacket::build(body()).unwrap();
+        let mut parent = body();
+        parent.owned_paths = vec![PathBuf::from("src")];
+        let packet = WorkPacket::build(parent).unwrap();
         let units = vec![
             DerivedUnit {
                 id: "1".to_owned(),
                 scope: "Implement".to_owned(),
-                owned_paths: vec![PathBuf::from("src/lib.rs")],
+                owned_paths: vec![PathBuf::from("src/parser/lib.rs")],
                 acceptance_criteria: vec!["AC-1".to_owned()],
                 dependencies: vec![],
                 cumulative_verification: false,
