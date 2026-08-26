@@ -2214,8 +2214,8 @@ mod tests {
                 DerivedUnit {
                     id: "2".to_owned(),
                     scope: "Run cumulative parent verification.".to_owned(),
-                    owned_paths: Vec::new(),
-                    acceptance_criteria: vec!["AC-2".to_owned()],
+                    owned_paths: vec![PathBuf::from("src")],
+                    acceptance_criteria: vec!["AC-1".to_owned(), "AC-2".to_owned()],
                     dependencies: vec!["1".to_owned()],
                     cumulative_verification: true,
                     completes_parent: true,

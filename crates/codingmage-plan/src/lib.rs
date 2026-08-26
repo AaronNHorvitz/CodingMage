@@ -1158,6 +1158,79 @@ impl DecompositionPlan {
             Err(PlanError::StaleSource)
         }
     }
+
+    /// Materializes the sealed child units as canonical provider work packets.
+    ///
+    /// Children retain the parent's repository, run, worktree, source, branch, commands, limits,
+    /// and prohibited effects. Their task identities, dependencies, scope, paths, and acceptance
+    /// criteria are narrowed by the verified decomposition. The final cumulative child retains
+    /// every parent acceptance criterion and expected artifact.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanError::InvalidDecomposition`] when this plan is stale or any derived packet
+    /// cannot be represented without broadening or losing parent authority.
+    pub fn child_packets(&self, packet: &WorkPacket) -> Result<Vec<WorkPacket>, PlanError> {
+        self.verify(packet)
+            .map_err(|_| PlanError::InvalidDecomposition)?;
+        self.units
+            .iter()
+            .map(|unit| {
+                let child_task_id = |id: &str| {
+                    TaskId::new(format!("{}.{}", packet.body.task_id, id))
+                        .map_err(|_| PlanError::InvalidDecomposition)
+                };
+                let acceptance_criteria = unit
+                    .acceptance_criteria
+                    .iter()
+                    .map(|criterion| {
+                        packet
+                            .body
+                            .acceptance_criteria
+                            .get(criterion)
+                            .cloned()
+                            .map(|text| (criterion.clone(), text))
+                            .ok_or(PlanError::InvalidDecomposition)
+                    })
+                    .collect::<Result<BTreeMap<_, _>, _>>()?;
+                let mut risks = packet.body.risks.clone();
+                if !risks.iter().any(|risk| risk == "decomposition_child") {
+                    risks.push("decomposition_child".to_owned());
+                }
+                WorkPacket::build(WorkPacketBody {
+                    version: packet.body.version,
+                    run_id: packet.body.run_id.clone(),
+                    task_id: child_task_id(&unit.id)?,
+                    repository_id: packet.body.repository_id.clone(),
+                    worktree_id: packet.body.worktree_id.clone(),
+                    source_anchor: packet.body.source_anchor.clone(),
+                    source_sha256: packet.body.source_sha256.clone(),
+                    base_commit: packet.body.base_commit.clone(),
+                    branch: packet.body.branch.clone(),
+                    worktree: packet.body.worktree.clone(),
+                    dependencies: unit
+                        .dependencies
+                        .iter()
+                        .map(|dependency| child_task_id(dependency).map(|id| id.to_string()))
+                        .collect::<Result<Vec<_>, _>>()?,
+                    scope: unit.scope.clone(),
+                    owned_paths: unit.owned_paths.clone(),
+                    commands: packet.body.commands.clone(),
+                    acceptance_criteria,
+                    risks,
+                    limits: packet.body.limits.clone(),
+                    prohibited_actions: packet.body.prohibited_actions.clone(),
+                    expected_artifacts: if unit.completes_parent {
+                        packet.body.expected_artifacts.clone()
+                    } else {
+                        Vec::new()
+                    },
+                    blocker_namespace: format!("{}.decomposition", packet.body.blocker_namespace),
+                })
+                .map_err(|_| PlanError::InvalidDecomposition)
+            })
+            .collect()
+    }
 }
 
 /// Validates that decomposition preserves requirements and cannot expand authority silently.
@@ -1189,7 +1262,11 @@ pub fn validate_decomposition(
     let mut ids = BTreeSet::new();
     let mut mapped = BTreeSet::new();
     for (index, unit) in units.iter().enumerate() {
-        if !valid_id(&unit.id) || !ids.insert(unit.id.as_str()) || unit.scope.trim().is_empty() {
+        if !valid_id(&unit.id)
+            || !ids.insert(unit.id.as_str())
+            || unit.scope.trim().is_empty()
+            || unit.owned_paths.is_empty()
+        {
             return Err(PlanError::InvalidDecomposition);
         }
         if unit.owned_paths.iter().any(|path| {
@@ -1228,6 +1305,12 @@ pub fn validate_decomposition(
             unit.completes_parent
                 && unit.cumulative_verification
                 && unit.dependencies.len() == units.len().saturating_sub(1)
+                && unit
+                    .acceptance_criteria
+                    .iter()
+                    .map(String::as_str)
+                    .collect::<BTreeSet<_>>()
+                    == original_criteria
         })
     {
         return Err(PlanError::InvalidDecomposition);
@@ -1663,7 +1746,7 @@ mod tests {
             DerivedUnit {
                 id: "2".to_owned(),
                 scope: "Verify".to_owned(),
-                owned_paths: vec![],
+                owned_paths: vec![PathBuf::from("src")],
                 acceptance_criteria: vec!["AC-1".to_owned()],
                 dependencies: vec!["1".to_owned()],
                 cumulative_verification: true,
@@ -1673,6 +1756,21 @@ mod tests {
         assert_eq!(validate_decomposition(&packet, &units, false), Ok(()));
         let sealed = DecompositionPlan::build(&packet, units.clone()).unwrap();
         assert_eq!(sealed.verify(&packet), Ok(()));
+        let children = sealed.child_packets(&packet).unwrap();
+        assert_eq!(children.len(), 2);
+        assert_eq!(children[0].body.task_id.as_str(), "0.1.1.2.1");
+        assert_eq!(children[1].body.task_id.as_str(), "0.1.1.2.2");
+        assert_eq!(children[1].body.dependencies, ["0.1.1.2.1"]);
+        assert_eq!(
+            children[1].body.acceptance_criteria,
+            packet.body.acceptance_criteria
+        );
+        assert_eq!(
+            children[1].body.expected_artifacts,
+            packet.body.expected_artifacts
+        );
+        assert!(children.iter().all(|child| child.verify().is_ok()));
+        assert_eq!(sealed.child_packets(&packet).unwrap(), children);
         let mut replay = sealed;
         replay.units.swap(0, 1);
         assert!(replay.verify(&packet).is_err());
