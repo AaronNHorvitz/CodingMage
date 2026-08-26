@@ -1427,7 +1427,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [ ] **Task 26.2.2 - Test the installed candidate**
   - [ ] **Sub-task 26.2.2.1:** Install the packaged artifact into a clean unprivileged user environment without using the source-tree binary.
   - [ ] **Sub-task 26.2.2.2:** Verify version, help, configuration validation, doctor, planning, supervised run, serial campaign, monitoring, controls, recovery, and content-minimized output.
-  - [ ] **Sub-task 26.2.2.3:** Run the prescribed disposable ten-outcome campaign through the installed candidate and bind the evidence to the package digest.
+  - [x] **Sub-task 26.2.2.3:** Run the prescribed disposable ten-outcome campaign through the installed candidate and bind the evidence to the package digest. Package D passed through an explicit fail-closed installed-binary selector; see `docs/evidence/sprint-26-package-d-installed-ten-outcome.md`.
   - [ ] **Sub-task 26.2.2.4:** Test service install, verify, start, stop, upgrade, rollback, removal, and explicit data-retention behavior.
   - [ ] **Sub-task 26.2.2.5:** Reinstall from the same artifact and prove deterministic configuration, state initialization, and package verification.
 - [ ] **Task 26.2.3 - Complete final external review gates**
