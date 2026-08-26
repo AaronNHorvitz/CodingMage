@@ -30,6 +30,10 @@ Scan all source and artifacts for credentials, private paths, runtime state, tar
 debug authority, unexpected executables, and undeclared files. Signing is an operator-controlled
 operation. CodingMage and provider models never receive signing material.
 
+Use `scripts/scan_release.py` from the exact clean candidate checkout. Supply absolute paths to that
+checkout, its binary archive, and its source archive. The scan is read-only and emits a
+content-minimized JSON result; any mismatch or prohibited observation blocks candidate progression.
+
 ## Installed-Candidate Verification
 
 Install the candidate archive into a clean unprivileged user environment and test version output,

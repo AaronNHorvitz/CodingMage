@@ -16,6 +16,22 @@ dependency inventory, tracked-source archive, checksums, provenance, notices, re
 build manifest. The top-level release manifest binds both archives to the reviewed commit and marks
 them unsigned and unpublished. The tool does not sign or publish an artifact.
 
+From that same clean source checkout, inspect both archives without extracting or executing them:
+
+```bash
+python3 scripts/scan_release.py \
+  --source "$PWD" \
+  --binary-archive "$PWD/dist/codingmage-0.1.0-linux-x86_64.tar.gz" \
+  --source-archive "$PWD/dist/codingmage-0.1.0-source.tar.gz"
+```
+
+The scanner requires the source archive to equal Git's complete tracked-file inventory. It
+requires the binary archive to contain only the declared release layout, with `bin/codingmage` as
+its sole executable, and verifies every package checksum. Unsafe archive entries, build/runtime
+residue, high-confidence credential signatures, actual local source/home paths, dirty source, and
+missing or undeclared files fail closed. Its JSON report contains digests and counts, not matched
+content or private paths.
+
 The operator-controlled review record is a private JSON file outside the source repository:
 
 ```json
