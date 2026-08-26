@@ -91,9 +91,9 @@ use codingmage_orchestrator::{
     ReviewOutcome, TaskState, VerificationOutcome, WorkflowPort, reconcile_and_select_next,
 };
 use codingmage_plan::{
-    CheckState, CompletionPredicate as PlanCompletionPredicate, PlanError, PlanItemKind,
-    ReadinessClass, ReadinessContext, ReadinessOverride, SelectedWork, TaskAuthorityEnvelope,
-    TaskAuthorityEnvelopeBody, TaskPlan, WorkPacket, WorkPacketBody,
+    CheckState, CompletionPredicate as PlanCompletionPredicate, ObservedDecision, PlanError,
+    PlanItemKind, ReadinessClass, ReadinessContext, ReadinessOverride, SelectedWork,
+    TaskAuthorityEnvelope, TaskAuthorityEnvelopeBody, TaskPlan, WorkPacket, WorkPacketBody,
 };
 use codingmage_process::{
     CancellationToken, ProcessExecutor, ProcessProfile, ProcessRequest, ProcessResult,
@@ -4277,6 +4277,7 @@ struct ProductionWorkflowPort<'a> {
     external_context: Option<String>,
     planned_worktree: WorktreePlan,
     authority_envelope_sha256: String,
+    decision_evidence: Option<EvidenceId>,
     lock: Option<CoordinatorLock>,
     worktree: Option<OwnedWorktree>,
     implementation: Option<ClaudeCompletionReport>,
@@ -4326,6 +4327,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             external_context: inputs.external_context,
             planned_worktree: inputs.planned_worktree,
             authority_envelope_sha256: String::new(),
+            decision_evidence: None,
             lock: None,
             worktree: None,
             implementation: None,
@@ -4884,6 +4886,21 @@ impl<'a> ProductionWorkflowPort<'a> {
         Ok(())
     }
 
+    fn observe_decision(&mut self, paths: Vec<PathBuf>) -> Result<(), OrchestrationError> {
+        let envelope = self.task_authority_envelope()?;
+        let decision = ObservedDecision::build(
+            &envelope,
+            paths,
+            self.acceptance_criteria_map().into_keys().collect(),
+        )
+        .map_err(|_| OrchestrationError::Port)?;
+        decision
+            .verify(&envelope)
+            .map_err(|_| OrchestrationError::Port)?;
+        self.decision_evidence = Some(evidence_id(&format!("decision-{}", decision.body_sha256))?);
+        Ok(())
+    }
+
     fn claude_adapter(&mut self) -> Result<ClaudeAdapter, OrchestrationError> {
         let authentication = match self.spec.implementer.authentication {
             AuthenticationMode::Bare => ClaudeAuthentication::Bare,
@@ -5191,6 +5208,9 @@ impl<'a> ProductionWorkflowPort<'a> {
             .iter()
             .map(|evidence| evidence_id(&evidence.integrity_sha256))
             .collect::<Result<Vec<_>, _>>()?;
+        if let Some(decision) = self.decision_evidence.clone() {
+            self.gate_evidence.push(decision);
+        }
         let passed = !result.blocked;
         self.gate_diagnostics = result.diagnostics;
         self.observe_lifecycle(UnitLifecycleEvent::GatesObserved {
@@ -5732,6 +5752,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             self.failure = Some(RuntimeError::Repository);
             return Err(OrchestrationError::Port);
         }
+        self.observe_decision(report.changed_paths.clone())?;
         let receipt = commit_owned_changes(
             &self.authorization,
             self.worktree()?,
@@ -5900,6 +5921,25 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         let mut checkpoint = CorrectionCheckpoint::load(&self.run_root, next_round)
             .map_err(|_| OrchestrationError::DurableState)?
             .ok_or(OrchestrationError::DurableState)?;
+        if checkpoint.phase != CorrectionPhase::CommitObserved {
+            let observed = observe_owned_changes(
+                &self.authorization,
+                self.worktree()?,
+                &expected_parent,
+                &self.spec.owned_paths,
+            )
+            .map_err(|_| OrchestrationError::Port)?;
+            let claimed = report
+                .changed_paths
+                .iter()
+                .cloned()
+                .collect::<BTreeSet<_>>();
+            if claimed != observed.iter().cloned().collect::<BTreeSet<_>>() {
+                self.failure = Some(RuntimeError::Repository);
+                return Err(OrchestrationError::Port);
+            }
+            self.observe_decision(observed)?;
+        }
         let receipt = if checkpoint.phase == CorrectionPhase::CommitObserved {
             reobserve_owned_commit(
                 &self.authorization,
@@ -5920,20 +5960,6 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             OrchestrationError::Port
         })?;
         if checkpoint.phase != CorrectionPhase::CommitObserved {
-            let claimed = report
-                .changed_paths
-                .iter()
-                .cloned()
-                .collect::<BTreeSet<_>>();
-            let observed = receipt
-                .changed_paths
-                .iter()
-                .cloned()
-                .collect::<BTreeSet<_>>();
-            if claimed != observed {
-                self.failure = Some(RuntimeError::Repository);
-                return Err(OrchestrationError::Port);
-            }
             checkpoint.phase = CorrectionPhase::CommitObserved;
             checkpoint.correction_commit = Some(receipt.commit.clone());
             checkpoint
@@ -5942,6 +5968,8 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
         } else if checkpoint.correction_commit.as_deref() != Some(receipt.commit.as_str()) {
             self.failure = Some(RuntimeError::Repository);
             return Err(OrchestrationError::Port);
+        } else {
+            self.observe_decision(receipt.changed_paths.clone())?;
         }
         let evidence = evidence_id(&receipt.commit)?;
         let commit = receipt.commit.clone();

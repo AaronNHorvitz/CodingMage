@@ -770,6 +770,167 @@ pub struct RoutineDecision {
     pub material_changes: BTreeSet<MaterialChange>,
 }
 
+/// Coordinator-observed decision classification bound to one exact authority envelope.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ObservedDecisionBody {
+    /// Closed schema version.
+    pub version: u16,
+    /// Exact authority-envelope digest.
+    pub authority_envelope_sha256: String,
+    /// Exact coordinator-observed changed paths.
+    pub paths: Vec<PathBuf>,
+    /// Acceptance criteria advanced by the observed change.
+    pub acceptance_criteria: Vec<String>,
+    /// Routine class granted only when no material signal exists.
+    pub routine_class: Option<RoutineDecisionClass>,
+    /// Deterministically derived material signals.
+    pub material_changes: BTreeSet<MaterialChange>,
+}
+
+/// Integrity-bound coordinator classification of one observed implementation decision.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ObservedDecision {
+    /// Canonical observation body.
+    pub body: ObservedDecisionBody,
+    /// SHA-256 of the canonical body.
+    pub body_sha256: String,
+}
+
+impl ObservedDecision {
+    /// Classifies exact coordinator-observed paths without trusting provider risk declarations.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanError::DecisionOutsideAuthority`] for escaping paths, unknown criteria, or a
+    /// stale envelope.
+    pub fn build(
+        envelope: &TaskAuthorityEnvelope,
+        paths: Vec<PathBuf>,
+        acceptance_criteria: Vec<String>,
+    ) -> Result<Self, PlanError> {
+        envelope.verify()?;
+        let material_changes = classify_material_changes(&paths);
+        let routine_class = if material_changes.is_empty() {
+            let decision = RoutineDecision {
+                class: RoutineDecisionClass::ExistingPattern,
+                paths: paths.clone(),
+                acceptance_criteria: acceptance_criteria.clone(),
+                material_changes: BTreeSet::new(),
+            };
+            validate_routine_decision(envelope, &decision)?;
+            Some(decision.class)
+        } else {
+            validate_decision_scope(envelope, &paths, &acceptance_criteria)?;
+            None
+        };
+        let body = ObservedDecisionBody {
+            version: 1,
+            authority_envelope_sha256: envelope.body_sha256.clone(),
+            paths,
+            acceptance_criteria,
+            routine_class,
+            material_changes,
+        };
+        let encoded = serde_json::to_vec(&body).map_err(|_| PlanError::DecisionOutsideAuthority)?;
+        Ok(Self {
+            body,
+            body_sha256: sha256(&encoded),
+        })
+    }
+
+    /// Revalidates the envelope binding, deterministic classification, and canonical digest.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanError`] when any observed decision field is stale or broadened.
+    pub fn verify(&self, envelope: &TaskAuthorityEnvelope) -> Result<(), PlanError> {
+        let rebuilt = Self::build(
+            envelope,
+            self.body.paths.clone(),
+            self.body.acceptance_criteria.clone(),
+        )?;
+        if self.body.version == 1
+            && self.body.authority_envelope_sha256 == envelope.body_sha256
+            && rebuilt == *self
+        {
+            Ok(())
+        } else {
+            Err(PlanError::StaleSource)
+        }
+    }
+}
+
+/// Conservatively classifies material repository surfaces from exact relative paths.
+#[must_use]
+pub fn classify_material_changes(paths: &[PathBuf]) -> BTreeSet<MaterialChange> {
+    let mut changes = BTreeSet::new();
+    for path in paths {
+        let normalized = path
+            .to_string_lossy()
+            .replace('\\', "/")
+            .to_ascii_lowercase();
+        let name = path
+            .file_name()
+            .and_then(|value| value.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        if matches!(
+            name.as_str(),
+            "cargo.toml"
+                | "cargo.lock"
+                | "package.json"
+                | "package-lock.json"
+                | "pnpm-lock.yaml"
+                | "yarn.lock"
+                | "pyproject.toml"
+                | "poetry.lock"
+                | "requirements.txt"
+                | "go.mod"
+                | "go.sum"
+        ) {
+            changes.insert(MaterialChange::Dependency);
+        }
+        if normalized.contains("/schema")
+            || normalized.starts_with("schema")
+            || normalized.contains("/contracts/")
+            || normalized.starts_with("contracts/")
+            || normalized.contains("/api/")
+            || normalized.starts_with("api/")
+            || matches!(normalized.as_str(), "src/lib.rs" | "src/main.rs")
+        {
+            changes.insert(MaterialChange::PublicContract);
+        }
+        if normalized.starts_with("docs/architecture/")
+            || normalized.starts_with("docs/decisions/")
+            || normalized.contains("/architecture/")
+            || name.starts_with("adr-")
+        {
+            changes.insert(MaterialChange::Architecture);
+        }
+        if normalized.starts_with("tests/")
+            || normalized.contains("/tests/")
+            || normalized.starts_with(".github/workflows/")
+            || normalized.contains("gate")
+            || name.starts_with("test_")
+            || name.ends_with("_test.rs")
+        {
+            changes.insert(MaterialChange::VerificationWeakening);
+        }
+        if normalized.starts_with(".github/workflows/")
+            || normalized.starts_with("deploy/")
+            || normalized.starts_with("infrastructure/")
+            || normalized.starts_with("terraform/")
+            || normalized.starts_with("k8s/")
+            || normalized.starts_with("cloud/")
+        {
+            changes.insert(MaterialChange::ExternalEffect);
+        }
+    }
+    changes
+}
+
 /// Validates that a routine choice remains inside an exact task envelope.
 ///
 /// # Errors
@@ -780,6 +941,20 @@ pub fn validate_routine_decision(
     decision: &RoutineDecision,
 ) -> Result<(), PlanError> {
     envelope.verify()?;
+    validate_decision_scope(envelope, &decision.paths, &decision.acceptance_criteria)?;
+    if !decision.material_changes.is_empty()
+        || !classify_material_changes(&decision.paths).is_empty()
+    {
+        return Err(PlanError::DecisionOutsideAuthority);
+    }
+    Ok(())
+}
+
+fn validate_decision_scope(
+    envelope: &TaskAuthorityEnvelope,
+    paths: &[PathBuf],
+    acceptance_criteria: &[String],
+) -> Result<(), PlanError> {
     let owned = envelope
         .body
         .packet
@@ -796,17 +971,14 @@ pub fn validate_routine_decision(
         .keys()
         .map(String::as_str)
         .collect::<BTreeSet<_>>();
-    if decision.paths.is_empty()
-        || decision.acceptance_criteria.is_empty()
-        || decision
-            .paths
+    if paths.is_empty()
+        || acceptance_criteria.is_empty()
+        || paths
             .iter()
             .any(|path| !safe_relative(path) || !owned.iter().any(|root| path_contains(root, path)))
-        || decision
-            .acceptance_criteria
+        || acceptance_criteria
             .iter()
             .any(|criterion| !criteria.contains(criterion.as_str()))
-        || !decision.material_changes.is_empty()
     {
         return Err(PlanError::DecisionOutsideAuthority);
     }
@@ -1547,7 +1719,9 @@ mod tests {
 
     #[test]
     fn task_envelope_rejects_cross_task_and_material_decisions() {
-        let packet = WorkPacket::build(body()).unwrap();
+        let mut routine_body = body();
+        routine_body.owned_paths = vec![PathBuf::from("src")];
+        let packet = WorkPacket::build(routine_body).unwrap();
         let envelope = TaskAuthorityEnvelope::build(TaskAuthorityEnvelopeBody {
             version: 1,
             parent_task_id: "0.1.1".to_owned(),
@@ -1559,11 +1733,38 @@ mod tests {
         assert_eq!(envelope.verify(), Ok(()));
         let routine = RoutineDecision {
             class: RoutineDecisionClass::ExistingPattern,
-            paths: vec![PathBuf::from("src/lib.rs")],
+            paths: vec![PathBuf::from("src/internal.rs")],
             acceptance_criteria: vec!["AC-1".to_owned()],
             material_changes: BTreeSet::new(),
         };
         assert_eq!(validate_routine_decision(&envelope, &routine), Ok(()));
+        let observed = ObservedDecision::build(
+            &envelope,
+            vec![PathBuf::from("src/internal.rs")],
+            vec!["AC-1".to_owned()],
+        )
+        .unwrap();
+        assert_eq!(
+            observed.body.routine_class,
+            Some(RoutineDecisionClass::ExistingPattern)
+        );
+        assert!(observed.body.material_changes.is_empty());
+        assert_eq!(observed.verify(&envelope), Ok(()));
+
+        let contract = ObservedDecision::build(
+            &envelope,
+            vec![PathBuf::from("src/lib.rs")],
+            vec!["AC-1".to_owned()],
+        )
+        .unwrap();
+        assert_eq!(contract.body.routine_class, None);
+        assert_eq!(
+            contract.body.material_changes,
+            BTreeSet::from([MaterialChange::PublicContract])
+        );
+        let mut stale = contract;
+        stale.body.material_changes.clear();
+        assert_eq!(stale.verify(&envelope), Err(PlanError::StaleSource));
         let mut material = routine;
         material
             .material_changes
