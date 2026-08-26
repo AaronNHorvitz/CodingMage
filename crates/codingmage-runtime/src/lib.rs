@@ -4025,7 +4025,7 @@ pub fn run_one_with_progress(
     codingmage_binary: &Path,
     mut observer: impl FnMut(RunProgress),
 ) -> Result<RunOutcome, RuntimeError> {
-    run_one_with_progress_id(
+    run_one_with_progress_for_id(
         config,
         spec,
         codingmage_binary,
@@ -4034,19 +4034,30 @@ pub fn run_one_with_progress(
     )
 }
 
-fn run_one_with_progress_id(
+/// Runs or resumes one exact supervised unit under an operator-selected run identity.
+///
+/// Reusing an identity is permitted only when retained state still binds the same repository,
+/// source commit, task, branch, worktree, and provider checkpoint. Any mismatch fails closed.
+/// Callers that do not need restart recovery should use [`run_one_with_progress`], which generates
+/// a fresh identity.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] under the same conditions as [`run_one_with_progress`], including when
+/// retained state does not match the supplied identity and current authority.
+pub fn run_one_with_progress_for_id(
     config: &Config,
     spec: RunSpec,
     codingmage_binary: &Path,
     run_id: RunId,
-    observer: &mut impl FnMut(RunProgress),
+    mut observer: impl FnMut(RunProgress),
 ) -> Result<RunOutcome, RuntimeError> {
     run_one_with_progress_id_budget(
         config,
         spec,
         codingmage_binary,
         run_id,
-        observer,
+        &mut observer,
         None,
         None,
         None,

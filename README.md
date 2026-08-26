@@ -375,6 +375,16 @@ codingmage campaign-observe-trigger --config /absolute/codingmage.toml \
   --request resume-example-1 --evidence-sha256 "${TRIGGER_EVIDENCE_SHA256}"
 ```
 
+`run` creates a fresh run identity by default. If a recoverable provider interruption retains an
+exact checkpoint, repeat the command with the `run_id` from its terminal JSON to resume only that
+run. The retained repository, source, task, branch, worktree, and checkpoint identities must all
+match or recovery fails closed:
+
+```bash
+codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml \
+  --run-id run-0123456789abcdef0123456789abcdef
+```
+
 With no `multi_agent` policy, `campaign` preserves the one-pod serial compatibility path. An
 explicit `execution_mode = "parallel"` policy lets Codex propose a bounded batch and lets the
 coordinator admit up to the configured safe capacity. Every task still receives a separate claim,

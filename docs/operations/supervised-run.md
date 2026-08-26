@@ -57,6 +57,21 @@ cargo build --locked --release -p codingmage-cli
 ./target/release/codingmage run --config /absolute/codingmage.toml --spec /absolute/run.toml
 ```
 
+The first invocation generates a fresh `run_id` and returns it in terminal JSON. When a provider
+timeout or other explicitly recoverable interruption retains an integrity-bound checkpoint, reuse
+that exact identity to resume it:
+
+```bash
+./target/release/codingmage run --config /absolute/codingmage.toml \
+  --spec /absolute/run.toml \
+  --run-id run-0123456789abcdef0123456789abcdef
+```
+
+`--run-id` is an operator recovery control, not a request to adopt arbitrary state. CodingMage
+requires retained state to match the same repository, source commit, task, branch, worktree,
+correction round, candidate, and provider session. A malformed identity or any binding mismatch
+fails before work can be resumed. Omitting the option always begins a distinct run.
+
 The terminal JSON identifies the run, task, terminal state, retained branch, candidate commit, completion commit, and review verdict. Provider output, prompts, source text, file names, paths, credentials, and hidden reasoning are not emitted.
 
 `existing_login` passes only `HOME` and any present `XDG_RUNTIME_DIR`, `XDG_CONFIG_HOME`, and `DBUS_SESSION_BUS_ADDRESS` references to the provider processes. CodingMage adds the compiled literal `PATH=/usr/bin:/bin` so installed sandbox dependencies can be found; it never inherits ambient `PATH`. Login-discovery values remain in memory and are not emitted or journaled. API keys, tokens, and arbitrary configuration variables are never accepted through this boundary.
@@ -65,7 +80,7 @@ The terminal JSON identifies the run, task, terminal state, retained branch, can
 
 - One live existing-login Claude implementation and exact-SHA Codex review are admitted as supervised local evidence; the five-unit and unattended campaigns remain open.
 - `bare` Claude authentication has no production credential-helper composition yet.
-- Production restart re-observation resumes an interrupted correction from its exact private,
+- Production restart re-observation with the retained `run_id` resumes an interrupted correction from its exact private,
   integrity-bound session and candidate identities. Initial implementation-session interruption
   remains unsupported.
 - The background service generator does not yet bind a run-spec queue to `codingmage run`.

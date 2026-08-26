@@ -9,7 +9,7 @@ use std::{
 };
 
 use codingmage_campaign::CampaignSpec;
-use codingmage_contracts::AgentId;
+use codingmage_contracts::{AgentId, RunId};
 use codingmage_core::{
     AgentProfile, CapabilityPolicy, CommandSpec, Config, PublicationMode, PublicationPolicy,
     RepositoryAuthorization, load_config,
@@ -20,8 +20,8 @@ use codingmage_runtime::{
     RunProgress, RunSpec, RuntimeError, approve_campaign_destination_promotion,
     approve_campaign_task_integration, campaign_blocker_explanation, campaign_preflight,
     campaign_status, clear_campaign_blocker, observe_campaign_deferral_trigger,
-    request_campaign_control, run_one_with_progress, run_team_campaign_with_progress,
-    team_campaign_report,
+    request_campaign_control, run_one_with_progress, run_one_with_progress_for_id,
+    run_team_campaign_with_progress, team_campaign_report,
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -139,14 +139,21 @@ fn diagnose(arguments: &[String], command: &str) -> Result<String, CliError> {
 }
 
 fn execute(arguments: &[String]) -> Result<String, CliError> {
-    let parsed = ParsedArguments::new(arguments, &["config", "spec"])?;
+    let parsed = ParsedArguments::new_with_optional(arguments, &["config", "spec"], &["run-id"])?;
     let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
     let spec = RunSpec::load(&parsed.absolute_file("spec")?).map_err(CliError::Runtime)?;
     let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
     let started = Instant::now();
-    let outcome = run_one_with_progress(&config, spec, &executable, |progress| {
-        write_progress(started.elapsed(), progress);
-    })
+    let outcome = if let Some(run_id) = parsed.optional_value("run-id") {
+        let run_id = RunId::new(run_id).map_err(|_| CliError::InvalidArgument)?;
+        run_one_with_progress_for_id(&config, spec, &executable, run_id, |progress| {
+            write_progress(started.elapsed(), progress);
+        })
+    } else {
+        run_one_with_progress(&config, spec, &executable, |progress| {
+            write_progress(started.elapsed(), progress);
+        })
+    }
     .map_err(CliError::Runtime)?;
     serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)
 }
@@ -414,6 +421,29 @@ impl ParsedArguments {
         Ok(Self { values })
     }
 
+    fn new_with_optional(
+        arguments: &[String],
+        required: &[&str],
+        optional: &[&str],
+    ) -> Result<Self, CliError> {
+        if !arguments.len().is_multiple_of(2) {
+            return Err(CliError::Usage);
+        }
+        let allowed = required.iter().chain(optional).copied().collect::<Vec<_>>();
+        let mut values = std::collections::BTreeMap::new();
+        for pair in arguments.chunks_exact(2) {
+            let name = pair[0].strip_prefix("--").ok_or(CliError::Usage)?;
+            if !allowed.contains(&name) || pair[1].is_empty() || values.contains_key(name) {
+                return Err(CliError::Usage);
+            }
+            values.insert(name.to_owned(), pair[1].clone());
+        }
+        if required.iter().any(|name| !values.contains_key(*name)) {
+            return Err(CliError::Usage);
+        }
+        Ok(Self { values })
+    }
+
     fn absolute_path(&self, name: &str) -> Result<PathBuf, CliError> {
         let path = PathBuf::from(self.values.get(name).ok_or(CliError::Usage)?);
         if !path.is_absolute()
@@ -431,6 +461,10 @@ impl ParsedArguments {
             .get(name)
             .map(String::as_str)
             .ok_or(CliError::Usage)
+    }
+
+    fn optional_value(&self, name: &str) -> Option<&str> {
+        self.values.get(name).map(String::as_str)
     }
 
     fn absolute_file(&self, name: &str) -> Result<PathBuf, CliError> {
@@ -550,6 +584,61 @@ mod tests {
         ] {
             let arguments = arguments.into_iter().map(str::to_owned).collect::<Vec<_>>();
             assert!(run(&arguments).is_err());
+        }
+    }
+
+    #[test]
+    fn run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes() {
+        let parsed = ParsedArguments::new_with_optional(
+            &[
+                "--run-id".to_owned(),
+                "run-resume-1".to_owned(),
+                "--spec".to_owned(),
+                "/tmp/run.toml".to_owned(),
+                "--config".to_owned(),
+                "/tmp/config.toml".to_owned(),
+            ],
+            &["config", "spec"],
+            &["run-id"],
+        )
+        .unwrap();
+        assert_eq!(parsed.optional_value("run-id"), Some("run-resume-1"));
+        assert!(RunId::new(parsed.optional_value("run-id").unwrap()).is_ok());
+
+        for arguments in [
+            vec!["--config", "/tmp/config.toml", "--run-id", "run-1"],
+            vec![
+                "--config",
+                "/tmp/config.toml",
+                "--spec",
+                "/tmp/run.toml",
+                "--run-id",
+                "../escape",
+            ],
+            vec![
+                "--config",
+                "/tmp/config.toml",
+                "--spec",
+                "/tmp/run.toml",
+                "--run-id",
+                "run-1",
+                "--run-id",
+                "run-2",
+            ],
+        ] {
+            let arguments = arguments.into_iter().map(str::to_owned).collect::<Vec<_>>();
+            let parsed =
+                ParsedArguments::new_with_optional(&arguments, &["config", "spec"], &["run-id"]);
+            if arguments.iter().any(|argument| argument == "../escape") {
+                assert!(
+                    parsed
+                        .ok()
+                        .and_then(|parsed| parsed.optional_value("run-id").map(str::to_owned))
+                        .is_some_and(|value| RunId::new(value).is_err())
+                );
+            } else {
+                assert!(parsed.is_err());
+            }
         }
     }
 }

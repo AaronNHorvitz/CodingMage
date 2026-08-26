@@ -1414,6 +1414,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 26.1.7.3:** Rebuild and install the final candidate, then pass one supervised unit and a three-outcome unattended local-only pilot against the frozen clone.
   - [ ] **Sub-task 26.1.7.4:** Pass an approximately ten-task controlled soak with useful completions, truthful blockers, restart recovery, bounded utilization, exact reconciliation, and zero active-checkout or destination-branch mutation.
   - [ ] **Sub-task 26.1.7.5:** Bind source, package, configuration, target, provider, task, gate, outcome, residue, and limitation identities into machine-readable and human-readable evidence.
+  - [ ] **Sub-task 26.1.7.6:** Prove an installed supervised run can resume an exact retained correction by explicit validated run identity without replaying implementation, adopting mismatched state, mutating the active checkout, or weakening the fresh-run default.
 
 ### Story 26.2 - Reproducible Candidate and Installed Evidence
 
