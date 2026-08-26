@@ -7,7 +7,7 @@ sensitive even when no credential is involved.
 ## Supported Versions
 
 No released version is currently supported. Security fixes apply to the latest commit on
-the default branch until the project publishes a versioned support policy.
+the default branch under the limitations in the [support policy](SUPPORT.md).
 
 ## Reporting a Vulnerability
 

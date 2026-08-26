@@ -6,10 +6,12 @@ import hashlib
 import importlib.util
 import io
 import json
+import subprocess
 import tarfile
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,6 +44,7 @@ def archive(
         "source_date_epoch": 1,
         "cargo_lock_sha256": "b" * 64,
         "binary_sha256": digest,
+        "release_review_sha256": "c" * 64,
         "contains_credentials": False,
         "contains_runtime_state": False,
         "native_evidence": "linux-only",
@@ -82,6 +85,138 @@ class ReleaseToolsTest(unittest.TestCase):
             binary.write_bytes(f"prefix {PACKAGER.ROOT} suffix".encode())
             with self.assertRaisesRegex(RuntimeError, "local build path"):
                 PACKAGER.reject_local_paths(binary)
+
+    def test_release_source_requires_clean_exact_external_review_evidence(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="codingmage-release-source-") as temporary:
+            root = Path(temporary)
+            source = root / "source"
+            source.mkdir()
+            subprocess.run(["/usr/bin/git", "init", "-q", str(source)], check=True)
+            subprocess.run(
+                ["/usr/bin/git", "-C", str(source), "config", "user.name", "Fixture"],
+                check=True,
+            )
+            subprocess.run(
+                [
+                    "/usr/bin/git",
+                    "-C",
+                    str(source),
+                    "config",
+                    "user.email",
+                    "fixture@example.invalid",
+                ],
+                check=True,
+            )
+            evidence = source / "evidence.md"
+            evidence.write_text("verified\n", encoding="utf-8")
+            subprocess.run(["/usr/bin/git", "-C", str(source), "add", "evidence.md"], check=True)
+            subprocess.run(
+                ["/usr/bin/git", "-C", str(source), "commit", "-q", "-m", "fixture"],
+                check=True,
+            )
+            commit = subprocess.run(
+                ["/usr/bin/git", "-C", str(source), "rev-parse", "HEAD"],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            review = root / "review.json"
+            review.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "source_commit": commit,
+                        "reviewed_commit": commit,
+                        "disposition": "approved_for_candidate_construction",
+                        "evidence": [
+                            {
+                                "path": "evidence.md",
+                                "sha256": hashlib.sha256(evidence.read_bytes()).hexdigest(),
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with mock.patch.object(PACKAGER, "ROOT", source):
+                verified_commit, review_digest = PACKAGER.verify_release_source(review)
+                self.assertEqual(verified_commit, commit)
+                self.assertEqual(review_digest, hashlib.sha256(review.read_bytes()).hexdigest())
+
+                evidence.write_text("dirty\n", encoding="utf-8")
+                with self.assertRaisesRegex(RuntimeError, "source is dirty"):
+                    PACKAGER.verify_release_source(review)
+
+    def test_release_review_mismatch_and_repository_local_record_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="codingmage-release-review-") as temporary:
+            root = Path(temporary)
+            source = root / "source"
+            source.mkdir()
+            local = source / "review.json"
+            local.write_text("{}", encoding="utf-8")
+            with mock.patch.object(PACKAGER, "ROOT", source), mock.patch.object(
+                PACKAGER, "git", side_effect=[b"", ("a" * 40 + "\n").encode()]
+            ):
+                with self.assertRaisesRegex(RuntimeError, "must be external"):
+                    PACKAGER.verify_release_source(local)
+
+            external = root / "review.json"
+            external.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "source_commit": "b" * 40,
+                        "reviewed_commit": "b" * 40,
+                        "disposition": "approved_for_candidate_construction",
+                        "evidence": [{"path": "evidence.md", "sha256": "c" * 64}],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with mock.patch.object(PACKAGER, "ROOT", source), mock.patch.object(
+                PACKAGER, "git", side_effect=[b"", ("a" * 40 + "\n").encode()]
+            ):
+                with self.assertRaisesRegex(RuntimeError, "does not bind source"):
+                    PACKAGER.verify_release_source(external)
+
+    def test_source_archive_is_reproducible_and_contains_only_tracked_files(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="codingmage-source-archive-") as temporary:
+            root = Path(temporary)
+            source = root / "source"
+            source.mkdir()
+            subprocess.run(["/usr/bin/git", "init", "-q", str(source)], check=True)
+            subprocess.run(
+                ["/usr/bin/git", "-C", str(source), "config", "user.name", "Fixture"],
+                check=True,
+            )
+            subprocess.run(
+                [
+                    "/usr/bin/git",
+                    "-C",
+                    str(source),
+                    "config",
+                    "user.email",
+                    "fixture@example.invalid",
+                ],
+                check=True,
+            )
+            (source / "tracked.txt").write_text("tracked\n", encoding="utf-8")
+            subprocess.run(["/usr/bin/git", "-C", str(source), "add", "tracked.txt"], check=True)
+            subprocess.run(
+                ["/usr/bin/git", "-C", str(source), "commit", "-q", "-m", "fixture"],
+                check=True,
+            )
+            (source / "untracked.txt").write_text("excluded\n", encoding="utf-8")
+            first = root / "first.tar.gz"
+            second = root / "second.tar.gz"
+            with mock.patch.object(PACKAGER, "ROOT", source):
+                PACKAGER.deterministic_source_archive(first)
+                PACKAGER.deterministic_source_archive(second)
+            self.assertEqual(first.read_bytes(), second.read_bytes())
+            with tarfile.open(first, "r:gz") as bundle:
+                names = bundle.getnames()
+            self.assertIn("codingmage-0.1.0-source/tracked.txt", names)
+            self.assertNotIn("codingmage-0.1.0-source/untracked.txt", names)
 
     def test_install_upgrade_verify_rollback_remove_preserves_unrelated_data(self) -> None:
         with tempfile.TemporaryDirectory(prefix="codingmage-installer-test-") as temporary:
@@ -148,6 +283,7 @@ class ReleaseToolsTest(unittest.TestCase):
             "source_date_epoch": -1,
             "cargo_lock_sha256": "x" * 64,
             "binary_sha256": "0" * 64,
+            "release_review_sha256": "x" * 64,
             "contains_credentials": True,
             "contains_runtime_state": True,
             "native_evidence": "changed",

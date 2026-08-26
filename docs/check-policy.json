@@ -4,7 +4,10 @@
     "TASKS.md",
     "LICENSE",
     "SECURITY.md",
+    "SUPPORT.md",
     "CONTRIBUTING.md",
+    "THIRD-PARTY-NOTICES.md",
+    "RELEASE-NOTES.md",
     ".markdownlint.json",
     "docs/decisions/template.md",
     "docs/decisions/0001-rust-first-bootstrap.md",
@@ -15,7 +18,11 @@
     "docs/decisions/0011-autonomous-roadmap-progression.md",
     "docs/architecture/unattended-safeguards.md",
     "docs/architecture/autonomous-progression.md",
-    "docs/operations/release.md"
+    "docs/operations/release.md",
+    "docs/operations/release-scope.md",
+    "docs/operations/compatibility.md",
+    "docs/operations/migration.md",
+    "docs/operations/first-run.md"
   ],
   "prohibited_claims": [
     "CodingMage is production ready",

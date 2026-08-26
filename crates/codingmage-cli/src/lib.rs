@@ -25,6 +25,67 @@ use codingmage_runtime::{
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+const HELP: &str = r"CodingMage local multi-agent engineering coordinator
+
+Usage:
+  codingmage <COMMAND> [OPTIONS]
+  codingmage --version
+  codingmage --help
+
+Commands:
+  init                          Create a deny-first local configuration
+  doctor                        Validate configuration, repository, and task source
+  status                        Show content-minimized local readiness
+  plan                          Select the first dependency-ready task
+  run                           Execute one explicitly scoped supervised unit
+  campaign-preflight            Validate a campaign before provider inference
+  campaign                      Execute a bounded serial or parallel campaign
+  campaign-status               Read durable campaign status
+  campaign-report               Read the final campaign report
+  campaign-explain-blocker      Read typed blocker and deferral details
+  campaign-clear-blocker        Record one exact external-prerequisite change
+  campaign-observe-trigger      Record one exact deferral trigger
+  campaign-control              Request pause, resume, stop, or cancellation
+  campaign-approve-task         Approve one exact task-integration effect
+  campaign-approve-destination  Approve one exact destination-promotion effect
+
+Run `codingmage <COMMAND> --help` for exact command usage.";
+
+fn command_help(command: &str) -> Option<&'static str> {
+    match command {
+        "init" => Some(
+            "Usage: codingmage init --repo <ABSOLUTE_DIR> --config <ABSOLUTE_FILE> \\\n  --scratch <ABSOLUTE_NEW_DIR> --state <ABSOLUTE_NEW_DIR>",
+        ),
+        "doctor" | "status" | "plan" => {
+            Some("Usage: codingmage <doctor|status|plan> --config <ABSOLUTE_FILE>")
+        }
+        "run" => Some(
+            "Usage: codingmage run --config <ABSOLUTE_FILE> --spec <ABSOLUTE_FILE> \\\n  [--run-id <EXACT_RUN_ID>]",
+        ),
+        "campaign-preflight" => Some(
+            "Usage: codingmage campaign-preflight --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --authorization <ABSOLUTE_FILE>",
+        ),
+        "campaign" | "campaign-status" | "campaign-report" | "campaign-explain-blocker" => Some(
+            "Usage: codingmage <campaign|campaign-status|campaign-report|campaign-explain-blocker> \\\n  --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE>",
+        ),
+        "campaign-clear-blocker" => Some(
+            "Usage: codingmage campaign-clear-blocker --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --task <TASK_ID> --request <REQUEST_ID> \\\n  --prerequisite-sha256 <SHA256>",
+        ),
+        "campaign-observe-trigger" => Some(
+            "Usage: codingmage campaign-observe-trigger --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --task <TASK_ID> --trigger <TRIGGER> \\\n  --request <REQUEST_ID> --evidence-sha256 <SHA256>",
+        ),
+        "campaign-control" => Some(
+            "Usage: codingmage campaign-control --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --action <ACTION> --request <REQUEST_ID>",
+        ),
+        "campaign-approve-task" => Some(
+            "Usage: codingmage campaign-approve-task --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --task <TASK_ID> --reviewed-commit <COMMIT> \\\n  --evidence-sha256 <SHA256> --request <REQUEST_ID>",
+        ),
+        "campaign-approve-destination" => Some(
+            "Usage: codingmage campaign-approve-destination --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --reviewed-commit <COMMIT> --destination <BRANCH> \\\n  --evidence-sha256 <SHA256> --request <REQUEST_ID>",
+        ),
+        _ => None,
+    }
+}
 
 /// Runs one CLI argument vector and returns bounded output.
 ///
@@ -36,6 +97,14 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
     let Some(command) = arguments.first().map(String::as_str) else {
         return Err(CliError::Usage);
     };
+    if matches!(command, "--help" | "help") && arguments.len() == 1 {
+        return Ok(HELP.to_owned());
+    }
+    if arguments.len() == 2 && arguments[1] == "--help" {
+        return command_help(command)
+            .map(str::to_owned)
+            .ok_or(CliError::Usage);
+    }
     match command {
         "--version" | "version" if arguments.len() == 1 => Ok(format!("codingmage {VERSION}")),
         "init" => initialize(&arguments[1..]),
@@ -570,8 +639,39 @@ mod tests {
     #[test]
     fn version_usage_and_run_contract_are_stable() {
         assert_eq!(run(&["--version".to_owned()]).unwrap(), "codingmage 0.1.0");
+        assert!(run(&["--help".to_owned()]).unwrap().contains("Commands:"));
+        assert!(run(&["help".to_owned()]).unwrap().contains("  run "));
         assert_eq!(run(&[]), Err(CliError::Usage));
         assert_eq!(run(&["run".to_owned()]), Err(CliError::Usage));
+    }
+
+    #[test]
+    fn every_public_command_has_side_effect_free_exact_help() {
+        for command in [
+            "init",
+            "doctor",
+            "status",
+            "plan",
+            "run",
+            "campaign-preflight",
+            "campaign",
+            "campaign-status",
+            "campaign-report",
+            "campaign-explain-blocker",
+            "campaign-clear-blocker",
+            "campaign-observe-trigger",
+            "campaign-control",
+            "campaign-approve-task",
+            "campaign-approve-destination",
+        ] {
+            let output = run(&[command.to_owned(), "--help".to_owned()]).unwrap();
+            assert!(output.starts_with("Usage: codingmage"), "{command}");
+            assert!(!output.contains("/home/"), "{command}");
+        }
+        assert_eq!(
+            run(&["unknown".to_owned(), "--help".to_owned()]),
+            Err(CliError::Usage)
+        );
     }
 
     #[test]

@@ -9,11 +9,11 @@
     "python3 scripts/check_architecture.py",
     "python3 scripts/docs_check.py",
     "python3 -m unittest discover -s tests -p 'test_*.py'",
-    "python3 scripts/package_release.py --output <output>",
+    "python3 scripts/package_release.py --output <output> --review-record <external-review>",
     "python3 scripts/install_release.py <action> --prefix <prefix>",
     "git diff --check"
   ],
-  "command_set_sha256": "b0c962d69ca9666c579cd94bf6b00fff0a4ba7e5e75cdee460ffcce4641414f3",
+  "command_set_sha256": "3b803ca67481236fdb714faaae42f5ee1367a52d47d63d0fdec077171102ec38",
   "inputs": [
     {
       "group": "implementation",
@@ -48,7 +48,7 @@
     {
       "group": "package",
       "path": "scripts/package_release.py",
-      "sha256": "bb4292ee529f86d1cb0dc9231f740fb1f61274302dc69241a827c2bb3ed8e987"
+      "sha256": "535bc5e3d178464919662b1a39c5c6caf32ed0a392bd75c2ebcb4880c1233080"
     },
     {
       "group": "package",
@@ -58,7 +58,7 @@
     {
       "group": "package",
       "path": "README.md",
-      "sha256": "c135cb1539748ad243521003c6c2710e5e1498953f280c5741bd5f614162593f"
+      "sha256": "8ea17a4d2a68f401fd2a924028f425ee0a814da79fe74b988b730638cc73c234"
     },
     {
       "group": "package",
@@ -68,7 +68,7 @@
     {
       "group": "package",
       "path": "SECURITY.md",
-      "sha256": "b86227505fcfbf79a813ccaeb3fbf9da8414cddf4a9307f3e6043535c8646b99"
+      "sha256": "1999c3f7974009a56a463ae139be2c4f5cc3b6b1c9351283cd6fe35cee878960"
     }
   ],
   "package": {

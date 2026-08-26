@@ -1,6 +1,6 @@
 # Contributing to CodingMage
 
-CodingMage is in a private bootstrap phase and is not accepting external contributions yet.
+CodingMage is in a pre-release bootstrap phase and is not accepting external contributions yet.
 This policy records the requirements that apply to owner-authored and agent-assisted changes.
 A code of conduct will be added before external contributions are opened.
 

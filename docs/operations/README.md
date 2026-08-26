@@ -4,6 +4,11 @@
 
 - [Installation](installation.md)
 - [Release](release.md)
+- [Release scope and risk register](release-scope.md)
+- [Compatibility and known limitations](compatibility.md)
+- [Support policy](../../SUPPORT.md)
+- [Migration and upgrade](migration.md)
+- [Synthetic first run](first-run.md)
 - [Quickstart](quickstart.md)
 - [Configuration](configuration.md)
 - [Recovery](recovery.md)
@@ -19,4 +24,7 @@
 - [Troubleshooting](troubleshooting.md)
 - [Unsupported behavior](unsupported.md)
 
-Security policy and vulnerability reporting remain in [`SECURITY.md`](../../SECURITY.md). These guides distinguish implemented local behavior from external or native evidence that has not run.
+Security policy and vulnerability reporting remain in [`SECURITY.md`](../../SECURITY.md).
+Third-party attribution and dependency-inventory rules are in
+[`THIRD-PARTY-NOTICES.md`](../../THIRD-PARTY-NOTICES.md). These guides distinguish implemented
+local behavior from external or native evidence that has not run.

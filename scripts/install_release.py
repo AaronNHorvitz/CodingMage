@@ -23,6 +23,7 @@ MANIFEST_FIELDS = {
     "source_date_epoch",
     "cargo_lock_sha256",
     "binary_sha256",
+    "release_review_sha256",
     "contains_credentials",
     "contains_runtime_state",
     "native_evidence",
@@ -209,6 +210,8 @@ def validate_build_manifest(root: Path, binary: Path) -> None:
         or not isinstance(manifest["cargo_lock_sha256"], str)
         or not SHA256.fullmatch(manifest["cargo_lock_sha256"])
         or manifest["binary_sha256"] != sha256(binary)
+        or not isinstance(manifest["release_review_sha256"], str)
+        or not SHA256.fullmatch(manifest["release_review_sha256"])
         or manifest["contains_credentials"] is not False
         or manifest["contains_runtime_state"] is not False
         or manifest["native_evidence"] != "linux-only"

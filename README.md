@@ -351,6 +351,10 @@ status, one explicitly scoped supervised run, and bounded serial or parallel cam
 separate absolute authority file that binds repository identity, initial commit, task-source digest,
 providers, paths, gates, unit ceilings, protected branches, and publication policy.
 
+Use `codingmage --help` to discover the public command set and
+`codingmage <COMMAND> --help` for the exact argument shape. Help and version output are static and
+do not open a repository, inspect credentials, or create runtime state.
+
 ```bash
 codingmage init --repo /absolute/repository --config /absolute/codingmage.toml \
   --scratch /absolute/worktrees --state /absolute/state
@@ -619,7 +623,11 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 Project decisions are recorded in [`docs/decisions`](docs/decisions). Security concerns should
 follow [`SECURITY.md`](SECURITY.md), and repository changes must follow
 [`CONTRIBUTING.md`](CONTRIBUTING.md). CodingMage is licensed under
-[`Apache-2.0`](LICENSE).
+[`Apache-2.0`](LICENSE). Pre-release support, compatibility, migration, third-party notices, and the
+current release-risk register are documented in [`SUPPORT.md`](SUPPORT.md),
+[`Compatibility`](docs/operations/compatibility.md), [`Migration`](docs/operations/migration.md),
+[`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md), and
+[`Release Scope`](docs/operations/release-scope.md).
 
 Operational guides are indexed in [`docs/operations/README.md`](docs/operations/README.md).
 
