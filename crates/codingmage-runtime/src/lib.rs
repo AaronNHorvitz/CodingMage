@@ -746,6 +746,12 @@ pub struct CampaignStatus {
     pub completed_units: u32,
     /// Aggregate provider attempts observed across the campaign.
     pub attempt_count: u32,
+    /// Latest immutable serial planning generation.
+    pub planning_generation: u32,
+    /// Consecutive unchanged logical planning generations retained before fail-closed stop.
+    pub identical_planning_generations: u16,
+    /// Closed trigger codes waiting to cause the next planning generation.
+    pub pending_planning_triggers: Vec<String>,
     /// Independent durable outcome counters and their accepted-outcome ceiling.
     pub outcomes: CampaignStatusOutcomes,
     /// Current aggregate campaign resource utilization.
@@ -1288,6 +1294,7 @@ pub fn campaign_blocker_explanation(
     )
 }
 
+#[allow(clippy::too_many_lines)]
 fn project_campaign_status(
     spec: &CampaignSpec,
     checkpoint: CampaignCheckpoint,
@@ -1350,8 +1357,10 @@ fn project_campaign_status(
                 heartbeat_sequence: 0,
             }]
         });
+    let (planning_generation, identical_planning_generations, pending_planning_triggers) =
+        serial_planning_status(&checkpoint)?;
     Ok(CampaignStatus {
-        schema_version: 3,
+        schema_version: 4,
         campaign_id: checkpoint.campaign_id,
         state: checkpoint.phase.label().to_owned(),
         actor: checkpoint.phase.actor().to_owned(),
@@ -1364,6 +1373,9 @@ fn project_campaign_status(
         last_task_id: checkpoint.last_task_id,
         completed_units: checkpoint.completed_units,
         attempt_count: checkpoint.utilization.provider_attempts,
+        planning_generation,
+        identical_planning_generations,
+        pending_planning_triggers,
         outcomes: CampaignStatusOutcomes {
             completed: checkpoint.outcomes.completed,
             blocked: checkpoint.outcomes.blocked,
@@ -1391,6 +1403,20 @@ fn project_campaign_status(
         elapsed_ms,
         updated_at_ms: checkpoint.updated_at_ms,
     })
+}
+
+fn serial_planning_status(
+    checkpoint: &CampaignCheckpoint,
+) -> Result<(u32, u16, Vec<String>), RuntimeError> {
+    Ok((
+        u32::try_from(checkpoint.planning_generations.len()).map_err(|_| RuntimeError::State)?,
+        checkpoint.identical_planning_generations,
+        checkpoint
+            .pending_planning_triggers
+            .iter()
+            .map(|trigger| trigger.code().to_owned())
+            .collect(),
+    ))
 }
 
 fn campaign_status_deferrals(checkpoint: &CampaignCheckpoint) -> Vec<CampaignStatusDeferral> {

@@ -961,7 +961,7 @@ profiles = ["configured-gates"]
     ]);
     assert!(status.status.success());
     let status: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
-    assert_eq!(status["schema_version"], 3);
+    assert_eq!(status["schema_version"], 4);
     assert_eq!(status["state"], "complete");
     assert_eq!(status["actor"], "coordinator");
     assert_eq!(status["model"], serde_json::Value::Null);
@@ -971,6 +971,12 @@ profiles = ["configured-gates"]
         status["utilization"]["provider_attempts"]
     );
     assert!(status["attempt_count"].as_u64().unwrap() > 0);
+    assert!(status["planning_generation"].as_u64().unwrap() > 0);
+    assert_eq!(status["identical_planning_generations"], 0);
+    assert_eq!(
+        status["pending_planning_triggers"],
+        serde_json::json!(["task_completion", "integration"])
+    );
     assert_eq!(status["outcomes"]["completed"], 2);
     assert_eq!(status["outcomes"]["blocked"], 0);
     assert_eq!(status["outcomes"]["deferred"], 0);

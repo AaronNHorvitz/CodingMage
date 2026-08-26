@@ -1035,7 +1035,7 @@ fn project_status(
         })
         .collect();
     Ok(CampaignStatus {
-        schema_version: 3,
+        schema_version: 4,
         campaign_id: snapshot.campaign_id,
         state: state.to_owned(),
         actor: actor.to_owned(),
@@ -1054,6 +1054,9 @@ fn project_status(
             .map(|record| record.task_id.clone()),
         completed_units: completed,
         attempt_count: utilization.provider_attempts,
+        planning_generation: u32::try_from(snapshot.generation).map_err(|_| RuntimeError::State)?,
+        identical_planning_generations: 0,
+        pending_planning_triggers: Vec::new(),
         outcomes: CampaignStatusOutcomes {
             completed,
             blocked,

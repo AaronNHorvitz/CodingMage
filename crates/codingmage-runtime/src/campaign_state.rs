@@ -137,6 +137,23 @@ pub(crate) enum PlanningTrigger {
     HumanDecision,
 }
 
+impl PlanningTrigger {
+    pub(crate) const fn code(self) -> &'static str {
+        match self {
+            Self::Initial => "initial",
+            Self::TaskCompletion => "task_completion",
+            Self::Blocker => "blocker",
+            Self::Deferral => "deferral",
+            Self::DeferralSatisfied => "deferral_satisfied",
+            Self::ProposalRejected => "proposal_rejected",
+            Self::RecoverableFailure => "recoverable_failure",
+            Self::DependencyChange => "dependency_change",
+            Self::Integration => "integration",
+            Self::HumanDecision => "human_decision",
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct PlanningGenerationBody {
