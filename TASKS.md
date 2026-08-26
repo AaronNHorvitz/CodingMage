@@ -1392,6 +1392,28 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [ ] **Sub-task 26.1.3.6:** Rebuild and install the verified binary, then pass a fresh supervised unit and three-outcome unattended controlled-target pilot before broader unattended operation.
   - [x] **Sub-task 26.1.3.7:** Preserve an integrity-verified immutable candidate across a transient senior-review provider, thread, or timeout failure; rerun deterministic gates and retry a fresh read-only review against the exact candidate without replaying implementation, changing the active checkout, or advancing task state before review passes. See `docs/evidence/sprint-26-correction-timeout-hardening.md`.
   - [x] **Sub-task 26.1.3.8:** Scope the three-attempt provider ceiling independently to initial implementation, each exact correction checkpoint, and each immutable review candidate, keyed by durable run, round, parent, and candidate identities while retaining every aggregate campaign ceiling. Verify an initial provider failure followed by two review failures and a third successful review without candidate or active-checkout drift. See `docs/evidence/sprint-26-correction-timeout-hardening.md`.
+- [ ] **Task 26.1.4 - Derive autonomous work authority and readiness**
+  - [ ] **Sub-task 26.1.4.1:** Define a closed readiness census for ready-local, waiting-dependency, blocked-external, deferred-resource, needs-decomposition, human-decision-required, and unsupported work, bound to exact plan, policy, platform, provider-capability, and campaign-head identities.
+  - [ ] **Sub-task 26.1.4.2:** Derive one exact task-authority envelope containing source anchor, parent task, dependencies, owned paths, acceptance criteria, artifacts, literal gates, prohibited effects, risk, completion predicate, and independent resource ceilings.
+  - [ ] **Sub-task 26.1.4.3:** Reject stale, incomplete, broadened, cross-task, provider-authored, repository-authored, duplicated, and contradictory census or authority projections before a lease, process, worktree, Git, or remote effect.
+  - [ ] **Sub-task 26.1.4.4:** Permit routine local engineering decisions only when they remain inside the exact envelope and do not add dependencies, change public contracts or architecture, weaken verification, or create external effects.
+- [ ] **Task 26.1.5 - Decompose, defer, and replan safely**
+  - [ ] **Sub-task 26.1.5.1:** Seal bounded child packets for oversized work with unique identities, acyclic dependencies, parent-path subsets, complete acceptance coverage, cumulative completion, and restart-persistent integrity.
+  - [ ] **Sub-task 26.1.5.2:** Continue independent work after an exact external blocker while leaving the blocked task and dependency descendants unchecked and visible.
+  - [ ] **Sub-task 26.1.5.3:** Advance an immutable planning generation after completion, blocker, satisfied deferral, rejected proposal, recoverable failure, dependency change, or integration outcome.
+  - [ ] **Sub-task 26.1.5.4:** Bound no-progress detection and prohibit repeated identical blockers, already-satisfied deferrals, decomposition replay, speculative redesign, and model-created authority.
+- [ ] **Task 26.1.6 - Harden routing, watchdog, integration, and reconciliation**
+  - [ ] **Sub-task 26.1.6.1:** Route implementation and review by deterministic risk, ownership boundary, required strength, provider capability and availability, and exact failure history without weakening reviewer independence.
+  - [ ] **Sub-task 26.1.6.2:** Recover or stop stalled coordinators, processes, leases, worktrees, provider sessions, and effect intents through exact watchdog observations without adopting unrelated state.
+  - [ ] **Sub-task 26.1.6.3:** Advance only the isolated campaign branch through compare-and-swap integration and verify local bare-remote push, uncertain-result reconciliation, and non-fast-forward refusal without granting destination promotion.
+  - [ ] **Sub-task 26.1.6.4:** Reconcile TASKS state, commits, tests, evidence, branches, worktrees, processes, locks, journal, checkpoint, and external blockers before completion.
+  - [ ] **Sub-task 26.1.6.5:** Expose content-minimized task, role, stage, blocker, retry, checkpoint, watchdog, reconciliation, and stop-reason progress without source, prompts, provider prose, credentials, environment values, or hidden reasoning.
+- [ ] **Task 26.1.7 - Qualify autonomous progression on a frozen target**
+  - [ ] **Sub-task 26.1.7.1:** Build a private no-hardlinks target clone pinned to an exact source commit and prove concurrent changes in another checkout cannot alter qualification identity or evidence.
+  - [ ] **Sub-task 26.1.7.2:** Pass deterministic positive, negative, malformed, boundary, mutation, cancellation, crash, retry, preservation, no-progress, and exact-side-effect suites for Tasks 26.1.4 through 26.1.6.
+  - [ ] **Sub-task 26.1.7.3:** Rebuild and install the final candidate, then pass one supervised unit and a three-outcome unattended local-only pilot against the frozen clone.
+  - [ ] **Sub-task 26.1.7.4:** Pass an approximately ten-task controlled soak with useful completions, truthful blockers, restart recovery, bounded utilization, exact reconciliation, and zero active-checkout or destination-branch mutation.
+  - [ ] **Sub-task 26.1.7.5:** Bind source, package, configuration, target, provider, task, gate, outcome, residue, and limitation identities into machine-readable and human-readable evidence.
 
 ### Story 26.2 - Reproducible Candidate and Installed Evidence
 
@@ -1418,6 +1440,10 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [ ] **AC 26.2:** Given two clean builds and one installed artifact, when reproducibility and lifecycle tests run, then identities match and install, execution, upgrade, rollback, and removal behave exactly as documented.
 - [ ] **AC 26.3:** Given manual fuzzing and independent review, when findings are reconciled, then no blocking finding remains and every accepted residual risk is explicit.
 - [ ] **AC 26.4:** Given a correction-provider timeout, when campaign execution remains within its aggregate limits, then CodingMage resumes only the exact prepared correction or stops with a distinct timeout disposition while preserving repository and task truth.
+- [ ] **AC 26.5:** Given a mixed roadmap, when autonomous planning runs, then every open task receives one exact readiness class and every locally runnable unit receives no authority beyond its canonical requirements.
+- [ ] **AC 26.6:** Given oversized, blocked, deferred, failed, and completed work, when the campaign replans, then it makes bounded progress on independent work without replay, scope invention, starvation, or false completion.
+- [ ] **AC 26.7:** Given provider, process, coordinator, Git, and state failures, when watchdog and reconciliation run, then only exact owned effects resume or clean up and unrelated repository and process state remains unchanged.
+- [ ] **AC 26.8:** Given the installed candidate and frozen target, when the supervised, pilot, and controlled-soak matrix runs, then useful work completes, external work remains open, every stop is truthful, and all retained state reconciles.
 
 ### Sprint 26 Gate
 

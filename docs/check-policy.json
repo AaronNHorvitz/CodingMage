@@ -12,7 +12,9 @@
     "docs/decisions/0003-cli-adapter-provider-boundary.md",
     "docs/decisions/0004-append-only-journal-atomic-snapshot.md",
     "docs/decisions/0008-unattended-safeguard-and-release-boundary.md",
+    "docs/decisions/0011-autonomous-roadmap-progression.md",
     "docs/architecture/unattended-safeguards.md",
+    "docs/architecture/autonomous-progression.md",
     "docs/operations/release.md"
   ],
   "prohibited_claims": [

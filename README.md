@@ -123,6 +123,10 @@ valuable-target use remains staged behind the documented serial and live qualifi
 [`Decision 0007`](docs/decisions/0007-hierarchical-campaign-pods.md). The approved unattended and
 release boundary is defined by [`Unattended Safeguards`](docs/architecture/unattended-safeguards.md)
 and [`Decision 0008`](docs/decisions/0008-unattended-safeguard-and-release-boundary.md).
+The stricter roadmap-completion contract is defined by
+[`Autonomous Roadmap Progression`](docs/architecture/autonomous-progression.md) and
+[`Decision 0011`](docs/decisions/0011-autonomous-roadmap-progression.md). Its unchecked Sprint 26
+work remains planned rather than claimed as current behavior.
 
 The role names describe authority within the workflow, not a permanent judgment about either model. Agent providers and models will be configurable behind typed adapter contracts.
 
