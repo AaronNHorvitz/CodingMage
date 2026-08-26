@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "evidence_id": "codingmage.sprint_26.frozen_target.v1",
+  "codingmage_source_commit": "ecf6faa06cf1b0392dc651a497d07e83d6121939",
+  "target": {
+    "commit": "6377b296448d16a20f6f63e6d7cc1162e87a05a2",
+    "detached": true,
+    "clean": true,
+    "tree_projection_sha256": "2f14c0f70130659ec5227b82d8fd26392341ac691f3cbc89d13345082c632bae"
+  },
+  "object_isolation": {
+    "clone_mode": "no_hardlinks",
+    "same_filesystem": true,
+    "sample_object_size": 8898444,
+    "source_object_inode": 24151300,
+    "frozen_object_inode": 33151841,
+    "hard_linked": false,
+    "alternates_file_present": false
+  },
+  "concurrent_peer": {
+    "changed_commit": "c1f0104ffcd3e7d5a9e5117927ca104d55ba9db9",
+    "frozen_head_after_change": "6377b296448d16a20f6f63e6d7cc1162e87a05a2",
+    "frozen_tree_projection_sha256_after_change": "2f14c0f70130659ec5227b82d8fd26392341ac691f3cbc89d13345082c632bae",
+    "frozen_checkout_unchanged": true
+  },
+  "limitations": [
+    "private qualification roots are intentionally excluded from repository content",
+    "no active target checkout was fetched, checked out, or modified",
+    "provider and installed-candidate qualification are recorded separately"
+  ]
+}

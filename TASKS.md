@@ -1409,7 +1409,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 26.1.6.4:** Reconcile TASKS state, commits, tests, evidence, branches, worktrees, processes, locks, journal, checkpoint, and external blockers before completion.
   - [x] **Sub-task 26.1.6.5:** Expose content-minimized task, role, stage, blocker, retry, checkpoint, watchdog, reconciliation, and stop-reason progress without source, prompts, provider prose, credentials, environment values, or hidden reasoning.
 - [ ] **Task 26.1.7 - Qualify autonomous progression on a frozen target**
-  - [ ] **Sub-task 26.1.7.1:** Build a private no-hardlinks target clone pinned to an exact source commit and prove concurrent changes in another checkout cannot alter qualification identity or evidence.
+  - [x] **Sub-task 26.1.7.1:** Build a private no-hardlinks target clone pinned to an exact source commit and prove concurrent changes in another checkout cannot alter qualification identity or evidence.
   - [ ] **Sub-task 26.1.7.2:** Pass deterministic positive, negative, malformed, boundary, mutation, cancellation, crash, retry, preservation, no-progress, and exact-side-effect suites for Tasks 26.1.4 through 26.1.6.
   - [ ] **Sub-task 26.1.7.3:** Rebuild and install the final candidate, then pass one supervised unit and a three-outcome unattended local-only pilot against the frozen clone.
   - [ ] **Sub-task 26.1.7.4:** Pass an approximately ten-task controlled soak with useful completions, truthful blockers, restart recovery, bounded utilization, exact reconciliation, and zero active-checkout or destination-branch mutation.
