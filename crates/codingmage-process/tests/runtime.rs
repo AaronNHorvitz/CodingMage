@@ -12,7 +12,7 @@ use std::{
 
 use codingmage_process::{
     CancellationToken, DescendantCleanup, ProcessError, ProcessExecutor, ProcessOutcome,
-    ProcessProfile, ProcessRequest,
+    ProcessProfile, ProcessRequest, observe_control_residue,
 };
 use nix::{
     sys::signal::{Signal, kill},
@@ -69,6 +69,26 @@ impl Drop for Fixture {
 
 fn strings(values: &[&str]) -> Vec<String> {
     values.iter().map(ToString::to_string).collect()
+}
+
+#[test]
+fn residue_observation_counts_every_exact_control_entry() {
+    let fixture = Fixture::new();
+    let control = fixture.root.join("control");
+    let _executor = fixture.executor();
+    assert_eq!(observe_control_residue(&control).unwrap(), 0);
+
+    fs::write(control.join("retained-file"), b"residue").unwrap();
+    fs::create_dir(control.join("retained-directory")).unwrap();
+    std::os::unix::fs::symlink(&fixture.root, control.join("retained-link")).unwrap();
+    assert_eq!(observe_control_residue(&control).unwrap(), 3);
+
+    let linked_root = fixture.root.join("linked-control");
+    std::os::unix::fs::symlink(&control, &linked_root).unwrap();
+    assert_eq!(
+        observe_control_residue(&linked_root),
+        Err(ProcessError::Control)
+    );
 }
 
 fn wait_for(path: &Path) {

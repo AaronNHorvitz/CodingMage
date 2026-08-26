@@ -13,8 +13,8 @@ mod team_runtime;
 mod team_state;
 
 pub use team_campaign::{
-    TeamCampaignReport, TeamTaskCompletionReport, run_team_campaign_with_progress,
-    team_campaign_report,
+    TeamCampaignReport, TeamCompletionReconciliation, TeamTaskCompletionReport,
+    run_team_campaign_with_progress, team_campaign_report,
 };
 pub use team_github::GhCliPublicationPort;
 pub use team_integration::{

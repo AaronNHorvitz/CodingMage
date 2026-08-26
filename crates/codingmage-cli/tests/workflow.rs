@@ -1348,6 +1348,15 @@ print(json.dumps({"type": "turn.completed"}))
     assert_eq!(report.final_commit, outcome.head);
     assert_eq!(report.initial_commit, original_head);
     assert_eq!(report.tasks.len(), 5);
+    assert_eq!(report.reconciliation.checked_task_count, 5);
+    assert_eq!(report.reconciliation.removed_worktree_count, 5);
+    assert_eq!(report.reconciliation.process_control_root_count, 7);
+    assert_eq!(report.reconciliation.process_control_residue_count, 0);
+    assert_eq!(report.reconciliation.active_lease_count, 0);
+    assert_eq!(report.reconciliation.active_reservation_count, 0);
+    assert_eq!(report.reconciliation.integration_queue_count, 0);
+    assert!(report.reconciliation.journal_reconciled);
+    assert!(report.reconciliation.task_source_reconciled);
     assert_eq!(report.final_gate_evidence_sha256.len(), 64);
     assert_eq!(report.final_review_evidence_sha256.len(), 64);
     let campaign_file = fixture.root.join("parallel-campaign.toml");

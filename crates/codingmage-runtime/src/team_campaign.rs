@@ -1,6 +1,6 @@
 //! Durable production loop for parallel multi-agent campaigns.
 
-use std::{collections::BTreeMap, fs, path::Path, sync::Arc, time::SystemTime};
+use std::{collections::BTreeMap, fmt::Write as _, fs, path::Path, sync::Arc, time::SystemTime};
 
 use codingmage_campaign::{
     CampaignExecutionMode, CampaignSpec, CampaignTaskState, TaskIntegrationPolicy,
@@ -9,12 +9,13 @@ use codingmage_campaign::{
 use codingmage_codex::{CodexLeadAdapter, team_lead_schema};
 use codingmage_contracts::{RunId, TaskId, WorktreeId};
 use codingmage_core::{CapabilityGrant, Config, RepositoryAuthorization};
-use codingmage_git::{OwnedWorktree, create_owned_worktree, inventory_repository};
-use codingmage_plan::TaskPlan;
-use codingmage_process::{CancellationToken, ProcessExecutor};
+use codingmage_git::{OwnedWorktree, WorktreeStatus, create_owned_worktree, inventory_repository};
+use codingmage_plan::{CheckState, TaskPlan};
+use codingmage_process::{CancellationToken, ProcessExecutor, observe_control_residue};
 use codingmage_service::CoordinatorLock;
 use codingmage_state::IntegrityDocument;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::{
     CampaignOutcome, CampaignPromotionOutcome, CampaignState, CampaignStopReason,
@@ -36,7 +37,7 @@ use crate::{
 pub(crate) const MANIFEST_NAME: &str = "team-campaign-manifest.json";
 const MANIFEST_VERSION: u16 = 1;
 const REPORT_NAME: &str = "team-campaign-report.json";
-const REPORT_VERSION: u16 = 1;
+const REPORT_VERSION: u16 = 2;
 
 /// Immutable completion identity for one task in a final team-campaign report.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -48,6 +49,38 @@ pub struct TeamTaskCompletionReport {
     pub integration_commit: String,
     /// Mechanical canonical-plan completion commit.
     pub completion_commit: String,
+}
+
+/// Content-minimized terminal reconciliation observed before the completion report is written.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TeamCompletionReconciliation {
+    /// Canonical digest of the journal-reconciled durable campaign snapshot.
+    pub state_sha256: String,
+    /// Digest of exact completed task identities in canonical order.
+    pub completed_task_ids_sha256: String,
+    /// Digest of exact removed worktree identities in canonical order.
+    pub removed_worktree_ids_sha256: String,
+    /// Digest of task gate, review, and CI evidence projections.
+    pub task_evidence_sha256: String,
+    /// Number of exact campaign tasks observed checked in the canonical task source.
+    pub checked_task_count: u32,
+    /// Number of exact task worktrees observed in the removed state.
+    pub removed_worktree_count: u32,
+    /// Number of exact process-control roots inspected.
+    pub process_control_root_count: u32,
+    /// Retained entries across all exact process-control roots; completion requires zero.
+    pub process_control_residue_count: u64,
+    /// Active durable scheduler leases; completion requires zero.
+    pub active_lease_count: u32,
+    /// Active durable resource reservations; completion requires zero.
+    pub active_reservation_count: u32,
+    /// Pending serialized integration entries; completion requires zero.
+    pub integration_queue_count: u32,
+    /// Confirms the atomic document and append-only journal reconciled to the same snapshot.
+    pub journal_reconciled: bool,
+    /// Confirms the canonical task source matched its digest and exact campaign tasks were checked.
+    pub task_source_reconciled: bool,
 }
 
 /// Content-minimized final report produced only after full gates and cumulative review pass.
@@ -70,6 +103,8 @@ pub struct TeamCampaignReport {
     pub task_source_sha256: String,
     /// Exact task completion identities in canonical task order.
     pub tasks: BTreeMap<String, TeamTaskCompletionReport>,
+    /// Exact terminal ownership and durable-state reconciliation.
+    pub reconciliation: TeamCompletionReconciliation,
     /// Full-suite deterministic gate evidence.
     pub final_gate_evidence_sha256: String,
     /// Fresh cumulative Codex review evidence.
@@ -94,6 +129,7 @@ impl TeamCampaignReport {
             && self.final_commit == snapshot.campaign_head
             && self.task_source_sha256 == snapshot.task_source_sha256
             && self.tasks.len() == snapshot.tasks.len()
+            && self.reconciliation.verify(snapshot)
             && valid_sha256(&self.final_gate_evidence_sha256)
             && valid_sha256(&self.final_review_evidence_sha256)
             && self.completed_at_ms > 0
@@ -106,6 +142,45 @@ impl TeamCampaignReport {
                             && record.completion_commit.as_ref() == Some(&report.completion_commit)
                     })
             })
+    }
+}
+
+impl TeamCompletionReconciliation {
+    fn verify(&self, snapshot: &codingmage_campaign::TeamCampaignSnapshot) -> bool {
+        let task_ids = snapshot.tasks.keys().cloned().collect::<Vec<_>>();
+        let removed_worktree_ids = snapshot
+            .tasks
+            .values()
+            .filter_map(|record| record.worktree_id.clone())
+            .collect::<Vec<_>>();
+        let evidence = snapshot
+            .tasks
+            .iter()
+            .map(|(task_id, record)| {
+                (
+                    task_id.clone(),
+                    (
+                        record.gate_evidence_sha256.clone(),
+                        record.review_evidence_sha256.clone(),
+                        record.ci_evidence_sha256.clone(),
+                    ),
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+        snapshot.sha256().ok().as_deref() == Some(&self.state_sha256)
+            && canonical_sha256(&task_ids).as_deref() == Some(&self.completed_task_ids_sha256)
+            && canonical_sha256(&removed_worktree_ids).as_deref()
+                == Some(&self.removed_worktree_ids_sha256)
+            && canonical_sha256(&evidence).as_deref() == Some(&self.task_evidence_sha256)
+            && usize::try_from(self.checked_task_count).ok() == Some(snapshot.tasks.len())
+            && usize::try_from(self.removed_worktree_count).ok() == Some(snapshot.tasks.len())
+            && self.process_control_root_count > 0
+            && self.process_control_residue_count == 0
+            && self.active_lease_count == 0
+            && self.active_reservation_count == 0
+            && self.integration_queue_count == 0
+            && self.journal_reconciled
+            && self.task_source_reconciled
     }
 }
 
@@ -643,9 +718,11 @@ pub fn run_team_campaign_with_progress(
             ));
             let report = finalize_team_campaign(
                 &campaign_root,
+                config,
                 &spec,
                 &manifest,
                 &snapshot,
+                &mut state_store,
                 &authorization,
                 &campaign,
                 &mut integration_verifier,
@@ -927,11 +1004,14 @@ pub fn team_campaign_report(
     .map_err(|_| RuntimeError::State)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn finalize_team_campaign(
     campaign_root: &Path,
+    base_config: &Config,
     spec: &CampaignSpec,
     manifest: &TeamCampaignManifest,
     snapshot: &codingmage_campaign::TeamCampaignSnapshot,
+    state_store: &mut TeamStateStore,
     authorization: &RepositoryAuthorization,
     campaign: &OwnedWorktree,
     verifier: &mut ProductionTeamIntegrationVerifier,
@@ -953,6 +1033,14 @@ fn finalize_team_campaign(
     }
     let verification = verifier.verify("campaign-final", campaign, &snapshot.campaign_head)?;
     verification.verify()?;
+    let reconciliation = reconcile_team_completion(
+        campaign_root,
+        base_config,
+        spec,
+        snapshot,
+        state_store,
+        campaign,
+    )?;
     let tasks = snapshot
         .tasks
         .iter()
@@ -982,6 +1070,7 @@ fn finalize_team_campaign(
         final_commit: snapshot.campaign_head.clone(),
         task_source_sha256: snapshot.task_source_sha256.clone(),
         tasks,
+        reconciliation,
         final_gate_evidence_sha256: verification.gate_evidence_sha256,
         final_review_evidence_sha256: verification.review_evidence_sha256,
         completed_at_ms: now_ms(),
@@ -994,6 +1083,145 @@ fn finalize_team_campaign(
     })
     .map_err(|_| RuntimeError::State)?;
     Ok(report)
+}
+
+#[allow(clippy::too_many_lines)]
+fn reconcile_team_completion(
+    campaign_root: &Path,
+    base_config: &Config,
+    spec: &CampaignSpec,
+    snapshot: &codingmage_campaign::TeamCampaignSnapshot,
+    state_store: &mut TeamStateStore,
+    campaign: &OwnedWorktree,
+) -> Result<TeamCompletionReconciliation, RuntimeError> {
+    let durable = state_store
+        .load_reconciled(now_ms())
+        .map_err(|_| RuntimeError::State)?
+        .ok_or(RuntimeError::State)?;
+    if &durable != snapshot
+        || !snapshot.scheduler.active.is_empty()
+        || !snapshot.resources.active.is_empty()
+        || !snapshot.integration_queue.is_empty()
+        || snapshot
+            .tasks
+            .values()
+            .any(|record| record.state != CampaignTaskState::Merged)
+    {
+        return Err(RuntimeError::State);
+    }
+
+    let source = fs::read(campaign.manifest().path.join(&base_config.task_source))
+        .map_err(|_| RuntimeError::Plan)?;
+    let plan = TaskPlan::parse(&source).map_err(|_| RuntimeError::Plan)?;
+    if plan.source_sha256 != snapshot.task_source_sha256 {
+        return Err(RuntimeError::Plan);
+    }
+    let checked_task_count = snapshot.tasks.keys().try_fold(0_u32, |count, task_id| {
+        let item = plan
+            .items
+            .iter()
+            .find(|item| item.id == *task_id)
+            .ok_or(RuntimeError::Plan)?;
+        if item.state != CheckState::Checked {
+            return Err(RuntimeError::Plan);
+        }
+        count.checked_add(1).ok_or(RuntimeError::State)
+    })?;
+
+    let mut removed_worktree_ids = Vec::new();
+    let mut process_roots = vec![
+        campaign_root.join("lead-processes"),
+        campaign_root
+            .join("integration-verification")
+            .join("integration-processes"),
+    ];
+    let publication_root = campaign_root
+        .join("publication-processes")
+        .join("processes");
+    if fs::symlink_metadata(&publication_root).is_ok() {
+        process_roots.push(publication_root);
+    }
+    for (task_id, record) in &snapshot.tasks {
+        let lease_id = record.lease_id.as_deref().ok_or(RuntimeError::State)?;
+        let pod_id = record.pod_id.as_deref().ok_or(RuntimeError::State)?;
+        let run_id = record.run_id.as_deref().ok_or(RuntimeError::State)?;
+        let worktree_id = WorktreeId::new(record.worktree_id.clone().ok_or(RuntimeError::State)?)
+            .map_err(|_| RuntimeError::State)?;
+        let branch = record.branch.as_deref().ok_or(RuntimeError::State)?;
+        let pod_root = campaign_root.join("execution").join("pods").join(lease_id);
+        let mut pod_config = base_config.clone();
+        pod_config.target_path.clone_from(&campaign.manifest().path);
+        pod_config.default_branch.clone_from(&spec.campaign_branch);
+        pod_config.integration_branch = format!("{}/pods/{pod_id}", spec.campaign_branch);
+        pod_config.scratch_root = pod_root.join("scratch");
+        pod_config.state_root = pod_root.join("state");
+        let worktree =
+            OwnedWorktree::load(&pod_config, &worktree_id).map_err(|_| RuntimeError::Repository)?;
+        let worktree_manifest = worktree.manifest();
+        if worktree_manifest.status != WorktreeStatus::Removed
+            || worktree_manifest.task_id.as_str() != task_id
+            || worktree_manifest.run_id.as_str() != run_id
+            || worktree_manifest.branch != branch
+        {
+            return Err(RuntimeError::State);
+        }
+        removed_worktree_ids.push(worktree_id.as_str().to_owned());
+        process_roots.push(
+            pod_config
+                .state_root
+                .join("runs")
+                .join(run_id)
+                .join("processes"),
+        );
+    }
+    let process_control_residue_count = process_roots.iter().try_fold(0_u64, |total, root| {
+        let observed = observe_control_residue(root).map_err(|_| RuntimeError::Process)?;
+        total.checked_add(observed).ok_or(RuntimeError::State)
+    })?;
+    if process_control_residue_count != 0 {
+        return Err(RuntimeError::Process);
+    }
+
+    let task_ids = snapshot.tasks.keys().cloned().collect::<Vec<_>>();
+    let evidence = snapshot
+        .tasks
+        .iter()
+        .map(|(task_id, record)| {
+            (
+                task_id.clone(),
+                (
+                    record.gate_evidence_sha256.clone(),
+                    record.review_evidence_sha256.clone(),
+                    record.ci_evidence_sha256.clone(),
+                ),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let reconciliation = TeamCompletionReconciliation {
+        state_sha256: snapshot.sha256().map_err(|_| RuntimeError::State)?,
+        completed_task_ids_sha256: canonical_sha256(&task_ids).ok_or(RuntimeError::State)?,
+        removed_worktree_ids_sha256: canonical_sha256(&removed_worktree_ids)
+            .ok_or(RuntimeError::State)?,
+        task_evidence_sha256: canonical_sha256(&evidence).ok_or(RuntimeError::State)?,
+        checked_task_count,
+        removed_worktree_count: u32::try_from(removed_worktree_ids.len())
+            .map_err(|_| RuntimeError::State)?,
+        process_control_root_count: u32::try_from(process_roots.len())
+            .map_err(|_| RuntimeError::State)?,
+        process_control_residue_count,
+        active_lease_count: u32::try_from(snapshot.scheduler.active.len())
+            .map_err(|_| RuntimeError::State)?,
+        active_reservation_count: u32::try_from(snapshot.resources.active.len())
+            .map_err(|_| RuntimeError::State)?,
+        integration_queue_count: u32::try_from(snapshot.integration_queue.len())
+            .map_err(|_| RuntimeError::State)?,
+        journal_reconciled: true,
+        task_source_reconciled: true,
+    };
+    if !reconciliation.verify(snapshot) {
+        return Err(RuntimeError::State);
+    }
+    Ok(reconciliation)
 }
 
 fn load_or_initialize(
@@ -1117,6 +1345,16 @@ fn now_ms() -> u64 {
 
 fn valid_sha256(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn canonical_sha256(value: &impl Serialize) -> Option<String> {
+    let encoded = serde_json::to_vec(value).ok()?;
+    Sha256::digest(encoded)
+        .iter()
+        .try_fold(String::with_capacity(64), |mut output, byte| {
+            write!(output, "{byte:02x}").ok()?;
+            Some(output)
+        })
 }
 
 fn task_integration_approved(

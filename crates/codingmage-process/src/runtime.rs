@@ -454,6 +454,33 @@ impl ProcessExecutor {
     }
 }
 
+/// Counts retained execution-control entries under one exact private root without following them.
+///
+/// A zero result is terminal evidence that every guarded execution using this root removed its
+/// exact control directory. Any file, directory, symbolic link, or other entry counts as residue;
+/// callers decide whether that residue blocks completion.
+///
+/// # Errors
+///
+/// Returns [`ProcessError::Control`] when the root is absent, relative, symbolic, not a directory,
+/// unreadable, or contains more entries than can be represented by `u64`.
+pub fn observe_control_residue(control_root: &Path) -> Result<u64, ProcessError> {
+    if !control_root.is_absolute() {
+        return Err(ProcessError::Control);
+    }
+    let metadata = fs::symlink_metadata(control_root).map_err(|_| ProcessError::Control)?;
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err(ProcessError::Control);
+    }
+    let canonical = fs::canonicalize(control_root).map_err(|_| ProcessError::Control)?;
+    fs::read_dir(&canonical)
+        .map_err(|_| ProcessError::Control)?
+        .try_fold(0_u64, |count, entry| {
+            entry.map_err(|_| ProcessError::Control)?;
+            count.checked_add(1).ok_or(ProcessError::Control)
+        })
+}
+
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct LaunchEnvelope {

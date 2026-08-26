@@ -9,6 +9,8 @@ use codingmage_state::IntegrityDocument;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+#[cfg(test)]
+use crate::TeamCompletionReconciliation;
 use crate::{CiObservation, RuntimeError, TeamCampaignReport};
 
 const PROMOTION_NAME: &str = "team-campaign-promotion.json";
@@ -912,6 +914,7 @@ mod tests {
         let _ = fs::remove_dir_all(root);
     }
 
+    #[allow(clippy::too_many_lines)]
     fn fixture(
         destination_policy: DestinationPromotionPolicy,
     ) -> (
@@ -1007,7 +1010,7 @@ mod tests {
         };
         snapshot.verify().unwrap();
         let report = TeamCampaignReport {
-            version: 1,
+            version: 2,
             campaign_id: spec.campaign_id.clone(),
             repository_id: spec.repository_id.clone(),
             branch: "codingmage/promotion-fixture/owned".to_owned(),
@@ -1015,6 +1018,21 @@ mod tests {
             final_commit: snapshot.campaign_head.clone(),
             task_source_sha256: snapshot.task_source_sha256.clone(),
             tasks: BTreeMap::new(),
+            reconciliation: TeamCompletionReconciliation {
+                state_sha256: snapshot.sha256().unwrap(),
+                completed_task_ids_sha256: "a".repeat(64),
+                removed_worktree_ids_sha256: "b".repeat(64),
+                task_evidence_sha256: "c".repeat(64),
+                checked_task_count: 0,
+                removed_worktree_count: 0,
+                process_control_root_count: 1,
+                process_control_residue_count: 0,
+                active_lease_count: 0,
+                active_reservation_count: 0,
+                integration_queue_count: 0,
+                journal_reconciled: true,
+                task_source_reconciled: true,
+            },
             final_gate_evidence_sha256: "e".repeat(64),
             final_review_evidence_sha256: "f".repeat(64),
             completed_at_ms: 1,
