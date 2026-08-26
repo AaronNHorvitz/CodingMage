@@ -2,16 +2,16 @@
 
 ## Boundary
 
-This record covers exact blocker projection, continued independent selection, immutable serial
-planning generations, bounded no-progress detection, and decomposition replay refusal for
-Sub-tasks `26.1.5.2`, `26.1.5.3`, and `26.1.5.4`. It does not close Sub-task `26.1.5.1`, Task
-`26.1.5`, or `AC 26.6`: sealed child plans are durable, but live campaign execution does not yet
-consume them.
+This record covers sealed bounded child packets, exact blocker projection, continued independent
+selection, immutable serial planning generations, bounded no-progress detection, and decomposition
+replay refusal for Task `26.1.5`. It does not close `AC 26.6`; the frozen-target qualification must
+still prove the complete oversized-to-progress workflow.
 
 Source commit `5afb82c` introduced the chained planning-generation checkpoint and replay-safe
 decomposition persistence. Source commit `c670b56` added the explicit blocked-prerequisite and
 independent-work regression. Source commit `61f26a6` separated logical stagnation from bounded
 provider recovery and added the end-to-end no-progress campaign assertion.
+Source commit `fbfe61d` materialized every verified decomposition as canonical child work packets.
 
 ## Verified Behavior
 
@@ -32,12 +32,17 @@ provider recovery and added the end-to-end no-progress campaign assertion.
   authority.
 - A persisted decomposition can be replayed idempotently only when byte-identical. A different
   valid decomposition for the same parent is refused rather than replacing the sealed plan.
+- Each verified decomposition deterministically materializes unique child packet identities and
+  ordered dependencies. Every packet retains the exact parent repository, source, base, branch,
+  worktree, gates, resource ceilings, and prohibited effects while narrowing scope, paths, and
+  criteria. Only the final cumulative packet carries all parent acceptance criteria and expected
+  artifacts.
 - Checkpoint schema version 8 rejects older or mutated generation ledgers and preserves the exact
   digest chain across restart.
 
 ## Local Verification
 
-The following commands passed against source commit `61f26a6` plus this evidence-only update:
+The following commands passed against source commit `fbfe61d` plus this evidence-only update:
 
 ```bash
 cargo test --workspace --all-targets --locked
@@ -55,7 +60,6 @@ independent selection.
 
 ## Remaining Limitations
 
-The runtime can build, verify, persist, reload, and reject replay of sealed decompositions, but the
-serial campaign does not yet dispatch their child packets. Sub-task `26.1.5.1`, Task `26.1.5`, and
-`AC 26.6` therefore remain open. No routing, watchdog, release-candidate, installed-package,
-external-review, signing, native-platform, publication, or manual-fuzzing claim is made here.
+The frozen-target campaign has not yet qualified live oversized-to-progress execution, so `AC 26.6`
+remains open. No routing, watchdog, release-candidate, installed-package, external-review, signing,
+native-platform, publication, or manual-fuzzing claim is made here.
