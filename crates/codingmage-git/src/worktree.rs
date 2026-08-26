@@ -67,6 +67,68 @@ pub struct WorktreeManifest {
     pub status: WorktreeStatus,
 }
 
+/// Side-effect-free identity reserved for one future owned worktree.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct WorktreePlan {
+    worktree_id: WorktreeId,
+    run_id: RunId,
+    task_id: TaskId,
+    path: PathBuf,
+    branch: String,
+}
+
+impl WorktreePlan {
+    /// Returns the exact future worktree identifier.
+    #[must_use]
+    pub const fn worktree_id(&self) -> &WorktreeId {
+        &self.worktree_id
+    }
+
+    /// Returns the run that owns the planned worktree.
+    #[must_use]
+    pub const fn run_id(&self) -> &RunId {
+        &self.run_id
+    }
+
+    /// Returns the task assigned to the planned worktree.
+    #[must_use]
+    pub const fn task_id(&self) -> &TaskId {
+        &self.task_id
+    }
+
+    /// Returns the exact future path under the private scratch root.
+    #[must_use]
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    /// Returns the exact future coordinator-owned branch.
+    #[must_use]
+    pub fn branch(&self) -> &str {
+        &self.branch
+    }
+
+    /// Reconstructs and validates a plan from one trusted persisted manifest.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`WorktreeError::Identity`] when the manifest does not match the configured plan.
+    pub fn from_manifest(
+        config: &Config,
+        manifest: &WorktreeManifest,
+    ) -> Result<Self, WorktreeError> {
+        let plan = Self {
+            worktree_id: manifest.worktree_id.clone(),
+            run_id: manifest.run_id.clone(),
+            task_id: manifest.task_id.clone(),
+            path: manifest.path.clone(),
+            branch: manifest.branch.clone(),
+        };
+        validate_worktree_plan(config, &plan)?;
+        Ok(plan)
+    }
+}
+
 /// Loaded worktree ownership authority.
 #[derive(Clone, Debug)]
 pub struct OwnedWorktree {
@@ -232,19 +294,46 @@ impl fmt::Display for WorktreeError {
 
 impl std::error::Error for WorktreeError {}
 
-/// Creates one exact branch and worktree from a validated source commit.
+/// Reserves one exact future worktree identity without creating files, branches, or processes.
+///
+/// # Errors
+///
+/// Returns [`WorktreeError`] for an invalid or colliding destination or branch identity.
+pub fn plan_owned_worktree(
+    config: &Config,
+    run_id: RunId,
+    task_id: TaskId,
+) -> Result<WorktreePlan, WorktreeError> {
+    let worktree_id = generate_worktree_id(run_id.as_str(), task_id.as_str())?;
+    let path = config.scratch_root.join(worktree_id.as_str());
+    let branch = planned_branch(config, &run_id, &task_id, &worktree_id)?;
+    let plan = WorktreePlan {
+        worktree_id,
+        run_id,
+        task_id,
+        path,
+        branch,
+    };
+    validate_worktree_plan(config, &plan)?;
+    if plan.path.exists() || fs::symlink_metadata(&plan.path).is_ok() {
+        return Err(WorktreeError::Collision);
+    }
+    Ok(plan)
+}
+
+/// Creates one exact branch and worktree from a prevalidated plan and source commit.
 ///
 /// # Errors
 ///
 /// Returns [`WorktreeError`] before adoption if repository state, source identity, destination,
 /// command execution, postflight identity, or private manifest persistence fails.
-pub fn create_owned_worktree(
+pub fn create_owned_worktree_from_plan(
     authorization: &RepositoryAuthorization,
     config: &Config,
-    run_id: RunId,
-    task_id: TaskId,
+    plan: WorktreePlan,
     source_commit: &str,
 ) -> Result<OwnedWorktree, WorktreeError> {
+    validate_worktree_plan(config, &plan)?;
     authorization
         .revalidate()
         .map_err(|_| WorktreeError::StaleAuthorization)?;
@@ -264,21 +353,11 @@ pub fn create_owned_worktree(
     prepare_private_directory(&config.scratch_root)?;
     let manifest_root = config.state_root.join("worktrees");
     prepare_private_directory(&manifest_root)?;
-    let worktree_id = generate_worktree_id(run_id.as_str(), task_id.as_str())?;
-    let destination = config.scratch_root.join(worktree_id.as_str());
+    let destination = plan.path.clone();
     if destination.exists() || fs::symlink_metadata(&destination).is_ok() {
         return Err(WorktreeError::Collision);
     }
-    let branch = format!(
-        "{}/{}-{}-{}",
-        config.integration_branch,
-        task_id,
-        run_id,
-        &worktree_id.as_str()[3..]
-    );
-    if branch.len() > 255 {
-        return Err(WorktreeError::Collision);
-    }
+    let branch = plan.branch.clone();
 
     run_git(
         &authorization.identity().canonical_path,
@@ -305,13 +384,13 @@ pub fn create_owned_worktree(
 
     let manifest = WorktreeManifest {
         version: 1,
-        worktree_id: worktree_id.clone(),
+        worktree_id: plan.worktree_id.clone(),
         repository_id: authorization.identity().repository_id.clone(),
-        run_id,
-        task_id,
+        run_id: plan.run_id,
+        task_id: plan.task_id,
         path: destination,
         filesystem: filesystem_identity(
-            &fs::metadata(config.scratch_root.join(worktree_id.as_str()))
+            &fs::metadata(config.scratch_root.join(plan.worktree_id.as_str()))
                 .map_err(|_| WorktreeError::Identity)?,
         ),
         source_commit: source_commit.to_owned(),
@@ -319,12 +398,28 @@ pub fn create_owned_worktree(
         owner_process_id: std::process::id(),
         status: WorktreeStatus::Active,
     };
-    let manifest_path = manifest_path(config, &worktree_id);
+    let manifest_path = manifest_path(config, &plan.worktree_id);
     write_manifest(&manifest_path, &manifest, true)?;
     Ok(OwnedWorktree {
         manifest,
         manifest_path,
     })
+}
+
+/// Creates one exact branch and worktree from a newly reserved side-effect-free plan.
+///
+/// # Errors
+///
+/// Returns [`WorktreeError`] when planning or creation fails.
+pub fn create_owned_worktree(
+    authorization: &RepositoryAuthorization,
+    config: &Config,
+    run_id: RunId,
+    task_id: TaskId,
+    source_commit: &str,
+) -> Result<OwnedWorktree, WorktreeError> {
+    let plan = plan_owned_worktree(config, run_id, task_id)?;
+    create_owned_worktree_from_plan(authorization, config, plan, source_commit)
 }
 
 /// Removes only a clean, registered worktree matching its exact private manifest.
@@ -431,6 +526,35 @@ fn generate_worktree_id(run: &str, task: &str) -> Result<WorktreeId, WorktreeErr
     let digest = Sha256::digest(input.as_bytes());
     let suffix = hex_bytes(&digest[..16]);
     WorktreeId::new(format!("wt-{suffix}")).map_err(|_| WorktreeError::Manifest)
+}
+
+fn planned_branch(
+    config: &Config,
+    run_id: &RunId,
+    task_id: &TaskId,
+    worktree_id: &WorktreeId,
+) -> Result<String, WorktreeError> {
+    let branch = format!(
+        "{}/{}-{}-{}",
+        config.integration_branch,
+        task_id,
+        run_id,
+        &worktree_id.as_str()[3..]
+    );
+    if branch.len() > 255 {
+        Err(WorktreeError::Collision)
+    } else {
+        Ok(branch)
+    }
+}
+
+fn validate_worktree_plan(config: &Config, plan: &WorktreePlan) -> Result<(), WorktreeError> {
+    let expected_path = config.scratch_root.join(plan.worktree_id.as_str());
+    let expected_branch = planned_branch(config, &plan.run_id, &plan.task_id, &plan.worktree_id)?;
+    if plan.path != expected_path || plan.branch != expected_branch {
+        return Err(WorktreeError::Identity);
+    }
+    Ok(())
 }
 
 fn manifest_path(config: &Config, worktree_id: &WorktreeId) -> PathBuf {
@@ -578,6 +702,68 @@ mod tests {
         )
         .unwrap();
         (authorization, config, owned)
+    }
+
+    #[test]
+    fn planned_identity_has_no_effect_and_creation_consumes_it_exactly() {
+        let fixture = GitFixture::new();
+        let authorization = fixture.authorization();
+        let config = fixture.config();
+        let scratch_before = fs::read_dir(&fixture.scratch).unwrap().count();
+        let state_before = fs::read_dir(&fixture.state).unwrap().count();
+        let plan = plan_owned_worktree(
+            &config,
+            RunId::new("run-planned").unwrap(),
+            TaskId::new("task-planned").unwrap(),
+        )
+        .unwrap();
+
+        assert!(!plan.path().exists());
+        assert_eq!(
+            fs::read_dir(&fixture.scratch).unwrap().count(),
+            scratch_before
+        );
+        assert_eq!(fs::read_dir(&fixture.state).unwrap().count(), state_before);
+        assert!(
+            output(&fixture.target, &["branch", "--list", plan.branch()])
+                .trim()
+                .is_empty()
+        );
+
+        let owned =
+            create_owned_worktree_from_plan(&authorization, &config, plan.clone(), &fixture.head())
+                .unwrap();
+        assert_eq!(owned.manifest().worktree_id, *plan.worktree_id());
+        assert_eq!(owned.manifest().run_id, *plan.run_id());
+        assert_eq!(owned.manifest().task_id, *plan.task_id());
+        assert_eq!(owned.manifest().path, plan.path());
+        assert_eq!(owned.manifest().branch, plan.branch());
+        assert_eq!(
+            WorktreePlan::from_manifest(&config, owned.manifest()).unwrap(),
+            plan
+        );
+    }
+
+    #[test]
+    fn mutated_worktree_plan_is_rejected_before_creation() {
+        let fixture = GitFixture::new();
+        let authorization = fixture.authorization();
+        let config = fixture.config();
+        let mut plan = plan_owned_worktree(
+            &config,
+            RunId::new("run-mutated-plan").unwrap(),
+            TaskId::new("task-mutated-plan").unwrap(),
+        )
+        .unwrap();
+        let original_path = plan.path.clone();
+        plan.branch.push_str("-broadened");
+
+        assert_eq!(
+            create_owned_worktree_from_plan(&authorization, &config, plan, &fixture.head())
+                .unwrap_err(),
+            WorktreeError::Identity
+        );
+        assert!(!original_path.exists());
     }
 
     #[test]

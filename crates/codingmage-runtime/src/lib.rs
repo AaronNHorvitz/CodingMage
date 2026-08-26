@@ -81,9 +81,10 @@ use codingmage_gate::{
     GateTrigger, TrustedGateDefinition,
 };
 use codingmage_git::{
-    CommitError, CommitReceipt, OwnedWorktree, commit_owned_changes, create_owned_worktree,
-    integrate_reviewed_descendant, inventory_repository, observe_owned_changes,
-    observe_owned_child_commit, remove_owned_worktree, reobserve_owned_commit,
+    CommitError, CommitReceipt, OwnedWorktree, WorktreePlan, commit_owned_changes,
+    create_owned_worktree, create_owned_worktree_from_plan, integrate_reviewed_descendant,
+    inventory_repository, observe_owned_changes, observe_owned_child_commit, plan_owned_worktree,
+    remove_owned_worktree, reobserve_owned_commit,
 };
 use codingmage_orchestrator::{
     DurableWorkflowPort, ImplementationOutcome, OneUnitCoordinator, OrchestrationError,
@@ -4004,6 +4005,22 @@ fn run_one_observed_with_id(
     write_private_idempotent(&schema_path, codex_review_schema().as_bytes())?;
     let mut journal = Journal::open(&run_root, format!("{}-journal", run_id.as_str()))
         .map_err(|_| RuntimeError::State)?;
+    let planned_worktree = if let Some(worktree_id) = correction_recovery
+        .as_ref()
+        .map(|checkpoint| &checkpoint.worktree_id)
+        .or_else(|| {
+            initial_recovery
+                .as_ref()
+                .map(|checkpoint| &checkpoint.worktree_id)
+        }) {
+        let owned =
+            OwnedWorktree::load(config, worktree_id).map_err(|_| RuntimeError::Repository)?;
+        WorktreePlan::from_manifest(config, owned.manifest())
+            .map_err(|_| RuntimeError::Authority)?
+    } else {
+        plan_owned_worktree(config, run_id.clone(), task_id.clone())
+            .map_err(|_| RuntimeError::Authority)?
+    };
     let inputs = ProductionInputs {
         config,
         authorization,
@@ -4022,11 +4039,12 @@ fn run_one_observed_with_id(
         lifecycle_observer,
         cancellation,
         external_context,
+        planned_worktree,
     };
     let port = match (correction_recovery.as_ref(), initial_recovery.as_ref()) {
         (Some(checkpoint), None) => ProductionWorkflowPort::recover_correction(inputs, checkpoint)?,
         (None, Some(checkpoint)) => ProductionWorkflowPort::recover_initial(inputs, checkpoint)?,
-        (None, None) => ProductionWorkflowPort::new(inputs),
+        (None, None) => ProductionWorkflowPort::new(inputs)?,
         (Some(_), Some(_)) => return Err(RuntimeError::State),
     };
     let repository_id = port.authorization.identity().repository_id.clone();
@@ -4236,6 +4254,7 @@ struct ProductionInputs<'a> {
     lifecycle_observer: Option<LifecycleObserver>,
     cancellation: CancellationToken,
     external_context: Option<String>,
+    planned_worktree: WorktreePlan,
 }
 
 struct ProductionWorkflowPort<'a> {
@@ -4256,7 +4275,8 @@ struct ProductionWorkflowPort<'a> {
     lifecycle_observer: Option<LifecycleObserver>,
     cancellation: CancellationToken,
     external_context: Option<String>,
-    authority_envelope_sha256: Option<String>,
+    planned_worktree: WorktreePlan,
+    authority_envelope_sha256: String,
     lock: Option<CoordinatorLock>,
     worktree: Option<OwnedWorktree>,
     implementation: Option<ClaudeCompletionReport>,
@@ -4285,8 +4305,8 @@ enum WorktreeRetention {
 }
 
 impl<'a> ProductionWorkflowPort<'a> {
-    fn new(inputs: ProductionInputs<'a>) -> Self {
-        Self {
+    fn new(inputs: ProductionInputs<'a>) -> Result<Self, RuntimeError> {
+        let mut port = Self {
             config: inputs.config,
             authorization: inputs.authorization,
             selected: inputs.selected,
@@ -4304,7 +4324,8 @@ impl<'a> ProductionWorkflowPort<'a> {
             lifecycle_observer: inputs.lifecycle_observer,
             cancellation: inputs.cancellation,
             external_context: inputs.external_context,
-            authority_envelope_sha256: None,
+            planned_worktree: inputs.planned_worktree,
+            authority_envelope_sha256: String::new(),
             lock: None,
             worktree: None,
             implementation: None,
@@ -4322,7 +4343,12 @@ impl<'a> ProductionWorkflowPort<'a> {
             initial_checkpoint: None,
             worktree_retention: WorktreeRetention::None,
             failure: None,
-        }
+        };
+        port.authority_envelope_sha256 = port
+            .task_authority_envelope()
+            .map_err(|_| RuntimeError::Authority)?
+            .body_sha256;
+        Ok(port)
     }
 
     fn observe_lifecycle(&mut self, event: UnitLifecycleEvent) -> Result<(), OrchestrationError> {
@@ -4475,7 +4501,10 @@ impl<'a> ProductionWorkflowPort<'a> {
             return Err(RuntimeError::Authority);
         }
         let candidate = recover_correction_candidate(&inputs, &worktree, checkpoint)?;
-        let mut port = Self::new(inputs);
+        let mut port = Self::new(inputs)?;
+        port.worktree = Some(worktree);
+        port.revalidate_live_worktree_plan()
+            .map_err(|_| RuntimeError::Authority)?;
         port.lock = Some(
             CoordinatorLock::acquire(
                 &port.config.state_root.join("locks"),
@@ -4484,7 +4513,6 @@ impl<'a> ProductionWorkflowPort<'a> {
             )
             .map_err(|_| RuntimeError::Orchestration)?,
         );
-        port.worktree = Some(worktree);
         port.candidate = Some(candidate);
         port.correction_round = checkpoint.correction_round.saturating_sub(1);
         port.observed_correction_baseline = port.correction_round;
@@ -4511,7 +4539,10 @@ impl<'a> ProductionWorkflowPort<'a> {
         {
             return Err(RuntimeError::Authority);
         }
-        let mut port = Self::new(inputs);
+        let mut port = Self::new(inputs)?;
+        port.worktree = Some(worktree);
+        port.revalidate_live_worktree_plan()
+            .map_err(|_| RuntimeError::Authority)?;
         port.lock = Some(
             CoordinatorLock::acquire(
                 &port.config.state_root.join("locks"),
@@ -4520,7 +4551,6 @@ impl<'a> ProductionWorkflowPort<'a> {
             )
             .map_err(|_| RuntimeError::Orchestration)?,
         );
-        port.worktree = Some(worktree);
         if checkpoint.phase == InitialPhase::CandidateObserved {
             let commit = checkpoint
                 .candidate_commit
@@ -4767,7 +4797,6 @@ impl<'a> ProductionWorkflowPort<'a> {
     }
 
     fn task_authority_envelope(&self) -> Result<TaskAuthorityEnvelope, OrchestrationError> {
-        let owned = self.worktree()?;
         let commands = self
             .config
             .gate_commands
@@ -4783,12 +4812,12 @@ impl<'a> ProductionWorkflowPort<'a> {
             run_id: self.run_id.clone(),
             task_id: self.task_id.clone(),
             repository_id: self.authorization.identity().repository_id.clone(),
-            worktree_id: owned.manifest().worktree_id.clone(),
+            worktree_id: self.planned_worktree.worktree_id().clone(),
             source_anchor: self.selected.item.anchor.clone(),
             source_sha256: self.selected.source_sha256.clone(),
             base_commit: self.source_commit.clone(),
-            branch: owned.manifest().branch.clone(),
-            worktree: owned.manifest().path.clone(),
+            branch: self.planned_worktree.branch().to_owned(),
+            worktree: self.planned_worktree.path().to_path_buf(),
             dependencies: self.selected.item.dependencies.clone(),
             scope: self.selected.item.title.clone(),
             owned_paths: self.spec.owned_paths.clone(),
@@ -4833,17 +4862,26 @@ impl<'a> ProductionWorkflowPort<'a> {
     fn revalidate_task_authority(&mut self) -> Result<(), OrchestrationError> {
         let envelope = self.task_authority_envelope()?;
         envelope.verify().map_err(|_| OrchestrationError::Port)?;
-        match &self.authority_envelope_sha256 {
-            Some(expected) if expected != &envelope.body_sha256 => {
-                self.failure = Some(RuntimeError::Authority);
-                Err(OrchestrationError::Port)
-            }
-            Some(_) => Ok(()),
-            None => {
-                self.authority_envelope_sha256 = Some(envelope.body_sha256);
-                Ok(())
-            }
+        if self.authority_envelope_sha256 == envelope.body_sha256 {
+            Ok(())
+        } else {
+            self.failure = Some(RuntimeError::Authority);
+            Err(OrchestrationError::Port)
         }
+    }
+
+    fn revalidate_live_worktree_plan(&mut self) -> Result<(), OrchestrationError> {
+        let manifest = self.worktree()?.manifest();
+        if &manifest.worktree_id != self.planned_worktree.worktree_id()
+            || &manifest.run_id != self.planned_worktree.run_id()
+            || &manifest.task_id != self.planned_worktree.task_id()
+            || manifest.path != self.planned_worktree.path()
+            || manifest.branch != self.planned_worktree.branch()
+        {
+            self.failure = Some(RuntimeError::Authority);
+            return Err(OrchestrationError::Port);
+        }
+        Ok(())
     }
 
     fn claude_adapter(&mut self) -> Result<ClaudeAdapter, OrchestrationError> {
@@ -5575,6 +5613,7 @@ fn recover_correction_candidate(
 
 impl WorkflowPort for ProductionWorkflowPort<'_> {
     fn claim(&mut self) -> Result<EvidenceId, OrchestrationError> {
+        self.revalidate_task_authority()?;
         self.lock = Some(
             CoordinatorLock::acquire(
                 &self.config.state_root.join("locks"),
@@ -5587,11 +5626,11 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
     }
 
     fn start_implementation(&mut self) -> Result<EvidenceId, OrchestrationError> {
-        let owned = create_owned_worktree(
+        self.revalidate_task_authority()?;
+        let owned = create_owned_worktree_from_plan(
             &self.authorization,
             self.config,
-            self.run_id.clone(),
-            self.task_id.clone(),
+            self.planned_worktree.clone(),
             &self.source_commit,
         )
         .map_err(|_| OrchestrationError::Port)?;
@@ -5603,6 +5642,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             worktree_id,
             branch,
         })?;
+        self.revalidate_live_worktree_plan()?;
         if self.gate_registry(&worktree).is_err() {
             self.failure = Some(RuntimeError::Verification);
             return Err(OrchestrationError::Port);

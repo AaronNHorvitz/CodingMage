@@ -26,6 +26,7 @@ pub use inventory::{
 pub use policy::{GitPolicyError, validate_requested_command};
 pub use review::{ReadOnlyScope, ReviewLocation, ReviewScope, ReviewScopeError};
 pub use worktree::{
-    OwnedWorktree, WorktreeError, WorktreeManifest, WorktreeStatus, create_owned_worktree,
+    OwnedWorktree, WorktreeError, WorktreeManifest, WorktreePlan, WorktreeStatus,
+    create_owned_worktree, create_owned_worktree_from_plan, plan_owned_worktree,
     remove_owned_worktree,
 };
