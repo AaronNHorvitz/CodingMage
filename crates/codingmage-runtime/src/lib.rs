@@ -110,8 +110,9 @@ use campaign_state::{
     ActiveUnit, BlockerClearanceIntent, CampaignCheckpoint, CampaignControlAction,
     CampaignControlIntent, CampaignPhase, CampaignReservation, CampaignUnitBudget,
     DeferralTriggerIntent, DeferredTaskProjection, HumanDecisionProjection,
-    HumanDecisionProjectionReason, LeadRejectionReason, PendingIntegration,
-    RejectedProposalProjection, ResumeValidationState, validate_private_campaign_state,
+    HumanDecisionProjectionReason, LeadRejectionReason, PendingIntegration, PlanningProgress,
+    PlanningTrigger, RejectedProposalProjection, ResumeValidationState,
+    validate_private_campaign_state,
 };
 use correction_state::{
     CorrectionCheckpoint, CorrectionDiagnosticKind, CorrectionDiagnosticProjection,
@@ -2195,6 +2196,7 @@ pub fn run_serial_campaign_with_progress(
             .map_err(|_| RuntimeError::Plan)?;
         let plan = TaskPlan::parse(&source).map_err(|_| RuntimeError::Plan)?;
         if observe_deferred_tasks(&mut checkpoint, &head) {
+            checkpoint.schedule_planning(PlanningTrigger::DeferralSatisfied);
             checkpoint.phase = CampaignPhase::Ready;
             checkpoint.blocker_code = None;
             checkpoint.persist(&campaign_root)?;
@@ -2333,9 +2335,40 @@ pub fn run_serial_campaign_with_progress(
             spec.initial_commit.clone_from(&head);
             spec.task_source_sha256.clone_from(&plan.source_sha256);
             let census = serial_readiness_census(&spec, &plan, &checkpoint)?;
+            let ready_task_ids = ready
+                .iter()
+                .map(|selected| selected.item.id.clone())
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>();
+            let planning_progress = checkpoint.record_planning_generation(
+                &head,
+                &plan.source_sha256,
+                &census.body_sha256,
+                &ready_task_ids,
+            )?;
             let binding = lead_binding(&spec, &campaign, &ready, &census.body_sha256);
             checkpoint.phase = CampaignPhase::Planning;
             checkpoint.blocker_code = None;
+            checkpoint.persist(&campaign_root)?;
+            if planning_progress == PlanningProgress::NoProgressLimit {
+                let blocker_code = "codingmage.campaign.no_progress_limit".to_owned();
+                checkpoint.phase = CampaignPhase::Blocked;
+                checkpoint.blocker_code = Some(blocker_code.clone());
+                checkpoint.persist(&campaign_root)?;
+                return Ok(campaign_outcome(
+                    &spec,
+                    &campaign,
+                    head,
+                    completed_units,
+                    last_task_id,
+                    CampaignTermination::new(
+                        CampaignState::Blocked,
+                        CampaignStopReason::NoIndependentReadyWork,
+                        Some(blocker_code),
+                    ),
+                ));
+            }
             checkpoint.record_provider_attempt()?;
             checkpoint.persist(&campaign_root)?;
             observer(RunProgress::new(
@@ -2372,6 +2405,7 @@ pub fn run_serial_campaign_with_progress(
             let lead_execution = match lead_execution {
                 Ok(value) => value,
                 Err(error @ (CodexError::Quota | CodexError::Authentication)) => {
+                    checkpoint.schedule_planning(PlanningTrigger::RecoverableFailure);
                     let blocker_code = error.code().to_owned();
                     checkpoint.phase = CampaignPhase::Paused;
                     checkpoint.blocker_code = Some(blocker_code.clone());
@@ -2403,6 +2437,7 @@ pub fn run_serial_campaign_with_progress(
                     );
                 }
                 Err(error) if retryable_lead_provider_failure(error) => {
+                    checkpoint.schedule_planning(PlanningTrigger::RecoverableFailure);
                     let blocker_code = "codingmage.campaign.provider_unavailable".to_owned();
                     checkpoint.phase = CampaignPhase::Paused;
                     checkpoint.blocker_code = Some(blocker_code.clone());
@@ -2425,6 +2460,7 @@ pub fn run_serial_campaign_with_progress(
             let lead_result = match lead_execution.report {
                 Ok(value) => value,
                 Err(error @ (CodexError::Quota | CodexError::Authentication)) => {
+                    checkpoint.schedule_planning(PlanningTrigger::RecoverableFailure);
                     let blocker_code = error.code().to_owned();
                     checkpoint.phase = CampaignPhase::Paused;
                     checkpoint.blocker_code = Some(blocker_code.clone());
@@ -2456,6 +2492,7 @@ pub fn run_serial_campaign_with_progress(
                     );
                 }
                 Err(error) if retryable_lead_provider_failure(error) => {
+                    checkpoint.schedule_planning(PlanningTrigger::RecoverableFailure);
                     let blocker_code = "codingmage.campaign.provider_unavailable".to_owned();
                     checkpoint.phase = CampaignPhase::Paused;
                     checkpoint.blocker_code = Some(blocker_code.clone());
@@ -2497,6 +2534,7 @@ pub fn run_serial_campaign_with_progress(
                 TeamLeadOutcome::Blocked(blocker) => {
                     let task_id = blocker.binding.task_id;
                     record_campaign_task_blocker(&mut checkpoint, task_id, blocker.reason)?;
+                    checkpoint.schedule_planning(PlanningTrigger::Blocker);
                     let blocker_code =
                         format!("codingmage.campaign.lead_blocked.{}", blocker.reason.code());
                     checkpoint.phase = CampaignPhase::Ready;
@@ -2524,6 +2562,7 @@ pub fn run_serial_campaign_with_progress(
                             &head,
                             &plan.source_sha256,
                         )?;
+                        checkpoint.schedule_planning(PlanningTrigger::HumanDecision);
                         checkpoint.phase = CampaignPhase::Ready;
                         checkpoint.blocker_code = Some(blocker_code.clone());
                         checkpoint.persist(&campaign_root)?;
@@ -2536,6 +2575,7 @@ pub fn run_serial_campaign_with_progress(
                     {
                         return Err(RuntimeError::Campaign(CampaignError::InvalidProposal));
                     }
+                    checkpoint.schedule_planning(PlanningTrigger::Deferral);
                     checkpoint.phase = CampaignPhase::Ready;
                     checkpoint.active_unit = None;
                     checkpoint.blocker_code = Some(format!(
@@ -2554,6 +2594,7 @@ pub fn run_serial_campaign_with_progress(
                         &head,
                         &plan.source_sha256,
                     )?;
+                    checkpoint.schedule_planning(PlanningTrigger::HumanDecision);
                     let blocker_code = "codingmage.campaign.human_decision".to_owned();
                     checkpoint.phase = CampaignPhase::Ready;
                     checkpoint.blocker_code = Some(blocker_code.clone());
@@ -2566,6 +2607,7 @@ pub fn run_serial_campaign_with_progress(
                 .next()
                 .ok_or(RuntimeError::Campaign(CampaignError::InvalidProposal))?;
             if !proposal_owned_paths_exist(&campaign.manifest().path, &proposal.owned_paths) {
+                checkpoint.schedule_planning(PlanningTrigger::ProposalRejected);
                 let blocker_code = "codingmage.campaign.lead_invalid_owned_paths".to_owned();
                 checkpoint.phase = CampaignPhase::Paused;
                 checkpoint.active_unit = None;
@@ -2863,6 +2905,7 @@ pub fn run_serial_campaign_with_progress(
                 lease.task_id.clone(),
                 codingmage_contracts::LeadBlockedReason::ImplementationConditionOutsideAuthority,
             )?;
+            checkpoint.schedule_planning(PlanningTrigger::Blocker);
             checkpoint.phase = CampaignPhase::Ready;
             checkpoint.active_unit = None;
             checkpoint.blocker_code = Some("codingmage.campaign.unit_blocked".to_owned());
@@ -2876,6 +2919,11 @@ pub fn run_serial_campaign_with_progress(
         }
         if let Some((campaign_state, phase, stop_reason, blocker_code)) = campaign_unit_pause(&unit)
         {
+            checkpoint.schedule_planning(if campaign_state == CampaignState::Blocked {
+                PlanningTrigger::Blocker
+            } else {
+                PlanningTrigger::RecoverableFailure
+            });
             checkpoint.phase = phase;
             checkpoint.active_unit = None;
             checkpoint.blocker_code = Some(blocker_code.to_owned());
@@ -2932,6 +2980,8 @@ pub fn run_serial_campaign_with_progress(
         checkpoint.active_unit = None;
         checkpoint.pending_integration = None;
         checkpoint.blocker_code = None;
+        checkpoint.schedule_planning(PlanningTrigger::TaskCompletion);
+        checkpoint.schedule_planning(PlanningTrigger::Integration);
         checkpoint.persist(&campaign_root)?;
         if lease_registered {
             scheduler
@@ -3350,6 +3400,8 @@ fn reconcile_campaign_restart(
     checkpoint.active_unit = None;
     checkpoint.pending_integration = None;
     checkpoint.blocker_code = None;
+    checkpoint.schedule_planning(PlanningTrigger::TaskCompletion);
+    checkpoint.schedule_planning(PlanningTrigger::Integration);
     checkpoint.persist(campaign_root)
 }
 
@@ -3449,6 +3501,7 @@ fn record_lead_rejection(
             source_head: head.to_owned(),
             task_source_sha256: task_source_sha256.to_owned(),
         });
+    checkpoint.schedule_planning(PlanningTrigger::ProposalRejected);
     let blocker_code = format!("codingmage.campaign.lead_rejected.{}", reason.code());
     checkpoint.phase = CampaignPhase::Paused;
     checkpoint.active_unit = None;
@@ -3669,6 +3722,7 @@ fn revalidate_campaign_resume(
         .map_err(|_| RuntimeError::Plan)?;
     let plan = TaskPlan::parse(&source).map_err(|_| RuntimeError::Plan)?;
     if observe_deferred_tasks(checkpoint, &checkpoint.head.clone()) {
+        checkpoint.schedule_planning(PlanningTrigger::DeferralSatisfied);
         checkpoint.persist(campaign_root)?;
     }
     campaign_queue_projection(&plan, checkpoint)?;

@@ -23,9 +23,11 @@ use sha2::{Digest, Sha256};
 
 use crate::{CampaignLimitKind, RunUtilization, RuntimeError};
 
-const SCHEMA_VERSION: u16 = 7;
+const SCHEMA_VERSION: u16 = 8;
 const MAX_CHECKPOINT_BYTES: usize = 1024 * 1024;
 const MAX_DECOMPOSITION_BYTES: usize = 1024 * 1024;
+const MAX_PLANNING_GENERATIONS: usize = 10_000;
+const MAX_IDENTICAL_PLANNING_GENERATIONS: u16 = 2;
 const CLEARANCE_SCHEMA_VERSION: u16 = 1;
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
 
@@ -118,6 +120,47 @@ pub(crate) struct RejectedProposalProjection {
     pub reason: LeadRejectionReason,
     pub source_head: String,
     pub task_source_sha256: String,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum PlanningTrigger {
+    Initial,
+    TaskCompletion,
+    Blocker,
+    Deferral,
+    DeferralSatisfied,
+    ProposalRejected,
+    RecoverableFailure,
+    DependencyChange,
+    Integration,
+    HumanDecision,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct PlanningGenerationBody {
+    pub sequence: u32,
+    pub triggers: BTreeSet<PlanningTrigger>,
+    pub campaign_head: String,
+    pub task_source_sha256: String,
+    pub readiness_census_sha256: String,
+    pub ready_task_ids: Vec<String>,
+    pub state_fingerprint_sha256: String,
+    pub previous_generation_sha256: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct PlanningGeneration {
+    pub body: PlanningGenerationBody,
+    pub body_sha256: String,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum PlanningProgress {
+    Progressed,
+    NoProgressLimit,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -287,6 +330,9 @@ pub(crate) struct CampaignCheckpoint {
     pub human_decisions: BTreeMap<String, HumanDecisionProjection>,
     #[serde(default)]
     pub rejected_proposals: Vec<RejectedProposalProjection>,
+    pub pending_planning_triggers: BTreeSet<PlanningTrigger>,
+    pub planning_generations: Vec<PlanningGeneration>,
+    pub identical_planning_generations: u16,
     pub outcomes: CampaignOutcomeProjection,
     pub utilization: CampaignUtilization,
     pub limits: CampaignLimits,
@@ -378,6 +424,20 @@ impl DecompositionCheckpoint {
             NEXT_TEMPORARY.fetch_add(1, Ordering::Relaxed)
         ));
         let current = directory.join(format!("{}.json", self.body.task_id));
+        match fs::symlink_metadata(&current) {
+            Ok(metadata) => {
+                if !metadata.is_file()
+                    || metadata.file_type().is_symlink()
+                    || metadata.len() > MAX_DECOMPOSITION_BYTES as u64
+                    || fs::read(&current).map_err(|_| RuntimeError::State)? != bytes
+                {
+                    return Err(RuntimeError::State);
+                }
+                return Ok(());
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(_) => return Err(RuntimeError::State),
+        }
         let mut file = OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -734,6 +794,9 @@ impl CampaignCheckpoint {
             satisfied_deferrals: BTreeMap::new(),
             human_decisions: BTreeMap::new(),
             rejected_proposals: Vec::new(),
+            pending_planning_triggers: BTreeSet::from([PlanningTrigger::Initial]),
+            planning_generations: Vec::new(),
+            identical_planning_generations: 0,
             outcomes: CampaignOutcomeProjection {
                 completed: 0,
                 blocked: 0,
@@ -822,6 +885,93 @@ impl CampaignCheckpoint {
             .and_then(|directory| directory.sync_all())
             .map_err(|_| RuntimeError::State)?;
         self.append_journal_projection(root, &canonical)
+    }
+
+    pub(crate) fn schedule_planning(&mut self, trigger: PlanningTrigger) {
+        self.pending_planning_triggers.insert(trigger);
+    }
+
+    pub(crate) fn record_planning_generation(
+        &mut self,
+        campaign_head: &str,
+        task_source_sha256: &str,
+        readiness_census_sha256: &str,
+        ready_task_ids: &[String],
+    ) -> Result<PlanningProgress, RuntimeError> {
+        if self.planning_generations.len() >= MAX_PLANNING_GENERATIONS
+            || campaign_head.len() != 40
+            || !campaign_head.bytes().all(|byte| byte.is_ascii_hexdigit())
+            || !valid_sha256(task_source_sha256)
+            || !valid_sha256(readiness_census_sha256)
+            || ready_task_ids.is_empty()
+            || ready_task_ids
+                .iter()
+                .any(|task_id| TaskId::new(task_id.clone()).is_err())
+            || ready_task_ids.windows(2).any(|pair| pair[0] >= pair[1])
+        {
+            return Err(RuntimeError::State);
+        }
+
+        let mut triggers = std::mem::take(&mut self.pending_planning_triggers);
+        if let Some(previous) = self.planning_generations.last() {
+            if previous.body.campaign_head != campaign_head
+                || previous.body.task_source_sha256 != task_source_sha256
+            {
+                triggers.insert(PlanningTrigger::DependencyChange);
+            }
+        } else {
+            triggers.insert(PlanningTrigger::Initial);
+        }
+        if triggers.is_empty() {
+            return Err(RuntimeError::State);
+        }
+
+        let state_fingerprint_sha256 = projection_sha256(&(
+            campaign_head,
+            task_source_sha256,
+            readiness_census_sha256,
+            ready_task_ids,
+        ))?;
+        let unchanged = self.planning_generations.last().is_some_and(|previous| {
+            previous.body.state_fingerprint_sha256 == state_fingerprint_sha256
+        });
+        self.identical_planning_generations = if unchanged {
+            self.identical_planning_generations
+                .checked_add(1)
+                .ok_or(RuntimeError::State)?
+        } else {
+            0
+        };
+
+        let sequence = u32::try_from(self.planning_generations.len())
+            .map_err(|_| RuntimeError::State)?
+            .checked_add(1)
+            .ok_or(RuntimeError::State)?;
+        let body = PlanningGenerationBody {
+            sequence,
+            triggers,
+            campaign_head: campaign_head.to_owned(),
+            task_source_sha256: task_source_sha256.to_owned(),
+            readiness_census_sha256: readiness_census_sha256.to_owned(),
+            ready_task_ids: ready_task_ids.to_vec(),
+            state_fingerprint_sha256,
+            previous_generation_sha256: self
+                .planning_generations
+                .last()
+                .map(|generation| generation.body_sha256.clone()),
+        };
+        let canonical = serde_json::to_vec(&body).map_err(|_| RuntimeError::State)?;
+        self.planning_generations.push(PlanningGeneration {
+            body,
+            body_sha256: sha256_hex(&canonical),
+        });
+        Ok(
+            if self.identical_planning_generations >= MAX_IDENTICAL_PLANNING_GENERATIONS {
+                PlanningProgress::NoProgressLimit
+            } else {
+                PlanningProgress::Progressed
+            },
+        )
     }
 
     fn append_journal_projection(&self, root: &Path, canonical: &[u8]) -> Result<(), RuntimeError> {
@@ -1258,6 +1408,9 @@ impl CampaignCheckpoint {
                 .values()
                 .chain(self.satisfied_deferrals.values())
                 .any(|projection| projection.reason.required_trigger() != projection.trigger)
+            || self.planning_generations.len() > MAX_PLANNING_GENERATIONS
+            || self.identical_planning_generations > MAX_IDENTICAL_PLANNING_GENERATIONS
+            || !valid_planning_chain(&self.planning_generations)
         {
             return Err(RuntimeError::State);
         }
@@ -1344,6 +1497,54 @@ fn projection_sha256<T: Serialize>(projection: &T) -> Result<String, RuntimeErro
     serde_json::to_vec(projection)
         .map(|bytes| sha256_hex(&bytes))
         .map_err(|_| RuntimeError::State)
+}
+
+fn valid_sha256(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+fn valid_planning_chain(generations: &[PlanningGeneration]) -> bool {
+    generations.iter().enumerate().all(|(index, generation)| {
+        let expected_sequence = u32::try_from(index)
+            .ok()
+            .and_then(|value| value.checked_add(1));
+        let expected_previous = index
+            .checked_sub(1)
+            .map(|prior| generations[prior].body_sha256.as_str());
+        let body = &generation.body;
+        expected_sequence == Some(body.sequence)
+            && body.previous_generation_sha256.as_deref() == expected_previous
+            && !body.triggers.is_empty()
+            && body.campaign_head.len() == 40
+            && body
+                .campaign_head
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit())
+            && valid_sha256(&body.task_source_sha256)
+            && valid_sha256(&body.readiness_census_sha256)
+            && valid_sha256(&body.state_fingerprint_sha256)
+            && body
+                .ready_task_ids
+                .iter()
+                .all(|task_id| TaskId::new(task_id.clone()).is_ok())
+            && !body.ready_task_ids.is_empty()
+            && !body
+                .ready_task_ids
+                .windows(2)
+                .any(|pair| pair[0] >= pair[1])
+            && projection_sha256(&(
+                body.campaign_head.as_str(),
+                body.task_source_sha256.as_str(),
+                body.readiness_census_sha256.as_str(),
+                body.ready_task_ids.as_slice(),
+            ))
+            .is_ok_and(|digest| digest == body.state_fingerprint_sha256)
+            && serde_json::to_vec(body)
+                .is_ok_and(|canonical| sha256_hex(&canonical) == generation.body_sha256)
+    })
 }
 
 impl BlockerClearanceIntent {
@@ -2037,6 +2238,18 @@ mod tests {
             checkpoint
         );
 
+        let mut replay_units = checkpoint.body.plan.units.clone();
+        replay_units[0].scope = "A different but valid bounded scope.".to_owned();
+        let replay_plan = DecompositionPlan::build(&parent, replay_units).unwrap();
+        let replay = DecompositionCheckpoint::new(
+            checkpoint.body.campaign_id.clone(),
+            checkpoint.body.task_id.clone(),
+            &parent,
+            replay_plan,
+        )
+        .unwrap();
+        assert_eq!(replay.persist(&root, &parent), Err(RuntimeError::State));
+
         let path = root
             .join("decompositions")
             .join(format!("{}.json", parent.body.task_id));
@@ -2066,6 +2279,79 @@ mod tests {
                 &changed_parent,
             )
             .is_err()
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn planning_generations_are_chained_restart_safe_and_bounded_without_progress() {
+        let root = root("planning-generations");
+        let mut checkpoint = checkpoint();
+        let ready = vec!["26.1.5.1".to_owned(), "26.1.5.2".to_owned()];
+        assert_eq!(
+            checkpoint
+                .record_planning_generation(
+                    &"b".repeat(40),
+                    &"c".repeat(64),
+                    &"d".repeat(64),
+                    &ready
+                )
+                .unwrap(),
+            PlanningProgress::Progressed
+        );
+        checkpoint.schedule_planning(PlanningTrigger::ProposalRejected);
+        assert_eq!(
+            checkpoint
+                .record_planning_generation(
+                    &"b".repeat(40),
+                    &"c".repeat(64),
+                    &"d".repeat(64),
+                    &ready
+                )
+                .unwrap(),
+            PlanningProgress::Progressed
+        );
+        checkpoint.schedule_planning(PlanningTrigger::RecoverableFailure);
+        assert_eq!(
+            checkpoint
+                .record_planning_generation(
+                    &"b".repeat(40),
+                    &"c".repeat(64),
+                    &"d".repeat(64),
+                    &ready
+                )
+                .unwrap(),
+            PlanningProgress::NoProgressLimit
+        );
+        assert_eq!(checkpoint.identical_planning_generations, 2);
+        assert!(valid_planning_chain(&checkpoint.planning_generations));
+        checkpoint.persist(&root).unwrap();
+        assert_eq!(
+            CampaignCheckpoint::load(&root).unwrap().unwrap(),
+            checkpoint
+        );
+
+        checkpoint.schedule_planning(PlanningTrigger::Integration);
+        assert_eq!(
+            checkpoint
+                .record_planning_generation(
+                    &"e".repeat(40),
+                    &"f".repeat(64),
+                    &"a".repeat(64),
+                    &ready
+                )
+                .unwrap(),
+            PlanningProgress::Progressed
+        );
+        assert_eq!(checkpoint.identical_planning_generations, 0);
+        assert!(
+            checkpoint
+                .planning_generations
+                .last()
+                .unwrap()
+                .body
+                .triggers
+                .contains(&PlanningTrigger::DependencyChange)
         );
         fs::remove_dir_all(root).unwrap();
     }
