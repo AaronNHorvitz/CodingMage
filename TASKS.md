@@ -1402,12 +1402,12 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 26.1.5.2:** Continue independent work after an exact external blocker while leaving the blocked task and dependency descendants unchecked and visible. See `docs/evidence/sprint-26-safe-replanning.md`.
   - [x] **Sub-task 26.1.5.3:** Advance an immutable planning generation after completion, blocker, satisfied deferral, rejected proposal, recoverable failure, dependency change, or integration outcome. See `docs/evidence/sprint-26-safe-replanning.md`.
   - [x] **Sub-task 26.1.5.4:** Bound no-progress detection and prohibit repeated identical blockers, already-satisfied deferrals, decomposition replay, speculative redesign, and model-created authority. See `docs/evidence/sprint-26-safe-replanning.md`.
-- [ ] **Task 26.1.6 - Harden routing, watchdog, integration, and reconciliation**
-  - [ ] **Sub-task 26.1.6.1:** Route implementation and review by deterministic risk, ownership boundary, required strength, provider capability and availability, and exact failure history without weakening reviewer independence.
-  - [ ] **Sub-task 26.1.6.2:** Recover or stop stalled coordinators, processes, leases, worktrees, provider sessions, and effect intents through exact watchdog observations without adopting unrelated state.
-  - [ ] **Sub-task 26.1.6.3:** Advance only the isolated campaign branch through compare-and-swap integration and verify local bare-remote push, uncertain-result reconciliation, and non-fast-forward refusal without granting destination promotion.
-  - [ ] **Sub-task 26.1.6.4:** Reconcile TASKS state, commits, tests, evidence, branches, worktrees, processes, locks, journal, checkpoint, and external blockers before completion.
-  - [ ] **Sub-task 26.1.6.5:** Expose content-minimized task, role, stage, blocker, retry, checkpoint, watchdog, reconciliation, and stop-reason progress without source, prompts, provider prose, credentials, environment values, or hidden reasoning.
+- [x] **Task 26.1.6 - Harden routing, watchdog, integration, and reconciliation**
+  - [x] **Sub-task 26.1.6.1:** Route implementation and review by deterministic risk, ownership boundary, required strength, provider capability and availability, and exact failure history without weakening reviewer independence.
+  - [x] **Sub-task 26.1.6.2:** Recover or stop stalled coordinators, processes, leases, worktrees, provider sessions, and effect intents through exact watchdog observations without adopting unrelated state.
+  - [x] **Sub-task 26.1.6.3:** Advance only the isolated campaign branch through compare-and-swap integration and verify local bare-remote push, uncertain-result reconciliation, and non-fast-forward refusal without granting destination promotion.
+  - [x] **Sub-task 26.1.6.4:** Reconcile TASKS state, commits, tests, evidence, branches, worktrees, processes, locks, journal, checkpoint, and external blockers before completion.
+  - [x] **Sub-task 26.1.6.5:** Expose content-minimized task, role, stage, blocker, retry, checkpoint, watchdog, reconciliation, and stop-reason progress without source, prompts, provider prose, credentials, environment values, or hidden reasoning.
 - [ ] **Task 26.1.7 - Qualify autonomous progression on a frozen target**
   - [ ] **Sub-task 26.1.7.1:** Build a private no-hardlinks target clone pinned to an exact source commit and prove concurrent changes in another checkout cannot alter qualification identity or evidence.
   - [ ] **Sub-task 26.1.7.2:** Pass deterministic positive, negative, malformed, boundary, mutation, cancellation, crash, retry, preservation, no-progress, and exact-side-effect suites for Tasks 26.1.4 through 26.1.6.
@@ -1442,7 +1442,7 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [ ] **AC 26.4:** Given a correction-provider timeout, when campaign execution remains within its aggregate limits, then CodingMage resumes only the exact prepared correction or stops with a distinct timeout disposition while preserving repository and task truth.
 - [x] **AC 26.5:** Given a mixed roadmap, when autonomous planning runs, then every open task receives one exact readiness class and every locally runnable unit receives no authority beyond its canonical requirements. See `docs/evidence/sprint-26-autonomous-authority.md`.
 - [ ] **AC 26.6:** Given oversized, blocked, deferred, failed, and completed work, when the campaign replans, then it makes bounded progress on independent work without replay, scope invention, starvation, or false completion.
-- [ ] **AC 26.7:** Given provider, process, coordinator, Git, and state failures, when watchdog and reconciliation run, then only exact owned effects resume or clean up and unrelated repository and process state remains unchanged.
+- [x] **AC 26.7:** Given provider, process, coordinator, Git, and state failures, when watchdog and reconciliation run, then only exact owned effects resume or clean up and unrelated repository and process state remains unchanged.
 - [ ] **AC 26.8:** Given the installed candidate and frozen target, when the supervised, pilot, and controlled-soak matrix runs, then useful work completes, external work remains open, every stop is truthful, and all retained state reconciles.
 
 ### Sprint 26 Gate
