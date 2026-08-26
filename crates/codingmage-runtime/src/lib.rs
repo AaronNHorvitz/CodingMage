@@ -6846,6 +6846,51 @@ effort = "high"
     }
 
     #[test]
+    fn exact_blocker_preserves_descendants_and_allows_independent_work() {
+        let plan = TaskPlan::parse(
+            b"# Tasks\n\n## Sprint 1 - Build\n\n**Sprint goal:** Build.\n\n### Story 1.1 - Work\n\n- [ ] **Task 1.1.1 - Units**\n  - [ ] **Sub-task 1.1.1.1:** Complete the blocked prerequisite.\n  - [ ] **Sub-task 1.1.1.2:** Complete the dependent unit.\n<!-- depends-on: 1.1.1.1 -->\n  - [ ] **Sub-task 1.1.1.3:** Complete the independent unit.\n",
+        )
+        .unwrap();
+        let mut checkpoint = CampaignCheckpoint::new(
+            "a".repeat(64),
+            "campaign-1".to_owned(),
+            "repo-1".to_owned(),
+            RunId::new("run-1").unwrap(),
+            codingmage_contracts::WorktreeId::new("worktree-1").unwrap(),
+            "codingmage/campaign-1".to_owned(),
+            "b".repeat(40),
+            10,
+            campaign_limits(),
+        )
+        .unwrap();
+        record_campaign_task_blocker(
+            &mut checkpoint,
+            "1.1.1.1".to_owned(),
+            codingmage_contracts::LeadBlockedReason::MissingOperatorManagedAuthentication,
+        )
+        .unwrap();
+
+        let queue = campaign_queue_projection(&plan, &checkpoint).unwrap();
+        let ready = plan
+            .select_ready(&queue.unavailable, &BTreeSet::new(), 3)
+            .unwrap();
+        assert_eq!(
+            ready
+                .iter()
+                .map(|selected| selected.item.id.as_str())
+                .collect::<Vec<_>>(),
+            ["1.1.1.3"]
+        );
+        assert!(
+            plan.items
+                .iter()
+                .filter(|item| { matches!(item.id.as_str(), "1.1.1.1" | "1.1.1.2") })
+                .all(|item| item.state == CheckState::Open)
+        );
+        assert_eq!(queue.blocked, BTreeSet::from(["1.1.1.1".to_owned()]));
+    }
+
+    #[test]
     fn human_decisions_suppress_only_the_exact_task() {
         let plan = TaskPlan::parse(
             b"# Tasks\n\n## Sprint 1 - Build\n\n**Sprint goal:** Build.\n\n### Story 1.1 - Work\n\n- [ ] **Task 1.1.1 - Units**\n  - [ ] **Sub-task 1.1.1.1:** Complete the first independent bounded unit.\n  - [ ] **Sub-task 1.1.1.2:** Complete the second independent bounded unit.\n",
