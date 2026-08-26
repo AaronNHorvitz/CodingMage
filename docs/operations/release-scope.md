@@ -40,8 +40,8 @@ The complete command and authority surfaces are described by the [operations ind
 
 | ID | Condition | Pre-release disposition | Release disposition |
 | --- | --- | --- | --- |
-| R26-01 | Two installed Package C supervised units did not reach a passing final review | Retained as truthful failure evidence | Blocking |
-| R26-02 | The required live three-outcome pilot has not run after a passing supervised unit | Dependency-blocked | Blocking |
+| R26-01 | Two installed Package C supervised units did not reach a passing final review | Superseded by the bounded Package D supervised pass; failure evidence remains retained | Blocking until the final candidate repeats the pass |
+| R26-02 | Package D passed the controlled live-completion, external-blocker, and quota-pause pilot; the final frozen-target run remains open | Controlled pilot resolved | Blocking until the final frozen-target matrix passes |
 | R26-03 | The required controlled approximately ten-task soak has not passed | Open | Blocking |
 | R26-04 | Ubuntu native evidence has not run | Open external platform evidence | Blocking for an Ubuntu claim |
 | R26-05 | Windows 11 native evidence has not run | Open external platform evidence | Blocking for a Windows claim |
