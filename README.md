@@ -1,5 +1,7 @@
 # CodingMage
 
+Ever wanted Claude as your Scrum Master and Codex as your senior developer? CodingMage makes that real. It turns the agents you already pay for into a development team with a chain of command: a lead that plans and assigns, isolated pods that implement, and a senior reviewer that signs off on the exact commit. A large roadmap runs end to end without you refereeing every step, and without any agent touching Git, merges, or credentials on its own. Put any model in any seat; the process is what makes the team.
+
 CodingMage is a local multi-agent engineering coordinator designed to move through large development roadmaps with better verified results per token. It assigns bounded tasks to isolated coding pods, routes work according to complexity and risk, and gives every candidate to deterministic checks and an independent senior-review model before integration.
 
 Instead of assigning every mechanical step to the strongest model, or trusting a lighter model with every architectural decision, CodingMage combines both where they are strongest:
