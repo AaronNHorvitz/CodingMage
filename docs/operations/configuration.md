@@ -35,7 +35,7 @@ are:
 | `max_task_tokens` | Per-task observed provider-token ceiling. |
 | `max_task_correction_cycles` | Bounded gate, review, and CI correction count. |
 | `max_follow_up_tasks` | Campaign-lifetime ceiling for sealed follow-up work admitted inside one source task's original path authority. |
-| `integration_validation_interval` | Number of task integrations between cumulative gates and independent review; `1` validates every integration. |
+| `integration_validation_interval` | Number of task integrations between cumulative gates and independent review. Default `5`; `1` validates every integration. Each integration still runs its affected gates and a fresh review of its own diff, and campaign finalization always runs the full cumulative gates and final review, so a larger interval trades intermediate whole-campaign checks for throughput without weakening the end state (Decision 0012). |
 
 For five local pods, use `max_parallel_pods = 5`, `execution_mode = "parallel"`, five Claude
 implementers, and physical resources sufficient for all five declared reservations. Team-lead,

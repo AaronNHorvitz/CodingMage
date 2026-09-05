@@ -337,8 +337,17 @@ pub struct MultiAgentPolicy {
     pub provider_routing: Option<ProviderRoutingPolicy>,
 }
 
+/// Default number of task integrations between cumulative campaign validation checkpoints.
+///
+/// Every integration still runs the affected gates and a fresh review of its own diff, and
+/// campaign finalization always runs the full cumulative gates and final independent review.
+/// Validating the whole campaign diff after every single merge scales the expensive step with
+/// task count (Decision 0012); `5` batches it without weakening the final state. Operators may
+/// set `1` to validate every integration.
+pub const DEFAULT_INTEGRATION_VALIDATION_INTERVAL: u16 = 5;
+
 const fn default_integration_validation_interval() -> u16 {
-    1
+    DEFAULT_INTEGRATION_VALIDATION_INTERVAL
 }
 
 impl MultiAgentPolicy {
@@ -4349,5 +4358,35 @@ mod tests {
         let mut snapshot = scheduler.snapshot().clone();
         snapshot.released.insert(lease.lease_id.clone());
         assert_eq!(snapshot.verify(), Err(TeamStateError::InvalidScheduler));
+    }
+
+    #[test]
+    fn integration_validation_interval_defaults_to_batched_checkpoints() {
+        assert_eq!(
+            default_integration_validation_interval(),
+            DEFAULT_INTEGRATION_VALIDATION_INTERVAL
+        );
+        assert_eq!(DEFAULT_INTEGRATION_VALIDATION_INTERVAL, 5);
+        let spec = spec(CampaignExecutionMode::Serial, 1);
+        let policy = spec
+            .multi_agent
+            .clone()
+            .expect("fixture declares a multi-agent policy");
+        let mut value = serde_json::to_value(&policy).expect("policy serializes");
+        value
+            .as_object_mut()
+            .expect("policy is an object")
+            .remove("integration_validation_interval")
+            .expect("fixture serializes the interval");
+        let decoded: MultiAgentPolicy =
+            serde_json::from_value(value).expect("absent interval uses the default");
+        assert_eq!(
+            decoded.integration_validation_interval,
+            DEFAULT_INTEGRATION_VALIDATION_INTERVAL
+        );
+        assert!(
+            decoded.verify(&spec).is_ok(),
+            "the default interval satisfies policy bounds"
+        );
     }
 }
