@@ -2,6 +2,14 @@
 
 use std::fmt;
 
+pub mod windows;
+
+pub use windows::{
+    ExecutableIdentity, MAX_VOLUME_FINGERPRINT_CHARS, MAX_WINDOWS_PATH_CHARS, ReparseKind,
+    RepositoryIdentity, find_case_collision, is_reserved_device_stem, normalize_windows_path,
+    refuse_reparse,
+};
+
 /// Supported or planned native platform family.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Platform {
@@ -184,7 +192,9 @@ impl PlatformAdapter for MacOsAdapter {
     }
 }
 
-/// Windows requirements adapter. Executable commands remain unavailable until implemented.
+/// Windows requirements adapter. Pure path validation is implemented in the
+/// [`windows`] module; executable commands and native probing remain
+/// unavailable until genuine Windows guest evidence exists.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct WindowsPlan;
 
@@ -192,12 +202,12 @@ impl PlatformAdapter for WindowsPlan {
     fn capabilities(&self) -> PlatformCapabilities {
         PlatformCapabilities {
             platform: Platform::Windows,
-            support: SupportLevel::Planned,
+            support: SupportLevel::ImplementedUntested,
             process: ProcessContainment::WindowsJobObject,
             service: ServiceManager::WindowsTask,
             credentials: CredentialStore::CredentialManager,
             monitoring: MonitorTransport::WindowsNamedPipe,
-            filesystem_identity: false,
+            filesystem_identity: true,
             native_lifecycle_evidence: false,
         }
     }
@@ -230,6 +240,10 @@ pub enum PlatformError {
     Unsupported,
     /// Credential label was noncanonical.
     InvalidReference,
+    /// Windows path, fingerprint, or digest input was malformed.
+    InvalidPath,
+    /// A live observation differs from the bound executable or root identity.
+    ReplacementDetected,
 }
 
 impl fmt::Display for PlatformError {
@@ -237,6 +251,8 @@ impl fmt::Display for PlatformError {
         formatter.write_str(match self {
             Self::Unsupported => "codingmage.platform.unsupported",
             Self::InvalidReference => "codingmage.platform.invalid_reference",
+            Self::InvalidPath => "codingmage.platform.invalid_path",
+            Self::ReplacementDetected => "codingmage.platform.replacement_detected",
         })
     }
 }
@@ -274,6 +290,15 @@ mod tests {
             mac.credential_reference("github-personal").unwrap(),
             "codingmage:keychain:github-personal"
         );
+    }
+
+    #[test]
+    fn windows_reports_implemented_contract_without_native_evidence() {
+        let windows = WindowsPlan.capabilities();
+        assert_eq!(windows.platform, Platform::Windows);
+        assert_eq!(windows.support, SupportLevel::ImplementedUntested);
+        assert!(windows.filesystem_identity);
+        assert!(!windows.native_lifecycle_evidence);
     }
 
     #[test]

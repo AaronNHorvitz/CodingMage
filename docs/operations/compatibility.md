@@ -6,7 +6,7 @@
 | --- | --- | --- | --- |
 | Fedora Linux x86-64 | Implemented | Local development and package evidence exists | Pre-release only |
 | Ubuntu Linux x86-64 | Intended | Required native guest evidence is open | Unsupported |
-| Windows 11 x86-64 | Intended | Required native guest evidence is open | Unsupported |
+| Windows 11 x86-64 | Path-validation contract only | Required native guest evidence is open | Unsupported |
 | macOS and Apple Silicon | Deferred | None claimed | Unsupported |
 
 Linux execution relies on ordinary unprivileged filesystem, process, Git, and user-service
