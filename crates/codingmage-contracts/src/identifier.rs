@@ -132,6 +132,14 @@ identifier!(
 );
 identifier!(ReviewId, "Identity assigned to one senior review.");
 identifier!(
+    ClientId,
+    "Identity assigned to one admitted host-application client."
+);
+identifier!(
+    RequestId,
+    "Identity assigned to one host request for idempotent replay."
+);
+identifier!(
     EvidenceId,
     "Identity assigned to one immutable evidence record."
 );

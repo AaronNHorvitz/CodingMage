@@ -7695,17 +7695,27 @@
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -8631,6 +8641,132 @@
       "test_mappings": {
         "negative": [
           "crates/codingmage-github/src/lib.rs::redirect_permission_loss_and_disabled_adapter_fail_without_effect"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "error:codingmage.host.invalid_request",
+      "kind": "error_code",
+      "line": 181,
+      "name": "codingmage.host.invalid_request",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "stable_error_code",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "error:codingmage.host.stale_revision",
+      "kind": "error_code",
+      "line": 183,
+      "name": "codingmage.host.stale_revision",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "stable_error_code",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "error:codingmage.host.unsupported_version",
+      "kind": "error_code",
+      "line": 182,
+      "name": "codingmage.host.unsupported_version",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "stable_error_code",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
       }
     },
@@ -9569,17 +9705,27 @@
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -10634,17 +10780,27 @@
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -14380,17 +14536,27 @@
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -21665,28 +21831,41 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -21707,32 +21886,47 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -21753,32 +21947,47 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -21799,32 +22008,47 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -21845,32 +22069,47 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -21891,32 +22130,47 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -21935,23 +22189,35 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -21972,23 +22238,35 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -22010,17 +22288,27 @@
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -22042,17 +22330,27 @@
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -22075,32 +22373,47 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22119,23 +22432,35 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -22157,28 +22482,41 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22199,32 +22537,47 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22244,28 +22597,41 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22285,28 +22651,41 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22326,28 +22705,41 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22368,32 +22760,47 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22413,28 +22820,41 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22454,28 +22874,41 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22495,28 +22928,41 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22536,17 +22982,27 @@
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -22567,23 +23023,35 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -22604,23 +23072,35 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -22642,17 +23122,27 @@
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -22675,32 +23165,47 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22721,32 +23226,866 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "unknown_field": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:const:HOST_PROTOCOL_VERSION:19",
+      "kind": "const",
+      "line": 19,
+      "name": "HOST_PROTOCOL_VERSION",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+        ],
+        "malformed_input": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "unknown_field": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "boundary",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:const:MAX_HOST_OPERATIONS:22",
+      "kind": "const",
+      "line": 22,
+      "name": "MAX_HOST_OPERATIONS",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:enum:HostBlocker:83",
+      "kind": "enum",
+      "line": 83,
+      "name": "HostBlocker",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "malformed_input": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
+        ],
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:enum:HostContractError:169",
+      "kind": "enum",
+      "line": 169,
+      "name": "HostContractError",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:enum:HostControlOperation:49",
+      "kind": "enum",
+      "line": 49,
+      "name": "HostControlOperation",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+        ],
+        "malformed_input": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
+        ],
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "unknown_field": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:enum:HostOperation:29",
+      "kind": "enum",
+      "line": 29,
+      "name": "HostOperation",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+        ],
+        "malformed_input": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
+        ],
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "unknown_field": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:enum:HostRunState:63",
+      "kind": "enum",
+      "line": 63,
+      "name": "HostRunState",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+        ],
+        "malformed_input": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
+        ],
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "unknown_field": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:fn:is_fresh_against:219",
+      "kind": "fn",
+      "line": 219,
+      "name": "is_fresh_against",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:fn:verify:201",
+      "kind": "fn",
+      "line": 201,
+      "name": "verify",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:fn:verify:232",
+      "kind": "fn",
+      "line": 232,
+      "name": "verify",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+        ],
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:fn:verify:274",
+      "kind": "fn",
+      "line": 274,
+      "name": "verify",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:fn:verify_against:258",
+      "kind": "fn",
+      "line": 258,
+      "name": "verify_against",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "malformed_input": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
+        ],
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "unknown_field": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:struct:HostCapability:129",
+      "kind": "struct",
+      "line": 129,
+      "name": "HostCapability",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "malformed_input": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
+        ],
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "unknown_field": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:struct:HostControl:139",
+      "kind": "struct",
+      "line": 139,
+      "name": "HostControl",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+        ],
+        "malformed_input": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
+        ],
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "unknown_field": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:struct:HostRequest:99",
+      "kind": "struct",
+      "line": 99,
+      "name": "HostRequest",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "malformed_input": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
+        ],
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "unknown_field": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-contracts/src/host.rs:struct:HostStatus:153",
+      "kind": "struct",
+      "line": 153,
+      "name": "HostStatus",
+      "path": "crates/codingmage-contracts/src/host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "malformed_input": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
+        ],
+        "negative": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "unknown_field": [
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22767,32 +24106,47 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "malformed_input": [
-          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed"
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible"
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ]
       }
     },
@@ -22811,23 +24165,35 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -22848,23 +24214,35 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/identifier.rs::rejects_empty_oversized_path_control_and_ambiguous_values"
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision",
+          "crates/codingmage-contracts/src/host.rs::rejects_empty_duplicate_and_oversized_capabilities",
+          "crates/codingmage-contracts/src/host.rs::rejects_foreign_protocol_version",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
+          "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
+          "crates/codingmage-contracts/src/host.rs::rejects_unknown_fields_before_any_effect"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
           "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ]
@@ -49242,6 +50620,6 @@
       }
     }
   ],
-  "items_sha256": "58870645ac2752ae3263258df71bb7b6f90d9fe26e0880e4da7ff76cf88abf9b",
+  "items_sha256": "aa2cb0a001d0ffaca46ea1b71affe7644c3cad52934d98b1e22fe886c494aad0",
   "schema_version": 1
 }
