@@ -3104,23 +3104,28 @@
       "status": "uncovered"
     },
     {
-      "category": "malformed_input",
-      "id": "rust:crates/codingmage-muse/src/lib.rs:const:MUSE_PROVIDER:18",
-      "status": "uncovered"
-    },
-    {
       "category": "unknown_field",
       "id": "rust:crates/codingmage-muse/src/lib.rs:const:MUSE_PROVIDER:18",
       "status": "uncovered"
     },
     {
-      "category": "malformed_input",
+      "category": "unknown_field",
       "id": "rust:crates/codingmage-muse/src/lib.rs:enum:MuseSpecError:37",
       "status": "uncovered"
     },
     {
+      "category": "boundary",
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:blockers:126",
+      "status": "uncovered"
+    },
+    {
       "category": "unknown_field",
-      "id": "rust:crates/codingmage-muse/src/lib.rs:enum:MuseSpecError:37",
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:blockers:126",
+      "status": "uncovered"
+    },
+    {
+      "category": "unknown_field",
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:parse:97",
       "status": "uncovered"
     },
     {
@@ -9934,7 +9939,9 @@
         "negative": [
           "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
           "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
-          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation"
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation",
+          "crates/codingmage-muse/src/lib.rs::observed_cli_identity_pins_exact_surface_and_blockers"
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
@@ -9962,7 +9969,9 @@
         "negative": [
           "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
           "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
-          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation"
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation",
+          "crates/codingmage-muse/src/lib.rs::observed_cli_identity_pins_exact_surface_and_blockers"
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
@@ -33643,6 +33652,10 @@
       "path": "crates/codingmage-muse/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
+        "malformed_input": [
+          "crates/codingmage-muse/src/lib.rs::cli_parse_does_not_mistake_prose_for_a_cancel_command",
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity"
+        ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel"
@@ -33668,10 +33681,16 @@
       "path": "crates/codingmage-muse/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
+        "malformed_input": [
+          "crates/codingmage-muse/src/lib.rs::cli_parse_does_not_mistake_prose_for_a_cancel_command",
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity"
+        ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
           "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
-          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation"
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation",
+          "crates/codingmage-muse/src/lib.rs::observed_cli_identity_pins_exact_surface_and_blockers"
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
@@ -33689,9 +33708,39 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:admit:71",
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:adapter_surface_ready:117",
       "kind": "fn",
-      "line": 71,
+      "line": 117,
+      "name": "adapter_surface_ready",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation",
+          "crates/codingmage-muse/src/lib.rs::observed_cli_identity_pins_exact_surface_and_blockers"
+        ],
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:admit:148",
+      "kind": "fn",
+      "line": 148,
       "name": "admit",
       "path": "crates/codingmage-muse/src/lib.rs",
       "surface": "rust_public_api",
@@ -33699,7 +33748,82 @@
         "negative": [
           "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
           "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
-          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation"
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation",
+          "crates/codingmage-muse/src/lib.rs::observed_cli_identity_pins_exact_surface_and_blockers"
+        ],
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:blockers:126",
+      "kind": "fn",
+      "line": 126,
+      "name": "blockers",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "malformed_input": [
+          "crates/codingmage-muse/src/lib.rs::cli_parse_does_not_mistake_prose_for_a_cancel_command",
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity"
+        ],
+        "negative": [
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation",
+          "crates/codingmage-muse/src/lib.rs::observed_cli_identity_pins_exact_surface_and_blockers"
+        ],
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:parse:97",
+      "kind": "fn",
+      "line": 97,
+      "name": "parse",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "malformed_input": [
+          "crates/codingmage-muse/src/lib.rs::cli_parse_does_not_mistake_prose_for_a_cancel_command",
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity"
+        ],
+        "negative": [
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation",
+          "crates/codingmage-muse/src/lib.rs::observed_cli_identity_pins_exact_surface_and_blockers"
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
@@ -33727,7 +33851,39 @@
         "negative": [
           "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
           "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
-          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation"
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation",
+          "crates/codingmage-muse/src/lib.rs::observed_cli_identity_pins_exact_surface_and_blockers"
+        ],
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-muse/src/lib.rs:struct:MuseCliCapabilities:73",
+      "kind": "struct",
+      "line": 73,
+      "name": "MuseCliCapabilities",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation",
+          "crates/codingmage-muse/src/lib.rs::observed_cli_identity_pins_exact_surface_and_blockers"
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
@@ -56096,6 +56252,6 @@
       }
     }
   ],
-  "items_sha256": "3209bb4315d61f87110f5fc1834550b2db950414883d92df57de8e6c25e27cfc",
+  "items_sha256": "9cde1401d6ce923a85fd75c14f6ce2ae34ee86d2ff50b5775c4e343e9d3ca065",
   "schema_version": 1
 }

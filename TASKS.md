@@ -1713,7 +1713,7 @@ availability and separately authorized authenticated access remain explicit qual
 - [ ] **Task 31.1.1 - Verify the protocol before enabling a worker**
   - [x] **Sub-task 31.1.1.1:** Define required structured probe/start/continue/cancel/usage behavior and deterministic fake transcripts using the existing provider-neutral contract. Required-behavior spec and `FakeAdapter` lifecycle transcripts in `crates/codingmage-muse/src/lib.rs`; see `docs/evidence/sprint-31-muse-protocol.md`.
     <!-- depends-on: 4.2.1.1, 4.2.2.3 -->
-  - [ ] **Sub-task 31.1.1.2:** Inspect the exact available CLI identity and supported structured protocol; record version/capability pins and a truthful blocker for unsupported behavior without terminal scraping or assumed flags.
+  - [x] **Sub-task 31.1.1.2:** Inspect the exact available CLI identity and supported structured protocol; record version/capability pins and a truthful blocker for unsupported behavior without terminal scraping or assumed flags. `MuseCliCapabilities::parse` pins `Muse Code 1.3.0 (1.3.0-R3401.1)` with headless/JSON/resume/schema hooks and usage/cancel blockers; see `docs/evidence/sprint-31-muse-protocol.md`.
     <!-- depends-on: 31.1.1.1 -->
   - [ ] **Sub-task 31.1.1.3:** Implement the typed CLI adapter with reference-only authentication, bounded environment, normalized output and version-drift refusal; retain independent reviewer routing.
     <!-- depends-on: 31.1.1.2 -->
