@@ -91,9 +91,29 @@ git diff --check
 - Verification inventory regenerated: 1,226 surfaces became 1,269 with zero
   new explicit gaps; the generator check passes.
 
+## Policy Subjection (Sub-task 29.1.1.4)
+
+`crates/codingmage-contracts/tests/host_policy.rs` proves every host
+operation stays inside the observation/control plane: an exhaustive
+classifier plus seven-operation and four-control count pins trip compilation
+or assertion before any new operation can exist, the control subset maps
+exactly onto job operations, and observation operations carry no control.
+Approval, promotion, publication, policy change, and credential effects have
+no representation in either host enum, so no request can broaden authority;
+admission still requires coordinator policy, operator grants, and human-only
+approvals enforced outside this contract.
+
+Recorded schema and fixture identities (SHA-256 at commit time):
+
+| File | SHA-256 | Tests |
+| --- | --- | --- |
+| `crates/codingmage-contracts/src/host.rs` | `0d575be6ba8e0a16a50e506782cb12249b36a138114688de2688e09805c99fa9` | 11 unit |
+| `crates/codingmage-contracts/src/transport.rs` | `55b664b0249a2d9b65452c33322aebb5392ac6c9e15e2ebb919664eac624de24` | 9 unit |
+| `crates/codingmage-contracts/tests/host_contract.rs` | `fd282bdc58c23e6605bbacb1b28da38aab242c8c09362ae2859d4be6ffc05d66` | 10 integration |
+| `crates/codingmage-contracts/tests/host_policy.rs` | `6da0c9f9940d12ff0619d1880f27eadd2f5f3f3f004b3f2a235102e4cec0130b` | 4 integration |
+
 ## Open Items
 
-Sub-task 29.1.1.4 (coordinator policy subjection with recorded schema and
-fixture identities) remains open next in dependency order. Consumer-side
-qualification in Story 29.3 additionally needs the blocked frozen-target soak
-and evidence renewal.
+Task 29.1.1 is complete. Story 29.2 (durable controls and observation)
+follows in dependency order. Consumer-side qualification in Story 29.3
+additionally needs the blocked frozen-target soak and evidence renewal.
