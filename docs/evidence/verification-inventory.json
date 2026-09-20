@@ -7235,9 +7235,54 @@
         "negative",
         "repeatability"
       ],
+      "id": "error:codingmage.context.cancelled",
+      "kind": "error_code",
+      "line": 148,
+      "name": "codingmage.context.cancelled",
+      "path": "crates/codingmage-contracts/src/context.rs",
+      "surface": "stable_error_code",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-contracts/src/context.rs::disabled_source_refuses_every_call",
+          "crates/codingmage-contracts/src/context.rs::rejects_directionless_grants",
+          "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
+          "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
+          "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+        ],
+        "positive": [
+          "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
+          "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/error.rs::syntactically_valid_future_reason_remains_compatible",
+          "crates/codingmage-contracts/src/host.rs::capability_accepts_distinct_operations",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
+          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+        ],
+        "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
+          "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
+          "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
+          "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
+          "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
       "id": "error:codingmage.context.invalid",
       "kind": "error_code",
-      "line": 137,
+      "line": 139,
       "name": "codingmage.context.invalid",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "stable_error_code",
@@ -7263,14 +7308,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -7282,7 +7327,7 @@
       ],
       "id": "error:codingmage.context.oversize",
       "kind": "error_code",
-      "line": 143,
+      "line": 145,
       "name": "codingmage.context.oversize",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "stable_error_code",
@@ -7308,14 +7353,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -7327,7 +7372,7 @@
       ],
       "id": "error:codingmage.context.quota_exceeded",
       "kind": "error_code",
-      "line": 144,
+      "line": 146,
       "name": "codingmage.context.quota_exceeded",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "stable_error_code",
@@ -7353,14 +7398,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -7372,7 +7417,7 @@
       ],
       "id": "error:codingmage.context.revoked",
       "kind": "error_code",
-      "line": 141,
+      "line": 143,
       "name": "codingmage.context.revoked",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "stable_error_code",
@@ -7398,14 +7443,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -7417,7 +7462,7 @@
       ],
       "id": "error:codingmage.context.stale",
       "kind": "error_code",
-      "line": 142,
+      "line": 144,
       "name": "codingmage.context.stale",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "stable_error_code",
@@ -7443,14 +7488,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -7462,7 +7507,7 @@
       ],
       "id": "error:codingmage.context.timeout",
       "kind": "error_code",
-      "line": 145,
+      "line": 147,
       "name": "codingmage.context.timeout",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "stable_error_code",
@@ -7488,14 +7533,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -7507,7 +7552,7 @@
       ],
       "id": "error:codingmage.context.unauthorized",
       "kind": "error_code",
-      "line": 140,
+      "line": 142,
       "name": "codingmage.context.unauthorized",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "stable_error_code",
@@ -7533,14 +7578,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -7552,7 +7597,7 @@
       ],
       "id": "error:codingmage.context.unavailable",
       "kind": "error_code",
-      "line": 138,
+      "line": 140,
       "name": "codingmage.context.unavailable",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "stable_error_code",
@@ -7578,14 +7623,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -7597,7 +7642,7 @@
       ],
       "id": "error:codingmage.context.unsupported",
       "kind": "error_code",
-      "line": 139,
+      "line": 141,
       "name": "codingmage.context.unsupported",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "stable_error_code",
@@ -7623,14 +7668,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -8118,14 +8163,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9086,14 +9131,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9356,14 +9401,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9401,14 +9446,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9446,14 +9491,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9491,14 +9536,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9536,14 +9581,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9581,14 +9626,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9626,14 +9671,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9671,14 +9716,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9716,14 +9761,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9761,14 +9806,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -9806,14 +9851,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -10770,14 +10815,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -11848,14 +11893,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -15607,14 +15652,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -22916,14 +22961,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -22989,14 +23034,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -23062,14 +23107,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -23135,14 +23180,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -23208,14 +23253,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -23281,14 +23326,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -23343,14 +23388,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -23399,14 +23444,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -23444,14 +23489,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -23489,14 +23534,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -23556,14 +23601,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -23618,14 +23663,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -23674,14 +23719,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -23747,14 +23792,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -23809,14 +23854,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -23871,14 +23916,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -23933,14 +23978,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -24006,14 +24051,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -24068,14 +24113,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -24119,14 +24164,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -24175,14 +24220,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -24226,14 +24271,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -24282,14 +24327,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -24344,14 +24389,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -24395,14 +24440,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -24451,14 +24496,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -24524,14 +24569,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -24550,9 +24595,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-contracts/src/context.rs:enum:ContextDirection:181",
+      "id": "rust:crates/codingmage-contracts/src/context.rs:enum:ContextDirection:184",
       "kind": "enum",
-      "line": 181,
+      "line": 184,
       "name": "ContextDirection",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "rust_public_api",
@@ -24597,14 +24642,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -24659,14 +24704,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -24676,9 +24721,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:admits:170",
+      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:admits:173",
       "kind": "fn",
-      "line": 170,
+      "line": 173,
       "name": "admits",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "rust_public_api",
@@ -24704,14 +24749,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -24721,9 +24766,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:is_fresh:242",
+      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:is_fresh:245",
       "kind": "fn",
-      "line": 242,
+      "line": 245,
       "name": "is_fresh",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "rust_public_api",
@@ -24749,14 +24794,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -24766,9 +24811,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:verify:160",
+      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:verify:163",
       "kind": "fn",
-      "line": 160,
+      "line": 163,
       "name": "verify",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "rust_public_api",
@@ -24794,14 +24839,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -24812,9 +24857,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:verify:194",
+      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:verify:197",
       "kind": "fn",
-      "line": 194,
+      "line": 197,
       "name": "verify",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "rust_public_api",
@@ -24850,14 +24895,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -24868,9 +24913,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:verify:209",
+      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:verify:212",
       "kind": "fn",
-      "line": 209,
+      "line": 212,
       "name": "verify",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "rust_public_api",
@@ -24906,14 +24951,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -24924,9 +24969,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:verify:227",
+      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:verify:230",
       "kind": "fn",
-      "line": 227,
+      "line": 230,
       "name": "verify",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "rust_public_api",
@@ -24962,14 +25007,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -24979,9 +25024,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:verify:255",
+      "id": "rust:crates/codingmage-contracts/src/context.rs:fn:verify:258",
       "kind": "fn",
-      "line": 255,
+      "line": 258,
       "name": "verify",
       "path": "crates/codingmage-contracts/src/context.rs",
       "surface": "rust_public_api",
@@ -25007,14 +25052,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -25074,14 +25119,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -25136,14 +25181,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -25209,14 +25254,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -25282,14 +25327,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -25355,14 +25400,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -25417,14 +25462,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -25479,14 +25524,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -25530,14 +25575,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -25586,14 +25631,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -25642,14 +25687,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -25687,14 +25732,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -25754,14 +25799,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -25827,14 +25872,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -25889,14 +25934,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -25940,14 +25985,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -25996,14 +26041,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -26047,14 +26092,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -26114,14 +26159,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -26187,14 +26232,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -26260,14 +26305,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -26311,14 +26356,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -26356,14 +26401,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -26412,14 +26457,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -26457,14 +26502,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -26513,14 +26558,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -26575,14 +26620,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -26648,14 +26693,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -26710,14 +26755,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -26772,14 +26817,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -26845,14 +26890,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -26907,14 +26952,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -26963,14 +27008,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27019,14 +27064,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -27070,14 +27115,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27115,14 +27160,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27160,14 +27205,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27216,14 +27261,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -27267,14 +27312,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27323,14 +27368,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -27374,14 +27419,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27419,14 +27464,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27464,14 +27509,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27520,14 +27565,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -27582,14 +27627,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27649,14 +27694,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -27711,14 +27756,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27767,14 +27812,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27812,14 +27857,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27868,14 +27913,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ]
       }
     },
@@ -27935,14 +27980,14 @@
           "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
         ],
         "repeatability": [
+          "crates/codingmage-contracts/src/context.rs::idempotent_write_recovery_never_duplicates",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
           "crates/codingmage-contracts/src/context.rs::seeded_source_answers_deterministically_within_grants",
           "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
           "crates/codingmage-contracts/src/host.rs::host_error_codes_are_stable",
           "crates/codingmage-contracts/src/host.rs::state_revision_freshness_is_deterministic",
           "crates/codingmage-contracts/src/host.rs::valid_request_verifies_and_round_trips",
-          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically",
-          "crates/codingmage-contracts/src/identifier.rs::serialization_is_canonical_and_revalidates_input"
+          "crates/codingmage-contracts/src/identifier.rs::accepts_boundary_length_and_orders_canonically"
         ],
         "unknown_field": [
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
@@ -55865,6 +55910,6 @@
       }
     }
   ],
-  "items_sha256": "d38dacc71786635b095d408e6118627d5971799b89f2258ead4f75f3661cd012",
+  "items_sha256": "dcb7987c78a12cbeed2b4bfcef7de391a9f5df8318d689795658a0310405f8c6",
   "schema_version": 1
 }
