@@ -173,6 +173,12 @@ pub enum HostContractError {
     UnsupportedVersion,
     /// The control targets a revision that is no longer current.
     StaleRevision,
+    /// The client identity is not the admitted one.
+    UnauthorizedPeer,
+    /// The operation is outside the admitted set.
+    WidenedScope,
+    /// The repository identity does not match the admitted project.
+    CrossProject,
 }
 
 impl fmt::Display for HostContractError {
@@ -181,6 +187,9 @@ impl fmt::Display for HostContractError {
             Self::InvalidRequest => "codingmage.host.invalid_request",
             Self::UnsupportedVersion => "codingmage.host.unsupported_version",
             Self::StaleRevision => "codingmage.host.stale_revision",
+            Self::UnauthorizedPeer => "codingmage.host.unauthorized_peer",
+            Self::WidenedScope => "codingmage.host.widened_scope",
+            Self::CrossProject => "codingmage.host.cross_project",
         })
     }
 }
@@ -479,6 +488,18 @@ mod tests {
         assert_eq!(
             HostContractError::StaleRevision.to_string(),
             "codingmage.host.stale_revision"
+        );
+        assert_eq!(
+            HostContractError::UnauthorizedPeer.to_string(),
+            "codingmage.host.unauthorized_peer"
+        );
+        assert_eq!(
+            HostContractError::WidenedScope.to_string(),
+            "codingmage.host.widened_scope"
+        );
+        assert_eq!(
+            HostContractError::CrossProject.to_string(),
+            "codingmage.host.cross_project"
         );
     }
 }

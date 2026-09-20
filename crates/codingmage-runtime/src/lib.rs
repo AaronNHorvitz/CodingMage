@@ -5,6 +5,7 @@ mod correction_state;
 mod team_campaign;
 mod team_control;
 mod team_github;
+mod team_host;
 mod team_integration;
 mod team_planning;
 mod team_promotion;
@@ -17,6 +18,7 @@ pub use team_campaign::{
     run_team_campaign_with_progress, team_campaign_report,
 };
 pub use team_github::GhCliPublicationPort;
+pub use team_host::{AdmittedHostRequest, HostAdmissionPolicy, HostEffectKind};
 pub use team_integration::{
     IntegrationVerification, ProductionTeamIntegrationVerifier, TeamIntegrationOutcome,
     TeamIntegrationVerifier, enqueue_team_integration, integrate_team_queue_head,

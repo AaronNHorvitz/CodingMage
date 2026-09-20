@@ -548,17 +548,27 @@ struct DeferralTriggerEnvelope {
     intent_sha256: String,
 }
 
+/// Durable coordinator control action shared with the host boundary.
+///
+/// The same four actions back operator CLI controls, coordinator recovery,
+/// and admitted host controls; no other effect is expressible here.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum CampaignControlAction {
+pub enum CampaignControlAction {
+    /// Pause at the next unit boundary.
     Pause,
+    /// Resume a paused run.
     Resume,
+    /// Finish the current unit, then stop without admitting more work.
     StopAfterUnit,
+    /// Cancel without adopting newer state.
     Cancel,
 }
 
 impl CampaignControlAction {
-    pub(crate) const fn parse(value: &str) -> Option<Self> {
+    /// Parses the canonical action code.
+    #[must_use]
+    pub const fn parse(value: &str) -> Option<Self> {
         match value.as_bytes() {
             b"pause" => Some(Self::Pause),
             b"resume" => Some(Self::Resume),
@@ -568,7 +578,9 @@ impl CampaignControlAction {
         }
     }
 
-    pub(crate) const fn code(self) -> &'static str {
+    /// Returns the canonical action code.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
         match self {
             Self::Pause => "pause",
             Self::Resume => "resume",

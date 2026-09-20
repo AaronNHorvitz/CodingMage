@@ -112,8 +112,29 @@ Recorded schema and fixture identities (SHA-256 at commit time):
 | `crates/codingmage-contracts/tests/host_contract.rs` | `fd282bdc58c23e6605bbacb1b28da38aab242c8c09362ae2859d4be6ffc05d66` | 10 integration |
 | `crates/codingmage-contracts/tests/host_policy.rs` | `6da0c9f9940d12ff0619d1880f27eadd2f5f3f3f004b3f2a235102e4cec0130b` | 4 integration |
 
+## Coordinator Boundary (Sub-task 29.2.1.1)
+
+`crates/codingmage-runtime/src/team_host.rs` admits validated host requests
+against an explicit pinned operator grant (`HostAdmissionPolicy`) and
+resolves exactly three effect kinds: job submission descriptors, read-only
+observation, and the shared `CampaignControlAction` set already backing
+operator controls and recovery. `CampaignControlAction` moved from
+crate-internal to public precisely for this boundary; no other coordinator
+state, process, worktree, or remote effect is reachable from admission, and
+standalone CLI behavior is unchanged (runtime lib suite green with no
+modifications to existing tests). Durable request dispositions, event
+cursors, and restart reconciliation attach in later stages without changing
+these rules.
+
+Gates: `cargo test -p codingmage-runtime --lib` 111 passed (106 pre-existing
+plus 5 admission fixtures covering every effect and refusal class);
+workspace `cargo clippy --all-targets -- -D warnings` clean; inventory
+1,269 surfaces became 1,277 with zero new explicit gaps.
+
 ## Open Items
 
-Task 29.1.1 is complete. Story 29.2 (durable controls and observation)
-follows in dependency order. Consumer-side qualification in Story 29.3
-additionally needs the blocked frozen-target soak and evidence renewal.
+Sub-tasks 29.2.1.2 (durable request identity and dispositions), 29.2.1.3
+(event observation and bounded cursors), and 29.2.1.4 (restart and crash
+recovery) remain open in dependency order. Consumer-side qualification in
+Story 29.3 additionally needs the blocked frozen-target soak and evidence
+renewal.
