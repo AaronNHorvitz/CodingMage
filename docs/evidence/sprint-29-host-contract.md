@@ -1,9 +1,10 @@
 # Sprint 29 Host Contract Evidence (Sub-task 29.1.1.1)
 
 - **Status:** Closed versioned request, capability, status, and control schemas
-  defined in `crates/codingmage-contracts/src/host.rs`, plus the bounded
-  transport definition in `crates/codingmage-contracts/src/transport.rs`;
-  fakes and policy subjection remain open under Sub-tasks 29.1.1.3–29.1.1.4
+  defined in `crates/codingmage-contracts/src/host.rs`, the bounded transport
+  definition in `crates/codingmage-contracts/src/transport.rs`, and fake-client
+  fixtures in `crates/codingmage-contracts/tests/host_contract.rs`;
+  coordinator policy subjection remains open under Sub-task 29.1.1.4
 - **Source:** `2045e5e39a9903709a84faf1a36d8eb060b5dca8` on `muse/complete-development`
 - **Executed:** 2026-09-20 on Fedora Linux x86-64
 
@@ -55,6 +56,20 @@ input/output attaches in a later stage against exactly these types.
   `empty_frame`, `oversize_frame`, `truncated_frame`, `malformed_frame`,
   `peer_refused`.
 
+## Fake Clients (Sub-task 29.1.1.3)
+
+`crates/codingmage-contracts/tests/host_contract.rs` drives framed byte
+streams from a simulated host peer at a fake admission predicate that mirrors
+the exact rules the coordinator will enforce for real: frame decode, schema
+parse, version, identity, digest, freshness, operation-grant, and
+project-match checks, each with a closed refusal classification
+(`Malformed`, `Version`, `Schema`, `Stale`, `UnauthorizedPeer`,
+`WidenedScope`, `CrossProject`). Covered scenarios: valid admission, foreign
+versions, truncated/unknown-field/non-JSON messages, unauthorized peers,
+widened operations, cross-project requests and controls, stale request and
+control revisions, digest mismatch, and status/capability shapes. The fake
+proves the contract refusal matrix only; live admission stays closed.
+
 ## Commands
 
 ```text
@@ -70,15 +85,15 @@ git diff --check
 
 - `cargo fmt --check`: clean.
 - `cargo clippy --all-targets -- -D warnings`: no warnings.
-- `cargo test --all-targets`: 27 passed, 0 failed (7 pre-existing, 11
-  schema fixtures, 9 transport fixtures covering limits, framing, peer
-  refusal, and code stability).
+- `cargo test --all-targets`: 37 passed, 0 failed (7 pre-existing, 11
+  schema fixtures, 9 transport fixtures, 10 fake-client integration
+  fixtures covering admission and every refusal class).
 - Verification inventory regenerated: 1,226 surfaces became 1,269 with zero
   new explicit gaps; the generator check passes.
 
 ## Open Items
 
-Sub-tasks 29.1.1.3 (fake clients and fixtures) and 29.1.1.4 (coordinator
-policy subjection with recorded schema identities) remain open in dependency
-order. Consumer-side qualification in Story 29.3 additionally needs the
-blocked frozen-target soak and evidence renewal.
+Sub-task 29.1.1.4 (coordinator policy subjection with recorded schema and
+fixture identities) remains open next in dependency order. Consumer-side
+qualification in Story 29.3 additionally needs the blocked frozen-target soak
+and evidence renewal.

@@ -1609,7 +1609,7 @@ controlled-target qualification. USTE, Muse and public release publication are n
     <!-- depends-on: 4.2.1.1, 12.2.1.1, 19.1.2.3 -->
   - [x] **Sub-task 29.1.1.2:** Define the bounded local transport, peer validation, framing, deadlines and typed errors without inventing an upstream API or granting shell-string execution. Framing, limits, peer policy, and typed errors live in `crates/codingmage-contracts/src/transport.rs`; socket input/output attaches later. See `docs/evidence/sprint-29-host-contract.md`.
     <!-- depends-on: 29.1.1.1 -->
-  - [ ] **Sub-task 29.1.1.3:** Implement fake clients and positive/negative fixtures for versions, malformed messages, unauthorized peers, widened scope, cross-project identity and stale controls.
+  - [x] **Sub-task 29.1.1.3:** Implement fake clients and positive/negative fixtures for versions, malformed messages, unauthorized peers, widened scope, cross-project identity and stale controls. Fake admission mirrors the future coordinator rules with a closed refusal matrix; see `docs/evidence/sprint-29-host-contract.md`.
     <!-- depends-on: 29.1.1.2 -->
   - [ ] **Sub-task 29.1.1.4:** Verify that every request remains subject to existing coordinator policy, exact operator grants and human-only approval requirements; record schema and fixture identities.
     <!-- depends-on: 29.1.1.3 -->

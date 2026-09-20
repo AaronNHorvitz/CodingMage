@@ -22125,7 +22125,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -22194,7 +22195,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -22263,7 +22265,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -22332,7 +22335,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -22401,7 +22405,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -22470,7 +22475,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -22741,7 +22747,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -22855,7 +22862,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -22924,7 +22932,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -22982,7 +22991,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -23040,7 +23050,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -23098,7 +23109,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -23167,7 +23179,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -23225,7 +23238,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -23283,7 +23297,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -23341,7 +23356,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -23612,7 +23628,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -23681,7 +23698,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -23749,7 +23767,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -23842,7 +23861,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -23956,7 +23976,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -24025,7 +24046,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -24094,7 +24116,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -24343,7 +24366,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -24401,7 +24425,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -24470,7 +24495,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -24528,7 +24554,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -24586,7 +24613,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -24655,7 +24683,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -24835,7 +24864,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -25028,7 +25058,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -25131,7 +25162,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -25324,7 +25356,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "positive": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -25439,7 +25472,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -25721,7 +25755,8 @@
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_commit_and_digests",
           "crates/codingmage-contracts/src/host.rs::rejects_malformed_identity_text",
-          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames"
+          "crates/codingmage-contracts/src/transport.rs::rejects_truncated_and_malformed_frames",
+          "crates/codingmage-contracts/tests/host_contract.rs::fake_client_malformed_messages_are_refused"
         ],
         "negative": [
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
@@ -52132,6 +52167,6 @@
       }
     }
   ],
-  "items_sha256": "e710b7109886a8316f2cfd56e696031012a398e4229f7c7601d3a7428ee6e0c4",
+  "items_sha256": "59c2ca3a149e11a77f500e383ba345bd3d42e3cbfbdfb16da346c22678b29dc2",
   "schema_version": 1
 }
