@@ -151,9 +151,25 @@ self-review correction: the first `reconcile` draft accepted `Accepted` as a
 no-op, and the new `reconcile_settles_uncertain_records_exactly_once`
 fixture caught it before any commit; only terminal outcomes reconcile.
 
+## Event Cursors (Sub-task 29.2.1.3)
+
+`HostEvent`, `HostEventCursor`, and `HostEventPage` in the same module page
+coordinator-held sequences with content minimization (kinds, revisions, and
+content digests only, never payloads) and explicit gap signaling: a cursor
+past available history returns an empty page with `gap` set and a resync
+revision instead of implying continuity. Malformed digests, out-of-order
+sequences, run mismatches, and out-of-bound limits fail; local control
+intents construct and validate with no host session present, so coordinator
+controls keep working while no host observes.
+
+Gates: `cargo test -p codingmage-runtime --lib` 121 passed (117 plus 4
+cursor fixtures covering bounded chained paging, explicit gaps, refusals,
+and host-independent local controls); crate Clippy clean; inventory 1,291
+surfaces became 1,299 with zero new explicit gaps. One correction: strict
+Clippy rejected a `u64`-to-`usize` cast in paging, now a checked conversion.
+
 ## Open Items
 
-Sub-tasks 29.2.1.3 (event observation and bounded cursors) and 29.2.1.4
-(restart and crash recovery) remain open in dependency order. Consumer-side
-qualification in Story 29.3 additionally needs the blocked frozen-target soak
-and evidence renewal.
+Sub-task 29.2.1.4 (restart and crash recovery) remains open next in
+dependency order. Consumer-side qualification in Story 29.3 additionally
+needs the blocked frozen-target soak and evidence renewal.

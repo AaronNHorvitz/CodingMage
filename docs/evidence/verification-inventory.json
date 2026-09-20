@@ -4555,7 +4555,7 @@
       ],
       "id": "error:codingmage.campaign.control.cancelled",
       "kind": "error_code",
-      "line": 3955,
+      "line": 3956,
       "name": "codingmage.campaign.control.cancelled",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -4600,7 +4600,7 @@
       ],
       "id": "error:codingmage.campaign.control.paused",
       "kind": "error_code",
-      "line": 3969,
+      "line": 3970,
       "name": "codingmage.campaign.control.paused",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -4645,7 +4645,7 @@
       ],
       "id": "error:codingmage.campaign.control.stop_after_unit",
       "kind": "error_code",
-      "line": 3962,
+      "line": 3963,
       "name": "codingmage.campaign.control.stop_after_unit",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -4690,7 +4690,7 @@
       ],
       "id": "error:codingmage.campaign.correction_timeout_retry",
       "kind": "error_code",
-      "line": 2877,
+      "line": 2878,
       "name": "codingmage.campaign.correction_timeout_retry",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -4735,7 +4735,7 @@
       ],
       "id": "error:codingmage.campaign.human_decision",
       "kind": "error_code",
-      "line": 2710,
+      "line": 2711,
       "name": "codingmage.campaign.human_decision",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -4780,7 +4780,7 @@
       ],
       "id": "error:codingmage.campaign.human_decision.repeated_satisfied_deferral",
       "kind": "error_code",
-      "line": 2668,
+      "line": 2669,
       "name": "codingmage.campaign.human_decision.repeated_satisfied_deferral",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -4825,7 +4825,7 @@
       ],
       "id": "error:codingmage.campaign.interrupted_unit_requires_reconciliation",
       "kind": "error_code",
-      "line": 2272,
+      "line": 2273,
       "name": "codingmage.campaign.interrupted_unit_requires_reconciliation",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -4870,7 +4870,7 @@
       ],
       "id": "error:codingmage.campaign.lead_invalid_owned_paths",
       "kind": "error_code",
-      "line": 2723,
+      "line": 2724,
       "name": "codingmage.campaign.lead_invalid_owned_paths",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -4915,7 +4915,7 @@
       ],
       "id": "error:codingmage.campaign.limit.correction_rounds",
       "kind": "error_code",
-      "line": 522,
+      "line": 523,
       "name": "codingmage.campaign.limit.correction_rounds",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -4960,7 +4960,7 @@
       ],
       "id": "error:codingmage.campaign.limit.execution_elapsed_ms",
       "kind": "error_code",
-      "line": 526,
+      "line": 527,
       "name": "codingmage.campaign.limit.execution_elapsed_ms",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5005,7 +5005,7 @@
       ],
       "id": "error:codingmage.campaign.limit.malformed_report_repairs",
       "kind": "error_code",
-      "line": 521,
+      "line": 522,
       "name": "codingmage.campaign.limit.malformed_report_repairs",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5050,7 +5050,7 @@
       ],
       "id": "error:codingmage.campaign.limit.output_bytes",
       "kind": "error_code",
-      "line": 524,
+      "line": 525,
       "name": "codingmage.campaign.limit.output_bytes",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5095,7 +5095,7 @@
       ],
       "id": "error:codingmage.campaign.limit.process_invocations",
       "kind": "error_code",
-      "line": 523,
+      "line": 524,
       "name": "codingmage.campaign.limit.process_invocations",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5140,7 +5140,7 @@
       ],
       "id": "error:codingmage.campaign.limit.provider_attempts",
       "kind": "error_code",
-      "line": 520,
+      "line": 521,
       "name": "codingmage.campaign.limit.provider_attempts",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5185,7 +5185,7 @@
       ],
       "id": "error:codingmage.campaign.limit.retained_state_bytes",
       "kind": "error_code",
-      "line": 525,
+      "line": 526,
       "name": "codingmage.campaign.limit.retained_state_bytes",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5230,7 +5230,7 @@
       ],
       "id": "error:codingmage.campaign.no_deferred_trigger_observed",
       "kind": "error_code",
-      "line": 2412,
+      "line": 2413,
       "name": "codingmage.campaign.no_deferred_trigger_observed",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5275,7 +5275,7 @@
       ],
       "id": "error:codingmage.campaign.no_independent_ready_work_pending_human_decision",
       "kind": "error_code",
-      "line": 2418,
+      "line": 2419,
       "name": "codingmage.campaign.no_independent_ready_work_pending_human_decision",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5320,7 +5320,7 @@
       ],
       "id": "error:codingmage.campaign.no_progress_limit",
       "kind": "error_code",
-      "line": 2467,
+      "line": 2468,
       "name": "codingmage.campaign.no_progress_limit",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5365,7 +5365,7 @@
       ],
       "id": "error:codingmage.campaign.no_unblocked_ready_work",
       "kind": "error_code",
-      "line": 2424,
+      "line": 2425,
       "name": "codingmage.campaign.no_unblocked_ready_work",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5447,7 +5447,7 @@
       ],
       "id": "error:codingmage.campaign.provider_authentication",
       "kind": "error_code",
-      "line": 3330,
+      "line": 3331,
       "name": "codingmage.campaign.provider_authentication",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5492,7 +5492,7 @@
       ],
       "id": "error:codingmage.campaign.provider_invalid_output",
       "kind": "error_code",
-      "line": 3334,
+      "line": 3335,
       "name": "codingmage.campaign.provider_invalid_output",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5537,7 +5537,7 @@
       ],
       "id": "error:codingmage.campaign.provider_quota",
       "kind": "error_code",
-      "line": 3327,
+      "line": 3328,
       "name": "codingmage.campaign.provider_quota",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5582,7 +5582,7 @@
       ],
       "id": "error:codingmage.campaign.provider_retry",
       "kind": "error_code",
-      "line": 2947,
+      "line": 2948,
       "name": "codingmage.campaign.provider_retry",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5627,7 +5627,7 @@
       ],
       "id": "error:codingmage.campaign.provider_unavailable",
       "kind": "error_code",
-      "line": 2553,
+      "line": 2554,
       "name": "codingmage.campaign.provider_unavailable",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5783,7 +5783,7 @@
       ],
       "id": "error:codingmage.campaign.unit_authority_failure",
       "kind": "error_code",
-      "line": 3290,
+      "line": 3291,
       "name": "codingmage.campaign.unit_authority_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5828,7 +5828,7 @@
       ],
       "id": "error:codingmage.campaign.unit_blocked",
       "kind": "error_code",
-      "line": 3023,
+      "line": 3024,
       "name": "codingmage.campaign.unit_blocked",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5873,7 +5873,7 @@
       ],
       "id": "error:codingmage.campaign.unit_campaign_failure",
       "kind": "error_code",
-      "line": 3307,
+      "line": 3308,
       "name": "codingmage.campaign.unit_campaign_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5918,7 +5918,7 @@
       ],
       "id": "error:codingmage.campaign.unit_ceiling",
       "kind": "error_code",
-      "line": 2338,
+      "line": 2339,
       "name": "codingmage.campaign.unit_ceiling",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -5963,7 +5963,7 @@
       ],
       "id": "error:codingmage.campaign.unit_implementer_invalid_binding",
       "kind": "error_code",
-      "line": 3265,
+      "line": 3266,
       "name": "codingmage.campaign.unit_implementer_invalid_binding",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6008,7 +6008,7 @@
       ],
       "id": "error:codingmage.campaign.unit_implementer_invalid_packet",
       "kind": "error_code",
-      "line": 3268,
+      "line": 3269,
       "name": "codingmage.campaign.unit_implementer_invalid_packet",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6053,7 +6053,7 @@
       ],
       "id": "error:codingmage.campaign.unit_implementer_invalid_profile",
       "kind": "error_code",
-      "line": 3262,
+      "line": 3263,
       "name": "codingmage.campaign.unit_implementer_invalid_profile",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6098,7 +6098,7 @@
       ],
       "id": "error:codingmage.campaign.unit_integration_failure",
       "kind": "error_code",
-      "line": 3310,
+      "line": 3311,
       "name": "codingmage.campaign.unit_integration_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6143,7 +6143,7 @@
       ],
       "id": "error:codingmage.campaign.unit_limit",
       "kind": "error_code",
-      "line": 3257,
+      "line": 3258,
       "name": "codingmage.campaign.unit_limit",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6188,7 +6188,7 @@
       ],
       "id": "error:codingmage.campaign.unit_orchestration_failure",
       "kind": "error_code",
-      "line": 3304,
+      "line": 3305,
       "name": "codingmage.campaign.unit_orchestration_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6233,7 +6233,7 @@
       ],
       "id": "error:codingmage.campaign.unit_plan_failure",
       "kind": "error_code",
-      "line": 3291,
+      "line": 3292,
       "name": "codingmage.campaign.unit_plan_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6278,7 +6278,7 @@
       ],
       "id": "error:codingmage.campaign.unit_process_failure",
       "kind": "error_code",
-      "line": 3292,
+      "line": 3293,
       "name": "codingmage.campaign.unit_process_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6323,7 +6323,7 @@
       ],
       "id": "error:codingmage.campaign.unit_provider_attempt_limit",
       "kind": "error_code",
-      "line": 3301,
+      "line": 3302,
       "name": "codingmage.campaign.unit_provider_attempt_limit",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6368,7 +6368,7 @@
       ],
       "id": "error:codingmage.campaign.unit_provider_failure",
       "kind": "error_code",
-      "line": 3284,
+      "line": 3285,
       "name": "codingmage.campaign.unit_provider_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6413,7 +6413,7 @@
       ],
       "id": "error:codingmage.campaign.unit_provider_timeout",
       "kind": "error_code",
-      "line": 3281,
+      "line": 3282,
       "name": "codingmage.campaign.unit_provider_timeout",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6458,7 +6458,7 @@
       ],
       "id": "error:codingmage.campaign.unit_recoverable_failure",
       "kind": "error_code",
-      "line": 3205,
+      "line": 3206,
       "name": "codingmage.campaign.unit_recoverable_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6503,7 +6503,7 @@
       ],
       "id": "error:codingmage.campaign.unit_repository_boundary",
       "kind": "error_code",
-      "line": 3287,
+      "line": 3288,
       "name": "codingmage.campaign.unit_repository_boundary",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6548,7 +6548,7 @@
       ],
       "id": "error:codingmage.campaign.unit_retained_state_observation_failure",
       "kind": "error_code",
-      "line": 3295,
+      "line": 3296,
       "name": "codingmage.campaign.unit_retained_state_observation_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6593,7 +6593,7 @@
       ],
       "id": "error:codingmage.campaign.unit_reviewer_invalid_binding",
       "kind": "error_code",
-      "line": 3274,
+      "line": 3275,
       "name": "codingmage.campaign.unit_reviewer_invalid_binding",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6638,7 +6638,7 @@
       ],
       "id": "error:codingmage.campaign.unit_reviewer_invalid_packet",
       "kind": "error_code",
-      "line": 3277,
+      "line": 3278,
       "name": "codingmage.campaign.unit_reviewer_invalid_packet",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6683,7 +6683,7 @@
       ],
       "id": "error:codingmage.campaign.unit_reviewer_invalid_profile",
       "kind": "error_code",
-      "line": 3271,
+      "line": 3272,
       "name": "codingmage.campaign.unit_reviewer_invalid_profile",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6728,7 +6728,7 @@
       ],
       "id": "error:codingmage.campaign.unit_spec_failure",
       "kind": "error_code",
-      "line": 3289,
+      "line": 3290,
       "name": "codingmage.campaign.unit_spec_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6773,7 +6773,7 @@
       ],
       "id": "error:codingmage.campaign.unit_state_failure",
       "kind": "error_code",
-      "line": 3293,
+      "line": 3294,
       "name": "codingmage.campaign.unit_state_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6818,7 +6818,7 @@
       ],
       "id": "error:codingmage.campaign.unit_utilization_failure",
       "kind": "error_code",
-      "line": 3298,
+      "line": 3299,
       "name": "codingmage.campaign.unit_utilization_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -6863,7 +6863,7 @@
       ],
       "id": "error:codingmage.campaign.unit_verification_failure",
       "kind": "error_code",
-      "line": 3259,
+      "line": 3260,
       "name": "codingmage.campaign.unit_verification_failure",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -10556,7 +10556,7 @@
       ],
       "id": "error:codingmage.provider.attempt_limit",
       "kind": "error_code",
-      "line": 6715,
+      "line": 6716,
       "name": "codingmage.provider.attempt_limit",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12189,7 +12189,7 @@
       ],
       "id": "error:codingmage.runtime.authority",
       "kind": "error_code",
-      "line": 6708,
+      "line": 6709,
       "name": "codingmage.runtime.authority",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12234,7 +12234,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.authority",
       "kind": "error_code",
-      "line": 6719,
+      "line": 6720,
       "name": "codingmage.runtime.campaign.authority",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12279,7 +12279,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.capacity",
       "kind": "error_code",
-      "line": 6723,
+      "line": 6724,
       "name": "codingmage.runtime.campaign.capacity",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12324,7 +12324,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.conflict",
       "kind": "error_code",
-      "line": 6722,
+      "line": 6723,
       "name": "codingmage.runtime.campaign.conflict",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12369,7 +12369,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.proposal",
       "kind": "error_code",
-      "line": 6720,
+      "line": 6721,
       "name": "codingmage.runtime.campaign.proposal",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12414,7 +12414,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.serialization",
       "kind": "error_code",
-      "line": 6725,
+      "line": 6726,
       "name": "codingmage.runtime.campaign.serialization",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12459,7 +12459,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.spec",
       "kind": "error_code",
-      "line": 6718,
+      "line": 6719,
       "name": "codingmage.runtime.campaign.spec",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12504,7 +12504,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.stale_proposal",
       "kind": "error_code",
-      "line": 6721,
+      "line": 6722,
       "name": "codingmage.runtime.campaign.stale_proposal",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12549,7 +12549,7 @@
       ],
       "id": "error:codingmage.runtime.campaign.unknown_lease",
       "kind": "error_code",
-      "line": 6724,
+      "line": 6725,
       "name": "codingmage.runtime.campaign.unknown_lease",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12594,7 +12594,7 @@
       ],
       "id": "error:codingmage.runtime.integration",
       "kind": "error_code",
-      "line": 6727,
+      "line": 6728,
       "name": "codingmage.runtime.integration",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12639,7 +12639,7 @@
       ],
       "id": "error:codingmage.runtime.orchestration",
       "kind": "error_code",
-      "line": 6716,
+      "line": 6717,
       "name": "codingmage.runtime.orchestration",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12684,7 +12684,7 @@
       ],
       "id": "error:codingmage.runtime.plan",
       "kind": "error_code",
-      "line": 6710,
+      "line": 6711,
       "name": "codingmage.runtime.plan",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12729,7 +12729,7 @@
       ],
       "id": "error:codingmage.runtime.process",
       "kind": "error_code",
-      "line": 6711,
+      "line": 6712,
       "name": "codingmage.runtime.process",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12774,7 +12774,7 @@
       ],
       "id": "error:codingmage.runtime.repository",
       "kind": "error_code",
-      "line": 6709,
+      "line": 6710,
       "name": "codingmage.runtime.repository",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12819,7 +12819,7 @@
       ],
       "id": "error:codingmage.runtime.retained_state_observation",
       "kind": "error_code",
-      "line": 6713,
+      "line": 6714,
       "name": "codingmage.runtime.retained_state_observation",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12864,7 +12864,7 @@
       ],
       "id": "error:codingmage.runtime.spec",
       "kind": "error_code",
-      "line": 6707,
+      "line": 6708,
       "name": "codingmage.runtime.spec",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -12909,7 +12909,7 @@
       ],
       "id": "error:codingmage.runtime.state",
       "kind": "error_code",
-      "line": 6712,
+      "line": 6713,
       "name": "codingmage.runtime.state",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -13179,7 +13179,7 @@
       ],
       "id": "error:codingmage.runtime.utilization",
       "kind": "error_code",
-      "line": 6714,
+      "line": 6715,
       "name": "codingmage.runtime.utilization",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -13224,7 +13224,7 @@
       ],
       "id": "error:codingmage.runtime.verification",
       "kind": "error_code",
-      "line": 6730,
+      "line": 6731,
       "name": "codingmage.runtime.verification",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "stable_error_code",
@@ -37118,6 +37118,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -37176,6 +37177,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -37234,6 +37236,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -37292,6 +37295,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -37361,6 +37365,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -37419,6 +37424,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -37477,6 +37483,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -37636,6 +37643,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -37694,6 +37702,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -37842,6 +37851,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -38417,6 +38427,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -38475,6 +38486,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -38533,6 +38545,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -38636,6 +38649,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -38739,6 +38753,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -38797,6 +38812,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -39372,6 +39388,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -39430,6 +39447,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -39499,6 +39517,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -39557,6 +39576,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -39626,6 +39646,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -39695,6 +39716,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -39764,6 +39786,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -39822,6 +39845,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -39880,6 +39904,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -39938,6 +39963,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -39996,6 +40022,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40054,6 +40081,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40112,6 +40140,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40170,6 +40199,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40239,6 +40269,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40297,6 +40328,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40355,6 +40387,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40413,6 +40446,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40482,6 +40516,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40551,6 +40586,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40609,6 +40645,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40757,6 +40794,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40860,6 +40898,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -40918,6 +40957,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -41032,6 +41072,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -41371,6 +41412,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -41440,6 +41482,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -41509,6 +41552,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -41567,6 +41611,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -41615,9 +41660,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:AuthenticationMode:315",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:AuthenticationMode:316",
       "kind": "enum",
-      "line": 315,
+      "line": 316,
       "name": "AuthenticationMode",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -41625,6 +41670,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -41674,9 +41720,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:CampaignLimitKind:500",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:CampaignLimitKind:501",
       "kind": "enum",
-      "line": 500,
+      "line": 501,
       "name": "CampaignLimitKind",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -41694,6 +41740,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -41742,9 +41789,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:CampaignState:461",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:CampaignState:462",
       "kind": "enum",
-      "line": 461,
+      "line": 462,
       "name": "CampaignState",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -41752,6 +41799,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -41798,9 +41846,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:CampaignStopReason:475",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:CampaignStopReason:476",
       "kind": "enum",
-      "line": 475,
+      "line": 476,
       "name": "CampaignStopReason",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -41846,9 +41894,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:CompletionPolicy:366",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:CompletionPolicy:367",
       "kind": "enum",
-      "line": 366,
+      "line": 367,
       "name": "CompletionPolicy",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -41866,6 +41914,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -41913,9 +41962,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:ProgressActor:140",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:ProgressActor:141",
       "kind": "enum",
-      "line": 140,
+      "line": 141,
       "name": "ProgressActor",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -41970,9 +42019,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:ProgressStage:172",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:ProgressStage:173",
       "kind": "enum",
-      "line": 172,
+      "line": 173,
       "name": "ProgressStage",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -41980,6 +42029,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42026,9 +42076,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:RuntimeError:6667",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:RuntimeError:6668",
       "kind": "enum",
-      "line": 6667,
+      "line": 6668,
       "name": "RuntimeError",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42073,9 +42123,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:UnitLifecycleEvent:249",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:enum:UnitLifecycleEvent:250",
       "kind": "enum",
-      "line": 249,
+      "line": 250,
       "name": "UnitLifecycleEvent",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42083,6 +42133,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42131,9 +42182,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:approve_campaign_destination_promotion:1701",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:approve_campaign_destination_promotion:1702",
       "kind": "fn",
-      "line": 1701,
+      "line": 1702,
       "name": "approve_campaign_destination_promotion",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42141,6 +42192,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42189,9 +42241,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:approve_campaign_task_integration:1663",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:approve_campaign_task_integration:1664",
       "kind": "fn",
-      "line": 1663,
+      "line": 1664,
       "name": "approve_campaign_task_integration",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42199,6 +42251,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42247,9 +42300,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:campaign_blocker_explanation:1347",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:campaign_blocker_explanation:1348",
       "kind": "fn",
-      "line": 1347,
+      "line": 1348,
       "name": "campaign_blocker_explanation",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42257,6 +42310,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42306,9 +42360,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:campaign_preflight:947",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:campaign_preflight:948",
       "kind": "fn",
-      "line": 947,
+      "line": 948,
       "name": "campaign_preflight",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42326,6 +42380,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42374,9 +42429,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:campaign_status:1285",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:campaign_status:1286",
       "kind": "fn",
-      "line": 1285,
+      "line": 1286,
       "name": "campaign_status",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42384,6 +42439,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42432,9 +42488,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:clear_campaign_blocker:1743",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:clear_campaign_blocker:1744",
       "kind": "fn",
-      "line": 1743,
+      "line": 1744,
       "name": "clear_campaign_blocker",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42442,6 +42498,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42489,9 +42546,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:code:6705",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:code:6706",
       "kind": "fn",
-      "line": 6705,
+      "line": 6706,
       "name": "code",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42544,9 +42601,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:label:158",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:label:159",
       "kind": "fn",
-      "line": 158,
+      "line": 159,
       "name": "label",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42590,9 +42647,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:load:379",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:load:380",
       "kind": "fn",
-      "line": 379,
+      "line": 380,
       "name": "load",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42645,9 +42702,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:load_decomposition_checkpoint:6648",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:load_decomposition_checkpoint:6649",
       "kind": "fn",
-      "line": 6648,
+      "line": 6649,
       "name": "load_decomposition_checkpoint",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42692,9 +42749,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:observe_campaign_deferral_trigger:1909",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:observe_campaign_deferral_trigger:1910",
       "kind": "fn",
-      "line": 1909,
+      "line": 1910,
       "name": "observe_campaign_deferral_trigger",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42702,6 +42759,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42748,9 +42806,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:persist_decomposition_checkpoint:6623",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:persist_decomposition_checkpoint:6624",
       "kind": "fn",
-      "line": 6623,
+      "line": 6624,
       "name": "persist_decomposition_checkpoint",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42795,9 +42853,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:request_campaign_control:1547",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:request_campaign_control:1548",
       "kind": "fn",
-      "line": 1547,
+      "line": 1548,
       "name": "request_campaign_control",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42805,6 +42863,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42853,9 +42912,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:run_one:4014",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:run_one:4015",
       "kind": "fn",
-      "line": 4014,
+      "line": 4015,
       "name": "run_one",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42863,6 +42922,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42911,9 +42971,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:run_one_with_progress:4030",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:run_one_with_progress:4031",
       "kind": "fn",
-      "line": 4030,
+      "line": 4031,
       "name": "run_one_with_progress",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42921,6 +42981,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -42969,9 +43030,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:run_one_with_progress_for_id:4056",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:run_one_with_progress_for_id:4057",
       "kind": "fn",
-      "line": 4056,
+      "line": 4057,
       "name": "run_one_with_progress_for_id",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -42979,6 +43040,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43027,9 +43089,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:run_serial_campaign_with_progress:2081",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:run_serial_campaign_with_progress:2082",
       "kind": "fn",
-      "line": 2081,
+      "line": 2082,
       "name": "run_serial_campaign_with_progress",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43037,6 +43099,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43085,9 +43148,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:summary:212",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:fn:summary:213",
       "kind": "fn",
-      "line": 212,
+      "line": 213,
       "name": "summary",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43095,6 +43158,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43141,9 +43205,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:BlockerClearanceOutcome:893",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:BlockerClearanceOutcome:894",
       "kind": "struct",
-      "line": 893,
+      "line": 894,
       "name": "BlockerClearanceOutcome",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43188,9 +43252,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignActiveTaskStatus:789",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignActiveTaskStatus:790",
       "kind": "struct",
-      "line": 789,
+      "line": 790,
       "name": "CampaignActiveTaskStatus",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43198,6 +43262,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43246,9 +43311,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignBlockerExplanation:873",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignBlockerExplanation:874",
       "kind": "struct",
-      "line": 873,
+      "line": 874,
       "name": "CampaignBlockerExplanation",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43256,6 +43321,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43302,9 +43368,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignControlOutcome:925",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignControlOutcome:926",
       "kind": "struct",
-      "line": 925,
+      "line": 926,
       "name": "CampaignControlOutcome",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43348,9 +43414,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignOutcome:534",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignOutcome:535",
       "kind": "struct",
-      "line": 534,
+      "line": 535,
       "name": "CampaignOutcome",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43404,9 +43470,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightControls:699",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightControls:700",
       "kind": "struct",
-      "line": 699,
+      "line": 700,
       "name": "CampaignPreflightControls",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43462,9 +43528,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightGates:683",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightGates:684",
       "kind": "struct",
-      "line": 683,
+      "line": 684,
       "name": "CampaignPreflightGates",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43482,6 +43548,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43528,9 +43595,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightPolicy:635",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightPolicy:636",
       "kind": "struct",
-      "line": 635,
+      "line": 636,
       "name": "CampaignPreflightPolicy",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43573,9 +43640,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightProvider:663",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightProvider:664",
       "kind": "struct",
-      "line": 663,
+      "line": 664,
       "name": "CampaignPreflightProvider",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43620,9 +43687,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightReport:577",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightReport:578",
       "kind": "struct",
-      "line": 577,
+      "line": 578,
       "name": "CampaignPreflightReport",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43630,6 +43697,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43678,9 +43746,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightRepository:605",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightRepository:606",
       "kind": "struct",
-      "line": 605,
+      "line": 606,
       "name": "CampaignPreflightRepository",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43688,6 +43756,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43736,9 +43805,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightStorage:713",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignPreflightStorage:714",
       "kind": "struct",
-      "line": 713,
+      "line": 714,
       "name": "CampaignPreflightStorage",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43746,6 +43815,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43794,9 +43864,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignStatus:727",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignStatus:728",
       "kind": "struct",
-      "line": 727,
+      "line": 728,
       "name": "CampaignStatus",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43804,6 +43874,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43852,9 +43923,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignStatusDeferral:859",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignStatusDeferral:860",
       "kind": "struct",
-      "line": 859,
+      "line": 860,
       "name": "CampaignStatusDeferral",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43862,6 +43933,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43911,9 +43983,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignStatusOutcomes:809",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignStatusOutcomes:810",
       "kind": "struct",
-      "line": 809,
+      "line": 810,
       "name": "CampaignStatusOutcomes",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43931,6 +44003,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -43979,9 +44052,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignStatusTaskReason:849",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignStatusTaskReason:850",
       "kind": "struct",
-      "line": 849,
+      "line": 850,
       "name": "CampaignStatusTaskReason",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -43989,6 +44062,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44037,9 +44111,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignStatusUtilization:829",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:CampaignStatusUtilization:830",
       "kind": "struct",
-      "line": 829,
+      "line": 830,
       "name": "CampaignStatusUtilization",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -44047,6 +44121,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44093,9 +44168,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:DeferralTriggerOutcome:909",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:DeferralTriggerOutcome:910",
       "kind": "struct",
-      "line": 909,
+      "line": 910,
       "name": "DeferralTriggerOutcome",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -44141,9 +44216,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:ImplementerSpec:337",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:ImplementerSpec:338",
       "kind": "struct",
-      "line": 337,
+      "line": 338,
       "name": "ImplementerSpec",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -44161,6 +44236,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44209,9 +44285,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:ProviderSpec:325",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:ProviderSpec:326",
       "kind": "struct",
-      "line": 325,
+      "line": 326,
       "name": "ProviderSpec",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -44219,6 +44295,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44265,9 +44342,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:RunOutcome:411",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:RunOutcome:412",
       "kind": "struct",
-      "line": 411,
+      "line": 412,
       "name": "RunOutcome",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -44310,9 +44387,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:RunProgress:239",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:RunProgress:240",
       "kind": "struct",
-      "line": 239,
+      "line": 240,
       "name": "RunProgress",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -44358,9 +44435,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:RunSpec:348",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:RunSpec:349",
       "kind": "struct",
-      "line": 348,
+      "line": 349,
       "name": "RunSpec",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -44378,6 +44455,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44427,9 +44505,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:RunUtilization:435",
+      "id": "rust:crates/codingmage-runtime/src/lib.rs:struct:RunUtilization:436",
       "kind": "struct",
-      "line": 435,
+      "line": 436,
       "name": "RunUtilization",
       "path": "crates/codingmage-runtime/src/lib.rs",
       "surface": "rust_public_api",
@@ -44447,6 +44525,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44504,6 +44583,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44552,6 +44632,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44610,6 +44691,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44724,6 +44806,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44782,6 +44865,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44840,6 +44924,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44898,6 +44983,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -44967,6 +45053,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -45205,6 +45292,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -45263,6 +45351,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -45321,6 +45410,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -45424,6 +45514,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -45583,6 +45674,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -45652,6 +45744,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -45740,6 +45833,65 @@
     {
       "applicable_categories": [
         "positive",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-runtime/src/team_host.rs:const:MAX_HOST_EVENT_PAGE:389",
+      "kind": "const",
+      "line": 389,
+      "name": "MAX_HOST_EVENT_PAGE",
+      "path": "crates/codingmage-runtime/src/team_host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/campaign_state.rs::deferral_trigger_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::every_control_crash_boundary_replays_to_one_recoverable_effect",
+          "crates/codingmage-runtime/src/campaign_state.rs::every_exhausted_campaign_limit_preserves_exact_policy_authority",
+          "crates/codingmage-runtime/src/campaign_state.rs::planning_generations_are_chained_restart_safe_and_bounded_without_progress"
+        ],
+        "malformed_input": [
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
+          "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
+          "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
+        ],
+        "positive": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::satisfied_deferral_remains_an_accepted_outcome_through_completion",
+          "crates/codingmage-runtime/src/campaign_state.rs::unit_budget_allows_exact_boundary_and_refuses_every_additional_effect",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/lib.rs::exact_blocker_preserves_descendants_and_allows_independent_work"
+        ],
+        "repeatability": [
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::provider_retry_backoff_is_deterministic_bounded_and_increasing",
+          "crates/codingmage-runtime/src/team_control.rs::control_history_is_idempotent_ordered_and_irreversibly_cancelled",
+          "crates/codingmage-runtime/src/team_control.rs::destination_approval_is_exact_idempotent_and_report_bound"
+        ],
+        "unknown_field": [
+          "crates/codingmage-runtime/src/lib.rs::campaign_status_schema_excludes_prohibited_content_classes",
+          "crates/codingmage-runtime/src/lib.rs::spec_rejects_credentials_relative_paths_and_unknown_fields"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
         "negative",
         "repeatability"
       ],
@@ -45800,6 +45952,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -45925,6 +46078,77 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
+          "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
+          "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
+        ],
+        "negative": [
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_id_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_reason_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_deferral_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_human_decision_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_legacy_v1_without_blocked_tasks",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_self_consistent_outcome_projection_mutations",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering"
+        ],
+        "positive": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::satisfied_deferral_remains_an_accepted_outcome_through_completion",
+          "crates/codingmage-runtime/src/campaign_state.rs::unit_budget_allows_exact_boundary_and_refuses_every_additional_effect",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/lib.rs::exact_blocker_preserves_descendants_and_allows_independent_work"
+        ],
+        "repeatability": [
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::provider_retry_backoff_is_deterministic_bounded_and_increasing",
+          "crates/codingmage-runtime/src/team_control.rs::control_history_is_idempotent_ordered_and_irreversibly_cancelled",
+          "crates/codingmage-runtime/src/team_control.rs::destination_approval_is_exact_idempotent_and_report_bound"
+        ],
+        "unknown_field": [
+          "crates/codingmage-runtime/src/lib.rs::campaign_status_schema_excludes_prohibited_content_classes",
+          "crates/codingmage-runtime/src/lib.rs::spec_rejects_credentials_relative_paths_and_unknown_fields"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-runtime/src/team_host.rs:enum:HostEventKind:395",
+      "kind": "enum",
+      "line": 395,
+      "name": "HostEventKind",
+      "path": "crates/codingmage-runtime/src/team_host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/campaign_state.rs::deferral_trigger_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::every_control_crash_boundary_replays_to_one_recoverable_effect",
+          "crates/codingmage-runtime/src/campaign_state.rs::every_exhausted_campaign_limit_preserves_exact_policy_authority",
+          "crates/codingmage-runtime/src/campaign_state.rs::planning_generations_are_chained_restart_safe_and_bounded_without_progress"
+        ],
+        "malformed_input": [
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -46065,6 +46289,51 @@
       "kind": "fn",
       "line": 243,
       "name": "open",
+      "path": "crates/codingmage-runtime/src/team_host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_id_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_reason_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_deferral_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_human_decision_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_legacy_v1_without_blocked_tasks",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_self_consistent_outcome_projection_mutations",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering"
+        ],
+        "positive": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::satisfied_deferral_remains_an_accepted_outcome_through_completion",
+          "crates/codingmage-runtime/src/campaign_state.rs::unit_budget_allows_exact_boundary_and_refuses_every_additional_effect",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/lib.rs::exact_blocker_preserves_descendants_and_allows_independent_work"
+        ],
+        "repeatability": [
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::provider_retry_backoff_is_deterministic_bounded_and_increasing",
+          "crates/codingmage-runtime/src/team_control.rs::control_history_is_idempotent_ordered_and_irreversibly_cancelled",
+          "crates/codingmage-runtime/src/team_control.rs::destination_approval_is_exact_idempotent_and_report_bound"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-runtime/src/team_host.rs:fn:page_host_events:496",
+      "kind": "fn",
+      "line": 496,
+      "name": "page_host_events",
       "path": "crates/codingmage-runtime/src/team_host.rs",
       "surface": "rust_public_api",
       "test_mappings": {
@@ -46252,6 +46521,107 @@
         "negative",
         "repeatability"
       ],
+      "id": "rust:crates/codingmage-runtime/src/team_host.rs:fn:verify:463",
+      "kind": "fn",
+      "line": 463,
+      "name": "verify",
+      "path": "crates/codingmage-runtime/src/team_host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_id_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_reason_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_deferral_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_human_decision_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_legacy_v1_without_blocked_tasks",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_self_consistent_outcome_projection_mutations",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering"
+        ],
+        "positive": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::satisfied_deferral_remains_an_accepted_outcome_through_completion",
+          "crates/codingmage-runtime/src/campaign_state.rs::unit_budget_allows_exact_boundary_and_refuses_every_additional_effect",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/lib.rs::exact_blocker_preserves_descendants_and_allows_independent_work"
+        ],
+        "repeatability": [
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::provider_retry_backoff_is_deterministic_bounded_and_increasing",
+          "crates/codingmage-runtime/src/team_control.rs::control_history_is_idempotent_ordered_and_irreversibly_cancelled",
+          "crates/codingmage-runtime/src/team_control.rs::destination_approval_is_exact_idempotent_and_report_bound"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-runtime/src/team_host.rs:fn:verify:480",
+      "kind": "fn",
+      "line": 480,
+      "name": "verify",
+      "path": "crates/codingmage-runtime/src/team_host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/campaign_state.rs::deferral_trigger_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::every_control_crash_boundary_replays_to_one_recoverable_effect",
+          "crates/codingmage-runtime/src/campaign_state.rs::every_exhausted_campaign_limit_preserves_exact_policy_authority",
+          "crates/codingmage-runtime/src/campaign_state.rs::planning_generations_are_chained_restart_safe_and_bounded_without_progress"
+        ],
+        "negative": [
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_id_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_reason_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_deferral_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_human_decision_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_legacy_v1_without_blocked_tasks",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_self_consistent_outcome_projection_mutations",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering"
+        ],
+        "positive": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::satisfied_deferral_remains_an_accepted_outcome_through_completion",
+          "crates/codingmage-runtime/src/campaign_state.rs::unit_budget_allows_exact_boundary_and_refuses_every_additional_effect",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/lib.rs::exact_blocker_preserves_descendants_and_allows_independent_work"
+        ],
+        "repeatability": [
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::provider_retry_backoff_is_deterministic_bounded_and_increasing",
+          "crates/codingmage-runtime/src/team_control.rs::control_history_is_idempotent_ordered_and_irreversibly_cancelled",
+          "crates/codingmage-runtime/src/team_control.rs::destination_approval_is_exact_idempotent_and_report_bound"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
       "id": "rust:crates/codingmage-runtime/src/team_host.rs:struct:AdmittedHostRequest:54",
       "kind": "struct",
       "line": 54,
@@ -46354,6 +46724,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -46443,6 +46814,205 @@
       "applicable_categories": [
         "positive",
         "negative",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-runtime/src/team_host.rs:struct:HostEvent:413",
+      "kind": "struct",
+      "line": 413,
+      "name": "HostEvent",
+      "path": "crates/codingmage-runtime/src/team_host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "malformed_input": [
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
+          "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
+          "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
+        ],
+        "negative": [
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_id_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_reason_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_deferral_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_human_decision_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_legacy_v1_without_blocked_tasks",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_self_consistent_outcome_projection_mutations",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering"
+        ],
+        "positive": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::satisfied_deferral_remains_an_accepted_outcome_through_completion",
+          "crates/codingmage-runtime/src/campaign_state.rs::unit_budget_allows_exact_boundary_and_refuses_every_additional_effect",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/lib.rs::exact_blocker_preserves_descendants_and_allows_independent_work"
+        ],
+        "repeatability": [
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::provider_retry_backoff_is_deterministic_bounded_and_increasing",
+          "crates/codingmage-runtime/src/team_control.rs::control_history_is_idempotent_ordered_and_irreversibly_cancelled",
+          "crates/codingmage-runtime/src/team_control.rs::destination_approval_is_exact_idempotent_and_report_bound"
+        ],
+        "unknown_field": [
+          "crates/codingmage-runtime/src/lib.rs::campaign_status_schema_excludes_prohibited_content_classes",
+          "crates/codingmage-runtime/src/lib.rs::spec_rejects_credentials_relative_paths_and_unknown_fields"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-runtime/src/team_host.rs:struct:HostEventCursor:427",
+      "kind": "struct",
+      "line": 427,
+      "name": "HostEventCursor",
+      "path": "crates/codingmage-runtime/src/team_host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/campaign_state.rs::deferral_trigger_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::every_control_crash_boundary_replays_to_one_recoverable_effect",
+          "crates/codingmage-runtime/src/campaign_state.rs::every_exhausted_campaign_limit_preserves_exact_policy_authority",
+          "crates/codingmage-runtime/src/campaign_state.rs::planning_generations_are_chained_restart_safe_and_bounded_without_progress"
+        ],
+        "malformed_input": [
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
+          "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
+          "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
+        ],
+        "negative": [
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_id_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_reason_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_deferral_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_human_decision_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_legacy_v1_without_blocked_tasks",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_self_consistent_outcome_projection_mutations",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering"
+        ],
+        "positive": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::satisfied_deferral_remains_an_accepted_outcome_through_completion",
+          "crates/codingmage-runtime/src/campaign_state.rs::unit_budget_allows_exact_boundary_and_refuses_every_additional_effect",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/lib.rs::exact_blocker_preserves_descendants_and_allows_independent_work"
+        ],
+        "repeatability": [
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::provider_retry_backoff_is_deterministic_bounded_and_increasing",
+          "crates/codingmage-runtime/src/team_control.rs::control_history_is_idempotent_ordered_and_irreversibly_cancelled",
+          "crates/codingmage-runtime/src/team_control.rs::destination_approval_is_exact_idempotent_and_report_bound"
+        ],
+        "unknown_field": [
+          "crates/codingmage-runtime/src/lib.rs::campaign_status_schema_excludes_prohibited_content_classes",
+          "crates/codingmage-runtime/src/lib.rs::spec_rejects_credentials_relative_paths_and_unknown_fields"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-runtime/src/team_host.rs:struct:HostEventPage:445",
+      "kind": "struct",
+      "line": 445,
+      "name": "HostEventPage",
+      "path": "crates/codingmage-runtime/src/team_host.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/campaign_state.rs::deferral_trigger_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::every_control_crash_boundary_replays_to_one_recoverable_effect",
+          "crates/codingmage-runtime/src/campaign_state.rs::every_exhausted_campaign_limit_preserves_exact_policy_authority",
+          "crates/codingmage-runtime/src/campaign_state.rs::planning_generations_are_chained_restart_safe_and_bounded_without_progress"
+        ],
+        "malformed_input": [
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
+          "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
+          "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
+        ],
+        "negative": [
+          "crates/codingmage-runtime/src/campaign_state.rs::blocker_clearance_intent_is_create_once_and_integrity_bound",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_id_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_blocked_reason_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_deferral_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_human_decision_legacy_shape",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_integrity_verified_legacy_v1_without_blocked_tasks",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_refuses_self_consistent_outcome_projection_mutations",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering"
+        ],
+        "positive": [
+          "crates/codingmage-runtime/src/campaign_state.rs::accepted_outcome_limit_covers_boundary_overflow_restart_and_concurrent_observation",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::satisfied_deferral_remains_an_accepted_outcome_through_completion",
+          "crates/codingmage-runtime/src/campaign_state.rs::unit_budget_allows_exact_boundary_and_refuses_every_additional_effect",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
+          "crates/codingmage-runtime/src/lib.rs::exact_blocker_preserves_descendants_and_allows_independent_work"
+        ],
+        "repeatability": [
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_reports_each_exhausted_limit_in_stable_order",
+          "crates/codingmage-runtime/src/campaign_state.rs::checkpoint_round_trips_and_rejects_tampering",
+          "crates/codingmage-runtime/src/campaign_state.rs::control_requests_are_ordered_integrity_bound_and_idempotently_applied",
+          "crates/codingmage-runtime/src/correction_state.rs::checkpoint_round_trips_and_rejects_mutation",
+          "crates/codingmage-runtime/src/correction_state.rs::initial_checkpoint_round_trips_and_every_identity_is_load_bearing",
+          "crates/codingmage-runtime/src/lib.rs::provider_retry_backoff_is_deterministic_bounded_and_increasing",
+          "crates/codingmage-runtime/src/team_control.rs::control_history_is_idempotent_ordered_and_irreversibly_cancelled",
+          "crates/codingmage-runtime/src/team_control.rs::destination_approval_is_exact_idempotent_and_report_bound"
+        ],
+        "unknown_field": [
+          "crates/codingmage-runtime/src/lib.rs::campaign_status_schema_excludes_prohibited_content_classes",
+          "crates/codingmage-runtime/src/lib.rs::spec_rejects_credentials_relative_paths_and_unknown_fields"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
         "repeatability"
       ],
       "id": "rust:crates/codingmage-runtime/src/team_integration.rs:fn:enqueue_team_integration:310",
@@ -46502,6 +47072,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -46560,6 +47131,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -46618,6 +47190,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -46676,6 +47249,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -46824,6 +47398,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -47028,6 +47603,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -47322,6 +47898,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -47425,6 +48002,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -47573,6 +48151,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -47631,6 +48210,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -47734,6 +48314,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -48388,6 +48969,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -48783,6 +49365,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -48953,6 +49536,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -49011,6 +49595,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -49069,6 +49654,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -49138,6 +49724,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -49196,6 +49783,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -49254,6 +49842,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -49379,6 +49968,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -49437,6 +50027,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -49663,6 +50254,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -49777,6 +50369,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -49846,6 +50439,7 @@
         "malformed_input": [
           "crates/codingmage-runtime/src/lib.rs::claude_report_retry_is_limited_to_invalid_completion_metadata",
           "crates/codingmage-runtime/src/team_github.rs::exact_supported_remote_urls_parse_without_credentials",
+          "crates/codingmage-runtime/src/team_host.rs::malformed_cursors_sequences_and_runs_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::malformed_documents_and_records_are_refused",
           "crates/codingmage-runtime/src/team_host.rs::refuses_malformed_policy_grants",
           "crates/codingmage-runtime/src/team_runtime.rs::ci_correction_rejects_failed_mismatched_or_malformed_evidence"
@@ -53474,6 +54068,6 @@
       }
     }
   ],
-  "items_sha256": "b0eb0e5512d1d9021e583ca90d39f20c445652da95c9aa1e3085567c303b42e5",
+  "items_sha256": "45c53f1c40ace07cbbe64166f8410f1fcf5e9fc8cc0cee005596b379761f3e47",
   "schema_version": 1
 }

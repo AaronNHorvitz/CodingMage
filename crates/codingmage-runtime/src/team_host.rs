@@ -16,7 +16,7 @@ use std::{
 };
 
 use codingmage_contracts::{
-    ClientId, HostContractError, HostOperation, HostRequest, RepositoryId, RequestId,
+    ClientId, HostContractError, HostOperation, HostRequest, RepositoryId, RequestId, RunId,
 };
 use codingmage_state::{IntegrityDocument, IntegrityDocumentError};
 use serde::{Deserialize, Serialize};
@@ -385,6 +385,159 @@ impl HostDisposition {
     }
 }
 
+/// Maximum events returned on one page.
+pub const MAX_HOST_EVENT_PAGE: u32 = 1_000;
+
+/// Content-minimized host-visible event kind. Payloads never cross the
+/// boundary: observers see kinds, revisions, and content digests only.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HostEventKind {
+    /// A request was admitted against the pinned grant.
+    Admitted,
+    /// An effect kind was resolved for an admitted request.
+    EffectDecided,
+    /// An effect completed with a recorded result digest.
+    Completed,
+    /// A request was refused with a stable code.
+    Refused,
+    /// A control was applied to the owned run.
+    ControlApplied,
+    /// The owned run reached a durable checkpoint.
+    Checkpoint,
+}
+
+/// One content-minimized host-visible event.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct HostEvent {
+    /// Monotonic index within the owned run, starting at zero.
+    pub index: u64,
+    /// Event kind.
+    pub kind: HostEventKind,
+    /// Durable state revision at the event.
+    pub state_revision: u64,
+    /// SHA-256 of the canonical event content held by the coordinator.
+    pub digest: String,
+}
+
+/// Bounded observation cursor for one owned run.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct HostEventCursor {
+    /// Owned run under observation.
+    pub run: RunId,
+    /// First index wanted; older events are never re-sent.
+    pub from_index: u64,
+    /// Maximum events wanted, one or more up to [`MAX_HOST_EVENT_PAGE`].
+    pub limit: u32,
+}
+
+/// One event page with explicit gap signaling.
+///
+/// A set gap means the cursor pointed past available history (disconnect,
+/// compaction, or crash window): the observer must resynchronize from run
+/// status at `resync_revision` instead of assuming continuity. Local
+/// coordinator controls never depend on this paging and keep working while
+/// no host observes.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct HostEventPage {
+    /// Events in index order, at most the cursor limit.
+    pub events: Vec<HostEvent>,
+    /// Cursor index for the next page.
+    pub next_from_index: u64,
+    /// True when continuity cannot be proven from this page.
+    pub gap: bool,
+    /// Revision to resynchronize from when `gap` is set.
+    pub resync_revision: u64,
+}
+
+impl HostEvent {
+    /// Validates digest shape. Index and revision ordering is checked by
+    /// [`page_host_events`] against the coordinator-held sequence.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HostContractError::InvalidRequest`] for a malformed digest.
+    pub fn verify(&self) -> Result<(), HostContractError> {
+        if valid_digest(&self.digest) {
+            Ok(())
+        } else {
+            Err(HostContractError::InvalidRequest)
+        }
+    }
+}
+
+impl HostEventCursor {
+    /// Validates the cursor bound.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HostContractError::InvalidRequest`] for a zero limit or a
+    /// limit above [`MAX_HOST_EVENT_PAGE`]. Run identity is validated by
+    /// construction.
+    pub fn verify(&self) -> Result<(), HostContractError> {
+        if self.limit == 0 || self.limit > MAX_HOST_EVENT_PAGE {
+            return Err(HostContractError::InvalidRequest);
+        }
+        Ok(())
+    }
+}
+
+/// Pages coordinator-held events for one cursor with explicit gap behavior.
+///
+/// # Errors
+///
+/// Returns [`HostContractError::InvalidRequest`] for an invalid cursor, a
+/// run mismatch, a malformed event, or an out-of-order sequence. A cursor
+/// past available history is not an error: it returns an empty page with
+/// `gap` set so the observer resynchronizes instead of assuming continuity.
+pub fn page_host_events(
+    events: &[HostEvent],
+    run: &RunId,
+    cursor: &HostEventCursor,
+) -> Result<HostEventPage, HostContractError> {
+    cursor.verify()?;
+    if &cursor.run != run {
+        return Err(HostContractError::InvalidRequest);
+    }
+    for (position, event) in events.iter().enumerate() {
+        event.verify()?;
+        let Ok(position) = u64::try_from(position) else {
+            return Err(HostContractError::InvalidRequest);
+        };
+        if event.index != position {
+            return Err(HostContractError::InvalidRequest);
+        }
+    }
+    let from = cursor.from_index;
+    let len = events.len() as u64;
+    if from > len {
+        return Ok(HostEventPage {
+            events: Vec::new(),
+            next_from_index: len,
+            gap: true,
+            resync_revision: events.last().map_or(0, |event| event.state_revision),
+        });
+    }
+    let Ok(from) = usize::try_from(from) else {
+        return Err(HostContractError::InvalidRequest);
+    };
+    let mut page = Vec::new();
+    let mut next = from as u64;
+    for event in events.iter().skip(from).take(cursor.limit as usize) {
+        page.push(event.clone());
+        next = next.saturating_add(1);
+    }
+    Ok(HostEventPage {
+        events: page,
+        next_from_index: next,
+        gap: false,
+        resync_revision: events.last().map_or(0, |event| event.state_revision),
+    })
+}
+
 /// Returns the SHA-256 of the canonical request JSON.
 fn request_digest(request: &HostRequest) -> Result<String, serde_json::Error> {
     let encoded = serde_json::to_vec(request)?;
@@ -404,7 +557,7 @@ fn hex_bytes(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codingmage_contracts::{HOST_PROTOCOL_VERSION, RequestId, RunId, TaskId};
+    use codingmage_contracts::{HOST_PROTOCOL_VERSION, TaskId};
 
     const COMMIT: &str = "dddddddddddddddddddddddddddddddddddddddd";
     const TASK_DIGEST: &str = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
@@ -751,6 +904,115 @@ mod tests {
             outcome: DispositionOutcome::Accepted,
         };
         assert_eq!(bad.verify(), Err(HostDispositionError::Malformed));
+    }
+
+    fn event_sequence(count: u64) -> Vec<super::HostEvent> {
+        let mut events = Vec::new();
+        for index in 0..count {
+            events.push(super::HostEvent {
+                index,
+                kind: super::HostEventKind::Checkpoint,
+                state_revision: 100 + index,
+                digest: TASK_DIGEST.to_owned(),
+            });
+        }
+        events
+    }
+
+    fn cursor(run: &RunId, from_index: u64, limit: u32) -> super::HostEventCursor {
+        super::HostEventCursor {
+            run: run.clone(),
+            from_index,
+            limit,
+        }
+    }
+
+    #[test]
+    fn event_pages_are_bounded_and_chained() {
+        let run = RunId::new("cursor-run-1").expect("valid fixture");
+        let events = event_sequence(5);
+        let first =
+            super::page_host_events(&events, &run, &cursor(&run, 0, 2)).expect("valid fixture");
+        assert_eq!(first.events.len(), 2);
+        assert!(!first.gap);
+        let second =
+            super::page_host_events(&events, &run, &cursor(&run, first.next_from_index, 10))
+                .expect("valid fixture");
+        assert_eq!(second.events.len(), 3);
+        assert_eq!(second.next_from_index, 5);
+        assert!(!second.gap);
+        let drained =
+            super::page_host_events(&events, &run, &cursor(&run, 5, 10)).expect("valid fixture");
+        assert!(drained.events.is_empty());
+        assert!(!drained.gap);
+    }
+
+    #[test]
+    fn past_history_cursors_signal_explicit_gaps() {
+        let run = RunId::new("cursor-run-2").expect("valid fixture");
+        let events = event_sequence(3);
+        let page =
+            super::page_host_events(&events, &run, &cursor(&run, 9, 10)).expect("valid fixture");
+        assert!(page.events.is_empty());
+        assert!(page.gap);
+        assert_eq!(page.next_from_index, 3);
+        assert_eq!(page.resync_revision, 102);
+    }
+
+    #[test]
+    fn malformed_cursors_sequences_and_runs_are_refused() {
+        let run = RunId::new("cursor-run-3").expect("valid fixture");
+        let other = RunId::new("cursor-run-4").expect("valid fixture");
+        let events = event_sequence(2);
+        assert_eq!(
+            super::page_host_events(&events, &run, &cursor(&run, 0, 0)),
+            Err(HostContractError::InvalidRequest)
+        );
+        assert_eq!(
+            super::page_host_events(
+                &events,
+                &run,
+                &cursor(&run, 0, super::MAX_HOST_EVENT_PAGE + 1)
+            ),
+            Err(HostContractError::InvalidRequest)
+        );
+        assert_eq!(
+            super::page_host_events(&events, &other, &cursor(&run, 0, 10)),
+            Err(HostContractError::InvalidRequest)
+        );
+        let mut broken = event_sequence(2);
+        broken[1].digest = "short".to_owned();
+        assert_eq!(
+            super::page_host_events(&broken, &run, &cursor(&run, 0, 10)),
+            Err(HostContractError::InvalidRequest)
+        );
+        let mut unordered = event_sequence(2);
+        unordered[1].index = 7;
+        assert_eq!(
+            super::page_host_events(&unordered, &run, &cursor(&run, 0, 10)),
+            Err(HostContractError::InvalidRequest)
+        );
+    }
+
+    #[test]
+    fn local_controls_need_no_host_session() {
+        use super::super::campaign_state::{CampaignControlAction, CampaignControlIntent};
+        let intent = CampaignControlIntent::new(
+            "local-control-1".to_owned(),
+            TASK_DIGEST.to_owned(),
+            "campaign-1".to_owned(),
+            "repo-1".to_owned(),
+            RunId::new("run-1").expect("valid fixture"),
+            CampaignControlAction::Pause,
+            COMMIT.to_owned(),
+            1,
+        )
+        .expect("valid fixture");
+        assert_eq!(intent.action.code(), "pause");
+        assert_eq!(
+            CampaignControlAction::parse("pause"),
+            Some(CampaignControlAction::Pause)
+        );
     }
 
     #[test]

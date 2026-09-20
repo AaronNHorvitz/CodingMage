@@ -20,7 +20,8 @@ pub use team_campaign::{
 pub use team_github::GhCliPublicationPort;
 pub use team_host::{
     AdmittedHostRequest, DispositionDecision, DispositionOutcome, HostAdmissionPolicy,
-    HostDisposition, HostDispositionError, HostDispositionStore, HostEffectKind,
+    HostDisposition, HostDispositionError, HostDispositionStore, HostEffectKind, HostEvent,
+    HostEventCursor, HostEventKind, HostEventPage, MAX_HOST_EVENT_PAGE, page_host_events,
 };
 pub use team_integration::{
     IntegrationVerification, ProductionTeamIntegrationVerifier, TeamIntegrationOutcome,
