@@ -549,10 +549,10 @@ impl MuseAdapter {
     /// (`run.terminal.completed` with `terminal: "completed"` and a null
     /// reason becomes `Completed` with empty claims); every other
     /// terminal shape fails closed so fault variants stay explicit work
-    /// for 31.1.1.5. Records outside the planned session, missing or
-    /// repeated terminal records, progress text beyond the bound, and
-    /// workspace paths or other provider internals never survive:
-    /// only truncated delta text reaches the transcript.
+    /// for 31.1.1.5. Records outside the planned session, a missing
+    /// terminal, orphan records after the terminal, progress text beyond
+    /// the bound, and workspace paths or other provider internals never
+    /// survive: only truncated delta text reaches the transcript.
     ///
     /// # Errors
     ///
@@ -570,7 +570,10 @@ impl MuseAdapter {
         let mut summaries: Vec<String> = Vec::new();
         let mut terminal: Option<bool> = None;
         for line in text.lines() {
-            if line.is_empty() {
+            // Orphan records after the terminal record fail: a finished
+            // run emits nothing further, so trailing output belongs to a
+            // dead or foreign run.
+            if terminal.is_some() || line.is_empty() {
                 return Err(AdapterError::InvalidOutput);
             }
             let record: serde_json::Value =
@@ -599,9 +602,6 @@ impl MuseAdapter {
                 }
                 summaries.push(String::from_utf8_lossy(truncated).into_owned());
             } else if payload_type == "run.terminal.completed" {
-                if terminal.is_some() {
-                    return Err(AdapterError::InvalidOutput);
-                }
                 let payload = record.get("payload").ok_or(AdapterError::InvalidOutput)?;
                 let completed = payload.get("terminal").and_then(serde_json::Value::as_str)
                     == Some("completed")
@@ -1348,6 +1348,122 @@ mod tests {
         let blockers = MuseAdapter::execution_blockers();
         assert!(blockers.len() >= 4);
         assert!(blockers.iter().all(|blocker| !blocker.is_empty()));
+    }
+
+    #[test]
+    fn completed_claims_grant_nothing_for_false_success() {
+        let session_id =
+            AttemptId::new("01a0c127-6666-4633-8633-666666666666").expect("valid fixture");
+        let stdout = echo_completed_stream(session_id.as_str(), &["echo: done"]);
+        let transcript =
+            MuseAdapter::normalize_output(&stdout, &session_id).expect("valid fixture");
+        let events = transcript.events();
+        let AgentEventKind::Final { result } = &events[events.len() - 1].event else {
+            panic!("valid fixture");
+        };
+        assert_eq!(result.status, AgentFinalStatus::Completed);
+        assert_eq!(result.claims, ProviderClaims::default());
+        assert_eq!(result.blocker_code, None);
+    }
+
+    #[test]
+    fn oversized_progress_is_truncated_within_bounds() {
+        let session_id =
+            AttemptId::new("01a0c127-7777-4733-8733-777777777777").expect("valid fixture");
+        let big = "x".repeat(5000);
+        let stdout = echo_completed_stream(session_id.as_str(), &[big.as_str()]);
+        let transcript =
+            MuseAdapter::normalize_output(&stdout, &session_id).expect("valid fixture");
+        let AgentEventKind::Progress { summary } = &transcript.events()[1].event else {
+            panic!("valid fixture");
+        };
+        assert_eq!(summary.len(), 4096);
+    }
+
+    #[test]
+    fn orphan_records_after_the_terminal_fail() {
+        let session_id =
+            AttemptId::new("01a0c127-8888-4833-8833-888888888888").expect("valid fixture");
+        let mut stream = echo_completed_stream(session_id.as_str(), &["echo: ping"]);
+        stream.extend_from_slice(
+            echo_record(
+                session_id.as_str(),
+                "run.output.delta",
+                &serde_json::json!({"kind": "run_output_delta", "text": "late"}),
+            )
+            .as_bytes(),
+        );
+        assert_eq!(
+            MuseAdapter::normalize_output(&stream, &session_id),
+            Err(AdapterError::InvalidOutput)
+        );
+    }
+
+    #[test]
+    fn unobserved_quota_and_cancellation_terminals_fail_closed() {
+        let session_id =
+            AttemptId::new("01a0c127-9999-4933-8933-999999999999").expect("valid fixture");
+        for terminal in [
+            serde_json::json!({"kind": "run_terminal", "terminal": "quota", "reason": null}),
+            serde_json::json!({"kind": "run_terminal", "terminal": "cancelled", "reason": null}),
+            serde_json::json!({"kind": "run_terminal", "terminal": "completed", "reason": "late"}),
+        ] {
+            let stream = [echo_record(
+                session_id.as_str(),
+                "run.terminal.completed",
+                &terminal,
+            )]
+            .join("\n")
+            .into_bytes();
+            assert_eq!(
+                MuseAdapter::normalize_output(&stream, &session_id),
+                Err(AdapterError::InvalidOutput)
+            );
+        }
+    }
+
+    #[test]
+    fn sequential_restart_streams_normalize_independently() {
+        let session_id =
+            AttemptId::new("01a0c127-aaaa-4a33-8a33-aaaaaaaaaaaa").expect("valid fixture");
+        for text in ["echo: first", "echo: second"] {
+            let stream = echo_completed_stream(session_id.as_str(), &[text]);
+            let transcript =
+                MuseAdapter::normalize_output(&stream, &session_id).expect("valid fixture");
+            let AgentEventKind::Progress { summary } = &transcript.events()[1].event else {
+                panic!("valid fixture");
+            };
+            assert_eq!(summary, text);
+        }
+    }
+
+    #[test]
+    fn provider_internals_never_reach_the_transcript() {
+        let session_id =
+            AttemptId::new("01a0c127-bbbb-4b33-8b33-bbbbbbbbbbbb").expect("valid fixture");
+        let mut lines = vec![
+            echo_record(
+                session_id.as_str(),
+                "session.workspace_branch.observed",
+                &serde_json::json!({"kind": "workspace_branch_observed", "reference": "main"}),
+            ),
+            echo_record(
+                session_id.as_str(),
+                "run.output.delta",
+                &serde_json::json!({"kind": "run_output_delta", "text": "echo: ping"}),
+            ),
+        ];
+        lines.push(echo_record(
+            session_id.as_str(),
+            "run.terminal.completed",
+            &serde_json::json!({"kind": "run_terminal", "terminal": "completed", "reason": null}),
+        ));
+        let transcript = MuseAdapter::normalize_output(&lines.join("\n").into_bytes(), &session_id)
+            .expect("valid fixture");
+        let rendered = serde_json::to_string(transcript.events()).expect("valid fixture");
+        assert!(!rendered.contains("workspace_branch"));
+        assert!(!rendered.contains("payload_type"));
+        assert!(!rendered.contains("causation"));
     }
 
     #[test]

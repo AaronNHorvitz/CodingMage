@@ -55,13 +55,21 @@ git diff --check
 - `cargo fmt --check`: clean (workspace).
 - `cargo clippy -p codingmage-muse --all-targets -- -D warnings`: no warnings.
 - `cargo test -p codingmage-muse --all-targets -- --test-threads=1`:
-  23 passed, 0 failed (spec admission and CLI pins plus adapter profile
+  29 passed, 0 failed (spec admission and CLI pins plus adapter profile
   refusal, version-drift refusal, bounded login environment and
   deadline, observed-flag start/resume plans with provider-gated
   model/effort, reviewer-role routing, session/packet path refusal,
   echo-shape normalization with privacy retention, fail-closed
   unobserved shapes, escape-hatch denylist over all plans, planning
-  determinism, active execution refusal, stable codes).
+  determinism, active execution refusal, false-success emptiness,
+  truncation bound, orphan refusal, quota/cancel fail-closed, restart
+  independence, internals privacy, stable codes).
+- Gate 31.1 closes: deterministic adapter, version-drift, authority,
+  and nested-worker fixtures all pass locally. AC 31.1 holds on fake
+  plus observed inputs with unsupported behavior failing admission;
+  existing suites pass unmodified except two pre-existing environmental
+  `codingmage-process` reaping failures proven identical on the parent
+  commit and the by-design 25.2.4.6 freshness gap.
 - `python3 scripts/docs_check.py`, `python3 scripts/check_architecture.py`:
   pass.
 - Verification inventory regenerated: 1,331 surfaces became 1,364
@@ -167,10 +175,45 @@ stays refused until the execution path exists:
   consistent with coordinator-owned confinement, but execution-time
   child reaping is explicitly unproven until an execution path exists.
 
+## Fault Fixtures (Sub-task 31.1.1.5)
+
+`cargo test -p codingmage-muse --all-targets -- --test-threads=1`
+covers each required fault against `normalize_output` and the plans:
+
+- Malformed output: empty, oversized, non-UTF-8, non-JSON, and
+  shape-mismatched records fail with `InvalidOutput`.
+- False success: completed transcripts always carry empty claims, so a
+  provider success grants nothing
+  (`completed_claims_grant_nothing_for_false_success`).
+- Session mismatch: foreign-session records fail
+  (`fake_transcripts_refuse_wrong_session_continuation`,
+  fail-closed foreign case).
+- Quota: no quota payload appears in any observed stream, and crafted
+  quota/cancelled/non-null-reason terminals fail closed
+  (`unobserved_quota_and_cancellation_terminals_fail_closed`); exact
+  quota mapping stays open on live observation.
+- Restart: two sequential same-session streams normalize independently
+  (`sequential_restart_streams_normalize_independently`), matching the
+  live-proven `--session-id` linkage.
+- Worker-escape: no plan emits tool, worktree, parallelism, or
+  policy-override flags (`plans_never_emit_confinement_escape_hatches`).
+- Orphan: records after the terminal record fail
+  (`orphan_records_after_the_terminal_fail`).
+- Cancellation: no cancel shape is observed, so crafted cancellation
+  terminals fail closed (same fixture as quota); runtime cancellation
+  stays open on the execution path.
+- Unrelated-process preservation: the crate owns no subprocess surface
+  (no process, Git, runtime, or state references), so there is nothing
+  to reap or preserve yet; runtime proof awaits the execution path and
+  Story 31.2 authority.
+- Bounds: oversized progress truncates to 4,096 bytes
+  (`oversized_progress_is_truncated_within_bounds`); provider internals
+  (branch records, stream linkage, record envelopes) never reach the
+  transcript (`provider_internals_never_reach_the_transcript`).
+
 ## Open Items
 
-Sub-task 31.1.1.5 fault fixtures (malformed output, false success,
-session mismatch, quota, restart, worker-escape, orphan, cancellation,
-unrelated-process preservation) are next in dependency order. Live
-qualification (Story 31.2) additionally needs existing compatible
-provider access and explicit live-run authority.
+Story 31.1 closes on these local fixtures (Gate 31.1 below). Live
+qualification (Story 31.2) needs existing compatible provider access
+and explicit live-run authority; execution-time child reaping and exact
+quota/cancel shapes stay open on that authority.

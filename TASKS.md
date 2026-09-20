@@ -1710,7 +1710,7 @@ availability and separately authorized authenticated access remain explicit qual
 
 ### Story 31.1 - Capability Admission And Adapter
 
-- [ ] **Task 31.1.1 - Verify the protocol before enabling a worker**
+- [x] **Task 31.1.1 - Verify the protocol before enabling a worker**
   - [x] **Sub-task 31.1.1.1:** Define required structured probe/start/continue/cancel/usage behavior and deterministic fake transcripts using the existing provider-neutral contract. Required-behavior spec and `FakeAdapter` lifecycle transcripts in `crates/codingmage-muse/src/lib.rs`; see `docs/evidence/sprint-31-muse-protocol.md`.
     <!-- depends-on: 4.2.1.1, 4.2.2.3 -->
   - [x] **Sub-task 31.1.1.2:** Inspect the exact available CLI identity and supported structured protocol; record version/capability pins and a truthful blocker for unsupported behavior without terminal scraping or assumed flags. `MuseCliCapabilities::parse` pins `Muse Code 1.3.0 (1.3.0-R3401.1)` with headless/JSON/resume/schema hooks and usage/cancel blockers; see `docs/evidence/sprint-31-muse-protocol.md`.
@@ -1719,12 +1719,12 @@ availability and separately authorized authenticated access remain explicit qual
     <!-- depends-on: 31.1.1.2 -->
   - [x] **Sub-task 31.1.1.4:** Prove all nested workers, tools, worktrees and retries stay under coordinator ownership and aggregate limits; refuse the provider if direct Git/publication or worker confinement cannot be controlled. Plan-surface proof: escape-hatch denylist over all plans, coordinator-bound worktrees, deterministic planning, policy-granted deps only, active execution refusal; execution-time confinement stays open on 31.1.1.5/Story 31.2. See `docs/evidence/sprint-31-muse-protocol.md`.
     <!-- depends-on: 31.1.1.3 -->
-  - [ ] **Sub-task 31.1.1.5:** Run malformed-output, false-success, session mismatch, quota, restart, worker-escape, orphan, cancellation and unrelated-process preservation fixtures.
+  - [x] **Sub-task 31.1.1.5:** Run malformed-output, false-success, session mismatch, quota, restart, worker-escape, orphan, cancellation and unrelated-process preservation fixtures. Ten fault fixtures over `normalize_output` and plans (fail-closed unobserved shapes, orphan refusal, restart independence, internals privacy); runtime cancel/reap and exact quota shapes stay open on Story 31.2 authority. See `docs/evidence/sprint-31-muse-protocol.md`.
     <!-- depends-on: 31.1.1.4 -->
 
 **Story acceptance criteria**
 
-- [ ] **AC 31.1:** Given compatible fake and observed capability inputs, the adapter preserves all existing gates; unsupported protocol, containment or reviewer strength fails admission.
+- [x] **AC 31.1:** Given compatible fake and observed capability inputs, the adapter preserves all existing gates; unsupported protocol, containment or reviewer strength fails admission. Muse 29 fixtures pass; existing suites unmodified except two pre-existing environmental process failures (proven on parent) and the by-design 25.2.4.6 gap; see `docs/evidence/sprint-31-muse-protocol.md`.
 
 ### Story 31.2 - Live Provider Qualification
 
@@ -1742,7 +1742,7 @@ availability and separately authorized authenticated access remain explicit qual
 
 ### Sprint 31 Gate
 
-- [ ] **Gate 31.1:** Deterministic adapter, version-drift, authority and nested-worker tests pass.
+- [x] **Gate 31.1:** Deterministic adapter, version-drift, authority and nested-worker tests pass. Muse all-targets 29 passed; see `docs/evidence/sprint-31-muse-protocol.md`.
 - [ ] **Gate 31.2:** Explicitly authorized live qualification passes and every supported role has exact evidence; development-tool use alone closes no provider gate.
 
 ---

@@ -9953,6 +9953,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -9989,6 +9990,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -10025,6 +10027,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -10061,6 +10064,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -10097,6 +10101,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -33784,6 +33789,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -33814,7 +33820,10 @@
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
-          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
+          "crates/codingmage-muse/src/lib.rs::orphan_records_after_the_terminal_fail",
+          "crates/codingmage-muse/src/lib.rs::oversized_progress_is_truncated_within_bounds",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::unobserved_quota_and_cancellation_terminals_fail_closed"
         ],
         "malformed_input": [
           "crates/codingmage-muse/src/lib.rs::cli_parse_does_not_mistake_prose_for_a_cancel_command",
@@ -33833,6 +33842,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -33876,6 +33886,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -33912,6 +33923,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -33948,6 +33960,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -33978,7 +33991,10 @@
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
-          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
+          "crates/codingmage-muse/src/lib.rs::orphan_records_after_the_terminal_fail",
+          "crates/codingmage-muse/src/lib.rs::oversized_progress_is_truncated_within_bounds",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::unobserved_quota_and_cancellation_terminals_fail_closed"
         ],
         "malformed_input": [
           "crates/codingmage-muse/src/lib.rs::cli_parse_does_not_mistake_prose_for_a_cancel_command",
@@ -33997,6 +34013,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34033,6 +34050,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34061,7 +34079,10 @@
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
-          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
+          "crates/codingmage-muse/src/lib.rs::orphan_records_after_the_terminal_fail",
+          "crates/codingmage-muse/src/lib.rs::oversized_progress_is_truncated_within_bounds",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::unobserved_quota_and_cancellation_terminals_fail_closed"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34075,6 +34096,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34103,7 +34125,10 @@
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
-          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
+          "crates/codingmage-muse/src/lib.rs::orphan_records_after_the_terminal_fail",
+          "crates/codingmage-muse/src/lib.rs::oversized_progress_is_truncated_within_bounds",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::unobserved_quota_and_cancellation_terminals_fail_closed"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34117,6 +34142,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34153,6 +34179,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34181,7 +34208,10 @@
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
-          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
+          "crates/codingmage-muse/src/lib.rs::orphan_records_after_the_terminal_fail",
+          "crates/codingmage-muse/src/lib.rs::oversized_progress_is_truncated_within_bounds",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::unobserved_quota_and_cancellation_terminals_fail_closed"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34195,6 +34225,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34231,6 +34262,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34259,7 +34291,10 @@
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
-          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
+          "crates/codingmage-muse/src/lib.rs::orphan_records_after_the_terminal_fail",
+          "crates/codingmage-muse/src/lib.rs::oversized_progress_is_truncated_within_bounds",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::unobserved_quota_and_cancellation_terminals_fail_closed"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34273,6 +34308,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34309,6 +34345,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34337,7 +34374,10 @@
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
-          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
+          "crates/codingmage-muse/src/lib.rs::orphan_records_after_the_terminal_fail",
+          "crates/codingmage-muse/src/lib.rs::oversized_progress_is_truncated_within_bounds",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::unobserved_quota_and_cancellation_terminals_fail_closed"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34351,6 +34391,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34394,6 +34435,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34430,6 +34472,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34466,6 +34509,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34502,6 +34546,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34538,6 +34583,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34574,6 +34620,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34602,7 +34649,10 @@
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
-          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
+          "crates/codingmage-muse/src/lib.rs::orphan_records_after_the_terminal_fail",
+          "crates/codingmage-muse/src/lib.rs::oversized_progress_is_truncated_within_bounds",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::unobserved_quota_and_cancellation_terminals_fail_closed"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34616,6 +34666,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34644,7 +34695,10 @@
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
-          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
+          "crates/codingmage-muse/src/lib.rs::orphan_records_after_the_terminal_fail",
+          "crates/codingmage-muse/src/lib.rs::oversized_progress_is_truncated_within_bounds",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::unobserved_quota_and_cancellation_terminals_fail_closed"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34658,6 +34712,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34694,6 +34749,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34730,6 +34786,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34766,6 +34823,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34796,7 +34854,10 @@
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
-          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
+          "crates/codingmage-muse/src/lib.rs::orphan_records_after_the_terminal_fail",
+          "crates/codingmage-muse/src/lib.rs::oversized_progress_is_truncated_within_bounds",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::unobserved_quota_and_cancellation_terminals_fail_closed"
         ],
         "malformed_input": [
           "crates/codingmage-muse/src/lib.rs::cli_parse_does_not_mistake_prose_for_a_cancel_command",
@@ -34815,6 +34876,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -34843,7 +34905,10 @@
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
-          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
+          "crates/codingmage-muse/src/lib.rs::orphan_records_after_the_terminal_fail",
+          "crates/codingmage-muse/src/lib.rs::oversized_progress_is_truncated_within_bounds",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::unobserved_quota_and_cancellation_terminals_fail_closed"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34857,6 +34922,7 @@
         ],
         "positive": [
           "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::completed_claims_grant_nothing_for_false_success",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
           "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
         ],
@@ -57225,6 +57291,6 @@
       }
     }
   ],
-  "items_sha256": "77931e461c73795313342a89173c1ce16d248e661f9b86c4b3eda21763e3c6b4",
+  "items_sha256": "8571dc4376a9b3fd354d06e28930474e9873d9923df6bcfe29d0f19afdae3ac0",
   "schema_version": 1
 }
