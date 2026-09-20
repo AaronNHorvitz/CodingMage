@@ -1616,7 +1616,7 @@ controlled-target qualification. USTE, Muse and public release publication are n
 
 **Story acceptance criteria**
 
-- [ ] **AC 29.1:** Given a valid request and matching authority, admission is deterministic; malformed, stale, unauthorized or broadened requests create no owned process, worktree or external effect.
+- [x] **AC 29.1:** Given a valid request and matching authority, admission is deterministic; malformed, stale, unauthorized or broadened requests create no owned process, worktree or external effect. Proven by `ac_29_1_admission_is_deterministic_and_contained`: identical requests admit identically and recording creates exactly the one known store file.
 
 ### Story 29.2 - Durable Controls And Observation
 
@@ -1632,7 +1632,7 @@ controlled-target qualification. USTE, Muse and public release publication are n
 
 **Story acceptance criteria**
 
-- [ ] **AC 29.2:** Given interruption or repeated controls, recovery reconciles the exact owned run without duplicate effects, silent authority expansion or reliance on host availability.
+- [x] **AC 29.2:** Given interruption or repeated controls, recovery reconciles the exact owned run without duplicate effects, silent authority expansion or reliance on host availability. Proven by `ac_29_2_recovery_reconciles_without_duplicates_or_expansion`: crash, restart, duplicate replays, and narrowed grants reconcile exactly.
 
 ### Story 29.3 - Pinned Consumer Qualification
 

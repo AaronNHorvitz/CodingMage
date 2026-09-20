@@ -183,6 +183,15 @@ Gates: `cargo test -p codingmage-runtime --lib` 126 passed (121 plus 5
 recovery fixtures); crate Clippy clean; inventory holds at 1,299 surfaces
 with zero new explicit gaps (fixture-only change).
 
+## Story Acceptance (AC 29.1, AC 29.2)
+
+Two end-to-end fixtures close the stories: `ac_29_1` proves identical
+requests admit identically and admission plus recording create exactly the
+one known store file (no owned process, worktree, or external effect), and
+`ac_29_2` proves crash, restart, duplicate replays, and narrowed grants
+reconcile exactly with no duplicate effects, no silent authority expansion,
+and no host availability. Runtime lib suite now 128 passed.
+
 ## Open Items
 
 Task 29.2.1 is complete. Consumer-side qualification in Story 29.3 needs

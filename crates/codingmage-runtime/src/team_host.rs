@@ -1185,6 +1185,89 @@ mod tests {
         std::fs::remove_dir_all(second_root).expect("valid fixture");
     }
 
+    fn collect_created_paths(root: &std::path::Path) -> Vec<std::path::PathBuf> {
+        let mut paths = Vec::new();
+        let mut stack = vec![root.to_path_buf()];
+        while let Some(directory) = stack.pop() {
+            let entries = std::fs::read_dir(&directory).expect("valid fixture");
+            for entry in entries {
+                let path = entry.expect("valid fixture").path();
+                if path.is_dir() {
+                    stack.push(path);
+                } else {
+                    paths.push(path);
+                }
+            }
+        }
+        paths.sort();
+        paths
+    }
+
+    #[test]
+    fn ac_29_1_admission_is_deterministic_and_contained() {
+        let (mut store, root) = open_store();
+        let admitted = policy()
+            .admit(&request(HostOperation::SubmitJob), 21)
+            .expect("valid fixture");
+        let repeated = policy()
+            .admit(&request(HostOperation::SubmitJob), 21)
+            .expect("valid fixture");
+        assert_eq!(admitted, repeated);
+        assert!(matches!(
+            store.record_admitted(&admitted.request, admitted.effect),
+            Ok(DispositionDecision::Proceed(_))
+        ));
+        assert_eq!(
+            collect_created_paths(&root),
+            vec![root.join(super::DISPOSITION_DOCUMENT)],
+            "admission and recording create exactly one known file"
+        );
+        drop(store);
+        std::fs::remove_dir_all(root).expect("valid fixture");
+    }
+
+    #[test]
+    fn ac_29_2_recovery_reconciles_without_duplicates_or_expansion() {
+        let narrowed = HostAdmissionPolicy::new(
+            ClientId::new("host-client-1").expect("valid fixture"),
+            RepositoryId::new("host-repo-1").expect("valid fixture"),
+            TASK_DIGEST.to_owned(),
+            POLICY_DIGEST.to_owned(),
+            vec![HostOperation::ReportStatus],
+        )
+        .expect("valid fixture");
+        let (mut store, root) = open_store();
+        let admitted = policy()
+            .admit(&request(HostOperation::Cancel), 21)
+            .expect("valid fixture");
+        assert!(matches!(
+            store.record_admitted(&admitted.request, admitted.effect),
+            Ok(DispositionDecision::Proceed(_))
+        ));
+        drop(store);
+        let mut restarted = super::HostDispositionStore::open(&root).expect("valid fixture");
+        assert_eq!(
+            restarted.record_admitted(&admitted.request, admitted.effect),
+            Err(HostDispositionError::Uncertain)
+        );
+        restarted
+            .reconcile(&admitted.request.request_id, completed())
+            .expect("valid fixture");
+        let first = restarted
+            .record_admitted(&admitted.request, admitted.effect)
+            .expect("valid fixture");
+        let second = restarted
+            .record_admitted(&admitted.request, admitted.effect)
+            .expect("valid fixture");
+        assert_eq!(first, second);
+        assert_eq!(
+            narrowed.admit(&admitted.request, 21),
+            Err(HostContractError::WidenedScope)
+        );
+        drop(restarted);
+        std::fs::remove_dir_all(root).expect("valid fixture");
+    }
+
     #[test]
     fn disposition_error_codes_are_stable() {
         assert_eq!(
