@@ -498,6 +498,49 @@ impl MuseAdapter {
         })
     }
 
+    /// Flags the adapter never emits, so nested workers, tools,
+    /// worktrees, and retries stay under coordinator ownership: no
+    /// approval/sandbox bypass, no unobserved parallelism, no
+    /// worker-created worktrees, no workspace switching, no credential
+    /// injection, and no tool-policy overrides. Coordinator defaults
+    /// (approval and sandbox on) always apply.
+    #[must_use]
+    pub fn forbidden_flags() -> &'static [&'static str] {
+        &[
+            "--yolo",
+            "--disable-approval",
+            "--disable-sandbox",
+            "--trust-workspace",
+            "--parallel-tool-calls",
+            "--allow-workspace-switch",
+            "--api-key-stdin",
+            "--disable-write",
+            "--disable-shell",
+            "--enable-shell-tool",
+            "--sandbox-network",
+            "-w",
+            "--worktree",
+            "--worktree-base",
+            "--worktree-existing",
+        ]
+    }
+
+    /// Active refusals keeping the provider out of use until execution
+    /// behavior is proven. Plan-surface confinement is proven by the
+    /// forbidden-flags and determinism fixtures below; execution-time
+    /// confinement (child reaping, aggregate enforcement at runtime)
+    /// needs the 31.1.1.5 fault fixtures, and any live run needs Story
+    /// 31.2 authority — until then every entry here blocks use.
+    #[must_use]
+    pub fn execution_blockers() -> Vec<&'static str> {
+        vec![
+            "no execution path: plans are data until 31.1.1.4 confinement proofs land",
+            "usage observation has no CLI source until 31.1.1.5 adapter proof",
+            "cancellation has no CLI command until 31.1.1.4 process-level proof",
+            "no live runs until Story 31.2 explicit live-run authority",
+        ]
+    }
+
     /// Normalizes one observed `exec --json` stdout stream into the
     /// provider-neutral transcript, treating every provider byte as
     /// untrusted data.
@@ -1241,6 +1284,70 @@ mod tests {
             MuseAdapter::normalize_output(&failed_terminal, &session_id),
             Err(AdapterError::InvalidOutput)
         );
+    }
+
+    fn all_plans() -> Vec<MuseInvocationPlan> {
+        let echo = adapter();
+        let meta = MuseAdapter::new(
+            PathBuf::from("/usr/local/bin/muse"),
+            "Muse Code 1.3.0 (1.3.0-R3401.1)",
+            "test-model",
+            "high",
+            "meta",
+            "untrusted",
+        )
+        .expect("valid fixture");
+        let start_packet = packet(AgentRole::Implementation);
+        let resume_packet = packet(AgentRole::Correction);
+        vec![
+            echo.plan_start(&session(), &start_packet)
+                .expect("valid fixture"),
+            echo.plan_resume(&session(), &resume_packet)
+                .expect("valid fixture"),
+            meta.plan_start(&session(), &start_packet)
+                .expect("valid fixture"),
+            meta.plan_resume(&session(), &resume_packet)
+                .expect("valid fixture"),
+        ]
+    }
+
+    #[test]
+    fn plans_never_emit_confinement_escape_hatches() {
+        let forbidden = MuseAdapter::forbidden_flags();
+        assert!(forbidden.contains(&"--yolo"));
+        assert!(forbidden.contains(&"--disable-sandbox"));
+        assert!(forbidden.contains(&"--worktree"));
+        for plan in all_plans() {
+            for argument in &plan.arguments {
+                assert!(
+                    !forbidden.contains(&argument.as_str()),
+                    "escape hatch in plan: {argument}"
+                );
+            }
+            assert_eq!(
+                plan.working_directory,
+                PathBuf::from("/tmp/muse-worker-fixture")
+            );
+        }
+    }
+
+    #[test]
+    fn planning_is_deterministic_with_no_retry_state() {
+        let adapter = adapter();
+        let first = adapter
+            .plan_start(&session(), &packet(AgentRole::Implementation))
+            .expect("valid fixture");
+        let second = adapter
+            .plan_start(&session(), &packet(AgentRole::Implementation))
+            .expect("valid fixture");
+        assert_eq!(first, second);
+    }
+
+    #[test]
+    fn provider_stays_refused_until_execution_proofs_land() {
+        let blockers = MuseAdapter::execution_blockers();
+        assert!(blockers.len() >= 4);
+        assert!(blockers.iter().all(|blocker| !blocker.is_empty()));
     }
 
     #[test]

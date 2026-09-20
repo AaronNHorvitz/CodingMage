@@ -9959,6 +9959,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -9994,6 +9995,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -10029,6 +10031,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -10064,6 +10067,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -10099,6 +10103,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -33785,6 +33790,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -33807,7 +33813,8 @@
       "test_mappings": {
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
-          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment"
+          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
         ],
         "malformed_input": [
           "crates/codingmage-muse/src/lib.rs::cli_parse_does_not_mistake_prose_for_a_cancel_command",
@@ -33832,6 +33839,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -33874,6 +33882,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -33909,6 +33918,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -33919,9 +33929,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:admit:625",
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:admit:668",
       "kind": "fn",
-      "line": 625,
+      "line": 668,
       "name": "admit",
       "path": "crates/codingmage-muse/src/lib.rs",
       "surface": "rust_public_api",
@@ -33944,6 +33954,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -33966,7 +33977,8 @@
       "test_mappings": {
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
-          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment"
+          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
         ],
         "malformed_input": [
           "crates/codingmage-muse/src/lib.rs::cli_parse_does_not_mistake_prose_for_a_cancel_command",
@@ -33991,6 +34003,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34026,6 +34039,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34046,7 +34060,8 @@
       "test_mappings": {
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
-          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment"
+          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34066,6 +34081,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34086,7 +34102,8 @@
       "test_mappings": {
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
-          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment"
+          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34106,6 +34123,43 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:execution_blockers:535",
+      "kind": "fn",
+      "line": 535,
+      "name": "execution_blockers",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
+          "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation",
+          "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail",
+          "crates/codingmage-muse/src/lib.rs::normalize_output_fails_closed_on_unobserved_shapes"
+        ],
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34126,7 +34180,8 @@
       "test_mappings": {
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
-          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment"
+          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34146,6 +34201,43 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:forbidden_flags:508",
+      "kind": "fn",
+      "line": 508,
+      "name": "forbidden_flags",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
+          "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
+          "crates/codingmage-muse/src/lib.rs::cli_parse_rejects_unrecognized_identity",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation",
+          "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail",
+          "crates/codingmage-muse/src/lib.rs::normalize_output_fails_closed_on_unobserved_shapes"
+        ],
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::invalid_session_and_packet_paths_fail"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34166,7 +34258,8 @@
       "test_mappings": {
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
-          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment"
+          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34186,6 +34279,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34221,6 +34315,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34232,16 +34327,17 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:normalize_output:519",
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:normalize_output:562",
       "kind": "fn",
-      "line": 519,
+      "line": 562,
       "name": "normalize_output",
       "path": "crates/codingmage-muse/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
-          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment"
+          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34261,6 +34357,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34303,6 +34400,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34338,6 +34436,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34373,6 +34472,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34408,6 +34508,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34443,6 +34544,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34478,6 +34580,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34498,7 +34601,8 @@
       "test_mappings": {
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
-          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment"
+          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34518,6 +34622,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34538,7 +34643,8 @@
       "test_mappings": {
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
-          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment"
+          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34558,6 +34664,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34593,6 +34700,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34628,6 +34736,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34663,6 +34772,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34685,7 +34795,8 @@
       "test_mappings": {
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
-          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment"
+          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
         ],
         "malformed_input": [
           "crates/codingmage-muse/src/lib.rs::cli_parse_does_not_mistake_prose_for_a_cancel_command",
@@ -34710,6 +34821,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -34730,7 +34842,8 @@
       "test_mappings": {
         "boundary": [
           "crates/codingmage-muse/src/lib.rs::adapter_bounds_invocation_deadline",
-          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment"
+          "crates/codingmage-muse/src/lib.rs::adapter_bounds_login_environment",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state"
         ],
         "negative": [
           "crates/codingmage-muse/src/lib.rs::adapter_pins_version_and_refuses_drift",
@@ -34750,6 +34863,7 @@
         "repeatability": [
           "crates/codingmage-muse/src/lib.rs::adapter_rejects_noncanonical_profiles",
           "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::planning_is_deterministic_with_no_retry_state",
           "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
@@ -57111,6 +57225,6 @@
       }
     }
   ],
-  "items_sha256": "52eb914aac97700579d56353b86487d1e000a6c2eec2e4054b34a52241f4cc92",
+  "items_sha256": "77931e461c73795313342a89173c1ce16d248e661f9b86c4b3eda21763e3c6b4",
   "schema_version": 1
 }

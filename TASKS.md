@@ -1717,7 +1717,7 @@ availability and separately authorized authenticated access remain explicit qual
     <!-- depends-on: 31.1.1.1 -->
   - [x] **Sub-task 31.1.1.3:** Implement the typed CLI adapter with reference-only authentication, bounded environment, normalized output and version-drift refusal; retain independent reviewer routing. `MuseAdapter` plans echo/meta argv from observed flags only, refuses drift and reviewer roles, and normalizes echo output through `normalize_events`; see `docs/evidence/sprint-31-muse-protocol.md`.
     <!-- depends-on: 31.1.1.2 -->
-  - [ ] **Sub-task 31.1.1.4:** Prove all nested workers, tools, worktrees and retries stay under coordinator ownership and aggregate limits; refuse the provider if direct Git/publication or worker confinement cannot be controlled.
+  - [x] **Sub-task 31.1.1.4:** Prove all nested workers, tools, worktrees and retries stay under coordinator ownership and aggregate limits; refuse the provider if direct Git/publication or worker confinement cannot be controlled. Plan-surface proof: escape-hatch denylist over all plans, coordinator-bound worktrees, deterministic planning, policy-granted deps only, active execution refusal; execution-time confinement stays open on 31.1.1.5/Story 31.2. See `docs/evidence/sprint-31-muse-protocol.md`.
     <!-- depends-on: 31.1.1.3 -->
   - [ ] **Sub-task 31.1.1.5:** Run malformed-output, false-success, session mismatch, quota, restart, worker-escape, orphan, cancellation and unrelated-process preservation fixtures.
     <!-- depends-on: 31.1.1.4 -->

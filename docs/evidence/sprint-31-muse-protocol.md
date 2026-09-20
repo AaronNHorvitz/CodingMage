@@ -55,15 +55,16 @@ git diff --check
 - `cargo fmt --check`: clean (workspace).
 - `cargo clippy -p codingmage-muse --all-targets -- -D warnings`: no warnings.
 - `cargo test -p codingmage-muse --all-targets -- --test-threads=1`:
-  20 passed, 0 failed (spec admission and CLI pins plus adapter profile
+  23 passed, 0 failed (spec admission and CLI pins plus adapter profile
   refusal, version-drift refusal, bounded login environment and
   deadline, observed-flag start/resume plans with provider-gated
   model/effort, reviewer-role routing, session/packet path refusal,
   echo-shape normalization with privacy retention, fail-closed
-  unobserved shapes, stable codes).
+  unobserved shapes, escape-hatch denylist over all plans, planning
+  determinism, active execution refusal, stable codes).
 - `python3 scripts/docs_check.py`, `python3 scripts/check_architecture.py`:
   pass.
-- Verification inventory regenerated: 1,331 surfaces became 1,362
+- Verification inventory regenerated: 1,331 surfaces became 1,364
   with 6 new explicit gaps (uncovered malformed-input/unknown-field
   categories on the new spec and adapter items — the same
   informational kind sibling provider crates already carry); the
@@ -137,10 +138,39 @@ proofs (31.1.1.4) and authorized live qualification (Story 31.2).
   retained). No usage counters appear anywhere in the observed streams,
   confirming the 31.1.1.2 usage blocker.
 
+## Confinement Proofs (Sub-task 31.1.1.4)
+
+Plan-surface confinement is closed locally; execution-time confinement
+stays refused until the execution path exists:
+
+- No escape hatches: `forbidden_flags` bans approval/sandbox bypass,
+  unobserved parallelism, worker-created worktrees, workspace
+  switching, credential injection, and tool-policy overrides across
+  every echo/meta start/resume plan
+  (`plans_never_emit_confinement_escape_hatches`). Coordinator defaults
+  (approval and sandbox on) always apply.
+- Coordinator-owned worktrees: every plan binds the exact
+  coordinator-supplied working directory; the worker cannot name its
+  own. No retry state exists: repeated planning is byte-identical
+  (`planning_is_deterministic_with_no_retry_state`).
+- No Git/publication authority by construction: the crate references no
+  Git, process, runtime, or state types (verified by search), and the
+  architecture policy grants only `codingmage-agent` and
+  `codingmage-contracts` — any future authority edge fails
+  `check_architecture.py`.
+- Active refusal: `execution_blockers` keeps the provider out of use
+  (no execution path, no usage source, no cancel command, no live
+  authority) until 31.1.1.5 fault fixtures and Story 31.2 land
+  (`provider_stays_refused_until_execution_proofs_land`).
+- Observed context: headless runs report approval and sandbox on by
+  default, and agent delegation is unavailable in untrusted workspaces —
+  consistent with coordinator-owned confinement, but execution-time
+  child reaping is explicitly unproven until an execution path exists.
+
 ## Open Items
 
-Sub-task 31.1.1.4 (nested-worker, tool, worktree, and retry confinement
-under coordinator ownership and aggregate limits) is next in dependency
-order, then 31.1.1.5 fault fixtures. Live qualification (Story 31.2)
-additionally needs existing compatible provider access and explicit
-live-run authority.
+Sub-task 31.1.1.5 fault fixtures (malformed output, false success,
+session mismatch, quota, restart, worker-escape, orphan, cancellation,
+unrelated-process preservation) are next in dependency order. Live
+qualification (Story 31.2) additionally needs existing compatible
+provider access and explicit live-run authority.
