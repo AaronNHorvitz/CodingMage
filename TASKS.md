@@ -1670,9 +1670,9 @@ exception; actual USTE binding requires the committed tested interface and admis
     <!-- depends-on: 12.2.1.1, 19.1.2.3 -->
   - [x] **Sub-task 30.1.1.2:** Implement a disabled/default and deterministic fake context source; preserve journal-based recovery and standalone operation when optional memory is absent. Disabled/seeded fake with grant, policy, and quota enforcement; no recovery path references context types. See `docs/evidence/sprint-30-context-boundary.md`.
     <!-- depends-on: 30.1.1.1 -->
-  - [ ] **Sub-task 30.1.1.3:** Test wrong namespace, revoked access, stale/malformed/oversized results, hostile instructions, quota, outage, timeout, cancellation and idempotent write recovery.
+  - [x] **Sub-task 30.1.1.3:** Test wrong namespace, revoked access, stale/malformed/oversized results, hostile instructions, quota, outage, timeout, cancellation and idempotent write recovery. Failure-matrix fixtures in `crates/codingmage-contracts/src/context.rs`; see `docs/evidence/sprint-30-context-boundary.md`.
     <!-- depends-on: 30.1.1.2 -->
-  - [ ] **Sub-task 30.1.1.4:** Prove memory cannot grant permissions, clear blockers, assert tests/review or complete tasks; explicitly memory-dependent tasks remain blocked on missing capability.
+  - [x] **Sub-task 30.1.1.4:** Prove memory cannot grant permissions, clear blockers, assert tests/review or complete tasks; explicitly memory-dependent tasks remain blocked on missing capability. Authority fixture `stored_content_confers_no_authority_and_absence_stays_blocking`; see `docs/evidence/sprint-30-context-boundary.md`.
     <!-- depends-on: 30.1.1.3 -->
 
 **Story acceptance criteria**

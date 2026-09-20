@@ -7248,9 +7248,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -7293,9 +7293,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -7338,9 +7338,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -7383,9 +7383,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -7428,9 +7428,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -7473,9 +7473,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -7518,9 +7518,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -7563,9 +7563,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -7608,9 +7608,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -7653,9 +7653,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -8148,9 +8148,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9116,9 +9116,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9386,9 +9386,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9431,9 +9431,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9476,9 +9476,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9521,9 +9521,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9566,9 +9566,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9611,9 +9611,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9656,9 +9656,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9701,9 +9701,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9746,9 +9746,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9791,9 +9791,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -9836,9 +9836,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -10800,9 +10800,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -11878,9 +11878,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -15637,9 +15637,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -22946,9 +22946,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23019,9 +23019,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23092,9 +23092,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23165,9 +23165,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23238,9 +23238,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23311,9 +23311,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23373,9 +23373,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23429,9 +23429,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23474,9 +23474,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23519,9 +23519,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23586,9 +23586,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23648,9 +23648,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23704,9 +23704,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23777,9 +23777,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23839,9 +23839,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23901,9 +23901,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -23963,9 +23963,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -24036,9 +24036,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -24098,9 +24098,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -24554,9 +24554,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -24627,9 +24627,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -24689,9 +24689,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -24734,9 +24734,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -24779,9 +24779,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -24824,9 +24824,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -24880,9 +24880,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -24936,9 +24936,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -24992,9 +24992,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25037,9 +25037,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25104,9 +25104,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25166,9 +25166,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25239,9 +25239,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25312,9 +25312,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25385,9 +25385,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25447,9 +25447,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25509,9 +25509,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25560,9 +25560,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25616,9 +25616,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25672,9 +25672,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25717,9 +25717,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25784,9 +25784,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -25857,9 +25857,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26026,9 +26026,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26077,9 +26077,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26144,9 +26144,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26217,9 +26217,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26290,9 +26290,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26341,9 +26341,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26386,9 +26386,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26442,9 +26442,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26487,9 +26487,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26543,9 +26543,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26605,9 +26605,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26678,9 +26678,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26740,9 +26740,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26802,9 +26802,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26875,9 +26875,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26937,9 +26937,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -26993,9 +26993,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -27612,9 +27612,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -27679,9 +27679,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -27741,9 +27741,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -27797,9 +27797,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -27842,9 +27842,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -27898,9 +27898,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -27965,9 +27965,9 @@
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_provenance_policy_and_limits",
           "crates/codingmage-contracts/src/context.rs::rejects_malformed_records",
           "crates/codingmage-contracts/src/context.rs::rejects_unknown_fields_and_reports_stable_codes",
+          "crates/codingmage-contracts/src/context.rs::stored_content_confers_no_authority_and_absence_stays_blocking",
           "crates/codingmage-contracts/src/error.rs::invalid_codes_fail_closed",
-          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields",
-          "crates/codingmage-contracts/src/host.rs::control_refuses_stale_revision"
+          "crates/codingmage-contracts/src/error.rs::stable_error_round_trips_and_rejects_unknown_fields"
         ],
         "positive": [
           "crates/codingmage-contracts/src/context.rs::valid_grant_verifies_and_admits_read_only",
@@ -55910,6 +55910,6 @@
       }
     }
   ],
-  "items_sha256": "dcb7987c78a12cbeed2b4bfcef7de391a9f5df8318d689795658a0310405f8c6",
+  "items_sha256": "038289d617164ae0c123f8d15135b429bc1e7ce256f6c25ca7f0aae52528409d",
   "schema_version": 1
 }
