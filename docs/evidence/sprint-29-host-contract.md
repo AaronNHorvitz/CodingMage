@@ -1,8 +1,9 @@
 # Sprint 29 Host Contract Evidence (Sub-task 29.1.1.1)
 
 - **Status:** Closed versioned request, capability, status, and control schemas
-  defined in `crates/codingmage-contracts/src/host.rs`; transport, fakes, and
-  policy subjection remain open under Sub-tasks 29.1.1.2–29.1.1.4
+  defined in `crates/codingmage-contracts/src/host.rs`, plus the bounded
+  transport definition in `crates/codingmage-contracts/src/transport.rs`;
+  fakes and policy subjection remain open under Sub-tasks 29.1.1.3–29.1.1.4
 - **Source:** `2045e5e39a9903709a84faf1a36d8eb060b5dca8` on `muse/complete-development`
 - **Executed:** 2026-09-20 on Fedora Linux x86-64
 
@@ -33,6 +34,27 @@ cross-repository work, or publication is authorized.
 - Stable codes: `codingmage.host.invalid_request`,
   `codingmage.host.unsupported_version`, `codingmage.host.stale_revision`.
 
+## Transport (Sub-task 29.1.1.2)
+
+Selection: local Unix-domain socket under an operator-owned `0700`
+directory, JSON payloads, four-byte big-endian length-prefixed frames
+(`TRANSPORT_KIND = "unix-socket-json-v1"`). No shell-string transport, no
+terminal scraping, no shared mutable file, no upstream endpoint. Socket
+input/output attaches in a later stage against exactly these types.
+
+- `TransportLimits`: maximum frame bytes (1 KiB–16 MiB, default 1 MiB),
+  per-connection request ceiling, and read/write deadlines (100 ms–10 min),
+  all validated by `verify()`.
+- `encode_frame`/`decode_frame`: pure length-prefixed codec. Empty payloads,
+  oversize advertisements, truncated buffers, and zero lengths each fail with
+  a distinct typed error; trailing bytes are left for later frames.
+- `validate_peer_directory`: admits only the expected owner uid with zero
+  group/other permission bits; the input/output layer supplies the observed
+  metadata.
+- Stable codes: `codingmage.host.transport.invalid_limits`,
+  `empty_frame`, `oversize_frame`, `truncated_frame`, `malformed_frame`,
+  `peer_refused`.
+
 ## Commands
 
 ```text
@@ -48,15 +70,15 @@ git diff --check
 
 - `cargo fmt --check`: clean.
 - `cargo clippy --all-targets -- -D warnings`: no warnings.
-- `cargo test --all-targets`: 18 passed, 0 failed (7 pre-existing plus 11
-  new schema, refusal, freshness, pairing, and stability fixtures).
-- Verification inventory regenerated: 1,226 surfaces became 1,245 with zero
+- `cargo test --all-targets`: 27 passed, 0 failed (7 pre-existing, 11
+  schema fixtures, 9 transport fixtures covering limits, framing, peer
+  refusal, and code stability).
+- Verification inventory regenerated: 1,226 surfaces became 1,269 with zero
   new explicit gaps; the generator check passes.
 
 ## Open Items
 
-Sub-task 29.1.1.2 (transport, peer validation, framing, deadlines, typed
-errors), 29.1.1.3 (fake clients and fixtures), and 29.1.1.4 (coordinator
+Sub-tasks 29.1.1.3 (fake clients and fixtures) and 29.1.1.4 (coordinator
 policy subjection with recorded schema identities) remain open in dependency
 order. Consumer-side qualification in Story 29.3 additionally needs the
 blocked frozen-target soak and evidence renewal.

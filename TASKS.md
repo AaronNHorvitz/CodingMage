@@ -1607,7 +1607,7 @@ controlled-target qualification. USTE, Muse and public release publication are n
 - [ ] **Task 29.1.1 - Implement the host contract and local fixtures**
   - [x] **Sub-task 29.1.1.1:** Define closed versioned request, capability, status and control schemas binding client/repository/run/task identities, source and authority digests, request ID and expected state revision. Schemas live in `crates/codingmage-contracts/src/host.rs`; transport and fakes stay open. See `docs/evidence/sprint-29-host-contract.md`.
     <!-- depends-on: 4.2.1.1, 12.2.1.1, 19.1.2.3 -->
-  - [ ] **Sub-task 29.1.1.2:** Define the bounded local transport, peer validation, framing, deadlines and typed errors without inventing an upstream API or granting shell-string execution.
+  - [x] **Sub-task 29.1.1.2:** Define the bounded local transport, peer validation, framing, deadlines and typed errors without inventing an upstream API or granting shell-string execution. Framing, limits, peer policy, and typed errors live in `crates/codingmage-contracts/src/transport.rs`; socket input/output attaches later. See `docs/evidence/sprint-29-host-contract.md`.
     <!-- depends-on: 29.1.1.1 -->
   - [ ] **Sub-task 29.1.1.3:** Implement fake clients and positive/negative fixtures for versions, malformed messages, unauthorized peers, widened scope, cross-project identity and stale controls.
     <!-- depends-on: 29.1.1.2 -->
