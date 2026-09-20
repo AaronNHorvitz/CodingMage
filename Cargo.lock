@@ -153,6 +153,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "codingmage-muse"
+version = "0.1.0"
+dependencies = [
+ "codingmage-agent",
+ "codingmage-contracts",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "codingmage-orchestrator"
 version = "0.1.0"
 dependencies = [

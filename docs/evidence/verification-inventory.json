@@ -3105,6 +3105,26 @@
     },
     {
       "category": "malformed_input",
+      "id": "rust:crates/codingmage-muse/src/lib.rs:const:MUSE_PROVIDER:18",
+      "status": "uncovered"
+    },
+    {
+      "category": "unknown_field",
+      "id": "rust:crates/codingmage-muse/src/lib.rs:const:MUSE_PROVIDER:18",
+      "status": "uncovered"
+    },
+    {
+      "category": "malformed_input",
+      "id": "rust:crates/codingmage-muse/src/lib.rs:enum:MuseSpecError:37",
+      "status": "uncovered"
+    },
+    {
+      "category": "unknown_field",
+      "id": "rust:crates/codingmage-muse/src/lib.rs:enum:MuseSpecError:37",
+      "status": "uncovered"
+    },
+    {
+      "category": "malformed_input",
       "id": "rust:crates/codingmage-orchestrator/src/lib.rs:enum:ImplementationOutcome:201",
       "status": "uncovered"
     },
@@ -9895,6 +9915,62 @@
       "test_mappings": {
         "repeatability": [
           "crates/codingmage-monitor/src/lib.rs::all_lifecycle_controls_are_idempotent"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "error:codingmage.muse.missing_version",
+      "kind": "error_code",
+      "line": 50,
+      "name": "codingmage.muse.missing_version",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "stable_error_code",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation"
+        ],
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "error:codingmage.muse.wrong_provider",
+      "kind": "error_code",
+      "line": 49,
+      "name": "codingmage.muse.wrong_provider",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "stable_error_code",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation"
+        ],
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
         ]
       }
     },
@@ -33556,6 +33632,116 @@
     {
       "applicable_categories": [
         "positive",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-muse/src/lib.rs:const:MUSE_PROVIDER:18",
+      "kind": "const",
+      "line": 18,
+      "name": "MUSE_PROVIDER",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-muse/src/lib.rs:enum:MuseSpecError:37",
+      "kind": "enum",
+      "line": 37,
+      "name": "MuseSpecError",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation"
+        ],
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:admit:71",
+      "kind": "fn",
+      "line": 71,
+      "name": "admit",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation"
+        ],
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-muse/src/lib.rs:fn:required_capabilities:25",
+      "kind": "fn",
+      "line": 25,
+      "name": "required_capabilities",
+      "path": "crates/codingmage-muse/src/lib.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_each_missing_behavior",
+          "crates/codingmage-muse/src/lib.rs::admission_rejects_wrong_provider_and_missing_version",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_refuse_wrong_session_continuation"
+        ],
+        "positive": [
+          "crates/codingmage-muse/src/lib.rs::admission_accepts_the_exact_required_behavior",
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel"
+        ],
+        "repeatability": [
+          "crates/codingmage-muse/src/lib.rs::fake_transcripts_round_trip_probe_start_continue_usage_cancel",
+          "crates/codingmage-muse/src/lib.rs::spec_error_codes_are_stable"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
         "negative",
         "boundary",
         "malformed_input",
@@ -55910,6 +56096,6 @@
       }
     }
   ],
-  "items_sha256": "038289d617164ae0c123f8d15135b429bc1e7ce256f6c25ca7f0aae52528409d",
+  "items_sha256": "3209bb4315d61f87110f5fc1834550b2db950414883d92df57de8e6c25e27cfc",
   "schema_version": 1
 }

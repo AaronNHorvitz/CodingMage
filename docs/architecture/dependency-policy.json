@@ -10,6 +10,7 @@
     "codingmage-git": ["codingmage-contracts", "codingmage-core"],
     "codingmage-github": ["codingmage-contracts", "codingmage-state"],
     "codingmage-monitor": ["codingmage-contracts", "codingmage-state"],
+    "codingmage-muse": ["codingmage-agent", "codingmage-contracts"],
     "codingmage-gate": ["codingmage-contracts", "codingmage-process"],
     "codingmage-plan": ["codingmage-contracts"],
     "codingmage-orchestrator": ["codingmage-contracts", "codingmage-plan", "codingmage-state"],

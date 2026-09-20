@@ -1711,7 +1711,7 @@ availability and separately authorized authenticated access remain explicit qual
 ### Story 31.1 - Capability Admission And Adapter
 
 - [ ] **Task 31.1.1 - Verify the protocol before enabling a worker**
-  - [ ] **Sub-task 31.1.1.1:** Define required structured probe/start/continue/cancel/usage behavior and deterministic fake transcripts using the existing provider-neutral contract.
+  - [x] **Sub-task 31.1.1.1:** Define required structured probe/start/continue/cancel/usage behavior and deterministic fake transcripts using the existing provider-neutral contract. Required-behavior spec and `FakeAdapter` lifecycle transcripts in `crates/codingmage-muse/src/lib.rs`; see `docs/evidence/sprint-31-muse-protocol.md`.
     <!-- depends-on: 4.2.1.1, 4.2.2.3 -->
   - [ ] **Sub-task 31.1.1.2:** Inspect the exact available CLI identity and supported structured protocol; record version/capability pins and a truthful blocker for unsupported behavior without terminal scraping or assumed flags.
     <!-- depends-on: 31.1.1.1 -->
