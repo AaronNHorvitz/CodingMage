@@ -198,3 +198,13 @@ Task 29.2.1 is complete. Consumer-side qualification in Story 29.3 needs
 counterpart-roadmap admission plus the blocked frozen-target soak and
 evidence renewal, all recorded as unavailable in
 `sprint-29-readiness-census.md`.
+
+## Sprint 29 Gate 29.1
+
+Gate 29.1 is met by the fixtures above: 27 contracts unit, 15 contracts
+integration (11 refusal-matrix plus 4 policy pins), and 129 runtime lib
+tests pass, including schema, authority, privacy (exact serialized key
+sets, static refusal codes), duplicate-request replay, and recovery
+fixtures; standalone operation is intact (no existing test modified, full
+runtime lib suite green). Gate 29.2 needs the externally blocked consumer
+side.

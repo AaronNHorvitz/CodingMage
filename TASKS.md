@@ -1650,7 +1650,7 @@ controlled-target qualification. USTE, Muse and public release publication are n
 
 ### Sprint 29 Gate
 
-- [ ] **Gate 29.1:** Local schema, authority, privacy, duplicate-request and recovery fixtures pass; standalone operation remains intact.
+- [x] **Gate 29.1:** Local schema, authority, privacy, duplicate-request and recovery fixtures pass; standalone operation remains intact. 27 unit, 15 integration, and 129 runtime lib fixtures green; see `docs/evidence/sprint-29-host-contract.md`.
 - [ ] **Gate 29.2:** Consumer-side tests against the admitted pinned host pass; no untested live, platform or release claim is added.
 
 ---

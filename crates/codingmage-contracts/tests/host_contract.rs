@@ -7,7 +7,7 @@
 
 use codingmage_contracts::{
     ClientId, HostBlocker, HostCapability, HostContractError, HostControl, HostControlOperation,
-    HostOperation, HostRequest, HostRunState, HostStatus, RepositoryId, RequestId, RunId,
+    HostOperation, HostRequest, HostRunState, HostStatus, RepositoryId, RequestId, RunId, TaskId,
     TransportLimits, decode_frame, encode_frame,
 };
 
@@ -278,4 +278,66 @@ fn fake_client_status_shapes_verify() {
 
 fn authority_revision() -> u64 {
     FakeAuthority::pinned().revision
+}
+
+#[test]
+fn fake_client_envelopes_minimize_content() {
+    let authority = FakeAuthority::pinned();
+    let mut scoped = authority.request(HostOperation::SubmitJob);
+    scoped.run = Some(RunId::new("run-owned").expect("valid fixture"));
+    scoped.task = Some(TaskId::new("task-owned").expect("valid fixture"));
+    let request = serde_json::to_value(scoped).expect("valid fixture");
+    let request_keys: Vec<&str> = request
+        .as_object()
+        .expect("valid fixture")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    assert_eq!(
+        request_keys,
+        vec![
+            "authority_policy_digest",
+            "client_id",
+            "expected_state_revision",
+            "operation",
+            "protocol_version",
+            "repository",
+            "request_id",
+            "run",
+            "source_commit",
+            "task",
+            "task_source_digest",
+        ]
+    );
+    let status = serde_json::to_value(HostStatus {
+        request_id: RequestId::new("fake-req-5").expect("valid fixture"),
+        run: RunId::new("run-owned").expect("valid fixture"),
+        state: HostRunState::Active,
+        state_revision: 6,
+        blocker: None,
+    })
+    .expect("valid fixture");
+    let status_keys: Vec<&str> = status
+        .as_object()
+        .expect("valid fixture")
+        .keys()
+        .map(String::as_str)
+        .collect();
+    assert_eq!(
+        status_keys,
+        vec!["request_id", "run", "state", "state_revision"]
+    );
+    let secret = "super-secret-payload-bytes";
+    let encoded = format!(
+        "{secret}{}",
+        serde_json::to_string(&status).expect("valid fixture")
+    );
+    for refusal in [
+        HostContractError::InvalidRequest,
+        HostContractError::UnsupportedVersion,
+        HostContractError::StaleRevision,
+    ] {
+        assert!(!refusal.to_string().contains(secret), "{refusal:?}");
+    }
+    assert!(!encoded.contains("blocker"));
 }

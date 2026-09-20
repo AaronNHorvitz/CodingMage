@@ -1269,6 +1269,34 @@ mod tests {
     }
 
     #[test]
+    fn event_pages_minimize_content() {
+        let run = RunId::new("cursor-run-5").expect("valid fixture");
+        let page = super::page_host_events(&event_sequence(2), &run, &cursor(&run, 0, 10))
+            .expect("valid fixture");
+        let encoded = serde_json::to_value(&page).expect("valid fixture");
+        let keys: Vec<&str> = encoded
+            .as_object()
+            .expect("valid fixture")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        assert_eq!(
+            keys,
+            vec!["events", "gap", "next_from_index", "resync_revision"]
+        );
+        let event_keys: Vec<&str> = encoded["events"][0]
+            .as_object()
+            .expect("valid fixture")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        assert_eq!(
+            event_keys,
+            vec!["digest", "index", "kind", "state_revision"]
+        );
+    }
+
+    #[test]
     fn disposition_error_codes_are_stable() {
         assert_eq!(
             HostDispositionError::Malformed.to_string(),
