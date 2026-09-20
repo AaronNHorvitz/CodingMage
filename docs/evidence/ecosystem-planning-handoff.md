@@ -4,6 +4,7 @@
 - **Repository:** CodingMage only
 - **Destination branch:** `feat/hierarchical-campaigns`
 - **Starting commit:** `37e7e51ddec36adecc759f11a28e00e8e8f9487a`
+- **Reviewed planning commit:** `db5bd77b0fe5c157677910560a6b41d23b6cd928`
 - **Scope:** Owner-requested planning reconciliation and branch push, before external development
   with Muse Code. No integration implementation or live qualification is claimed.
 
@@ -58,7 +59,7 @@ test thread were configured. No Cargo build or live provider was started for thi
 | Task-structure inspection | 656 unique sub-task IDs, 26 explicit dependency entries resolving without cycles, and all 46 new integration checklist rows unchecked |
 | Existing downstream-name privacy test | Passed as part of the full suite with all new documents staged |
 | `git diff --check` and `git diff --cached --check` | Passed |
-| Runtime/test/evidence-input preservation | No Rust, test or script edits; retained multi-agent binding unchanged |
+| Runtime/test and binding preservation | No Rust, test or script edits; retained multi-agent binding unchanged |
 
 The updated suite was observed inside `codingmage-plan-verification.scope` with the same
 5368709120/6442450944/536870912-byte memory limits as the baseline. Available memory before the
@@ -69,6 +70,12 @@ live integration, native-platform or independent-review result is claimed for th
 Review of this documentation diff is an agent self-review, not the independent human review
 required for release. Branch publication is authorized by the owner's planning request and does
 not promote or qualify a release candidate.
+
+The planning commit above contains the complete 13-file documentation/policy batch. Its committed
+diff was reviewed and passed `git show --format= --check`. This follow-up only records that exact
+identity and clarifies the preservation label; the README is an intentionally changed evidence
+input. Documentation and diff checks are rerun for this report update. The Git commit containing
+this update provides the immutable handoff identity without a self-referential embedded hash.
 
 ## Exact Continuation For Muse Or Another Development Tool
 
