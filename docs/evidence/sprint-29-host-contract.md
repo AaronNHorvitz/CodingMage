@@ -131,10 +131,29 @@ plus 5 admission fixtures covering every effect and refusal class);
 workspace `cargo clippy --all-targets -- -D warnings` clean; inventory
 1,269 surfaces became 1,277 with zero new explicit gaps.
 
+## Durable Dispositions (Sub-task 29.2.1.2)
+
+`HostDispositionStore` in the same module persists one atomic
+`host-dispositions.json` document keyed by request identity. Identical
+retries replay the stored terminal outcome without re-executing; an identity
+bound to a different request digest is refused as conflicting reuse; an
+accepted-but-unfinished record blocks replay as uncertain until `reconcile`
+settles it to a terminal outcome, and settled history never changes
+(repeating the stored outcome is observational). Store roots are
+caller-supplied private directories; malformed documents and records fail at
+open and at write.
+
+Gates: `cargo test -p codingmage-runtime --lib` 117 passed (111 plus 6
+disposition fixtures covering replay, conflicting reuse, uncertainty,
+reconciliation, reopening, and malformed inputs); crate Clippy clean;
+inventory 1,277 surfaces became 1,291 with zero new explicit gaps. One
+self-review correction: the first `reconcile` draft accepted `Accepted` as a
+no-op, and the new `reconcile_settles_uncertain_records_exactly_once`
+fixture caught it before any commit; only terminal outcomes reconcile.
+
 ## Open Items
 
-Sub-tasks 29.2.1.2 (durable request identity and dispositions), 29.2.1.3
-(event observation and bounded cursors), and 29.2.1.4 (restart and crash
-recovery) remain open in dependency order. Consumer-side qualification in
-Story 29.3 additionally needs the blocked frozen-target soak and evidence
-renewal.
+Sub-tasks 29.2.1.3 (event observation and bounded cursors) and 29.2.1.4
+(restart and crash recovery) remain open in dependency order. Consumer-side
+qualification in Story 29.3 additionally needs the blocked frozen-target soak
+and evidence renewal.

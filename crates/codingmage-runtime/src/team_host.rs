@@ -9,9 +9,23 @@
 //! request dispositions, event cursors, and restart reconciliation attach in
 //! later stages without changing these rules.
 
-use codingmage_contracts::{ClientId, HostContractError, HostOperation, HostRequest, RepositoryId};
+use std::{
+    collections::BTreeMap,
+    fmt, fs,
+    path::{Path, PathBuf},
+};
+
+use codingmage_contracts::{
+    ClientId, HostContractError, HostOperation, HostRequest, RepositoryId, RequestId,
+};
+use codingmage_state::{IntegrityDocument, IntegrityDocumentError};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use super::campaign_state::CampaignControlAction;
+
+/// Durable host-disposition document name.
+const DISPOSITION_DOCUMENT: &str = "host-dispositions.json";
 
 /// Pinned operator grant a host request is admitted against.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -24,7 +38,8 @@ pub struct HostAdmissionPolicy {
 }
 
 /// Effect kind resolved for one admitted host request.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum HostEffectKind {
     /// Bounded job submission descriptor; execution needs later stages.
     Submit,
@@ -136,6 +151,254 @@ fn valid_digest(value: &str) -> bool {
         && value
             .bytes()
             .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+}
+
+/// Terminal outcome recorded for one request identity.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DispositionOutcome {
+    /// Admitted; the effect outcome is still uncertain (crash window).
+    Accepted,
+    /// Effect completed with the recorded result digest.
+    Completed {
+        /// Lowercase SHA-256 of the canonical result summary.
+        result_digest: String,
+    },
+    /// Request refused with the stable refusal code.
+    Refused {
+        /// Stable refusal code, never a prompt or prose.
+        code: String,
+    },
+}
+
+/// Durable record for one request identity.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct HostDisposition {
+    /// Request identity this record belongs to.
+    pub request_id: RequestId,
+    /// SHA-256 of the canonical admitted request JSON.
+    pub request_digest: String,
+    /// Resolved effect kind.
+    pub effect: HostEffectKind,
+    /// Recorded outcome.
+    pub outcome: DispositionOutcome,
+}
+
+/// Replay decision for one request identity.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum DispositionDecision {
+    /// No record exists: the caller may execute the effect once.
+    Proceed(HostEffectKind),
+    /// An identical retry: return the stored outcome without re-executing.
+    Replay(DispositionOutcome),
+}
+
+/// Stable disposition-store error.
+#[derive(Debug, Eq, PartialEq)]
+pub enum HostDispositionError {
+    /// Durable document I/O failed.
+    Document(IntegrityDocumentError),
+    /// A stored or supplied value was malformed.
+    Malformed,
+    /// The identity is already bound to a different request.
+    ConflictingReuse,
+    /// The recorded outcome is still uncertain; reconcile first.
+    Uncertain,
+    /// No record exists for the identity.
+    UnknownRequest,
+}
+
+impl fmt::Display for HostDispositionError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::Document(_) => "codingmage.host.disposition.document",
+            Self::Malformed => "codingmage.host.disposition.malformed",
+            Self::ConflictingReuse => "codingmage.host.disposition.conflicting_reuse",
+            Self::Uncertain => "codingmage.host.disposition.uncertain",
+            Self::UnknownRequest => "codingmage.host.disposition.unknown_request",
+        })
+    }
+}
+
+impl std::error::Error for HostDispositionError {}
+
+/// Durable idempotency store for host request dispositions.
+///
+/// Identical retries return prior results without re-executing; conflicting
+/// reuse of an identity is refused; uncertain (accepted but unfinished)
+/// records block replay until reconciled to a terminal outcome.
+pub struct HostDispositionStore {
+    root: PathBuf,
+    records: BTreeMap<String, HostDisposition>,
+}
+
+impl HostDispositionStore {
+    /// Opens one exact private store root, loading and verifying any record.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HostDispositionError`] for malformed stored records or
+    /// durable I/O behavior.
+    pub fn open(root: &Path) -> Result<Self, HostDispositionError> {
+        let records = Self::load_document(root)?;
+        for record in records.values() {
+            record
+                .verify()
+                .map_err(|_| HostDispositionError::Malformed)?;
+        }
+        Ok(Self {
+            root: root.to_path_buf(),
+            records,
+        })
+    }
+
+    /// Records admission or replays the stored disposition.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HostDispositionError::ConflictingReuse`] when the identity
+    /// is bound to a different request, [`HostDispositionError::Uncertain`]
+    /// when the stored outcome still needs reconciliation, and document
+    /// errors for durable I/O behavior.
+    pub fn record_admitted(
+        &mut self,
+        request: &HostRequest,
+        effect: HostEffectKind,
+    ) -> Result<DispositionDecision, HostDispositionError> {
+        let digest = request_digest(request).map_err(|_| HostDispositionError::Malformed)?;
+        let key = request.request_id.as_str().to_owned();
+        if let Some(stored) = self.records.get(&key) {
+            if stored.request_digest != digest {
+                return Err(HostDispositionError::ConflictingReuse);
+            }
+            return match &stored.outcome {
+                DispositionOutcome::Accepted => Err(HostDispositionError::Uncertain),
+                outcome => Ok(DispositionDecision::Replay(outcome.clone())),
+            };
+        }
+        let record = HostDisposition {
+            request_id: request.request_id.clone(),
+            request_digest: digest,
+            effect,
+            outcome: DispositionOutcome::Accepted,
+        };
+        record
+            .verify()
+            .map_err(|_| HostDispositionError::Malformed)?;
+        self.records.insert(key, record);
+        self.persist()?;
+        Ok(DispositionDecision::Proceed(effect))
+    }
+
+    /// Reconciles one uncertain record to a terminal outcome.
+    ///
+    /// Repeating the stored outcome is observational. Any other transition
+    /// out of a terminal outcome is refused: settled history never changes.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HostDispositionError::UnknownRequest`] for a missing
+    /// identity, [`HostDispositionError::Malformed`] for an invalid
+    /// transition, and document errors for durable I/O behavior.
+    pub fn reconcile(
+        &mut self,
+        request_id: &RequestId,
+        outcome: DispositionOutcome,
+    ) -> Result<(), HostDispositionError> {
+        if outcome == DispositionOutcome::Accepted {
+            return Err(HostDispositionError::Malformed);
+        }
+        let key = request_id.as_str().to_owned();
+        let Some(record) = self.records.get_mut(&key) else {
+            return Err(HostDispositionError::UnknownRequest);
+        };
+        if record.outcome == outcome {
+            return Ok(());
+        }
+        if record.outcome != DispositionOutcome::Accepted {
+            return Err(HostDispositionError::Malformed);
+        }
+        record.outcome = outcome;
+        record
+            .verify()
+            .map_err(|_| HostDispositionError::Malformed)?;
+        self.persist()
+    }
+
+    fn persist(&self) -> Result<(), HostDispositionError> {
+        IntegrityDocument::write_atomic(
+            &self.root,
+            DISPOSITION_DOCUMENT,
+            self.records.clone(),
+            |records| records.values().all(|record| record.verify().is_ok()),
+        )
+        .map_err(HostDispositionError::Document)?;
+        Ok(())
+    }
+
+    fn load_document(
+        root: &Path,
+    ) -> Result<BTreeMap<String, HostDisposition>, HostDispositionError> {
+        let path = root.join(DISPOSITION_DOCUMENT);
+        if fs::symlink_metadata(&path).is_err() {
+            return Ok(BTreeMap::new());
+        }
+        IntegrityDocument::<BTreeMap<String, HostDisposition>>::load(
+            root,
+            DISPOSITION_DOCUMENT,
+            |records| records.values().all(|record| record.verify().is_ok()),
+        )
+        .map(|document| document.payload)
+        .map_err(HostDispositionError::Document)
+    }
+}
+
+impl HostDisposition {
+    /// Validates digest shape and outcome coherence.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HostDispositionError::Malformed`] for a malformed digest, a
+    /// completed outcome without a digest, or a refused outcome without a code.
+    pub fn verify(&self) -> Result<(), HostDispositionError> {
+        if !valid_digest(&self.request_digest) {
+            return Err(HostDispositionError::Malformed);
+        }
+        match &self.outcome {
+            DispositionOutcome::Accepted => Ok(()),
+            DispositionOutcome::Completed { result_digest } => {
+                if valid_digest(result_digest) {
+                    Ok(())
+                } else {
+                    Err(HostDispositionError::Malformed)
+                }
+            }
+            DispositionOutcome::Refused { code } => {
+                if code.is_empty() || code.len() > 128 {
+                    Err(HostDispositionError::Malformed)
+                } else {
+                    Ok(())
+                }
+            }
+        }
+    }
+}
+
+/// Returns the SHA-256 of the canonical request JSON.
+fn request_digest(request: &HostRequest) -> Result<String, serde_json::Error> {
+    let encoded = serde_json::to_vec(request)?;
+    Ok(hex_bytes(Sha256::digest(encoded).as_ref()))
+}
+
+fn hex_bytes(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut encoded = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        encoded.push(char::from(HEX[usize::from(byte >> 4)]));
+        encoded.push(char::from(HEX[usize::from(byte & 0x0f)]));
+    }
+    encoded
 }
 
 #[cfg(test)]
@@ -321,6 +584,192 @@ mod tests {
         assert_eq!(
             admitted.request.run.as_ref().map(RunId::as_str),
             Some("host-run-1")
+        );
+    }
+
+    fn store_root() -> std::path::PathBuf {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("valid fixture")
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "codingmage-host-dispositions-{}-{unique}",
+            std::process::id()
+        ))
+    }
+
+    fn open_store() -> (HostDispositionStore, std::path::PathBuf) {
+        let root = store_root();
+        let store = HostDispositionStore::open(&root).expect("valid fixture");
+        (store, root)
+    }
+
+    #[test]
+    fn identical_retries_replay_without_reexecuting() {
+        let (mut store, root) = open_store();
+        let admitted = policy()
+            .admit(&request(HostOperation::Pause), 21)
+            .expect("valid fixture");
+        assert_eq!(
+            store
+                .record_admitted(&admitted.request, admitted.effect)
+                .expect("valid fixture"),
+            DispositionDecision::Proceed(HostEffectKind::Control(CampaignControlAction::Pause))
+        );
+        store
+            .reconcile(
+                &admitted.request.request_id,
+                DispositionOutcome::Completed {
+                    result_digest: TASK_DIGEST.to_owned(),
+                },
+            )
+            .expect("valid fixture");
+        assert_eq!(
+            store
+                .record_admitted(&admitted.request, admitted.effect)
+                .expect("valid fixture"),
+            DispositionDecision::Replay(DispositionOutcome::Completed {
+                result_digest: TASK_DIGEST.to_owned(),
+            })
+        );
+        drop(store);
+        std::fs::remove_dir_all(root).expect("valid fixture");
+    }
+
+    #[test]
+    fn conflicting_reuse_and_uncertain_replay_are_refused() {
+        let (mut store, root) = open_store();
+        let admitted = policy()
+            .admit(&request(HostOperation::SubmitJob), 21)
+            .expect("valid fixture");
+        assert!(matches!(
+            store.record_admitted(&admitted.request, admitted.effect),
+            Ok(DispositionDecision::Proceed(_))
+        ));
+        let mut conflict = admitted.request.clone();
+        conflict.expected_state_revision = 22;
+        assert_eq!(
+            store.record_admitted(&conflict, admitted.effect),
+            Err(HostDispositionError::ConflictingReuse)
+        );
+        assert_eq!(
+            store.record_admitted(&admitted.request, admitted.effect),
+            Err(HostDispositionError::Uncertain)
+        );
+        drop(store);
+        std::fs::remove_dir_all(root).expect("valid fixture");
+    }
+
+    #[test]
+    fn reconcile_settles_uncertain_records_exactly_once() {
+        let (mut store, root) = open_store();
+        let admitted = policy()
+            .admit(&request(HostOperation::Cancel), 21)
+            .expect("valid fixture");
+        let id = admitted.request.request_id.clone();
+        assert!(matches!(
+            store.record_admitted(&admitted.request, admitted.effect),
+            Ok(DispositionDecision::Proceed(_))
+        ));
+        assert_eq!(
+            store.reconcile(&id, DispositionOutcome::Accepted),
+            Err(HostDispositionError::Malformed)
+        );
+        assert_eq!(
+            store.reconcile(
+                &RequestId::new("missing-1").expect("valid fixture"),
+                completed()
+            ),
+            Err(HostDispositionError::UnknownRequest)
+        );
+        store.reconcile(&id, completed()).expect("valid fixture");
+        assert!(store.reconcile(&id, completed()).is_ok());
+        assert_eq!(
+            store.reconcile(
+                &id,
+                DispositionOutcome::Refused {
+                    code: "other".to_owned(),
+                }
+            ),
+            Err(HostDispositionError::Malformed)
+        );
+        assert_eq!(
+            store
+                .record_admitted(&admitted.request, admitted.effect)
+                .expect("valid fixture"),
+            DispositionDecision::Replay(completed())
+        );
+        drop(store);
+        std::fs::remove_dir_all(root).expect("valid fixture");
+    }
+
+    fn completed() -> DispositionOutcome {
+        DispositionOutcome::Completed {
+            result_digest: TASK_DIGEST.to_owned(),
+        }
+    }
+
+    #[test]
+    fn reopened_store_preserves_settled_records() {
+        let (mut store, root) = open_store();
+        let admitted = policy()
+            .admit(&request(HostOperation::ReportStatus), 21)
+            .expect("valid fixture");
+        assert!(matches!(
+            store.record_admitted(&admitted.request, admitted.effect),
+            Ok(DispositionDecision::Proceed(_))
+        ));
+        store
+            .reconcile(&admitted.request.request_id, completed())
+            .expect("valid fixture");
+        drop(store);
+        let mut reopened = HostDispositionStore::open(&root).expect("valid fixture");
+        assert_eq!(
+            reopened
+                .record_admitted(&admitted.request, admitted.effect)
+                .expect("valid fixture"),
+            DispositionDecision::Replay(completed())
+        );
+        drop(reopened);
+        std::fs::remove_dir_all(root).expect("valid fixture");
+    }
+
+    #[test]
+    fn malformed_documents_and_records_are_refused() {
+        let root = store_root();
+        std::fs::create_dir_all(&root).expect("valid fixture");
+        std::fs::write(root.join(DISPOSITION_DOCUMENT), b"{invalid}").expect("valid fixture");
+        assert!(matches!(
+            HostDispositionStore::open(&root),
+            Err(HostDispositionError::Document(_))
+        ));
+        std::fs::remove_dir_all(&root).expect("valid fixture");
+        let bad = HostDisposition {
+            request_id: RequestId::new("bad-1").expect("valid fixture"),
+            request_digest: "short".to_owned(),
+            effect: HostEffectKind::Observe,
+            outcome: DispositionOutcome::Accepted,
+        };
+        assert_eq!(bad.verify(), Err(HostDispositionError::Malformed));
+    }
+
+    #[test]
+    fn disposition_error_codes_are_stable() {
+        assert_eq!(
+            HostDispositionError::Malformed.to_string(),
+            "codingmage.host.disposition.malformed"
+        );
+        assert_eq!(
+            HostDispositionError::ConflictingReuse.to_string(),
+            "codingmage.host.disposition.conflicting_reuse"
+        );
+        assert_eq!(
+            HostDispositionError::Uncertain.to_string(),
+            "codingmage.host.disposition.uncertain"
+        );
+        assert_eq!(
+            HostDispositionError::UnknownRequest.to_string(),
+            "codingmage.host.disposition.unknown_request"
         );
     }
 }
