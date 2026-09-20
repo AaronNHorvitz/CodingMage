@@ -1796,12 +1796,17 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 ## Immediate Next Unit
 
-The next action is to inspect current branch, processes and resources, then execute Sub-task
-25.2.4.6 within its available authority. Review the exact source drift and required construction
-record before any rebuild. Earlier native-platform, live-service and independent-review gates stay
-open. If all earlier work is actually blocked, select the first eligible local-preparation package
-under the exception above. The next development agent does not need a Muse runtime adapter to work
-on this repository. See the development handoff for commands and the existing baseline failure.
+On 2026-09-20 the Sub-task 25.2.4.6 renewal attempt ran every locally
+runnable gate, confirmed the drift is exactly the Decision 0012 campaign
+source and the README, and stopped at the missing external construction
+record without changing binding hashes; Sub-tasks 28.1.1.1 through 28.1.1.3
+were implemented with hostile fixtures and pushed as `0953968`/`1f2d82e` on
+`muse/complete-development`. The next action is Story 29.1 local preparation
+under the readiness census in `docs/evidence/sprint-29-readiness-census.md`:
+host contract schemas, transport, fakes, and fixtures under its explicit
+dependencies only, with no live integration. Return to earlier work the moment
+any recorded prerequisite becomes available. The next development agent does
+not need a Muse runtime adapter to work on this repository.
 
 The completed continuation ledger below is historical; it is not a fresh authorization to rerun
 any old controlled-target campaign or adopt its private state:
