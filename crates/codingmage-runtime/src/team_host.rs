@@ -1015,6 +1015,176 @@ mod tests {
         );
     }
 
+    fn effects() -> Vec<super::HostEffectKind> {
+        vec![
+            super::HostEffectKind::Submit,
+            super::HostEffectKind::Observe,
+            super::HostEffectKind::Control(super::CampaignControlAction::Cancel),
+        ]
+    }
+
+    #[test]
+    fn crash_window_reopens_as_uncertain_then_replays() {
+        for effect in effects() {
+            let operation = match effect {
+                super::HostEffectKind::Submit => HostOperation::SubmitJob,
+                super::HostEffectKind::Observe => HostOperation::ReportStatus,
+                super::HostEffectKind::Control(_) => HostOperation::Cancel,
+            };
+            let (mut store, root) = open_store();
+            let admitted = policy()
+                .admit(&request(operation), 21)
+                .expect("valid fixture");
+            assert!(matches!(
+                store.record_admitted(&admitted.request, admitted.effect),
+                Ok(DispositionDecision::Proceed(_))
+            ));
+            drop(store);
+            let mut restarted = super::HostDispositionStore::open(&root).expect("valid fixture");
+            assert_eq!(
+                restarted.record_admitted(&admitted.request, admitted.effect),
+                Err(HostDispositionError::Uncertain),
+                "{effect:?}"
+            );
+            restarted
+                .reconcile(&admitted.request.request_id, completed())
+                .expect("valid fixture");
+            assert_eq!(
+                restarted
+                    .record_admitted(&admitted.request, admitted.effect)
+                    .expect("valid fixture"),
+                DispositionDecision::Replay(completed()),
+                "{effect:?}"
+            );
+            drop(restarted);
+            std::fs::remove_dir_all(root).expect("valid fixture");
+        }
+    }
+
+    #[test]
+    fn authority_revocation_narrows_admission() {
+        let admitted = policy()
+            .admit(&request(HostOperation::Pause), 21)
+            .expect("valid fixture");
+        let narrowed = HostAdmissionPolicy::new(
+            ClientId::new("host-client-1").expect("valid fixture"),
+            RepositoryId::new("host-repo-1").expect("valid fixture"),
+            TASK_DIGEST.to_owned(),
+            POLICY_DIGEST.to_owned(),
+            vec![HostOperation::ReportStatus],
+        )
+        .expect("valid fixture");
+        assert_eq!(
+            narrowed.admit(&admitted.request, 21),
+            Err(HostContractError::WidenedScope)
+        );
+        let rotated = HostAdmissionPolicy::new(
+            ClientId::new("host-client-1").expect("valid fixture"),
+            RepositoryId::new("host-repo-1").expect("valid fixture"),
+            POLICY_DIGEST.to_owned(),
+            POLICY_DIGEST.to_owned(),
+            vec![HostOperation::Pause],
+        )
+        .expect("valid fixture");
+        assert_eq!(
+            rotated.admit(&admitted.request, 21),
+            Err(HostContractError::InvalidRequest)
+        );
+    }
+
+    #[test]
+    fn duplicate_and_conflicting_retries_survive_restart() {
+        let (mut store, root) = open_store();
+        let admitted = policy()
+            .admit(&request(HostOperation::SubmitJob), 21)
+            .expect("valid fixture");
+        assert!(matches!(
+            store.record_admitted(&admitted.request, admitted.effect),
+            Ok(DispositionDecision::Proceed(_))
+        ));
+        store
+            .reconcile(&admitted.request.request_id, completed())
+            .expect("valid fixture");
+        drop(store);
+        let mut restarted = super::HostDispositionStore::open(&root).expect("valid fixture");
+        assert_eq!(
+            restarted
+                .record_admitted(&admitted.request, admitted.effect)
+                .expect("valid fixture"),
+            DispositionDecision::Replay(completed())
+        );
+        let mut conflict = admitted.request.clone();
+        conflict.task_source_digest = POLICY_DIGEST.to_owned();
+        assert_eq!(
+            restarted.record_admitted(&conflict, admitted.effect),
+            Err(HostDispositionError::ConflictingReuse)
+        );
+        drop(restarted);
+        std::fs::remove_dir_all(root).expect("valid fixture");
+    }
+
+    #[test]
+    fn stale_cancellation_reconciles_as_refused_not_replayed() {
+        let (mut store, root) = open_store();
+        let admitted = policy()
+            .admit(&request(HostOperation::Cancel), 21)
+            .expect("valid fixture");
+        assert!(matches!(
+            store.record_admitted(&admitted.request, admitted.effect),
+            Ok(DispositionDecision::Proceed(_))
+        ));
+        drop(store);
+        let mut restarted = super::HostDispositionStore::open(&root).expect("valid fixture");
+        let refused = DispositionOutcome::Refused {
+            code: "codingmage.host.stale_revision".to_owned(),
+        };
+        restarted
+            .reconcile(&admitted.request.request_id, refused.clone())
+            .expect("valid fixture");
+        assert_eq!(
+            restarted
+                .record_admitted(&admitted.request, admitted.effect)
+                .expect("valid fixture"),
+            DispositionDecision::Replay(refused)
+        );
+        drop(restarted);
+        std::fs::remove_dir_all(root).expect("valid fixture");
+    }
+
+    #[test]
+    fn unrelated_store_roots_stay_independent() {
+        let (mut first, first_root) = open_store();
+        let (mut second, second_root) = open_store();
+        let admitted = policy()
+            .admit(&request(HostOperation::SubmitJob), 21)
+            .expect("valid fixture");
+        assert!(matches!(
+            first.record_admitted(&admitted.request, admitted.effect),
+            Ok(DispositionDecision::Proceed(_))
+        ));
+        assert!(matches!(
+            second.record_admitted(&admitted.request, admitted.effect),
+            Ok(DispositionDecision::Proceed(_))
+        ));
+        first
+            .reconcile(&admitted.request.request_id, completed())
+            .expect("valid fixture");
+        assert_eq!(
+            first
+                .record_admitted(&admitted.request, admitted.effect)
+                .expect("valid fixture"),
+            DispositionDecision::Replay(completed())
+        );
+        assert_eq!(
+            second.record_admitted(&admitted.request, admitted.effect),
+            Err(HostDispositionError::Uncertain)
+        );
+        drop(first);
+        drop(second);
+        std::fs::remove_dir_all(first_root).expect("valid fixture");
+        std::fs::remove_dir_all(second_root).expect("valid fixture");
+    }
+
     #[test]
     fn disposition_error_codes_are_stable() {
         assert_eq!(

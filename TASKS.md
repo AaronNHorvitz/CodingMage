@@ -1620,14 +1620,14 @@ controlled-target qualification. USTE, Muse and public release publication are n
 
 ### Story 29.2 - Durable Controls And Observation
 
-- [ ] **Task 29.2.1 - Connect the contract to existing coordinator operations**
+- [x] **Task 29.2.1 - Connect the contract to existing coordinator operations**
   - [x] **Sub-task 29.2.1.1:** Add job submission and existing status, pause, resume, stop-after-unit and cancel operations through the typed coordinator boundary while preserving standalone CLI behavior. Admission resolves submit/observe/control effects against a pinned grant with no state-changing effect; see `docs/evidence/sprint-29-host-contract.md`.
     <!-- depends-on: 29.1.1.4, 13.2.1.1, 22.2.1.1 -->
   - [x] **Sub-task 29.2.1.2:** Persist request identity and dispositions; return prior results for identical retries, reject conflicting reuse and reconcile uncertain effects before replay. Atomic disposition store with replay/conflict/uncertainty semantics; see `docs/evidence/sprint-29-host-contract.md`.
     <!-- depends-on: 29.2.1.1 -->
   - [x] **Sub-task 29.2.1.3:** Add bounded content-minimized event cursors and explicit gap/disconnect behavior; preserve local controls when the host is unavailable. Paged observation with gap resync and host-independent local controls; see `docs/evidence/sprint-29-host-contract.md`.
     <!-- depends-on: 29.2.1.2 -->
-  - [ ] **Sub-task 29.2.1.4:** Test both-side restart, disconnect, duplicate requests, stale cancellation, authority revocation and crashes around each effect; prove unrelated checkout/process preservation.
+  - [x] **Sub-task 29.2.1.4:** Test both-side restart, disconnect, duplicate requests, stale cancellation, authority revocation and crashes around each effect; prove unrelated checkout/process preservation. Five recovery fixtures on the existing store machinery; see `docs/evidence/sprint-29-host-contract.md`.
     <!-- depends-on: 29.2.1.3 -->
 
 **Story acceptance criteria**

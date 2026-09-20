@@ -168,8 +168,24 @@ and host-independent local controls); crate Clippy clean; inventory 1,291
 surfaces became 1,299 with zero new explicit gaps. One correction: strict
 Clippy rejected a `u64`-to-`usize` cast in paging, now a checked conversion.
 
+## Restart And Crash Recovery (Sub-task 29.2.1.4)
+
+Five fixtures in the same module prove recovery around every effect using
+the existing store machinery, with no new implementation: crash windows for
+submit, observe, and control reopen as uncertain then replay after reconcile;
+duplicates and conflicting retries survive restart with replay and refusal
+preserved; authority revocation (narrowed operations, rotated digests)
+narrows admission; a stale cancellation reconciles as refused rather than
+replaying; and two unrelated store roots stay fully independent, proving
+checkout and process preservation by isolation (this layer spawns nothing).
+
+Gates: `cargo test -p codingmage-runtime --lib` 126 passed (121 plus 5
+recovery fixtures); crate Clippy clean; inventory holds at 1,299 surfaces
+with zero new explicit gaps (fixture-only change).
+
 ## Open Items
 
-Sub-task 29.2.1.4 (restart and crash recovery) remains open next in
-dependency order. Consumer-side qualification in Story 29.3 additionally
-needs the blocked frozen-target soak and evidence renewal.
+Task 29.2.1 is complete. Consumer-side qualification in Story 29.3 needs
+counterpart-roadmap admission plus the blocked frozen-target soak and
+evidence renewal, all recorded as unavailable in
+`sprint-29-readiness-census.md`.
