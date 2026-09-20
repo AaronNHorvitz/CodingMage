@@ -52,11 +52,25 @@ git diff --check
 - Verification inventory regenerated: 1,299 surfaces became 1,330 with zero
   new explicit gaps; the generator check passes.
 
+## Fake Source (Sub-task 30.1.1.2)
+
+A deterministic fake source in the `context.rs` test module backs failure
+fixtures: disabled mode refuses every call with `Unavailable` so callers
+must fall back to the journal, and seeded mode answers fixed entries with
+exact grant, policy, quota, and freshness enforcement. Journal-based
+recovery and standalone operation are preserved by construction: no
+recovery path references context types, and the existing state, runtime,
+and workflow suites pass unmodified with memory absent.
+
+Gates: `cargo test -p codingmage-contracts --lib` 36 passed (33 plus 3
+fake-source fixtures covering disabled refusal, deterministic grants, and
+policy/quota enforcement); crate Clippy clean; inventory holds at 1,330
+surfaces with zero new explicit gaps (fixture-only change).
+
 ## Open Items
 
-Sub-tasks 30.1.1.2 (disabled/default and deterministic fake source),
-30.1.1.3 (wrong namespace, revoked access, stale/malformed/oversized,
-hostile, quota, outage, timeout, cancellation, idempotent recovery), and
-30.1.1.4 (memory grants nothing) remain open in dependency order. Actual
-USTE binding in Story 30.2 needs pinned interfaces and admission on both
-sides.
+Sub-tasks 30.1.1.3 (wrong namespace, revoked access, stale/malformed/
+oversized, hostile, quota, outage, timeout, cancellation, idempotent
+recovery) and 30.1.1.4 (memory grants nothing) remain open in dependency
+order. Actual USTE binding in Story 30.2 needs pinned interfaces and
+admission on both sides.

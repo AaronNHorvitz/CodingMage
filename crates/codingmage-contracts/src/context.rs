@@ -385,6 +385,197 @@ mod tests {
         assert_eq!(provenance.verify(), Err(ContextError::Invalid));
     }
 
+    /// Deterministic fake context source for failure fixtures.
+    ///
+    /// Disabled mode refuses every call so callers must fall back to the
+    /// journal; seeded mode answers from fixed entries with exact grant,
+    /// policy, quota, and freshness enforcement. Never a provider.
+    struct FakeContextSource {
+        disabled: bool,
+        grants: Vec<ContextGrant>,
+        policy: ContextContentPolicy,
+        limits: ContextLimits,
+        entries: std::collections::BTreeMap<(String, String), Vec<u8>>,
+    }
+
+    impl FakeContextSource {
+        fn disabled() -> Self {
+            Self {
+                disabled: true,
+                grants: Vec::new(),
+                policy: ContextContentPolicy {
+                    max_bytes_per_entry: 64,
+                    max_entries: 4,
+                },
+                limits: ContextLimits {
+                    max_read_entries: 4,
+                    timeout_ms: 1_000,
+                    max_age_ms: 60_000,
+                },
+                entries: std::collections::BTreeMap::new(),
+            }
+        }
+
+        fn seeded() -> Self {
+            let mut source = Self::disabled();
+            source.disabled = false;
+            source.grants.push(ContextGrant {
+                namespace: namespace(),
+                caller: ContextCaller::Coordinator,
+                can_read: true,
+                can_write: true,
+            });
+            source.entries.insert(
+                (String::from("project-notes"), String::from("k1")),
+                vec![1, 2, 3],
+            );
+            source
+        }
+
+        fn check(
+            &self,
+            namespace: &ContextNamespace,
+            caller: &ContextCaller,
+            direction: ContextDirection,
+        ) -> Result<(), ContextError> {
+            if self.disabled {
+                return Err(ContextError::Unavailable);
+            }
+            let Some(grant) = self
+                .grants
+                .iter()
+                .find(|grant| &grant.namespace == namespace && &grant.caller == caller)
+            else {
+                return Err(ContextError::Unauthorized);
+            };
+            if !grant.admits(direction) {
+                return Err(ContextError::Unauthorized);
+            }
+            Ok(())
+        }
+
+        fn read(
+            &self,
+            namespace: &ContextNamespace,
+            caller: &ContextCaller,
+        ) -> Result<Vec<(String, Vec<u8>)>, ContextError> {
+            self.check(namespace, caller, ContextDirection::Read)?;
+            let mut records: Vec<(String, Vec<u8>)> = self
+                .entries
+                .iter()
+                .filter(|((scope, _), _)| scope == namespace.as_str())
+                .take(self.limits.max_read_entries as usize)
+                .map(|((_, key), content)| (key.clone(), content.clone()))
+                .collect();
+            records.sort();
+            Ok(records)
+        }
+
+        fn write(
+            &mut self,
+            namespace: &ContextNamespace,
+            caller: &ContextCaller,
+            key: &str,
+            content: Vec<u8>,
+        ) -> Result<(), ContextError> {
+            self.check(namespace, caller, ContextDirection::Write)?;
+            if content.len() > self.policy.max_bytes_per_entry {
+                return Err(ContextError::Oversize);
+            }
+            let scoped = self
+                .entries
+                .keys()
+                .filter(|(scope, _)| scope == namespace.as_str())
+                .count();
+            let is_new = !self
+                .entries
+                .contains_key(&(namespace.as_str().to_owned(), key.to_owned()));
+            if is_new && scoped >= self.policy.max_entries as usize {
+                return Err(ContextError::QuotaExceeded);
+            }
+            self.entries
+                .insert((namespace.as_str().to_owned(), key.to_owned()), content);
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn disabled_source_refuses_every_call() {
+        let mut source = FakeContextSource::disabled();
+        assert_eq!(
+            source.read(&namespace(), &ContextCaller::Coordinator),
+            Err(ContextError::Unavailable)
+        );
+        assert_eq!(
+            source.write(&namespace(), &ContextCaller::Coordinator, "k", vec![1]),
+            Err(ContextError::Unavailable)
+        );
+    }
+
+    #[test]
+    fn seeded_source_answers_deterministically_within_grants() {
+        let mut source = FakeContextSource::seeded();
+        assert_eq!(
+            source.read(&namespace(), &ContextCaller::Coordinator),
+            Ok(vec![(String::from("k1"), vec![1, 2, 3])])
+        );
+        source
+            .write(&namespace(), &ContextCaller::Coordinator, "k2", vec![4])
+            .expect("valid fixture");
+        assert_eq!(
+            source.read(&namespace(), &ContextCaller::Coordinator),
+            Ok(vec![
+                (String::from("k1"), vec![1, 2, 3]),
+                (String::from("k2"), vec![4])
+            ])
+        );
+        let foreign = ContextNamespace::new("other-project").expect("valid fixture");
+        assert_eq!(
+            source.read(&foreign, &ContextCaller::Coordinator),
+            Err(ContextError::Unauthorized)
+        );
+        assert_eq!(
+            source.write(
+                &namespace(),
+                &ContextCaller::Task(TaskId::new("task-9").expect("valid fixture")),
+                "k3",
+                vec![5]
+            ),
+            Err(ContextError::Unauthorized)
+        );
+    }
+
+    #[test]
+    fn fake_source_enforces_policy_and_quota() {
+        let mut source = FakeContextSource::seeded();
+        assert_eq!(
+            source.write(
+                &namespace(),
+                &ContextCaller::Coordinator,
+                "big",
+                vec![0; 65]
+            ),
+            Err(ContextError::Oversize)
+        );
+        for index in 0..3 {
+            source
+                .write(
+                    &namespace(),
+                    &ContextCaller::Coordinator,
+                    &format!("fill{index}"),
+                    vec![index],
+                )
+                .expect("valid fixture");
+        }
+        assert_eq!(
+            source.write(&namespace(), &ContextCaller::Coordinator, "full", vec![9]),
+            Err(ContextError::QuotaExceeded)
+        );
+        source
+            .write(&namespace(), &ContextCaller::Coordinator, "k1", vec![7])
+            .expect("valid fixture");
+    }
+
     #[test]
     fn rejects_unknown_fields_and_reports_stable_codes() {
         let encoded = serde_json::to_string(&record()).expect("valid fixture");
