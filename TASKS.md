@@ -27,6 +27,30 @@ CodingMage is under active implementation. A checked item means its complete imp
 18. Keep serial mode supported and regression-tested through every multi-agent change.
 19. Keep monetary values outside campaign authority; use bounded provider attempts, tokens,
     processes, output, storage, elapsed time, and accepted outcomes.
+20. Preserve the independent coordinator and journal in Decisions 0003 through 0005 when working
+    on the optional ecosystem packages admitted by Decision 0013. Host requests, USTE context and
+    provider output never create authority.
+21. Prioritize existing first-release work. Sprints 29 through 31 add no first-release prerequisite;
+    use their explicit local-preparation exception only after recording exact blockers for all
+    earlier remaining work. No public release approval is needed merely to prepare local contracts.
+22. Keep sibling repositories and their active agents outside CodingMage development authority.
+    Use pinned committed interfaces and consumer fakes; live integration requires admission on both
+    sides and its own qualification. Developing with Muse does not require a Muse runtime adapter.
+23. Complete each related capability batch before renewing dependent evidence once. Never remove
+    bound inputs, copy a new hash onto unexecuted evidence, or infer independent reviewer approval.
+
+## Current Integration And Evidence Truth
+
+The [ecosystem requirements](docs/architecture/ecosystem-integration.md) define planned host,
+optional USTE context and optional Muse provider boundaries. Their implementation and qualification
+items remain unchecked. The host's private project name remains outside tracked content.
+
+On 2026-09-20, the unchanged baseline `37e7e51` ran 38 Python tests: 37 passed and the evidence
+freshness test failed for `crates/codingmage-campaign/src/team.rs` and `README.md`. Existing reports
+retain their historical source identities; they are not current-source qualification. Task
+25.2.4.6, AC 25.4 and Gates 25.3/25.4 record the required renewal. This planning increment does not
+rebuild packages or replace those evidence hashes. See the
+[development handoff](docs/evidence/ecosystem-planning-handoff.md).
 
 ## Multi-Agent Implementation Phases
 
@@ -1290,12 +1314,13 @@ Every completed implementation sub-task must satisfy all applicable conditions:
   - [x] **Sub-task 25.2.3.3:** Exercise hostile Git configuration, aliases, hooks, filters, signers, credential helpers, replacement refs, alternates, submodules, large-file metadata, symlinks, case collisions, and Unicode collisions.
   - [ ] **Sub-task 25.2.3.4:** Exercise process escape, descendant survival, executable replacement, response-file injection, output pressure, process pressure, storage pressure, sleep, logout, shutdown, and concurrent unrelated processes. All dependency-ready Fedora process, pressure, storage, cancellation, and unrelated-process cases pass; native sleep, isolated logout, and shutdown/restart evidence remains open. See `docs/evidence/sprint-25-platform-faults.md`.
   - [x] **Sub-task 25.2.3.5:** Prove sensitive values, prompts, provider prose, source text, hidden reasoning, unrestricted environment data, and unnecessary target copies never enter durable state, logs, status, evidence, packages, or publication payloads.
-- [x] **Task 25.2.4 - Bind verification evidence and traceability**
+- [ ] **Task 25.2.4 - Bind verification evidence and traceability**
   - [x] **Sub-task 25.2.4.1:** Create a machine-checkable test matrix linking every approved multi-agent safeguard and claim to implementation, focused tests, integration tests, and evidence records. See `docs/evidence/multi-agent-scenario-matrix.json`.
   - [x] **Sub-task 25.2.4.2:** Record exact source commit, command, exit status, test counts, skipped prerequisites, artifact digests, and limitations for each required local multi-agent gate. See `docs/evidence/sprint-25-multi-agent-local.md`.
   - [x] **Sub-task 25.2.4.3:** Make stale evidence fail when its bound implementation, test command, schema, fixture, package, or platform claim changes. See `docs/evidence/multi-agent-evidence-binding.json` and its mutation tests.
   - [x] **Sub-task 25.2.4.4:** Run formatting, strict Clippy, all-target workspace tests, documentation, architecture, traceability, supply-chain, packaging, and diff-integrity checks from a clean clone. See `docs/evidence/sprint-25-multi-agent-local.md`.
   - [x] **Sub-task 25.2.4.5:** Require zero unexplained skips, warnings promoted by policy, dirty files, untracked release inputs, secret findings, broken links, invalid diagrams, or unsupported claims. The two ignored sustained qualifications are guarded, documented, and executed separately.
+  - [ ] **Sub-task 25.2.4.6:** Renew the current-source evidence after the completed capability/documentation batch: review the exact changes since the retained binding, run every affected declared gate, regenerate dependent package/provenance/evidence once, retain genuine review/construction authority, and close the freshness failure only when all input and artifact identities are verified. Baseline `37e7e51` already drifted in the campaign source and README; the planning handoff preserves the exact failure. Unavailable review or qualification prerequisites remain explicit blockers.
 - [x] **Task 25.2.5 - Execute the complete multi-agent scenario matrix**
   - [x] **Sub-task 25.2.5.1:** Admit five independent tasks concurrently with five distinct pod identities.
   - [x] **Sub-task 25.2.5.2:** Run fewer than five ready tasks without manufacturing work.
@@ -1352,14 +1377,14 @@ Every completed implementation sub-task must satisfy all applicable conditions:
 - [ ] **AC 25.1:** Given the complete fault corpus and sustained disposable campaign, when evidence is reconciled, then every effect is exact, recoverable, or truthfully blocked with no uncontrolled residue.
 - [x] **AC 25.2:** Given provider and machine capacity changes, when concurrency adapts, then required model strength and verification depth never silently decrease.
 - [x] **AC 25.3:** Given the complete contract inventory, when unit and schema suites run, then every applicable positive, negative, boundary, malformed, mutation, and repeatability case has a passing test or a truthful external blocker.
-- [x] **AC 25.4:** Given a clean clone and packaged candidate, when the full workflow matrix runs, then all local gates and traceability checks pass without undocumented skips or authority expansion.
+- [ ] **AC 25.4:** Given a clean clone and packaged candidate, when the full workflow matrix runs, then all local gates and traceability checks pass without undocumented skips or authority expansion. Reopened for current-source renewal under Sub-task 25.2.4.6; earlier passing results remain historical evidence.
 
 ### Sprint 25 Gate
 
 - [x] **Gate 25.1:** Deterministic adversarial campaigns pass after the final correction. See `docs/evidence/sprint-25-multi-agent-local.md`.
 - [x] **Gate 25.2:** Sustained one-pod and multi-pod local soak evidence passes. This does not supersede the separate controlled-target human-review gate. See `docs/evidence/sprint-25-multi-agent-local.md`.
-- [x] **Gate 25.3:** Complete crate-level unit, schema, integration, workflow, mutation, recovery, security, privacy, and package tests pass from a clean clone. See `docs/evidence/sprint-25-multi-agent-local.md`.
-- [x] **Gate 25.4:** Every safeguard and supported release claim maps to current immutable evidence; unsupported and external claims remain explicitly open. See `docs/evidence/multi-agent-evidence-binding.json`.
+- [ ] **Gate 25.3:** Complete crate-level unit, schema, integration, workflow, mutation, recovery, security, privacy, and package tests pass from a clean clone. Current-source qualification is reopened under Sub-task 25.2.4.6; `docs/evidence/sprint-25-multi-agent-local.md` retains the earlier results.
+- [ ] **Gate 25.4:** Every safeguard and supported release claim maps to current immutable evidence; unsupported and external claims remain explicitly open. Reopened after the 2026-09-20 baseline failure in `docs/evidence/multi-agent-evidence-binding.json`; do not replace hashes without executing the required renewal.
 
 ---
 
@@ -1568,6 +1593,160 @@ compatibility-layer behavior as native evidence.
 
 ---
 
+## Sprint 29 - Optional Host Application Interface
+
+**Sprint goal:** Let a separately authorized host request and observe bounded coding work without transferring coordinator authority.
+
+**Entry dependency:** Decision 0013 and the ecosystem requirements govern this optional package.
+Local schemas and fakes are dependency-independent preparation only under the scheduling exception
+below. Live host work requires counterpart-roadmap admission, pinned interfaces and standalone
+controlled-target qualification. USTE, Muse and public release publication are not prerequisites.
+
+### Story 29.1 - Versioned Client Contract
+
+- [ ] **Task 29.1.1 - Implement the host contract and local fixtures**
+  - [ ] **Sub-task 29.1.1.1:** Define closed versioned request, capability, status and control schemas binding client/repository/run/task identities, source and authority digests, request ID and expected state revision.
+    <!-- depends-on: 4.2.1.1, 12.2.1.1, 19.1.2.3 -->
+  - [ ] **Sub-task 29.1.1.2:** Define the bounded local transport, peer validation, framing, deadlines and typed errors without inventing an upstream API or granting shell-string execution.
+    <!-- depends-on: 29.1.1.1 -->
+  - [ ] **Sub-task 29.1.1.3:** Implement fake clients and positive/negative fixtures for versions, malformed messages, unauthorized peers, widened scope, cross-project identity and stale controls.
+    <!-- depends-on: 29.1.1.2 -->
+  - [ ] **Sub-task 29.1.1.4:** Verify that every request remains subject to existing coordinator policy, exact operator grants and human-only approval requirements; record schema and fixture identities.
+    <!-- depends-on: 29.1.1.3 -->
+
+**Story acceptance criteria**
+
+- [ ] **AC 29.1:** Given a valid request and matching authority, admission is deterministic; malformed, stale, unauthorized or broadened requests create no owned process, worktree or external effect.
+
+### Story 29.2 - Durable Controls And Observation
+
+- [ ] **Task 29.2.1 - Connect the contract to existing coordinator operations**
+  - [ ] **Sub-task 29.2.1.1:** Add job submission and existing status, pause, resume, stop-after-unit and cancel operations through the typed coordinator boundary while preserving standalone CLI behavior.
+    <!-- depends-on: 29.1.1.4, 13.2.1.1, 22.2.1.1 -->
+  - [ ] **Sub-task 29.2.1.2:** Persist request identity and dispositions; return prior results for identical retries, reject conflicting reuse and reconcile uncertain effects before replay.
+    <!-- depends-on: 29.2.1.1 -->
+  - [ ] **Sub-task 29.2.1.3:** Add bounded content-minimized event cursors and explicit gap/disconnect behavior; preserve local controls when the host is unavailable.
+    <!-- depends-on: 29.2.1.2 -->
+  - [ ] **Sub-task 29.2.1.4:** Test both-side restart, disconnect, duplicate requests, stale cancellation, authority revocation and crashes around each effect; prove unrelated checkout/process preservation.
+    <!-- depends-on: 29.2.1.3 -->
+
+**Story acceptance criteria**
+
+- [ ] **AC 29.2:** Given interruption or repeated controls, recovery reconciles the exact owned run without duplicate effects, silent authority expansion or reliance on host availability.
+
+### Story 29.3 - Pinned Consumer Qualification
+
+- [ ] **Task 29.3.1 - Qualify one bounded host workflow**
+  - [ ] **Sub-task 29.3.1.1:** Obtain counterpart-roadmap admission and record both committed interface/artifact identities, protocol/schema digests, capabilities and explicit disposable-target authorization.
+    <!-- depends-on: 29.2.1.4 -->
+  - [ ] **Sub-task 29.3.1.2:** Execute the consumer-side pinned host workflow from authorized job to independently reviewed exact candidate, including retry, cancellation and restart, without changing the active checkout or destination branch.
+    <!-- depends-on: 29.3.1.1, 26.1.7.4, 25.2.4.6 -->
+  - [ ] **Sub-task 29.3.1.3:** Publish only the tested compatibility row and evidence, with platform, limits, remaining gates and standalone regression results.
+    <!-- depends-on: 29.3.1.2 -->
+
+**Story acceptance criteria**
+
+- [ ] **AC 29.3:** Given the pinned client and coordinator, one disposable end-to-end job returns exact verified evidence and survives the required faults without USTE or Muse being installed.
+
+### Sprint 29 Gate
+
+- [ ] **Gate 29.1:** Local schema, authority, privacy, duplicate-request and recovery fixtures pass; standalone operation remains intact.
+- [ ] **Gate 29.2:** Consumer-side tests against the admitted pinned host pass; no untested live, platform or release claim is added.
+
+---
+
+## Sprint 30 - Optional USTE Context Consumer
+
+**Sprint goal:** Add bounded project context without replacing the authoritative journal or blocking standalone operation.
+
+**Entry dependency:** Decision 0013; the existing state and project-isolation contracts. Host
+integration and Muse support are not dependencies. Local fakes may proceed under the scheduling
+exception; actual USTE binding requires the committed tested interface and admission on both sides.
+
+### Story 30.1 - Context Port And Failure Semantics
+
+- [ ] **Task 30.1.1 - Implement a provider-independent optional context boundary**
+  - [ ] **Sub-task 30.1.1.1:** Define separate read/write grants, namespace/caller identity, operation IDs, provenance, freshness, retention, content policy, size limits, deadlines and typed unavailable/unsupported outcomes.
+    <!-- depends-on: 12.2.1.1, 19.1.2.3 -->
+  - [ ] **Sub-task 30.1.1.2:** Implement a disabled/default and deterministic fake context source; preserve journal-based recovery and standalone operation when optional memory is absent.
+    <!-- depends-on: 30.1.1.1 -->
+  - [ ] **Sub-task 30.1.1.3:** Test wrong namespace, revoked access, stale/malformed/oversized results, hostile instructions, quota, outage, timeout, cancellation and idempotent write recovery.
+    <!-- depends-on: 30.1.1.2 -->
+  - [ ] **Sub-task 30.1.1.4:** Prove memory cannot grant permissions, clear blockers, assert tests/review or complete tasks; explicitly memory-dependent tasks remain blocked on missing capability.
+    <!-- depends-on: 30.1.1.3 -->
+
+**Story acceptance criteria**
+
+- [ ] **AC 30.1:** Given disabled, unavailable or hostile memory, canonical authority and recovery remain intact, with no wrong-project disclosure or fabricated completion.
+
+### Story 30.2 - Pinned USTE Binding
+
+- [ ] **Task 30.2.1 - Admit and qualify the actual memory consumer**
+  - [ ] **Sub-task 30.2.1.1:** Obtain admission in both roadmaps and a pinned committed USTE interface with operation-level test evidence, namespace/data policy and explicit qualification access; never use a dirty sibling tree.
+    <!-- depends-on: 30.1.1.4 -->
+  - [ ] **Sub-task 30.2.1.2:** Implement the consumer adapter only against that interface and run consumer-side success, authority, isolation, fault, restart and resource tests against the exact artifact.
+    <!-- depends-on: 30.2.1.1 -->
+  - [ ] **Sub-task 30.2.1.3:** Verify disabling/rolling back the optional adapter preserves journal recovery and standalone workflows; record exact compatibility and bounded M1 limitations.
+    <!-- depends-on: 30.2.1.2 -->
+
+**Story acceptance criteria**
+
+- [ ] **AC 30.2:** Given the pinned USTE artifact, only the admitted context operations pass consumer qualification; no whole-database qualification or orchestration-state migration is implied.
+
+### Sprint 30 Gate
+
+- [ ] **Gate 30.1:** Local context contract, failure, privacy and journal-preservation fixtures pass.
+- [ ] **Gate 30.2:** Pinned USTE consumer qualification and optional-adapter rollback pass with exact evidence and truthful unsupported operations.
+
+---
+
+## Sprint 31 - Optional Muse Code Runtime Adapter
+
+**Sprint goal:** Qualify Muse as a bounded worker only if its observed capabilities satisfy the existing provider authority contract.
+
+**Entry dependency:** Decision 0013 and Story 4.2. Using Muse externally to develop this repository
+does not depend on this sprint. Host and USTE integration are not prerequisites. Installed CLI
+availability and separately authorized authenticated access remain explicit qualification gates.
+
+### Story 31.1 - Capability Admission And Adapter
+
+- [ ] **Task 31.1.1 - Verify the protocol before enabling a worker**
+  - [ ] **Sub-task 31.1.1.1:** Define required structured probe/start/continue/cancel/usage behavior and deterministic fake transcripts using the existing provider-neutral contract.
+    <!-- depends-on: 4.2.1.1, 4.2.2.3 -->
+  - [ ] **Sub-task 31.1.1.2:** Inspect the exact available CLI identity and supported structured protocol; record version/capability pins and a truthful blocker for unsupported behavior without terminal scraping or assumed flags.
+    <!-- depends-on: 31.1.1.1 -->
+  - [ ] **Sub-task 31.1.1.3:** Implement the typed CLI adapter with reference-only authentication, bounded environment, normalized output and version-drift refusal; retain independent reviewer routing.
+    <!-- depends-on: 31.1.1.2 -->
+  - [ ] **Sub-task 31.1.1.4:** Prove all nested workers, tools, worktrees and retries stay under coordinator ownership and aggregate limits; refuse the provider if direct Git/publication or worker confinement cannot be controlled.
+    <!-- depends-on: 31.1.1.3 -->
+  - [ ] **Sub-task 31.1.1.5:** Run malformed-output, false-success, session mismatch, quota, restart, worker-escape, orphan, cancellation and unrelated-process preservation fixtures.
+    <!-- depends-on: 31.1.1.4 -->
+
+**Story acceptance criteria**
+
+- [ ] **AC 31.1:** Given compatible fake and observed capability inputs, the adapter preserves all existing gates; unsupported protocol, containment or reviewer strength fails admission.
+
+### Story 31.2 - Live Provider Qualification
+
+- [ ] **Task 31.2.1 - Qualify the exact provider on a disposable target**
+  - [ ] **Sub-task 31.2.1.1:** Establish existing compatible provider access and explicit live-run authority without provisioning accounts, purchasing plans or fabricating credentials.
+    <!-- depends-on: 31.1.1.5 -->
+  - [ ] **Sub-task 31.2.1.2:** Execute a bounded implementation/correction and separate qualified review, including cancellation/restart and full worker accounting, with pinned executable, model when observable, policy and limits.
+    <!-- depends-on: 31.2.1.1, 26.1.7.4, 25.2.4.6 -->
+  - [ ] **Sub-task 31.2.1.3:** Record only the demonstrated roles, operations, versions and platform in the compatibility matrix; retain other provider and serial regressions.
+    <!-- depends-on: 31.2.1.2 -->
+
+**Story acceptance criteria**
+
+- [ ] **AC 31.2:** Given the pinned live provider and independent reviewer, a bounded candidate passes the existing gates without a background worker escaping its scope or becoming orchestration authority.
+
+### Sprint 31 Gate
+
+- [ ] **Gate 31.1:** Deterministic adapter, version-drift, authority and nested-worker tests pass.
+- [ ] **Gate 31.2:** Explicitly authorized live qualification passes and every supported role has exact evidence; development-tool use alone closes no provider gate.
+
+---
+
 ## Remaining Dependency Order
 
 Sprint numbers remain stable identifiers for historical evidence. Complete the remaining work in
@@ -1586,6 +1765,16 @@ this dependency order; do not skip forward merely because a later sprint number 
 11. Complete Sprint 26 source freeze, documentation reconciliation, reproducible Linux and Windows artifacts, installed-package testing, deferred manual fuzzing, and independent human review.
 12. Obtain the explicit release authorization in `External 7`; no provider or coordinator may infer it from prior approvals.
 13. Complete Sprint 27 repository review, owner-authorized merge, signed tag, publication, independent download and installation verification, and post-publication response validation.
+
+Decision 0013 adds the following optional continuation without changing those release requirements:
+
+14. Select dependency-ready host interface work in Sprint 29, optional USTE work in Sprint 30, then optional Muse provider work in Sprint 31. An exact blocked interface or provider must not stop an independent permitted package.
+15. Local-preparation exception: when every earlier remaining first-release item has a recorded unavailable prerequisite, local contracts, fakes and consumer tests in these sprints may proceed under their explicit dependencies. Return to earlier work when its prerequisite becomes available. This does not authorize live integration, cross-repository work or publication.
+16. Complete real counterpart admission and pinned consumer qualification before enabling an integration. Preserve each package's independent gates; no optional package requires public release signing or publication merely to develop it locally.
+
+The current evidence-freshness failure is Sub-task 25.2.4.6. Complete the legitimate renewal before
+claiming Gates 25.3/25.4 or constructing a new qualified release candidate. If a required review or
+qualification input is unavailable, record that exact blocker instead of editing hashes to pass.
 
 ## External and Deferred Evidence Register
 
@@ -1607,7 +1796,15 @@ Independent review, manual fuzzing, signing, and explicit release authorization 
 
 ## Immediate Next Unit
 
-The first dependency-ready implementation unit is:
+The next action is to inspect current branch, processes and resources, then execute Sub-task
+25.2.4.6 within its available authority. Review the exact source drift and required construction
+record before any rebuild. Earlier native-platform, live-service and independent-review gates stay
+open. If all earlier work is actually blocked, select the first eligible local-preparation package
+under the exception above. The next development agent does not need a Muse runtime adapter to work
+on this repository. See the development handoff for commands and the existing baseline failure.
+
+The completed continuation ledger below is historical; it is not a fresh authorization to rerun
+any old controlled-target campaign or adopt its private state:
 
 - [x] **Next 1:** Create Campaign Z from unchanged accepted head `1ad4759328fc253b718388131fb484ecdf2c4c25` with one pod, local-only publication, and bounded domain-root authority for each early task family instead of brittle individual companion-file lists. Generate and compare two source-free preflights, then run to ten accepted outcomes or the next exact safety stop. Campaign Z produced byte-identical preflights with digest `f99715bdb418c9b85477db4f9155fe4daec3e7e08d9e222bb8ba0fd6fe86e87d`, accepted two typed blockers, created no completion or integration, preserved the target at the exact starting head, and stopped fail-closed at `codingmage.campaign.unit_state_failure` after initial-session interruption. Campaign U through Z state remains preserved. See `docs/evidence/sprint-22-controlled-preflight.md`.
 - [x] **Next 2:** Implement and verify Sub-task 22.3.3.11, then create a fresh one-pod, local-only successor from the unchanged accepted target head and run it to ten accepted outcomes or the next exact safety stop. Campaign AA used the verified recovery binary, preserved Campaign U through Z, accepted two typed blockers, created no completion or integration, and stopped exactly at `codingmage.campaign.unit_repository_boundary` when task `2.3.1.1` changed a deterministic security-scan report inside campaign authority but outside the lead's narrower unit proposal. The target remained at `1ad4759328fc253b718388131fb484ecdf2c4c25`. See `docs/evidence/sprint-22-controlled-preflight.md`.

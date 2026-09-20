@@ -36,6 +36,15 @@ The complete command and authority surfaces are described by the [operations ind
   gates run; and
 - compatibility with unlisted provider CLI versions or repository task formats.
 
+## Optional Integration Roadmap
+
+Sprint 29 host application integration, Sprint 30 USTE contextual memory and Sprint 31 Muse Code
+provider support are planned under [Decision 0013](../decisions/0013-optional-ecosystem-integration.md).
+They are outside the current first-release support claim and add no dependency on a sibling product
+to standalone release qualification. Their local preparation follows the scheduling rules in
+[TASKS.md](../../TASKS.md); live integration requires a pinned interface and separately admitted
+counterpart work. Changing first-release scope requires another explicit owner decision.
+
 ## Open Release Risks
 
 | ID | Condition | Pre-release disposition | Release disposition |
@@ -51,6 +60,7 @@ The complete command and authority surfaces are described by the [operations ind
 | R26-09 | Operator-controlled artifact signing has not occurred | Open human action | Blocking |
 | R26-10 | No release publication has been authorized | Deliberately prohibited | Blocking by design |
 | R26-11 | Final source, package, evidence, and support identities are not frozen | Open until the last correction | Blocking |
+| R26-12 | Multi-agent evidence binding is stale for the campaign implementation and README at the 2026-09-20 reconciliation | Task 25.2.4.6 and Gate 25.4 reopened; historical evidence retained | Blocking until all affected evidence is renewed against verified inputs |
 
 No listed risk is waived for release. A correction that affects a candidate invalidates every
 dependent build, package, installed, soak, review, and signature record.

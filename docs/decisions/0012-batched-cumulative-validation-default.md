@@ -1,10 +1,22 @@
 # Decision 0012: Batched Cumulative Validation by Default
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-09-20 owner-requested reconciliation)
 - **Date:** 2026-09-04
 - **Decision owners:** Repository owner
 - **Supersedes:** The implicit default of validating the whole campaign after every integration
 - **Superseded by:** None
+
+## Acceptance And Implementation Reconciliation
+
+The default of five was implemented in commit
+`37e7e51ddec36adecc759f11a28e00e8e8f9487a` while this record still said Proposed. On 2026-09-20 the
+repository owner requested the reviewed decision reconciliation and integration-plan changes before
+the next development handoff. Acceptance is recorded as of that request, not backdated to the
+implementation commit. The behavioral decision below is unchanged.
+
+This acceptance does not assert independent review, renew source-bound evidence, or approve a
+release. The 2026-09-20 baseline check found the earlier multi-agent evidence binding stale for the
+campaign source and README. Task 25.2.4.6 and Gate 25.4 remain open until real renewal succeeds.
 
 ## Context
 

@@ -21,6 +21,8 @@ The current build does not claim:
 - Manual fuzz execution.
 - Signed or published packages or releases.
 - Jira or Azure DevOps adapters.
+- A host application control interface, USTE memory adapter or Muse Code runtime provider; these
+  are planned in Sprints 29 through 31 and have no qualified versions yet.
 
 ## Deliberately Absent Authority
 

@@ -21,6 +21,22 @@ accept raw API keys in configuration, or guarantee a provider model's availabili
 quota, or stable command surface. A provider upgrade requires capability probing and fresh live
 qualification before a release claim can rely on it.
 
+## Planned Ecosystem Compatibility
+
+The following rows are planning records, not supported combinations:
+
+| Surface | Current state | Required compatibility record before live use |
+| --- | --- | --- |
+| Host application job and control interface | Planned, Sprint 29 | Both immutable source/package identities, protocol and schema digests, capability set, authority policy and consumer-side test evidence |
+| USTE contextual memory | Optional and planned, Sprint 30 | Exact USTE revision/package and interface schema, bounded admitted operations, namespace policy and consumer-side fault/recovery evidence |
+| Muse Code worker adapter | Optional and planned, Sprint 31 | Exact CLI identity, observed structured protocol and capabilities, model identity when exposed, confinement and authenticated qualification evidence |
+
+No version is qualified for any of these rows. An external tool used to develop CodingMage is not
+thereby a supported runtime provider. Interfaces must use pinned committed artifacts; an ambient
+sibling checkout or uncommitted upstream change cannot satisfy compatibility. Version drift or a
+missing required capability must stop admission. See the
+[integration requirements](../architecture/ecosystem-integration.md).
+
 ## Repository Compatibility
 
 The target must be an explicitly authorized, observable Git repository with the declared task

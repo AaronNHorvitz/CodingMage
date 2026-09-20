@@ -54,6 +54,9 @@ Network, feature-branch push, issue synchronization, and draft pull requests are
 by default. Push, issues, or pull requests cannot be enabled while network is denied. Publication
 mode must agree exactly with the grants.
 
+Decision 0012's default of five cumulative integrations was accepted in the 2026-09-20 planning
+reconciliation. Acceptance does not refresh earlier evidence; Task 25.2.4.6 tracks the stale binding.
+
 Configuration contains references and policy, never raw credentials. Provider and GitHub CLIs use
 their own existing authenticated stores only within their explicit adapter boundaries.
 

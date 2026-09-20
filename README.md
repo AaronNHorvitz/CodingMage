@@ -1,6 +1,6 @@
 # CodingMage
 
-Ever wanted Claude as your Scrum Master and Codex as your senior developer? CodingMage makes that real. It turns the agents you already pay for into a development team with a chain of command: a lead that plans and assigns, isolated pods that implement, and a senior reviewer that signs off on the exact commit. A large roadmap runs end to end without you refereeing every step, and without any agent touching Git, merges, or credentials on its own. Put any model in any seat; the process is what makes the team.
+CodingMage turns coding agents into a development team with a chain of command: a lead that proposes work, isolated pods that implement, and a separate reviewer that evaluates the exact commit. It is designed to advance large roadmaps without manual handoffs at every step, while the coordinator controls Git, verification and publication. The current adapters use Claude Code for implementation and Codex for planning and review; additional providers require their own tested adapters and qualification.
 
 CodingMage is a local multi-agent engineering coordinator designed to move through large development roadmaps with better verified results per token. It assigns bounded tasks to isolated coding pods, routes work according to complexity and risk, and gives every candidate to deterministic checks and an independent senior-review model before integration.
 
@@ -131,6 +131,32 @@ The stricter roadmap-completion contract is defined by
 work remains planned rather than claimed as current behavior.
 
 The role names describe authority within the workflow, not a permanent judgment about either model. Agent providers and models will be configurable behind typed adapter contracts.
+
+## Planned Ecosystem Integration
+
+CodingMage remains an independent engineering coordinator under
+[Decision 0005](docs/decisions/0005-retain-independent-coordinator.md). The host application may
+eventually submit authorized coding jobs and display progress through a versioned interface;
+CodingMage will continue to enforce repository, worktree, process, test, review and publication
+authority. Neither product may rewrite the other's policy or share writable orchestration state.
+
+USTE is a proposed optional source of contextual memory. Its contents will be untrusted context,
+not authority to execute commands, approve work or close tasks. CodingMage's durable journal remains
+the source of execution and recovery truth. A qualified bounded memory pilot does not qualify an
+entire database, and neither memory integration nor host integration is a new first-release gate.
+
+Muse Code may be used as an external development tool for this repository under the same
+contribution rules as other coding agents. That does not make Muse an implemented CodingMage
+runtime provider. A future Muse adapter must separately prove structured output, exact session
+control, worker confinement and independent review compatibility.
+
+These are accepted planning boundaries, not implemented integrations. See the
+[integration requirements](docs/architecture/ecosystem-integration.md),
+[Decision 0013](docs/decisions/0013-optional-ecosystem-integration.md), and Sprints 29 through 31 in
+[TASKS.md](TASKS.md). The public plan uses the role name "host application" to preserve the existing
+downstream-name privacy gate. Operator-specific repository mappings remain outside this source tree.
+The [development handoff](docs/evidence/ecosystem-planning-handoff.md) records the starting state,
+verification limits and next action for a new development session.
 
 ## Operating Flow
 
@@ -635,6 +661,12 @@ Operational guides are indexed in [`docs/operations/README.md`](docs/operations/
 
 ## Current Status
 
+The 2026-09-20 planning reconciliation found an already-stale multi-agent evidence binding at
+source `37e7e51`: the bound campaign implementation and README have changed. Gate 25.4 is reopened;
+historical package and test results do not qualify the current source. See the development handoff
+above for the exact baseline failure and required renewal. No evidence hashes or input sets were
+changed to hide the failure.
+
 - Repository created: yes
 - Product boundary documented: yes
 - Granular development plan: yes
@@ -659,3 +691,6 @@ Operational guides are indexed in [`docs/operations/README.md`](docs/operations/
 - Parallel authenticated-provider operation: implementation present; guarded live qualification remains open
 - Multi-agent scenario matrix: 44 required scenarios mapped to executable local evidence
 - Sustained five-pod soak: guarded two-cycle local run passed; longer live qualification remains open
+- Host application integration: planned; no compatible interface or end-to-end qualification claimed
+- USTE contextual-memory integration: planned and optional; current journal remains authoritative
+- Muse Code runtime adapter: planned and optional; external development use is a separate choice

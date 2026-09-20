@@ -16,6 +16,8 @@
 - [GitHub](github.md)
 - [Model routing](model-routing.md)
 - [Project adapters](project-adapters.md)
+- [Planned ecosystem integration requirements](../architecture/ecosystem-integration.md)
+- [Development planning handoff](../evidence/ecosystem-planning-handoff.md)
 - [Serial campaign](serial-campaign.md)
 - [Supervised run](supervised-run.md)
 - [Durable multi-agent campaign architecture](../architecture/multi-agent-campaigns.md)
