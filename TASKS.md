@@ -1715,7 +1715,7 @@ availability and separately authorized authenticated access remain explicit qual
     <!-- depends-on: 4.2.1.1, 4.2.2.3 -->
   - [x] **Sub-task 31.1.1.2:** Inspect the exact available CLI identity and supported structured protocol; record version/capability pins and a truthful blocker for unsupported behavior without terminal scraping or assumed flags. `MuseCliCapabilities::parse` pins `Muse Code 1.3.0 (1.3.0-R3401.1)` with headless/JSON/resume/schema hooks and usage/cancel blockers; see `docs/evidence/sprint-31-muse-protocol.md`.
     <!-- depends-on: 31.1.1.1 -->
-  - [ ] **Sub-task 31.1.1.3:** Implement the typed CLI adapter with reference-only authentication, bounded environment, normalized output and version-drift refusal; retain independent reviewer routing.
+  - [x] **Sub-task 31.1.1.3:** Implement the typed CLI adapter with reference-only authentication, bounded environment, normalized output and version-drift refusal; retain independent reviewer routing. `MuseAdapter` plans echo/meta argv from observed flags only, refuses drift and reviewer roles, and normalizes echo output through `normalize_events`; see `docs/evidence/sprint-31-muse-protocol.md`.
     <!-- depends-on: 31.1.1.2 -->
   - [ ] **Sub-task 31.1.1.4:** Prove all nested workers, tools, worktrees and retries stay under coordinator ownership and aggregate limits; refuse the provider if direct Git/publication or worker confinement cannot be controlled.
     <!-- depends-on: 31.1.1.3 -->
