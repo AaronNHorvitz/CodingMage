@@ -1665,7 +1665,7 @@ exception; actual USTE binding requires the committed tested interface and admis
 
 ### Story 30.1 - Context Port And Failure Semantics
 
-- [ ] **Task 30.1.1 - Implement a provider-independent optional context boundary**
+- [x] **Task 30.1.1 - Implement a provider-independent optional context boundary**
   - [x] **Sub-task 30.1.1.1:** Define separate read/write grants, namespace/caller identity, operation IDs, provenance, freshness, retention, content policy, size limits, deadlines and typed unavailable/unsupported outcomes. Schemas live in `crates/codingmage-contracts/src/context.rs`; providers stay unbound. See `docs/evidence/sprint-30-context-boundary.md`.
     <!-- depends-on: 12.2.1.1, 19.1.2.3 -->
   - [x] **Sub-task 30.1.1.2:** Implement a disabled/default and deterministic fake context source; preserve journal-based recovery and standalone operation when optional memory is absent. Disabled/seeded fake with grant, policy, and quota enforcement; no recovery path references context types. See `docs/evidence/sprint-30-context-boundary.md`.
@@ -1677,7 +1677,7 @@ exception; actual USTE binding requires the committed tested interface and admis
 
 **Story acceptance criteria**
 
-- [ ] **AC 30.1:** Given disabled, unavailable or hostile memory, canonical authority and recovery remain intact, with no wrong-project disclosure or fabricated completion.
+- [x] **AC 30.1:** Given disabled, unavailable or hostile memory, canonical authority and recovery remain intact, with no wrong-project disclosure or fabricated completion. Proven by the Sub-task 30.1.1.3 failure matrix, the 30.1.1.4 authority fixture, zero context-type references in any recovery crate, and unmodified runtime (129) plus state (15) suites passing; see `docs/evidence/sprint-30-context-boundary.md`.
 
 ### Story 30.2 - Pinned USTE Binding
 
@@ -1695,7 +1695,7 @@ exception; actual USTE binding requires the committed tested interface and admis
 
 ### Sprint 30 Gate
 
-- [ ] **Gate 30.1:** Local context contract, failure, privacy and journal-preservation fixtures pass.
+- [x] **Gate 30.1:** Local context contract, failure, privacy and journal-preservation fixtures pass. Contracts all-targets 57 passed; runtime 129 and state 15 passed unmodified with memory absent; no production context-type references outside `codingmage-contracts`; see `docs/evidence/sprint-30-context-boundary.md`.
 - [ ] **Gate 30.2:** Pinned USTE consumer qualification and optional-adapter rollback pass with exact evidence and truthful unsupported operations.
 
 ---

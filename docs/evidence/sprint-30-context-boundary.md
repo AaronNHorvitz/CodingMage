@@ -113,8 +113,19 @@ clears blockers, asserts tests/review, or completes tasks; explicitly
 memory-dependent reads stay blocked on the missing capability with the
 journal as the canonical fallback.
 
+## Journal Preservation
+
+`grep -rln "codingmage_context\|contracts::context\|context::Context"
+crates/*/src` returns no production references outside
+`codingmage-contracts`: no recovery path names a context type, so
+journal-based recovery and standalone operation hold with memory
+absent. `cargo test -p codingmage-runtime -p codingmage-state
+--all-targets -- --test-threads=1`: 129 plus 15 passed, 0 failed,
+unmodified. Gate 30.1 and AC 30.1 close on these local fixtures.
+
 ## Open Items
 
 Story 30.2 pinned USTE binding needs counterpart admission, a pinned
 committed interface, and exact-artifact qualification access on both
-sides; none is available locally, so no provider is bound here.
+sides; none is available locally, so no provider is bound here. Gate
+30.2 stays open on that external admission.
