@@ -3,7 +3,7 @@
 - **Status:** Closed versioned request, capability, status, and control schemas
   defined in `crates/codingmage-contracts/src/host.rs`; transport, fakes, and
   policy subjection remain open under Sub-tasks 29.1.1.2–29.1.1.4
-- **Source:** current `muse/complete-development` worktree before commit
+- **Source:** `2045e5e39a9903709a84faf1a36d8eb060b5dca8` on `muse/complete-development`
 - **Executed:** 2026-09-20 on Fedora Linux x86-64
 
 ## Boundary
