@@ -1,6 +1,7 @@
 //! Stable wire contracts shared across `CodingMage` ownership boundaries.
 
 mod campaign;
+mod context;
 mod error;
 mod host;
 mod identifier;
@@ -11,6 +12,12 @@ pub use campaign::{
     LeadDeferredReason, LeadDispositionKind, LeadHumanDecisionReason, LeadReconsiderationTrigger,
     LeadTaskBinding, PodRisk, TeamLeadProposal, TeamLeadReport,
 };
+pub use context::{
+    ContextCaller, ContextContentPolicy, ContextDirection, ContextError, ContextGrant,
+    ContextLimits, ContextProvenance, ContextRecord, MAX_CONTEXT_ENTRY_BYTES,
+    MAX_CONTEXT_KEY_CHARS, MAX_CONTEXT_READ_ENTRIES, MAX_CONTEXT_SOURCE_CHARS,
+    MAX_CONTEXT_TIMEOUT_MS, MIN_CONTEXT_ENTRY_BYTES, MIN_CONTEXT_TIMEOUT_MS,
+};
 pub use error::{ErrorCategory, ErrorCode, ErrorCodeError, ErrorMetadata, PublicError};
 pub use host::{
     HOST_PROTOCOL_VERSION, HostBlocker, HostCapability, HostContractError, HostControl,
@@ -18,8 +25,8 @@ pub use host::{
     MAX_HOST_OPERATIONS,
 };
 pub use identifier::{
-    AgentId, AttemptId, ClientId, EvidenceId, IdentifierError, RepositoryId, RequestId, ReviewId,
-    RunId, TaskId, WorktreeId,
+    AgentId, AttemptId, ClientId, ContextNamespace, ContextOperationId, EvidenceId,
+    IdentifierError, RepositoryId, RequestId, ReviewId, RunId, TaskId, WorktreeId,
 };
 pub use transport::{
     DEFAULT_MAX_FRAME_BYTES, DEFAULT_MAX_REQUESTS_PER_CONNECTION, DEFAULT_READ_TIMEOUT_MS,

@@ -1,0 +1,423 @@
+//! Provider-independent optional context boundary (local preparation).
+//!
+//! Project context (memory) is strictly optional: the authoritative journal
+//! carries recovery, and memory can never grant permissions, clear blockers,
+//! assert tests or review, or complete tasks. These closed schemas bind
+//! namespace, caller, operation, provenance, freshness, retention, content
+//! policy, size limits, and deadlines with typed unavailable and unsupported
+//! outcomes. A disabled or deterministic fake source attaches in a later
+//! sub-task; the actual consumer binds only against a pinned interface.
+
+use core::fmt;
+
+use serde::{Deserialize, Serialize};
+
+use super::{ContextNamespace, ContextOperationId, TaskId};
+
+/// Maximum context key length in characters.
+pub const MAX_CONTEXT_KEY_CHARS: usize = 256;
+
+/// Maximum source label length in characters.
+pub const MAX_CONTEXT_SOURCE_CHARS: usize = 128;
+
+/// Maximum entries returned on one read.
+pub const MAX_CONTEXT_READ_ENTRIES: u32 = 256;
+
+/// Maximum bytes accepted per entry.
+pub const MAX_CONTEXT_ENTRY_BYTES: usize = 65_536;
+
+/// Minimum bytes accepted per entry bound.
+pub const MIN_CONTEXT_ENTRY_BYTES: usize = 1;
+
+/// Minimum admissible deadline in milliseconds.
+pub const MIN_CONTEXT_TIMEOUT_MS: u64 = 100;
+
+/// Maximum admissible deadline in milliseconds (ten minutes).
+pub const MAX_CONTEXT_TIMEOUT_MS: u64 = 600_000;
+
+/// Caller admitted to context operations.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContextCaller {
+    /// The coordinator itself, outside any task.
+    Coordinator,
+    /// One exact task.
+    Task(TaskId),
+}
+
+/// Separate read/write grant for one namespace and caller.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContextGrant {
+    /// Project-scoped namespace; never crosses projects.
+    pub namespace: ContextNamespace,
+    /// Admitted caller.
+    pub caller: ContextCaller,
+    /// Reads are admitted.
+    pub can_read: bool,
+    /// Writes are admitted.
+    pub can_write: bool,
+}
+
+/// Provenance bound to one context record.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContextProvenance {
+    /// Source label naming the provider-side origin.
+    pub source: String,
+    /// Milliseconds since the Unix epoch when the provider recorded it.
+    pub recorded_at_ms: u64,
+}
+
+/// Content policy bounding entries.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContextContentPolicy {
+    /// Maximum bytes accepted per entry.
+    pub max_bytes_per_entry: usize,
+    /// Maximum entries retained per namespace.
+    pub max_entries: u32,
+}
+
+/// Size, deadline, and freshness limits agreed before any call.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContextLimits {
+    /// Maximum entries returned on one read.
+    pub max_read_entries: u32,
+    /// Read and write deadline in milliseconds.
+    pub timeout_ms: u64,
+    /// Maximum record age in milliseconds before it reads as stale.
+    pub max_age_ms: u64,
+}
+
+/// One content-minimized context record. Content bytes stay provider-side;
+/// only the digest crosses the boundary.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContextRecord {
+    /// Project-scoped namespace.
+    pub namespace: ContextNamespace,
+    /// Caller-visible key within the namespace.
+    pub key: String,
+    /// SHA-256 of the canonical provider-side content.
+    pub digest: String,
+    /// Bound provenance.
+    pub provenance: ContextProvenance,
+    /// Unique operation identity for idempotent replay.
+    pub operation_id: ContextOperationId,
+}
+
+/// Stable context error.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ContextError {
+    /// A value was malformed.
+    Invalid,
+    /// Optional memory is disabled or absent.
+    Unavailable,
+    /// The operation is unsupported by the bound source.
+    Unsupported,
+    /// The namespace or caller is not granted.
+    Unauthorized,
+    /// The grant was revoked.
+    Revoked,
+    /// The record or cursor is stale.
+    Stale,
+    /// An entry exceeds the content policy.
+    Oversize,
+    /// Namespace retention is exhausted.
+    QuotaExceeded,
+    /// The deadline fired before completion.
+    Timeout,
+}
+
+impl fmt::Display for ContextError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::Invalid => "codingmage.context.invalid",
+            Self::Unavailable => "codingmage.context.unavailable",
+            Self::Unsupported => "codingmage.context.unsupported",
+            Self::Unauthorized => "codingmage.context.unauthorized",
+            Self::Revoked => "codingmage.context.revoked",
+            Self::Stale => "codingmage.context.stale",
+            Self::Oversize => "codingmage.context.oversize",
+            Self::QuotaExceeded => "codingmage.context.quota_exceeded",
+            Self::Timeout => "codingmage.context.timeout",
+        })
+    }
+}
+
+impl std::error::Error for ContextError {}
+
+impl ContextGrant {
+    /// Validates that the grant admits at least one direction.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ContextError::Invalid`] for a grant admitting neither read
+    /// nor write. Namespace and caller identities are validated by
+    /// construction.
+    pub fn verify(&self) -> Result<(), ContextError> {
+        if !self.can_read && !self.can_write {
+            return Err(ContextError::Invalid);
+        }
+        Ok(())
+    }
+
+    /// Returns true when `operation` reads and reads are granted, or writes
+    /// and writes are granted.
+    #[must_use]
+    pub fn admits(&self, operation: ContextDirection) -> bool {
+        match operation {
+            ContextDirection::Read => self.can_read,
+            ContextDirection::Write => self.can_write,
+        }
+    }
+}
+
+/// Read or write direction for one context call.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContextDirection {
+    /// Observation without mutation.
+    Read,
+    /// Bounded mutation within the granted namespace.
+    Write,
+}
+
+impl ContextProvenance {
+    /// Validates the source label.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ContextError::Invalid`] for an empty or overlong label.
+    pub fn verify(&self) -> Result<(), ContextError> {
+        if self.source.is_empty() || self.source.len() > MAX_CONTEXT_SOURCE_CHARS {
+            return Err(ContextError::Invalid);
+        }
+        Ok(())
+    }
+}
+
+impl ContextContentPolicy {
+    /// Validates policy bounds.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ContextError::Invalid`] for a zero entry bound or an entry
+    /// count of zero.
+    pub fn verify(&self) -> Result<(), ContextError> {
+        if self.max_bytes_per_entry < MIN_CONTEXT_ENTRY_BYTES
+            || self.max_bytes_per_entry > MAX_CONTEXT_ENTRY_BYTES
+            || self.max_entries == 0
+        {
+            return Err(ContextError::Invalid);
+        }
+        Ok(())
+    }
+}
+
+impl ContextLimits {
+    /// Validates limit bounds.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ContextError::Invalid`] for an empty read bound, an
+    /// out-of-range deadline, or a zero freshness window.
+    pub fn verify(&self) -> Result<(), ContextError> {
+        if self.max_read_entries == 0 || self.max_read_entries > MAX_CONTEXT_READ_ENTRIES {
+            return Err(ContextError::Invalid);
+        }
+        if !(MIN_CONTEXT_TIMEOUT_MS..=MAX_CONTEXT_TIMEOUT_MS).contains(&self.timeout_ms) {
+            return Err(ContextError::Invalid);
+        }
+        if self.max_age_ms == 0 {
+            return Err(ContextError::Invalid);
+        }
+        Ok(())
+    }
+
+    /// Returns true when a record of `age_ms` is still fresh.
+    #[must_use]
+    pub fn is_fresh(&self, age_ms: u64) -> bool {
+        age_ms <= self.max_age_ms
+    }
+}
+
+impl ContextRecord {
+    /// Validates key, digest, and provenance shape.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ContextError::Invalid`] for an empty or overlong key, a
+    /// malformed digest, or malformed provenance. Namespace and operation
+    /// identities are validated by construction.
+    pub fn verify(&self) -> Result<(), ContextError> {
+        if self.key.is_empty() || self.key.len() > MAX_CONTEXT_KEY_CHARS {
+            return Err(ContextError::Invalid);
+        }
+        if !valid_digest(&self.digest) {
+            return Err(ContextError::Invalid);
+        }
+        self.provenance.verify()
+    }
+}
+
+fn valid_digest(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::TaskId;
+
+    const DIGEST: &str = "ab0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd";
+
+    fn namespace() -> ContextNamespace {
+        ContextNamespace::new("project-notes").expect("valid fixture")
+    }
+
+    fn grant() -> ContextGrant {
+        ContextGrant {
+            namespace: namespace(),
+            caller: ContextCaller::Task(TaskId::new("task-1").expect("valid fixture")),
+            can_read: true,
+            can_write: false,
+        }
+    }
+
+    fn record() -> ContextRecord {
+        ContextRecord {
+            namespace: namespace(),
+            key: "decision-1".to_owned(),
+            digest: DIGEST.to_owned(),
+            provenance: ContextProvenance {
+                source: "fake-memory".to_owned(),
+                recorded_at_ms: 1_000,
+            },
+            operation_id: ContextOperationId::new("ctx-op-1").expect("valid fixture"),
+        }
+    }
+
+    #[test]
+    fn valid_grant_verifies_and_admits_read_only() {
+        let grant = grant();
+        assert!(grant.verify().is_ok());
+        assert!(grant.admits(ContextDirection::Read));
+        assert!(!grant.admits(ContextDirection::Write));
+    }
+
+    #[test]
+    fn rejects_directionless_grants() {
+        let grant = ContextGrant {
+            can_read: false,
+            can_write: false,
+            ..grant()
+        };
+        assert_eq!(grant.verify(), Err(ContextError::Invalid));
+    }
+
+    #[test]
+    fn rejects_malformed_provenance_policy_and_limits() {
+        let provenance = ContextProvenance {
+            source: String::new(),
+            recorded_at_ms: 0,
+        };
+        assert_eq!(provenance.verify(), Err(ContextError::Invalid));
+        let policy = ContextContentPolicy {
+            max_bytes_per_entry: 0,
+            max_entries: 1,
+        };
+        assert_eq!(policy.verify(), Err(ContextError::Invalid));
+        let policy = ContextContentPolicy {
+            max_bytes_per_entry: MAX_CONTEXT_ENTRY_BYTES + 1,
+            max_entries: 1,
+        };
+        assert_eq!(policy.verify(), Err(ContextError::Invalid));
+        let limits = ContextLimits {
+            max_read_entries: 0,
+            timeout_ms: 1_000,
+            max_age_ms: 60_000,
+        };
+        assert_eq!(limits.verify(), Err(ContextError::Invalid));
+        let limits = ContextLimits {
+            max_read_entries: 1,
+            timeout_ms: MIN_CONTEXT_TIMEOUT_MS - 1,
+            max_age_ms: 60_000,
+        };
+        assert_eq!(limits.verify(), Err(ContextError::Invalid));
+        let limits = ContextLimits {
+            max_read_entries: 1,
+            timeout_ms: 1_000,
+            max_age_ms: 0,
+        };
+        assert_eq!(limits.verify(), Err(ContextError::Invalid));
+    }
+
+    #[test]
+    fn freshness_boundaries_hold() {
+        let limits = ContextLimits {
+            max_read_entries: 1,
+            timeout_ms: 1_000,
+            max_age_ms: 60_000,
+        };
+        assert!(limits.verify().is_ok());
+        assert!(limits.is_fresh(60_000));
+        assert!(!limits.is_fresh(60_001));
+        assert!(!limits.is_fresh(u64::MAX - 1));
+    }
+
+    #[test]
+    fn rejects_malformed_records() {
+        assert!(record().verify().is_ok());
+        let mut key = record();
+        key.key = String::new();
+        assert_eq!(key.verify(), Err(ContextError::Invalid));
+        let mut digest = record();
+        digest.digest = "short".to_owned();
+        assert_eq!(digest.verify(), Err(ContextError::Invalid));
+        let mut provenance = record();
+        provenance.provenance.source = "x".repeat(MAX_CONTEXT_SOURCE_CHARS + 1);
+        assert_eq!(provenance.verify(), Err(ContextError::Invalid));
+    }
+
+    #[test]
+    fn rejects_unknown_fields_and_reports_stable_codes() {
+        let encoded = serde_json::to_string(&record()).expect("valid fixture");
+        let hostile = encoded.replace('}', ",\"future\":1}");
+        assert!(serde_json::from_str::<ContextRecord>(&hostile).is_err());
+        assert_eq!(
+            ContextError::Unavailable.to_string(),
+            "codingmage.context.unavailable"
+        );
+        assert_eq!(
+            ContextError::Unsupported.to_string(),
+            "codingmage.context.unsupported"
+        );
+        assert_eq!(
+            ContextError::Unauthorized.to_string(),
+            "codingmage.context.unauthorized"
+        );
+        assert_eq!(
+            ContextError::Revoked.to_string(),
+            "codingmage.context.revoked"
+        );
+        assert_eq!(ContextError::Stale.to_string(), "codingmage.context.stale");
+        assert_eq!(
+            ContextError::Oversize.to_string(),
+            "codingmage.context.oversize"
+        );
+        assert_eq!(
+            ContextError::QuotaExceeded.to_string(),
+            "codingmage.context.quota_exceeded"
+        );
+        assert_eq!(
+            ContextError::Timeout.to_string(),
+            "codingmage.context.timeout"
+        );
+    }
+}

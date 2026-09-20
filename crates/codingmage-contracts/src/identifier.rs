@@ -140,6 +140,14 @@ identifier!(
     "Identity assigned to one host request for idempotent replay."
 );
 identifier!(
+    ContextNamespace,
+    "Project-scoped memory namespace; never crosses projects."
+);
+identifier!(
+    ContextOperationId,
+    "Identity assigned to one context operation for idempotent replay."
+);
+identifier!(
     EvidenceId,
     "Identity assigned to one immutable evidence record."
 );

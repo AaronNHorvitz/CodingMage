@@ -1666,7 +1666,7 @@ exception; actual USTE binding requires the committed tested interface and admis
 ### Story 30.1 - Context Port And Failure Semantics
 
 - [ ] **Task 30.1.1 - Implement a provider-independent optional context boundary**
-  - [ ] **Sub-task 30.1.1.1:** Define separate read/write grants, namespace/caller identity, operation IDs, provenance, freshness, retention, content policy, size limits, deadlines and typed unavailable/unsupported outcomes.
+  - [x] **Sub-task 30.1.1.1:** Define separate read/write grants, namespace/caller identity, operation IDs, provenance, freshness, retention, content policy, size limits, deadlines and typed unavailable/unsupported outcomes. Schemas live in `crates/codingmage-contracts/src/context.rs`; providers stay unbound. See `docs/evidence/sprint-30-context-boundary.md`.
     <!-- depends-on: 12.2.1.1, 19.1.2.3 -->
   - [ ] **Sub-task 30.1.1.2:** Implement a disabled/default and deterministic fake context source; preserve journal-based recovery and standalone operation when optional memory is absent.
     <!-- depends-on: 30.1.1.1 -->
