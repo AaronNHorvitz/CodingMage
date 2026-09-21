@@ -4,6 +4,12 @@ This file is the canonical implementation sequence for CodingMage. It is intenti
 
 CodingMage is under active implementation. A checked item means its complete implementation, tests, acceptance criteria, and required evidence genuinely exist in this repository. Documentation existence alone does not close an implementation item.
 
+[PRD.md](PRD.md) defines product requirements and [PRODUCT-DEVELOPMENT-PLAN.md](PRODUCT-DEVELOPMENT-PLAN.md)
+defines delivery milestones. This file remains the only canonical task/evidence ledger.
+[Decision 0014](docs/decisions/0014-owner-optional-engineering-team.md) adds the planned
+owner-optional engineering team in Sprints 32 through 35. It does not check any implementation row,
+change an active worker's brief or enable an unattended campaign.
+
 ## Execution Rules
 
 1. Work in sprint and dependency order unless an item explicitly declares itself dependency-independent.
@@ -38,6 +44,11 @@ CodingMage is under active implementation. A checked item means its complete imp
     sides and its own qualification. Developing with Muse does not require a Muse runtime adapter.
 23. Complete each related capability batch before renewing dependent evidence once. Never remove
     bound inputs, copy a new hash onto unexecuted evidence, or infer independent reviewer approval.
+24. Keep owner involvement separate from execution and delivery authority. The new hands-off mode
+    requires an admitted mission and explicit decision-domain grants; no provider may create owner
+    responses, broaden policy or clear a human-only gate. Sprints 32 through 35 define future behavior.
+25. Preserve the existing independent reviewer and deterministic coordinator while adding director,
+    team-lead and QA roles. Reviewer-authored corrections require a separate independent review.
 
 ## Current Integration And Evidence Truth
 
@@ -1747,6 +1758,246 @@ availability and separately authorized authenticated access remain explicit qual
 
 ---
 
+## Sprint 32 - Mission Authority and Owner Involvement
+
+**Status:** Planned under Decision 0014. Requirements CM-TEAM-001 through CM-TEAM-004.
+Reuse existing authority/readiness/decomposition and control boundaries. All new rows inherit the
+Universal Definition of Done and applicable positive, negative, boundary, malformed-input,
+failure/recovery and side-effect tests. No documentation or fake result enables live execution.
+
+### Story 32.1 - Mission Charter and Involvement Modes
+
+**User-facing value:** As the owner, I can authorize the engineering outcome and my involvement
+once, with precise limits, rather than supervising every task.
+
+- [ ] **Task 32.1.1 - Bind mission and engineering delegation**
+  - [ ] **Sub-task 32.1.1.1:** Inventory current source, state, authority, provider and evidence prerequisites; map the new charter to existing owners, preserve Task 25.2.4.6 and record exact external blockers without treating stale reports as current qualification.
+  - [ ] **Sub-task 32.1.1.2:** Define closed versioned mission/decision-domain schemas binding objective, criteria, exclusions, operator/target/source identities, architecture constraints, paths, command registry, profiles, budgets, expiry and revocation; reject unknown or conflicting fields.
+    <!-- depends-on: 32.1.1.1 -->
+  - [ ] **Sub-task 32.1.1.3:** Derive exact task/effect authority from authenticated mission grants using the existing coordinator; test delegated architecture, dependency and interface choices without allowing model-authored policy, scope or acceptance expansion.
+    <!-- depends-on: 32.1.1.2 -->
+  - [ ] **Sub-task 32.1.1.4:** Bind and persist decisions and authority generations; prove stale, replayed, cross-project, over-budget and mutated charters produce no lease, process, Git or external effect, and old state never gains new authority implicitly.
+    <!-- depends-on: 32.1.1.3 -->
+- [ ] **Task 32.1.2 - Separate involvement from delivery authority**
+  - [ ] **Sub-task 32.1.2.1:** Add explicit supervised, exception-only and hands-off contracts independently of pod count, serial/parallel operation and publication/promotion policy, retaining old configuration behavior.
+    <!-- depends-on: 32.1.1.4 -->
+  - [ ] **Sub-task 32.1.2.2:** Implement admission preflight for role availability, existing authentication, exact grants and interactive-only prerequisites; reject invalid no-intervention configurations before starting a campaign.
+    <!-- depends-on: 32.1.2.1 -->
+  - [ ] **Sub-task 32.1.2.3:** Exercise every involvement/delivery-policy combination, including local-only hands-off and supervised preauthorized integration; a mode selector or owner disconnect must never create publication authority.
+    <!-- depends-on: 32.1.2.2 -->
+  - [ ] **Sub-task 32.1.2.4:** Verify CLI/config/state compatibility and source-bound preflight reports, including refusal on unsupported schema or provider capabilities and absence of credential values in retained records.
+    <!-- depends-on: 32.1.2.3 -->
+
+- [ ] **AC 32.1:** Given one admitted mission, involvement mode and independent delivery policy, only exact delegated work can start; old configurations and unsupported input do not acquire new authority.
+
+### Story 32.2 - Noninteractive Decisions and Revocation
+
+**User-facing value:** I may disconnect while the team resolves permitted decisions and records
+unavailable work without repeatedly requesting an answer.
+
+- [ ] **Task 32.2.1 - Continue without owner responses**
+  - [ ] **Sub-task 32.2.1.1:** Implement typed decision-needed, permitted-choice, defer, block and dispute outcomes through the existing disposition machinery; retain decision identity, generation, constraints and source-bound rationale.
+    <!-- depends-on: 32.1.2.4 -->
+  - [ ] **Sub-task 32.2.1.2:** Route supervised checkpoints and deduplicated exception-only requests through authenticated controls; hands-off must issue no approval dialog or stdin wait and must never fabricate an owner response.
+    <!-- depends-on: 32.2.1.1 -->
+  - [ ] **Sub-task 32.2.1.3:** Continue independent work after an exact blocker, reconsider only on changed declared observations, and bound retry/replanning/correction so repeated no-progress states cannot consume unlimited resources.
+    <!-- depends-on: 32.2.1.2 -->
+  - [ ] **Sub-task 32.2.1.4:** Inject late provider approval/login requests, quota changes, unknown tool requirements and unavailable stronger reviewers; retain explicit holds or qualified permitted alternatives without auto-answering prompts or reducing review strength.
+    <!-- depends-on: 32.2.1.3 -->
+- [ ] **Task 32.2.2 - Preserve authority across disconnect and restart**
+  - [ ] **Sub-task 32.2.2.1:** Extend existing durable controls with mission expiry/revocation epochs and exact observer-disconnect semantics; revalidate authority before every effect rather than equating disconnection with a stop.
+    <!-- depends-on: 32.1.1.4 -->
+  - [ ] **Sub-task 32.2.2.2:** Test expiry/revocation races with implementation, commit, gate, review and integration, preserving uncertain effects and terminating only exact owned descendants.
+    <!-- depends-on: 32.2.2.1 -->
+  - [ ] **Sub-task 32.2.2.3:** Reconcile mission/decision/control state across crash and upgrade; refuse incompatible state and prove restart cannot resurrect revoked authority or repeat an uncertain effect.
+    <!-- depends-on: 32.2.2.2 -->
+  - [ ] **Sub-task 32.2.2.4:** Reconcile all three involvement modes with existing pause/resume/stop/cancel and content-minimized reports through actual coordinator-process fixtures.
+    <!-- depends-on: 32.2.1.4, 32.2.2.3 -->
+
+- [ ] **AC 32.2:** Given an absent owner, permitted work continues with zero mid-campaign responses; unavailable authority is retained as a blocker and revocation prevents further effects across restart.
+
+### Sprint 32 Gate
+
+- [ ] **Gate 32.1:** All mission/mode/delegation mutation and compatibility tests pass; no default authority expansion or invented owner approval is possible.
+- [ ] **Gate 32.2:** Actual-process disconnect, expiry, revocation, no-progress and recovery fixtures pass; `M-TEAM-CONTRACT` is recorded only with its deterministic scope.
+
+---
+
+## Sprint 33 - Director, Team Lead, Pods and Independent QA
+
+**Status:** Planned. Requirements CM-TEAM-005 through CM-TEAM-008. Depends on Sprint 32's exact
+contract/control prerequisites, not optional host, memory or Muse integrations.
+
+### Story 33.1 - Outcome Planning and Work Assignment
+
+- [ ] **Task 33.1.1 - Add bounded director planning**
+  - [ ] **Sub-task 33.1.1.1:** Define director input/output packets over mission criteria, milestone progress, dependency-ready work, failures and remaining limits; reuse existing planning generations and persist only source-bound proposals.
+    <!-- depends-on: 32.2.2.4 -->
+  - [ ] **Sub-task 33.1.1.2:** Validate priority/replanning proposals against approved outcomes and delegated domains before accepting them; reject invented work, erased criteria, unapproved dependencies and contradictory generations.
+    <!-- depends-on: 33.1.1.1 -->
+  - [ ] **Sub-task 33.1.1.3:** Invoke the director on bounded outcome/blocker/interface events with deadline and no-progress limits, not continuous agent-to-agent conversations or activity-based completion.
+    <!-- depends-on: 33.1.1.2 -->
+  - [ ] **Sub-task 33.1.1.4:** Test missed criteria, priority changes, resource scarcity, stale plans, hostile repository text and rejected decisions with no effect or canonical status mutation by the model.
+    <!-- depends-on: 33.1.1.3 -->
+- [ ] **Task 33.1.2 - Extend team-lead decomposition and readiness**
+  - [ ] **Sub-task 33.1.2.1:** Extend existing sealed work packets with parent acceptance coverage, declared interfaces, required role profiles, tests and definition-of-ready/done predicates; preserve one task queue and scheduler.
+    <!-- depends-on: 33.1.1.2 -->
+  - [ ] **Sub-task 33.1.2.2:** Verify acyclic child dependencies, parent-scope subsets, complete criterion coverage and mandatory cumulative acceptance; decomposition cannot discard difficult work or confer parent completion on one child.
+    <!-- depends-on: 33.1.2.1 -->
+  - [ ] **Sub-task 33.1.2.3:** Route admitted packets to leased pods through current scheduling/resource policy, retaining idle slots when no eligible work exists and keeping director/team-lead authority distinct from allocator authority.
+    <!-- depends-on: 33.1.2.2 -->
+  - [ ] **Sub-task 33.1.2.4:** Exercise oversized tasks, invalid splits, shared criteria, rejected assignments and restart-persistent decomposition through the actual coordinator and fake role adapters.
+    <!-- depends-on: 33.1.2.3 -->
+
+- [ ] **AC 33.1:** Director and team-lead proposals advance approved objectives through validated packets; neither role can add scope, omit acceptance or create execution authority.
+
+### Story 33.2 - Role Qualification and Independent Judgment
+
+- [ ] **Task 33.2.1 - Bind providers to roles and review independence**
+  - [ ] **Sub-task 33.2.1.1:** Define role-capability requirements and exact provider/version/model/profile identity using current adapter contracts; separate development-tool use from supported runtime roles and retain unavailable profiles as blockers.
+    <!-- depends-on: 33.1.2.1 -->
+  - [ ] **Sub-task 33.2.1.2:** Record authorship/session lineage and fresh immutable cumulative reviewer input; reject writer/reviewer role confusion, stale evidence, self-approval and model changes below required strength.
+    <!-- depends-on: 33.2.1.1 -->
+  - [ ] **Sub-task 33.2.1.3:** Return bounded findings only to the matching implementer lineage, run gates after corrections and require fresh full-diff review; a reviewer that edits becomes an implementer for those contributions.
+    <!-- depends-on: 33.2.1.2 -->
+  - [ ] **Sub-task 33.2.1.4:** Test unavailable/replaced models, version drift, rejected capabilities, cancellation and malformed review output; provider branding or a new persona must never prove independence by itself.
+    <!-- depends-on: 33.2.1.3 -->
+- [ ] **Task 33.2.2 - Add on-demand QA and specialists**
+  - [ ] **Sub-task 33.2.2.1:** Define bounded risk-triggered security, architecture, performance, accessibility, UX and documentation evaluation packets without permanent worker requirements or new effect authority.
+    <!-- depends-on: 33.2.1.4 -->
+  - [ ] **Sub-task 33.2.2.2:** Admit independent acceptance/test proposals through existing gate and path owners; any test-author code contribution receives separate review and no provider runs an arbitrary gate command.
+    <!-- depends-on: 33.2.2.1 -->
+  - [ ] **Sub-task 33.2.2.3:** Resolve conflicting findings with bounded qualified escalation or an explicit dispute; voting, director preference or absent owner cannot override failed deterministic checks or human-required review.
+    <!-- depends-on: 33.2.2.2 -->
+  - [ ] **Sub-task 33.2.2.4:** Exercise specialist timeouts, unsupported expertise, false PASS, hostile findings, scope expansion and partial acceptance, retaining all unverified criteria and resource charges.
+    <!-- depends-on: 33.2.2.3 -->
+
+- [ ] **AC 33.2:** Each supported role has exact authority and identity; corrections remain independently reviewed and specialist judgments cannot bypass deterministic gates or owner-only requirements.
+
+### Sprint 33 Gate
+
+- [ ] **Gate 33.1:** Director, team-lead, pod, reviewer and QA fake-role fixtures use one coordinator/journal and preserve serial behavior and existing containment.
+- [ ] **Gate 33.2:** Role confusion, authority, coverage, escalation and independent-correction tests pass with unqualified live roles still visibly open.
+
+---
+
+## Sprint 34 - Integrated Product Acceptance and Durable Team Knowledge
+
+**Status:** Planned. Requirements CM-TEAM-009 through CM-TEAM-012. Reuse existing integration,
+artifact/privacy and checkpoint owners; do not create a competing orchestrator or memory store.
+
+### Story 34.1 - Interface-Safe Composition and Product Acceptance
+
+- [ ] **Task 34.1.1 - Extend scheduling beyond disjoint paths**
+  - [ ] **Sub-task 34.1.1.1:** Register shared API/schema, migration, lockfile, generated-output and fixture resources alongside existing path leases with exact versions and declared compatibility constraints.
+    <!-- depends-on: 33.1.2.4 -->
+  - [ ] **Sub-task 34.1.1.2:** Reject semantic/resource conflicts or serialize an explicitly authorized batch; prove disjoint file edits do not automatically admit incompatible public-interface changes.
+    <!-- depends-on: 34.1.1.1 -->
+  - [ ] **Sub-task 34.1.1.3:** Revalidate interface identities and source preimages in the existing integration queue, rerun affected gates and obtain fresh review after any changed effective diff or stale-base transfer.
+    <!-- depends-on: 34.1.1.2, 33.2.1.4 -->
+  - [ ] **Sub-task 34.1.1.4:** Test incompatible schema changes, generated collisions, interrupted integration, concurrent human edits and recovery, preserving rejected candidates and the active checkout.
+    <!-- depends-on: 34.1.1.3 -->
+- [ ] **Task 34.1.2 - Verify integrated user outcomes**
+  - [ ] **Sub-task 34.1.2.1:** Define source-bound product acceptance scenarios and expected outcomes before implementation trials, separate from implementer-written unit tests; charter changes require a new authorized generation.
+    <!-- depends-on: 33.2.2.4 -->
+  - [ ] **Sub-task 34.1.2.2:** Execute actual CLI/application workflows on the integrated candidate with disposable data through the coordinator's registered gates, inspecting filesystem, process, event and user-visible outcomes.
+    <!-- depends-on: 34.1.1.4, 34.1.2.1 -->
+  - [ ] **Sub-task 34.1.2.3:** Bind acceptance results to exact candidate/configuration/requirements and invalidate affected results after changes; a unit-test pass, fake screenshot or model summary cannot substitute for executable acceptance.
+    <!-- depends-on: 34.1.2.2 -->
+  - [ ] **Sub-task 34.1.2.4:** Prove incomplete criteria, regression, incompatible components, failure after integration and rejected QA prevent objective completion and return bounded repairs without weakening frozen predicates.
+    <!-- depends-on: 34.1.2.3 -->
+
+- [ ] **AC 34.1:** Individually reviewed tasks produce a compatible integrated candidate that passes actual declared user workflows before the objective can be marked satisfied.
+
+### Story 34.2 - Source-Backed Handoffs and Outcome Feedback
+
+- [ ] **Task 34.2.1 - Extend durable team state and handoffs**
+  - [ ] **Sub-task 34.2.1.1:** Extend current journals/checkpoints with mission, role, decision, criterion and interface identities, retaining intent/observation reconciliation and explicit migration or refusal for old state.
+    <!-- depends-on: 32.2.2.4, 33.2.2.4 -->
+  - [ ] **Sub-task 34.2.1.2:** Produce bounded inspectable source-referenced handoffs for director, lead, implementer, reviewer and QA with exact unresolved work; summaries cannot supply authority or overwrite originals/evidence.
+    <!-- depends-on: 34.2.1.1 -->
+  - [ ] **Sub-task 34.2.1.3:** Reject stale, revoked, deleted, cross-project and tampered references during context reconstruction, and prove optional memory-service absence does not disable standalone operation.
+    <!-- depends-on: 34.2.1.2 -->
+  - [ ] **Sub-task 34.2.1.4:** Exercise compaction, context exhaustion, retained-artifact pressure, interrupted writes and privacy scans without retaining secrets, hidden reasoning or unrestricted provider text in canonical state.
+    <!-- depends-on: 34.2.1.3 -->
+- [ ] **Task 34.2.2 - Replan from delivered outcomes**
+  - [ ] **Sub-task 34.2.2.1:** Derive acceptance coverage, delivered task counts, rework, escaped defects, intervention counts, blocker age, queue delays and actual resource usage from verified state; retain unknown metrics as unknown.
+    <!-- depends-on: 34.1.2.4, 34.2.1.4 -->
+  - [ ] **Sub-task 34.2.2.2:** Feed bounded retrospective projections into director decisions to improve authorized ordering, packet size or qualified routing, without autonomous relaxation of thresholds, criteria or review strength.
+    <!-- depends-on: 34.2.2.1 -->
+  - [ ] **Sub-task 34.2.2.3:** Extend existing status/report surfaces with separate engineering completion, objective satisfaction and delivery dispositions, while preserving content minimization and optional observer connectivity.
+    <!-- depends-on: 34.2.2.2 -->
+  - [ ] **Sub-task 34.2.2.4:** Test metric manipulation, all-blocker campaigns, stale dashboards, missing usage, observer disconnect and restart so visible progress cannot become false completion or fabricated cost savings.
+    <!-- depends-on: 34.2.2.3 -->
+
+- [ ] **AC 34.2:** Limited-context roles recover source-backed decisions and pending work, and all progress/delivery claims reconcile with the same canonical evidence rather than chat prose.
+
+### Sprint 34 Gate
+
+- [ ] **Gate 34.1:** Interface-aware integration and actual product acceptance pass through coordinator-process fixtures, including stale-base, denied and partial-outcome cases.
+- [ ] **Gate 34.2:** Durable handoff, privacy, feedback and reporting tests pass; `M-TEAM-LOCAL` records executable deterministic scope only, not live no-intervention qualification.
+
+---
+
+## Sprint 35 - Hands-Off Qualification and Optional Delivery
+
+**Status:** Planned. Requirements CM-TEAM-013 through CM-TEAM-016. Local hands-off completion does
+not depend on optional remote delivery. Existing exact source, provider, native-platform, owner
+admission and review prerequisites remain required; missing external artifacts cannot be substituted.
+
+### Story 35.1 - Real No-Intervention Campaign
+
+- [ ] **Task 35.1.1 - Qualify one pod and staged live concurrency**
+  - [ ] **Sub-task 35.1.1.1:** Freeze source/target/package/configuration identities, qualified role profiles, workload, expected results and resource/performance ceilings; renew applicable current-source evidence including Task 25.2.4.6 before qualification.
+    <!-- depends-on: 34.2.2.4, 25.2.4.6 -->
+  - [ ] **Sub-task 35.1.1.2:** Run actual installed one-pod coordinator/provider execution on a disposable target after one initial owner authorization, with zero mid-campaign owner responses and no optional host, memory or remote service.
+    <!-- depends-on: 35.1.1.1 -->
+  - [ ] **Sub-task 35.1.1.3:** Execute the declared ten-outcome workload with at least five genuine integrated implementations, failed-test repair, review correction, an external blocker with independent progress, owner disconnect and durable restart; report failures and interventions without cherry-picking.
+    <!-- depends-on: 35.1.1.2 -->
+  - [ ] **Sub-task 35.1.1.4:** After the exact required one-pod and existing live gates pass, qualify two pods and each higher claimed capacity separately on a frozen controlled target; reconcile aggregate reservations, interface conflicts, accepted outputs and active-checkout preservation.
+    <!-- depends-on: 35.1.1.3 -->
+- [ ] **Task 35.1.2 - Verify unattended failure and recovery behavior**
+  - [ ] **Sub-task 35.1.2.1:** Inject provider loss, quota exhaustion, model/version change, unexpected input prompts and unavailable review strength; verify bounded retry/hold or already qualified alternatives without authority expansion.
+    <!-- depends-on: 35.1.1.2 -->
+  - [ ] **Sub-task 35.1.2.2:** Inject process crashes, disk/output pressure, stale leases, source drift and interrupted commit/integration; prove no duplicate effect, orphan descendants or adoption of unrelated work across restart.
+    <!-- depends-on: 35.1.2.1 -->
+  - [ ] **Sub-task 35.1.2.3:** Inject hostile task/repository/provider text, forged owner responses, altered handoffs, revoked grants and cancellation races; require zero unauthorized effects and no silent false success.
+    <!-- depends-on: 35.1.2.2 -->
+  - [ ] **Sub-task 35.1.2.4:** Compare supervised, exception-only and hands-off runs on the same fixed workload, declare sustained-duration thresholds before running, and retain all limitations including any operation that still needs owner input.
+    <!-- depends-on: 35.1.2.3, 35.1.1.4 -->
+
+- [ ] **AC 35.1:** The owner can authorize once and disconnect while the exact supported team completes useful declared work, corrects failures and recovers without further responses or unauthorized effects.
+
+### Story 35.2 - Delivery Policy and Honest Completion
+
+- [ ] **Task 35.2.1 - Qualify optional preauthorized remote delivery**
+  - [ ] **Sub-task 35.2.1.1:** Specify the exact optional branch/PR/destination effect contract and whether policy-derived candidate grants are permitted; preserve existing human-required policies and require separate accepted authority before any new promotion path.
+    <!-- depends-on: 32.1.2.4, 35.1.2.4 -->
+  - [ ] **Sub-task 35.2.1.2:** Validate local-only, branch-publication and eligible automatic-destination policies independently of involvement, with exact repository/account/branch/candidate/check identities and deny-first defaults.
+    <!-- depends-on: 35.2.1.1 -->
+  - [ ] **Sub-task 35.2.1.3:** Exercise stale destination, revoked access, changed review, incomplete CI, uncertain writes and crash reconciliation against fakes/local bare remotes before separately authorized disposable authenticated tests; never replay or broaden a rejected effect.
+    <!-- depends-on: 35.2.1.2 -->
+  - [ ] **Sub-task 35.2.1.4:** Record only demonstrated remote operations and actual no-intervention results for the approved policies; signing, public releases, deployment, infrastructure, purchase and mandatory human-review requirements remain outside this grant.
+    <!-- depends-on: 35.2.1.3 -->
+- [ ] **Task 35.2.2 - Publish operational truth and obtain independent review**
+  - [ ] **Sub-task 35.2.2.1:** Reconcile every mission criterion, task outcome, decision, review, commit, process, worktree, budget and delivery state; distinguish satisfied objectives from completed processing with unresolved external work.
+    <!-- depends-on: 35.1.2.4 -->
+  - [ ] **Sub-task 35.2.2.2:** Document only implemented setup/migration/configuration/controls and supported role/provider/platform combinations; provide one reproducible hands-off walkthrough with privacy-safe logs and no invented CLI flags.
+    <!-- depends-on: 35.2.2.1 -->
+  - [ ] **Sub-task 35.2.2.3:** Obtain fresh source-bound independent review of mission authority, role separation, noninteractive decisions, integration, acceptance, state and recovery; fix findings through implementers and requalify affected behavior, retaining human-required gates separately.
+    <!-- depends-on: 35.2.2.2 -->
+  - [ ] **Sub-task 35.2.2.4:** Record `M-TEAM-HANDS-OFF` only after all local prerequisites and independent review pass; record optional `M-TEAM-DELIVERY` only after Task 35.2.1 also passes, without closing unrelated platform or release gates.
+    <!-- depends-on: 35.2.2.3 -->
+
+- [ ] **AC 35.2:** Reports state exactly what engineering objective and delivery policy passed, what remains blocked and which independent evidence exists; no mode, model verdict or absent owner supplies missing authorization.
+
+### Sprint 35 Gate
+
+- [ ] **Gate 35.1:** All required local hands-off, sustained/fault and independent-review evidence passes on exact supported profiles; no-intervention claims include actual intervention counts and useful outcomes.
+- [ ] **Gate 35.2:** Optional remote delivery passes its separately authorized matrix before `M-TEAM-DELIVERY`; withholding this gate does not prevent an otherwise proven local `M-TEAM-HANDS-OFF` milestone.
+
+---
+
 ## Remaining Dependency Order
 
 Sprint numbers remain stable identifiers for historical evidence. Complete the remaining work in
@@ -1772,6 +2023,12 @@ Decision 0013 adds the following optional continuation without changing those re
 15. Local-preparation exception: when every earlier remaining first-release item has a recorded unavailable prerequisite, local contracts, fakes and consumer tests in these sprints may proceed under their explicit dependencies. Return to earlier work when its prerequisite becomes available. This does not authorize live integration, cross-repository work or publication.
 16. Complete real counterpart admission and pinned consumer qualification before enabling an integration. Preserve each package's independent gates; no optional package requires public release signing or publication merely to develop it locally.
 
+Decision 0014 adds an independent product continuation:
+
+17. Reconcile the existing source/evidence and implement dependency-ready local contracts, fake-role tests and integration in Sprints 32 through 34. Record exact earlier blockers before using this continuation; optional Sprints 29 through 31 and release publication are not prerequisites for local hands-off development.
+18. Renew exact current-source prerequisites and qualify Story 35.1 and Task 35.2.2 in one-pod then staged-concurrency order. Do not replace live, platform, independent-review or owner admission evidence with documentation or fake providers.
+19. Qualify optional Task 35.2.1 only under separately approved external-effect authority. Involvement mode does not alter signing, package release or mandatory human-review gates.
+
 The current evidence-freshness failure is Sub-task 25.2.4.6. Complete the legitimate renewal before
 claiming Gates 25.3/25.4 or constructing a new qualified release candidate. If a required review or
 qualification input is unavailable, record that exact blocker instead of editing hashes to pass.
@@ -1795,6 +2052,13 @@ claims those remote capabilities as supported.
 Independent review, manual fuzzing, signing, and explicit release authorization are release gates.
 
 ## Immediate Next Unit
+
+For the separately assigned owner-optional team workstream, start Sub-task 32.1.1.1 and follow
+Decision 0014's exact prerequisite/continuation rules. The
+[planning handoff](docs/evidence/owner-optional-team-planning-handoff.md) preserves baseline and
+post-change verification limits. This is not permission to redirect an existing worker or replace
+the pinned independent implementation review. The existing continuation below remains applicable
+to the earlier release/integration workstream.
 
 The next action is to inspect current branch, processes and resources, then execute Sub-task
 25.2.4.6 within its available authority. Review the exact source drift and required construction

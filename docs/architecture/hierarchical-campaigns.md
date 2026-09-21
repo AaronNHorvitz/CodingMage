@@ -6,15 +6,22 @@ A CodingMage campaign coordinates a large dependency-aware roadmap as a bounded 
 It combines model specialization with deterministic authority: models propose and evaluate work,
 while the coordinator alone owns state, Git mutation, verification, and configured publication.
 
+[Decision 0014](../decisions/0014-owner-optional-engineering-team.md) adds the planned
+[owner-optional team contract](autonomous-engineering-team.md): mission/director planning above
+the existing team lead, on-demand QA/specialists, product acceptance and explicit involvement modes.
+The following existing roles and workflow remain the foundation, not proof of those extensions.
+
 ## Roles
 
 | Role | Authority | Prohibited authority |
 | --- | --- | --- |
 | Product owner | Campaign scope, allowed roots, final promotion policy | None within explicit local ownership |
+| Director (planned) | Milestone evaluation and bounded priority/replanning proposals | Policy expansion, writes, completion or release approval |
 | Campaign coordinator | Task selection, leases, state, limits, recovery, stopping | Inventing scope or bypassing evidence |
 | Campaign lead | Read-only planning, decomposition, risk and dependency analysis | Writes, Git mutation, publication, approval |
 | Pod implementer | File edits inside one leased worktree and path set | Git, credentials, network, task state, publication |
 | Pod reviewer | Read-only review of an immutable cumulative diff | Writes, self-approval, task state, publication |
+| QA/specialist (planned) | Independent outcome and risk findings on exact candidates | Self-approval, unconstrained test execution or authority expansion |
 | Deterministic verifier | Literal configured gates and evidence | Model judgment or policy changes |
 | Integration lead | Coordinator-mediated ancestry, conflict, and batch verification | Direct provider Git commands or protected-branch writes |
 | GitHub adapter | Configured feature push, story issue, and draft PR effects | Merge, release, settings, secrets, branch deletion |
@@ -50,6 +57,11 @@ flowchart TD
 ```
 
 ## Pod Admission
+
+In the planned extension, involvement mode determines how unresolved choices are handled, not
+whether admission checks run. A hands-off owner authorizes once; the coordinator records unmet
+prerequisites without interactive waits and continues independent eligible work. Declared interface
+dependencies and integrated product acceptance supplement existing path leases and gates.
 
 A pod starts only when all of the following are true:
 

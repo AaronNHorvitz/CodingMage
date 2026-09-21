@@ -5,7 +5,9 @@
 - **Decision owners:** Repository owner
 - **Supersedes:** Informal assumptions that repeating bounded campaign units is sufficient for
   autonomous roadmap completion
-- **Superseded by:** None
+- **Superseded by:** [Decision 0014](0014-owner-optional-engineering-team.md), only for the planned
+  explicit engineering-decision delegation and owner-involvement extension; existing authority,
+  verification and release boundaries remain in force
 
 ## Context
 
@@ -72,4 +74,3 @@ authority, mark an external prerequisite satisfied, or weaken a gate.
 - A frozen-clone campaign completes a supervised unit, a three-outcome pilot, and a bounded
   multi-task soak without changing the active source checkout or destination branch.
 - External and unsupported work remains open and visible after local completion reconciliation.
-

@@ -24,12 +24,18 @@ sign-off or equivalent provenance process.
 4. Run focused tests, repository-wide applicable gates, and `git diff --check`.
 5. Review the exact committed diff; do not review an uncommitted approximation.
 6. Push only the authorized feature branch. Do not force-push or rewrite published history.
-7. Leave merge, release, and external-infrastructure decisions to the repository owner.
+7. Leave merge, release, and external-infrastructure authority with the repository owner; perform
+   only exact effects already admitted by the applicable policy, never infer them from autonomy.
 
 Changes to unattended execution, provider authority, Git effects, recovery, operator controls,
 soak evidence, or release behavior must preserve
 [`Unattended Safeguards`](docs/architecture/unattended-safeguards.md) and record a superseding
 architecture decision before intentionally changing that contract.
+
+[Decision 0014](docs/decisions/0014-owner-optional-engineering-team.md) accepts planned owner
+involvement and bounded engineering delegation. It does not enable those modes or authorize this
+repository's development agents to publish, merge, release, redirect other workers or sign their
+own independent review. Treat PRD/development-plan changes as requirements, not runtime grants.
 
 ## Evidence
 

@@ -2,6 +2,8 @@
   "required_files": [
     "README.md",
     "TASKS.md",
+    "PRD.md",
+    "PRODUCT-DEVELOPMENT-PLAN.md",
     "LICENSE",
     "SECURITY.md",
     "SUPPORT.md",
@@ -18,6 +20,8 @@
     "docs/decisions/0011-autonomous-roadmap-progression.md",
     "docs/decisions/0012-batched-cumulative-validation-default.md",
     "docs/decisions/0013-optional-ecosystem-integration.md",
+    "docs/decisions/0014-owner-optional-engineering-team.md",
+    "docs/architecture/autonomous-engineering-team.md",
     "docs/architecture/ecosystem-integration.md",
     "docs/evidence/ecosystem-planning-handoff.md",
     "docs/architecture/unattended-safeguards.md",

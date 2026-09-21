@@ -45,6 +45,12 @@ merge. The safe default permits verified task integration only into the isolated
 and requires an exact human decision for destination promotion. A final draft PR may be maintained
 after final gates and review without promoting it.
 
+Planned owner involvement modes do not change this default. An optional hands-off destination
+policy must be separately accepted, implemented and qualified, with the coordinator deriving each
+exact effect from authenticated owner authority and current candidate/check identities. Existing
+human-required policies stay human-required. Local hands-off qualification needs no GitHub access;
+withheld destination promotion is reported separately from engineering completion.
+
 Fake transport, command-rendering, idempotency, CI-correction, human-content, and promotion-policy
 tests pass locally. Authenticated disposable-repository evidence remains open and must use the
 guarded qualification runner documented in [`Quickstart`](quickstart.md).

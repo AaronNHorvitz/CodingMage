@@ -10,6 +10,11 @@ Autonomous progression composes existing deny-first planning, isolated worktrees
 execution, deterministic gates, immutable senior review, durable integration, and recovery. It does
 not grant default-branch, release, signing, credential, purchase, or infrastructure authority.
 
+[Decision 0014](../decisions/0014-owner-optional-engineering-team.md) and the planned
+[team contract](autonomous-engineering-team.md) extend this foundation with an immutable mission,
+director/lead roles and supervised, exception-only or hands-off involvement. Existing configurations
+and evidence are not opted into the new contract. TASKS Sprints 32 through 35 track implementation.
+
 ## Progression Loop
 
 ```mermaid
@@ -53,6 +58,11 @@ those fields, but may not add dependencies, broaden paths, change public contrac
 alter architecture, or introduce external effects unless the canonical task explicitly authorizes
 the choice.
 
+Under the new planned mission contract, the authenticated owner may explicitly delegate named
+architecture, dependency and public-interface decision domains before launch. Exact task authority
+must still be derived and validated inside that grant. No model-authored task or acceptance change
+can enlarge the charter; changes to policy or undelegated scope need new owner authority.
+
 A decomposition is valid only when child identifiers are unique and ordered, every child remains a
 path and requirement subset of the parent, dependencies are acyclic, all parent acceptance criteria
 are covered, no child can claim parent completion alone, and the final child requires cumulative
@@ -69,6 +79,11 @@ busy loop.
 Recoverable implementation or review failure may generate one bounded replanning decision: retry
 the exact checkpoint, split an already authorized packet, route to a stronger available profile, or
 defer the exact task. It cannot synthesize scope or erase failed evidence.
+
+Planned hands-off operation converts undelegated choices into durable noninteractive holds, not
+approval dialogs or model-invented owner responses. Independent work continues and external-only
+blockage remains incomplete. Exception-only and supervised modes retain their configured exact
+operator channels. Unexpected provider input requests must time out into an explicit disposition.
 
 ## Provider Routing and Watchdog
 
@@ -100,4 +115,3 @@ clone, one supervised unit, a three-outcome unattended pilot, and a bounded appr
 soak. Each result binds exact source and target commits, configuration digest, package digest,
 tasks, provider roles, gates, outcomes, residue, and limitations. No result from a concurrently
 changing checkout is admissible.
-
