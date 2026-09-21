@@ -7,6 +7,12 @@ engineering team. It reuses the same one-unit implementation, deterministic gate
 review, bounded correction, Git safety, and recovery contracts. Serial mode remains the default and
 must produce the same behavior as before.
 
+The planned [autonomous engineering team](autonomous-engineering-team.md) extends this runtime
+with director/lead role packets, involvement policy, interface dependencies and product acceptance.
+It reuses this scheduler and state machine. Supervised, exception-only and hands-off are independent
+of serial/parallel execution; these new contracts remain unimplemented until Sprints 32 through 35
+provide their exact evidence.
+
 ```mermaid
 flowchart TD
     A[Canonical plan and campaign head] --> B[Coordinator computes ready set]
@@ -223,6 +229,10 @@ promotion to the destination branch. Provider `PASS` is evidence consumed by pol
 authority.
 
 ## Campaign Completion
+
+For the planned extension, report engineering completion, objective satisfaction and delivery
+separately. An external-only blocked campaign may have no runnable work but is not a satisfied
+product objective. No owner response is required to reach this truthful hands-off disposition.
 
 The campaign continues while independently ready work exists and limits permit. It terminates only
 with a typed state and stop reason: complete, truthfully blocked, disputed, operator-stopped,

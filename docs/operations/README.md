@@ -2,6 +2,11 @@
 
 ## Guides
 
+- [Product requirements](../../PRD.md)
+- [Product development plan](../../PRODUCT-DEVELOPMENT-PLAN.md)
+- [Planned owner-optional engineering team](../architecture/autonomous-engineering-team.md)
+- [Owner-optional planning handoff](../evidence/owner-optional-team-planning-handoff.md)
+
 - [Installation](installation.md)
 - [Release](release.md)
 - [Release scope and risk register](release-scope.md)

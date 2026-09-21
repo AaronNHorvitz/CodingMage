@@ -46,6 +46,13 @@ Unattended execution remains constrained by the approved
 authority, clear blockers, satisfy deferrals, approve their own work, merge protected branches,
 receive signing material, or publish a release.
 
+The planned hands-off mode in [Decision 0014](docs/decisions/0014-owner-optional-engineering-team.md)
+removes routine owner interaction, not enforcement. Its initial authenticated charter is revocable
+and bounded; silence, model output and a mode selector never grant missing authority. Unexpected
+interactive prerequisites become visible holds while unrelated permitted work continues. An AI
+director, reviewer or QA agent cannot stand in for a required independent human reviewer. External
+delivery still needs exact separate policy and qualification; this planning change enables none.
+
 A public release requires the complete local verification matrix, prescribed disposable and
 controlled-target soak evidence, manual fuzzing, independent human review, reproducible packaging,
 operator-controlled signing, explicit owner authorization, and independent verification of the

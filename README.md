@@ -4,6 +4,13 @@ CodingMage turns coding agents into a development team with a chain of command: 
 
 CodingMage is a local multi-agent engineering coordinator designed to move through large development roadmaps with better verified results per token. It assigns bounded tasks to isolated coding pods, routes work according to complexity and risk, and gives every candidate to deterministic checks and an independent senior-review model before integration.
 
+The product direction includes an owner-optional engineering team: director, team lead,
+implementation pods, independent review, QA and controlled integration. The owner may supervise,
+handle exceptions only, or authorize a bounded campaign once and remain completely hands-off.
+These new involvement modes and team extensions are **planned, not qualified current behavior**.
+See the [PRD](PRD.md), [product development plan](PRODUCT-DEVELOPMENT-PLAN.md),
+[Decision 0014](docs/decisions/0014-owner-optional-engineering-team.md) and Sprints 32 through 35.
+
 The current local campaign path supports both durable serial execution and bounded parallel teams:
 one Codex team lead, up to five concurrent Claude implementation pods, fresh Codex reviewers,
 per-task publication records, serialized integration, final validation, and restart-safe campaign
@@ -18,7 +25,7 @@ Instead of assigning every mechanical step to the strongest model, or trusting a
 - **Protect coding quality:** escalate security-sensitive, architectural, disputed, or repeatedly failing work to stronger profiles.
 - **Separate writing from judgment:** one agent implements; another reviews the exact immutable commit and evidence.
 - **Keep long builds moving:** durable checkpoints preserve task state across context limits, quotas, crashes, and restarts.
-- **Stay in control:** deny-first permissions isolate worktrees and reserve merges, releases, credentials, and external consequences for the human owner.
+- **Stay in control:** deny-first permissions enforce the owner's grants; campaign integration, destination promotion, releases and external effects have separate authority and gates.
 
 ## Authorship, Independence, and License
 
@@ -106,13 +113,31 @@ CodingMage is designed to:
 - Persist enough state to recover after crashes, context limits, rate limits, or restarts.
 - Expose live status and controls inside a VS Code terminal or future extension surface.
 
-CodingMage is not intended to replace human product ownership. Scope changes, destructive operations, merges, releases, purchases, credentials, external infrastructure changes, and unsupported evidence remain outside its autonomous authority.
+CodingMage is not intended to replace human product ownership. The owner may delegate bounded
+engineering decisions without attending each step. The planned hands-off mode never grants scope
+expansion, destructive operations, releases, purchases, credentials, infrastructure changes or
+unsupported evidence. Campaign integration and destination promotion follow their separate exact
+policies; a model cannot authorize either.
+
+## Planned Owner Involvement
+
+| Mode | Product behavior after initial authorization |
+| --- | --- |
+| Supervised | Involve the owner at configured checkpoints. |
+| Exception-only | Perform delegated work autonomously and request attention only for declared exceptions. |
+| Hands-off | Require no mid-campaign answers; resolve permitted decisions, retain exact blockers and continue independent work. |
+
+Involvement is independent of pod count and delivery permissions. Hands-off can be local-only;
+automatic destination promotion needs separate authority and qualification. No available work does
+not mean the objective is complete, and owner silence never supplies approval or missing evidence.
+See the [team contract](docs/architecture/autonomous-engineering-team.md). The current CLI does not
+gain an involvement-mode flag through this documentation update.
 
 ## Initial Roles
 
 | Role | Initial implementation | Responsibility |
 | --- | --- | --- |
-| Product owner | Human | Owns scope, architecture exceptions, releases, and external consequences. |
+| Product owner | Human | Owns mission, delegation, revocation, releases and external consequences; planned hands-off operation does not require continuous presence. |
 | Coordinator | CodingMage | Selects work, enforces state transitions, controls authority, records evidence, and stops safely. |
 | Implementation agent | Claude Code | Edits only packet-owned files and returns a structured candidate or truthful blocker. |
 | Senior review agent | Codex | Reviews exact commits, validates claims and architecture, identifies defects, and verifies corrections. |
@@ -127,10 +152,17 @@ release boundary is defined by [`Unattended Safeguards`](docs/architecture/unatt
 and [`Decision 0008`](docs/decisions/0008-unattended-safeguard-and-release-boundary.md).
 The stricter roadmap-completion contract is defined by
 [`Autonomous Roadmap Progression`](docs/architecture/autonomous-progression.md) and
-[`Decision 0011`](docs/decisions/0011-autonomous-roadmap-progression.md). Its unchecked Sprint 26
-work remains planned rather than claimed as current behavior.
+[`Decision 0011`](docs/decisions/0011-autonomous-roadmap-progression.md). Consult the exact Sprint 26
+rows and their source-bound evidence for implementation versus remaining qualification; a normative
+contract alone is not proof of current behavior.
 
 The role names describe authority within the workflow, not a permanent judgment about either model. Agent providers and models will be configurable behind typed adapter contracts.
+
+The planned director manages milestone priorities and outcome evaluation; the team lead manages
+bounded decomposition and pod coordination. QA and specialist roles are invoked for declared
+acceptance/risk needs rather than kept running continuously. These roles propose or evaluate;
+the existing deterministic coordinator retains all effect, state and completion authority.
+Reviewers stay read-only, and their findings return to an implementer for correction.
 
 ## Planned Ecosystem Integration
 
@@ -222,6 +254,11 @@ Model selection will be policy-driven and recorded for every run. Names below ar
 | Routine bounded code review | Codex Terra High | Codex Sol High for material findings or disagreement |
 | Security, architecture, Git safety, process control, and final story gates | Codex Sol High | Human decision if unresolved |
 | Mechanical summaries and queue administration | Codex Luna or deterministic code | Higher model only when classification is uncertain |
+
+The human-decision entries above describe undelegated escalation, not a requirement for constant
+owner attendance. Under the planned involvement policy, an absent owner produces a recorded
+blocked/deferred disposition while independent work continues. No prompt responder or weaker
+unqualified model may be used to bypass that boundary.
 
 Routing must never silently weaken a required gate. The journal will retain the requested profile, exact resolved model identifier when exposed, reasoning/effort setting, routing reason, elapsed time, available usage metrics, and result.
 
@@ -641,6 +678,11 @@ The implementation order is recorded in [`TASKS.md`](TASKS.md). The critical pat
 9. Run adversarial testing and a sustained soak campaign.
 10. Pilot against a disposable controlled target, then validate reusable project adapters.
 
+The owner-optional extension is delivered through Sprints 32 through 35: mission/delegation
+contracts, director/lead/QA coordination, integrated product acceptance, and actual no-intervention
+qualification. Reuse the existing foundation and preserve earlier required evidence. Optional host,
+memory, remote delivery and additional providers are not prerequisites for local hands-off use.
+
 Documentation changes are checked locally without downloading a toolchain:
 
 ```bash
@@ -660,6 +702,10 @@ current release-risk register are documented in [`SUPPORT.md`](SUPPORT.md),
 Operational guides are indexed in [`docs/operations/README.md`](docs/operations/README.md).
 
 ## Current Status
+
+The 2026-09-21 owner-optional team planning adds a PRD, development plan, Decision 0014 and unchecked
+Sprints 32 through 35. It changes no executable or active agent authority, enables no live campaign,
+and does not satisfy the outstanding evidence or release gates.
 
 The 2026-09-20 planning reconciliation found an already-stale multi-agent evidence binding at
 source `37e7e51`: the bound campaign implementation and README have changed. Gate 25.4 is reopened;

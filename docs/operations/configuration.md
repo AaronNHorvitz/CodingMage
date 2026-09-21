@@ -1,5 +1,19 @@
 # Configuration
 
+## Planned Owner Involvement
+
+[Decision 0014](../decisions/0014-owner-optional-engineering-team.md) specifies future supervised,
+exception-only and hands-off modes, a mission charter and bounded decision-domain grants. These
+are not supported version-1/version-3 configuration fields yet; do not add invented keys to the
+current examples. Existing configurations retain their existing behavior and are not opted in.
+
+The new contract must bind outcomes, scope, accepted engineering decisions, role profiles, limits,
+expiry and noninteractive blocker dispositions. Involvement is separate from serial/parallel mode
+and publication/promotion policy. Preflight must reject an interactive-only path when hands-off was
+selected. Existing logins and qualified adapters are prerequisites, not permission to buy services
+or obtain credentials. See the [PRD](../../PRD.md) and
+[team contract](../architecture/autonomous-engineering-team.md).
+
 ## Authority Roots
 
 Configuration version 1 requires absolute existing target, scratch, and state directories. Roots

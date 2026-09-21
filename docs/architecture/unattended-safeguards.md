@@ -6,6 +6,11 @@ This document defines the approved target contract for unattended CodingMage cam
 normative policy, while [`TASKS.md`](../../TASKS.md) records implementation and evidence status.
 Nothing here claims that an unchecked task or gate is implemented.
 
+[Decision 0014](../decisions/0014-owner-optional-engineering-team.md) adds the planned
+[owner-optional team contract](autonomous-engineering-team.md). Initial authenticated delegation
+may cover defined engineering decisions; no further owner interaction is required inside a
+qualified hands-off campaign. All effect, review, resource and release safeguards below remain.
+
 The first valuable-target rollout boundary is one local campaign, one implementation pod, and no
 remote publication. Parallel scheduling, branch push, draft pull requests, integration, and
 destination policy are implemented behind explicit authority, but each broader live effect still
@@ -64,6 +69,12 @@ That repetition becomes a precise no-progress condition requiring a new observab
 decision. This prevents starvation and model-generated defer loops.
 
 ## Independent Limits
+
+The planned hands-off disposition of `human_decision_required` is a durable hold on affected work,
+not an interactive wait or permission to answer on the owner's behalf. Continue independent work;
+reconsider only after a real authorized observation changes. Mode selection never clears blockers,
+satisfies human review, expands a budget or enables publication. Expiry/revocation is checked at
+each effect boundary, including after restart.
 
 The coordinator enforces separate ceilings for:
 
