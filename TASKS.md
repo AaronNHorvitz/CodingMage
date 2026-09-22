@@ -2016,7 +2016,7 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
   - [x] **Sub-task 36.1.1.2:** Implement the native shell and bounded asynchronous backend connection with repository/campaign identity checks, no startup effects, stale-response rejection and explicit failure states. The eframe shell, sibling-binary client, bounded worker with bound requests, strict contract models and freshness states are covered by 12 unit and 8 display-less integration tests against the real coordinator; see `docs/evidence/sprint-36-native-ui-local.md`.
     <!-- depends-on: 36.1.1.1 -->
 - [ ] **Task 36.1.2 - Present real work and team state**
-  - [ ] **Sub-task 36.1.2.1:** Add repository selection, searchable/filterable work plan, task dependencies, source locations and overview using actual task parsing and repository state; opening or browsing must not modify either.
+  - [x] **Sub-task 36.1.2.1:** Add repository selection, searchable/filterable work plan, task dependencies, source locations and overview using actual task parsing and repository state; opening or browsing must not modify either. The work plan indexes the strict parser output with search, state, kind and ready-only filters, dependency and dependent resolution and source anchors; the browser and recent list select configurations without writes; four display-less tests verify the target stays byte-identical; see `docs/evidence/sprint-36-native-ui-local.md`.
     <!-- depends-on: 36.1.1.2 -->
   - [ ] **Sub-task 36.1.2.2:** Add actual campaign/team activity, blockers and outcome counts with distinct source-checkbox, verified-completion, accepted, blocked/deferred, stale and unknown states; show only backend-supported roles.
     <!-- depends-on: 36.1.2.1 -->

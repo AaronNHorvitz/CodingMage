@@ -6,9 +6,11 @@
 
 pub mod app;
 pub mod backend;
+pub mod browser;
 pub mod fonts;
 pub mod observed;
 pub mod project;
 pub mod state_dir;
+pub mod workplan;
 
 pub use app::{App, Screen};

@@ -5,15 +5,19 @@ use std::{
     time::{Duration, Instant},
 };
 
+use codingmage_plan::{CheckState, PlanItemKind};
+
 use crate::{
     backend::{
         BackendError, Binding, CoordinatorBinary, Generation, Job, QueueError, Request, Response,
         Worker, explain_code,
         models::{Diagnosis, parse_diagnosis},
     },
+    browser::Browser,
     observed::{Freshness, Observed, age_label},
     project::{OpenError, Project},
     state_dir::{RecentProjects, StateError, user_config_dir},
+    workplan::{KindFilter, PlanFilter, PlanIndex, PlanRow, SourceReadiness, StateFilter},
 };
 
 /// Deadline for read-only diagnosis commands.
@@ -100,6 +104,10 @@ pub struct App {
     discarded_stale: u64,
     started_at: Instant,
     now: Instant,
+    plan_index: Option<PlanIndex>,
+    plan_filter: PlanFilter,
+    selected_item: Option<String>,
+    browser: Option<Browser>,
 }
 
 impl App {
@@ -149,7 +157,34 @@ impl App {
             discarded_stale: 0,
             started_at: now,
             now,
+            plan_index: None,
+            plan_filter: PlanFilter::default(),
+            selected_item: None,
+            browser: None,
         }
+    }
+
+    /// Index over the opened task plan, when it parsed.
+    #[must_use]
+    pub const fn plan_index(&self) -> Option<&PlanIndex> {
+        self.plan_index.as_ref()
+    }
+
+    /// Current plan filter.
+    #[must_use]
+    pub const fn plan_filter(&self) -> &PlanFilter {
+        &self.plan_filter
+    }
+
+    /// Replaces the plan filter.
+    pub fn set_plan_filter(&mut self, filter: PlanFilter) {
+        self.plan_filter = filter;
+    }
+
+    /// Selected plan item identifier.
+    #[must_use]
+    pub fn selected_item(&self) -> Option<&str> {
+        self.selected_item.as_deref()
     }
 
     /// Current selection binding.
@@ -213,12 +248,20 @@ impl App {
         self.diagnosis.clear();
         self.project = None;
         self.open_error = None;
+        self.plan_index = None;
+        self.selected_item = None;
+        self.browser = None;
         match Project::open(config_path) {
             Ok(project) => {
                 if let Ok(directory) = &self.state_dir {
                     let _ = self.recent.remember(directory, &project.config_path);
                 }
                 self.config_input = project.config_path.display().to_string();
+                self.plan_index = project
+                    .plan
+                    .as_ref()
+                    .ok()
+                    .map(|loaded| PlanIndex::new(&loaded.plan));
                 self.project = Some(project);
                 self.set_status("opened configuration; requesting repository diagnosis");
                 self.refresh_diagnosis();
@@ -239,6 +282,8 @@ impl App {
         self.project = None;
         self.diagnosis.clear();
         self.open_error = None;
+        self.plan_index = None;
+        self.selected_item = None;
         self.set_status("closed the repository view; no coordinator process was affected");
     }
 
@@ -355,6 +400,7 @@ impl App {
                 .auto_shrink([false, false])
                 .show(ui, |ui| match self.screen {
                     Screen::Overview => self.overview(ui),
+                    Screen::WorkPlan => self.work_plan(ui),
                     Screen::Setup => self.setup(ui),
                     other => self.placeholder(ui, other),
                 });
@@ -516,6 +562,12 @@ impl App {
                 ui.end_row();
             });
         ui.separator();
+        self.overview_diagnosis(ui);
+        ui.separator();
+        self.overview_plan(ui);
+    }
+
+    fn overview_diagnosis(&self, ui: &mut egui::Ui) {
         ui.heading("Repository diagnosis");
         match self.diagnosis.freshness(self.now) {
             Freshness::NotRequested => {
@@ -553,7 +605,12 @@ impl App {
                 }
             }
         }
-        ui.separator();
+    }
+
+    fn overview_plan(&self, ui: &mut egui::Ui) {
+        let Some(project) = &self.project else {
+            return;
+        };
         match &project.plan {
             Ok(plan) => {
                 ui.label(format!(
@@ -564,6 +621,17 @@ impl App {
                     plan.byte_length,
                     &plan.source_sha256[..12]
                 ));
+                if let Some(index) = &self.plan_index {
+                    let counts = index.counts();
+                    ui.label(format!(
+                        "Sub-tasks: {} open ({} dependency-ready), {} checked in source; {} open acceptance criteria and gates",
+                        counts.open_subtasks,
+                        counts.ready_subtasks,
+                        counts.checked_subtasks,
+                        counts.open_acceptance
+                    ));
+                    ui.small("Source checkboxes are the repository's own claims; verified completion is shown separately on the Campaign screen.");
+                }
             }
             Err(error) => failure_box(
                 ui,
@@ -571,6 +639,149 @@ impl App {
                 &error.to_string(),
                 "Fix the task source in the repository; the work plan stays empty until it parses.",
             ),
+        }
+    }
+
+    fn browser_panel(&mut self, ui: &mut egui::Ui) {
+        let Some(browser) = &mut self.browser else {
+            return;
+        };
+        let mut open: Option<PathBuf> = None;
+        let mut enter: Option<PathBuf> = None;
+        let mut up = false;
+        egui::Frame::group(ui.style()).show(ui, |ui| {
+            ui.horizontal(|ui| {
+                if ui.button("Up").clicked() {
+                    up = true;
+                }
+                ui.monospace(browser.current.display().to_string());
+            });
+            if let Some(error) = &browser.error {
+                ui.colored_label(egui::Color32::RED, error);
+            }
+            if browser.truncated {
+                ui.small("Listing truncated; navigate into a narrower directory.");
+            }
+            egui::ScrollArea::vertical()
+                .max_height(240.0)
+                .id_salt("browser-entries")
+                .show(ui, |ui| {
+                    for entry in &browser.entries {
+                        let label = if entry.is_dir {
+                            format!("{}/", entry.name)
+                        } else {
+                            entry.name.clone()
+                        };
+                        let response = ui.add_enabled(!entry.is_symlink, egui::Button::new(label));
+                        if response.clicked() {
+                            if entry.is_dir {
+                                enter = Some(entry.path.clone());
+                            } else {
+                                open = Some(entry.path.clone());
+                            }
+                        }
+                    }
+                });
+        });
+        if up {
+            browser.up();
+        }
+        if let Some(path) = enter {
+            browser.enter(&path);
+        }
+        if let Some(path) = open {
+            self.open_project(&path);
+        }
+    }
+
+    fn work_plan(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Work plan");
+        let Some(project) = &self.project else {
+            ui.label("Open a repository to see its task plan.");
+            return;
+        };
+        let Some(index) = &self.plan_index else {
+            if let Err(error) = &project.plan {
+                failure_box(
+                    ui,
+                    "Task source unavailable",
+                    &error.to_string(),
+                    "Fix the task source in the repository; the plan is shown only when it parses.",
+                );
+            }
+            return;
+        };
+        ui.small(format!(
+            "Read from {} - source checkboxes only; nothing here edits the file.",
+            project.task_source_path().display()
+        ));
+        let mut filter = self.plan_filter.clone();
+        ui.horizontal_wrapped(|ui| {
+            ui.label("Search");
+            ui.add(
+                egui::TextEdit::singleline(&mut filter.query)
+                    .hint_text("identifier or title")
+                    .desired_width(240.0),
+            );
+            for state in StateFilter::ALL {
+                ui.selectable_value(&mut filter.state, state, state.label());
+            }
+            ui.separator();
+            for kind in KindFilter::ALL {
+                ui.selectable_value(&mut filter.kind, kind, kind.label());
+            }
+            ui.separator();
+            ui.checkbox(&mut filter.ready_only, "Dependency-ready only");
+        });
+        let rows = index.filtered(&filter);
+        ui.label(format!(
+            "{} of {} items shown",
+            rows.len(),
+            index.counts().items
+        ));
+        let mut selected = self.selected_item.clone();
+        let mut last_sprint: Option<&str> = None;
+        let mut last_story: Option<&str> = None;
+        egui::ScrollArea::vertical()
+            .id_salt("plan-rows")
+            .max_height(360.0)
+            .show(ui, |ui| {
+                for row in &rows {
+                    if last_sprint != Some(row.sprint_id.as_str()) {
+                        last_sprint = Some(row.sprint_id.as_str());
+                        last_story = None;
+                        ui.strong(format!(
+                            "Sprint {} - {}",
+                            row.sprint_id,
+                            index.sprint_title(&row.sprint_id).unwrap_or("")
+                        ));
+                    }
+                    if row.story_id.as_deref() != last_story {
+                        last_story = row.story_id.as_deref();
+                        if let Some(story) = last_story {
+                            ui.label(format!(
+                                "Story {} - {}",
+                                story,
+                                index.story_title(story).unwrap_or("")
+                            ));
+                        }
+                    }
+                    let is_selected = selected.as_deref() == Some(row.id.as_str());
+                    let response = ui.selectable_label(is_selected, row_label(row));
+                    if response.clicked() {
+                        selected = Some(row.id.clone());
+                    }
+                }
+            });
+        self.plan_filter = filter;
+        self.selected_item = selected;
+        if let Some(row) = self
+            .selected_item
+            .as_ref()
+            .and_then(|id| index.rows().iter().find(|row| &row.id == id))
+        {
+            ui.separator();
+            item_detail(ui, row, index);
         }
     }
 
@@ -605,7 +816,21 @@ impl App {
             if self.project.is_some() && ui.button("Close").clicked() {
                 self.close_project();
             }
+            if ui
+                .button(if self.browser.is_some() {
+                    "Hide browser"
+                } else {
+                    "Browse"
+                })
+                .clicked()
+            {
+                self.browser = match self.browser.take() {
+                    Some(_) => None,
+                    None => Some(Browser::at_home(vec!["toml"])),
+                };
+            }
         });
+        self.browser_panel(ui);
         if let Some(error) = &self.open_error {
             failure_box(
                 ui,
@@ -673,6 +898,84 @@ fn diagnosis_grid(ui: &mut egui::Ui, diagnosis: &Diagnosis) {
             ui.label(&diagnosis.configuration.publication.mode);
             ui.end_row();
         });
+}
+
+fn row_label(row: &PlanRow) -> String {
+    let checkbox = match row.state {
+        CheckState::Open => "[ ]",
+        CheckState::Checked => "[x]",
+    };
+    let kind = match row.kind {
+        PlanItemKind::Task => "Task",
+        PlanItemKind::SubTask => "Sub-task",
+        PlanItemKind::AcceptanceCriterion => "AC",
+        PlanItemKind::Gate => "Gate",
+    };
+    let readiness = match row.readiness {
+        SourceReadiness::NotApplicable => String::new(),
+        other => format!(" - {}", other.label()),
+    };
+    format!("{checkbox} {kind} {} {}{readiness}", row.id, row.title)
+}
+
+fn item_detail(ui: &mut egui::Ui, row: &PlanRow, index: &PlanIndex) {
+    ui.heading(format!("Item {}", row.id));
+    egui::Grid::new("item-detail")
+        .num_columns(2)
+        .spacing([12.0, 6.0])
+        .show(ui, |ui| {
+            ui.label("Title");
+            ui.label(&row.title);
+            ui.end_row();
+            ui.label("Source checkbox");
+            ui.label(match row.state {
+                CheckState::Open => "open",
+                CheckState::Checked => {
+                    "checked (source claim; verified completion is shown on the Campaign screen)"
+                }
+            });
+            ui.end_row();
+            ui.label("Source location");
+            ui.monospace(format!(
+                "line {} (sha256 {}...)",
+                row.line,
+                &row.line_sha256[..12]
+            ));
+            ui.end_row();
+            ui.label("Parent");
+            ui.monospace(&row.parent_id);
+            ui.end_row();
+            ui.label("Readiness from source");
+            ui.label(if row.readiness == SourceReadiness::NotApplicable {
+                "not computed for this kind"
+            } else {
+                row.readiness.label()
+            });
+            ui.end_row();
+        });
+    if row.dependencies.is_empty() {
+        ui.label("Dependencies: none declared");
+    } else {
+        ui.label("Dependencies");
+        for dependency in &row.dependencies {
+            let state = match dependency.state {
+                Some(CheckState::Checked) => "checked",
+                Some(CheckState::Open) => "open",
+                None => "unknown identifier",
+            };
+            ui.monospace(format!("  {} - {state}", dependency.id));
+        }
+    }
+    let dependents = index.dependents(&row.id);
+    if !dependents.is_empty() {
+        ui.label("Depended on by");
+        for dependent in dependents {
+            ui.monospace(format!("  {}", dependent.id));
+        }
+    }
+    if ui.button("Copy identifier").clicked() {
+        ui.ctx().copy_text(row.id.clone());
+    }
 }
 
 /// Renders one failure state with what happened and what to do.

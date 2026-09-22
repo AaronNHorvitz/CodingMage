@@ -56,3 +56,42 @@ binary on disposable repositories:
 
 Not proven here: a real desktop window, Wayland or X11 input, a screen reader, installation and
 any campaign behavior. Those belong to later sub-tasks and to the human-only items.
+
+## Sub-task 36.1.2.1 - Repository selection and read-only work plan
+
+Implemented in `crates/codingmage-ui/src/workplan.rs`, `browser.rs` and the work-plan screen in
+`app.rs`.
+
+Behavior:
+
+- The work plan is built from `codingmage-plan::TaskPlan::parse` over the exact task-source
+  bytes. Rows keep the source checkbox, kind, title, parent, sprint and story, source line and
+  line digest, declared dependencies with each dependency's resolved source state, dependents,
+  and a readiness derived from the source alone (`checked in source`, `dependency-ready`,
+  `waiting on dependencies`).
+- Search matches identifier or title; filters cover checkbox state, kind and dependency-ready
+  only. Selecting a row shows its detail and can copy the identifier.
+- Repository selection offers a path field, the private recent list and a directory browser that
+  lists only directories and `.toml` files, skips hidden entries, disables symbolic links and
+  never writes.
+- A task source that fails the strict grammar is a visible failure on the overview and the work
+  plan; the repository stays open for diagnosis.
+
+Commands:
+
+```text
+cargo test -p codingmage-ui --locked -- --test-threads=1
+cargo clippy -p codingmage-ui --all-targets --locked -- -D warnings
+```
+
+Results: 15 unit tests, 8 shell tests and 4 work-plan tests passed.
+
+| Test | What it proves |
+| --- | --- |
+| `work_plan_shows_source_states_dependencies_and_anchors_without_editing` | Checked, dependency-ready and waiting rows, dependency states, source line and dependents appear in the accessibility tree; the target tree, head and task source are byte-identical afterwards |
+| `filters_and_search_narrow_the_plan` | Ready-only, checked, acceptance and query filters narrow the rows and the counts agree with the parser |
+| `malformed_task_source_is_a_visible_failure_and_overview_still_works` | A source rejected by the strict grammar is reported on both screens without closing the repository |
+| `browser_lists_directories_and_opens_a_configuration` | The browser exposes navigation controls and lists only directories and configuration files |
+
+Not proven here: coordinator observations over the plan (Sub-task 36.1.2.2) and any file dialog
+integration with the desktop environment.
