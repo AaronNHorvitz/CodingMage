@@ -866,6 +866,7 @@ dependencies = [
  "eframe",
  "egui",
  "egui_kittest",
+ "image",
  "serde",
  "serde_json",
  "sha2",
