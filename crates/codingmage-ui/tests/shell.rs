@@ -155,6 +155,7 @@ fn stale_generation_and_cross_project_responses_are_discarded() {
             campaign_id: None,
         },
         label: "doctor",
+        request_id: None,
         result: Ok(doctor_json.clone()),
     };
     assert!(!harness.state_mut().handle_response(stale));
@@ -166,6 +167,7 @@ fn stale_generation_and_cross_project_responses_are_discarded() {
             campaign_id: None,
         },
         label: "doctor",
+        request_id: None,
         result: Ok(doctor_json.clone()),
     };
     assert!(!harness.state_mut().handle_response(cross_project));
@@ -174,6 +176,7 @@ fn stale_generation_and_cross_project_responses_are_discarded() {
         generation: harness.state().generation(),
         binding: harness.state().binding(),
         label: "doctor",
+        request_id: None,
         result: Ok(doctor_json),
     };
     assert!(harness.state_mut().handle_response(current));

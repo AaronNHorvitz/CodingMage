@@ -98,6 +98,7 @@ impl App {
                 arguments,
                 deadline: PREFLIGHT_DEADLINE,
             },
+            request_id: None,
         };
         match self.submit(request) {
             Ok(()) => {

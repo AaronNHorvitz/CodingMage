@@ -80,6 +80,8 @@ pub struct Request {
     pub binding: Binding,
     /// Work to perform.
     pub job: Job,
+    /// Caller correlation identity (used for control requests).
+    pub request_id: Option<String>,
 }
 
 /// One completed request.
@@ -91,6 +93,8 @@ pub struct Response {
     pub binding: Binding,
     /// Label of the job.
     pub label: &'static str,
+    /// Caller correlation identity when supplied.
+    pub request_id: Option<String>,
     /// Raw stdout or the failure.
     pub result: Result<Vec<u8>, BackendError>,
 }
@@ -246,6 +250,7 @@ fn run_loop(
             generation: request.generation,
             binding: request.binding,
             label,
+            request_id: request.request_id,
             result,
         };
         if let Err(SendError(_)) = responses.send(response) {
@@ -286,6 +291,7 @@ mod tests {
                 arguments: vec![argument.to_owned()],
                 deadline: Duration::from_secs(10),
             },
+            request_id: None,
         }
     }
 

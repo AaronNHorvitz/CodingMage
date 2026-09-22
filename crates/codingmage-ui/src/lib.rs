@@ -4,11 +4,14 @@
 //! `codingmage` executable and the existing parser libraries. It requests explicit controls
 //! through the same command boundary and never enforces policy or grants authority itself.
 
+pub mod admission;
 pub mod app;
 pub mod backend;
 pub mod browser;
 pub mod campaign;
+pub mod controls;
 pub mod fonts;
+pub mod launch;
 pub mod observed;
 pub mod project;
 pub mod readiness;

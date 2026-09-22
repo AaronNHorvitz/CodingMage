@@ -466,3 +466,39 @@ pub fn write_controlled_campaign(fixture: &Fixture, campaign_id: &str) -> (PathB
     fs::write(&spec, text.replace(&"a".repeat(64), &digest)).unwrap();
     (spec, record)
 }
+
+/// Fake Claude implementer that records its pid and sleeps before implementing, so a live
+/// coordinator can be observed and cancelled while a provider process is running.
+pub const FAKE_CLAUDE_SLOW: &str = r#"#!/usr/bin/python3
+import json, os, re, sys, time
+from pathlib import Path
+if "--version" in sys.argv:
+    print("2.1.136 (Claude Code)")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
+    raise SystemExit(0)
+packet = sys.stdin.read()
+root = Path(__file__).parent
+(root / "slow-claude.pid").write_text(str(os.getpid()), encoding="utf-8")
+time.sleep(120)
+path = Path("src/lib.rs")
+value = int(re.search(r"\{ (\d+) \}", path.read_text(encoding="utf-8")).group(1)) + 1
+path.write_text(f"pub fn value() -> u8 {{ {value} }}\n", encoding="utf-8")
+print(json.dumps({
+    "type": "result", "is_error": False,
+    "structured_output": {
+        "changed_paths": ["src/lib.rs"], "tests": [], "commit": None,
+        "ready_for_commit": True, "limitations": [], "blocker_code": None
+    }
+}))
+"#;
+
+/// Whether a process with this pid is alive and not a zombie.
+pub fn pid_alive(pid: u32) -> bool {
+    fs::read_to_string(format!("/proc/{pid}/stat")).is_ok_and(|stat| {
+        stat.rsplit_once(')')
+            .and_then(|(_, rest)| rest.split_whitespace().next().map(str::to_owned))
+            .is_some_and(|state| state != "Z")
+    })
+}

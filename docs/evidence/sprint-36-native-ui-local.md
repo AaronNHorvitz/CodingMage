@@ -209,3 +209,46 @@ Behavior:
 | `provider_probe_failure_is_actionable_and_names_no_substitute` | An implementer executable without the required capability surface fails preflight with a `codingmage.provider.claude.*` code and the interface states that no substitute is used |
 
 Not proven here: authenticated real providers; the probes ran against fake executables.
+
+## Sub-tasks 36.2.1.1 and 36.2.1.2 - Admission, controls, detach, reconnect and recovery
+
+Implemented in `crates/codingmage-ui/src/admission.rs`, `launch.rs`, `controls.rs` and
+`app/execution_screen.rs`.
+
+Behavior:
+
+- Admission requires a `ready` preflight report whose authority and authorization digests match
+  the selected specification, and the owner must type at least the first twelve characters of
+  the report's SHA-256 exactly as shown. The admission is persisted privately, bound to the
+  authority digest, repository identity, head, task-source digest and authorization digest, and
+  becomes stale (start refused) when any of them change. It grants nothing: the coordinator
+  revalidates everything when `campaign` starts.
+- Start launches `codingmage campaign` in its own process group with stdin closed and private
+  stdout/stderr files, records pid and kernel start time, and never waits for or signals it.
+  Liveness is read from `/proc` and the recorded start time; the terminal JSON outcome is read
+  from the private stdout file after exit. A second start is refused while the launch is live,
+  and the coordinator's own repository lock remains the authority.
+- Pause, resume, stop-after-unit and cancel go through `campaign-control` with interface-generated
+  create-once request identities kept in a private ledger. A pending request blocks another;
+  a lost outcome is replayed with the same identity and the coordinator answers
+  `created: false`; cancel needs a second press; resume records the intent only and starting
+  again is a separate explicit action.
+- Closing the window neither stops nor adopts the coordinator. Reopening restores the admission,
+  launch record and ledger, observes the live process, and marks any pending request whose
+  outcome was lost as replayable.
+
+Commands:
+
+```text
+cargo test -p codingmage-ui --test execution --locked -- --test-threads=1
+```
+
+| Test | What it proves |
+| --- | --- |
+| `admission_requires_the_reviewed_report_and_goes_stale_when_the_repository_moves` | Admission is refused without a report or with a wrong digest prefix; a confirmed digest admits; the admission survives reopening; a new commit on the checkout makes it stale and start is refused without creating campaign state |
+| `start_detach_reconnect_stop_after_unit_and_replayed_controls` | The real coordinator starts detached with fake providers; closing the interface leaves it alive; a new interface reconnects to the same pid; stop-after-unit is created, the coordinator exits `paused`/`stop_after_unit` with at least one accepted unit; a pause whose outcome is marked lost is replayed with the same identity and reported as already recorded; resume records the intent and start becomes available again; the active checkout's task source is untouched |
+| `cancel_terminates_only_the_owned_provider_and_retains_state` | With a provider that sleeps, cancel (after confirmation) makes the coordinator exit `cancelled`, the owned provider process is gone, the interface process is unaffected, durable campaign state is retained and start is refused for the cancelled campaign |
+| `a_second_launch_is_refused_while_the_coordinator_is_live` | A second start while live is refused locally with the pid unchanged; a control issued before the first checkpoint exists is reported with the coordinator's `codingmage.runtime.state` code; the campaign is cancelled to clean up |
+
+Not proven here: behavior on a real desktop session (window close through the compositor) and
+any live-provider execution; the coordinator ran with fake providers.

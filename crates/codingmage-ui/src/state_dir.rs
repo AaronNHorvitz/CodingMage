@@ -253,6 +253,16 @@ pub struct ProjectMemory {
     pub authorization_record: Option<PathBuf>,
 }
 
+/// Private directory for one configuration's interface state (admissions, launches, controls).
+#[must_use]
+pub fn project_private_dir(directory: &Path, config: &Path) -> PathBuf {
+    use sha2::{Digest as _, Sha256};
+    let digest = Sha256::digest(config.as_os_str().as_encoded_bytes());
+    directory
+        .join("projects")
+        .join(crate::project::hex(&digest))
+}
+
 impl ProjectMemory {
     fn path(directory: &Path, config: &Path) -> PathBuf {
         use sha2::{Digest as _, Sha256};

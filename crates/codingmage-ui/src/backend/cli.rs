@@ -355,6 +355,17 @@ pub fn explain_code(code: &str) -> (&'static str, &'static str) {
             "The guarded process runtime is unavailable.",
             "Check that the coordinator executable can start its process guard.",
         ),
+        code if code.starts_with("codingmage.provider.") => explain_provider_code(code),
+        code if code.starts_with("codingmage.ui.") => explain_interface_code(code),
+        _ => (
+            "The coordinator reported a stable failure code.",
+            "Look the code up in the operations troubleshooting guide.",
+        ),
+    }
+}
+
+fn explain_provider_code(code: &str) -> (&'static str, &'static str) {
+    match code {
         "codingmage.provider.codex.authentication"
         | "codingmage.provider.claude.authentication" => (
             "A provider login is missing or expired.",
@@ -387,6 +398,15 @@ pub fn explain_code(code: &str) -> (&'static str, &'static str) {
             "A provider did not answer within its bounded deadline.",
             "Retry; persistent timeouts indicate a provider or network problem outside CodingMage.",
         ),
+        _ => (
+            "A configured provider reported a stable failure code.",
+            "Run the provider's own version command in a terminal and check its login state.",
+        ),
+    }
+}
+
+fn explain_interface_code(code: &str) -> (&'static str, &'static str) {
+    match code {
         "codingmage.ui.binary_unavailable" => (
             "The coordinator executable is not installed next to this interface.",
             "Install codingmage in the same directory or select its path in Setup.",
@@ -399,13 +419,17 @@ pub fn explain_code(code: &str) -> (&'static str, &'static str) {
             "A read-only Git object read failed.",
             "The campaign head or initial commit may be missing from this repository; refresh after the coordinator checkpoints.",
         ),
+        "codingmage.ui.outcome_unknown" => (
+            "The interface lost the outcome of a control request.",
+            "Issue the same control again; the coordinator replays the exact request identity idempotently.",
+        ),
         "codingmage.ui.contract" => (
             "The coordinator output does not match the contract this interface was built for.",
             "Install matching versions of codingmage and codingmage-ui.",
         ),
         _ => (
-            "The coordinator reported a stable failure code.",
-            "Look the code up in the operations troubleshooting guide.",
+            "The interface refused or lost a request.",
+            "Retry the action; nothing was changed by the refusal.",
         ),
     }
 }

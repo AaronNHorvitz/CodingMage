@@ -35,6 +35,7 @@ impl App {
                 self.campaign = Some(selection);
                 self.campaign_error = None;
                 self.persist_campaign_memory();
+                self.restore_execution();
                 self.set_status("campaign selected; requesting durable status");
                 self.refresh_campaign();
             }
@@ -50,6 +51,7 @@ impl App {
         self.clear_campaign_observations();
         self.campaign = None;
         self.campaign_error = None;
+        self.execution = super::ExecutionState::default();
         self.persist_campaign_memory();
         self.set_status("campaign selection cleared; no coordinator process was affected");
     }
@@ -94,6 +96,7 @@ impl App {
                     arguments,
                     deadline: STATUS_DEADLINE,
                 },
+                request_id: None,
             };
             match self.submit(request) {
                 Ok(()) => match label {
@@ -161,6 +164,7 @@ impl App {
                 arguments: vec!["show".to_owned(), format!("{head}:{task_source}")],
                 deadline: GIT_DEADLINE,
             },
+            request_id: None,
         };
         match self.submit(request) {
             Ok(()) => {
@@ -250,6 +254,8 @@ impl App {
         self.authority_drift(ui);
         ui.separator();
         self.readiness_section(ui);
+        ui.separator();
+        self.execution_section(ui);
         ui.separator();
         self.status_section(ui);
         ui.separator();

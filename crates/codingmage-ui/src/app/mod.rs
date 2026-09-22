@@ -1,9 +1,11 @@
 //! Application shell: navigation, project selection and bounded backend observation.
 
 mod campaign_screen;
+mod execution_screen;
 mod readiness_screen;
 mod setup_screen;
 
+pub use execution_screen::{ExecutionState, LAUNCH_OBSERVE_INTERVAL};
 pub use setup_screen::SetupState;
 
 use std::{
@@ -136,6 +138,7 @@ pub struct App {
     authorization_record: Option<PathBuf>,
     authorization_input: String,
     preflight: Observed<crate::readiness::PreflightObservation>,
+    execution: ExecutionState,
 }
 
 impl App {
@@ -212,6 +215,7 @@ impl App {
             authorization_record: None,
             authorization_input: String::new(),
             preflight: Observed::default(),
+            execution: ExecutionState::default(),
         }
     }
 
@@ -413,6 +417,7 @@ impl App {
                 arguments,
                 deadline: DIAGNOSIS_DEADLINE,
             },
+            request_id: None,
         };
         match self.submit(request) {
             Ok(()) => self.diagnosis.loading = true,
@@ -474,6 +479,10 @@ impl App {
             }
             "campaign-preflight" => {
                 self.accept_preflight(response);
+                true
+            }
+            "campaign-control" => {
+                self.accept_control(response);
                 true
             }
             "campaign-explain-blocker" => {
@@ -547,6 +556,7 @@ impl App {
         for response in responses {
             self.handle_response(response);
         }
+        self.observe_launch(false);
         if self.campaign.is_some()
             && !self.status.loading
             && self
@@ -586,6 +596,8 @@ impl App {
             || self.preflight.loading
         {
             ctx.request_repaint_after(Duration::from_millis(250));
+        } else if self.launch_is_live() || self.execution.ledger.pending().is_some() {
+            ctx.request_repaint_after(LAUNCH_OBSERVE_INTERVAL);
         } else if self.campaign.is_some() {
             ctx.request_repaint_after(STATUS_POLL_INTERVAL);
         }
