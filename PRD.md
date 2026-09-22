@@ -31,6 +31,39 @@ Success is accepted functionality with traceable evidence, not tokens consumed, 
 manager messages, checked boxes or model assertions. CodingMage remains a standalone product;
 a host UI, optional memory service and additional provider adapters are not required for this loop.
 
+## Native Linux Desktop Interface
+
+The owner selected a native Linux desktop app for CodingMage. This is a planned first-class
+product surface, not a web dashboard, a terminal launcher or a separate orchestration system.
+Its purpose is to make the existing coding workflow usable without managing agent terminals.
+The opening screen is the actual workspace, not a marketing page or fabricated demonstration.
+
+The first milestone works with CodingMage's existing local backend and supported providers.
+It does not require a host application, external memory service, additional stack component or
+completion of Sprints 32 through 35. Those later capabilities extend the same interface when ready.
+Opening the app or a repository must not start agents, edit task status or authorize a campaign.
+
+| ID | Required behavior | Planned task |
+| --- | --- | --- |
+| CM-UI-001 | Native Linux presentation over the existing coordinator, with one authoritative state and permission model. | 36.1.1 |
+| CM-UI-002 | Repository workspace with searchable tasks, dependencies, actual team activity, blockers and distinct source-checkbox versus verified-outcome states. | 36.1.2 |
+| CM-UI-003 | Guided configuration of supported provider/model profiles, target, limits and local campaign policy, with actionable readiness errors. | 36.1.3 |
+| CM-UI-004 | Explicit campaign admission, start/pause/resume/stop/cancel and truthful reconnect/recovery behavior; no silent authority expansion. | 36.2.1 |
+| CM-UI-005 | Inspectable changes, exact-commit review and test results, bounded activity, and exportable outcome reports from real backend records. | 36.2.2 |
+| CM-UI-006 | Native user-workflow, keyboard/accessibility, resizing, resource-use and installation verification with separate live-provider qualification. | 36.2.3 |
+
+The interface must keep completed work, accepted outcomes, blocked/deferred work, source checkboxes
+and delivery state separate. Unknown usage stays unknown; disconnected or stale observations must
+not appear live. Empty, loading, failure and recovery states must be usable, not replaced with
+sample success data. Repository text and model output never grant permission.
+
+Owner involvement remains independent of publication authority. Show supervised, exception-only
+and hands-off options only when the corresponding backend capability is available; explain an
+unavailable mode without pretending it works. Once qualified, hands-off requires one initial
+authorization and no routine UI approvals. Observer disconnect is not campaign cancellation;
+the implementation must make execution ownership and supported detach/reconnect behavior explicit.
+Existing provider authentication and human-only gates remain unchanged.
+
 ## Owner Involvement Modes
 
 These are planned product modes, not currently accepted configuration keys.
@@ -147,4 +180,5 @@ No self-modification of CodingMage during a target campaign, unrestricted agent 
 policy expansion, mandatory external memory, new orchestration engine, or simulation of human
 approval. Release gates and human-only decisions are not delegated to a model by changing mode.
 This planning increment changes no executable, schema, enabled provider, running session or gate
-result. Sprints 32 through 35 remain unchecked until their exact evidence exists.
+result. Sprints 32 through 36 remain unchecked until their exact evidence exists. The native UI
+is assigned to a future implementation agent; this documentation update does not build or launch it.

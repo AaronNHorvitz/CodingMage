@@ -11,6 +11,15 @@ These new involvement modes and team extensions are **planned, not qualified cur
 See the [PRD](PRD.md), [product development plan](PRODUCT-DEVELOPMENT-PLAN.md),
 [Decision 0014](docs/decisions/0014-owner-optional-engineering-team.md) and Sprints 32 through 35.
 
+CodingMage's planned user interface is a **native Linux desktop app**, not a browser dashboard.
+It will provide repository and campaign setup, a work plan, team activity, review/test results,
+blockers and execution controls over the existing coordinator. The first usable local interface
+does not depend on the rest of the stack or completion of the owner-optional team extensions.
+Supervised, exception-only and hands-off controls will become available only as their backend
+contracts are implemented and qualified. This is planned work, not a shipped interface; see
+Sprint 36 in [TASKS.md](TASKS.md) and the native UI implementation brief in the
+[development plan](PRODUCT-DEVELOPMENT-PLAN.md).
+
 The current local campaign path supports both durable serial execution and bounded parallel teams:
 one Codex team lead, up to five concurrent Claude implementation pods, fresh Codex reviewers,
 per-task publication records, serialized integration, final validation, and restart-safe campaign

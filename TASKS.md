@@ -1998,6 +1998,63 @@ admission and review prerequisites remain required; missing external artifacts c
 
 ---
 
+## Sprint 36 - Native Linux Desktop Workspace
+
+**Status:** Planned, documentation only. Requirements CM-UI-001 through CM-UI-006. The owner
+selected a native Linux app; no UI implementation or qualification is claimed. This is a separate
+local UI workstream over the existing backend, not a dependency on completion of Sprints 32
+through 35 or optional stack integrations. See the native UI agent brief in
+[the product development plan](PRODUCT-DEVELOPMENT-PLAN.md).
+
+**Sprint goal:** Make CodingMage's supported local coding workflow usable from a native desktop
+workspace without managing agent terminals, duplicating coordinator logic or fabricating progress.
+
+### Story 36.1 - Native Workspace and Guided Setup
+
+- [ ] **Task 36.1.1 - Establish the native presentation boundary**
+  - [ ] **Sub-task 36.1.1.1:** Reconcile actual repository/task/configuration/preflight/status/control/report contracts and known source/evidence gaps; define the native toolkit, command boundary, execution ownership and compatibility approach without introducing another scheduler.
+  - [ ] **Sub-task 36.1.1.2:** Implement the native shell and bounded asynchronous backend connection with repository/campaign identity checks, no startup effects, stale-response rejection and explicit failure states.
+    <!-- depends-on: 36.1.1.1 -->
+- [ ] **Task 36.1.2 - Present real work and team state**
+  - [ ] **Sub-task 36.1.2.1:** Add repository selection, searchable/filterable work plan, task dependencies, source locations and overview using actual task parsing and repository state; opening or browsing must not modify either.
+    <!-- depends-on: 36.1.1.2 -->
+  - [ ] **Sub-task 36.1.2.2:** Add actual campaign/team activity, blockers and outcome counts with distinct source-checkbox, verified-completion, accepted, blocked/deferred, stale and unknown states; show only backend-supported roles.
+    <!-- depends-on: 36.1.2.1 -->
+- [ ] **Task 36.1.3 - Guide local campaign configuration**
+  - [ ] **Sub-task 36.1.3.1:** Add guided target/provider/model/limit/policy setup and optional configuration import/export through existing validated contracts, preserving deny-first defaults, separate publication authority and credential privacy.
+    <!-- depends-on: 36.1.1.2 -->
+  - [ ] **Sub-task 36.1.3.2:** Present real readiness/preflight results and actionable configuration/authentication/capability failures; do not enable unavailable involvement modes or silently substitute providers/models.
+    <!-- depends-on: 36.1.3.1 -->
+
+- [ ] **AC 36.1:** The owner can open a repository, inspect real work and team state, configure supported local execution and understand readiness without shell commands, fabricated data or automatic campaign launch.
+
+### Story 36.2 - Controlled Execution and Product Verification
+
+- [ ] **Task 36.2.1 - Control and reconnect to campaigns**
+  - [ ] **Sub-task 36.2.1.1:** Connect explicit admission, start, pause, resume, stop-after-unit and cancellation through existing coordinator authority; revalidate changed bindings and reject duplicate, stale and cross-project control requests.
+    <!-- depends-on: 36.1.2.2, 36.1.3.2 -->
+  - [ ] **Sub-task 36.2.1.2:** Prove execution ownership, close/detach/reconnect, durable recovery and failed-control behavior; observer disconnect is not revocation and must not create duplicate work, orphan owned processes or affect unrelated sessions.
+    <!-- depends-on: 36.2.1.1 -->
+- [ ] **Task 36.2.2 - Inspect changes and evidence**
+  - [ ] **Sub-task 36.2.2.1:** Present exact candidate changes, independent-review findings, test results and bounded activity from real records, distinguishing missing evidence from a pass and engineering completion from delivery.
+    <!-- depends-on: 36.2.1.1 -->
+  - [ ] **Sub-task 36.2.2.2:** Add inspectable/exportable outcome and blocker reports with privacy and overwrite safeguards; viewing, exporting or clicking a source checkbox must not manufacture canonical completion or review authority.
+    <!-- depends-on: 36.2.2.1 -->
+- [ ] **Task 36.2.3 - Verify and document the native product**
+  - [ ] **Sub-task 36.2.3.1:** Exercise setup-to-outcome and failure/recovery/control workflows on disposable repositories, including stale/malformed state, keyboard/accessibility behavior, compact/high-DPI windows and bounded resource use; inspect actual native screenshots and interaction results.
+    <!-- depends-on: 36.2.1.2, 36.2.2.2 -->
+  - [ ] **Sub-task 36.2.3.2:** Verify Linux installation/launch and separately admitted real-provider behavior, obtain required independent review, and document exact supported capabilities and remaining limits without closing unrelated team, platform or release gates.
+    <!-- depends-on: 36.2.3.1 -->
+
+- [ ] **AC 36.2:** The native app controls the supported real backend workflow, preserves authority and recovery boundaries, and presents inspectable outcomes without claiming unimplemented hands-off or ecosystem capabilities.
+
+### Sprint 36 Gate
+
+- [ ] **Gate 36.1:** Native workspace, guided setup, actual local workflow and control/recovery acceptance pass on disposable targets; deterministic fixtures are explicitly distinguished from live-provider evidence.
+- [ ] **Gate 36.2:** Linux install/launch, native usability/accessibility checks, separately admitted live-provider scope and required independent review support M-UI-LOCAL; public-release and hands-off qualification remain separate.
+
+---
+
 ## Remaining Dependency Order
 
 Sprint numbers remain stable identifiers for historical evidence. Complete the remaining work in
@@ -2029,6 +2086,10 @@ Decision 0014 adds an independent product continuation:
 18. Renew exact current-source prerequisites and qualify Story 35.1 and Task 35.2.2 in one-pod then staged-concurrency order. Do not replace live, platform, independent-review or owner admission evidence with documentation or fake providers.
 19. Qualify optional Task 35.2.1 only under separately approved external-effect authority. Involvement mode does not alter signing, package release or mandatory human-review gates.
 
+The owner's native Linux UI request adds a separate implementation assignment:
+
+20. When assigned the UI workstream, begin Sub-task 36.1.1.1 and follow Sprint 36's local dependencies. Do not wait for optional stack integrations or the entire team extension to build the first usable interface; preserve applicable backend execution, independent-review and release gates.
+
 The current evidence-freshness failure is Sub-task 25.2.4.6. Complete the legitimate renewal before
 claiming Gates 25.3/25.4 or constructing a new qualified release candidate. If a required review or
 qualification input is unavailable, record that exact blocker instead of editing hashes to pass.
@@ -2052,6 +2113,10 @@ claims those remote capabilities as supported.
 Independent review, manual fuzzing, signing, and explicit release authorization are release gates.
 
 ## Immediate Next Unit
+
+For the separately assigned native UI workstream, start Sub-task 36.1.1.1 using the native UI
+agent brief in [the development plan](PRODUCT-DEVELOPMENT-PLAN.md). This planning update does not
+start that assignment or authorize changing any running agent. All Sprint 36 rows remain unchecked.
 
 For the separately assigned owner-optional team workstream, start Sub-task 32.1.1.1 and follow
 Decision 0014's exact prerequisite/continuation rules. The
