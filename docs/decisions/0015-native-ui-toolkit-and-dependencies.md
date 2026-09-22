@@ -52,8 +52,8 @@ public crates.io index.
    | `codingmage-runtime` | workspace | Apache-2.0 | dev | Contract-parity tests against the real backend types |
 
 6. `codingmage-ui` may depend at runtime only on `codingmage-campaign`, `codingmage-contracts`,
-   `codingmage-core` and `codingmage-plan` (parsers and validators without repository or process
-   authority). The dependency policy records this edge set; it does not grant the UI a path to
+   `codingmage-core`, `codingmage-plan` and `codingmage-state` (parsers, validators and the
+   journal record types, none of which carry repository or process authority). The dependency policy records this edge set; it does not grant the UI a path to
    `codingmage-runtime`, `codingmage-git` or `codingmage-process` at runtime.
 
 ## Alternatives Considered

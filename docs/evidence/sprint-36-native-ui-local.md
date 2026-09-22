@@ -252,3 +252,33 @@ cargo test -p codingmage-ui --test execution --locked -- --test-threads=1
 
 Not proven here: behavior on a real desktop session (window close through the compositor) and
 any live-provider execution; the coordinator ran with fake providers.
+
+## Sub-task 36.2.2.1 - Exact changes, review and test records, bounded activity
+
+Implemented in `crates/codingmage-ui/src/records.rs` and `app/changes_screen.rs`, with a
+records scan job in `backend/worker.rs`.
+
+Behavior:
+
+- Exact candidate changes are read from the repository's own objects with read-only Git:
+  `log` of the coordinator commits between the campaign's initial commit and its head, and
+  `diff --numstat -z` of the changed files. The screen states that the campaign head equalling
+  the initial commit means no reviewed candidate was integrated.
+- Review and test results come from every `runs/<run_id>/checkpoint.json` beneath the campaign's
+  private state, parsed with the strict checkpoint model, plus each run's journal parsed with the
+  existing `JournalRecord` type. A missing checkpoint, a missing verdict, empty gate evidence, a
+  missing journal or malformed journal lines are reported as exactly that, never as a pass.
+  Reviewer finding text is stated as not retained by the backend.
+- The delivery boundary is stated on the screen: accepted work lives on the coordinator-owned
+  campaign branch under the campaign's publication policy; engineering completion is not delivery.
+- Bounded activity is the coordinator's own content-minimized progress stream from the private
+  stderr capture of the launch, limited to the last twelve lines.
+
+| Test | What it proves |
+| --- | --- |
+| `accepted_units_show_exact_commits_files_verdicts_and_gate_evidence` | After two real accepted units, the four coordinator commits, the two changed files, per-run `pass` verdicts, two gate evidence identities each and the journaled phase sequence appear; the active checkout head is unchanged |
+| `missing_and_malformed_records_are_reported_not_passed` | A run with its checkpoint removed and a malformed journal line shows "checkpoint.json is absent", "review outcome not recorded" and the malformed-line count, with the task identity recovered from the journal |
+| `never_started_campaign_has_no_changes_or_records` | Never-started campaigns show explicit empty states for changes, records and activity |
+
+Not proven here: parallel-campaign per-pod record layouts (the scan is recursive and bounded,
+but only serial runs were exercised) and any real reviewer output.

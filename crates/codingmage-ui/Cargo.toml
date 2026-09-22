@@ -16,6 +16,7 @@ codingmage-campaign.workspace = true
 codingmage-contracts.workspace = true
 codingmage-core.workspace = true
 codingmage-plan.workspace = true
+codingmage-state.workspace = true
 eframe = { version = "=0.36.2", default-features = false, features = ["accesskit", "wayland", "wgpu", "x11"] }
 egui = { version = "=0.36.2", default-features = false }
 serde.workspace = true

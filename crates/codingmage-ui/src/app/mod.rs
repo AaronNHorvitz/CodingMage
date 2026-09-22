@@ -1,10 +1,12 @@
 //! Application shell: navigation, project selection and bounded backend observation.
 
 mod campaign_screen;
+mod changes_screen;
 mod execution_screen;
 mod readiness_screen;
 mod setup_screen;
 
+pub use changes_screen::ChangeSet;
 pub use execution_screen::{ExecutionState, LAUNCH_OBSERVE_INTERVAL};
 pub use setup_screen::SetupState;
 
@@ -139,6 +141,11 @@ pub struct App {
     authorization_input: String,
     preflight: Observed<crate::readiness::PreflightObservation>,
     execution: ExecutionState,
+    changes: Observed<ChangeSet>,
+    changes_range: Option<(String, String)>,
+    pending_changes: Option<ChangeSet>,
+    pending_changes_parts: u8,
+    records: Observed<Vec<crate::records::RunRecord>>,
 }
 
 impl App {
@@ -216,6 +223,11 @@ impl App {
             authorization_input: String::new(),
             preflight: Observed::default(),
             execution: ExecutionState::default(),
+            changes: Observed::default(),
+            changes_range: None,
+            pending_changes: None,
+            pending_changes_parts: 0,
+            records: Observed::default(),
         }
     }
 
@@ -485,6 +497,14 @@ impl App {
                 self.accept_control(response);
                 true
             }
+            "git-log" | "git-numstat" => {
+                self.accept_changes_part(response);
+                true
+            }
+            "records" => {
+                self.accept_records(response);
+                true
+            }
             "campaign-explain-blocker" => {
                 match response.result.and_then(|bytes| {
                     crate::backend::models::parse_blocker_explanation(&bytes)
@@ -586,14 +606,17 @@ impl App {
                     Screen::Overview => self.overview(ui),
                     Screen::WorkPlan => self.work_plan(ui),
                     Screen::Campaign => self.campaign_screen(ui),
+                    Screen::Changes => self.changes_screen(ui),
                     Screen::Setup => self.setup(ui),
-                    other => self.placeholder(ui, other),
+                    Screen::Reports => self.placeholder(ui, Screen::Reports),
                 });
         });
         if self.diagnosis.loading
             || self.status.loading
             || self.head_plan.loading
             || self.preflight.loading
+            || self.changes.loading
+            || self.records.loading
         {
             ctx.request_repaint_after(Duration::from_millis(250));
         } else if self.launch_is_live() || self.execution.ledger.pending().is_some() {

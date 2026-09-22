@@ -863,6 +863,7 @@ dependencies = [
  "codingmage-core",
  "codingmage-plan",
  "codingmage-runtime",
+ "codingmage-state",
  "eframe",
  "egui",
  "egui_kittest",

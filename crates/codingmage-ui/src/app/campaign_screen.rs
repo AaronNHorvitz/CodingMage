@@ -58,6 +58,10 @@ impl App {
 
     pub(super) fn clear_campaign_observations(&mut self) {
         self.preflight.clear();
+        self.changes.clear();
+        self.changes_range = None;
+        self.pending_changes = None;
+        self.records.clear();
         self.status.clear();
         self.explanation.clear();
         self.report.clear();
@@ -72,6 +76,9 @@ impl App {
             return;
         };
         self.last_status_request = Some(self.now);
+        if !self.records.loading {
+            self.request_records();
+        }
         let base = [
             "--config".to_owned(),
             config_path.clone(),
@@ -136,10 +143,19 @@ impl App {
             Ok(status) => {
                 let head = status.as_ref().map(|status| status.head.clone());
                 self.status.accept(status, response.generation, self.now);
-                if let Some(head) = head
+                if let Some(head) = &head
                     && self.head_plan_commit.as_deref() != Some(head.as_str())
                 {
-                    self.request_head_plan(&head);
+                    self.request_head_plan(head);
+                }
+                let base = self
+                    .campaign
+                    .as_ref()
+                    .map(|campaign| campaign.spec.initial_commit.clone());
+                if let (Some(head), Some(base)) = (head, base)
+                    && self.changes_range.as_ref() != Some(&(base.clone(), head.clone()))
+                {
+                    self.request_changes(&base, &head);
                 }
             }
             Err(error) => {
