@@ -1,0 +1,32 @@
+[package]
+name = "codingmage-ui"
+description = "Native Linux desktop workspace over the CodingMage coordinator"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "codingmage-ui"
+path = "src/main.rs"
+
+[dependencies]
+codingmage-campaign.workspace = true
+codingmage-contracts.workspace = true
+codingmage-core.workspace = true
+codingmage-plan.workspace = true
+eframe = { version = "=0.36.2", default-features = false, features = ["accesskit", "wayland", "wgpu", "x11"] }
+egui = { version = "=0.36.2", default-features = false }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+toml.workspace = true
+winit = { version = "=0.30.13", default-features = false, features = ["rwh_06", "wayland-csd-adwaita-notitle", "wayland-dlopen"] }
+
+[dev-dependencies]
+codingmage-runtime.workspace = true
+egui_kittest = { version = "=0.36.2", default-features = false, features = ["eframe", "snapshot", "wgpu"] }
+
+[lints]
+workspace = true

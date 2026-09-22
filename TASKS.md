@@ -2012,7 +2012,7 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
 ### Story 36.1 - Native Workspace and Guided Setup
 
 - [ ] **Task 36.1.1 - Establish the native presentation boundary**
-  - [ ] **Sub-task 36.1.1.1:** Reconcile actual repository/task/configuration/preflight/status/control/report contracts and known source/evidence gaps; define the native toolkit, command boundary, execution ownership and compatibility approach without introducing another scheduler.
+  - [x] **Sub-task 36.1.1.1:** Reconcile actual repository/task/configuration/preflight/status/control/report contracts and known source/evidence gaps; define the native toolkit, command boundary, execution ownership and compatibility approach without introducing another scheduler. Contracts, execution ownership, evidence drift and backend gaps are recorded in `docs/evidence/sprint-36-native-ui-reconciliation.md`; the toolkit, licence audit and command boundary are Decisions 0015 and 0016; `crates/codingmage-ui` is scaffolded with its dependency edges in `docs/architecture/dependency-policy.json`.
   - [ ] **Sub-task 36.1.1.2:** Implement the native shell and bounded asynchronous backend connection with repository/campaign identity checks, no startup effects, stale-response rejection and explicit failure states.
     <!-- depends-on: 36.1.1.1 -->
 - [ ] **Task 36.1.2 - Present real work and team state**
