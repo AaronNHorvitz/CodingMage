@@ -10,6 +10,13 @@ dependency graph. That generated SBOM, the corresponding `Cargo.lock`, and the p
 manifest are the authoritative dependency inventory for a candidate. A source checkout alone is
 not evidence that a final release artifact contains the same graph.
 
+## Native Interface Dependencies
+
+The native Linux workspace (`crates/codingmage-ui`) adds the `egui`, `eframe`, `winit` and
+`wgpu` crate families and their transitive dependencies. Decision 0015 records the audit of every
+crate reachable on `x86_64-unknown-linux-gnu` against the admitted licence list. The interface
+bundles no font: it loads fonts installed on the host at runtime and does not redistribute them.
+
 ## Interoperable Tools
 
 CodingMage can invoke separately installed Git, Claude Code, Codex, Cargo, Node.js tooling, and

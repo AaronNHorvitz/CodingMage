@@ -748,6 +748,7 @@ changed to hide the failure.
 - Parallel authenticated-provider operation: implementation present; guarded live qualification remains open
 - Multi-agent scenario matrix: 44 required scenarios mapped to executable local evidence
 - Sustained five-pod soak: guarded two-cycle local run passed; longer live qualification remains open
+- Native Linux desktop workspace: local implementation with display-less verification against the real coordinator and fake providers; real desktop, screen reader, clean installation, live providers and independent review remain open
 - Host application integration: planned; no compatible interface or end-to-end qualification claimed
 - USTE contextual-memory integration: planned and optional; current journal remains authoritative
 - Muse Code runtime adapter: planned and optional; external development use is a separate choice
