@@ -165,12 +165,29 @@ pub fn harness(
     binary: Result<CoordinatorBinary, codingmage_ui::backend::BackendError>,
     size: [f32; 2],
 ) -> Harness<'static, App> {
+    let state_dir = std::env::temp_dir().join(format!(
+        "codingmage-ui-state-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    harness_with_state(binary, size, state_dir)
+}
+
+/// Builds a harness with an explicit private state directory.
+pub fn harness_with_state(
+    binary: Result<CoordinatorBinary, codingmage_ui::backend::BackendError>,
+    size: [f32; 2],
+    state_dir: PathBuf,
+) -> Harness<'static, App> {
     Harness::builder()
         .with_size(egui::Vec2::new(size[0], size[1]))
         .with_max_steps(4)
         .build_eframe(move |creation| {
             creation.egui_ctx.set_fonts(fonts());
-            App::with_binary(&creation.egui_ctx, binary)
+            App::with_state_dir(&creation.egui_ctx, binary, Ok(state_dir))
         })
 }
 
@@ -187,6 +204,26 @@ pub fn settle(
             return true;
         }
         if started.elapsed() > timeout {
+            let app = harness.state();
+            eprintln!(
+                "settle timed out: diagnosis={:?} status={:?} head_plan={:?} report={:?}",
+                app.diagnosis()
+                    .last_error
+                    .as_ref()
+                    .map(|(_, error)| error.to_string()),
+                app.status()
+                    .last_error
+                    .as_ref()
+                    .map(|(_, error)| error.to_string()),
+                app.head_plan()
+                    .last_error
+                    .as_ref()
+                    .map(|(_, error)| error.to_string()),
+                app.report()
+                    .last_error
+                    .as_ref()
+                    .map(|(_, error)| error.to_string()),
+            );
             return false;
         }
         std::thread::sleep(Duration::from_millis(20));
@@ -218,4 +255,199 @@ pub fn tree_digest(root: &Path) -> Vec<(PathBuf, Vec<u8>)> {
     let mut out = Vec::new();
     visit(root, root, &mut out);
     out
+}
+
+/// Fake Claude implementer: bumps the value in `src/lib.rs` and reports readiness.
+pub const FAKE_CLAUDE: &str = r#"#!/usr/bin/python3
+import json, re, sys
+from pathlib import Path
+if "--version" in sys.argv:
+    print("2.1.136 (Claude Code)")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
+    raise SystemExit(0)
+packet = sys.stdin.read()
+path = Path("src/lib.rs")
+value = int(re.search(r"\{ (\d+) \}", path.read_text(encoding="utf-8")).group(1)) + 1
+path.write_text(f"pub fn value() -> u8 {{ {value} }}\n", encoding="utf-8")
+print(json.dumps({
+    "type": "result", "is_error": False,
+    "structured_output": {
+        "changed_paths": ["src/lib.rs"], "tests": [], "commit": None,
+        "ready_for_commit": True, "limitations": [], "blocker_code": None
+    }
+}))
+"#;
+
+/// Fake Codex lead and reviewer. When a `block-first-task` marker exists next to the script,
+/// the lead reports the first offered task as blocked once, then proposes remaining tasks.
+pub const FAKE_CODEX: &str = r#"#!/usr/bin/python3
+import json, re, sys
+from pathlib import Path
+if "--version" in sys.argv:
+    print("codex-cli 0.144.5")
+    raise SystemExit(0)
+if "--help" in sys.argv and "resume" in sys.argv:
+    print("SESSION_ID --json --output-schema --model --ignore-user-config")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print("Run Codex non-interactively --json --output-schema resume --model read-only --ignore-user-config")
+    raise SystemExit(0)
+packet = sys.stdin.read()
+root = Path(__file__).parent
+if packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
+    campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
+    head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
+    digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
+    tasks = re.findall(r"- id=([0-9.]+)", packet)
+    marker = root / "block-first-task"
+    if marker.exists() and "0.1.1.1" in tasks and not (root / "blocked-once").exists():
+        (root / "blocked-once").write_text("blocked\n", encoding="utf-8")
+        report = {
+            "campaign_id": campaign_id, "campaign_head": head,
+            "task_source_sha256": digest, "disposition": "blocked",
+            "proposals": [],
+            "blocked": {
+                "binding": {
+                    "campaign_id": campaign_id, "campaign_head": head,
+                    "task_source_sha256": digest, "task_id": "0.1.1.1",
+                    "dependencies": []
+                },
+                "reason": "unavailable_external_dependency"
+            },
+            "deferred": None, "human_decision": None
+        }
+    else:
+        task = tasks[0]
+        report = {
+            "campaign_id": campaign_id, "campaign_head": head, "task_source_sha256": digest,
+            "disposition": "propose",
+            "proposals": [{
+                "task_id": task, "dependencies": [], "owned_paths": ["src"],
+                "gate_tiers": ["focused"], "test_resources": ["rust-tests"],
+                "expected_artifacts": ["src/lib.rs"], "risk": "routine",
+                "rationale_summary": "The supplied task is dependency-ready and path-bounded."
+            }],
+            "blocked": None, "deferred": None, "human_decision": None
+        }
+else:
+    base = re.search(r"Base commit: ([0-9a-f]{40,64})", packet).group(1)
+    target = re.search(r"Target commit: ([0-9a-f]{40,64})", packet).group(1)
+    report = {
+        "verdict": "pass", "base_commit": base, "target_commit": target,
+        "findings": [], "blocker_code": None
+    }
+print(json.dumps({"type": "thread.started", "thread_id": "123e4567-e89b-12d3-a456-426614174000"}))
+print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps(report)}}))
+print(json.dumps({"type": "turn.completed"}))
+"#;
+
+/// Reads the diagnosis of a fixture through the real coordinator.
+pub fn doctor(fixture: &Fixture) -> serde_json::Value {
+    let output = Command::new(coordinator_binary())
+        .args(["doctor", "--config", fixture.config.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "doctor failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).unwrap()
+}
+
+/// Writes fake providers, a gate that always passes and a serial campaign specification.
+pub fn write_campaign(fixture: &Fixture, campaign_id: &str, max_units: u32) -> PathBuf {
+    let claude = fixture.executable("fake-claude", FAKE_CLAUDE);
+    let codex = fixture.executable("fake-codex", FAKE_CODEX);
+    let gate = fixture.executable("fake-gate", "#!/bin/sh\nexit 0\n");
+    let configured = fs::read_to_string(&fixture.config).unwrap();
+    fs::write(
+        &fixture.config,
+        configured.replace("/usr/bin/git", gate.to_str().unwrap()),
+    )
+    .unwrap();
+    let diagnosis = doctor(fixture);
+    let spec = fixture.root.join(format!("{campaign_id}.toml"));
+    fs::write(
+        &spec,
+        format!(
+            r#"version = 3
+campaign_id = "{campaign_id}"
+repository_id = "{}"
+repository_path = "{}"
+initial_commit = "{}"
+task_source_sha256 = "{}"
+operator_authorization_sha256 = "{}"
+max_parallel_pods = 1
+max_units = {max_units}
+implementer_authentication = "existing_login"
+campaign_branch = "codingmage/{campaign_id}"
+allowed_paths = ["src"]
+denied_paths = []
+protected_branches = ["main"]
+publication = "local_only"
+
+[limits]
+provider_attempts = 1000
+malformed_report_repairs = 100
+correction_rounds = 100
+process_invocations = 10000
+output_bytes = 1073741824
+retained_state_bytes = 1073741824
+execution_elapsed_ms = 86400000
+
+[team_lead]
+executable = "{}"
+model = "fixture-lead"
+effort = "high"
+
+[implementer]
+executable = "{}"
+model = "fixture-implementer"
+effort = "high"
+
+[reviewer]
+executable = "{}"
+model = "fixture-reviewer"
+effort = "high"
+
+[[gate_tiers]]
+name = "focused"
+profiles = ["configured-gates"]
+"#,
+            diagnosis["repository_id"].as_str().unwrap(),
+            fixture.target.display(),
+            diagnosis["head"].as_str().unwrap(),
+            diagnosis["task_source_sha256"].as_str().unwrap(),
+            "a".repeat(64),
+            codex.display(),
+            claude.display(),
+            codex.display(),
+        ),
+    )
+    .unwrap();
+    spec
+}
+
+/// Runs one `codingmage campaign` invocation to its terminal JSON.
+pub fn run_campaign(fixture: &Fixture, spec: &Path) -> serde_json::Value {
+    let output = Command::new(coordinator_binary())
+        .args([
+            "campaign",
+            "--config",
+            fixture.config.to_str().unwrap(),
+            "--campaign",
+            spec.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "campaign failed: {} {}",
+        String::from_utf8_lossy(&output.stderr),
+        String::from_utf8_lossy(&output.stdout)
+    );
+    serde_json::from_slice(&output.stdout).unwrap()
 }

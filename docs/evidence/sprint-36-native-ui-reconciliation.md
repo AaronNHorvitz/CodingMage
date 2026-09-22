@@ -15,10 +15,10 @@ Every row names the exact existing surface, its authority class and how the UI c
 | `codingmage-plan::TaskPlan::parse` | Library | None | Work plan: sprints, stories, items, checkbox state, dependencies, source anchors |
 | `codingmage-core::load_config` | Library | None | Validate authored or imported configuration before use |
 | `codingmage-campaign::CampaignSpec::verify` | Library | None | Validate authored or imported campaign authority |
-| `codingmage campaign-preflight` | CLI JSON (`CampaignPreflightReport`, schema 1) | Read-only probes of providers, gates, guard and storage | Readiness screen; admission requires an acknowledged report digest |
+| `codingmage campaign-preflight` | CLI JSON (`CampaignPreflightReport`, schema 2) | Read-only probes of providers, gates, guard and storage | Readiness screen; admission requires an acknowledged report digest |
 | `codingmage campaign` | CLI process, JSON outcome (`CampaignOutcome`) | Coordinator execution under the repository lock | Launched detached; owns execution; never waited on by the window |
-| `codingmage campaign-status` | CLI JSON (`CampaignStatus`, schema 1) or `null` | Read-only durable checkpoint projection | Campaign, team, blockers, outcome counts, limits, utilization |
-| `codingmage campaign-explain-blocker` | CLI JSON (`CampaignBlockerExplanation`) | Read-only projection | Blocker detail |
+| `codingmage campaign-status` | CLI JSON (`CampaignStatus`, schema 5) or `null` | Read-only durable checkpoint projection | Campaign, team, blockers, outcome counts, limits, utilization |
+| `codingmage campaign-explain-blocker` | CLI JSON (`CampaignBlockerExplanation`, schema 1) | Read-only projection | Blocker detail |
 | `codingmage campaign-report` | CLI JSON (`TeamCampaignReport`) or `null` | Read-only final report (parallel campaigns only) | Reports screen and export |
 | `codingmage campaign-control` | CLI JSON (`CampaignControlOutcome`) | Create-once durable control intent | Pause, resume, stop-after-unit, cancel |
 | `/usr/bin/git` read-only object reads (`show`, `diff --numstat`, `log`) | Fixed executable with cleared environment | None (object database reads) | Exact candidate changes between initial commit and campaign head; campaign-head task source |

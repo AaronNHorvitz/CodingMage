@@ -1,5 +1,7 @@
 //! Application shell: navigation, project selection and bounded backend observation.
 
+mod campaign_screen;
+
 use std::{
     path::{Path, PathBuf},
     time::{Duration, Instant},
@@ -8,20 +10,28 @@ use std::{
 use codingmage_plan::{CheckState, PlanItemKind};
 
 use crate::{
+    backend::models::{BlockerExplanation, CampaignReport, CampaignStatus},
     backend::{
         BackendError, Binding, CoordinatorBinary, Generation, Job, QueueError, Request, Response,
         Worker, explain_code,
         models::{Diagnosis, parse_diagnosis},
     },
     browser::Browser,
+    campaign::{CampaignSelection, SelectError},
     observed::{Freshness, Observed, age_label},
-    project::{OpenError, Project},
-    state_dir::{RecentProjects, StateError, user_config_dir},
+    project::{LoadedPlan, OpenError, Project},
+    state_dir::{ProjectMemory, RecentProjects, StateError, user_config_dir},
     workplan::{KindFilter, PlanFilter, PlanIndex, PlanRow, SourceReadiness, StateFilter},
 };
 
 /// Deadline for read-only diagnosis commands.
 pub const DIAGNOSIS_DEADLINE: Duration = Duration::from_mins(1);
+/// Deadline for read-only campaign projections.
+pub const STATUS_DEADLINE: Duration = Duration::from_mins(1);
+/// Deadline for read-only Git object reads.
+pub const GIT_DEADLINE: Duration = Duration::from_secs(30);
+/// Campaign status polling interval while a campaign is selected.
+pub const STATUS_POLL_INTERVAL: Duration = Duration::from_secs(15);
 /// Minimum window size the layout supports.
 pub const MIN_WINDOW: [f32; 2] = [720.0, 480.0];
 
@@ -108,6 +118,16 @@ pub struct App {
     plan_filter: PlanFilter,
     selected_item: Option<String>,
     browser: Option<Browser>,
+    campaign: Option<CampaignSelection>,
+    campaign_input: String,
+    campaign_error: Option<SelectError>,
+    campaign_browser: Option<Browser>,
+    status: Observed<Option<CampaignStatus>>,
+    explanation: Observed<BlockerExplanation>,
+    report: Observed<Option<CampaignReport>>,
+    head_plan: Observed<Option<LoadedPlan>>,
+    head_plan_commit: Option<String>,
+    last_status_request: Option<Instant>,
 }
 
 impl App {
@@ -124,6 +144,16 @@ impl App {
         ctx: &egui::Context,
         binary: Result<CoordinatorBinary, BackendError>,
     ) -> Self {
+        Self::with_state_dir(ctx, binary, user_config_dir())
+    }
+
+    /// Creates the shell with an explicit private state directory (used by tests).
+    #[must_use]
+    pub fn with_state_dir(
+        ctx: &egui::Context,
+        binary: Result<CoordinatorBinary, BackendError>,
+        state_dir: Result<PathBuf, StateError>,
+    ) -> Self {
         let wake_ctx = ctx.clone();
         let (connection, binary_path) = match binary {
             Ok(binary) => {
@@ -135,7 +165,6 @@ impl App {
             }
             Err(error) => (Connection::Unavailable(error), None),
         };
-        let state_dir = user_config_dir();
         let recent = state_dir
             .as_ref()
             .ok()
@@ -161,7 +190,47 @@ impl App {
             plan_filter: PlanFilter::default(),
             selected_item: None,
             browser: None,
+            campaign: None,
+            campaign_input: String::new(),
+            campaign_error: None,
+            campaign_browser: None,
+            status: Observed::default(),
+            explanation: Observed::default(),
+            report: Observed::default(),
+            head_plan: Observed::default(),
+            head_plan_commit: None,
+            last_status_request: None,
         }
+    }
+
+    /// Selected campaign, if any.
+    #[must_use]
+    pub const fn campaign(&self) -> Option<&CampaignSelection> {
+        self.campaign.as_ref()
+    }
+
+    /// Latest campaign status observation (`Some(None)` means no durable state exists).
+    #[must_use]
+    pub const fn status(&self) -> &Observed<Option<CampaignStatus>> {
+        &self.status
+    }
+
+    /// Latest task source observed at the campaign head.
+    #[must_use]
+    pub const fn head_plan(&self) -> &Observed<Option<LoadedPlan>> {
+        &self.head_plan
+    }
+
+    /// Latest final report observation.
+    #[must_use]
+    pub const fn report(&self) -> &Observed<Option<CampaignReport>> {
+        &self.report
+    }
+
+    /// Last campaign selection failure.
+    #[must_use]
+    pub const fn campaign_error(&self) -> Option<&SelectError> {
+        self.campaign_error.as_ref()
     }
 
     /// Index over the opened task plan, when it parsed.
@@ -200,7 +269,10 @@ impl App {
                 .value
                 .as_ref()
                 .map(|diagnosis| diagnosis.repository_id.clone()),
-            campaign_id: None,
+            campaign_id: self
+                .campaign
+                .as_ref()
+                .map(|campaign| campaign.spec.campaign_id.clone()),
         }
     }
 
@@ -251,6 +323,10 @@ impl App {
         self.plan_index = None;
         self.selected_item = None;
         self.browser = None;
+        self.clear_campaign_observations();
+        self.campaign = None;
+        self.campaign_error = None;
+        self.campaign_input.clear();
         match Project::open(config_path) {
             Ok(project) => {
                 if let Ok(directory) = &self.state_dir {
@@ -265,6 +341,16 @@ impl App {
                 self.project = Some(project);
                 self.set_status("opened configuration; requesting repository diagnosis");
                 self.refresh_diagnosis();
+                let remembered = self
+                    .state_dir
+                    .as_ref()
+                    .ok()
+                    .and_then(|directory| ProjectMemory::load(directory, config_path).ok())
+                    .and_then(|memory| memory.campaign_spec);
+                if let Some(spec_path) = remembered {
+                    self.campaign_input = spec_path.display().to_string();
+                    self.select_campaign(&spec_path);
+                }
             }
             Err(error) => {
                 self.set_status(format!("could not open configuration: {error}"));
@@ -284,6 +370,9 @@ impl App {
         self.open_error = None;
         self.plan_index = None;
         self.selected_item = None;
+        self.clear_campaign_observations();
+        self.campaign = None;
+        self.campaign_error = None;
         self.set_status("closed the repository view; no coordinator process was affected");
     }
 
@@ -336,7 +425,9 @@ impl App {
     ///
     /// Returns true when the response was accepted.
     pub fn handle_response(&mut self, response: Response) -> bool {
-        if response.generation != self.generation || !self.binding_matches(&response.binding) {
+        if response.generation != self.generation
+            || !self.binding_matches(&response.binding, response.label)
+        {
             self.discarded_stale += 1;
             return false;
         }
@@ -358,17 +449,69 @@ impl App {
                 }
                 true
             }
+            "campaign-status" => {
+                self.accept_status(response);
+                true
+            }
+            "campaign-explain-blocker" => {
+                match response.result.and_then(|bytes| {
+                    crate::backend::models::parse_blocker_explanation(&bytes)
+                        .map_err(BackendError::from)
+                }) {
+                    Ok(explanation) => {
+                        self.explanation
+                            .accept(explanation, response.generation, self.now);
+                    }
+                    Err(error) => self.explanation.fail(error, self.now),
+                }
+                true
+            }
+            "campaign-report" => {
+                match response.result.and_then(|bytes| {
+                    crate::backend::models::parse_campaign_report(&bytes)
+                        .map_err(BackendError::from)
+                }) {
+                    Ok(report) => self.report.accept(report, response.generation, self.now),
+                    Err(error) => self.report.fail(error, self.now),
+                }
+                true
+            }
+            "git-head-plan" => {
+                match response.result {
+                    Ok(bytes) => match crate::project::parse_plan_bytes(&bytes) {
+                        Ok(plan) => {
+                            self.head_plan
+                                .accept(Some(plan), response.generation, self.now);
+                        }
+                        Err(_) => self.head_plan.fail(
+                            BackendError::Refused(
+                                "the task source at the campaign head does not parse".to_owned(),
+                            ),
+                            self.now,
+                        ),
+                    },
+                    Err(error) => self.head_plan.fail(error, self.now),
+                }
+                true
+            }
             _ => false,
         }
     }
 
-    fn binding_matches(&self, issued: &Binding) -> bool {
+    fn binding_matches(&self, issued: &Binding, label: &str) -> bool {
         let current = self.binding();
-        issued.config_path == current.config_path
-            && (issued.repository_id.is_none()
-                || issued.repository_id == current.repository_id
-                || current.repository_id.is_none())
-            && issued.campaign_id == current.campaign_id
+        if issued.config_path != current.config_path {
+            return false;
+        }
+        if let (Some(issued_repository), Some(current_repository)) =
+            (&issued.repository_id, &current.repository_id)
+            && issued_repository != current_repository
+        {
+            return false;
+        }
+        // Repository-level observations stay valid when a campaign is selected afterwards;
+        // campaign-level observations must belong to the currently selected campaign.
+        label == "doctor" || issued.campaign_id == current.campaign_id
     }
 
     /// Drains worker responses.
@@ -380,6 +523,14 @@ impl App {
         };
         for response in responses {
             self.handle_response(response);
+        }
+        if self.campaign.is_some()
+            && !self.status.loading
+            && self
+                .last_status_request
+                .is_none_or(|last| self.now.duration_since(last) >= STATUS_POLL_INTERVAL)
+        {
+            self.refresh_campaign();
         }
     }
 
@@ -401,12 +552,15 @@ impl App {
                 .show(ui, |ui| match self.screen {
                     Screen::Overview => self.overview(ui),
                     Screen::WorkPlan => self.work_plan(ui),
+                    Screen::Campaign => self.campaign_screen(ui),
                     Screen::Setup => self.setup(ui),
                     other => self.placeholder(ui, other),
                 });
         });
-        if self.diagnosis.loading {
+        if self.diagnosis.loading || self.status.loading || self.head_plan.loading {
             ctx.request_repaint_after(Duration::from_millis(250));
+        } else if self.campaign.is_some() {
+            ctx.request_repaint_after(STATUS_POLL_INTERVAL);
         }
     }
 
@@ -430,6 +584,7 @@ impl App {
         }
         if refresh {
             self.refresh_diagnosis();
+            self.refresh_campaign();
         }
     }
 
@@ -716,29 +871,23 @@ impl App {
             project.task_source_path().display()
         ));
         let mut filter = self.plan_filter.clone();
-        ui.horizontal_wrapped(|ui| {
-            ui.label("Search");
-            ui.add(
-                egui::TextEdit::singleline(&mut filter.query)
-                    .hint_text("identifier or title")
-                    .desired_width(240.0),
-            );
-            for state in StateFilter::ALL {
-                ui.selectable_value(&mut filter.state, state, state.label());
-            }
-            ui.separator();
-            for kind in KindFilter::ALL {
-                ui.selectable_value(&mut filter.kind, kind, kind.label());
-            }
-            ui.separator();
-            ui.checkbox(&mut filter.ready_only, "Dependency-ready only");
-        });
+        plan_filter_controls(ui, &mut filter);
         let rows = index.filtered(&filter);
         ui.label(format!(
             "{} of {} items shown",
             rows.len(),
             index.counts().items
         ));
+        let overlay = self.task_overlay();
+        let observation_known = self.status.value.is_some();
+        if self.campaign.is_some() {
+            ui.small(format!(
+                "Coordinator overlay: status {} ({}), campaign-head source {}",
+                self.status.freshness(self.now).label(),
+                age_label(self.status.age(self.now)),
+                self.head_plan.freshness(self.now).label()
+            ));
+        }
         let mut selected = self.selected_item.clone();
         let mut last_sprint: Option<&str> = None;
         let mut last_story: Option<&str> = None;
@@ -767,7 +916,20 @@ impl App {
                         }
                     }
                     let is_selected = selected.as_deref() == Some(row.id.as_str());
-                    let response = ui.selectable_label(is_selected, row_label(row));
+                    let mut label = row_label(row);
+                    if let Some(task) = overlay.get(&row.id) {
+                        let states = task
+                            .labels(observation_known)
+                            .into_iter()
+                            .filter(|state| !state.ends_with("in source"))
+                            .collect::<Vec<_>>();
+                        if !states.is_empty() {
+                            label.push_str(" [");
+                            label.push_str(&states.join("; "));
+                            label.push(']');
+                        }
+                    }
+                    let response = ui.selectable_label(is_selected, label);
                     if response.clicked() {
                         selected = Some(row.id.clone());
                     }
@@ -898,6 +1060,26 @@ fn diagnosis_grid(ui: &mut egui::Ui, diagnosis: &Diagnosis) {
             ui.label(&diagnosis.configuration.publication.mode);
             ui.end_row();
         });
+}
+
+fn plan_filter_controls(ui: &mut egui::Ui, filter: &mut PlanFilter) {
+    ui.horizontal_wrapped(|ui| {
+        ui.label("Search");
+        ui.add(
+            egui::TextEdit::singleline(&mut filter.query)
+                .hint_text("identifier or title")
+                .desired_width(240.0),
+        );
+        for state in StateFilter::ALL {
+            ui.selectable_value(&mut filter.state, state, state.label());
+        }
+        ui.separator();
+        for kind in KindFilter::ALL {
+            ui.selectable_value(&mut filter.kind, kind, kind.label());
+        }
+        ui.separator();
+        ui.checkbox(&mut filter.ready_only, "Dependency-ready only");
+    });
 }
 
 fn row_label(row: &PlanRow) -> String {

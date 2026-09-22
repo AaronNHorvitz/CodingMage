@@ -48,6 +48,27 @@ pub enum Job {
         /// Deadline after which the command is killed.
         deadline: Duration,
     },
+    /// Run one read-only Git object read against a repository.
+    GitRead {
+        /// Stable label for the interface.
+        label: &'static str,
+        /// Repository to read.
+        repository: PathBuf,
+        /// Exact argument vector after `--no-pager -C <repository>`.
+        arguments: Vec<String>,
+        /// Deadline after which the command is killed.
+        deadline: Duration,
+    },
+}
+
+impl Job {
+    /// Stable label of the job.
+    #[must_use]
+    pub const fn label(&self) -> &'static str {
+        match self {
+            Self::Command { label, .. } | Self::GitRead { label, .. } => label,
+        }
+    }
 }
 
 /// One queued request.
@@ -184,11 +205,7 @@ fn run_loop(
     wake: &(impl Fn() + Send),
 ) {
     while let Ok(request) = requests.recv() {
-        let Job::Command {
-            label,
-            arguments,
-            deadline,
-        } = request.job;
+        let label = request.job.label();
         let result = if request.generation.0 < current.load(Ordering::Acquire) {
             Err(BackendError::Cancelled)
         } else {
@@ -208,7 +225,19 @@ fn run_loop(
                     thread::sleep(Duration::from_millis(25));
                 }
             });
-            let result = binary.run(&arguments, deadline, &cancel);
+            let result = match &request.job {
+                Job::Command {
+                    arguments,
+                    deadline,
+                    ..
+                } => binary.run(arguments, *deadline, &cancel),
+                Job::GitRead {
+                    repository,
+                    arguments,
+                    deadline,
+                    ..
+                } => super::cli::run_git(repository, arguments, *deadline, &cancel),
+            };
             stop.store(true, Ordering::Release);
             let _ = watcher.join();
             result

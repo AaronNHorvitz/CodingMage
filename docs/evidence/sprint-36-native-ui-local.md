@@ -95,3 +95,54 @@ Results: 15 unit tests, 8 shell tests and 4 work-plan tests passed.
 
 Not proven here: coordinator observations over the plan (Sub-task 36.1.2.2) and any file dialog
 integration with the desktop environment.
+
+## Sub-task 36.1.2.2 - Campaign and team state with distinct outcome states
+
+Implemented in `crates/codingmage-ui/src/campaign.rs`, `app/campaign_screen.rs`, the read-only
+Git job in `backend/cli.rs` and `backend/worker.rs`, and `state_dir.rs` (per-configuration
+campaign memory).
+
+Behavior:
+
+- A campaign specification is loaded with `CampaignSpec::load`, its authority digest computed,
+  and it is refused before any backend request when its repository path or repository identity
+  differs from the opened repository.
+- `campaign-status`, `campaign-explain-blocker` and (for parallel campaigns) `campaign-report`
+  are requested through the coordinator binary and polled every 15 seconds with reactive
+  repaint. `null` status is an explicit "never started" state, not an empty table.
+- The task source at the campaign head is read with `git show <head>:<task_source>` (cleared
+  environment, no pager, no hooks) and parsed with the same strict parser, so verified completion
+  at the campaign head is shown separately from the active checkout's source checkbox.
+- The per-task overlay keeps source checkbox, campaign-head completion, accepted outcome (report),
+  active unit, blocked reason, deferral trigger state and human-decision reason as separate labels;
+  a task without any coordinator observation is labelled "coordinator state unknown".
+- Binding drift between the active checkout (repository identity, head, task-source digest) and
+  the campaign authority is reported, never corrected.
+- Only the roles the backend reports (`coordinator`, `codex-lead`, `pod`, `integration`) are
+  listed; supervised, exception-only and hands-off modes are shown as unavailable with the reason.
+- Repository-level observations remain valid when a campaign is selected afterwards; campaign
+  observations are bound to the selected campaign identity.
+
+Contract correction discovered by the strict models: `campaign-status` emits schema version 5 and
+`campaign-preflight` emits schema version 2; the reconciliation table was corrected and the
+accepted versions are pinned in `backend/models.rs`. Contract-parity tests serialize the real
+runtime types into the interface models.
+
+Commands:
+
+```text
+cargo test -p codingmage-ui --locked -- --test-threads=1
+cargo clippy -p codingmage-ui --all-targets --locked -- -D warnings
+```
+
+| Test | What it proves |
+| --- | --- |
+| `never_started_campaign_is_an_explicit_empty_state` | A selected campaign without durable state shows the explicit never-started state, the unavailable modes and the binding match; no campaign directory is created |
+| `completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree` | After one real accepted unit through the coordinator with fake providers, the status counts (1 of 1 accepted, paused) agree with the CLI outcome; the work plan shows "open in source" plus "completed at campaign head (verified, not yet in active checkout)" for the accepted task only |
+| `blocked_task_shows_its_closed_reason_and_independent_progress` | A typed lead blocker appears with its closed reason while the independent task completed |
+| `cross_repository_campaign_is_refused_before_any_backend_request` | A specification for another repository path, and one tampered to the right path but wrong identity, are refused with distinct reasons and no status request |
+| `campaign_selection_is_remembered_per_configuration` | The selection is restored on reopen from private state and cleared explicitly |
+| `contract_parity` (4 tests) | Real `CampaignStatus`, `CampaignBlockerExplanation`, `CampaignOutcome`, `CampaignControlOutcome`, `CampaignPreflightReport` and `TeamCampaignReport` values round-trip through the interface models |
+
+Not proven here: starting or controlling a campaign from the interface (Story 36.2) and any
+parallel-campaign report rendering over a real parallel run.

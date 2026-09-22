@@ -237,3 +237,61 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
     }
 }
+
+/// Per-configuration memory: the campaign specification last selected for a repository.
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProjectMemory {
+    /// Document version.
+    #[serde(default = "recent_version")]
+    pub version: u16,
+    /// Absolute campaign specification path last selected.
+    #[serde(default)]
+    pub campaign_spec: Option<PathBuf>,
+}
+
+impl ProjectMemory {
+    fn path(directory: &Path, config: &Path) -> PathBuf {
+        use sha2::{Digest as _, Sha256};
+        let digest = Sha256::digest(config.as_os_str().as_encoded_bytes());
+        directory
+            .join("projects")
+            .join(format!("{}.json", crate::project::hex(&digest)))
+    }
+
+    /// Loads the memory for one configuration; missing means empty.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StateError`] when the document exists but is invalid.
+    pub fn load(directory: &Path, config: &Path) -> Result<Self, StateError> {
+        let path = Self::path(directory, config);
+        if !path.exists() {
+            return Ok(Self {
+                version: 1,
+                campaign_spec: None,
+            });
+        }
+        let bytes = read_private(&path)?;
+        let value: Self = serde_json::from_slice(&bytes).map_err(|_| StateError::Invalid)?;
+        if value.version != 1
+            || value
+                .campaign_spec
+                .as_ref()
+                .is_some_and(|path| !path.is_absolute())
+        {
+            return Err(StateError::Invalid);
+        }
+        Ok(value)
+    }
+
+    /// Persists the memory for one configuration.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StateError`] when persistence fails.
+    pub fn save(&self, directory: &Path, config: &Path) -> Result<(), StateError> {
+        let bytes = serde_json::to_vec_pretty(self).map_err(|_| StateError::Invalid)?;
+        write_private(&Self::path(directory, config), &bytes)
+    }
+}

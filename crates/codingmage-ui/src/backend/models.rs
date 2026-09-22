@@ -8,8 +8,12 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-/// Schema version accepted for `doctor`, `campaign-status` and `campaign-explain-blocker`.
+/// Schema version accepted for `doctor` and `campaign-explain-blocker`.
 pub const SUPPORTED_SCHEMA_VERSION: u16 = 1;
+/// Schema version accepted for `campaign-status` (serial and parallel projections).
+pub const SUPPORTED_STATUS_SCHEMA_VERSION: u16 = 5;
+/// Schema version accepted for `campaign-preflight`.
+pub const SUPPORTED_PREFLIGHT_SCHEMA_VERSION: u16 = 2;
 /// Report version accepted for `campaign-report`.
 pub const SUPPORTED_REPORT_VERSION: u16 = 2;
 /// Run checkpoint schema version accepted from `<state_root>/runs/<run_id>/checkpoint.json`.
@@ -651,7 +655,7 @@ pub fn parse_campaign_status(bytes: &[u8]) -> Result<Option<CampaignStatus>, Mod
     let value: Option<CampaignStatus> =
         serde_json::from_slice(bytes).map_err(|_| ModelError::Malformed)?;
     if let Some(status) = &value {
-        check_version(status.schema_version, SUPPORTED_SCHEMA_VERSION)?;
+        check_version(status.schema_version, SUPPORTED_STATUS_SCHEMA_VERSION)?;
     }
     Ok(value)
 }
@@ -676,7 +680,7 @@ pub fn parse_blocker_explanation(bytes: &[u8]) -> Result<BlockerExplanation, Mod
 pub fn parse_preflight(bytes: &[u8]) -> Result<PreflightReport, ModelError> {
     let value: PreflightReport =
         serde_json::from_slice(bytes).map_err(|_| ModelError::Malformed)?;
-    check_version(value.schema_version, SUPPORTED_SCHEMA_VERSION)?;
+    check_version(value.schema_version, SUPPORTED_PREFLIGHT_SCHEMA_VERSION)?;
     Ok(value)
 }
 

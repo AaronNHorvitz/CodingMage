@@ -20,6 +20,8 @@ use std::{
 pub const MAX_OUTPUT_BYTES: usize = 8 * 1024 * 1024;
 /// File name of the coordinator executable.
 pub const COORDINATOR_EXECUTABLE: &str = "codingmage";
+/// Fixed Git executable used for read-only object reads, matching the coordinator's own choice.
+pub const GIT_EXECUTABLE: &str = "/usr/bin/git";
 
 /// Location of the coordinator executable relative to this interface.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -123,6 +125,53 @@ impl CoordinatorBinary {
             } else {
                 "codingmage.ui.unreadable_failure".to_owned()
             },
+            exit_code: status.code(),
+        })
+    }
+}
+
+/// Runs one read-only Git command against a repository with a cleared environment.
+///
+/// Only object and reference reads are issued by the interface (`show`, `diff`, `log`,
+/// `rev-parse`); the command never receives a pager, hooks, aliases or ambient configuration.
+///
+/// # Errors
+///
+/// Returns [`BackendError`] for spawn failure, timeout, cancellation, oversized output or a
+/// nonzero exit, which is reported as `codingmage.ui.git_read`.
+pub fn run_git(
+    repository: &Path,
+    arguments: &[String],
+    deadline: Duration,
+    cancel: &Arc<AtomicBool>,
+) -> Result<Vec<u8>, BackendError> {
+    let mut command = Command::new(GIT_EXECUTABLE);
+    command
+        .arg("--no-pager")
+        .arg("-C")
+        .arg(repository)
+        .args(arguments)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .env_clear()
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("PATH", "/usr/bin:/bin");
+    let mut child = command.spawn().map_err(|_| BackendError::Spawn)?;
+    let stdout = child.stdout.take().ok_or(BackendError::Spawn)?;
+    let stderr = child.stderr.take().ok_or(BackendError::Spawn)?;
+    let stdout_reader = thread::spawn(move || read_bounded(stdout));
+    let stderr_reader = thread::spawn(move || read_bounded(stderr));
+    let status = wait_bounded(&mut child, deadline, cancel)?;
+    let stdout = stdout_reader.join().map_err(|_| BackendError::Spawn)??;
+    let _stderr = stderr_reader.join().map_err(|_| BackendError::Spawn)??;
+    if status.success() {
+        Ok(stdout)
+    } else {
+        Err(BackendError::Command {
+            code: "codingmage.ui.git_read".to_owned(),
             exit_code: status.code(),
         })
     }
@@ -322,6 +371,10 @@ pub fn explain_code(code: &str) -> (&'static str, &'static str) {
         "codingmage.ui.timeout" => (
             "The coordinator command did not finish within the interface deadline.",
             "Retry; if it repeats, run the same command in a terminal to inspect it.",
+        ),
+        "codingmage.ui.git_read" => (
+            "A read-only Git object read failed.",
+            "The campaign head or initial commit may be missing from this repository; refresh after the coordinator checkpoints.",
         ),
         "codingmage.ui.contract" => (
             "The coordinator output does not match the contract this interface was built for.",
