@@ -135,7 +135,9 @@ impl App {
                     "campaign specification written and verified at {}",
                     path.display()
                 )));
+                let record = PathBuf::from(form.authorization_path.trim());
                 self.select_campaign(&path);
+                self.set_authorization_record(&record);
             }
             Err(error) => self.setup.message = Some(Err(error.to_string())),
         }
@@ -163,6 +165,7 @@ impl App {
                     form.authorization_path = path.display().to_string();
                 }
                 self.setup.authorization_text.clear();
+                self.set_authorization_record(&path);
             }
             Err(error) => self.setup.message = Some(Err(error.to_string())),
         }

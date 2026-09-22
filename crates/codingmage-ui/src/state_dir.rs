@@ -248,6 +248,9 @@ pub struct ProjectMemory {
     /// Absolute campaign specification path last selected.
     #[serde(default)]
     pub campaign_spec: Option<PathBuf>,
+    /// Absolute operator authorization record last selected.
+    #[serde(default)]
+    pub authorization_record: Option<PathBuf>,
 }
 
 impl ProjectMemory {
@@ -270,6 +273,7 @@ impl ProjectMemory {
             return Ok(Self {
                 version: 1,
                 campaign_spec: None,
+                authorization_record: None,
             });
         }
         let bytes = read_private(&path)?;

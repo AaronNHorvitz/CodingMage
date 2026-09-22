@@ -451,3 +451,18 @@ pub fn run_campaign(fixture: &Fixture, spec: &Path) -> serde_json::Value {
     );
     serde_json::from_slice(&output.stdout).unwrap()
 }
+
+/// Writes an authorization record and a controlled-target campaign (ten outcomes) bound to it.
+pub fn write_controlled_campaign(fixture: &Fixture, campaign_id: &str) -> (PathBuf, PathBuf) {
+    let record = fixture.root.join("operator-authorization.txt");
+    fs::write(
+        &record,
+        b"The owner authorizes this disposable fixture campaign.\n",
+    )
+    .unwrap();
+    let digest = codingmage_ui::project::file_sha256(&record, 1024 * 1024).unwrap();
+    let spec = write_campaign(fixture, campaign_id, 10);
+    let text = fs::read_to_string(&spec).unwrap();
+    fs::write(&spec, text.replace(&"a".repeat(64), &digest)).unwrap();
+    (spec, record)
+}

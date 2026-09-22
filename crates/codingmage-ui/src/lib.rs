@@ -11,6 +11,7 @@ pub mod campaign;
 pub mod fonts;
 pub mod observed;
 pub mod project;
+pub mod readiness;
 pub mod setup;
 pub mod state_dir;
 pub mod workplan;

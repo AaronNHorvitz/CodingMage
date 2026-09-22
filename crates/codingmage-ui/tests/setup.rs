@@ -65,6 +65,7 @@ fn guided_configuration_is_validated_by_the_existing_loader_and_opened() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repository() {
     let fixture = Fixture::new("setup-campaign", 10);
     let workspace = fixture.root.join("guided");

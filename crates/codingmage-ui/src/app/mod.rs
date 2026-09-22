@@ -1,6 +1,7 @@
 //! Application shell: navigation, project selection and bounded backend observation.
 
 mod campaign_screen;
+mod readiness_screen;
 mod setup_screen;
 
 pub use setup_screen::SetupState;
@@ -132,6 +133,9 @@ pub struct App {
     head_plan_commit: Option<String>,
     last_status_request: Option<Instant>,
     setup: SetupState,
+    authorization_record: Option<PathBuf>,
+    authorization_input: String,
+    preflight: Observed<crate::readiness::PreflightObservation>,
 }
 
 impl App {
@@ -205,6 +209,9 @@ impl App {
             head_plan_commit: None,
             last_status_request: None,
             setup: SetupState::default(),
+            authorization_record: None,
+            authorization_input: String::new(),
+            preflight: Observed::default(),
         }
     }
 
@@ -332,6 +339,8 @@ impl App {
         self.campaign = None;
         self.campaign_error = None;
         self.campaign_input.clear();
+        self.authorization_record = None;
+        self.authorization_input.clear();
         match Project::open(config_path) {
             Ok(project) => {
                 if let Ok(directory) = &self.state_dir {
@@ -350,11 +359,16 @@ impl App {
                     .state_dir
                     .as_ref()
                     .ok()
-                    .and_then(|directory| ProjectMemory::load(directory, config_path).ok())
-                    .and_then(|memory| memory.campaign_spec);
-                if let Some(spec_path) = remembered {
-                    self.campaign_input = spec_path.display().to_string();
-                    self.select_campaign(&spec_path);
+                    .and_then(|directory| ProjectMemory::load(directory, config_path).ok());
+                if let Some(memory) = remembered {
+                    if let Some(record) = memory.authorization_record {
+                        self.authorization_record = Some(record.clone());
+                        self.authorization_input = record.display().to_string();
+                    }
+                    if let Some(spec_path) = memory.campaign_spec {
+                        self.campaign_input = spec_path.display().to_string();
+                        self.select_campaign(&spec_path);
+                    }
                 }
             }
             Err(error) => {
@@ -456,6 +470,10 @@ impl App {
             }
             "campaign-status" => {
                 self.accept_status(response);
+                true
+            }
+            "campaign-preflight" => {
+                self.accept_preflight(response);
                 true
             }
             "campaign-explain-blocker" => {
@@ -562,7 +580,11 @@ impl App {
                     other => self.placeholder(ui, other),
                 });
         });
-        if self.diagnosis.loading || self.status.loading || self.head_plan.loading {
+        if self.diagnosis.loading
+            || self.status.loading
+            || self.head_plan.loading
+            || self.preflight.loading
+        {
             ctx.request_repaint_after(Duration::from_millis(250));
         } else if self.campaign.is_some() {
             ctx.request_repaint_after(STATUS_POLL_INTERVAL);

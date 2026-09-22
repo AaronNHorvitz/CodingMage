@@ -364,6 +364,29 @@ pub fn explain_code(code: &str) -> (&'static str, &'static str) {
             "A provider reported exhausted quota.",
             "Wait for the provider reset, then resume; CodingMage never acquires capacity.",
         ),
+        "codingmage.provider.codex.capability_missing"
+        | "codingmage.provider.claude.capability_missing"
+        | "codingmage.provider.codex.unsupported_version"
+        | "codingmage.provider.claude.unsupported_version" => (
+            "A configured provider executable lacks a required capability or version.",
+            "Install a supported provider version at the configured path; CodingMage never substitutes another provider or model.",
+        ),
+        "codingmage.provider.codex.invalid_profile"
+        | "codingmage.provider.claude.invalid_profile" => (
+            "A configured provider profile is invalid.",
+            "Check the executable path, model selector and effort in the campaign authority.",
+        ),
+        "codingmage.provider.codex.process"
+        | "codingmage.provider.claude.process"
+        | "codingmage.provider.codex.failed"
+        | "codingmage.provider.claude.failed" => (
+            "A configured provider executable could not be probed.",
+            "Run the provider's own version command in a terminal to confirm it starts.",
+        ),
+        "codingmage.provider.codex.timeout" | "codingmage.provider.claude.timeout" => (
+            "A provider did not answer within its bounded deadline.",
+            "Retry; persistent timeouts indicate a provider or network problem outside CodingMage.",
+        ),
         "codingmage.ui.binary_unavailable" => (
             "The coordinator executable is not installed next to this interface.",
             "Install codingmage in the same directory or select its path in Setup.",

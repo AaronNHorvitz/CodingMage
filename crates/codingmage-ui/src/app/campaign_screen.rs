@@ -11,7 +11,6 @@ use crate::{
     browser::Browser,
     campaign::{CampaignSelection, SUPPORTED_ROLES, TaskOverlay, UNAVAILABLE_MODES, build_overlay},
     observed::{Freshness, age_label},
-    state_dir::ProjectMemory,
 };
 
 impl App {
@@ -28,21 +27,14 @@ impl App {
             .as_ref()
             .map(|diagnosis| diagnosis.repository_id.clone());
         let target = project.config.target_path.clone();
-        let config_path = project.config_path.clone();
         self.clear_campaign_observations();
         self.campaign = None;
         match CampaignSelection::load(spec_path, &target, observed.as_deref()) {
             Ok(selection) => {
                 self.campaign_input = selection.spec_path.display().to_string();
-                if let Ok(directory) = &self.state_dir {
-                    let memory = ProjectMemory {
-                        version: 1,
-                        campaign_spec: Some(selection.spec_path.clone()),
-                    };
-                    let _ = memory.save(directory, &config_path);
-                }
                 self.campaign = Some(selection);
                 self.campaign_error = None;
+                self.persist_campaign_memory();
                 self.set_status("campaign selected; requesting durable status");
                 self.refresh_campaign();
             }
@@ -58,17 +50,12 @@ impl App {
         self.clear_campaign_observations();
         self.campaign = None;
         self.campaign_error = None;
-        if let (Ok(directory), Some(project)) = (&self.state_dir, &self.project) {
-            let memory = ProjectMemory {
-                version: 1,
-                campaign_spec: None,
-            };
-            let _ = memory.save(directory, &project.config_path);
-        }
+        self.persist_campaign_memory();
         self.set_status("campaign selection cleared; no coordinator process was affected");
     }
 
     pub(super) fn clear_campaign_observations(&mut self) {
+        self.preflight.clear();
         self.status.clear();
         self.explanation.clear();
         self.report.clear();
@@ -261,6 +248,8 @@ impl App {
                 ui.end_row();
             });
         self.authority_drift(ui);
+        ui.separator();
+        self.readiness_section(ui);
         ui.separator();
         self.status_section(ui);
         ui.separator();

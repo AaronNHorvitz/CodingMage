@@ -180,3 +180,32 @@ Behavior:
 | `setup` unit tests (2) | Writers refuse overwrite, keep the previous file on rejection and bind the authorization digest |
 
 Not proven here: preflight over the authored files (Sub-task 36.1.3.2).
+
+## Sub-task 36.1.3.2 - Readiness and preflight
+
+Implemented in `crates/codingmage-ui/src/readiness.rs` and `app/readiness_screen.rs`.
+
+Behavior:
+
+- Local checks mirror the conditions the coordinator's preflight enforces and explain its stable
+  codes before it runs: repository identity, initial commit, task-source digest, clean checkout,
+  dedicated branch, protected default branch, at least ten open sub-tasks, controlled-target
+  authority (one pod, exactly ten accepted outcomes, local-only publication, existing-login
+  authentication, no multi-agent policy), external capabilities denied, provider executables
+  present, and the authorization record matching the bound digest outside the repository. Each
+  check carries the observed detail and an action; unknown conditions are labelled unknown.
+- `campaign-preflight` runs through the coordinator with the selected authorization record. The
+  parsed report (schema 2) is shown with the SHA-256 of the exact bytes the coordinator wrote,
+  which later admission binds to. Failures show the stable code with an explanation; provider
+  probe failures name the configured provider and state that nothing is substituted.
+- Preflight never starts inference and leaves no campaign state; the tests assert the campaign
+  state directory does not exist afterwards.
+- The authorization record path is remembered per configuration in private state.
+
+| Test | What it proves |
+| --- | --- |
+| `local_checks_explain_the_preflight_failure_before_it_runs` | A default-branch, three-sub-task, two-outcome campaign fails the dedicated-branch, open-sub-task and controlled-target checks with exact details; a mismatched record is a distinct failure; running preflight anyway returns `codingmage.runtime.authority` with its explanation and creates no campaign state |
+| `real_preflight_passes_on_a_ready_fixture_and_binds_the_report_digest` | On a ten-sub-task fixture on a dedicated branch with fake providers, every local check passes and the real preflight reports `ready`, verified providers, a dedicated branch and a source-free report whose bytes contain neither the repository path nor model names |
+| `provider_probe_failure_is_actionable_and_names_no_substitute` | An implementer executable without the required capability surface fails preflight with a `codingmage.provider.claude.*` code and the interface states that no substitute is used |
+
+Not proven here: authenticated real providers; the probes ran against fake executables.
