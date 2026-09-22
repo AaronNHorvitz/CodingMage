@@ -137,3 +137,19 @@ credentials or private repository content appear in them.
 Real Wayland or X11 windows, compositor decorations, screen-reader announcements, installation on
 a clean desktop, live providers and independent review are open in
 [the human-only register](sprint-36-human-only.md).
+
+## Release build and startup failure paths
+
+`cargo build --locked --release -p codingmage-cli -p codingmage-ui` completed in the sandbox
+with the workspace release profile (thin LTO, one codegen unit, symbols stripped).
+
+| Binary | Size |
+| --- | --- |
+| `codingmage` | 4.7 MB |
+| `codingmage-ui` | 16.0 MB |
+
+Running the release `codingmage-ui` in the sandbox, which has no Wayland or X11 session, exits
+with status 3 and the message that the native window could not be created because neither
+`WAYLAND_DISPLAY`, `WAYLAND_SOCKET` nor `DISPLAY` is set. Running it with `CODINGMAGE_UI_FONT`
+pointing at a missing file exits with status 2 and the font explanation. Both are the documented
+failure paths, not crashes; a real window remains human-only item H1.
