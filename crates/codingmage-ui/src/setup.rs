@@ -831,6 +831,20 @@ fn write_validated(
     Ok(destination.to_path_buf())
 }
 
+/// Writes arbitrary bytes with the export safeguards (absolute, no symbolic link, no silent
+/// overwrite).
+///
+/// # Errors
+///
+/// Returns [`WriteError`] when the destination is refused or the write fails.
+pub fn export_bytes(
+    destination: &Path,
+    bytes: &[u8],
+    overwrite: bool,
+) -> Result<PathBuf, WriteError> {
+    write_validated(destination, bytes, overwrite, |_| Ok(()))
+}
+
 /// Exports a validated document to another path with the same overwrite safeguard.
 ///
 /// # Errors

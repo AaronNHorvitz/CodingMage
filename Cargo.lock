@@ -866,6 +866,7 @@ dependencies = [
  "codingmage-state",
  "eframe",
  "egui",
+ "egui-wgpu",
  "egui_kittest",
  "image",
  "serde",

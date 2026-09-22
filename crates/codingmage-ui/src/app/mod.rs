@@ -4,10 +4,12 @@ mod campaign_screen;
 mod changes_screen;
 mod execution_screen;
 mod readiness_screen;
+mod reports_screen;
 mod setup_screen;
 
 pub use changes_screen::ChangeSet;
 pub use execution_screen::{ExecutionState, LAUNCH_OBSERVE_INTERVAL};
+pub use reports_screen::ReportsState;
 pub use setup_screen::SetupState;
 
 use std::{
@@ -146,6 +148,7 @@ pub struct App {
     pending_changes: Option<ChangeSet>,
     pending_changes_parts: u8,
     records: Observed<Vec<crate::records::RunRecord>>,
+    reports: ReportsState,
 }
 
 impl App {
@@ -228,6 +231,7 @@ impl App {
             pending_changes: None,
             pending_changes_parts: 0,
             records: Observed::default(),
+            reports: ReportsState::default(),
         }
     }
 
@@ -608,7 +612,7 @@ impl App {
                     Screen::Campaign => self.campaign_screen(ui),
                     Screen::Changes => self.changes_screen(ui),
                     Screen::Setup => self.setup(ui),
-                    Screen::Reports => self.placeholder(ui, Screen::Reports),
+                    Screen::Reports => self.reports_screen(ui),
                 });
         });
         if self.diagnosis.loading
@@ -958,43 +962,20 @@ impl App {
             .max_height(360.0)
             .show(ui, |ui| {
                 for row in &rows {
-                    if last_sprint != Some(row.sprint_id.as_str()) {
-                        last_sprint = Some(row.sprint_id.as_str());
-                        last_story = None;
-                        ui.strong(format!(
-                            "Sprint {} - {}",
-                            row.sprint_id,
-                            index.sprint_title(&row.sprint_id).unwrap_or("")
-                        ));
-                    }
-                    if row.story_id.as_deref() != last_story {
-                        last_story = row.story_id.as_deref();
-                        if let Some(story) = last_story {
-                            ui.label(format!(
-                                "Story {} - {}",
-                                story,
-                                index.story_title(story).unwrap_or("")
-                            ));
-                        }
-                    }
+                    plan_group_headers(ui, index, row, &mut last_sprint, &mut last_story);
                     let is_selected = selected.as_deref() == Some(row.id.as_str());
-                    let mut label = row_label(row);
-                    if let Some(task) = overlay.get(&row.id) {
-                        let states = task
-                            .labels(observation_known)
-                            .into_iter()
-                            .filter(|state| !state.ends_with("in source"))
-                            .collect::<Vec<_>>();
-                        if !states.is_empty() {
-                            label.push_str(" [");
-                            label.push_str(&states.join("; "));
-                            label.push(']');
+                    let label = overlay_label(row, overlay.get(&row.id), observation_known);
+                    ui.horizontal(|ui| {
+                        let mut checked = row.state == CheckState::Checked;
+                        ui.add_enabled(false, egui::Checkbox::without_text(&mut checked))
+                            .on_disabled_hover_text(
+                                "Source checkbox, read from the task source; the interface never edits it.",
+                            );
+                        let response = ui.selectable_label(is_selected, label);
+                        if response.clicked() {
+                            selected = Some(row.id.clone());
                         }
-                    }
-                    let response = ui.selectable_label(is_selected, label);
-                    if response.clicked() {
-                        selected = Some(row.id.clone());
-                    }
+                    });
                 }
             });
         self.plan_filter = filter;
@@ -1006,15 +987,6 @@ impl App {
         {
             ui.separator();
             item_detail(ui, row, index);
-        }
-    }
-
-    fn placeholder(&self, ui: &mut egui::Ui, screen: Screen) {
-        ui.heading(screen.label());
-        if self.project.is_none() {
-            ui.label("Open a repository first.");
-        } else {
-            ui.label("This screen is not implemented in this build.");
         }
     }
 
@@ -1136,6 +1108,55 @@ fn plan_filter_controls(ui: &mut egui::Ui, filter: &mut PlanFilter) {
         ui.separator();
         ui.checkbox(&mut filter.ready_only, "Dependency-ready only");
     });
+}
+
+fn plan_group_headers<'a>(
+    ui: &mut egui::Ui,
+    index: &PlanIndex,
+    row: &'a PlanRow,
+    last_sprint: &mut Option<&'a str>,
+    last_story: &mut Option<&'a str>,
+) {
+    if *last_sprint != Some(row.sprint_id.as_str()) {
+        *last_sprint = Some(row.sprint_id.as_str());
+        *last_story = None;
+        ui.strong(format!(
+            "Sprint {} - {}",
+            row.sprint_id,
+            index.sprint_title(&row.sprint_id).unwrap_or("")
+        ));
+    }
+    if row.story_id.as_deref() != *last_story {
+        *last_story = row.story_id.as_deref();
+        if let Some(story) = *last_story {
+            ui.label(format!(
+                "Story {} - {}",
+                story,
+                index.story_title(story).unwrap_or("")
+            ));
+        }
+    }
+}
+
+fn overlay_label(
+    row: &PlanRow,
+    overlay: Option<&crate::campaign::TaskOverlay>,
+    observation_known: bool,
+) -> String {
+    let mut label = row_label(row);
+    if let Some(task) = overlay {
+        let states = task
+            .labels(observation_known)
+            .into_iter()
+            .filter(|state| !state.ends_with("in source"))
+            .collect::<Vec<_>>();
+        if !states.is_empty() {
+            label.push_str(" [");
+            label.push_str(&states.join("; "));
+            label.push(']');
+        }
+    }
+    label
 }
 
 fn row_label(row: &PlanRow) -> String {

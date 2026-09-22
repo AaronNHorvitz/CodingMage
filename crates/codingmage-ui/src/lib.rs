@@ -16,6 +16,7 @@ pub mod observed;
 pub mod project;
 pub mod readiness;
 pub mod records;
+pub mod report;
 pub mod setup;
 pub mod state_dir;
 pub mod workplan;

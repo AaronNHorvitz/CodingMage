@@ -282,3 +282,34 @@ Behavior:
 
 Not proven here: parallel-campaign per-pod record layouts (the scan is recursive and bounded,
 but only serial runs were exercised) and any real reviewer output.
+
+## Sub-task 36.2.2.2 - Inspectable and exportable reports with safeguards
+
+Implemented in `crates/codingmage-ui/src/report.rs`, `app/reports_screen.rs` and the read-only
+source checkboxes in the work plan.
+
+Behavior:
+
+- The outcome report restates the coordinator's status, blocker explanation, final report, the
+  last launched invocation's terminal outcome, coordinator commits, run summaries (verdict,
+  correction rounds, gate evidence identities, record problems) and a disposition that keeps
+  accepted outcomes, completed units, blocked, deferred and human-decision counts separate and
+  states delivery as withheld. Fixed limits in the document say it is not independent review.
+- Repository file paths are excluded unless the owner opts in, and the document carries a
+  `contains_repository_paths` flag. Configuration paths, provider executables, environment values
+  and credentials are never included.
+- Export refuses destinations inside the target repository, symbolic links and existing files
+  without explicit replacement; writes go through a private candidate file and rename.
+- The blocker report lists closed reason codes and names the operator-controlled commands a
+  person must run to clear a blocker or observe a trigger; the interface never runs them.
+- Source checkboxes on the work plan are rendered disabled; the interface has no code path that
+  writes the task source.
+
+| Test | What it proves |
+| --- | --- |
+| `outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safeguards` | After one accepted unit and one typed blocker, the report shows 1 completed, 1 blocked, 2 of 2 accepted, the run verdict, withheld delivery and no repository, configuration or provider paths; export inside the repository is refused, a second export without replacement is refused, and an opted-in export contains paths and the flag; the active checkout's task source is unchanged |
+| `clicking_a_source_checkbox_changes_nothing` | Every source checkbox is disabled in the accessibility tree; clicking each leaves the target byte-identical and the parsed counts unchanged |
+| `report` unit test | Path omission, inside-repository, existing-file and symbolic-link refusals |
+
+Not proven here: report rendering for a parallel campaign's final report (no parallel run was
+exercised) and any external consumer of the exported document.
