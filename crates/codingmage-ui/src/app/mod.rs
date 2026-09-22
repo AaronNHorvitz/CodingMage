@@ -1,6 +1,9 @@
 //! Application shell: navigation, project selection and bounded backend observation.
 
 mod campaign_screen;
+mod setup_screen;
+
+pub use setup_screen::SetupState;
 
 use std::{
     path::{Path, PathBuf},
@@ -128,6 +131,7 @@ pub struct App {
     head_plan: Observed<Option<LoadedPlan>>,
     head_plan_commit: Option<String>,
     last_status_request: Option<Instant>,
+    setup: SetupState,
 }
 
 impl App {
@@ -200,6 +204,7 @@ impl App {
             head_plan: Observed::default(),
             head_plan_commit: None,
             last_status_request: None,
+            setup: SetupState::default(),
         }
     }
 
@@ -954,12 +959,6 @@ impl App {
         } else {
             ui.label("This screen is not implemented in this build.");
         }
-    }
-
-    fn setup(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Setup");
-        ui.label("Open an existing configuration. Guided configuration is added in a later build.");
-        self.open_controls(ui);
     }
 
     fn open_controls(&mut self, ui: &mut egui::Ui) {

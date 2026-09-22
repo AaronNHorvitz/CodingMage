@@ -146,3 +146,37 @@ cargo clippy -p codingmage-ui --all-targets --locked -- -D warnings
 
 Not proven here: starting or controlling a campaign from the interface (Story 36.2) and any
 parallel-campaign report rendering over a real parallel run.
+
+## Sub-task 36.1.3.1 - Guided configuration and campaign authoring
+
+Implemented in `crates/codingmage-ui/src/setup.rs` and `app/setup_screen.rs`.
+
+Behavior:
+
+- The configuration form starts from the same deny-first defaults as `codingmage init` (two
+  profiles, one `git diff --check` gate, local-only publication, every capability denied) or from
+  the opened configuration. Writing serializes the existing `Config` type, writes a private
+  candidate file, runs the existing `load_config` on the exact bytes and only then renames it into
+  place; a loader rejection (for example a publication policy that conflicts with denied
+  capabilities) leaves the previous file untouched. Missing scratch and state roots are created.
+- The owner's authorization record is typed by the owner, written with its exact bytes outside
+  the repository, and its digest is bound into the campaign authority. Records inside the target
+  repository are refused, matching the preflight rule.
+- The campaign form binds repository identity, head and task-source digest from the live
+  diagnosis rather than typed text, offers only serial, one-pod, local-only authority with the
+  closed effort list, verifies the built `CampaignSpec`, writes a candidate, reloads it with
+  `CampaignSpec::load` and then selects it. Parallel pods and draft pull requests are named as
+  import-only.
+- Model selectors are free text passed to the provider unchanged; the interface keeps no model
+  list and states that preflight probes validate them.
+- Export copies a validated file to a new path with the same overwrite and inside-repository
+  refusals. No field asks for or stores a credential.
+
+| Test | What it proves |
+| --- | --- |
+| `guided_configuration_is_validated_by_the_existing_loader_and_opened` | The guided file loads with the existing loader, opens as the project, leaves the target untouched; a conflicting policy is refused with the loader's reason and the file is unchanged; overwrite is refused without consent |
+| `guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repository` | Authorization records inside the repository are refused, outside they are written byte-exact; the written specification carries the diagnosis identity, head and digest, verifies through the existing loader and becomes the selected campaign; export refuses the repository and silent overwrite and copies bytes exactly |
+| `campaign_form_without_a_live_diagnosis_is_refused` | Without a live diagnosis the campaign form cannot be applied |
+| `setup` unit tests (2) | Writers refuse overwrite, keep the previous file on rejection and bind the authorization digest |
+
+Not proven here: preflight over the authored files (Sub-task 36.1.3.2).
