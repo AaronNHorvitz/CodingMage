@@ -219,12 +219,13 @@ impl App {
         ui.heading("1. Open or create a repository configuration");
         self.open_controls(ui);
         ui.horizontal(|ui| {
-            ui.label("Workspace directory for new authority files (optional)");
+            let label = ui.label("Workspace directory for new authority files (optional)");
             ui.add(
                 egui::TextEdit::singleline(&mut self.setup.workspace_root)
                     .hint_text("/absolute/path outside the repository")
                     .desired_width(360.0),
-            );
+            )
+            .labelled_by(label.id);
         });
         self.target_selection(ui);
         if self.project.is_some() && ui.button("Edit the opened configuration").clicked() {
@@ -323,12 +324,13 @@ impl App {
         }
         ui.label("Type the owner's authorization in your own words. The exact bytes are written to a file outside the repository and their digest is bound into the campaign authority. The interface never invents this record.");
         ui.horizontal(|ui| {
-            ui.label("Record file");
+            let label = ui.label("Record file");
             ui.add(
                 egui::TextEdit::singleline(&mut self.setup.authorization_path)
                     .hint_text("/absolute/path/operator-authorization.txt")
                     .desired_width(420.0),
-            );
+            )
+            .labelled_by(label.id);
         });
         ui.add(
             egui::TextEdit::multiline(&mut self.setup.authorization_text)
@@ -388,12 +390,13 @@ impl App {
     fn export_view(&mut self, ui: &mut egui::Ui) {
         ui.label("Import means opening an existing configuration or selecting an existing campaign above. Export copies the validated file elsewhere; digests and paths inside it are unchanged and no credential exists to leak.");
         ui.horizontal(|ui| {
-            ui.label("Export destination");
+            let label = ui.label("Export destination");
             ui.add(
                 egui::TextEdit::singleline(&mut self.setup.export_path)
                     .hint_text("/absolute/path/copy.toml")
                     .desired_width(420.0),
-            );
+            )
+            .labelled_by(label.id);
             ui.checkbox(&mut self.setup.export_overwrite, "Replace");
         });
         let config_source = self
@@ -438,8 +441,9 @@ fn config_form_body(ui: &mut egui::Ui, form: &mut ConfigForm) -> (bool, bool) {
                     ("State root", &mut form.state_root),
                     ("Correction limit", &mut form.correction_limit),
                 ] {
-                    ui.label(label);
-                    ui.add(egui::TextEdit::singleline(value).desired_width(480.0));
+                    let caption = ui.label(label);
+                    ui.add(egui::TextEdit::singleline(value).desired_width(480.0))
+                        .labelled_by(caption.id);
                     ui.end_row();
                 }
             });
@@ -541,8 +545,9 @@ fn campaign_form_body(ui: &mut egui::Ui, form: &mut CampaignForm) -> (bool, bool
                     ("Gate tier name", &mut form.gate_tier),
                     ("Gate profiles", &mut form.gate_profiles),
                 ] {
-                    ui.label(label);
-                    ui.add(egui::TextEdit::singleline(value).desired_width(480.0));
+                    let caption = ui.label(label);
+                    ui.add(egui::TextEdit::singleline(value).desired_width(480.0))
+                        .labelled_by(caption.id);
                     ui.end_row();
                 }
             });
@@ -580,8 +585,9 @@ fn campaign_form_body(ui: &mut egui::Ui, form: &mut CampaignForm) -> (bool, bool
                     ("Retained state bytes", &mut form.limits.retained_state_bytes),
                     ("Execution milliseconds", &mut form.limits.execution_elapsed_ms),
                 ] {
-                    ui.label(label);
-                    ui.add(egui::TextEdit::singleline(value).desired_width(200.0));
+                    let caption = ui.label(label);
+                    ui.add(egui::TextEdit::singleline(value).desired_width(200.0))
+                        .labelled_by(caption.id);
                     ui.end_row();
                 }
             });

@@ -269,11 +269,21 @@ impl App {
             });
         self.authority_drift(ui);
         ui.separator();
-        self.readiness_section(ui);
-        ui.separator();
-        self.execution_section(ui);
-        ui.separator();
-        self.status_section(ui);
+        let admitted_or_launched =
+            self.execution.admission.is_some() || self.execution.record.is_some();
+        if admitted_or_launched {
+            self.execution_section(ui);
+            ui.separator();
+            self.status_section(ui);
+            ui.separator();
+            self.readiness_section(ui);
+        } else {
+            self.readiness_section(ui);
+            ui.separator();
+            self.execution_section(ui);
+            ui.separator();
+            self.status_section(ui);
+        }
         ui.separator();
         roles_and_modes(ui);
     }
@@ -282,12 +292,13 @@ impl App {
         let mut select: Option<std::path::PathBuf> = None;
         let mut clear = false;
         ui.horizontal(|ui| {
-            ui.label("Campaign specification");
+            let label = ui.label("Campaign specification");
             ui.add(
                 egui::TextEdit::singleline(&mut self.campaign_input)
                     .hint_text("/absolute/path/campaign.toml")
                     .desired_width(420.0),
-            );
+            )
+            .labelled_by(label.id);
             if ui.button("Select campaign").clicked() {
                 select = Some(std::path::PathBuf::from(self.campaign_input.trim()));
             }

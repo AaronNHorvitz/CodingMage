@@ -15,10 +15,7 @@ use std::{
 };
 
 use codingmage_ui::{
-    App, Screen,
-    backend::CoordinatorBinary,
-    controls::ControlAction,
-    launch::LaunchState,
+    App, Screen, backend::CoordinatorBinary, controls::ControlAction, launch::LaunchState,
     setup::ProviderForm,
 };
 use common::{
@@ -89,7 +86,7 @@ impl Evidence {
         });
     }
 
-    fn measure(&mut self, name: &str, value: impl ToString) {
+    fn measure(&mut self, name: &str, value: &dyn std::fmt::Display) {
         self.measurements.push(Measurement {
             name: name.to_owned(),
             value: value.to_string(),
@@ -116,21 +113,25 @@ impl Evidence {
 use sha2::Digest as _;
 
 fn adapter_description() -> String {
-    let instance = egui_wgpu::wgpu::Instance::default();
-    let adapters = instance.enumerate_adapters(egui_wgpu::wgpu::Backends::all());
-    let mut names = adapters
-        .iter()
-        .map(|adapter| {
-            let info = adapter.get_info();
-            format!("{} ({:?}, {:?})", info.name, info.device_type, info.backend)
-        })
-        .collect::<Vec<_>>();
-    names.sort();
-    names.dedup();
+    let state = egui_kittest::wgpu::create_render_state(
+        egui_kittest::wgpu::default_wgpu_setup(),
+        egui_wgpu::RendererOptions::default(),
+    );
+    let info = state.adapter.get_info();
     format!(
-        "offscreen wgpu through egui_kittest preferring CPU adapters; available: {}",
-        names.join("; ")
+        "offscreen wgpu through egui_kittest on adapter {} ({:?}, {:?} backend, driver {})",
+        info.name, info.device_type, info.backend, info.driver
     )
+}
+
+/// Whole pixels for a logical extent at a scale factor; both are small positive values here.
+fn pixel_extent(logical: f32, ppp: f32) -> u32 {
+    let scaled = (logical * ppp).round();
+    let mut extent = 0_u32;
+    while f32::from(u16::try_from(extent).unwrap_or(u16::MAX)) < scaled {
+        extent += 1;
+    }
+    extent
 }
 
 fn rss_kib() -> u64 {
@@ -181,7 +182,10 @@ fn wait_for_admitted_unit(harness: &mut Harness<'static, App>) {
 fn setup_to_outcome_workflow_through_the_interface() {
     let mut evidence = Evidence::new();
     let fixture = Fixture::new("verify-workflow", 10);
-    git(&fixture.target, &["switch", "-q", "-c", "controlled-target"]);
+    git(
+        &fixture.target,
+        &["switch", "-q", "-c", "controlled-target"],
+    );
     let workspace = fixture.root.join("guided");
     let state_dir = fixture.root.join("ui-state");
     let claude = fixture.executable("fake-claude", FAKE_CLAUDE);
@@ -298,7 +302,11 @@ fn setup_to_outcome_workflow_through_the_interface() {
     assert!(outcome.completed_units >= 1);
     assert!(settle(&mut harness, Duration::from_mins(1), |app| {
         app.changes().value.is_some()
-            && app.run_records().value.as_ref().is_some_and(|r| !r.is_empty())
+            && app
+                .run_records()
+                .value
+                .as_ref()
+                .is_some_and(|r| !r.is_empty())
     }));
     evidence.snapshot(&mut harness, "10-campaign-stopped", 1.0);
     harness.state_mut().select_screen(Screen::WorkPlan);
@@ -317,20 +325,23 @@ fn setup_to_outcome_workflow_through_the_interface() {
     let exported = fs::read_to_string(workspace.join("outcome-report.json")).unwrap();
     assert!(exported.contains("\"delivery\": \"withheld"));
     assert!(!exported.contains(fixture.target.to_str().unwrap()));
-    evidence.measure("workflow_completed_units", outcome.completed_units);
-    evidence.measure("workflow_stop_reason", outcome.stop_reason.clone());
-    evidence.measure(
-        "active_checkout_task_source_unchanged",
-        fs::read_to_string(fixture.target.join("TASKS.md")).unwrap() == common::task_source(10),
-    );
+    evidence.measure("workflow_completed_units", &outcome.completed_units);
+    evidence.measure("workflow_stop_reason", &outcome.stop_reason.clone());
+    let unchanged =
+        fs::read_to_string(fixture.target.join("TASKS.md")).unwrap() == common::task_source(10);
+    evidence.measure("active_checkout_task_source_unchanged", &unchanged);
     evidence.finish("workflow");
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn recovery_after_a_killed_coordinator_and_resumed_durable_state() {
     let mut evidence = Evidence::new();
     let fixture = Fixture::new("verify-recovery", 10);
-    git(&fixture.target, &["switch", "-q", "-c", "controlled-target"]);
+    git(
+        &fixture.target,
+        &["switch", "-q", "-c", "controlled-target"],
+    );
     let (spec, record) = write_controlled_campaign(&fixture, "recovery");
     fixture.executable("fake-claude", FAKE_CLAUDE_SLOW);
     let state_dir = fixture.root.join("ui-state");
@@ -370,11 +381,13 @@ fn recovery_after_a_killed_coordinator_and_resumed_durable_state() {
         .parse()
         .unwrap();
     // Kill the fixture coordinator (our own detached child) to simulate a crash.
-    assert!(Command::new("/usr/bin/kill")
-        .args(["-9", &pid.to_string()])
-        .status()
-        .unwrap()
-        .success());
+    assert!(
+        Command::new("/usr/bin/kill")
+            .args(["-9", &pid.to_string()])
+            .status()
+            .unwrap()
+            .success()
+    );
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {
         !app.launch_is_live()
     }));
@@ -387,13 +400,20 @@ fn recovery_after_a_killed_coordinator_and_resumed_durable_state() {
     evidence.snapshot(&mut harness, "20-campaign-after-crash", 1.0);
     harness.get_by_label_contains("exited without a terminal outcome");
     std::thread::sleep(Duration::from_secs(3));
-    evidence.measure("owned_provider_alive_after_coordinator_kill", pid_alive(provider_pid));
+    evidence.measure(
+        "owned_provider_alive_after_coordinator_kill",
+        &pid_alive(provider_pid),
+    );
     // Durable state is readable and a new start is allowed under the same admission.
     harness.state_mut().refresh_campaign();
     assert!(settle(&mut harness, Duration::from_mins(1), |app| {
         app.status().value.as_ref().is_some_and(Option::is_some)
     }));
-    assert!(harness.state().start_refusals().is_empty(), "{:?}", harness.state().start_refusals());
+    assert!(
+        harness.state().start_refusals().is_empty(),
+        "{:?}",
+        harness.state().start_refusals()
+    );
     // Reopen the interface: the crash observation and admission survive.
     drop(harness);
     let mut reopened = rendering_harness([1100.0, 720.0], 1.0, state_dir);
@@ -403,17 +423,42 @@ fn recovery_after_a_killed_coordinator_and_resumed_durable_state() {
     }));
     assert!(reopened.state().execution().admission.is_some());
     assert!(matches!(
-        reopened.state().execution().observed.clone().map(|(_, s)| s),
+        reopened
+            .state()
+            .execution()
+            .observed
+            .clone()
+            .map(|(_, s)| s),
         Some(LaunchState::ExitedWithoutOutcome { .. })
     ));
     fixture.executable("fake-claude", FAKE_CLAUDE);
     reopened.state_mut().start_campaign();
-    assert!(reopened.state().launch_is_live(), "{:?}", reopened.state().execution().error);
-    wait_for_admitted_unit(&mut reopened);
-    reopened
-        .state_mut()
-        .request_control(ControlAction::StopAfterUnit)
-        .unwrap();
+    assert!(
+        reopened.state().launch_is_live(),
+        "{:?}",
+        reopened.state().execution().error
+    );
+    // The interrupted unit is reconciled by the coordinator; wait for a newly accepted unit.
+    let waited = Instant::now();
+    loop {
+        reopened.state_mut().refresh_campaign();
+        let accepted = settle(&mut reopened, Duration::from_secs(5), |app| {
+            app.status().value.as_ref().is_some_and(|status| {
+                status
+                    .as_ref()
+                    .is_some_and(|status| status.completed_units >= 1)
+            }) || !app.launch_is_live()
+        });
+        if accepted || waited.elapsed() > Duration::from_mins(3) {
+            break;
+        }
+    }
+    if reopened.state().launch_is_live() {
+        reopened
+            .state_mut()
+            .request_control(ControlAction::StopAfterUnit)
+            .unwrap();
+    }
     assert!(settle(&mut reopened, Duration::from_mins(4), |app| {
         !app.launch_is_live()
     }));
@@ -421,8 +466,14 @@ fn recovery_after_a_killed_coordinator_and_resumed_durable_state() {
         Some((_, LaunchState::Exited(outcome))) => outcome,
         other => panic!("{other:?}"),
     };
-    evidence.measure("resumed_outcome_state", outcome.state.clone());
-    evidence.measure("resumed_completed_units", outcome.completed_units);
+    evidence.measure("resumed_outcome_state", &outcome.state.clone());
+    evidence.measure("resumed_stop_reason", &outcome.stop_reason.clone());
+    evidence.measure("resumed_completed_units", &outcome.completed_units);
+    evidence.measure(
+        "resumed_blocker_code",
+        &outcome.blocker_code.clone().unwrap_or_default(),
+    );
+    assert!(outcome.completed_units >= 1, "{outcome:?}");
     reopened.state_mut().select_screen(Screen::Campaign);
     evidence.snapshot(&mut reopened, "21-campaign-resumed-after-crash", 1.0);
     evidence.finish("recovery");
@@ -443,14 +494,15 @@ fn keyboard_navigation_reaches_controls_in_order() {
             .root()
             .children_recursive()
             .find(|node| node.accesskit_node().is_focused())
-            .map(|node| {
-                node.accesskit_node()
-                    .label()
-                    .map(str::to_owned)
-                    .or_else(|| node.accesskit_node().value().map(|v| v.to_string()))
-                    .unwrap_or_else(|| format!("{:?}", node.accesskit_node().role()))
-            })
-            .unwrap_or_else(|| "none".to_owned());
+            .map_or_else(
+                || "none".to_owned(),
+                |node| {
+                    node.accesskit_node()
+                        .label()
+                        .or_else(|| node.accesskit_node().value())
+                        .unwrap_or_else(|| format!("{:?}", node.accesskit_node().role()))
+                },
+            );
         focused.push(label);
     }
     for screen in Screen::ALL {
@@ -460,7 +512,7 @@ fn keyboard_navigation_reaches_controls_in_order() {
             screen.label()
         );
     }
-    evidence.measure("tab_focus_order", focused.join(" > "));
+    evidence.measure("tab_focus_order", &focused.join(" > "));
     // Shortcuts switch screens; Enter in the path field opens the repository.
     harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::Num2);
     harness.run_steps(2);
@@ -468,7 +520,10 @@ fn keyboard_navigation_reaches_controls_in_order() {
     harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::Num6);
     harness.run_steps(2);
     assert_eq!(harness.state().screen(), Screen::Setup);
-    let field = harness.get_by_role(egui::accesskit::Role::TextInput);
+    let field = harness
+        .get_all_by_role(egui::accesskit::Role::TextInput)
+        .next()
+        .expect("configuration path field");
     field.focus();
     field.type_text(fixture.config.to_str().unwrap());
     harness.run_steps(2);
@@ -476,10 +531,12 @@ fn keyboard_navigation_reaches_controls_in_order() {
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {
         app.project().is_some()
     }));
-    evidence.measure("enter_opens_typed_configuration", true);
+    evidence.measure("enter_opens_typed_configuration", &true);
     harness.key_press(egui::Key::F5);
     harness.run_steps(2);
-    evidence.measure("f5_refresh_accepted", harness.state().diagnosis().loading || harness.state().diagnosis().value.is_some());
+    let refreshed =
+        harness.state().diagnosis().loading || harness.state().diagnosis().value.is_some();
+    evidence.measure("f5_refresh_accepted", &refreshed);
     evidence.finish("keyboard");
 }
 
@@ -506,8 +563,10 @@ fn window_sizes_and_high_dpi_keep_navigation_and_content_reachable() {
         harness.get_by_label_contains("Repository diagnosis");
         evidence.snapshot(&mut harness, name, ppp);
         let last = evidence.artifacts.last().unwrap();
-        assert_eq!(last.width, (size[0] * ppp) as u32);
-        assert_eq!(last.height, (size[1] * ppp) as u32);
+        let expected_width = pixel_extent(size[0], ppp);
+        let expected_height = pixel_extent(size[1], ppp);
+        assert_eq!(last.width, expected_width);
+        assert_eq!(last.height, expected_height);
     }
     evidence.finish("sizes");
 }
@@ -521,8 +580,12 @@ fn resource_use_is_bounded_and_idle_repaint_is_reactive() {
     let mut harness = harness(binary, [1100.0, 720.0]);
     harness.run_steps(3);
     // Without a repository nothing is pending: no repaint is requested by the app.
-    let requested_idle = harness.output().viewport_output.values().any(|v| v.repaint_delay < Duration::from_secs(10));
-    evidence.measure("idle_repaint_requested_without_repository", requested_idle);
+    let requested_idle = harness
+        .output()
+        .viewport_output
+        .values()
+        .any(|v| v.repaint_delay < Duration::from_secs(10));
+    evidence.measure("idle_repaint_requested_without_repository", &requested_idle);
     assert!(!requested_idle);
     let config = fixture.config.clone();
     harness.state_mut().open_project(&config);
@@ -534,13 +597,19 @@ fn resource_use_is_bounded_and_idle_repaint_is_reactive() {
         harness.state_mut().select_screen(screen);
         harness.run_steps(2);
     }
-    let per_frame = started.elapsed() / (Screen::ALL.len() as u32 * 2);
-    evidence.measure("mean_frame_time_ms_logic_only", per_frame.as_millis());
+    let per_frame = started.elapsed() / (u32::try_from(Screen::ALL.len()).unwrap_or(1) * 2);
+    evidence.measure("mean_frame_time_ms_logic_only", &per_frame.as_millis());
     let after = rss_kib();
-    evidence.measure("test_process_rss_kib_before", before);
-    evidence.measure("test_process_rss_kib_after_all_screens", after);
-    assert!(after < 1_500_000, "resident set {after} KiB exceeds the 1.5 GiB bound");
-    assert!(per_frame < Duration::from_millis(250), "{per_frame:?} per frame");
+    evidence.measure("test_process_rss_kib_before", &before);
+    evidence.measure("test_process_rss_kib_after_all_screens", &after);
+    assert!(
+        after < 1_500_000,
+        "resident set {after} KiB exceeds the 1.5 GiB bound"
+    );
+    assert!(
+        per_frame < Duration::from_millis(250),
+        "{per_frame:?} per frame"
+    );
     evidence.finish("resources");
 }
 
@@ -569,12 +638,18 @@ fn stale_and_malformed_private_state_is_visible_and_never_fatal() {
         .authority_sha256()
         .unwrap();
     fs::write(
-        project_dir.join("admissions").join(format!("{authority}.json")),
+        project_dir
+            .join("admissions")
+            .join(format!("{authority}.json")),
         b"[]",
     )
     .unwrap();
     fs::create_dir_all(project_dir.join("controls")).unwrap();
-    fs::write(project_dir.join("controls/malformed-state.json"), b"\"nope\"").unwrap();
+    fs::write(
+        project_dir.join("controls/malformed-state.json"),
+        b"\"nope\"",
+    )
+    .unwrap();
     let binary = CoordinatorBinary::at(&coordinator_binary());
     let mut reopened = harness_with_state(binary, [1100.0, 720.0], state_dir);
     reopened.state_mut().open_project(&config);
@@ -584,11 +659,13 @@ fn stale_and_malformed_private_state_is_visible_and_never_fatal() {
     assert!(reopened.state().execution().admission.is_none());
     assert!(reopened.state().execution().record.is_none());
     assert!(reopened.state().execution().ledger.entries.is_empty());
-    assert!(reopened
-        .state()
-        .start_refusals()
-        .iter()
-        .any(|reason| reason.contains("not admitted")));
+    assert!(
+        reopened
+            .state()
+            .start_refusals()
+            .iter()
+            .any(|reason| reason.contains("not admitted"))
+    );
     reopened.state_mut().select_screen(Screen::Campaign);
     reopened.run_steps(2);
     reopened.get_by_label_contains("Not admitted.");

@@ -106,12 +106,13 @@ impl App {
         ui.separator();
         ui.strong("Export");
         ui.horizontal(|ui| {
-            ui.label("Destination");
+            let label = ui.label("Destination");
             ui.add(
                 egui::TextEdit::singleline(&mut self.reports.export_path)
                     .hint_text("/absolute/path/outside/the/repository/report.json")
                     .desired_width(420.0),
-            );
+            )
+            .labelled_by(label.id);
         });
         ui.horizontal(|ui| {
             ui.checkbox(

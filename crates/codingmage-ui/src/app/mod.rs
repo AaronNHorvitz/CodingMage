@@ -992,11 +992,11 @@ impl App {
 
     fn open_controls(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.label("Configuration file");
+            let label = ui.label("Configuration file");
             let edit = egui::TextEdit::singleline(&mut self.config_input)
                 .hint_text("/absolute/path/codingmage.toml")
                 .desired_width(420.0);
-            let response = ui.add(edit);
+            let response = ui.add(edit).labelled_by(label.id);
             let submitted =
                 response.lost_focus() && ui.input(|input| input.key_pressed(egui::Key::Enter));
             if ui.button("Open").clicked() || submitted {
@@ -1092,12 +1092,13 @@ fn diagnosis_grid(ui: &mut egui::Ui, diagnosis: &Diagnosis) {
 
 fn plan_filter_controls(ui: &mut egui::Ui, filter: &mut PlanFilter) {
     ui.horizontal_wrapped(|ui| {
-        ui.label("Search");
+        let label = ui.label("Search");
         ui.add(
             egui::TextEdit::singleline(&mut filter.query)
                 .hint_text("identifier or title")
                 .desired_width(240.0),
-        );
+        )
+        .labelled_by(label.id);
         for state in StateFilter::ALL {
             ui.selectable_value(&mut filter.state, state, state.label());
         }

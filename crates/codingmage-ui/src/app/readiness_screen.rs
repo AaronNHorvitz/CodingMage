@@ -137,12 +137,13 @@ impl App {
     pub(super) fn readiness_section(&mut self, ui: &mut egui::Ui) {
         ui.heading("Readiness");
         ui.horizontal(|ui| {
-            ui.label("Authorization record");
+            let label = ui.label("Authorization record");
             ui.add(
                 egui::TextEdit::singleline(&mut self.authorization_input)
                     .hint_text("/absolute/path/operator-authorization.txt")
                     .desired_width(420.0),
-            );
+            )
+            .labelled_by(label.id);
             if ui.button("Use record").clicked() {
                 let path = PathBuf::from(self.authorization_input.trim());
                 self.set_authorization_record(&path);

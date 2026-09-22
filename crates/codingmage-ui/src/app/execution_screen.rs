@@ -385,12 +385,13 @@ impl App {
             }
         }
         ui.horizontal(|ui| {
-            ui.label("Confirm report digest prefix");
+            let label = ui.label("Confirm report digest prefix");
             ui.add(
                 egui::TextEdit::singleline(&mut self.execution.confirmation)
                     .hint_text("first 12 or more characters")
                     .desired_width(260.0),
-            );
+            )
+            .labelled_by(label.id);
             if ui.button("Admit campaign").clicked() {
                 self.admit_campaign();
             }
