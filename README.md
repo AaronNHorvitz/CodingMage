@@ -1,5 +1,15 @@
 # CodingMage
 
+## Current Delivery Amendment (2026-09-24)
+
+[The 48-capability roadmap](CAPABILITY-ROADMAP.md) and
+[the implementation amendment](IMPLEMENTATION-AMENDMENT.md) define the current
+Rust-first delivery direction and ownership. TASKS.md remains the only completion ledger.
+This is accepted implementation scope, not evidence that the capabilities already work.
+Existing security, independent-review, licensing and release gates remain in force.
+
+Reconcile the existing native UI and evidence-freshness gaps first, then implement Sprints 32-35 in their dependency order and the owned capability crosswalk below. Preserve Sprint 36 human/live acceptance; unavailable credentials or desktop access do not block independent contract work.
+
 CodingMage turns coding agents into a development team with a chain of command: a lead that proposes work, isolated pods that implement, and a separate reviewer that evaluates the exact commit. It is designed to advance large roadmaps without manual handoffs at every step, while the coordinator controls Git, verification and publication. The current adapters use Claude Code for implementation and Codex for planning and review; additional providers require their own tested adapters and qualification.
 
 CodingMage is a local multi-agent engineering coordinator designed to move through large development roadmaps with better verified results per token. It assigns bounded tasks to isolated coding pods, routes work according to complexity and risk, and gives every candidate to deterministic checks and an independent senior-review model before integration.

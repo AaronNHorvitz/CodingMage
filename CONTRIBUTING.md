@@ -1,5 +1,20 @@
 # Contributing to CodingMage
 
+## Current Delivery Amendment (2026-09-24)
+
+[The 48-capability roadmap](CAPABILITY-ROADMAP.md) and
+[the implementation amendment](IMPLEMENTATION-AMENDMENT.md) define the current
+Rust-first delivery direction and ownership. TASKS.md remains the only completion ledger.
+This is accepted implementation scope, not evidence that the capabilities already work.
+Existing security, independent-review, licensing and release gates remain in force.
+
+For the assigned implementation worker, the owner's explicit 2026-09-24 restart supersedes
+older planning-only, permanently-paused and narrower-slice instructions. It does not enlarge
+filesystem, network, spending, publication or independent-acceptance authority. Read the
+current private operator assignment for GPU/build reservations; unavailable resources are
+queued/blocked, never grounds to kill another worker or raise limits. Use one designated
+writer, preserve existing changes, and do not put private consumer identities in public Git.
+
 CodingMage is in a pre-release bootstrap phase and is not accepting external contributions yet.
 This policy records the requirements that apply to owner-authored and agent-assisted changes.
 A code of conduct will be added before external contributions are opened.
