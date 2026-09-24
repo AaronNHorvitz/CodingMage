@@ -24,6 +24,7 @@
 - [Planned ecosystem integration requirements](../architecture/ecosystem-integration.md)
 - [Development planning handoff](../evidence/ecosystem-planning-handoff.md)
 - [Serial campaign](serial-campaign.md)
+- [Native Linux desktop workspace](native-ui.md)
 - [Supervised run](supervised-run.md)
 - [Durable multi-agent campaign architecture](../architecture/multi-agent-campaigns.md)
 - [Multi-agent implementation reconciliation](../architecture/multi-agent-gap-analysis.md)

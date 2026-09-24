@@ -1,0 +1,24 @@
+F
+======================================================================
+FAIL: test_multi_agent_evidence_binding_is_current (tests.test_multi_agent_matrix.MultiAgentScenarioMatrixTests.test_multi_agent_evidence_binding_is_current)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "tests/test_multi_agent_matrix.py", line 190, in test_multi_agent_evidence_binding_is_current
+    self.assertEqual(binding_errors(binding), [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['input-drift:crates/codingmage-campaign/s[85 chars].md'] != []
+
+First list contains 4 additional elements.
+First extra element 0:
+'input-drift:crates/codingmage-campaign/src/team.rs'
+
++ []
+- ['input-drift:crates/codingmage-campaign/src/team.rs',
+-  'input-drift:Cargo.lock',
+-  'input-drift:README.md',
+-  'input-drift:SECURITY.md']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

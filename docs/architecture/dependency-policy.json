@@ -21,10 +21,12 @@
     "codingmage-runtime": ["codingmage-campaign", "codingmage-claude", "codingmage-codex", "codingmage-contracts", "codingmage-core", "codingmage-gate", "codingmage-git", "codingmage-github", "codingmage-orchestrator", "codingmage-plan", "codingmage-process", "codingmage-service", "codingmage-state"],
     "codingmage-service": ["codingmage-contracts", "codingmage-state"],
     "codingmage-soak": [],
-    "codingmage-state": ["codingmage-contracts"]
+    "codingmage-state": ["codingmage-contracts"],
+    "codingmage-ui": ["codingmage-campaign", "codingmage-contracts", "codingmage-core", "codingmage-plan", "codingmage-state"]
   },
   "allowed_internal_dev_dependencies": {
     "codingmage-cli": ["codingmage-soak"],
-    "codingmage-soak": ["codingmage-contracts", "codingmage-orchestrator", "codingmage-plan"]
+    "codingmage-soak": ["codingmage-contracts", "codingmage-orchestrator", "codingmage-plan"],
+    "codingmage-ui": ["codingmage-runtime"]
   }
 }

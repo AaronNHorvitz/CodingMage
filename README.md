@@ -3,7 +3,6 @@
 Current development publication follows [the main-first workflow](DEVELOPMENT-WORKFLOW.md).
 This supersedes older local-only/feature-branch-only instructions for this repository;
 runtime authority, truthful verification and release gates are unchanged.
-
 ## Current Delivery Amendment (2026-09-24)
 
 [The 48-capability roadmap](CAPABILITY-ROADMAP.md) and
@@ -25,14 +24,16 @@ These new involvement modes and team extensions are **planned, not qualified cur
 See the [PRD](PRD.md), [product development plan](PRODUCT-DEVELOPMENT-PLAN.md),
 [Decision 0014](docs/decisions/0014-owner-optional-engineering-team.md) and Sprints 32 through 35.
 
-CodingMage's planned user interface is a **native Linux desktop app**, not a browser dashboard.
-It will provide repository and campaign setup, a work plan, team activity, review/test results,
-blockers and execution controls over the existing coordinator. The first usable local interface
-does not depend on the rest of the stack or completion of the owner-optional team extensions.
-Supervised, exception-only and hands-off controls will become available only as their backend
-contracts are implemented and qualified. This is planned work, not a shipped interface; see
-Sprint 36 in [TASKS.md](TASKS.md) and the native UI implementation brief in the
-[development plan](PRODUCT-DEVELOPMENT-PLAN.md).
+CodingMage's user interface is a **native Linux desktop app**, not a browser dashboard.
+`crates/codingmage-ui` provides repository and campaign setup, a work plan, campaign activity,
+review/test records, blockers, reports and execution controls over the existing coordinator
+binary. It is implemented locally with display-less tests against the real `codingmage`
+executable and fake providers; real-desktop, screen-reader, clean-installation, live-provider and
+independent-review verification remain open and are listed in
+[the human-only register](docs/evidence/sprint-36-human-only.md). Supervised, exception-only and
+hands-off controls become available only as their backend contracts are implemented and qualified.
+See the [native workspace guide](docs/operations/native-ui.md), Sprint 36 in
+[TASKS.md](TASKS.md) and Decisions 0015 and 0016.
 
 The current local campaign path supports both durable serial execution and bounded parallel teams:
 one Codex team lead, up to five concurrent Claude implementation pods, fresh Codex reviewers,
@@ -760,6 +761,7 @@ changed to hide the failure.
 - Parallel authenticated-provider operation: implementation present; guarded live qualification remains open
 - Multi-agent scenario matrix: 44 required scenarios mapped to executable local evidence
 - Sustained five-pod soak: guarded two-cycle local run passed; longer live qualification remains open
+- Native Linux desktop workspace: local implementation with display-less verification against the real coordinator and fake providers; real desktop, screen reader, clean installation, live providers and independent review remain open
 - Host application integration: planned; no compatible interface or end-to-end qualification claimed
 - USTE contextual-memory integration: planned and optional; current journal remains authoritative
 - Muse Code runtime adapter: planned and optional; external development use is a separate choice
