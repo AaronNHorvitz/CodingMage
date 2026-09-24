@@ -122,6 +122,10 @@ impl Drop for GitFixture {
 pub(crate) fn run(directory: &Path, arguments: &[&str]) {
     let status = Command::new("/usr/bin/git")
         .current_dir(directory)
+        .env("GIT_AUTHOR_NAME", "CodingMage Fixture")
+        .env("GIT_AUTHOR_EMAIL", "fixture@example.invalid")
+        .env("GIT_COMMITTER_NAME", "CodingMage Fixture")
+        .env("GIT_COMMITTER_EMAIL", "fixture@example.invalid")
         .args(arguments)
         .status()
         .unwrap();

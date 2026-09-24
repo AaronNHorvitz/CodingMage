@@ -68,8 +68,11 @@ review of the interface is pending.
 - Preflight admits only the controlled-target boundary: one pod, exactly ten accepted outcomes,
   local-only publication, existing-login authentication, a dedicated branch and at least ten open
   sub-tasks. The readiness checks explain each condition.
-- Supervised, exception-only and hands-off involvement modes have no backend contract and are
-  shown as unavailable.
+- Supervised, exception-only and hands-off involvement modes are shown only from a mission charter
+  the backend reports through `campaign-mission-status`. Without an admitted charter the modes are
+  shown as unavailable with the admission command; the interface never admits, answers or revokes
+  a mission itself. Mission contracts are deterministic local scope, not qualified no-intervention
+  operation.
 - Blocker clearance, trigger observation and integration or promotion approvals remain CLI-only
   because they bind operator-controlled evidence digests or remote effects.
 - Reviewer finding text is not retained by the backend; the interface shows verdicts, correction

@@ -340,6 +340,7 @@ pub fn run_team_campaign_with_progress(
     let cancellation = CancellationToken::default();
     let _cancellation_watcher = TeamCancellationWatcher::start(
         &campaign_root,
+        &config.state_root,
         &spec,
         &manifest,
         &authority_sha256,
@@ -397,8 +398,33 @@ pub fn run_team_campaign_with_progress(
         snapshot = batch.snapshot;
     }
 
+    let mut mission_replans = 0_u32;
     loop {
         let control = observe_team_control(&campaign_root, &spec, &manifest, &authority_sha256)?;
+        if let Some(mission) = crate::team_mission::observe_mission_authority(
+            &config.state_root,
+            &spec,
+            &authority_sha256,
+            now_ms(),
+        )? && let Some(code) = mission.hold_code()
+        {
+            let (state, reason) = if mission.revoked {
+                cancellation.cancel();
+                (CampaignState::Cancelled, CampaignStopReason::MissionRevoked)
+            } else {
+                (CampaignState::Blocked, CampaignStopReason::MissionExpired)
+            };
+            return Ok(controlled_outcome(
+                &spec,
+                &campaign,
+                &snapshot,
+                integrated_this_invocation,
+                last_task_id,
+                state,
+                reason,
+                code,
+            ));
+        }
         if control.cancelled {
             cancellation.cancel();
             return Ok(controlled_outcome(
@@ -861,7 +887,7 @@ pub fn run_team_campaign_with_progress(
             ProgressActor::CampaignLead,
             ProgressStage::PlanningCampaign,
         ));
-        let Ok(binding) =
+        let Ok(mut binding) =
             build_team_lead_binding(&spec, &plan, &snapshot, &campaign.manifest().path)
         else {
             return Ok(blocked_outcome(
@@ -873,6 +899,12 @@ pub fn run_team_campaign_with_progress(
                 "codingmage.team.no_dependency_ready_work",
             ));
         };
+        crate::team_mission::attach_lead_mission_context(
+            &config.state_root,
+            &spec,
+            &authority_sha256,
+            &mut binding,
+        )?;
         let lead_plan = lead.plan(&binding).map_err(RuntimeError::Reviewer)?;
         let (lead_result, _) = lead
             .execute(&lead_executor, &lead_plan, &binding, &cancellation)
@@ -889,10 +921,31 @@ pub fn run_team_campaign_with_progress(
             let TeamPlanningOutcome::NoExecution(disposition) = planning else {
                 unreachable!();
             };
-            let code = match disposition {
+            let code = match &disposition {
                 TeamLeadOutcome::Blocked(_) => "codingmage.team.lead_blocked",
                 TeamLeadOutcome::Deferred(_) => "codingmage.team.lead_deferred",
-                TeamLeadOutcome::HumanDecision(_) => "codingmage.team.human_decision_required",
+                TeamLeadOutcome::HumanDecision(blocker) => {
+                    match crate::team_mission::resolve_lead_decision(
+                        &config.state_root,
+                        &spec,
+                        &authority_sha256,
+                        blocker,
+                        now_ms(),
+                    )? {
+                        Some(resolution) if resolution.outcome.permits_effect() => {
+                            mission_replans += 1;
+                            if mission_replans > u32::from(resolution.max_no_progress_cycles) {
+                                "codingmage.team.mission_no_progress"
+                            } else {
+                                continue;
+                            }
+                        }
+                        Some(resolution) => {
+                            crate::team_mission::lead_hold_code(&resolution.outcome)
+                        }
+                        None => "codingmage.team.human_decision_required",
+                    }
+                }
                 TeamLeadOutcome::Proposals(_) => return Err(RuntimeError::State),
             };
             return Ok(blocked_outcome(

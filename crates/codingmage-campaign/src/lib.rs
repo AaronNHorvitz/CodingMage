@@ -1,7 +1,13 @@
 //! Campaign authority, team-lead proposals, and deterministic pod leases.
 
+mod mission;
 mod team;
 
+pub use mission::{
+    DecisionDomainGrant, DecisionHoldReason, DecisionObservation, EscalationDisposition,
+    InvolvementMode, MISSION_VERSION, MissionBudgets, MissionCharter, MissionDecisionOutcome,
+    evaluate_decision,
+};
 pub use team::{
     ActorClass, AdmissionDecision, AdmissionReason, CampaignConcurrency, CampaignExecutionMode,
     CampaignTaskRecord, CampaignTaskState, CampaignTaskTransition, DestinationPromotionPolicy,
@@ -21,9 +27,10 @@ use std::{
 
 use codingmage_contracts::TaskId;
 pub use codingmage_contracts::{
-    HumanDecisionBlocker, LeadBlockedDisposition, LeadBlockedReason, LeadDeferredDisposition,
-    LeadDeferredReason, LeadDispositionKind, LeadHumanDecisionReason, LeadReconsiderationTrigger,
-    LeadTaskBinding, PodRisk, TeamLeadProposal, TeamLeadReport,
+    DecisionClass, DecisionProposal, HumanDecisionBlocker, LeadBlockedDisposition,
+    LeadBlockedReason, LeadDeferredDisposition, LeadDeferredReason, LeadDispositionKind,
+    LeadHumanDecisionReason, LeadReconsiderationTrigger, LeadTaskBinding, PodRisk,
+    TeamLeadProposal, TeamLeadReport,
 };
 use codingmage_plan::SelectedWork;
 use serde::{Deserialize, Serialize};
@@ -1252,6 +1259,7 @@ mod tests {
                 binding: binding(&authority, &selected),
                 reason: LeadHumanDecisionReason::MaterialArchitectureChoice,
                 summary: "Select the public compatibility boundary.".to_owned(),
+                decision: None,
             }),
         };
         assert!(matches!(
@@ -1580,6 +1588,7 @@ mod tests {
                     binding: bound.clone(),
                     reason,
                     summary: "Resolve the bounded external decision.".to_owned(),
+                    decision: None,
                 }),
             };
             assert!(matches!(
@@ -1640,6 +1649,7 @@ mod tests {
             binding: bound,
             reason: LeadHumanDecisionReason::AmbiguousScope,
             summary: "Resolve the exact bounded scope.".to_owned(),
+            decision: None,
         };
         let report = |disposition| TeamLeadReport {
             campaign_id: authority.campaign_id.clone(),

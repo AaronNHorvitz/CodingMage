@@ -28,12 +28,18 @@ fn never_started_campaign_is_an_explicit_empty_state() {
     let mut harness = opened(&fixture);
     harness.state_mut().select_campaign(&spec);
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {
-        app.status().value.is_some()
+        app.status().value.is_some() && app.mission().value.is_some()
     }));
     assert_eq!(harness.state().status().value, Some(None));
+    assert_eq!(
+        harness.state().mission().value,
+        Some(None),
+        "no charter admitted is an explicit absent state, not a failure"
+    );
     harness.state_mut().select_screen(Screen::Campaign);
     harness.run_steps(2);
     harness.get_by_label_contains("No durable campaign state exists");
+    harness.get_by_label_contains("No mission charter is admitted");
     harness.get_by_label_contains("Hands-off: unavailable");
     harness
         .get_by_label_contains("Active checkout matches the campaign's bound repository identity");

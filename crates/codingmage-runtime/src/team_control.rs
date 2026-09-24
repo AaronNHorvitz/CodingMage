@@ -478,6 +478,7 @@ pub(crate) struct TeamCancellationWatcher {
 impl TeamCancellationWatcher {
     pub(crate) fn start(
         campaign_root: &Path,
+        state_root: &Path,
         spec: &CampaignSpec,
         manifest: &TeamCampaignManifest,
         authority_sha256: &str,
@@ -486,11 +487,27 @@ impl TeamCancellationWatcher {
         let stop = Arc::new(AtomicBool::new(false));
         let watcher_stop = Arc::clone(&stop);
         let root = campaign_root.to_path_buf();
+        let state_root = state_root.to_path_buf();
         let spec = spec.clone();
         let manifest = manifest.clone();
         let authority_sha256 = authority_sha256.to_owned();
         let handle = thread::spawn(move || {
             while !watcher_stop.load(Ordering::Acquire) {
+                let revoked = match now_ms().and_then(|now| {
+                    crate::team_mission::observe_mission_authority(
+                        &state_root,
+                        &spec,
+                        &authority_sha256,
+                        now,
+                    )
+                }) {
+                    Ok(mission) => mission.is_some_and(|mission| mission.revoked),
+                    Err(_) => true,
+                };
+                if revoked {
+                    cancellation.cancel();
+                    break;
+                }
                 match observe_team_control(&root, &spec, &manifest, &authority_sha256) {
                     Ok(observation) if observation.cancelled => {
                         cancellation.cancel();

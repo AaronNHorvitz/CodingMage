@@ -373,6 +373,57 @@ pub struct PreflightReport {
     pub storage: PreflightStorage,
     /// True when the report excludes source, paths, model names and process output.
     pub source_free: bool,
+    /// Mission charter validation, present only when the preflight received a charter.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mission: Option<PreflightMission>,
+}
+
+/// Mission section of a preflight report; the interface shows it only when present.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct PreflightMission {
+    /// Report schema version.
+    pub schema_version: u16,
+    /// Stable mission identity.
+    pub mission_id: String,
+    /// Digest of the verified charter.
+    pub mission_sha256: String,
+    /// Charter generation.
+    pub generation: u64,
+    /// Involvement mode code reported by the backend contract.
+    pub involvement: String,
+    /// Charter expiry in Unix milliseconds.
+    pub expires_at_ms: u64,
+    /// True when the charter is outside its validity window.
+    pub expired: bool,
+    /// Number of delegated decision domains.
+    pub decision_domains: u32,
+    /// Role availability and credential boundaries.
+    pub roles: Vec<PreflightMissionRole>,
+    /// Effects that will hold for owner authority.
+    pub retained_holds: Vec<String>,
+    /// Channels the involvement mode needs during the campaign.
+    pub interactive_prerequisites: Vec<String>,
+    /// Exact reasons a no-intervention run is invalid.
+    pub no_intervention_defects: Vec<String>,
+    /// True when hands-off execution would be admitted.
+    pub no_intervention_valid: bool,
+    /// `absent`, `bound` or `mismatch` relative to durable mission state.
+    pub durable_state: String,
+}
+
+/// One role inside the mission preflight section.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct PreflightMissionRole {
+    /// Closed role name.
+    pub role: String,
+    /// True when the configured executable is available.
+    pub executable_available: bool,
+    /// Digest of the executable, or empty when unavailable.
+    pub executable_sha256: String,
+    /// Credential boundary code.
+    pub authentication: String,
 }
 
 /// Repository baseline inside a preflight report.
@@ -681,6 +732,59 @@ pub fn parse_preflight(bytes: &[u8]) -> Result<PreflightReport, ModelError> {
     let value: PreflightReport =
         serde_json::from_slice(bytes).map_err(|_| ModelError::Malformed)?;
     check_version(value.schema_version, SUPPORTED_PREFLIGHT_SCHEMA_VERSION)?;
+    Ok(value)
+}
+
+/// Durable mission authority projection from `campaign-mission-status`.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct MissionStatus {
+    /// Report schema version.
+    pub schema_version: u16,
+    /// Exact campaign identity.
+    pub campaign_id: String,
+    /// Stable mission identity.
+    pub mission_id: String,
+    /// Digest of the admitted charter generation.
+    pub mission_sha256: String,
+    /// Digest of the bound campaign authority.
+    pub authority_sha256: String,
+    /// Current authority generation.
+    pub generation: u64,
+    /// Involvement mode code reported by the backend contract.
+    pub involvement: String,
+    /// Charter issue time in Unix milliseconds.
+    pub issued_at_ms: u64,
+    /// Charter expiry in Unix milliseconds.
+    pub expires_at_ms: u64,
+    /// True when the backend observed the charter outside its validity window.
+    pub expired: bool,
+    /// Current revocation epoch.
+    pub revocation_epoch: u64,
+    /// True once revoked.
+    pub revoked: bool,
+    /// Retained decision records.
+    pub decisions_recorded: u32,
+    /// Decisions applied as permitted choices.
+    pub permitted_choices: u32,
+    /// Decisions retained as holds.
+    pub held_decisions: u32,
+    /// Owner decisions awaiting an answer.
+    pub pending_owner_decisions: u32,
+    /// Owner answers recorded.
+    pub owner_answers: u32,
+    /// Backend observation time in Unix milliseconds.
+    pub observed_at_ms: u64,
+}
+
+/// Parses `campaign-mission-status` output.
+///
+/// # Errors
+///
+/// Returns [`ModelError`] for malformed output or an unsupported schema.
+pub fn parse_mission_status(bytes: &[u8]) -> Result<MissionStatus, ModelError> {
+    let value: MissionStatus = serde_json::from_slice(bytes).map_err(|_| ModelError::Malformed)?;
+    check_version(value.schema_version, SUPPORTED_SCHEMA_VERSION)?;
     Ok(value)
 }
 

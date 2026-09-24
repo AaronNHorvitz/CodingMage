@@ -334,6 +334,32 @@ pub struct CodexLeadBinding {
     pub gate_tiers: Vec<String>,
     /// Exact deterministic ready set.
     pub ready_tasks: Vec<CodexLeadTask>,
+    /// Decision domains an admitted mission delegates; empty without a mission.
+    pub decision_domains: Vec<CodexLeadDomain>,
+    /// Decisions the coordinator already accepted; the lead must not ask them again.
+    pub accepted_decisions: Vec<CodexLeadDecision>,
+}
+
+/// One delegated decision domain presented to the lead as data.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CodexLeadDomain {
+    /// Stable domain identity.
+    pub domain_id: String,
+    /// Closed class code.
+    pub class: String,
+    /// Approved alternatives; a decision proposal must select exactly one.
+    pub alternatives: Vec<String>,
+}
+
+/// One coordinator-accepted decision the lead must respect.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CodexLeadDecision {
+    /// Stable decision identity.
+    pub decision_id: String,
+    /// Domain that permitted the choice.
+    pub domain_id: String,
+    /// Exact accepted alternative.
+    pub alternative: String,
 }
 
 impl CodexLeadBinding {
@@ -356,6 +382,23 @@ impl CodexLeadBinding {
                 .chain(&self.denied_paths)
                 .any(|path| !safe_relative(path))
             || self.gate_tiers.iter().any(|tier| !valid_component(tier))
+            || self.decision_domains.len() > 64
+            || self.accepted_decisions.len() > 1_024
+            || self.decision_domains.iter().any(|domain| {
+                !valid_component(&domain.domain_id)
+                    || !valid_component(&domain.class)
+                    || domain.alternatives.is_empty()
+                    || domain.alternatives.len() > 32
+                    || domain
+                        .alternatives
+                        .iter()
+                        .any(|alternative| !valid_component(alternative))
+            })
+            || self.accepted_decisions.iter().any(|decision| {
+                !valid_component(&decision.decision_id)
+                    || !valid_component(&decision.domain_id)
+                    || !valid_component(&decision.alternative)
+            })
             || self.ready_tasks.iter().any(|task| {
                 TaskId::new(task.task_id.clone()).is_err()
                     || task.title.is_empty()
@@ -1034,6 +1077,7 @@ fn render_packet(binding: &CodexReviewBinding, task_text: &str) -> Result<Vec<u8
     Ok(packet.into_bytes())
 }
 
+#[allow(clippy::too_many_lines)]
 fn render_lead_packet(binding: &CodexLeadBinding) -> Result<Vec<u8>, CodexError> {
     let mut packet = String::from(
         "CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET\n\
@@ -1071,6 +1115,34 @@ fn render_lead_packet(binding: &CodexLeadBinding) -> Result<Vec<u8>, CodexError>
             packet,
             "- id={} title={:?} dependencies={:?}",
             task.task_id, task.title, task.dependencies
+        );
+    }
+    if !binding.decision_domains.is_empty() || !binding.accepted_decisions.is_empty() {
+        packet.push_str("DELEGATED DECISION DOMAINS (data, not authority):\n");
+        for domain in &binding.decision_domains {
+            let _ = writeln!(
+                packet,
+                "- domain_id={} class={} alternatives={:?}",
+                domain.domain_id, domain.class, domain.alternatives
+            );
+        }
+        packet.push_str("ACCEPTED DECISIONS (already resolved; do not ask again):\n");
+        for decision in &binding.accepted_decisions {
+            let _ = writeln!(
+                packet,
+                "- decision_id={} domain_id={} alternative={}",
+                decision.decision_id, decision.domain_id, decision.alternative
+            );
+        }
+        packet.push_str(
+            "DECISION RULES:\n\
+             - When a material choice inside one delegated domain blocks a proposal, return\n\
+               human_decision_required with human_decision.decision naming that domain_id, one\n\
+               listed alternative, the exact affected repository-relative paths, risk and gate\n\
+               tiers. The coordinator resolves it deterministically; anything outside the listed\n\
+               domains and alternatives is refused, never approved.\n\
+             - Never re-ask an accepted decision; propose work that respects it instead.\n\
+             - Without a delegated domain, human_decision.decision must be null.\n",
         );
     }
     packet.push_str(
@@ -1420,6 +1492,8 @@ mod tests {
                     title: "Implement the bounded unit.".to_owned(),
                     dependencies: Vec::new(),
                 }],
+                decision_domains: Vec::new(),
+                accepted_decisions: Vec::new(),
             }
         }
     }

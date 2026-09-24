@@ -5,9 +5,10 @@ mod error;
 mod identifier;
 
 pub use campaign::{
-    HumanDecisionBlocker, LeadBlockedDisposition, LeadBlockedReason, LeadDeferredDisposition,
-    LeadDeferredReason, LeadDispositionKind, LeadHumanDecisionReason, LeadReconsiderationTrigger,
-    LeadTaskBinding, PodRisk, TeamLeadProposal, TeamLeadReport,
+    DecisionClass, DecisionProposal, HumanDecisionBlocker, LeadBlockedDisposition,
+    LeadBlockedReason, LeadDeferredDisposition, LeadDeferredReason, LeadDispositionKind,
+    LeadHumanDecisionReason, LeadReconsiderationTrigger, LeadTaskBinding, PodRisk,
+    TeamLeadProposal, TeamLeadReport,
 };
 pub use error::{ErrorCategory, ErrorCode, ErrorCodeError, ErrorMetadata, PublicError};
 pub use identifier::{

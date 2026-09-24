@@ -63,11 +63,26 @@
     "human_decision": {
       "type": ["object", "null"],
       "additionalProperties": false,
-      "required": ["binding", "reason", "summary"],
+      "required": ["binding", "reason", "summary", "decision"],
       "properties": {
         "binding": { "$ref": "#/$defs/binding" },
         "reason": { "enum": ["ambiguous_scope", "material_architecture_choice", "requested_authority_expansion", "protected_branch_consequence", "external_infrastructure_change", "release_decision"] },
-        "summary": { "type": "string", "minLength": 1, "maxLength": 4096 }
+        "summary": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "decision": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["decision_id", "domain_id", "class", "selected_alternative", "affected_paths", "risk", "gate_tiers", "rationale_summary"],
+          "properties": {
+            "decision_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "domain_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "class": { "enum": ["architecture", "dependency", "interface", "test_strategy", "ordering"] },
+            "selected_alternative": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "affected_paths": { "type": "array", "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 1024 } },
+            "risk": { "enum": ["routine", "high"] },
+            "gate_tiers": { "type": "array", "maxItems": 256, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
+            "rationale_summary": { "type": "string", "minLength": 1, "maxLength": 4096 }
+          }
+        }
       }
     }
   }

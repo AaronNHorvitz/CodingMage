@@ -20,7 +20,7 @@ use std::{
 use codingmage_plan::{CheckState, PlanItemKind};
 
 use crate::{
-    backend::models::{BlockerExplanation, CampaignReport, CampaignStatus},
+    backend::models::{BlockerExplanation, CampaignReport, CampaignStatus, MissionStatus},
     backend::{
         BackendError, Binding, CoordinatorBinary, Generation, Job, QueueError, Request, Response,
         Worker, explain_code,
@@ -135,6 +135,7 @@ pub struct App {
     status: Observed<Option<CampaignStatus>>,
     explanation: Observed<BlockerExplanation>,
     report: Observed<Option<CampaignReport>>,
+    mission: Observed<Option<MissionStatus>>,
     head_plan: Observed<Option<LoadedPlan>>,
     head_plan_commit: Option<String>,
     last_status_request: Option<Instant>,
@@ -218,6 +219,7 @@ impl App {
             status: Observed::default(),
             explanation: Observed::default(),
             report: Observed::default(),
+            mission: Observed::default(),
             head_plan: Observed::default(),
             head_plan_commit: None,
             last_status_request: None,
@@ -257,6 +259,12 @@ impl App {
     #[must_use]
     pub const fn report(&self) -> &Observed<Option<CampaignReport>> {
         &self.report
+    }
+
+    /// Latest mission authority observation (`Some(None)` means no charter is admitted).
+    #[must_use]
+    pub const fn mission(&self) -> &Observed<Option<MissionStatus>> {
+        &self.mission
     }
 
     /// Last campaign selection failure.
@@ -520,6 +528,10 @@ impl App {
                     }
                     Err(error) => self.explanation.fail(error, self.now),
                 }
+                true
+            }
+            "campaign-mission-status" => {
+                self.accept_mission(response);
                 true
             }
             "campaign-report" => {

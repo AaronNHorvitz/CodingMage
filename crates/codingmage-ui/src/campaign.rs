@@ -264,21 +264,34 @@ pub const SUPPORTED_ROLES: &[(&str, &str)] = &[
     ),
 ];
 
-/// Planned involvement modes that have no backend contract at this revision.
-pub const UNAVAILABLE_MODES: &[(&str, &str)] = &[
+/// Owner involvement modes with a backend contract (`campaign-mission-admit`): code, label and
+/// what the coordinator does with a choice the charter does not delegate.
+pub const INVOLVEMENT_MODES: &[(&str, &str, &str)] = &[
     (
+        "supervised",
         "Supervised",
-        "no checkpoint or operator-question contract exists in this backend",
+        "undelegated choices become exact owner decision requests answered through campaign-mission-answer",
     ),
     (
+        "exception_only",
         "Exception-only",
-        "no exception request or hold contract exists in this backend",
+        "undelegated choices produce one deduplicated exception request each while other work continues",
     ),
     (
+        "hands_off",
         "Hands-off",
-        "no mission charter or noninteractive disposition contract exists in this backend",
+        "no mid-campaign request is issued; undelegated choices are retained as blockers",
     ),
 ];
+
+/// Human label for an involvement mode code reported by the backend.
+#[must_use]
+pub fn involvement_label(code: &str) -> &str {
+    INVOLVEMENT_MODES
+        .iter()
+        .find(|(known, _, _)| *known == code)
+        .map_or(code, |(_, label, _)| label)
+}
 
 #[cfg(test)]
 mod tests {

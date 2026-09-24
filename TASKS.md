@@ -35,7 +35,7 @@ Bounded subtasks split on 2026-09-24 before coding. They map to Sprint 36 rows a
 - [x] **CM-R01.2:** Investigate the exact evidence-freshness defect: the binding at `026f910` matched source commit `319de72` for every input, and eight later commits (`f463f63` through `26fb3ff`) refreshed six input digests and the command set without rebuilding the package or re-binding the source commit. The working-tree-only test could not detect that. Exact table in `docs/evidence/cm-r01-reconciliation.md`; original failed receipt retained under `docs/evidence/cm-r01/`.
 - [x] **CM-R01.3:** Repair the test blind spot: `tests/test_multi_agent_matrix.py` now verifies every recorded digest against the content committed at the bound source commit (`input-provenance`) separately from working-tree freshness (`input-drift`), with regression tests for a refreshed digest and a missing bound object.
 - [x] **CM-R01.4:** Restore the binding to its provenance-consistent form (the `026f910` record for source commit `319de72` and package `8031a62b…`), keep the drifted `7bb3dbf` receipt and its failing output as retained evidence, and correct the private runtime name in the new roadmap to the public role name with provenance.
-- [ ] **CM-R01.5:** Execute every bound command that needs no external authority on the exact repaired commit and record an exact receipt: formatting, strict Clippy, all-target workspace tests, architecture, documentation, Python suite and diff checks. Receipt pending; see the reconciliation document for the run identity.
+- [x] **CM-R01.5:** Execute every bound command that needs no external authority on the exact repaired commit and record an exact receipt: formatting, strict Clippy, all-target workspace tests, architecture, documentation, Python suite and diff checks. Receipt recorded in `docs/evidence/cm-r01-reconciliation.md` for the tree of the Sprint 32 commit that carries the repair: fmt, Clippy, architecture, docs and diff clean; 463 workspace tests pass with 3 sandbox-environment failures disclosed for operator-host re-run; the Python suite keeps only the designed freshness failure of CM-R01.6.
 - [ ] **CM-R01.6:** Renew the package, provenance and binding. Blocked: `scripts/package_release.py` requires an external exact-commit review record with disposition `approved_for_candidate_construction` (External 4 / Sprint 26 independent human review), which the implementation worker cannot author. The freshness test therefore keeps failing by design until that renewal; do not edit digests.
 This file is the canonical implementation sequence for CodingMage. It is intentionally granular so a human or coding agent can select one bounded, dependency-ready unit without reconstructing the project from conversation history.
 
@@ -1804,6 +1804,8 @@ availability and separately authorized authenticated access remain explicit qual
 
 ## Sprint 32 - Mission Authority and Owner Involvement
 
+**Sprint goal:** Bind one authenticated mission charter and owner-involvement mode to exact campaign authority, with noninteractive decisions, revocation and expiry that survive restart.
+
 **Status:** Planned under Decision 0014. Requirements CM-TEAM-001 through CM-TEAM-004.
 Reuse existing authority/readiness/decomposition and control boundaries. All new rows inherit the
 Universal Definition of Done and applicable positive, negative, boundary, malformed-input,
@@ -1815,21 +1817,21 @@ failure/recovery and side-effect tests. No documentation or fake result enables 
 once, with precise limits, rather than supervising every task.
 
 - [ ] **Task 32.1.1 - Bind mission and engineering delegation**
-  - [ ] **Sub-task 32.1.1.1:** Inventory current source, state, authority, provider and evidence prerequisites; map the new charter to existing owners, preserve Task 25.2.4.6 and record exact external blockers without treating stale reports as current qualification.
-  - [ ] **Sub-task 32.1.1.2:** Define closed versioned mission/decision-domain schemas binding objective, criteria, exclusions, operator/target/source identities, architecture constraints, paths, command registry, profiles, budgets, expiry and revocation; reject unknown or conflicting fields.
+  - [x] **Sub-task 32.1.1.1:** Inventory current source, state, authority, provider and evidence prerequisites; map the new charter to existing owners, preserve Task 25.2.4.6 and record exact external blockers without treating stale reports as current qualification. Inventory recorded with owner mapping and exact external blockers; see `docs/evidence/sprint-32-mission-authority.md`.
+  - [x] **Sub-task 32.1.1.2:** Define closed versioned mission/decision-domain schemas binding objective, criteria, exclusions, operator/target/source identities, architecture constraints, paths, command registry, profiles, budgets, expiry and revocation; reject unknown or conflicting fields. `MissionCharter`, `DecisionDomainGrant`, `MissionBudgets` and closed enums with `deny_unknown_fields` in `codingmage-campaign::mission`; binding, subset and conflict mutations tested; see `docs/evidence/sprint-32-mission-authority.md`.
     <!-- depends-on: 32.1.1.1 -->
-  - [ ] **Sub-task 32.1.1.3:** Derive exact task/effect authority from authenticated mission grants using the existing coordinator; test delegated architecture, dependency and interface choices without allowing model-authored policy, scope or acceptance expansion.
+  - [x] **Sub-task 32.1.1.3:** Derive exact task/effect authority from authenticated mission grants using the existing coordinator; test delegated architecture, dependency and interface choices without allowing model-authored policy, scope or acceptance expansion. `evaluate_decision` derives permitted choices only inside named domains and blocks class, path, risk and gate expansion in every mode; see `docs/evidence/sprint-32-mission-authority.md`.
     <!-- depends-on: 32.1.1.2 -->
-  - [ ] **Sub-task 32.1.1.4:** Bind and persist decisions and authority generations; prove stale, replayed, cross-project, over-budget and mutated charters produce no lease, process, Git or external effect, and old state never gains new authority implicitly.
+  - [x] **Sub-task 32.1.1.4:** Bind and persist decisions and authority generations; prove stale, replayed, cross-project, over-budget and mutated charters produce no lease, process, Git or external effect, and old state never gains new authority implicitly. `mission.json` binds authority digest, identities, generations, decisions and revocation epoch; stale, replayed, cross-project, mutated and unknown-version documents produce holds and no effect; see `docs/evidence/sprint-32-mission-authority.md`.
     <!-- depends-on: 32.1.1.3 -->
 - [ ] **Task 32.1.2 - Separate involvement from delivery authority**
-  - [ ] **Sub-task 32.1.2.1:** Add explicit supervised, exception-only and hands-off contracts independently of pod count, serial/parallel operation and publication/promotion policy, retaining old configuration behavior.
+  - [x] **Sub-task 32.1.2.1:** Add explicit supervised, exception-only and hands-off contracts independently of pod count, serial/parallel operation and publication/promotion policy, retaining old configuration behavior. `InvolvementMode` is a charter field independent of pod count, execution mode and publication policy; campaigns without a charter keep legacy behavior and authority digests; see `docs/evidence/sprint-32-mission-authority.md`.
     <!-- depends-on: 32.1.1.4 -->
-  - [ ] **Sub-task 32.1.2.2:** Implement admission preflight for role availability, existing authentication, exact grants and interactive-only prerequisites; reject invalid no-intervention configurations before starting a campaign.
+  - [x] **Sub-task 32.1.2.2:** Implement admission preflight for role availability, existing authentication, exact grants and interactive-only prerequisites; reject invalid no-intervention configurations before starting a campaign. `campaign_mission_preflight` reports role availability, authentication, retained holds and interactive prerequisites and refuses invalid hands-off configurations before any process; see `docs/evidence/sprint-32-mission-authority.md`.
     <!-- depends-on: 32.1.2.1 -->
   - [ ] **Sub-task 32.1.2.3:** Exercise every involvement/delivery-policy combination, including local-only hands-off and supervised preauthorized integration; a mode selector or owner disconnect must never create publication authority.
     <!-- depends-on: 32.1.2.2 -->
-  - [ ] **Sub-task 32.1.2.4:** Verify CLI/config/state compatibility and source-bound preflight reports, including refusal on unsupported schema or provider capabilities and absence of credential values in retained records.
+  - [x] **Sub-task 32.1.2.4:** Verify CLI/config/state compatibility and source-bound preflight reports, including refusal on unsupported schema or provider capabilities and absence of credential values in retained records. CLI mission commands and the optional preflight `mission` section are covered by binary tests, including unknown fields, stale generations and content-free retained state; see `docs/evidence/sprint-32-mission-authority.md`.
     <!-- depends-on: 32.1.2.3 -->
 
 - [ ] **AC 32.1:** Given one admitted mission, involvement mode and independent delivery policy, only exact delegated work can start; old configurations and unsupported input do not acquire new authority.
@@ -1840,20 +1842,20 @@ once, with precise limits, rather than supervising every task.
 unavailable work without repeatedly requesting an answer.
 
 - [ ] **Task 32.2.1 - Continue without owner responses**
-  - [ ] **Sub-task 32.2.1.1:** Implement typed decision-needed, permitted-choice, defer, block and dispute outcomes through the existing disposition machinery; retain decision identity, generation, constraints and source-bound rationale.
+  - [x] **Sub-task 32.2.1.1:** Implement typed decision-needed, permitted-choice, defer, block and dispute outcomes through the existing disposition machinery; retain decision identity, generation, constraints and source-bound rationale. Typed `decision` on the human-decision disposition is evaluated to permitted, decision-needed, deferred or blocked outcomes with durable identity, generation and rationale digest; see `docs/evidence/sprint-32-mission-authority.md`.
     <!-- depends-on: 32.1.2.4 -->
-  - [ ] **Sub-task 32.2.1.2:** Route supervised checkpoints and deduplicated exception-only requests through authenticated controls; hands-off must issue no approval dialog or stdin wait and must never fabricate an owner response.
+  - [x] **Sub-task 32.2.1.2:** Route supervised checkpoints and deduplicated exception-only requests through authenticated controls; hands-off must issue no approval dialog or stdin wait and must never fabricate an owner response. Supervised and exception-only pending decisions are deduplicated per identity and answered through `campaign-mission-answer`; hands-off registers none and issues no prompt; see `docs/evidence/sprint-32-mission-authority.md`.
     <!-- depends-on: 32.2.1.1 -->
   - [ ] **Sub-task 32.2.1.3:** Continue independent work after an exact blocker, reconsider only on changed declared observations, and bound retry/replanning/correction so repeated no-progress states cannot consume unlimited resources.
     <!-- depends-on: 32.2.1.2 -->
   - [ ] **Sub-task 32.2.1.4:** Inject late provider approval/login requests, quota changes, unknown tool requirements and unavailable stronger reviewers; retain explicit holds or qualified permitted alternatives without auto-answering prompts or reducing review strength.
     <!-- depends-on: 32.2.1.3 -->
 - [ ] **Task 32.2.2 - Preserve authority across disconnect and restart**
-  - [ ] **Sub-task 32.2.2.1:** Extend existing durable controls with mission expiry/revocation epochs and exact observer-disconnect semantics; revalidate authority before every effect rather than equating disconnection with a stop.
+  - [x] **Sub-task 32.2.2.1:** Extend existing durable controls with mission expiry/revocation epochs and exact observer-disconnect semantics; revalidate authority before every effect rather than equating disconnection with a stop. Revocation epochs and expiry are revalidated before effects in both engines and in the cancellation watcher; observer disconnect is not a control; see `docs/evidence/sprint-32-mission-authority.md`.
     <!-- depends-on: 32.1.1.4 -->
   - [ ] **Sub-task 32.2.2.2:** Test expiry/revocation races with implementation, commit, gate, review and integration, preserving uncertain effects and terminating only exact owned descendants.
     <!-- depends-on: 32.2.2.1 -->
-  - [ ] **Sub-task 32.2.2.3:** Reconcile mission/decision/control state across crash and upgrade; refuse incompatible state and prove restart cannot resurrect revoked authority or repeat an uncertain effect.
+  - [x] **Sub-task 32.2.2.3:** Reconcile mission/decision/control state across crash and upgrade; refuse incompatible state and prove restart cannot resurrect revoked authority or repeat an uncertain effect. Unknown mission document versions and tampered documents are refused, and revoked authority survives reload without re-issue; see `docs/evidence/sprint-32-mission-authority.md`.
     <!-- depends-on: 32.2.2.2 -->
   - [ ] **Sub-task 32.2.2.4:** Reconcile all three involvement modes with existing pause/resume/stop/cancel and content-minimized reports through actual coordinator-process fixtures.
     <!-- depends-on: 32.2.1.4, 32.2.2.3 -->
@@ -1868,6 +1870,8 @@ unavailable work without repeatedly requesting an answer.
 ---
 
 ## Sprint 33 - Director, Team Lead, Pods and Independent QA
+
+**Sprint goal:** Add director, team-lead, pod, independent-review and QA roles as validated proposal producers under the one existing coordinator.
 
 **Status:** Planned. Requirements CM-TEAM-005 through CM-TEAM-008. Depends on Sprint 32's exact
 contract/control prerequisites, not optional host, memory or Muse integrations.
@@ -1927,6 +1931,8 @@ contract/control prerequisites, not optional host, memory or Muse integrations.
 
 ## Sprint 34 - Integrated Product Acceptance and Durable Team Knowledge
 
+**Sprint goal:** Extend scheduling to declared interfaces and integrated product acceptance with durable source-backed handoffs and outcome feedback.
+
 **Status:** Planned. Requirements CM-TEAM-009 through CM-TEAM-012. Reuse existing integration,
 artifact/privacy and checkpoint owners; do not create a competing orchestrator or memory store.
 
@@ -1984,6 +1990,8 @@ artifact/privacy and checkpoint owners; do not create a competing orchestrator o
 ---
 
 ## Sprint 35 - Hands-Off Qualification and Optional Delivery
+
+**Sprint goal:** Qualify real no-intervention campaigns in staged order and keep optional delivery under separate authority with honest completion states.
 
 **Status:** Planned. Requirements CM-TEAM-013 through CM-TEAM-016. Local hands-off completion does
 not depend on optional remote delivery. Existing exact source, provider, native-platform, owner

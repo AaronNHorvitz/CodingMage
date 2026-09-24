@@ -17,11 +17,13 @@ use codingmage_core::{
 use codingmage_git::inventory_repository;
 use codingmage_plan::TaskPlan;
 use codingmage_runtime::{
-    RunProgress, RunSpec, RuntimeError, approve_campaign_destination_promotion,
-    approve_campaign_task_integration, campaign_blocker_explanation, campaign_preflight,
-    campaign_status, clear_campaign_blocker, observe_campaign_deferral_trigger,
-    request_campaign_control, run_one_with_progress, run_one_with_progress_for_id,
-    run_team_campaign_with_progress, team_campaign_report,
+    RunProgress, RunSpec, RuntimeError, admit_campaign_mission, answer_campaign_decision,
+    approve_campaign_destination_promotion, approve_campaign_task_integration,
+    campaign_blocker_explanation, campaign_mission_preflight, campaign_mission_status,
+    campaign_preflight_with_mission, campaign_status, clear_campaign_blocker,
+    observe_campaign_deferral_trigger, request_campaign_control, revoke_campaign_mission,
+    run_one_with_progress, run_one_with_progress_for_id, run_team_campaign_with_progress,
+    team_campaign_report,
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -48,6 +50,10 @@ Commands:
   campaign-control              Request pause, resume, stop, or cancellation
   campaign-approve-task         Approve one exact task-integration effect
   campaign-approve-destination  Approve one exact destination-promotion effect
+  campaign-mission-admit        Admit or re-issue one mission charter for a campaign
+  campaign-mission-status       Read durable mission authority and decision counts
+  campaign-mission-revoke       Revoke a mission irreversibly; no new effect may start
+  campaign-mission-answer       Answer one pending owner decision (supervised modes)
 
 Run `codingmage <COMMAND> --help` for exact command usage.";
 
@@ -63,10 +69,25 @@ fn command_help(command: &str) -> Option<&'static str> {
             "Usage: codingmage run --config <ABSOLUTE_FILE> --spec <ABSOLUTE_FILE> \\\n  [--run-id <EXACT_RUN_ID>]",
         ),
         "campaign-preflight" => Some(
-            "Usage: codingmage campaign-preflight --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --authorization <ABSOLUTE_FILE>",
+            "Usage: codingmage campaign-preflight --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --authorization <ABSOLUTE_FILE> [--mission <ABSOLUTE_FILE>]",
         ),
-        "campaign" | "campaign-status" | "campaign-report" | "campaign-explain-blocker" => Some(
-            "Usage: codingmage <campaign|campaign-status|campaign-report|campaign-explain-blocker> \\\n  --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE>",
+        "campaign" => Some(
+            "Usage: codingmage campaign --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> \\\n  [--mission <ABSOLUTE_FILE>]",
+        ),
+        "campaign-status"
+        | "campaign-report"
+        | "campaign-explain-blocker"
+        | "campaign-mission-status" => Some(
+            "Usage: codingmage <campaign-status|campaign-report|campaign-explain-blocker|campaign-mission-status> \\\n  --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE>",
+        ),
+        "campaign-mission-admit" => Some(
+            "Usage: codingmage campaign-mission-admit --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --mission <ABSOLUTE_FILE>",
+        ),
+        "campaign-mission-revoke" => Some(
+            "Usage: codingmage campaign-mission-revoke --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --request <REQUEST_ID>",
+        ),
+        "campaign-mission-answer" => Some(
+            "Usage: codingmage campaign-mission-answer --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --decision <DECISION_ID> --request <REQUEST_ID> \\\n  --answer <ALTERNATIVE|block>",
         ),
         "campaign-clear-blocker" => Some(
             "Usage: codingmage campaign-clear-blocker --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --task <TASK_ID> --request <REQUEST_ID> \\\n  --prerequisite-sha256 <SHA256>",
@@ -122,6 +143,10 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign-control" => control_campaign(&arguments[1..]),
         "campaign-approve-task" => approve_campaign_task(&arguments[1..]),
         "campaign-approve-destination" => approve_campaign_destination(&arguments[1..]),
+        "campaign-mission-admit" => admit_mission(&arguments[1..]),
+        "campaign-mission-status" => inspect_mission(&arguments[1..]),
+        "campaign-mission-revoke" => revoke_mission(&arguments[1..]),
+        "campaign-mission-answer" => answer_mission_decision(&arguments[1..]),
         _ => Err(CliError::Usage),
     }
 }
@@ -228,11 +253,18 @@ fn execute(arguments: &[String]) -> Result<String, CliError> {
 }
 
 fn execute_campaign(arguments: &[String]) -> Result<String, CliError> {
-    let parsed = ParsedArguments::new(arguments, &["config", "campaign"])?;
+    let parsed =
+        ParsedArguments::new_with_optional(arguments, &["config", "campaign"], &["mission"])?;
     let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
     let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
         .map_err(|_| CliError::InvalidArgument)?;
     let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    if parsed.optional_value("mission").is_some() {
+        let charter = parsed.absolute_file("mission")?;
+        campaign_mission_preflight(&config, &spec, &executable, &charter)
+            .map_err(CliError::Runtime)?;
+        admit_campaign_mission(&config, &spec, &executable, &charter).map_err(CliError::Runtime)?;
+    }
     let started = Instant::now();
     let outcome = run_team_campaign_with_progress(&config, spec, &executable, |progress| {
         write_progress(started.elapsed(), progress);
@@ -242,15 +274,90 @@ fn execute_campaign(arguments: &[String]) -> Result<String, CliError> {
 }
 
 fn preflight_campaign(arguments: &[String]) -> Result<String, CliError> {
-    let parsed = ParsedArguments::new(arguments, &["config", "campaign", "authorization"])?;
+    let parsed = ParsedArguments::new_with_optional(
+        arguments,
+        &["config", "campaign", "authorization"],
+        &["mission"],
+    )?;
     let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
     let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
         .map_err(|_| CliError::InvalidArgument)?;
     let authorization = parsed.absolute_file("authorization")?;
+    let mission = if parsed.optional_value("mission").is_some() {
+        Some(parsed.absolute_file("mission")?)
+    } else {
+        None
+    };
     let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
-    let report = campaign_preflight(&config, &spec, &executable, &authorization)
-        .map_err(CliError::Runtime)?;
+    let report = campaign_preflight_with_mission(
+        &config,
+        &spec,
+        &executable,
+        &authorization,
+        mission.as_deref(),
+    )
+    .map_err(CliError::Runtime)?;
     serde_json::to_string_pretty(&report).map_err(|_| CliError::Internal)
+}
+
+fn admit_mission(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "campaign", "mission"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let charter = parsed.absolute_file("mission")?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let outcome =
+        admit_campaign_mission(&config, &spec, &executable, &charter).map_err(CliError::Runtime)?;
+    serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)
+}
+
+fn inspect_mission(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "campaign"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let report = campaign_mission_status(&config, &spec, &executable).map_err(CliError::Runtime)?;
+    serde_json::to_string_pretty(&report).map_err(|_| CliError::Internal)
+}
+
+fn revoke_mission(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "campaign", "request"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let outcome = revoke_campaign_mission(&config, &spec, &executable, parsed.value("request")?)
+        .map_err(CliError::Runtime)?;
+    serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)
+}
+
+fn answer_mission_decision(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(
+        arguments,
+        &["config", "campaign", "decision", "request", "answer"],
+    )?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let answer = parsed.value("answer")?;
+    let alternative = if answer == "block" {
+        None
+    } else {
+        Some(answer)
+    };
+    let outcome = answer_campaign_decision(
+        &config,
+        &spec,
+        &executable,
+        parsed.value("decision")?,
+        parsed.value("request")?,
+        alternative,
+    )
+    .map_err(CliError::Runtime)?;
+    serde_json::to_string_pretty(&outcome).map_err(|_| CliError::Internal)
 }
 
 fn inspect_campaign(arguments: &[String]) -> Result<String, CliError> {

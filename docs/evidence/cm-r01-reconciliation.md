@@ -95,8 +95,52 @@ provenance; it does not change any licensing statement.
 
 ## CM-R01.5 - Receipt for the bound commands that need no external authority
 
-Receipt pending. The run identity, commands, exit statuses and counts are recorded here after the
-gate batch completes on the exact repaired commit.
+The receipt was executed inside the implementation sandbox on the working tree that became the
+commit carrying this document (the tree includes the `2be3128` repair and the Sprint 32 mission
+work). The earlier attempt on `2be3128` alone never obtained the shared build reservation before
+the session was restarted, so it produced no receipt. Commands ran with one build job and one
+test thread through the shared reservation script; the log is retained privately as
+`full-gates-8.log`.
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `cargo fmt --all -- --check` | 0 | clean |
+| `cargo clippy --workspace --all-targets -- -D warnings` | 0 | no findings |
+| `cargo test --workspace --all-targets --no-fail-fast` | 101 | 463 passed, 3 failed, 2 ignored (guarded sustained qualifications) across 50 test binaries; the 3 failures are the sandbox-environment cases below |
+| `python3 scripts/check_architecture.py` | 0 | pass |
+| `python3 scripts/docs_check.py` | 0 | pass |
+| `python3 -m unittest discover -s tests -p 'test_*.py'` | 1 | 41 tests, 40 pass, 1 designed failure (`test_multi_agent_evidence_binding_is_current`, CM-R01.6) |
+| `git diff --check` | 0 | clean |
+
+After the batch completed, only the CM-R01.5 checkbox text in `TASKS.md` and this paragraph
+changed before the commit; no Rust source, schema or fixture changed after the receipt.
+
+Findings from executing the workspace suite in this sandbox, which the earlier native UI work had
+not run for untouched crates:
+
+- `codingmage-plan::tests::canonical_repository_plan_parses_and_selects_the_first_open_unit`
+  failed with `codingmage.plan.missing_goal` because the Sprint 32 through 35 sections added on
+  2026-09-21 carried no `**Sprint goal:**` line, so this repository's own task source stopped
+  parsing. Fixed forward by adding the four goal lines; the selected first open unit remains
+  `16.2.1.2`.
+- Six `codingmage-git` fixture tests depended on an ambient Git user identity for later fixture
+  commits (`review`, `inventory`, `worktree` and `commit` tests). The fixture runner now sets a
+  deterministic author and committer; no product code changed.
+- Environment-only failures retained, not repaired: `codingmage-process` tests
+  `cancellation_reaps_children_and_grandchildren` and `timeout_and_cancellation_reap_descendants`
+  time out waiting for the fixture's grandchild pid file because the request's
+  `max_processes = 4` becomes `RLIMIT_NPROC` for a user id that already owns the sandbox's
+  launcher, shell and build processes, so the fixture cannot fork; and
+  `codingmage-service::tests::native_systemd_analyze_accepts_rendered_user_unit` fails because
+  `systemd-analyze --user verify` cannot initialize a user manager here
+  (`Failed to lookup RuntimeDirectory path`). Both must be re-run on the operator's desktop host;
+  see the human-only register.
+
+## Items that need a person
+
+- Re-run the three environment-only failing tests on the operator's Fedora host with a user
+  systemd instance and an uncontended user id, and record the result with the commit hash.
+- CM-R01.6 below.
 
 ## CM-R01.6 - Package renewal blocker
 

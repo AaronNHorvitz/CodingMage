@@ -18,7 +18,12 @@ use sha2::{Digest, Sha256};
 use crate::{RuntimeError, TeamBatchJob, generated_run_id};
 
 /// Result of one deterministically validated team-lead planning generation.
+///
+/// The nonexecution variant carries the complete typed disposition, including an optional
+/// mission decision proposal; it is produced once per planning generation, so its size is not
+/// on any hot path.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[allow(clippy::large_enum_variant)]
 pub enum TeamPlanningOutcome {
     /// Zero or more nonconflicting proposals were admitted under durable leases.
     Admitted(Vec<TeamBatchJob>),
@@ -176,6 +181,8 @@ pub fn build_team_lead_binding(
             .map(|tier| tier.name.clone())
             .collect(),
         ready_tasks,
+        decision_domains: Vec::new(),
+        accepted_decisions: Vec::new(),
     })
 }
 

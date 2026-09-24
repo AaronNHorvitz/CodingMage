@@ -18,12 +18,17 @@ credentials, and hidden reasoning.
 
 ## Controls
 
-The planned owner-optional extension adds mission/milestone and acceptance coverage, role and
-decision identities, involvement mode, intervention count, no-progress reasons and separate
-engineering/delivery dispositions. These are requirements in Sprints 32 through 35, not current
-JSON fields. Hands-off observation is optional; disconnect does not stop the campaign or grant new
-authority. Pending external prerequisites remain visible without repeated interactive prompts.
-Explicit pause, cancellation, expiry and revocation still apply.
+The owner-optional extension adds mission/milestone and acceptance coverage, role and decision
+identities, involvement mode, intervention count, no-progress reasons and separate
+engineering/delivery dispositions across Sprints 32 through 35. Sprint 32 now provides the mission
+charter part locally: `campaign-mission-admit --mission <charter>` binds one charter to the exact
+campaign authority digest, `campaign-mission-status` reports generation, involvement mode, expiry,
+revocation epoch and decision counts, `campaign-mission-revoke --request <id>` is an irreversible
+authenticated revocation checked before every effect, and `campaign-mission-answer` records the
+owner's answer to one pending decision in supervised or exception-only mode. Hands-off observation
+is optional; disconnect does not stop the campaign or grant new authority. Pending external
+prerequisites remain visible without repeated interactive prompts. Explicit pause, cancellation,
+expiry and revocation still apply. None of this is live no-intervention qualification.
 
 Pause, resume, stop-after-unit, and cancel require same-user authorization, exact campaign identity,
 and a create-once request ID:

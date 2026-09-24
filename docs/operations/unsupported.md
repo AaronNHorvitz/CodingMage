@@ -4,9 +4,11 @@
 
 The current build does not claim:
 
-- The owner-involvement modes, director/team-lead/QA extension or no-intervention engineering-team
-  qualification in Decision 0014 and Sprints 32 through 35. These are accepted planned requirements,
-  not runtime flags, current campaign grants or a new release assurance claim.
+- The director/team-lead/QA extension or no-intervention engineering-team qualification in
+  Decision 0014 and Sprints 32 through 35. The Sprint 32 mission charter, involvement modes and
+  mission controls exist as deterministic, fake-provider-tested local contracts
+  (`campaign-mission-*` commands); they are not live-qualified, independently reviewed or a new
+  release assurance claim.
 
 - Release-qualified authenticated Claude implementation or Codex review across the final matrix.
 - Authenticated GitHub issue, branch-push, draft-PR, CI, integration, or destination-promotion

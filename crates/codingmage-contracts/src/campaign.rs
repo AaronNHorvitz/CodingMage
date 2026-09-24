@@ -258,6 +258,60 @@ pub struct TeamLeadProposal {
     pub rationale_summary: String,
 }
 
+/// Closed class of engineering choice that a mission charter may delegate.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DecisionClass {
+    /// Internal structure or module boundary inside the granted scope.
+    Architecture,
+    /// Selection among already approved dependency alternatives.
+    Dependency,
+    /// Shape of an interface inside the granted scope.
+    Interface,
+    /// Choice of test approach among approved alternatives.
+    TestStrategy,
+    /// Ordering of already authorized work.
+    Ordering,
+}
+
+impl DecisionClass {
+    /// Stable content-free class code.
+    #[must_use]
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::Architecture => "architecture",
+            Self::Dependency => "dependency",
+            Self::Interface => "interface",
+            Self::TestStrategy => "test_strategy",
+            Self::Ordering => "ordering",
+        }
+    }
+}
+
+/// Untrusted role-authored request to resolve one engineering choice inside a mission domain.
+///
+/// The coordinator evaluates it against the admitted charter; it is data, never authority.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct DecisionProposal {
+    /// Stable decision identity chosen by the proposer; replays are deduplicated by it.
+    pub decision_id: String,
+    /// Domain the proposal claims.
+    pub domain_id: String,
+    /// Class the proposal claims; must match the domain.
+    pub class: DecisionClass,
+    /// Alternative the proposer selected.
+    pub selected_alternative: String,
+    /// Repository-relative paths the choice affects.
+    pub affected_paths: Vec<PathBuf>,
+    /// Risk the proposer assigned; deterministic policy may only raise it.
+    pub risk: PodRisk,
+    /// Gate tiers the proposer requests.
+    pub gate_tiers: Vec<String>,
+    /// Concise inspectable rationale; never authority.
+    pub rationale_summary: String,
+}
+
 /// Bounded request for an operator decision when no proposal is independently safe.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -268,6 +322,9 @@ pub struct HumanDecisionBlocker {
     pub reason: LeadHumanDecisionReason,
     /// Concise inspectable question with no hidden reasoning.
     pub summary: String,
+    /// Optional typed proposal the coordinator may resolve under an admitted mission charter.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub decision: Option<DecisionProposal>,
 }
 
 /// Strict read-only campaign-lead response.

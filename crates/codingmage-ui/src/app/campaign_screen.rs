@@ -7,9 +7,16 @@ use codingmage_plan::{CheckState, PlanItemKind};
 
 use super::{App, GIT_DEADLINE, STATUS_DEADLINE, failure_box};
 use crate::{
-    backend::{BackendError, Job, Request, Response, explain_code, models::parse_campaign_status},
+    backend::{
+        BackendError, Job, Request, Response, explain_code,
+        models::{MissionStatus, parse_campaign_status, parse_mission_status},
+    },
     browser::Browser,
-    campaign::{CampaignSelection, SUPPORTED_ROLES, TaskOverlay, UNAVAILABLE_MODES, build_overlay},
+    campaign::{
+        CampaignSelection, INVOLVEMENT_MODES, SUPPORTED_ROLES, TaskOverlay, build_overlay,
+        involvement_label,
+    },
+    observed::Observed,
     observed::{Freshness, age_label},
 };
 
@@ -65,6 +72,7 @@ impl App {
         self.status.clear();
         self.explanation.clear();
         self.report.clear();
+        self.mission.clear();
         self.head_plan.clear();
         self.head_plan_commit = None;
         self.last_status_request = None;
@@ -88,6 +96,7 @@ impl App {
         let mut jobs = vec![
             ("campaign-status", "campaign-status"),
             ("campaign-explain-blocker", "campaign-explain-blocker"),
+            ("campaign-mission-status", "campaign-mission-status"),
         ];
         if parallel {
             jobs.push(("campaign-report", "campaign-report"));
@@ -109,11 +118,13 @@ impl App {
                 Ok(()) => match label {
                     "campaign-status" => self.status.loading = true,
                     "campaign-explain-blocker" => self.explanation.loading = true,
+                    "campaign-mission-status" => self.mission.loading = true,
                     _ => self.report.loading = true,
                 },
                 Err(error) => match label {
                     "campaign-status" => self.status.fail(error, self.now),
                     "campaign-explain-blocker" => self.explanation.fail(error, self.now),
+                    "campaign-mission-status" => self.mission.fail(error, self.now),
                     _ => self.report.fail(error, self.now),
                 },
             }
@@ -133,6 +144,22 @@ impl App {
             campaign.spec_path.display().to_string(),
             parallel,
         ))
+    }
+
+    /// Accepts a mission status; a `codingmage.runtime.state` refusal means no charter exists.
+    pub(super) fn accept_mission(&mut self, response: Response) {
+        match response
+            .result
+            .and_then(|bytes| parse_mission_status(&bytes).map_err(BackendError::from))
+        {
+            Ok(mission) => self
+                .mission
+                .accept(Some(mission), response.generation, self.now),
+            Err(BackendError::Command { code, .. }) if code == "codingmage.runtime.state" => {
+                self.mission.accept(None, response.generation, self.now);
+            }
+            Err(error) => self.mission.fail(error, self.now),
+        }
     }
 
     pub(super) fn accept_status(&mut self, response: Response) {
@@ -230,7 +257,7 @@ impl App {
         self.campaign_selection_controls(ui);
         let Some(campaign) = &self.campaign else {
             ui.label("No campaign selected. Select the campaign specification that binds this repository, or create one in Setup.");
-            roles_and_modes(ui);
+            roles_and_modes(ui, &self.mission, self.now);
             return;
         };
         let spec = &campaign.spec;
@@ -285,7 +312,7 @@ impl App {
             self.status_section(ui);
         }
         ui.separator();
-        roles_and_modes(ui);
+        roles_and_modes(ui, &self.mission, self.now);
     }
 
     fn campaign_selection_controls(&mut self, ui: &mut egui::Ui) {
@@ -638,14 +665,81 @@ fn utilization_grid(ui: &mut egui::Ui, status: &crate::backend::models::Campaign
     ui.small("Token usage is not reported by this backend and is shown as unknown rather than estimated.");
 }
 
-fn roles_and_modes(ui: &mut egui::Ui) {
+fn roles_and_modes(
+    ui: &mut egui::Ui,
+    mission: &Observed<Option<MissionStatus>>,
+    now: std::time::Instant,
+) {
     ui.heading("Roles this backend reports");
     for (code, description) in SUPPORTED_ROLES {
         ui.label(format!("{code}: {description}"));
     }
-    ui.heading("Owner involvement modes");
-    ui.label("Unavailable in this backend revision. The campaign runs under its recorded authority; the interface neither asks routine questions nor answers them.");
-    for (mode, reason) in UNAVAILABLE_MODES {
-        ui.label(format!("{mode}: unavailable, {reason}"));
+    ui.heading("Owner involvement");
+    match &mission.value {
+        Some(Some(status)) => {
+            let mode = involvement_label(&status.involvement);
+            let authority = if status.revoked {
+                "revoked; no new effect may start"
+            } else if status.expired {
+                "expired; a re-issued charter generation is required"
+            } else {
+                "current"
+            };
+            ui.label(format!(
+                "Mission {} generation {}: {mode} mode, authority {authority}",
+                status.mission_id, status.generation
+            ));
+            egui::Grid::new("mission-status")
+                .num_columns(2)
+                .spacing([12.0, 4.0])
+                .show(ui, |ui| {
+                    ui.label("Involvement");
+                    ui.label(mode);
+                    ui.end_row();
+                    ui.label("Revocation epoch");
+                    ui.label(status.revocation_epoch.to_string());
+                    ui.end_row();
+                    ui.label("Expires (Unix ms)");
+                    ui.label(status.expires_at_ms.to_string());
+                    ui.end_row();
+                    ui.label("Decisions recorded");
+                    ui.label(format!(
+                        "{} ({} permitted, {} held)",
+                        status.decisions_recorded, status.permitted_choices, status.held_decisions
+                    ));
+                    ui.end_row();
+                    ui.label("Pending owner decisions");
+                    ui.label(status.pending_owner_decisions.to_string());
+                    ui.end_row();
+                    ui.label("Owner answers");
+                    ui.label(status.owner_answers.to_string());
+                    ui.end_row();
+                    ui.label("Charter digest");
+                    ui.label(&status.mission_sha256);
+                    ui.end_row();
+                });
+            ui.small(format!(
+                "Observed {} ago through campaign-mission-status; the interface never answers or grants a decision.",
+                age_label(mission.age(now))
+            ));
+        }
+        Some(None) => {
+            ui.label("No mission charter is admitted for this campaign; it runs under its recorded authority and the legacy human-decision path.");
+            for (_, label, description) in INVOLVEMENT_MODES {
+                ui.label(format!(
+                    "{label}: unavailable until a charter is admitted with codingmage campaign-mission-admit; {description}"
+                ));
+            }
+        }
+        None => {
+            if mission.loading {
+                ui.label("Requesting mission authority through campaign-mission-status");
+            } else if let Some((_, error)) = &mission.last_error {
+                let (what, action) = explain_code(&error.code());
+                failure_box(ui, what, &error.to_string(), action);
+            } else {
+                ui.label("Mission authority not yet observed");
+            }
+        }
     }
 }

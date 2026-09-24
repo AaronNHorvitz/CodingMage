@@ -6,6 +6,7 @@ mod team_campaign;
 mod team_control;
 mod team_github;
 mod team_integration;
+mod team_mission;
 mod team_planning;
 mod team_promotion;
 mod team_publication;
@@ -21,6 +22,11 @@ pub use team_integration::{
     IntegrationVerification, ProductionTeamIntegrationVerifier, TeamIntegrationOutcome,
     TeamIntegrationVerifier, enqueue_team_integration, integrate_team_queue_head,
     integrate_team_queue_head_with_strategy, integrate_team_queue_head_with_validation,
+};
+pub use team_mission::{
+    MissionAuthorityObservation, MissionControlOutcome, MissionPreflightReport,
+    MissionPreflightRole, MissionStatusReport, admit_campaign_mission, answer_campaign_decision,
+    campaign_mission_preflight, campaign_mission_status, revoke_campaign_mission,
 };
 pub use team_planning::{
     TeamPlanningOutcome, admit_team_lead_report, build_team_lead_binding, initialize_team_campaign,
@@ -488,6 +494,10 @@ pub enum CampaignStopReason {
     NoIndependentReadyWork,
     /// A policy, authority, repository, or integrity boundary stopped execution.
     TerminalPolicyFailure,
+    /// An authenticated owner revoked the bound mission; no new effect may start.
+    MissionRevoked,
+    /// The bound mission charter expired; a re-issued generation is required.
+    MissionExpired,
 }
 
 /// Exact aggregate campaign ceiling that exhausted admission authority.
@@ -592,6 +602,9 @@ pub struct CampaignPreflightReport {
     pub storage: CampaignPreflightStorage,
     /// True only when the report excludes source, paths, model names, and process output.
     pub source_free: bool,
+    /// Mission charter validation, present only when a charter was supplied.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mission: Option<MissionPreflightReport>,
 }
 
 /// Content-free repository baseline for campaign preflight.
@@ -945,6 +958,29 @@ pub fn campaign_preflight(
     codingmage_binary: &Path,
     authorization_record: &Path,
 ) -> Result<CampaignPreflightReport, RuntimeError> {
+    campaign_preflight_with_mission(config, spec, codingmage_binary, authorization_record, None)
+}
+
+/// Runs [`campaign_preflight`] and, when a charter path is supplied, validates the mission too.
+///
+/// The mission section is computed before provider probes so an unbound or invalid
+/// no-intervention charter fails closed without starting any process.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError`] for every [`campaign_preflight`] failure and for an unbound charter
+/// or an invalid hands-off configuration.
+#[allow(clippy::too_many_lines)]
+pub fn campaign_preflight_with_mission(
+    config: &Config,
+    spec: &CampaignSpec,
+    codingmage_binary: &Path,
+    authorization_record: &Path,
+    charter_path: Option<&Path>,
+) -> Result<CampaignPreflightReport, RuntimeError> {
+    let mission = charter_path
+        .map(|path| team_mission::campaign_mission_preflight(config, spec, codingmage_binary, path))
+        .transpose()?;
     spec.verify().map_err(RuntimeError::Campaign)?;
     let authority_sha256 = spec.authority_sha256().map_err(RuntimeError::Campaign)?;
     let operator_authorization_sha256 = bounded_file_sha256(
@@ -1269,6 +1305,7 @@ pub fn campaign_preflight(
             sufficient: storage_sufficient,
         },
         source_free: true,
+        mission,
     })
 }
 
@@ -2215,6 +2252,18 @@ pub fn run_serial_campaign_with_progress(
             termination,
         ));
     }
+    if let Some(termination) =
+        team_mission::mission_hold_termination(&config.state_root, &spec, &authority_sha256)?
+    {
+        return Ok(campaign_outcome(
+            &spec,
+            &campaign,
+            checkpoint.head,
+            checkpoint.completed_units,
+            checkpoint.last_task_id,
+            termination,
+        ));
+    }
     if applied_controls.resumed || checkpoint.resume_validation == ResumeValidationState::Pending {
         let revalidation = revalidate_campaign_resume(
             config,
@@ -2257,6 +2306,18 @@ pub fn run_serial_campaign_with_progress(
             termination,
         ));
     }
+    if let Some(termination) =
+        team_mission::mission_hold_termination(&config.state_root, &spec, &authority_sha256)?
+    {
+        return Ok(campaign_outcome(
+            &spec,
+            &campaign,
+            checkpoint.head,
+            checkpoint.completed_units,
+            checkpoint.last_task_id,
+            termination,
+        ));
+    }
     let mut interrupted_active = checkpoint.active_unit.clone();
     if interrupted_active
         .as_ref()
@@ -2287,9 +2348,22 @@ pub fn run_serial_campaign_with_progress(
     let mut head = checkpoint.head.clone();
     let mut completed_units = checkpoint.completed_units;
     let mut last_task_id = checkpoint.last_task_id.clone();
+    let mut mission_replans = 0_u32;
     loop {
         apply_pending_campaign_controls(&mut checkpoint, &campaign_root)?;
         if let Some(termination) = campaign_control_termination(&mut checkpoint, &campaign_root)? {
+            return Ok(campaign_outcome(
+                &spec,
+                &campaign,
+                head,
+                completed_units,
+                last_task_id,
+                termination,
+            ));
+        }
+        if let Some(termination) =
+            team_mission::mission_hold_termination(&config.state_root, &spec, &authority_sha256)?
+        {
             return Ok(campaign_outcome(
                 &spec,
                 &campaign,
@@ -2454,7 +2528,13 @@ pub fn run_serial_campaign_with_progress(
                 &census.body_sha256,
                 &ready_task_ids,
             )?;
-            let binding = lead_binding(&spec, &campaign, &ready, &census.body_sha256);
+            let mut binding = lead_binding(&spec, &campaign, &ready, &census.body_sha256);
+            team_mission::attach_lead_mission_context(
+                &config.state_root,
+                &spec,
+                &authority_sha256,
+                &mut binding,
+            )?;
             checkpoint.phase = CampaignPhase::Planning;
             checkpoint.blocker_code = None;
             checkpoint.persist(&campaign_root)?;
@@ -2693,6 +2773,39 @@ pub fn run_serial_campaign_with_progress(
                     continue;
                 }
                 TeamLeadOutcome::HumanDecision(decision) => {
+                    let resolution = team_mission::resolve_lead_decision(
+                        &config.state_root,
+                        &spec,
+                        &authority_sha256,
+                        &decision,
+                        team_mission::current_time_ms()?,
+                    )?;
+                    if let Some(resolution) = &resolution
+                        && resolution.outcome.permits_effect()
+                    {
+                        mission_replans += 1;
+                        if mission_replans > u32::from(resolution.max_no_progress_cycles) {
+                            let blocker_code = "codingmage.campaign.mission_no_progress".to_owned();
+                            checkpoint.phase = CampaignPhase::Paused;
+                            checkpoint.blocker_code = Some(blocker_code.clone());
+                            checkpoint.persist(&campaign_root)?;
+                            return Ok(campaign_outcome(
+                                &spec,
+                                &campaign,
+                                head,
+                                completed_units,
+                                last_task_id,
+                                CampaignTermination::new(
+                                    CampaignState::Paused,
+                                    CampaignStopReason::AttemptLimit,
+                                    Some(blocker_code),
+                                ),
+                            ));
+                        }
+                        checkpoint.schedule_planning(PlanningTrigger::HumanDecision);
+                        checkpoint.persist(&campaign_root)?;
+                        continue;
+                    }
                     let task_id = decision.binding.task_id;
                     record_human_decision(
                         &mut checkpoint,
@@ -2702,7 +2815,12 @@ pub fn run_serial_campaign_with_progress(
                         &plan.source_sha256,
                     )?;
                     checkpoint.schedule_planning(PlanningTrigger::HumanDecision);
-                    let blocker_code = "codingmage.campaign.human_decision".to_owned();
+                    let blocker_code = resolution
+                        .as_ref()
+                        .map_or("codingmage.campaign.human_decision", |resolution| {
+                            team_mission::lead_hold_code(&resolution.outcome)
+                        })
+                        .to_owned();
                     checkpoint.phase = CampaignPhase::Ready;
                     checkpoint.blocker_code = Some(blocker_code.clone());
                     checkpoint.persist(&campaign_root)?;
@@ -3669,6 +3787,8 @@ fn lead_binding(
             .map(|tier| tier.name.clone())
             .collect(),
         ready_tasks,
+        decision_domains: Vec::new(),
+        accepted_decisions: Vec::new(),
     }
 }
 

@@ -158,8 +158,9 @@ policies; a model cannot authorize either.
 Involvement is independent of pod count and delivery permissions. Hands-off can be local-only;
 automatic destination promotion needs separate authority and qualification. No available work does
 not mean the objective is complete, and owner silence never supplies approval or missing evidence.
-See the [team contract](docs/architecture/autonomous-engineering-team.md). The current CLI does not
-gain an involvement-mode flag through this documentation update.
+See the [team contract](docs/architecture/autonomous-engineering-team.md). The CLI binds an
+involvement mode only through an admitted mission charter (`campaign-mission-admit`); that
+contract is deterministic local scope with fake-provider tests, not qualified hands-off operation.
 
 ## Initial Roles
 

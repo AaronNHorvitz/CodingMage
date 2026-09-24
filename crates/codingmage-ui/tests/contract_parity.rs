@@ -209,6 +209,7 @@ fn preflight_report_round_trips() {
             sufficient: true,
         },
         source_free: true,
+        mission: None,
     };
     let parsed = parse_preflight(&serde_json::to_vec(&report).unwrap()).unwrap();
     assert_eq!(parsed.repository.open_subtask_count, 10);

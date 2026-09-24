@@ -439,7 +439,15 @@ mod tests {
         assert!(status.success());
         let status = std::process::Command::new("/usr/bin/git")
             .current_dir(&owned.manifest().path)
-            .args(["commit", "-m", "unowned commit"])
+            .args([
+                "-c",
+                "user.name=Unowned Fixture",
+                "-c",
+                "user.email=unowned@example.invalid",
+                "commit",
+                "-m",
+                "unowned commit",
+            ])
             .status()
             .unwrap();
         assert!(status.success());
