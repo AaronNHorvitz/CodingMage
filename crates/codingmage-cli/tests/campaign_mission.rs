@@ -102,9 +102,90 @@ struct Campaign {
     authorization_sha256: String,
 }
 
+const PROBE_ONLY_LEAD: &str = r#"#!/usr/bin/python3
+import sys
+if "--version" in sys.argv:
+    print("codex-cli 0.144.5")
+    raise SystemExit(0)
+if "--help" in sys.argv and "resume" in sys.argv:
+    print("SESSION_ID --json --output-schema --model --ignore-user-config")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print("Run Codex non-interactively --json --output-schema resume --model read-only --ignore-user-config")
+    raise SystemExit(0)
+raise SystemExit(9)
+"#;
+
+/// A lead that asks one typed mission decision for the first task, then blocks every task.
+///
+/// The decision domain comes from `decision-domain.txt` beside the script so one script serves
+/// delegated and undelegated scenarios. Once the packet lists an accepted decision the lead
+/// stops asking and records that it observed the acceptance.
+const DECIDING_LEAD: &str = r#"#!/usr/bin/python3
+import json, re, sys
+from pathlib import Path
+if "--version" in sys.argv:
+    print("codex-cli 0.144.5")
+    raise SystemExit(0)
+if "--help" in sys.argv and "resume" in sys.argv:
+    print("SESSION_ID --json --output-schema --model --ignore-user-config")
+    raise SystemExit(0)
+if "--help" in sys.argv:
+    print("Run Codex non-interactively --json --output-schema resume --model read-only --ignore-user-config")
+    raise SystemExit(0)
+packet = sys.stdin.read()
+root = Path(__file__).parent
+if not packet.startswith("CODINGMAGE READ-ONLY CAMPAIGN LEAD PACKET"):
+    raise SystemExit(9)
+campaign_id = re.search(r"Campaign: ([A-Za-z0-9._-]+)", packet).group(1)
+head = re.search(r"Head: ([0-9a-f]{40,64})", packet).group(1)
+digest = re.search(r"Task source SHA-256: ([0-9a-f]{64})", packet).group(1)
+task = re.search(r"- id=([0-9.]+)", packet).group(1)
+accepted = "decision_id=layout-1" in packet
+domain = (root / "decision-domain.txt").read_text(encoding="utf-8").strip()
+with (root / "lead.log").open("a", encoding="utf-8") as stream:
+    stream.write(task + ("|accepted" if accepted else "") + "\n")
+binding = {
+    "campaign_id": campaign_id, "campaign_head": head,
+    "task_source_sha256": digest, "task_id": task, "dependencies": []
+}
+asked = root / "decision-asked"
+if task == "0.1.1.1" and not accepted and not asked.exists():
+    asked.write_text("asked\n", encoding="utf-8")
+    report = {
+        "campaign_id": campaign_id, "campaign_head": head,
+        "task_source_sha256": digest, "disposition": "human_decision_required",
+        "proposals": [], "blocked": None, "deferred": None,
+        "human_decision": {
+            "binding": binding, "reason": "material_architecture_choice",
+            "summary": "PRIVATE_SUMMARY choose the storage layout",
+            "decision": {
+                "decision_id": "layout-1", "domain_id": domain, "class": "architecture",
+                "selected_alternative": "flat", "affected_paths": ["src/baseline.txt"],
+                "risk": "routine", "gate_tiers": ["focused"],
+                "rationale_summary": "PRIVATE_RATIONALE flat is simpler"
+            }
+        }
+    }
+else:
+    report = {
+        "campaign_id": campaign_id, "campaign_head": head,
+        "task_source_sha256": digest, "disposition": "blocked", "proposals": [],
+        "blocked": {"binding": binding, "reason": "unavailable_external_dependency"},
+        "deferred": None, "human_decision": None
+    }
+print(json.dumps({"type": "thread.started", "thread_id": "123e4567-e89b-12d3-a456-426614174000"}))
+print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps(report)}}))
+print(json.dumps({"type": "turn.completed"}))
+"#;
+
 impl Campaign {
-    #[allow(clippy::too_many_lines)]
     fn new() -> Self {
+        Self::with_lead_script(PROBE_ONLY_LEAD)
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn with_lead_script(lead_script: &str) -> Self {
         let fixture = Fixture::new();
         let target = fixture.root.join("target");
         let mut task_items = String::new();
@@ -134,31 +215,18 @@ impl Campaign {
             "mission-claude",
             r#"#!/usr/bin/python3
 import sys
+from pathlib import Path
 if "--version" in sys.argv:
     print("2.1.136 (Claude Code)")
     raise SystemExit(0)
 if "--help" in sys.argv:
     print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
     raise SystemExit(0)
+Path(__file__).with_name("MODEL_INFERENCE_CALLED").write_text("claude\n", encoding="utf-8")
 raise SystemExit(9)
 "#,
         );
-        let codex = fixture.executable(
-            "mission-codex",
-            r#"#!/usr/bin/python3
-import sys
-if "--version" in sys.argv:
-    print("codex-cli 0.144.5")
-    raise SystemExit(0)
-if "--help" in sys.argv and "resume" in sys.argv:
-    print("SESSION_ID --json --output-schema --model --ignore-user-config")
-    raise SystemExit(0)
-if "--help" in sys.argv:
-    print("Run Codex non-interactively --json --output-schema resume --model read-only --ignore-user-config")
-    raise SystemExit(0)
-raise SystemExit(9)
-"#,
-        );
+        let codex = fixture.executable("mission-codex", lead_script);
 
         let config = fixture.root.join("config/codingmage.toml");
         let scratch = fixture.root.join("scratch");
@@ -713,4 +781,201 @@ fn expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused() {
         status["generation"], 1,
         "a refused hands-off charter is not admitted"
     );
+}
+
+fn control(campaign: &Campaign, action: &str, request: &str) -> serde_json::Value {
+    campaign.json(
+        "campaign-control",
+        &["--action", action, "--request", request],
+    )
+}
+
+fn lead_log(campaign: &Campaign) -> String {
+    fs::read_to_string(campaign.fixture.root.join("lead.log")).unwrap_or_default()
+}
+
+#[test]
+fn hands_off_mission_resolves_a_delegated_lead_decision_in_a_real_campaign_process() {
+    let campaign = Campaign::with_lead_script(DECIDING_LEAD);
+    fs::write(
+        campaign.fixture.root.join("decision-domain.txt"),
+        "layout\n",
+    )
+    .unwrap();
+    let charter = campaign.charter("mission.toml", 1, "hands_off", "block", "x");
+    let mission = charter.to_str().unwrap();
+
+    let outcome = campaign.json("campaign", &["--mission", mission]);
+    assert_eq!(outcome["state"], "paused", "{outcome}");
+    assert_eq!(outcome["stop_reason"], "unit_limit", "{outcome}");
+    assert_eq!(outcome["completed_units"], 0);
+    assert!(
+        !inference_marker(&campaign).exists(),
+        "no implementation provider ran"
+    );
+    let log = lead_log(&campaign);
+    assert!(log.starts_with("0.1.1.1\n0.1.1.1|accepted\n"), "{log}");
+
+    let status = campaign.json("campaign-mission-status", &[]);
+    assert_eq!(status["decisions_recorded"], 1);
+    assert_eq!(status["permitted_choices"], 1);
+    assert_eq!(status["held_decisions"], 0);
+    assert_eq!(
+        status["pending_owner_decisions"], 0,
+        "hands-off never asks the owner"
+    );
+    campaign.state_files_are_content_free();
+    let campaign_status = campaign.json("campaign-status", &[]);
+    assert!(
+        !serde_json::to_string(&campaign_status)
+            .unwrap()
+            .contains("PRIVATE_")
+    );
+
+    assert_eq!(control(&campaign, "pause", "pause-1")["created"], true);
+    assert_eq!(control(&campaign, "resume", "resume-1")["created"], true);
+    assert_eq!(
+        control(&campaign, "stop_after_unit", "stop-1")["created"],
+        true
+    );
+    assert_eq!(control(&campaign, "resume", "resume-2")["created"], true);
+    let status = campaign.json("campaign-mission-status", &[]);
+    assert_eq!(
+        status["revocation_epoch"], 0,
+        "controls never touch mission authority"
+    );
+    assert_eq!(status["generation"], 1);
+
+    let lead_calls_before = lead_log(&campaign).lines().count();
+    campaign.json("campaign-mission-revoke", &["--request", "revoke-1"]);
+    let revoked = campaign.json("campaign", &[]);
+    match revoked["state"].as_str() {
+        Some("cancelled") => assert_eq!(revoked["stop_reason"], "mission_revoked", "{revoked}"),
+        Some("paused") => assert_eq!(
+            revoked["stop_reason"], "unit_limit",
+            "the ceiling reached earlier is reported truthfully: {revoked}"
+        ),
+        other => panic!("unexpected state {other:?}: {revoked}"),
+    }
+    assert_eq!(
+        lead_log(&campaign).lines().count(),
+        lead_calls_before,
+        "no planning or provider effect after revocation"
+    );
+    let status = campaign.json("campaign-mission-status", &[]);
+    assert_eq!(status["revoked"], true);
+    assert_eq!(control(&campaign, "cancel", "cancel-1")["created"], true);
+    let cancelled = campaign.json("campaign", &[]);
+    assert_eq!(cancelled["state"], "cancelled", "{cancelled}");
+    assert!(
+        matches!(
+            cancelled["stop_reason"].as_str(),
+            Some("operator_cancellation" | "mission_revoked")
+        ),
+        "{cancelled}"
+    );
+    let campaign_status = campaign.json("campaign-status", &[]);
+    assert_eq!(campaign_status["state"], "cancelled");
+}
+
+#[test]
+fn supervised_mission_holds_an_undelegated_decision_for_the_owner_and_continues() {
+    let campaign = Campaign::with_lead_script(DECIDING_LEAD);
+    fs::write(
+        campaign.fixture.root.join("decision-domain.txt"),
+        "unknown\n",
+    )
+    .unwrap();
+    let charter = campaign.charter("mission.toml", 1, "supervised", "ask_owner", "x");
+    let mission = charter.to_str().unwrap();
+
+    let outcome = campaign.json("campaign", &["--mission", mission]);
+    assert_eq!(outcome["state"], "paused", "{outcome}");
+    assert_eq!(outcome["stop_reason"], "unit_limit", "{outcome}");
+    assert!(!inference_marker(&campaign).exists());
+    let log = lead_log(&campaign);
+    assert!(
+        log.starts_with("0.1.1.1\n0.1.1.2\n"),
+        "independent work continued: {log}"
+    );
+    assert!(!log.contains("accepted"));
+
+    let status = campaign.json("campaign-mission-status", &[]);
+    assert_eq!(status["decisions_recorded"], 1);
+    assert_eq!(status["permitted_choices"], 0);
+    assert_eq!(status["held_decisions"], 1);
+    assert_eq!(status["pending_owner_decisions"], 1);
+    let explanation = campaign.json("campaign-explain-blocker", &[]);
+    assert!(
+        !serde_json::to_string(&explanation)
+            .unwrap()
+            .contains("PRIVATE_")
+    );
+
+    let stderr = campaign.refused(
+        "campaign-mission-answer",
+        &[
+            "--decision",
+            "layout-1",
+            "--request",
+            "answer-1",
+            "--answer",
+            "unapproved",
+        ],
+    );
+    assert!(stderr.contains("codingmage.runtime.authority"), "{stderr}");
+    let answered = campaign.json(
+        "campaign-mission-answer",
+        &[
+            "--decision",
+            "layout-1",
+            "--request",
+            "answer-2",
+            "--answer",
+            "block",
+        ],
+    );
+    assert_eq!(answered["created"], true);
+    let repeated = campaign.json(
+        "campaign-mission-answer",
+        &[
+            "--decision",
+            "layout-1",
+            "--request",
+            "answer-2",
+            "--answer",
+            "block",
+        ],
+    );
+    assert_eq!(repeated["created"], false);
+    let status = campaign.json("campaign-mission-status", &[]);
+    assert_eq!(status["pending_owner_decisions"], 0);
+    assert_eq!(status["owner_answers"], 1);
+    campaign.state_files_are_content_free();
+}
+
+#[test]
+fn exception_only_mission_deduplicates_the_exception_request_across_runs() {
+    let campaign = Campaign::with_lead_script(DECIDING_LEAD);
+    fs::write(
+        campaign.fixture.root.join("decision-domain.txt"),
+        "unknown\n",
+    )
+    .unwrap();
+    let charter = campaign.charter("mission.toml", 1, "exception_only", "ask_owner", "x");
+    let mission = charter.to_str().unwrap();
+    let outcome = campaign.json("campaign", &["--mission", mission]);
+    assert_eq!(outcome["state"], "paused", "{outcome}");
+    assert_eq!(outcome["stop_reason"], "unit_limit", "{outcome}");
+    let first = campaign.json("campaign-mission-status", &[]);
+    assert_eq!(first["pending_owner_decisions"], 1);
+    let again = campaign.json("campaign", &[]);
+    assert_eq!(again["state"], "paused", "{again}");
+    assert_eq!(again["stop_reason"], "unit_limit", "{again}");
+    let second = campaign.json("campaign-mission-status", &[]);
+    assert_eq!(
+        second["pending_owner_decisions"], 1,
+        "one exception request per decision"
+    );
+    assert_eq!(second["decisions_recorded"], first["decisions_recorded"]);
 }

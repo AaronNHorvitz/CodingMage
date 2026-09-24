@@ -89,6 +89,54 @@ re-issue and stale generations, unbound/prompting/unknown-field charters, revoca
 answer refusal without a pending decision, real coordinator process stopped by revocation
 before any provider runs, expired charter hold and hands-off refusal.
 
+## Sub-task 32.1.2.3 - Involvement and delivery-policy matrix
+
+`retained_holds` and `no_intervention_defects` are pure functions of the campaign specification
+and charter. The unit test `involvement_mode_never_changes_delivery_holds_or_no_intervention_validity`
+walks serial and parallel execution, every task-integration policy and every destination-promotion
+policy under all three involvement modes (54 combinations): the retained holds and the decision
+outcome are identical across modes, and no delivery policy is ever a no-intervention defect. A mode
+selector therefore creates no integration, promotion or publication authority; the legacy
+(no `multi_agent`) campaign keeps human-required integration and promotion holds.
+
+## Sub-task 32.2.2.2 - Revocation races and owned descendants
+
+`mission_revocation_during_implementation_cancels_owned_pods_without_effects` runs a two-pod
+batch through `execute_team_batch` with the real `TeamCancellationWatcher` bound to a mission
+document, then revokes the mission from another thread while one pod is still running. The
+in-flight pod is cancelled with `operator_cancelled`, the pod that had already completed keeps
+its result (no replay), no lease or reservation stays active and the mission observation reports
+`revoked`. The serial engine's `CampaignCancellationWatcher` now observes mission revocation too,
+so a lead or unit invocation in flight is cancelled rather than left running to completion.
+
+This test exposed a pre-existing defect in the parallel engine: the cancellation watcher was
+started on a child token, and cancelling a child never cancels the parent token that the batch
+and its pods observe, so an authenticated `cancel` control would not interrupt in-flight pods
+until the next loop boundary. The watcher now shares the batch token. No other behavior changed.
+Races with commit, gate, review and integration phases are still exercised only through the
+existing cancellation fixtures of those phases, not with a mission revocation mid-phase.
+
+## Sub-task 32.2.2.4 - Modes with pause, resume, stop and cancel through real coordinator processes
+
+Three binary-level tests run the real `codingmage campaign` process with a scripted lead that
+asks one typed decision for the first task and blocks the rest, under a hands-off, a supervised
+and an exception-only charter:
+
+- Hands-off with a delegated domain: the coordinator records `permitted_choice`, re-plans, the
+  lead packet carries the accepted decision (`lead.log` shows `0.1.1.1` then `0.1.1.1|accepted`),
+  no owner decision is pending, the campaign reaches its ten-outcome ceiling with typed blockers
+  and no implementation provider runs. Pause, resume, stop-after-unit and resume controls are
+  accepted afterwards and leave mission generation and revocation epoch untouched; after an
+  authenticated revocation a further `campaign` invocation performs no planning and the
+  operator's cancel is still accepted.
+- Supervised with an undelegated domain: the decision is held (`decision_needed`), one owner
+  decision is pending, independent work continues (`0.1.1.2` is planned next), an unapproved
+  answer is refused and `block` is recorded once with idempotent replay.
+- Exception-only: a second campaign invocation does not create a second exception request for the
+  same decision identity.
+
+Status, blocker explanation and mission outputs contain no charter or lead prose.
+
 ## Sub-tasks 32.2.1.1 to 32.2.1.3 - Noninteractive decisions
 
 - The lead may attach a typed `decision` to a human-decision disposition (schema and prompt
@@ -111,17 +159,17 @@ bound, revoked mission holds, lead routing and binding feedback (`team_mission` 
 ## Verification receipt
 
 Executed inside the sandbox on the tree of the commit carrying this document, through the shared
-build reservation with one build job and one test thread (private log `full-gates-8.log`):
+build reservation with one build job and one test thread (private log `full-gates-9.log`):
 
 | Command | Result |
 | --- | --- |
 | `cargo fmt --all -- --check` | clean |
 | `cargo clippy --workspace --all-targets -- -D warnings` | no findings |
 | `cargo test -p codingmage-campaign mission` | 12 passed |
-| `cargo test -p codingmage-runtime` | 117 passed (team_mission: 12) |
-| `cargo test -p codingmage-cli --test campaign_mission` | 7 passed, including two real coordinator-process runs |
+| `cargo test -p codingmage-runtime` | 119 passed (team_mission: 13, revocation race in team_runtime) |
+| `cargo test -p codingmage-cli --test campaign_mission` | 10 passed, including five real coordinator-process runs |
 | `cargo test -p codingmage-ui --lib --test campaign` | 27 and 5 passed (offscreen software renderer) |
-| `cargo test --workspace --all-targets --no-fail-fast` | 463 passed, 3 sandbox-environment failures unrelated to this sprint (see `cm-r01-reconciliation.md`), 2 guarded ignores |
+| `cargo test --workspace --all-targets --no-fail-fast` | 468 passed, 3 sandbox-environment failures unrelated to this sprint (see `cm-r01-reconciliation.md`), 2 guarded ignores |
 | `python3 -m unittest discover -s tests -p 'test_*.py'` | 40 pass, 1 designed freshness failure (CM-R01.6) |
 | `python3 scripts/docs_check.py`, `python3 scripts/check_architecture.py`, `git diff --check` | pass |
 

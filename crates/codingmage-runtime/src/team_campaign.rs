@@ -338,13 +338,15 @@ pub fn run_team_campaign_with_progress(
     .and_then(|adapter| adapter.with_login_environment(login_environment))
     .map_err(RuntimeError::Reviewer)?;
     let cancellation = CancellationToken::default();
+    // The watcher must cancel the very token the batch and its pods observe; a child token
+    // would never propagate cancellation upward and in-flight pods would keep running.
     let _cancellation_watcher = TeamCancellationWatcher::start(
         &campaign_root,
         &config.state_root,
         &spec,
         &manifest,
         &authority_sha256,
-        cancellation.child(),
+        cancellation.clone(),
     );
     let runner = Arc::new(ProductionTeamUnitRunner::new(
         config.clone(),

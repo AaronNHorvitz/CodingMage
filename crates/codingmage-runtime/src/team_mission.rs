@@ -548,6 +548,48 @@ pub fn campaign_mission_preflight(
             ));
         }
     }
+    let retained_holds = retained_holds(spec);
+    let interactive_prerequisites = match charter.involvement {
+        InvolvementMode::Supervised => vec!["owner_checkpoint_channel".to_owned()],
+        InvolvementMode::ExceptionOnly => vec!["owner_exception_channel".to_owned()],
+        InvolvementMode::HandsOff => Vec::new(),
+    };
+    let expired = !charter.valid_at(observed_at_ms);
+    let defects = no_intervention_defects(spec, &charter, &roles, observed_at_ms);
+    let durable_state = match load_mission(&mission_root, spec, &authority_sha256)? {
+        None => "absent",
+        Some(state) if state.mission_sha256 == mission_sha256 && !state.revoked => "bound",
+        Some(_) => "mismatch",
+    }
+    .to_owned();
+    let no_intervention_valid = defects.is_empty();
+    if charter.involvement == InvolvementMode::HandsOff && !no_intervention_valid {
+        return Err(RuntimeError::Authority);
+    }
+    Ok(MissionPreflightReport {
+        schema_version: 1,
+        mission_id: charter.mission_id.clone(),
+        mission_sha256,
+        generation: charter.generation,
+        involvement: charter.involvement.code().to_owned(),
+        expires_at_ms: charter.expires_at_ms,
+        expired,
+        decision_domains: u32::try_from(charter.decision_domains.len()).unwrap_or(u32::MAX),
+        roles,
+        retained_holds,
+        interactive_prerequisites,
+        no_intervention_defects: defects,
+        no_intervention_valid,
+        durable_state,
+    })
+}
+
+/// Effects that hold for owner authority under the campaign's delivery policy.
+///
+/// The list depends only on the campaign specification, never on the involvement mode: a mode
+/// selector or an absent owner cannot create integration, promotion or publication authority.
+#[must_use]
+pub(crate) fn retained_holds(spec: &CampaignSpec) -> Vec<String> {
     let mut retained_holds = Vec::new();
     if let Some(policy) = spec.multi_agent.as_ref() {
         match policy.task_integration_policy {
@@ -575,21 +617,29 @@ pub fn campaign_mission_preflight(
         retained_holds.push("task_integration_human_required".to_owned());
         retained_holds.push("destination_promotion_human_required".to_owned());
     }
-    let interactive_prerequisites = match charter.involvement {
-        InvolvementMode::Supervised => vec!["owner_checkpoint_channel".to_owned()],
-        InvolvementMode::ExceptionOnly => vec!["owner_exception_channel".to_owned()],
-        InvolvementMode::HandsOff => Vec::new(),
-    };
-    let expired = !charter.valid_at(observed_at_ms);
+    retained_holds
+}
+
+/// Exact no-intervention defects for a verified charter against its campaign and roles.
+///
+/// Empty means hands-off execution would be admitted. The list never depends on the delivery
+/// policy: holds are retained work, not defects.
+#[must_use]
+pub(crate) fn no_intervention_defects(
+    spec: &CampaignSpec,
+    charter: &MissionCharter,
+    roles: &[MissionPreflightRole],
+    now_ms: u64,
+) -> Vec<String> {
     let mut defects = Vec::new();
-    if expired {
+    if !charter.valid_at(now_ms) {
         defects.push("mission_expired".to_owned());
     }
     if spec.implementer_authentication != codingmage_campaign::CampaignAuthentication::ExistingLogin
     {
         defects.push("implementer_login_discovery_required".to_owned());
     }
-    for role in &roles {
+    for role in roles {
         if !role.executable_available {
             defects.push(format!("{}_executable_unavailable", role.role));
         }
@@ -601,32 +651,32 @@ pub fn campaign_mission_preflight(
     {
         defects.push("owner_prompt_configured".to_owned());
     }
-    let durable_state = match load_mission(&mission_root, spec, &authority_sha256)? {
-        None => "absent",
-        Some(state) if state.mission_sha256 == mission_sha256 && !state.revoked => "bound",
-        Some(_) => "mismatch",
+    defects
+}
+
+/// Writes a verified mission document for tests without repository authorization.
+#[cfg(test)]
+pub(crate) fn write_test_mission(
+    state_root: &Path,
+    spec: &CampaignSpec,
+    charter: &MissionCharter,
+    revoked: bool,
+) -> Result<(), RuntimeError> {
+    let authority_sha256 = spec.authority_sha256().map_err(RuntimeError::Campaign)?;
+    let mission_sha256 = charter
+        .mission_sha256(spec)
+        .map_err(RuntimeError::Campaign)?;
+    let mut state = MissionState::initial(spec, charter, &mission_sha256, &authority_sha256, 1);
+    if revoked {
+        state.revoke("test-revocation", 2)?;
     }
-    .to_owned();
-    let no_intervention_valid = defects.is_empty();
-    if charter.involvement == InvolvementMode::HandsOff && !no_intervention_valid {
-        return Err(RuntimeError::Authority);
-    }
-    Ok(MissionPreflightReport {
-        schema_version: 1,
-        mission_id: charter.mission_id.clone(),
-        mission_sha256,
-        generation: charter.generation,
-        involvement: charter.involvement.code().to_owned(),
-        expires_at_ms: charter.expires_at_ms,
-        expired,
-        decision_domains: u32::try_from(charter.decision_domains.len()).unwrap_or(u32::MAX),
-        roles,
-        retained_holds,
-        interactive_prerequisites,
-        no_intervention_defects: defects,
-        no_intervention_valid,
-        durable_state,
+    let root = mission_root(state_root, spec);
+    private_directory(&root)?;
+    IntegrityDocument::write_atomic(&root, MISSION_NAME, state, |value| {
+        value.verify(spec, &authority_sha256)
     })
+    .map_err(|_| RuntimeError::State)?;
+    Ok(())
 }
 
 fn role_report(role: &str, executable: &Path, authentication: &str) -> MissionPreflightRole {
@@ -1777,6 +1827,133 @@ mod tests {
             Ok(None)
         );
         fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    fn involvement_mode_never_changes_delivery_holds_or_no_intervention_validity() {
+        use codingmage_campaign::{
+            CampaignConcurrency, CampaignExecutionMode, DestinationPromotionPolicy,
+            MultiAgentPolicy, TaskIntegrationPolicy, TaskMergeStrategy, TaskPublicationMode,
+            TeamResourcePolicy,
+        };
+        let integration = [
+            TaskIntegrationPolicy::Never,
+            TaskIntegrationPolicy::HumanRequired,
+            TaskIntegrationPolicy::AutoToCampaignBranch,
+        ];
+        let promotion = [
+            DestinationPromotionPolicy::Never,
+            DestinationPromotionPolicy::HumanRequired,
+            DestinationPromotionPolicy::AutoToDefaultBranch,
+        ];
+        let modes = [
+            InvolvementMode::Supervised,
+            InvolvementMode::ExceptionOnly,
+            InvolvementMode::HandsOff,
+        ];
+        let roles = vec![MissionPreflightRole {
+            role: "implementer".to_owned(),
+            executable_available: true,
+            executable_sha256: "a".repeat(64),
+            authentication: "existing_login".to_owned(),
+        }];
+        let mut combinations = 0;
+        for execution_mode in [
+            CampaignExecutionMode::Serial,
+            CampaignExecutionMode::Parallel,
+        ] {
+            for task_integration_policy in integration {
+                for destination_promotion_policy in promotion {
+                    let mut spec = spec();
+                    spec.max_parallel_pods = 2;
+                    let implementers = if execution_mode == CampaignExecutionMode::Serial {
+                        1
+                    } else {
+                        2
+                    };
+                    spec.multi_agent = Some(MultiAgentPolicy {
+                        version: 1,
+                        execution_mode,
+                        publication_mode: TaskPublicationMode::LocalOnly,
+                        task_integration_policy,
+                        destination_promotion_policy,
+                        task_merge_strategy: TaskMergeStrategy::Squash,
+                        github: None,
+                        concurrency: CampaignConcurrency {
+                            claude_implementers: implementers,
+                            codex_team_leads: 1,
+                            codex_reviewers: 1,
+                            test_workers: 1,
+                            github_writers: 1,
+                            integration_workers: 1,
+                        },
+                        resources: TeamResourcePolicy::default(),
+                        max_campaign_tokens: 100_000,
+                        max_task_tokens: 50_000,
+                        max_task_correction_cycles: 3,
+                        max_follow_up_tasks: 0,
+                        integration_validation_interval: 1,
+                        provider_routing: None,
+                    });
+                    assert_eq!(spec.verify(), Ok(()));
+                    let holds = retained_holds(&spec);
+                    let mut outcomes = Vec::new();
+                    for involvement in modes {
+                        let charter = charter(&spec, involvement);
+                        assert_eq!(charter.verify(&spec), Ok(()));
+                        assert_eq!(
+                            retained_holds(&spec),
+                            holds,
+                            "holds derive from delivery policy only"
+                        );
+                        assert!(
+                            no_intervention_defects(&spec, &charter, &roles, 500).is_empty(),
+                            "delivery policy is never a no-intervention defect"
+                        );
+                        let outcome = evaluate_decision(
+                            &charter,
+                            &spec,
+                            &proposal("storage-layout", "per-task-file"),
+                            &DecisionObservation {
+                                now_ms: 500,
+                                revocation_epoch: 0,
+                                revoked: false,
+                                decisions_recorded: 0,
+                                prior_attempts: 0,
+                            },
+                        )
+                        .unwrap();
+                        outcomes.push(outcome);
+                        combinations += 1;
+                    }
+                    assert!(outcomes.windows(2).all(|pair| pair[0] == pair[1]));
+                    let expected_integration = match task_integration_policy {
+                        TaskIntegrationPolicy::Never => Some("task_integration_never"),
+                        TaskIntegrationPolicy::HumanRequired => {
+                            Some("task_integration_human_required")
+                        }
+                        TaskIntegrationPolicy::AutoToCampaignBranch => None,
+                    };
+                    assert_eq!(
+                        holds
+                            .iter()
+                            .find(|hold| hold.starts_with("task_integration"))
+                            .map(String::as_str),
+                        expected_integration
+                    );
+                }
+            }
+        }
+        assert_eq!(combinations, 2 * 3 * 3 * 3);
+        let legacy = spec();
+        assert_eq!(
+            retained_holds(&legacy),
+            vec![
+                "task_integration_human_required".to_owned(),
+                "destination_promotion_human_required".to_owned()
+            ]
+        );
     }
 
     #[test]

@@ -2566,6 +2566,8 @@ pub fn run_serial_campaign_with_progress(
             let lead_cancellation = CancellationToken::default();
             let lead_watcher = CampaignCancellationWatcher::start(
                 campaign_root.clone(),
+                config.state_root.clone(),
+                spec.clone(),
                 &checkpoint,
                 lead_cancellation.clone(),
             );
@@ -2908,6 +2910,8 @@ pub fn run_serial_campaign_with_progress(
             let unit_cancellation = CancellationToken::default();
             let unit_watcher = CampaignCancellationWatcher::start(
                 campaign_root.clone(),
+                config.state_root.clone(),
+                spec.clone(),
                 &checkpoint,
                 unit_cancellation.clone(),
             );
@@ -3868,8 +3872,12 @@ struct CampaignCancellationWatcher {
 }
 
 impl CampaignCancellationWatcher {
+    /// Watches the authenticated cancel intent and the bound mission's revocation; either one
+    /// cancels only the exact owned token.
     fn start(
         campaign_root: PathBuf,
+        state_root: PathBuf,
+        spec: CampaignSpec,
         checkpoint: &CampaignCheckpoint,
         cancellation: CancellationToken,
     ) -> Self {
@@ -3881,6 +3889,21 @@ impl CampaignCancellationWatcher {
         let campaign_run_id = checkpoint.campaign_run_id.clone();
         let handle = thread::spawn(move || {
             while !watcher_stop.load(Ordering::Acquire) {
+                let mission_revoked = match team_mission::current_time_ms().and_then(|now| {
+                    team_mission::observe_mission_authority(
+                        &state_root,
+                        &spec,
+                        &authority_sha256,
+                        now,
+                    )
+                }) {
+                    Ok(mission) => mission.is_some_and(|mission| mission.revoked),
+                    Err(_) => true,
+                };
+                if mission_revoked {
+                    cancellation.cancel();
+                    break;
+                }
                 let cancel_requested = CampaignControlIntent::pending(&campaign_root)
                     .ok()
                     .is_some_and(|intents| {
@@ -3965,6 +3988,8 @@ fn revalidate_campaign_resume(
     let cancellation = CancellationToken::default();
     let watcher = CampaignCancellationWatcher::start(
         campaign_root.to_path_buf(),
+        config.state_root.clone(),
+        spec.clone(),
         checkpoint,
         cancellation.clone(),
     );

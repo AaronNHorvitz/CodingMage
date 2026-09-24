@@ -2901,6 +2901,168 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
+    fn mission_revocation_during_implementation_cancels_owned_pods_without_effects() {
+        use codingmage_campaign::{
+            DecisionClass, DecisionDomainGrant, EscalationDisposition, InvolvementMode,
+            MISSION_VERSION, MissionBudgets, MissionCharter,
+        };
+
+        let (spec, mut snapshot, jobs) = fixture(2, 2, 5_000);
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-mission-race-{}-{}",
+            std::process::id(),
+            now_ms()
+        ));
+        let state_root = root.join("state");
+        let campaign_root = root.join("campaign");
+        fs::create_dir_all(&state_root).unwrap();
+        fs::create_dir_all(&campaign_root).unwrap();
+        let authority_sha256 = spec.authority_sha256().unwrap();
+        let charter = MissionCharter {
+            version: MISSION_VERSION,
+            mission_id: "race-mission".to_owned(),
+            generation: 1,
+            campaign_id: spec.campaign_id.clone(),
+            repository_id: spec.repository_id.clone(),
+            initial_commit: spec.initial_commit.clone(),
+            task_source_sha256: spec.task_source_sha256.clone(),
+            operator_authorization_sha256: spec.operator_authorization_sha256.clone(),
+            campaign_authority_sha256: authority_sha256.clone(),
+            objective: "race".to_owned(),
+            success_criteria: vec!["all units accepted".to_owned()],
+            exclusions: Vec::new(),
+            architecture_invariants: Vec::new(),
+            decision_domains: vec![DecisionDomainGrant {
+                domain_id: "layout".to_owned(),
+                class: DecisionClass::Architecture,
+                alternatives: vec!["flat".to_owned()],
+                scope_paths: vec![PathBuf::from("crates")],
+                max_risk: PodRisk::Routine,
+                required_gate_tiers: vec!["focused".to_owned()],
+                escalation: EscalationDisposition::Block,
+            }],
+            command_registry: vec!["workspace".to_owned()],
+            involvement: InvolvementMode::HandsOff,
+            budgets: MissionBudgets {
+                max_decisions: 10,
+                max_decision_retries: 2,
+                max_no_progress_cycles: 3,
+            },
+            issued_at_ms: 1,
+            expires_at_ms: 31_536_000_000,
+            revocation_epoch: 0,
+        };
+        crate::team_mission::write_test_mission(&state_root, &spec, &charter, false).unwrap();
+        let manifest = crate::team_campaign::TeamCampaignManifest {
+            version: 1,
+            campaign_id: spec.campaign_id.clone(),
+            repository_id: spec.repository_id.clone(),
+            authority_sha256: authority_sha256.clone(),
+            initial_commit: spec.initial_commit.clone(),
+            campaign_run_id: "run-race".to_owned(),
+            worktree_id: "worktree-race".to_owned(),
+            branch: format!("{}/race", spec.campaign_branch),
+        };
+        let cancellation = CancellationToken::default();
+        let watcher = crate::team_control::TeamCancellationWatcher::start(
+            &campaign_root,
+            &state_root,
+            &spec,
+            &manifest,
+            &authority_sha256,
+            cancellation.clone(),
+        );
+        let runner = Arc::new(FakeRunner {
+            wait_for_cancellation: Some(0),
+            delays_ms: BTreeMap::from([(1, 10)]),
+            ..FakeRunner::successful()
+        });
+        let revoke_root = state_root.clone();
+        let revoke_spec = spec.clone();
+        let revoke_charter = charter.clone();
+        let revoker = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(120));
+            crate::team_mission::write_test_mission(
+                &revoke_root,
+                &revoke_spec,
+                &revoke_charter,
+                true,
+            )
+            .unwrap();
+        });
+        let outcome = execute_team_batch(
+            &spec,
+            &mut snapshot,
+            &jobs,
+            &runner,
+            &cancellation,
+            |_| Ok(()),
+            |_| {},
+        )
+        .expect("revocation reconciles the batch");
+        revoker.join().unwrap();
+        drop(watcher);
+        assert!(
+            cancellation.is_cancelled(),
+            "revocation cancelled the owned token"
+        );
+        let interrupted = outcome
+            .tasks
+            .iter()
+            .find(|task| task.sequence == 0)
+            .expect("interrupted job");
+        assert!(
+            interrupted.result.is_err(),
+            "the in-flight pod was cancelled"
+        );
+        let interrupted_record = &outcome.snapshot.tasks[&jobs[0].lease.task_id];
+        assert_eq!(interrupted_record.state, CampaignTaskState::Cancelled);
+        assert_eq!(
+            interrupted_record.terminal_reason.as_deref(),
+            Some("operator_cancelled")
+        );
+        let finished = outcome
+            .tasks
+            .iter()
+            .find(|task| task.sequence == 1)
+            .expect("finished job");
+        assert!(
+            finished.result.is_ok(),
+            "a unit that completed before revocation is retained, not replayed"
+        );
+        let interrupted_task = jobs[0].lease.task_id.clone();
+        assert!(
+            !outcome
+                .snapshot
+                .scheduler
+                .active
+                .values()
+                .any(|lease| lease.task_id == interrupted_task),
+            "the cancelled pod holds no lease"
+        );
+        assert!(
+            !outcome
+                .snapshot
+                .resources
+                .active
+                .values()
+                .any(|reservation| reservation.task_id == interrupted_task),
+            "the cancelled pod holds no reservation"
+        );
+        let observation = crate::team_mission::observe_mission_authority(
+            &state_root,
+            &spec,
+            &authority_sha256,
+            now_ms(),
+        )
+        .unwrap()
+        .unwrap();
+        assert!(observation.revoked);
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
     fn completion_permutations_do_not_change_result_order() {
         let (spec, mut snapshot, jobs) = fixture(3, 3, 2_000);
         let runner = Arc::new(FakeRunner {
