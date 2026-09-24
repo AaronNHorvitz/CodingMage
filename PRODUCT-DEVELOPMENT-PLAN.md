@@ -1,5 +1,15 @@
 # CodingMage Product Development Plan
 
+## Current Delivery Amendment (2026-09-24)
+
+[The 48-capability roadmap](CAPABILITY-ROADMAP.md) and
+[the implementation amendment](IMPLEMENTATION-AMENDMENT.md) define the current
+Rust-first delivery direction and ownership. TASKS.md remains the only completion ledger.
+This is accepted implementation scope, not evidence that the capabilities already work.
+Existing security, independent-review, licensing and release gates remain in force.
+
+Reconcile the existing native UI and evidence-freshness gaps first, then implement Sprints 32-35 in their dependency order and the owned capability crosswalk below. Preserve Sprint 36 human/live acceptance; unavailable credentials or desktop access do not block independent contract work.
+
 ## Status and Ownership
 
 This is the delivery guide for [PRD.md](PRD.md), under

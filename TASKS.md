@@ -1,5 +1,31 @@
 # CodingMage Development Plan
 
+## Current Delivery Amendment (2026-09-24)
+
+[The 48-capability roadmap](CAPABILITY-ROADMAP.md) and
+[the implementation amendment](IMPLEMENTATION-AMENDMENT.md) define the current
+Rust-first delivery direction and ownership. TASKS.md remains the only completion ledger.
+This is accepted implementation scope, not evidence that the capabilities already work.
+Existing security, independent-review, licensing and release gates remain in force.
+
+### Capability Work Packages
+
+These crosswalk packages extend, rather than replace or renumber, existing tasks. All start
+open. Reconcile existing source/evidence, split into bounded subtasks here, then implement
+in dependency order. Catalogue priority P0 precedes P1/P2; a grouped package cannot pull a
+later capability ahead of an unblocked P0 dependency. Checked historical rows are not proof
+of the new acceptance criteria. Detailed proof requirements are in the linked amendment.
+
+| Status | Package | Capability mapping | Dependencies | Deliverable and acceptance |
+| --- | --- | --- | --- | --- |
+| [ ] | CM-R01 | CAP-01,02,11,12,30,39,45,46 | Existing Sprint 36 implementation and Task 25.2.4.6 | Reconcile UI source, test results and exact freshness failures; fix forward with regression evidence. Preserve independent and human-only gates; do not refresh hashes to hide a failing implementation. |
+| [ ] | CM-R02 | CAP-09,33,34,35,36,42 | CM-R01; existing coordinator/journal; Sprint 32 | Implement supervised, exception-only and bounded hands-off campaigns with grant expiry/revocation, durable holds, cancellation and resource leases. Crash/duplicate/restart tests must not repeat uncertain effects. |
+| [ ] | CM-R03 | CAP-10,11,14,15,31,38 | CM-R02; existing Git authority and review contracts | Implement reproducible bug/recipe campaigns, exact-commit review and bounded CI/review repair, with separately authorized publication. Real remote tests require separately admitted disposable credentials/targets. |
+| [ ] | CM-R04 | CAP-08,17,20,21,23,24,25,28,29 | Pinned runtime and optional memory contracts; CM-R02 | Consume execution/research evidence through a versioned provider adapter. Treat citations as data, not instruction; preserve source authority and run identity. Label fake-adapter conformance separately from combined-model qualification. |
+| [ ] | CM-R05 | CAP-27,37,40,41 | CM-R02, CM-R03; Sprints 33-35 | Implement director/lead/pod/QA roles, interface dependencies and typed workflow scheduling through the existing coordinator. Qualify one pod before staged concurrency; no second scheduler or role-created authority. |
+| [ ] | CM-R06 | CAP-05,07,16,22,26,32,43,44 | CM-R04; capability-specific producer contracts | Consume model/resource, language, connector, extension and private-deployment capabilities without taking over their runtime. Missing producer functionality is a typed unsupported state, not a mock success. |
+| [ ] | CM-R07 | CAP-45,46,47,48 | CM-R01-CM-R03 and applicable release gates | Qualify the native local experience, no-intervention campaign matrix, manual support export and Apache notices. Maintain independent review, live qualification and final delivery as different states. |
+
 This file is the canonical implementation sequence for CodingMage. It is intentionally granular so a human or coding agent can select one bounded, dependency-ready unit without reconstructing the project from conversation history.
 
 CodingMage is under active implementation. A checked item means its complete implementation, tests, acceptance criteria, and required evidence genuinely exist in this repository. Documentation existence alone does not close an implementation item.
