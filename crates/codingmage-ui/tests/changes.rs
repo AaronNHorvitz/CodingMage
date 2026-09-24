@@ -58,7 +58,8 @@ fn accepted_units_show_exact_commits_files_verdicts_and_gate_evidence() {
     for record in &records {
         let checkpoint = record.checkpoint.as_ref().expect("checkpoint");
         assert_eq!(checkpoint.review_verdict.as_deref(), Some("pass"));
-        assert_eq!(checkpoint.gate_evidence.len(), 2);
+        // Two configured gates plus the baseline comparison receipt bound to the candidate.
+        assert_eq!(checkpoint.gate_evidence.len(), 3);
         assert!(
             record
                 .phases
@@ -80,7 +81,7 @@ fn accepted_units_show_exact_commits_files_verdicts_and_gate_evidence() {
     );
     assert_eq!(
         harness
-            .get_all_by_label_contains("2 gate evidence record(s)")
+            .get_all_by_label_contains("3 gate evidence record(s)")
             .count(),
         2
     );

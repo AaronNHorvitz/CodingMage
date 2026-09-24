@@ -2,6 +2,7 @@
 
 mod campaign_state;
 mod correction_state;
+mod gate_baseline;
 mod team_campaign;
 mod team_control;
 mod team_github;
@@ -13,6 +14,7 @@ mod team_publication;
 mod team_runtime;
 mod team_state;
 
+pub use gate_baseline::{BaselineGate, GateBaseline, GateBaselineStore, GateComparison};
 pub use team_campaign::{
     TeamCampaignReport, TeamCompletionReconciliation, TeamTaskCompletionReport,
     run_team_campaign_with_progress, team_campaign_report,
@@ -5565,6 +5567,9 @@ impl<'a> ProductionWorkflowPort<'a> {
             .iter()
             .map(|evidence| evidence_id(&evidence.integrity_sha256))
             .collect::<Result<Vec<_>, _>>()?;
+        let comparison = self.compare_with_baseline(&commit, &result)?;
+        self.gate_evidence
+            .push(evidence_id(&comparison.integrity_sha256)?);
         if let Some(decision) = self.decision_evidence.clone() {
             self.gate_evidence.push(decision);
         }
@@ -5579,6 +5584,54 @@ impl<'a> ProductionWorkflowPort<'a> {
             VerificationOutcome::Pass
         } else {
             VerificationOutcome::RecoverableFailure
+        })
+    }
+
+    /// Classifies the candidate gate run against the retained baseline of its base commit and
+    /// retains the comparison; a fully passing candidate becomes the baseline of its own commit.
+    ///
+    /// No extra process runs: baselines come only from earlier passing candidate runs, so a
+    /// base commit without one is reported as `unknown` rather than guessed.
+    fn compare_with_baseline(
+        &mut self,
+        candidate_commit: &str,
+        run: &codingmage_gate::GateRun,
+    ) -> Result<GateComparison, OrchestrationError> {
+        let outcome = (|| {
+            let registry_sha256 = serializable_sha256(&self.config.gate_commands)?;
+            let repository_id = self
+                .authorization
+                .identity()
+                .repository_id
+                .as_str()
+                .to_owned();
+            let store = GateBaselineStore::open(&self.config.state_root, &repository_id)?;
+            let baseline = store.baseline(&self.source_commit, &registry_sha256)?;
+            let comparison = GateComparison::classify(
+                &repository_id,
+                &self.source_commit,
+                candidate_commit,
+                &registry_sha256,
+                baseline.as_ref(),
+                run,
+            )?;
+            store.retain_comparison(&comparison)?;
+            if !run.blocked {
+                let baseline = GateBaseline::from_run(
+                    &repository_id,
+                    candidate_commit,
+                    &registry_sha256,
+                    run,
+                )?;
+                if baseline.all_passed() {
+                    store.retain_baseline(&baseline)?;
+                }
+            }
+            Ok::<GateComparison, RuntimeError>(comparison)
+        })();
+        outcome.map_err(|error| {
+            self.failure = Some(error);
+            OrchestrationError::DurableState
         })
     }
 
