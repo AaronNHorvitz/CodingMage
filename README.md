@@ -3,6 +3,7 @@
 Current development publication follows [the main-first workflow](DEVELOPMENT-WORKFLOW.md).
 This supersedes older local-only/feature-branch-only instructions for this repository;
 runtime authority, truthful verification and release gates are unchanged.
+
 ## Current Delivery Amendment (2026-09-24)
 
 [The 48-capability roadmap](CAPABILITY-ROADMAP.md) and
@@ -12,6 +13,9 @@ This is accepted implementation scope, not evidence that the capabilities alread
 Existing security, independent-review, licensing and release gates remain in force.
 
 Reconcile the existing native UI and evidence-freshness gaps first, then implement Sprints 32-35 in their dependency order and the owned capability crosswalk below. Preserve Sprint 36 human/live acceptance; unavailable credentials or desktop access do not block independent contract work.
+
+Ever wanted Claude as your Scrum Master and Codex as your senior developer? CodingMage's
+direction is a configurable engineering team, with each role and provider qualified before use.
 
 CodingMage turns coding agents into a development team with a chain of command: a lead that proposes work, isolated pods that implement, and a separate reviewer that evaluates the exact commit. It is designed to advance large roadmaps without manual handoffs at every step, while the coordinator controls Git, verification and publication. The current adapters use Claude Code for implementation and Codex for planning and review; additional providers require their own tested adapters and qualification.
 

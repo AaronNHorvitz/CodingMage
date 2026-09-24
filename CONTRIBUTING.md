@@ -3,6 +3,7 @@
 Current development publication follows [the main-first workflow](DEVELOPMENT-WORKFLOW.md).
 This supersedes older local-only/feature-branch-only instructions for this repository;
 runtime authority, truthful verification and release gates are unchanged.
+
 ## Current Delivery Amendment (2026-09-24)
 
 [The 48-capability roadmap](CAPABILITY-ROADMAP.md) and
