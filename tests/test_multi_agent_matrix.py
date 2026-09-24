@@ -8,7 +8,9 @@ import json
 from pathlib import Path
 import re
 import subprocess
+from typing import Callable
 import unittest
+import unittest.mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -49,7 +51,32 @@ def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def binding_errors(binding: dict[str, object]) -> list[str]:
+def bound_file_sha256(commit: str, relative: str) -> str | None:
+    """Return the digest of ``relative`` as committed at ``commit``, or None if absent."""
+    observed = subprocess.run(
+        ["git", "show", f"{commit}:{relative}"],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if observed.returncode != 0:
+        return None
+    return hashlib.sha256(observed.stdout).hexdigest()
+
+
+def binding_errors(
+    binding: dict[str, object],
+    bound_sha256: Callable[[str, str], str | None] = bound_file_sha256,
+) -> list[str]:
+    """Validate the binding against its bound commit and the working tree.
+
+    ``input-provenance:<path>`` means the recorded digest is not the content committed at the
+    bound ``source_commit``; a digest refreshed from a later working tree without rebuilding
+    and re-binding the package produces this error even when the working tree matches.
+    ``input-drift:<path>`` means the working tree no longer matches the recorded digest, so the
+    evidence is stale and renewal under Sub-task 25.2.4.6 is required.
+    """
     errors: list[str] = []
     if set(binding) != REQUIRED_BINDING_FIELDS:
         errors.append("binding-fields")
@@ -108,12 +135,16 @@ def binding_errors(binding: dict[str, object]) -> list[str]:
                 continue
             paths.add(relative)
             target = ROOT / relative
+            if not isinstance(expected, str) or not SHA256_PATTERN.fullmatch(expected):
+                errors.append(f"input-digest:{relative}")
+                continue
             if (
-                not isinstance(expected, str)
-                or not SHA256_PATTERN.fullmatch(expected)
-                or not target.is_file()
-                or file_sha256(target) != expected
+                isinstance(source_commit, str)
+                and COMMIT_PATTERN.fullmatch(source_commit)
+                and bound_sha256(source_commit, relative) != expected
             ):
+                errors.append(f"input-provenance:{relative}")
+            if not target.is_file() or file_sha256(target) != expected:
                 errors.append(f"input-drift:{relative}")
         if groups != REQUIRED_INPUT_GROUPS:
             errors.append("input-groups")
@@ -185,9 +216,60 @@ class MultiAgentScenarioMatrixTests(unittest.TestCase):
         self.assertEqual(tracked.stdout, "")
         self.assertEqual(tracked.stderr, "")
 
-    def test_multi_agent_evidence_binding_is_current(self) -> None:
+    def test_multi_agent_evidence_binding_matches_its_bound_commit(self) -> None:
+        """Every recorded digest must be the content committed at the bound source commit."""
         binding = json.loads(BINDING.read_text(encoding="utf-8"))
-        self.assertEqual(binding_errors(binding), [])
+        provenance = [
+            error for error in binding_errors(binding) if error.startswith("input-provenance:")
+        ]
+        self.assertEqual(provenance, [])
+
+    def test_multi_agent_evidence_binding_is_current(self) -> None:
+        """The working tree must still match the bound evidence inputs.
+
+        This fails whenever a bound input changed after the evidence was recorded. That is the
+        intended stale-evidence signal for Sub-task 25.2.4.6; it is closed only by executing the
+        bound commands again, rebuilding the package and re-binding the new source commit.
+        """
+        binding = json.loads(BINDING.read_text(encoding="utf-8"))
+        errors = binding_errors(binding)
+        self.assertEqual(
+            errors,
+            [],
+            "stale multi-agent evidence; renew under Sub-task 25.2.4.6 instead of editing digests",
+        )
+
+    def test_evidence_binding_rejects_refreshed_digest_without_rebinding(self) -> None:
+        """A digest copied from a later working tree must fail even though the tree matches."""
+        binding = json.loads(BINDING.read_text(encoding="utf-8"))
+        refreshed = copy.deepcopy(binding)
+        entry = refreshed["inputs"][0]
+        later_content = b"implementation changed after the package was built\n"
+        entry["sha256"] = hashlib.sha256(later_content).hexdigest()
+        relative = entry["path"]
+
+        def bound_sha256(commit: str, path: str) -> str | None:
+            if path == relative:
+                return hashlib.sha256(b"content committed at the bound source commit\n").hexdigest()
+            return bound_file_sha256(commit, path)
+
+        with unittest.mock.patch(
+            f"{__name__}.file_sha256",
+            side_effect=lambda path: entry["sha256"]
+            if path == ROOT / relative
+            else hashlib.sha256(path.read_bytes()).hexdigest(),
+        ):
+            errors = binding_errors(refreshed, bound_sha256)
+        self.assertIn(f"input-provenance:{relative}", errors)
+        self.assertNotIn(f"input-drift:{relative}", errors)
+
+    def test_evidence_binding_rejects_missing_bound_commit_content(self) -> None:
+        binding = json.loads(BINDING.read_text(encoding="utf-8"))
+        errors = binding_errors(binding, lambda commit, path: None)
+        self.assertEqual(
+            [error for error in errors if error.startswith("input-provenance:")],
+            [f"input-provenance:{entry['path']}" for entry in binding["inputs"]],
+        )
 
     def test_evidence_binding_rejects_each_stale_claim_class(self) -> None:
         binding = json.loads(BINDING.read_text(encoding="utf-8"))

@@ -26,6 +26,18 @@ of the new acceptance criteria. Detailed proof requirements are in the linked am
 | [ ] | CM-R06 | CAP-05,07,16,22,26,32,43,44 | CM-R04; capability-specific producer contracts | Consume model/resource, language, connector, extension and private-deployment capabilities without taking over their runtime. Missing producer functionality is a typed unsupported state, not a mock success. |
 | [ ] | CM-R07 | CAP-45,46,47,48 | CM-R01-CM-R03 and applicable release gates | Qualify the native local experience, no-intervention campaign matrix, manual support export and Apache notices. Maintain independent review, live qualification and final delivery as different states. |
 
+#### CM-R01 - Reconcile native UI source and evidence freshness
+
+Bounded subtasks split on 2026-09-24 before coding. They map to Sprint 36 rows and Sub-task
+25.2.4.6 without renumbering them; see `docs/evidence/cm-r01-reconciliation.md`.
+
+- [x] **CM-R01.1:** Reconcile the twelve native UI commits with CAP-01, 02, 11, 12, 30, 39, 45 and 46: map each implemented screen and test to the capability it serves, and record which acceptance remains fake-provider-only or human-only. Mapping recorded in `docs/evidence/cm-r01-reconciliation.md`; Sprint 36 human-only rows stay open.
+- [x] **CM-R01.2:** Investigate the exact evidence-freshness defect: the binding at `026f910` matched source commit `319de72` for every input, and eight later commits (`f463f63` through `26fb3ff`) refreshed six input digests and the command set without rebuilding the package or re-binding the source commit. The working-tree-only test could not detect that. Exact table in `docs/evidence/cm-r01-reconciliation.md`; original failed receipt retained under `docs/evidence/cm-r01/`.
+- [x] **CM-R01.3:** Repair the test blind spot: `tests/test_multi_agent_matrix.py` now verifies every recorded digest against the content committed at the bound source commit (`input-provenance`) separately from working-tree freshness (`input-drift`), with regression tests for a refreshed digest and a missing bound object.
+- [x] **CM-R01.4:** Restore the binding to its provenance-consistent form (the `026f910` record for source commit `319de72` and package `8031a62b…`), keep the drifted `7bb3dbf` receipt and its failing output as retained evidence, and correct the private runtime name in the new roadmap to the public role name with provenance.
+- [ ] **CM-R01.5:** Execute every bound command that needs no external authority on the exact repaired commit and record an exact receipt: formatting, strict Clippy, all-target workspace tests, architecture, documentation, Python suite and diff checks. Receipt pending; see the reconciliation document for the run identity.
+- [ ] **CM-R01.6:** Renew the package, provenance and binding. Blocked: `scripts/package_release.py` requires an external exact-commit review record with disposition `approved_for_candidate_construction` (External 4 / Sprint 26 independent human review), which the implementation worker cannot author. The freshness test therefore keeps failing by design until that renewal; do not edit digests.
+
 This file is the canonical implementation sequence for CodingMage. It is intentionally granular so a human or coding agent can select one bounded, dependency-ready unit without reconstructing the project from conversation history.
 
 CodingMage is under active implementation. A checked item means its complete implementation, tests, acceptance criteria, and required evidence genuinely exist in this repository. Documentation existence alone does not close an implementation item.
@@ -88,6 +100,13 @@ retain their historical source identities; they are not current-source qualifica
 25.2.4.6, AC 25.4 and Gates 25.3/25.4 record the required renewal. This planning increment does not
 rebuild packages or replace those evidence hashes. See the
 [development handoff](docs/evidence/ecosystem-planning-handoff.md).
+
+On 2026-09-24, CM-R01 found the underlying defect: after commit `026f910` bound the package to
+`319de72`, eight commits refreshed input digests without rebuilding or re-binding, and the test
+compared digests with the working tree only. The test now also verifies digests against the bound
+commit, the binding was restored to its consistent `026f910` record, and the drifted receipt is
+retained. The freshness failure remains open until an externally reviewed package renewal; see
+[the CM-R01 reconciliation](docs/evidence/cm-r01-reconciliation.md).
 
 ## Multi-Agent Implementation Phases
 

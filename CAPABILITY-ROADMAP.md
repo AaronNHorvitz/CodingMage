@@ -14,7 +14,7 @@ readiness; P2 is later team/enterprise/automation expansion. Priority is not per
 skip prerequisites, existing safety gates, or the assigned repository boundary. There is
 no calendar delivery promise. Each component can remain useful without the other services.
 
-Owner names below are roles: Runtime = AgentMage; Coordinator = CodingMage; Memory = USTE;
+Owner names below are roles: Runtime = Muse (the standalone execution engine); Coordinator = CodingMage; Memory = USTE;
 Host = an independently developed consuming native application. Public contracts must not
 name or disclose a private consumer. A role pair requires a producer contract and a consumer
 test, not duplicated implementations or shared mutable state.
@@ -100,7 +100,7 @@ local model inference and cloud model inference are three distinct disclosures.
    Rust. Reuse proven crates and established toolkits. Existing build/test scripts and
    independently packaged external inference engines, browsers, language servers and CLI
    providers are explicit integration boundaries, not a demand to rewrite those projects.
-2. AgentMage owns the task/tool/research/context execution loop. CodingMage owns campaigns,
+2. The runtime owns the task/tool/research/context execution loop. CodingMage owns campaigns,
    role scheduling, repository integration and review policy. USTE owns graph/content storage
    and bounded source-backed retrieval, not user permissions or agent execution. Hosts own
    presentation and onboarding, not another authority engine.
@@ -136,9 +136,9 @@ Do not rewrite historical results as proof of new source.
 
 Recommended direction: permissively licensed public engines and an independently licensed
 consumer, with paid packaging, support and optional managed/team offerings. This recommendation
-does not change any existing license. AgentMage currently uses BSL 1.1 for current versions;
+does not change any existing license. The runtime currently uses BSL 1.1 for current versions;
 CodingMage uses Apache-2.0; USTE uses MIT OR Apache-2.0. Do not call BSL open source.
-A proposed AgentMage Apache-2.0 transition needs explicit owner confirmation and a provenance
+A proposed runtime Apache-2.0 transition needs explicit owner confirmation and a provenance
 audit, synchronized license/metadata/policy changes, and accurate treatment of historical versions.
 No worker may unilaterally publish a private consumer or relicense third-party code or weights.
 
