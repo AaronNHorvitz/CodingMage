@@ -149,6 +149,32 @@ binding = {
     "campaign_id": campaign_id, "campaign_head": head,
     "task_source_sha256": digest, "task_id": task, "dependencies": []
 }
+fault = root / "lead-fault.txt"
+if fault.exists():
+    kind = fault.read_text(encoding="utf-8").strip()
+    fault.unlink()
+    if kind == "quota":
+        print(json.dumps({"type": "error", "message": "quota exhausted"}))
+        raise SystemExit(0)
+    if kind == "login":
+        print(json.dumps({"type": "error", "message": "login required: run codex login"}))
+        raise SystemExit(0)
+    if kind == "unknown-gate":
+        report = {
+            "campaign_id": campaign_id, "campaign_head": head,
+            "task_source_sha256": digest, "disposition": "propose",
+            "proposals": [{
+                "task_id": task, "dependencies": [], "owned_paths": ["src"],
+                "gate_tiers": ["nonexistent-tool"], "test_resources": [],
+                "expected_artifacts": [], "risk": "routine",
+                "rationale_summary": "requires a gate tier the campaign never registered"
+            }],
+            "blocked": None, "deferred": None, "human_decision": None
+        }
+        print(json.dumps({"type": "thread.started", "thread_id": "123e4567-e89b-12d3-a456-426614174000"}))
+        print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps(report)}}))
+        print(json.dumps({"type": "turn.completed"}))
+        raise SystemExit(0)
 asked = root / "decision-asked"
 if task == "0.1.1.1" and not accepted and not asked.exists():
     asked.write_text("asked\n", encoding="utf-8")
@@ -783,6 +809,110 @@ fn expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused() {
     );
 }
 
+/// Rewrites the fixture campaign as a two-pod parallel campaign so the team engine runs.
+///
+/// The parallel policy keeps local-only publication, automatic campaign-branch integration and
+/// human-required promotion; the authority digest changes, so charters are written afterwards.
+fn make_parallel(campaign: &mut Campaign) {
+    use codingmage_campaign::{
+        CampaignConcurrency, CampaignExecutionMode, CampaignSpec, DestinationPromotionPolicy,
+        MultiAgentPolicy, TaskIntegrationPolicy, TaskMergeStrategy, TaskPublicationMode,
+        TeamResourcePolicy,
+    };
+    let mut spec = CampaignSpec::load(&campaign.spec).unwrap();
+    spec.max_parallel_pods = 2;
+    spec.multi_agent = Some(MultiAgentPolicy {
+        version: 1,
+        execution_mode: CampaignExecutionMode::Parallel,
+        publication_mode: TaskPublicationMode::LocalOnly,
+        task_integration_policy: TaskIntegrationPolicy::AutoToCampaignBranch,
+        destination_promotion_policy: DestinationPromotionPolicy::HumanRequired,
+        task_merge_strategy: TaskMergeStrategy::Squash,
+        github: None,
+        concurrency: CampaignConcurrency {
+            claude_implementers: 2,
+            codex_team_leads: 1,
+            codex_reviewers: 2,
+            test_workers: 2,
+            github_writers: 1,
+            integration_workers: 1,
+        },
+        resources: TeamResourcePolicy::default(),
+        max_campaign_tokens: 1_000_000,
+        max_task_tokens: 500_000,
+        max_task_correction_cycles: 3,
+        max_follow_up_tasks: 0,
+        integration_validation_interval: 1,
+        provider_routing: None,
+    });
+    spec.verify().unwrap();
+    fs::write(&campaign.spec, toml::to_string(&spec).unwrap()).unwrap();
+    campaign.authority_sha256 = spec.authority_sha256().unwrap();
+}
+
+#[test]
+fn parallel_engine_retains_typed_holds_and_continues_under_a_mission() {
+    let mut campaign = Campaign::with_lead_script(DECIDING_LEAD);
+    make_parallel(&mut campaign);
+    fs::write(
+        campaign.fixture.root.join("decision-domain.txt"),
+        "layout\n",
+    )
+    .unwrap();
+    let charter = campaign.charter("mission.toml", 1, "hands_off", "block", "x");
+    let mission = charter.to_str().unwrap();
+
+    let outcome = campaign.json("campaign", &["--mission", mission]);
+    assert_eq!(outcome["state"], "blocked", "{outcome}");
+    assert_eq!(
+        outcome["blocker_code"], "codingmage.team.no_dependency_ready_work",
+        "every task was retained with a typed hold before the invocation ended: {outcome}"
+    );
+    assert!(!inference_marker(&campaign).exists());
+    let log = lead_log(&campaign);
+    assert!(log.starts_with("0.1.1.1\n0.1.1.1|accepted\n"), "{log}");
+    assert_eq!(
+        log.lines().count(),
+        11,
+        "one decision plus ten typed blockers: {log}"
+    );
+    let status = campaign.json("campaign-mission-status", &[]);
+    assert_eq!(status["permitted_choices"], 1);
+    assert_eq!(status["pending_owner_decisions"], 0);
+    let campaign_status = campaign.json("campaign-status", &[]);
+    assert!(
+        !serde_json::to_string(&campaign_status)
+            .unwrap()
+            .contains("PRIVATE_")
+    );
+    campaign.state_files_are_content_free();
+}
+
+#[test]
+fn parallel_engine_without_a_mission_keeps_ending_on_the_first_typed_blocker() {
+    let mut campaign = Campaign::with_lead_script(DECIDING_LEAD);
+    make_parallel(&mut campaign);
+    fs::write(
+        campaign.fixture.root.join("decision-domain.txt"),
+        "layout\n",
+    )
+    .unwrap();
+    fs::write(campaign.fixture.root.join("decision-asked"), "skip\n").unwrap();
+    let outcome = campaign.json("campaign", &[]);
+    assert_eq!(outcome["state"], "blocked", "{outcome}");
+    assert_eq!(
+        outcome["blocker_code"], "codingmage.team.lead_blocked",
+        "{outcome}"
+    );
+    assert_eq!(
+        lead_log(&campaign).lines().count(),
+        1,
+        "legacy behavior is unchanged"
+    );
+    let stderr = campaign.refused("campaign-mission-status", &[]);
+    assert!(stderr.contains("codingmage.runtime.state"), "{stderr}");
+}
+
 fn control(campaign: &Campaign, action: &str, request: &str) -> serde_json::Value {
     campaign.json(
         "campaign-control",
@@ -978,4 +1108,90 @@ fn exception_only_mission_deduplicates_the_exception_request_across_runs() {
         "one exception request per decision"
     );
     assert_eq!(second["decisions_recorded"], first["decisions_recorded"]);
+}
+
+fn inject_fault(campaign: &Campaign, kind: &str) {
+    fs::write(
+        campaign.fixture.root.join("lead-fault.txt"),
+        format!("{kind}\n"),
+    )
+    .unwrap();
+}
+
+#[test]
+fn late_provider_quota_and_login_requests_hold_without_answering_or_retrying_unboundedly() {
+    for (fault, code) in [
+        ("quota", "codingmage.provider.codex.quota"),
+        ("login", "codingmage.provider.codex.authentication"),
+    ] {
+        let campaign = Campaign::with_lead_script(DECIDING_LEAD);
+        fs::write(
+            campaign.fixture.root.join("decision-domain.txt"),
+            "layout\n",
+        )
+        .unwrap();
+        fs::write(campaign.fixture.root.join("decision-asked"), "skip\n").unwrap();
+        let charter = campaign.charter("mission.toml", 1, "hands_off", "block", "x");
+        let mission = charter.to_str().unwrap();
+        inject_fault(&campaign, fault);
+
+        let held = campaign.json("campaign", &["--mission", mission]);
+        assert_eq!(held["state"], "paused", "{fault}: {held}");
+        assert_eq!(held["blocker_code"], code, "{fault}: {held}");
+        assert!(!campaign.fixture.root.join("lead-fault.txt").exists());
+        assert_eq!(
+            lead_log(&campaign).lines().count(),
+            1,
+            "{fault}: the hold is recorded once, not retried until a budget is gone"
+        );
+        assert!(!inference_marker(&campaign).exists());
+        let status = campaign.json("campaign-mission-status", &[]);
+        assert_eq!(
+            status["pending_owner_decisions"], 0,
+            "no prompt, no fabricated answer"
+        );
+        assert_eq!(status["revoked"], false);
+
+        let resumed = campaign.json("campaign", &[]);
+        assert_eq!(resumed["state"], "paused", "{fault}: {resumed}");
+        assert_eq!(resumed["stop_reason"], "unit_limit", "{fault}: {resumed}");
+        assert!(
+            lead_log(&campaign).lines().count() > 1,
+            "{fault}: work resumed after the hold"
+        );
+        campaign.state_files_are_content_free();
+    }
+}
+
+#[test]
+fn unknown_gate_requirement_is_rejected_without_running_any_tool_or_provider() {
+    let campaign = Campaign::with_lead_script(DECIDING_LEAD);
+    fs::write(
+        campaign.fixture.root.join("decision-domain.txt"),
+        "layout\n",
+    )
+    .unwrap();
+    fs::write(campaign.fixture.root.join("decision-asked"), "skip\n").unwrap();
+    let charter = campaign.charter("mission.toml", 1, "hands_off", "block", "x");
+    let mission = charter.to_str().unwrap();
+    inject_fault(&campaign, "unknown-gate");
+
+    let rejected = campaign.json("campaign", &["--mission", mission]);
+    assert_eq!(rejected["state"], "paused", "{rejected}");
+    assert!(
+        rejected["blocker_code"]
+            .as_str()
+            .is_some_and(|code| code.starts_with("codingmage.campaign.lead_rejected.")),
+        "{rejected}"
+    );
+    assert!(
+        !inference_marker(&campaign).exists(),
+        "no implementer ran for a rejected proposal"
+    );
+    let status = campaign.json("campaign-mission-status", &[]);
+    assert_eq!(status["pending_owner_decisions"], 0);
+    let resumed = campaign.json("campaign", &[]);
+    assert_eq!(resumed["state"], "paused", "{resumed}");
+    assert_eq!(resumed["stop_reason"], "unit_limit", "{resumed}");
+    campaign.state_files_are_content_free();
 }

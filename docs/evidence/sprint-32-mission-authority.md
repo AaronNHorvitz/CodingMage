@@ -156,20 +156,44 @@ Status, blocker explanation and mission outputs contain no charter or lead prose
 Tests: decision ledger deduplication and generation binding, hands-off holds, no-progress
 bound, revoked mission holds, lead routing and binding feedback (`team_mission` unit tests).
 
+## Sub-task 32.2.1.3 - Continue independent work after an exact blocker
+
+Under a bound mission the parallel engine no longer ends the invocation on the first typed
+blocker: `hold_ready_task` retains the exact task as `blocked` with a typed terminal reason
+(`prerequisite_blocked` for a lead blocker, `external_blocked` for a mission decision hold) on a
+verified, persisted candidate snapshot, and planning continues with the remaining ready set. The
+ready set strictly shrinks on every hold, so the loop is bounded by the task count; consecutive
+permitted-choice re-plans are bounded by `max_no_progress_cycles`. Without a mission the legacy
+behavior (end the invocation with `lead_blocked`) is unchanged, which the process test
+`parallel_engine_without_a_mission_keeps_ending_on_the_first_typed_blocker` verifies. The serial
+engine already continued after blockers and human decisions; its lead deferrals still use the
+existing reconsideration-trigger machinery, which is the only reconsideration path exercised.
+
+## Sub-task 32.2.1.4 - Late provider requests and unknown requirements
+
+Real-process fixtures under a hands-off mission inject, once each, a lead quota error, a lead
+login request and a proposal requiring a gate tier the campaign never registered. Each produces
+a typed hold (`codingmage.provider.codex.quota`, `codingmage.provider.codex.authentication`, `codingmage.campaign.lead_rejected.*`), the lead is not
+retried within the invocation, no implementer runs, no owner decision is registered or fabricated,
+and the next invocation resumes work to the unit ceiling. An unavailable stronger reviewer is
+refused by the existing Sub-task 24.1.2.3 integration guard; no mission-specific fixture adds
+to that, so review strength cannot be reduced by a mode selector because no mission field
+reaches the review profile resolution.
+
 ## Verification receipt
 
 Executed inside the sandbox on the tree of the commit carrying this document, through the shared
-build reservation with one build job and one test thread (private log `full-gates-9.log`):
+build reservation with one build job and one test thread (private log `full-gates-10.log`):
 
 | Command | Result |
 | --- | --- |
 | `cargo fmt --all -- --check` | clean |
 | `cargo clippy --workspace --all-targets -- -D warnings` | no findings |
 | `cargo test -p codingmage-campaign mission` | 12 passed |
-| `cargo test -p codingmage-runtime` | 119 passed (team_mission: 13, revocation race in team_runtime) |
-| `cargo test -p codingmage-cli --test campaign_mission` | 10 passed, including five real coordinator-process runs |
+| `cargo test -p codingmage-runtime` | 120 passed (team_mission: 12, hold in team_planning, revocation race in team_runtime) |
+| `cargo test -p codingmage-cli --test campaign_mission` | 14 passed, including eleven real coordinator-process runs |
 | `cargo test -p codingmage-ui --lib --test campaign` | 27 and 5 passed (offscreen software renderer) |
-| `cargo test --workspace --all-targets --no-fail-fast` | 468 passed, 3 sandbox-environment failures unrelated to this sprint (see `cm-r01-reconciliation.md`), 2 guarded ignores |
+| `cargo test --workspace --all-targets --no-fail-fast` | 473 passed, 3 sandbox-environment failures unrelated to this sprint (see `cm-r01-reconciliation.md`), 2 guarded ignores |
 | `python3 -m unittest discover -s tests -p 'test_*.py'` | 40 pass, 1 designed freshness failure (CM-R01.6) |
 | `python3 scripts/docs_check.py`, `python3 scripts/check_architecture.py`, `git diff --check` | pass |
 
@@ -177,13 +201,8 @@ Fake providers only; no live model, real desktop or independent review is claime
 
 ## Not claimed
 
-- 32.2.1.3 stays open: the serial engine already continues independent work after a recorded
-  human decision, but the parallel team engine still ends the invocation on any nonexecution
-  disposition, and the reconsideration-on-changed-observation and retry/replanning bounds are
-  not yet exercised end to end.
-- 32.2.1.4 (late provider approval/login, quota, unknown tool, unavailable reviewer injection),
-  32.2.2.2 (revocation races against implementation/commit/gate/review/integration) and
-  32.2.2.4 (all three modes through pause/resume/stop/cancel with coordinator-process fixtures)
-  remain open until their fixtures exist; the real-process tests here cover revocation and
-  expiry holds before a provider runs.
+- Revocation races with the commit, gate, review and integration phases are covered only by
+  those phases' existing cancellation fixtures, not by a mid-phase mission revocation.
+- Lead deferrals are still reconsidered only through the existing declared triggers; a
+  mission-specific "changed observation" record does not exist yet.
 - AC 32.1, AC 32.2, Gate 32.1 and Gate 32.2 need independent review and are not ticked.

@@ -403,12 +403,14 @@ pub fn run_team_campaign_with_progress(
     let mut mission_replans = 0_u32;
     loop {
         let control = observe_team_control(&campaign_root, &spec, &manifest, &authority_sha256)?;
-        if let Some(mission) = crate::team_mission::observe_mission_authority(
+        let mission_observation = crate::team_mission::observe_mission_authority(
             &config.state_root,
             &spec,
             &authority_sha256,
             now_ms(),
-        )? && let Some(code) = mission.hold_code()
+        )?;
+        if let Some(mission) = &mission_observation
+            && let Some(code) = mission.hold_code()
         {
             let (state, reason) = if mission.revoked {
                 cancellation.cancel();
@@ -924,7 +926,21 @@ pub fn run_team_campaign_with_progress(
                 unreachable!();
             };
             let code = match &disposition {
-                TeamLeadOutcome::Blocked(_) => "codingmage.team.lead_blocked",
+                TeamLeadOutcome::Blocked(blocked) => {
+                    if mission_observation.is_some() {
+                        // Under a mission the typed blocker is retained on the exact task and
+                        // independent ready work continues; the ready set strictly shrinks.
+                        crate::hold_ready_task(
+                            &mut snapshot,
+                            &blocked.binding.task_id,
+                            codingmage_campaign::TaskTerminalReason::PrerequisiteBlocked,
+                            "lead_blocked",
+                            |value| persist(&mut state_store, value),
+                        )?;
+                        continue;
+                    }
+                    "codingmage.team.lead_blocked"
+                }
                 TeamLeadOutcome::Deferred(_) => "codingmage.team.lead_deferred",
                 TeamLeadOutcome::HumanDecision(blocker) => {
                     match crate::team_mission::resolve_lead_decision(
@@ -943,7 +959,15 @@ pub fn run_team_campaign_with_progress(
                             }
                         }
                         Some(resolution) => {
-                            crate::team_mission::lead_hold_code(&resolution.outcome)
+                            // The hold is retained on the exact task; other ready work continues.
+                            crate::hold_ready_task(
+                                &mut snapshot,
+                                &blocker.binding.task_id,
+                                codingmage_campaign::TaskTerminalReason::ExternalBlocked,
+                                crate::team_mission::lead_hold_code(&resolution.outcome),
+                                |value| persist(&mut state_store, value),
+                            )?;
+                            continue;
                         }
                         None => "codingmage.team.human_decision_required",
                     }

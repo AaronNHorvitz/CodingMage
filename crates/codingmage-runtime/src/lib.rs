@@ -29,8 +29,8 @@ pub use team_mission::{
     campaign_mission_preflight, campaign_mission_status, revoke_campaign_mission,
 };
 pub use team_planning::{
-    TeamPlanningOutcome, admit_team_lead_report, build_team_lead_binding, initialize_team_campaign,
-    refresh_team_readiness,
+    TeamPlanningOutcome, admit_team_lead_report, build_team_lead_binding, hold_ready_task,
+    initialize_team_campaign, refresh_team_readiness,
 };
 pub use team_promotion::{
     CampaignPromotionApprovalBinding, CampaignPromotionError, CampaignPromotionOutcome,

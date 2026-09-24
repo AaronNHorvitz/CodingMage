@@ -343,6 +343,53 @@ where
     Ok(TeamPlanningOutcome::Admitted(jobs))
 }
 
+/// Retains one dependency-ready task as blocked with a typed reason and no effect.
+///
+/// The transition is validated on a candidate snapshot and persisted before it replaces the
+/// caller's state, so a persistence failure leaves the ready set unchanged. Holding a task shrinks
+/// the ready set, which lets the engine continue independent work instead of ending the
+/// invocation on the first typed blocker.
+///
+/// # Errors
+///
+/// Returns [`RuntimeError::State`] when the task is not ready or the projection cannot be
+/// persisted.
+pub fn hold_ready_task<P>(
+    snapshot: &mut TeamCampaignSnapshot,
+    task_id: &str,
+    reason: codingmage_campaign::TaskTerminalReason,
+    phase: &str,
+    mut persist: P,
+) -> Result<(), RuntimeError>
+where
+    P: FnMut(&TeamCampaignSnapshot) -> Result<(), RuntimeError>,
+{
+    let mut candidate = snapshot.clone();
+    let record = candidate
+        .tasks
+        .get_mut(task_id)
+        .ok_or(RuntimeError::State)?;
+    if record.state != CampaignTaskState::Ready {
+        return Err(RuntimeError::State);
+    }
+    let transition = CampaignTaskTransition {
+        sequence: record.next_transition,
+        campaign_id: record.campaign_id.clone(),
+        task_id: record.task_id.clone(),
+        generation: record.generation,
+        from: CampaignTaskState::Ready,
+        to: CampaignTaskState::Blocked,
+        evidence_sha256: planning_evidence(record, phase),
+    };
+    record
+        .transition_terminal(&transition, reason)
+        .map_err(|_| RuntimeError::State)?;
+    candidate.verify().map_err(|_| RuntimeError::State)?;
+    persist(&candidate)?;
+    *snapshot = candidate;
+    Ok(())
+}
+
 fn ready_work(
     plan: &TaskPlan,
     snapshot: &TeamCampaignSnapshot,
@@ -445,6 +492,78 @@ mod tests {
         assert!(
             jobs.iter()
                 .all(|job| snapshot.tasks[&job.lease.task_id].state == CampaignTaskState::Leased)
+        );
+        snapshot.verify().unwrap();
+    }
+
+    #[test]
+    fn held_task_leaves_the_ready_set_atomically_and_only_from_ready() {
+        let plan = TaskPlan::parse(PLAN.as_bytes()).unwrap();
+        let spec = spec(&plan, 5);
+        let mut snapshot = initialize_team_campaign(&spec, &plan).unwrap();
+        let persisted = std::cell::Cell::new(0);
+        hold_ready_task(
+            &mut snapshot,
+            "24.1.1.1",
+            codingmage_campaign::TaskTerminalReason::PrerequisiteBlocked,
+            "lead_blocked",
+            |value| {
+                persisted.set(persisted.get() + 1);
+                value.verify().map_err(|_| RuntimeError::State)
+            },
+        )
+        .unwrap();
+        assert_eq!(persisted.get(), 1);
+        let held = &snapshot.tasks["24.1.1.1"];
+        assert_eq!(held.state, CampaignTaskState::Blocked);
+        assert_eq!(
+            held.terminal_reason.as_deref(),
+            Some("prerequisite_blocked")
+        );
+        assert_eq!(
+            ready_work(&plan, &snapshot)
+                .unwrap()
+                .iter()
+                .map(|selected| selected.item.id.clone())
+                .collect::<Vec<_>>(),
+            vec!["24.1.1.2", "24.1.1.3", "24.1.1.4", "24.1.1.5"]
+        );
+        assert_eq!(
+            hold_ready_task(
+                &mut snapshot,
+                "24.1.1.1",
+                codingmage_campaign::TaskTerminalReason::ExternalBlocked,
+                "again",
+                |_| Ok(())
+            ),
+            Err(RuntimeError::State),
+            "a held task cannot be held twice"
+        );
+        assert_eq!(
+            hold_ready_task(
+                &mut snapshot,
+                "24.1.1.6",
+                codingmage_campaign::TaskTerminalReason::ExternalBlocked,
+                "planned",
+                |_| Ok(())
+            ),
+            Err(RuntimeError::State),
+            "a dependency-blocked task is not ready"
+        );
+        let before = snapshot.clone();
+        assert_eq!(
+            hold_ready_task(
+                &mut snapshot,
+                "24.1.1.2",
+                codingmage_campaign::TaskTerminalReason::ExternalBlocked,
+                "decision",
+                |_| Err(RuntimeError::State)
+            ),
+            Err(RuntimeError::State)
+        );
+        assert_eq!(
+            snapshot, before,
+            "a persistence failure leaves the ready set unchanged"
         );
         snapshot.verify().unwrap();
     }

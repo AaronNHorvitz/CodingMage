@@ -342,6 +342,7 @@ impl MissionState {
             revoked: self.revoked,
             expired: now_ms >= self.expires_at_ms || now_ms < self.issued_at_ms,
             pending_owner_decisions: u32::try_from(self.pending.len()).unwrap_or(u32::MAX),
+            max_no_progress_cycles: self.charter.budgets.max_no_progress_cycles,
         }
     }
 }
@@ -363,6 +364,8 @@ pub struct MissionAuthorityObservation {
     pub expired: bool,
     /// Owner decisions awaiting an answer; always zero under hands-off.
     pub pending_owner_decisions: u32,
+    /// Charter bound on consecutive planning cycles that admit no work.
+    pub max_no_progress_cycles: u16,
 }
 
 impl MissionAuthorityObservation {
