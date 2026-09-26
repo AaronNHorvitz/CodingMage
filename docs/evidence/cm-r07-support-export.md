@@ -37,7 +37,18 @@ Observed on the current locked dependency graph (`cargo metadata --locked --offl
 Outcome: one genuine gap (per-crate notice text in the package) is recorded as row CM-R07.2a;
 licensing changes remain the owner's separate decision and nothing here is a release claim.
 
+## CM-R07.2a - Per-crate notice text in the package
+
+`scripts/package_release.py` now writes `share/doc/codingmage/THIRD-PARTY-LICENSES.txt` from the
+locked graph: for every third-party crate it reproduces the licence and notice files found in the
+crate's sources (declared `license_file` first, then `LICENSE*`, `LICENCE*`, `COPYING*` and
+`NOTICE*`, each at most 256 KiB), skips workspace crates, and lists crates that ship no such file
+under `MISSING LICENSE TEXT` with their declared expression so the gap stays visible. The release
+scanner requires the file. The Python unit test covers an attributed crate, a bare crate and a
+workspace crate. A packaged artifact carrying the file still needs a constructed candidate,
+which CM-R01.6's external review record blocks.
+
 ## Open
 
-- CM-R07.2a per-crate notice generation at packaging; CM-R07.3 and CM-R07.4 are human-only or
-  live qualification.
+- CM-R07.3 and CM-R07.4 are human-only or live qualification; the packaged artifact proof of
+  CM-R07.2a waits on CM-R01.6.

@@ -27,6 +27,12 @@ PACKAGE_SPEC = importlib.util.spec_from_file_location(
 assert PACKAGE_SPEC is not None and PACKAGE_SPEC.loader is not None
 PACKAGER = importlib.util.module_from_spec(PACKAGE_SPEC)
 PACKAGE_SPEC.loader.exec_module(PACKAGER)
+SCAN_SPEC = importlib.util.spec_from_file_location(
+    "scan_release", ROOT / "scripts" / "scan_release.py"
+)
+assert SCAN_SPEC is not None and SCAN_SPEC.loader is not None
+SCANNER = importlib.util.module_from_spec(SCAN_SPEC)
+SCAN_SPEC.loader.exec_module(SCANNER)
 
 
 def archive(
@@ -178,6 +184,71 @@ class ReleaseToolsTest(unittest.TestCase):
             ):
                 with self.assertRaisesRegex(RuntimeError, "does not bind source"):
                     PACKAGER.verify_release_source(external)
+
+    def test_third_party_license_texts_are_collected_and_gaps_are_listed(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="codingmage-notices-test-") as temporary:
+            root = Path(temporary)
+            attributed = root / "attributed-1.0.0"
+            attributed.mkdir()
+            (attributed / "Cargo.toml").write_text("[package]\n", encoding="utf-8")
+            (attributed / "LICENSE-MIT").write_text(
+                "MIT License\n\nCopyright (c) Example Author\n", encoding="utf-8"
+            )
+            (attributed / "NOTICE").write_text("Notice text\n", encoding="utf-8")
+            bare = root / "bare-2.0.0"
+            bare.mkdir()
+            (bare / "Cargo.toml").write_text("[package]\n", encoding="utf-8")
+            (bare / "src.rs").write_text("", encoding="utf-8")
+            workspace = root / "codingmage-core"
+            workspace.mkdir()
+            (workspace / "LICENSE").write_text("must not appear\n", encoding="utf-8")
+            metadata = {
+                "workspace_members": ["path+file:///codingmage-core#0.1.0"],
+                "packages": [
+                    {
+                        "id": "registry+attributed#1.0.0",
+                        "name": "attributed",
+                        "version": "1.0.0",
+                        "license": "MIT",
+                        "license_file": None,
+                        "source": "registry+https://github.com/rust-lang/crates.io-index",
+                        "manifest_path": str(attributed / "Cargo.toml"),
+                    },
+                    {
+                        "id": "registry+bare#2.0.0",
+                        "name": "bare",
+                        "version": "2.0.0",
+                        "license": "Zlib",
+                        "license_file": None,
+                        "source": "registry+https://github.com/rust-lang/crates.io-index",
+                        "manifest_path": str(bare / "Cargo.toml"),
+                    },
+                    {
+                        "id": "path+file:///codingmage-core#0.1.0",
+                        "name": "codingmage-core",
+                        "version": "0.1.0",
+                        "license": "Apache-2.0",
+                        "license_file": None,
+                        "source": None,
+                        "manifest_path": str(workspace / "Cargo.toml"),
+                    },
+                ],
+            }
+            destination = root / "THIRD-PARTY-LICENSES.txt"
+            counts = PACKAGER.write_third_party_licenses(destination, metadata)
+            self.assertEqual(counts, {"included": 1, "missing": 1})
+            text = destination.read_text(encoding="utf-8")
+            self.assertIn("==== attributed 1.0.0 (MIT) ====", text)
+            self.assertIn("---- LICENSE-MIT ----", text)
+            self.assertIn("Copyright (c) Example Author", text)
+            self.assertIn("---- NOTICE ----", text)
+            self.assertIn("MISSING LICENSE TEXT", text)
+            self.assertIn("- bare 2.0.0 (Zlib)", text)
+            self.assertNotIn("must not appear", text)
+            self.assertNotIn("codingmage-core", text)
+            self.assertIn(
+                "share/doc/codingmage/THIRD-PARTY-LICENSES.txt", SCANNER.BINARY_FILES
+            )
 
     def test_source_archive_is_reproducible_and_contains_only_tracked_files(self) -> None:
         with tempfile.TemporaryDirectory(prefix="codingmage-source-archive-") as temporary:

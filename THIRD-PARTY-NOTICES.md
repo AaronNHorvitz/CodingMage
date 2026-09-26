@@ -6,7 +6,9 @@ CodingMage is licensed under Apache-2.0. It also depends on third-party Rust cra
 operator-installed tools whose licenses remain their respective owners' responsibility.
 
 The release packager generates an SPDX 2.3 software bill of materials from the exact locked Cargo
-dependency graph. That generated SBOM, the corresponding `Cargo.lock`, and the packaged build
+dependency graph and a `THIRD-PARTY-LICENSES.txt` that reproduces every third-party crate's
+licence and notice files from its sources, listing crates that ship none under a visible
+`MISSING LICENSE TEXT` heading. That generated SBOM, the corresponding `Cargo.lock`, and the packaged build
 manifest are the authoritative dependency inventory for a candidate. A source checkout alone is
 not evidence that a final release artifact contains the same graph.
 

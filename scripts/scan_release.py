@@ -27,6 +27,7 @@ BINARY_FILES = {
     "share/doc/codingmage/RELEASE-NOTES.md",
     "share/doc/codingmage/SECURITY.md",
     "share/doc/codingmage/SUPPORT.md",
+    "share/doc/codingmage/THIRD-PARTY-LICENSES.txt",
     "share/doc/codingmage/THIRD-PARTY-NOTICES.md",
 }
 PROHIBITED_PARTS = {".env", ".git", "logs", "runtime-state", "scratch", "target"}
