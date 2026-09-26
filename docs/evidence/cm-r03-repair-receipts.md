@@ -47,8 +47,12 @@ port (`reproduce_regression`, `complete_repair_receipt`) with `RepairReceipt` in
   candidate observation digest, and appends the receipt digest to the unit's gate evidence. A
   still-failing regression gate follows the ordinary bounded correction path with no receipt.
 - Ordinary run specs without `[repair]` are byte-for-byte unchanged in behavior and process counts.
-- Not done: carrying the requirement through campaign task authority (`task_path_authority`);
-  campaigns still run repair units only through the supervised run spec.
+- Campaign task authority carries the requirement too: `task_path_authority` entries may name a
+  `regression_gate` for one exact task (absent entries serialize to nothing, so existing
+  authority digests are unchanged). Both engines set the unit's repair requirement from it. A
+  base that already passes ends the invocation with the typed blocker
+  `codingmage.campaign.unit_repair_not_reproduced`, exactly as other unit errors do in the serial
+  engine; retaining it per task and continuing with independent work is a follow-up.
 
 Tests: `cargo test -p codingmage-runtime gate_baseline` (receipt requires a failing base and a
 passing candidate, refuses other gates and tampering) and `cargo test -p codingmage-cli --test
@@ -56,6 +60,11 @@ repair` (real coordinator process: reproduced regression repaired and receipted 
 and candidate commits; a gate that already passes is refused before any provider runs and leaves
 the active checkout untouched; unknown or escaping gate names are spec refusals; an ordinary unit
 is unchanged).
+`cargo test -p codingmage-campaign` covers the optional task-bound gate (absent serializes to
+nothing, valid names accepted, escaping or malformed names refused, exact lookup), and
+`cargo test -p codingmage-cli --test campaign_repair` runs a real serial campaign whose first task
+carries the gate: the pod's unit is receipted, and with an already-passing base the invocation
+stops with the typed blocker before any provider runs.
 
 ## CM-R03.3 - Crosswalk of exact-commit review and bounded repair against CAP-15 and CAP-38
 

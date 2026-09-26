@@ -528,7 +528,11 @@ impl ProductionTeamUnitRunner {
                 },
             },
             reviewer: provider_spec(reviewer),
-            repair: None,
+            repair: self.campaign_spec.regression_gate_for(task_id).map(|gate| {
+                crate::RepairRequirement {
+                    regression_gate: gate.to_owned(),
+                }
+            }),
             context: None,
         })
     }

@@ -91,8 +91,10 @@ only that configured gate at the base commit and refuses the unit with
 the candidate's gates pass, the coordinator retains an integrity-protected repair receipt binding
 the failing base observation and the passing candidate observation under
 `<state>/gate-baselines/<repository_id>/`. Provider prose about a reproduction never satisfies the
-requirement, and an unknown gate identity is a spec refusal. Campaign task authority does not yet
-carry this requirement; it applies to supervised run specs.
+requirement, and an unknown gate identity is a spec refusal. A campaign binds the same requirement
+to one exact task with `regression_gate` on a `task_path_authority` entry; a base that already
+passes stops the campaign invocation with the typed blocker
+`codingmage.campaign.unit_repair_not_reproduced` before any provider runs.
 
 An optional `context` string (at most 4096 bytes, no NUL) is appended to the implementer packet
 as data; it grants no authority.

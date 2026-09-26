@@ -134,6 +134,10 @@ pub struct CampaignTaskPathAuthority {
     pub task_id: String,
     /// Additional repository-relative paths composed into the sealed pod proposal.
     pub companion_paths: Vec<PathBuf>,
+    /// Optional configured gate that must fail at the unit's base commit and pass on its
+    /// candidate (reproduce before repair); absence keeps the task an ordinary unit.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub regression_gate: Option<String>,
 }
 
 /// Independent operator-authorized aggregate ceilings for one campaign.
@@ -322,6 +326,10 @@ impl CampaignSpec {
                 != self.task_path_authority.len()
             || self.task_path_authority.iter().any(|authority| {
                 TaskId::new(authority.task_id.clone()).is_err()
+                    || authority
+                        .regression_gate
+                        .as_ref()
+                        .is_some_and(|gate| !valid_gate_name(gate))
                     || authority.companion_paths.is_empty()
                     || authority.companion_paths.len() > MAX_PATHS
                     || authority
@@ -353,6 +361,15 @@ impl CampaignSpec {
     pub fn authority_sha256(&self) -> Result<String, CampaignError> {
         self.verify()?;
         canonical_sha256(self)
+    }
+
+    /// Returns the configured regression gate the operator bound to one exact task, if any.
+    #[must_use]
+    pub fn regression_gate_for(&self, task_id: &str) -> Option<&str> {
+        self.task_path_authority
+            .iter()
+            .find(|authority| authority.task_id == task_id)
+            .and_then(|authority| authority.regression_gate.as_deref())
     }
 
     fn permits(&self, path: &Path) -> bool {
@@ -803,6 +820,14 @@ fn valid_component(value: &str) -> bool {
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
 }
 
+fn valid_gate_name(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+}
+
 fn valid_branch(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 255
@@ -904,6 +929,40 @@ impl std::error::Error for CampaignError {}
 mod tests {
     use super::*;
     use codingmage_plan::TaskPlan;
+
+    #[test]
+    fn task_regression_gate_is_optional_validated_and_looked_up_exactly() {
+        let mut spec = spec(1);
+        spec.allowed_paths = vec![PathBuf::from("src"), PathBuf::from("docs")];
+        spec.denied_paths.clear();
+        spec.task_path_authority = vec![CampaignTaskPathAuthority {
+            task_id: "0.1.1.1".to_owned(),
+            companion_paths: vec![PathBuf::from("docs")],
+            regression_gate: None,
+        }];
+        spec.verify().unwrap();
+        let encoded = toml::to_string(&spec).unwrap();
+        assert!(
+            !encoded.contains("regression_gate"),
+            "an absent gate serializes to nothing, so existing authority digests are stable"
+        );
+        assert_eq!(spec.regression_gate_for("0.1.1.1"), None);
+        spec.task_path_authority[0].regression_gate = Some("configured-gate-2".to_owned());
+        spec.verify().unwrap();
+        assert_eq!(
+            spec.regression_gate_for("0.1.1.1"),
+            Some("configured-gate-2")
+        );
+        assert_eq!(spec.regression_gate_for("0.1.1.2"), None);
+        for bad in ["", "../gate", "gate with space", &"g".repeat(129)] {
+            spec.task_path_authority[0].regression_gate = Some(bad.to_owned());
+            assert_eq!(
+                spec.verify(),
+                Err(CampaignError::InvalidAuthority),
+                "{bad:?}"
+            );
+        }
+    }
 
     fn spec(max_parallel_pods: u16) -> CampaignSpec {
         CampaignSpec {
@@ -1149,6 +1208,7 @@ mod tests {
                 PathBuf::from("docs/public/traceability.json"),
                 PathBuf::from("crates/engine/src"),
             ],
+            regression_gate: None,
         }];
         authority.verify().unwrap();
         let report = TeamLeadReport {
@@ -1464,6 +1524,7 @@ mod tests {
         value.task_path_authority = vec![CampaignTaskPathAuthority {
             task_id: "1.1.1.1".to_owned(),
             companion_paths: vec![PathBuf::from("docs/public/traceability.json")],
+            regression_gate: None,
         }];
         mutations.push(("task_path_authority", value));
         let mut value = baseline.clone();

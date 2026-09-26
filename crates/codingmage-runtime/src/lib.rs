@@ -2938,7 +2938,11 @@ pub fn run_serial_campaign_with_progress(
                 },
             },
             reviewer: provider_spec(&spec.reviewer),
-            repair: None,
+            repair: spec
+                .regression_gate_for(&lease.task_id)
+                .map(|gate| RepairRequirement {
+                    regression_gate: gate.to_owned(),
+                }),
             context: None,
         };
         let mut provider_retry_budget = ProviderRetryBudget::default();
