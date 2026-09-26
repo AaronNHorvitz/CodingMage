@@ -273,6 +273,95 @@ impl GateComparison {
     }
 }
 
+/// Receipt that one named regression gate was observed failing at the base commit before
+/// implementation and passing on the reviewed candidate, both by the coordinator's gate runner.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RepairReceipt {
+    /// Closed document version.
+    pub version: u16,
+    /// Repository the commits belong to.
+    pub repository_id: String,
+    /// Exact base commit where the regression was reproduced.
+    pub base_commit: String,
+    /// Exact candidate commit where the regression gate passed.
+    pub candidate_commit: String,
+    /// Digest of the gate registry the gate belongs to.
+    pub registry_sha256: String,
+    /// Stable identity of the regression gate.
+    pub regression_gate: String,
+    /// Integrity digest of the failing base observation.
+    pub base_evidence_sha256: String,
+    /// Integrity digest of the passing candidate observation.
+    pub candidate_evidence_sha256: String,
+    /// Integrity digest of every other field.
+    pub integrity_sha256: String,
+}
+
+impl RepairReceipt {
+    /// Builds a receipt from a failing base observation and a passing candidate observation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RuntimeError::State`] when either observation names another commit or gate,
+    /// the base gate did not fail or the candidate gate did not pass.
+    pub fn new(
+        repository_id: &str,
+        registry_sha256: &str,
+        regression_gate: &str,
+        base: &codingmage_gate::GateEvidence,
+        candidate: &codingmage_gate::GateEvidence,
+    ) -> Result<Self, RuntimeError> {
+        if base.gate_id != regression_gate
+            || candidate.gate_id != regression_gate
+            || base.outcome != GateOutcome::Failed
+            || candidate.outcome != GateOutcome::Passed
+            || base.source_commit == candidate.source_commit
+        {
+            return Err(RuntimeError::State);
+        }
+        let mut receipt = Self {
+            version: COMPARISON_VERSION,
+            repository_id: repository_id.to_owned(),
+            base_commit: base.source_commit.clone(),
+            candidate_commit: candidate.source_commit.clone(),
+            registry_sha256: registry_sha256.to_owned(),
+            regression_gate: regression_gate.to_owned(),
+            base_evidence_sha256: base.integrity_sha256.clone(),
+            candidate_evidence_sha256: candidate.integrity_sha256.clone(),
+            integrity_sha256: String::new(),
+        };
+        receipt.integrity_sha256 = receipt.body_sha256()?;
+        if !receipt.verify() {
+            return Err(RuntimeError::State);
+        }
+        Ok(receipt)
+    }
+
+    fn body_sha256(&self) -> Result<String, RuntimeError> {
+        let mut body = self.clone();
+        body.integrity_sha256 = String::new();
+        let bytes = serde_json::to_vec(&body).map_err(|_| RuntimeError::State)?;
+        Ok(hex(&Sha256::digest(bytes)))
+    }
+
+    fn verify(&self) -> bool {
+        self.version == COMPARISON_VERSION
+            && !self.repository_id.is_empty()
+            && valid_commit(&self.base_commit)
+            && valid_commit(&self.candidate_commit)
+            && self.base_commit != self.candidate_commit
+            && valid_sha256(&self.registry_sha256)
+            && !self.regression_gate.is_empty()
+            && valid_sha256(&self.base_evidence_sha256)
+            && valid_sha256(&self.candidate_evidence_sha256)
+            && self.base_evidence_sha256 != self.candidate_evidence_sha256
+            && self
+                .body_sha256()
+                .is_ok_and(|digest| digest == self.integrity_sha256)
+    }
+}
+
 /// Durable store of baselines and comparisons beneath the private state root.
 pub struct GateBaselineStore {
     root: PathBuf,
@@ -379,6 +468,62 @@ impl GateBaselineStore {
         .map(|document| Some(document.payload))
         .map_err(|_| RuntimeError::State)
     }
+}
+
+impl GateBaselineStore {
+    /// Retains a repair receipt for one candidate commit and regression gate.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RuntimeError::State`] when the document cannot be verified or written.
+    pub fn retain_repair(&self, receipt: &RepairReceipt) -> Result<(), RuntimeError> {
+        IntegrityDocument::write_atomic(
+            &self.root,
+            &repair_name(&receipt.candidate_commit, &receipt.regression_gate),
+            receipt.clone(),
+            RepairReceipt::verify,
+        )
+        .map_err(|_| RuntimeError::State)?;
+        Ok(())
+    }
+
+    /// Loads the repair receipt retained for one candidate commit and gate, if any.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RuntimeError::State`] when a retained document fails verification.
+    pub fn repair(
+        &self,
+        candidate_commit: &str,
+        regression_gate: &str,
+    ) -> Result<Option<RepairReceipt>, RuntimeError> {
+        let name = repair_name(candidate_commit, regression_gate);
+        if fs::symlink_metadata(self.root.join(&name)).is_err() {
+            return Ok(None);
+        }
+        IntegrityDocument::<RepairReceipt>::load(&self.root, &name, |value| {
+            value.verify()
+                && value.candidate_commit == candidate_commit
+                && value.regression_gate == regression_gate
+        })
+        .map(|document| Some(document.payload))
+        .map_err(|_| RuntimeError::State)
+    }
+}
+
+fn repair_name(candidate_commit: &str, regression_gate: &str) -> String {
+    let gate: String = regression_gate
+        .chars()
+        .map(|character| {
+            if character.is_ascii_alphanumeric() || character == '-' {
+                character
+            } else {
+                '_'
+            }
+        })
+        .take(64)
+        .collect();
+    format!("repair-{candidate_commit}-{gate}.json")
 }
 
 fn baseline_name(source_commit: &str, registry_sha256: &str) -> String {
@@ -605,6 +750,45 @@ mod tests {
             !tampered.verify(),
             "a comparison without its digest is refused"
         );
+    }
+
+    #[test]
+    fn repair_receipt_requires_failing_base_and_passing_candidate() {
+        let base = evidence("regress", BASE, GateOutcome::Failed, 1);
+        let candidate = evidence("regress", CANDIDATE, GateOutcome::Passed, 2);
+        let receipt = RepairReceipt::new("repo", REGISTRY, "regress", &base, &candidate).unwrap();
+        assert!(receipt.verify());
+        assert_eq!(receipt.base_commit, BASE);
+        assert_eq!(receipt.candidate_commit, CANDIDATE);
+        let passing_base = evidence("regress", BASE, GateOutcome::Passed, 1);
+        assert_eq!(
+            RepairReceipt::new("repo", REGISTRY, "regress", &passing_base, &candidate),
+            Err(RuntimeError::State),
+            "a base that already passes reproduced nothing"
+        );
+        let failing_candidate = evidence("regress", CANDIDATE, GateOutcome::Failed, 2);
+        assert_eq!(
+            RepairReceipt::new("repo", REGISTRY, "regress", &base, &failing_candidate),
+            Err(RuntimeError::State)
+        );
+        let other_gate = evidence("other", CANDIDATE, GateOutcome::Passed, 2);
+        assert_eq!(
+            RepairReceipt::new("repo", REGISTRY, "regress", &base, &other_gate),
+            Err(RuntimeError::State)
+        );
+        let root = temp_root("repair");
+        let store = GateBaselineStore::open(&root, "repo").unwrap();
+        assert!(store.repair(CANDIDATE, "regress").unwrap().is_none());
+        store.retain_repair(&receipt).unwrap();
+        assert_eq!(store.repair(CANDIDATE, "regress").unwrap(), Some(receipt));
+        let path = root
+            .join(BASELINE_ROOT)
+            .join("repo")
+            .join(repair_name(CANDIDATE, "regress"));
+        let text = fs::read_to_string(&path).unwrap();
+        fs::write(&path, text.replace(&"01".repeat(32), &"03".repeat(32))).unwrap();
+        assert_eq!(store.repair(CANDIDATE, "regress"), Err(RuntimeError::State));
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]

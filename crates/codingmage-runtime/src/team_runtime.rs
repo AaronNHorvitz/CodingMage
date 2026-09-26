@@ -528,6 +528,7 @@ impl ProductionTeamUnitRunner {
                 },
             },
             reviewer: provider_spec(reviewer),
+            repair: None,
         })
     }
 
@@ -2086,6 +2087,10 @@ fn classify_terminal(
         Err(RuntimeError::Verification) => {
             (CampaignTaskState::Failed, TaskTerminalReason::GateFailed)
         }
+        Err(RuntimeError::RepairNotReproduced) => (
+            CampaignTaskState::Blocked,
+            TaskTerminalReason::PrerequisiteBlocked,
+        ),
         Err(RuntimeError::Integration) => (
             CampaignTaskState::Blocked,
             TaskTerminalReason::IntegrationConflict,

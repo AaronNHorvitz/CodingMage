@@ -84,6 +84,16 @@ identifiers fail closed. The run spec contains no credential value or monetary c
 `close_task` rejects every provider-reported limitation; `candidate_only` retains a reviewed
 checkpoint without changing the canonical checkbox.
 
+An optional `[repair]` table with `regression_gate = "configured-gate-N"` turns the unit into a
+reproduce-before-repair unit. Before the implementer runs, the coordinator's gate runner executes
+only that configured gate at the base commit and refuses the unit with
+`codingmage.runtime.repair_not_reproduced` when it passes, because nothing was reproduced. After
+the candidate's gates pass, the coordinator retains an integrity-protected repair receipt binding
+the failing base observation and the passing candidate observation under
+`<state>/gate-baselines/<repository_id>/`. Provider prose about a reproduction never satisfies the
+requirement, and an unknown gate identity is a spec refusal. Campaign task authority does not yet
+carry this requirement; it applies to supervised run specs.
+
 The `existing_login` mode permits the provider CLIs to discover their own established login while
 CodingMage supplies empty setting sources, strict empty MCP configuration, no network tools, and
 file-only worktree permissions. The process receives only `HOME` and any present

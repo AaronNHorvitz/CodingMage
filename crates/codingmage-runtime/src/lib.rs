@@ -14,7 +14,9 @@ mod team_publication;
 mod team_runtime;
 mod team_state;
 
-pub use gate_baseline::{BaselineGate, GateBaseline, GateBaselineStore, GateComparison};
+pub use gate_baseline::{
+    BaselineGate, GateBaseline, GateBaselineStore, GateComparison, RepairReceipt,
+};
 pub use team_campaign::{
     TeamCampaignReport, TeamCompletionReconciliation, TeamTaskCompletionReport,
     run_team_campaign_with_progress, team_campaign_report,
@@ -361,6 +363,22 @@ pub struct RunSpec {
     pub implementer: ImplementerSpec,
     /// Codex read-only review profile.
     pub reviewer: ProviderSpec,
+    /// Optional reproduce-before-repair requirement; absence preserves ordinary units.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repair: Option<RepairRequirement>,
+}
+
+/// Reproduce-before-repair requirement bound to one unit.
+///
+/// The named gate must be observed failing at the base commit by the coordinator's gate runner
+/// before the implementer runs, and passing on the reviewed candidate; provider prose about a
+/// reproduction never satisfies it.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RepairRequirement {
+    /// Stable identity of the configured gate that reproduces the defect, such as
+    /// `configured-gate-2`.
+    pub regression_gate: String,
 }
 
 /// Canonical completion authority for one run.
@@ -401,6 +419,14 @@ impl RunSpec {
             || self.owned_paths.iter().any(|path| !safe_relative(path))
             || !valid_provider(&self.implementer.provider)
             || !valid_provider(&self.reviewer)
+            || self.repair.as_ref().is_some_and(|repair| {
+                repair.regression_gate.is_empty()
+                    || repair.regression_gate.len() > 128
+                    || repair
+                        .regression_gate
+                        .bytes()
+                        .any(|byte| !(byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_')))
+            })
         {
             return Err(RuntimeError::Spec);
         }
@@ -2905,6 +2931,7 @@ pub fn run_serial_campaign_with_progress(
                 },
             },
             reviewer: provider_spec(&spec.reviewer),
+            repair: None,
         };
         let mut provider_retry_budget = ProviderRetryBudget::default();
         let (unit, accepted_usage) = loop {
@@ -3376,6 +3403,9 @@ const fn campaign_unit_error(error: RuntimeError) -> CampaignUnitError {
         RuntimeError::CampaignLimit(_) => paused_unit_error("codingmage.campaign.unit_limit"),
         RuntimeError::Verification => {
             paused_unit_error("codingmage.campaign.unit_verification_failure")
+        }
+        RuntimeError::RepairNotReproduced => {
+            blocked_unit_error("codingmage.campaign.unit_repair_not_reproduced")
         }
         RuntimeError::Implementer(ClaudeError::InvalidProfile) => {
             blocked_unit_error("codingmage.campaign.unit_implementer_invalid_profile")
@@ -4600,6 +4630,7 @@ struct ProductionWorkflowPort<'a> {
     external_context: Option<String>,
     planned_worktree: WorktreePlan,
     authority_envelope_sha256: String,
+    repair_base: Option<codingmage_gate::GateEvidence>,
     decision_evidence: Option<EvidenceId>,
     lock: Option<CoordinatorLock>,
     worktree: Option<OwnedWorktree>,
@@ -4650,6 +4681,7 @@ impl<'a> ProductionWorkflowPort<'a> {
             external_context: inputs.external_context,
             planned_worktree: inputs.planned_worktree,
             authority_envelope_sha256: String::new(),
+            repair_base: None,
             decision_evidence: None,
             lock: None,
             worktree: None,
@@ -5570,6 +5602,10 @@ impl<'a> ProductionWorkflowPort<'a> {
         let comparison = self.compare_with_baseline(&commit, &result)?;
         self.gate_evidence
             .push(evidence_id(&comparison.integrity_sha256)?);
+        if let Some(receipt) = self.complete_repair_receipt(&result)? {
+            self.gate_evidence
+                .push(evidence_id(&receipt.integrity_sha256)?);
+        }
         if let Some(decision) = self.decision_evidence.clone() {
             self.gate_evidence.push(decision);
         }
@@ -5584,6 +5620,110 @@ impl<'a> ProductionWorkflowPort<'a> {
             VerificationOutcome::Pass
         } else {
             VerificationOutcome::RecoverableFailure
+        })
+    }
+
+    /// Observes the unit's named regression gate at the base commit before any implementer runs.
+    ///
+    /// The gate must fail there; a passing gate means no defect was reproduced and the unit is
+    /// refused with `codingmage.runtime.repair_not_reproduced` before any provider process.
+    fn reproduce_regression(&mut self, worktree: &Path) -> Result<(), OrchestrationError> {
+        let Some(requirement) = self.spec.repair.clone() else {
+            return Ok(());
+        };
+        let registry = self.gate_registry(worktree)?;
+        let entries = registry
+            .entries()
+            .iter()
+            .filter(|entry| match entry {
+                GateEntry::Available(definition) => definition.id == requirement.regression_gate,
+                GateEntry::Unavailable(gate) => gate.id == requirement.regression_gate,
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        if entries.is_empty() {
+            self.failure = Some(RuntimeError::Spec);
+            return Err(OrchestrationError::Port);
+        }
+        let Ok(registry) = GateRegistry::new(entries) else {
+            self.failure = Some(RuntimeError::Verification);
+            return Err(OrchestrationError::Port);
+        };
+        self.authorize_campaign_effect(CampaignReservation {
+            process_invocations: 1,
+            ..CampaignReservation::default()
+        })?;
+        let Ok(result) = GateRunner::new(self.executor.clone()).run_with_cancellation(
+            &registry,
+            &self.source_commit,
+            &BTreeSet::new(),
+            &self.cancellation,
+        ) else {
+            self.failure = Some(RuntimeError::Verification);
+            return Err(OrchestrationError::Port);
+        };
+        self.record_gate_run(&result)?;
+        let Some(observation) = result
+            .evidence
+            .iter()
+            .find(|evidence| evidence.gate_id == requirement.regression_gate)
+            .cloned()
+        else {
+            self.failure = Some(RuntimeError::Verification);
+            return Err(OrchestrationError::Port);
+        };
+        if observation.outcome != codingmage_gate::GateOutcome::Failed {
+            self.failure = Some(RuntimeError::RepairNotReproduced);
+            return Err(OrchestrationError::Port);
+        }
+        self.repair_base = Some(observation);
+        Ok(())
+    }
+
+    /// Retains the repair receipt once the candidate's regression gate passed.
+    fn complete_repair_receipt(
+        &mut self,
+        run: &codingmage_gate::GateRun,
+    ) -> Result<Option<RepairReceipt>, OrchestrationError> {
+        let (Some(requirement), Some(base)) = (self.spec.repair.clone(), self.repair_base.clone())
+        else {
+            return Ok(None);
+        };
+        let Some(candidate) = run
+            .evidence
+            .iter()
+            .find(|evidence| evidence.gate_id == requirement.regression_gate)
+        else {
+            self.failure = Some(RuntimeError::Verification);
+            return Err(OrchestrationError::Port);
+        };
+        if candidate.outcome != codingmage_gate::GateOutcome::Passed {
+            // The candidate still fails the regression gate; the ordinary gate failure path
+            // requests a bounded correction and no receipt exists yet.
+            return Ok(None);
+        }
+        let outcome = (|| {
+            let registry_sha256 = serializable_sha256(&self.config.gate_commands)?;
+            let repository_id = self
+                .authorization
+                .identity()
+                .repository_id
+                .as_str()
+                .to_owned();
+            let receipt = RepairReceipt::new(
+                &repository_id,
+                &registry_sha256,
+                &requirement.regression_gate,
+                &base,
+                candidate,
+            )?;
+            GateBaselineStore::open(&self.config.state_root, &repository_id)?
+                .retain_repair(&receipt)?;
+            Ok::<RepairReceipt, RuntimeError>(receipt)
+        })();
+        outcome.map(Some).map_err(|error| {
+            self.failure = Some(error);
+            OrchestrationError::DurableState
         })
     }
 
@@ -6077,6 +6217,7 @@ impl WorkflowPort for ProductionWorkflowPort<'_> {
             self.failure = Some(RuntimeError::Verification);
             return Err(OrchestrationError::Port);
         }
+        self.reproduce_regression(&worktree)?;
         self.revalidate_task_authority()?;
         let claude = self.claude_adapter()?;
         self.authorize_campaign_effect(CampaignReservation {
@@ -6888,6 +7029,9 @@ pub enum RuntimeError {
     Reviewer(CodexError),
     /// A deterministic gate profile or execution failed before trustworthy evidence existed.
     Verification,
+    /// The unit's named regression gate did not fail at the base commit, so no defect was
+    /// reproduced before repair.
+    RepairNotReproduced,
     /// An exact aggregate campaign limit stopped admission before the next delegated effect.
     CampaignLimit(CampaignLimitKind),
 }
@@ -6921,6 +7065,7 @@ impl RuntimeError {
             Self::Implementer(error) => error.code(),
             Self::Reviewer(error) => error.code(),
             Self::Verification => "codingmage.runtime.verification",
+            Self::RepairNotReproduced => "codingmage.runtime.repair_not_reproduced",
             Self::CampaignLimit(limit) => limit.code(),
         }
     }
