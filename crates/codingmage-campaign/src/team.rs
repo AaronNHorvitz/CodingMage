@@ -108,11 +108,80 @@ pub struct GitHubCampaignPolicy {
     /// Required commit-check names, in deterministic order.
     #[serde(default)]
     pub required_checks: Vec<String>,
+    /// Optional explicit trust policy for the exact host; absent means no certificate or proxy
+    /// variable reaches the CLI. Absence serializes to nothing, so existing digests are stable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trust: Option<GitHubHostTrust>,
+}
+
+/// Explicit per-host trust for a GitHub host, typically a GitHub Enterprise deployment behind a
+/// private certificate authority or an egress proxy. Absence keeps the ambient-free default in
+/// which no certificate or proxy variable reaches the CLI.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct GitHubHostTrust {
+    /// Absolute PEM bundle passed to the CLI as `SSL_CERT_FILE`; validated at admission.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ca_bundle: Option<PathBuf>,
+    /// Exact `http://` or `https://` proxy URL passed as `HTTPS_PROXY`; no credentials.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub https_proxy: Option<String>,
+    /// Hosts excluded from the proxy, passed as `NO_PROXY`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub no_proxy: Vec<String>,
+}
+
+impl GitHubHostTrust {
+    fn verify(&self) -> Result<(), CampaignError> {
+        let declares_something =
+            self.ca_bundle.is_some() || self.https_proxy.is_some() || !self.no_proxy.is_empty();
+        if !declares_something
+            || self.ca_bundle.as_ref().is_some_and(|path| {
+                !path.is_absolute()
+                    || path.components().any(|part| {
+                        !matches!(
+                            part,
+                            std::path::Component::RootDir | std::path::Component::Normal(_)
+                        )
+                    })
+            })
+            || self
+                .https_proxy
+                .as_ref()
+                .is_some_and(|proxy| !valid_proxy_url(proxy))
+            || self.no_proxy.len() > MAX_GITHUB_CHECKS
+            || self.no_proxy.iter().any(|host| !valid_host(host))
+            || self.no_proxy.iter().collect::<BTreeSet<_>>().len() != self.no_proxy.len()
+        {
+            return Err(CampaignError::InvalidAuthority);
+        }
+        Ok(())
+    }
+}
+
+fn valid_proxy_url(value: &str) -> bool {
+    let Some(rest) = value
+        .strip_prefix("https://")
+        .or_else(|| value.strip_prefix("http://"))
+    else {
+        return false;
+    };
+    !rest.is_empty()
+        && value.len() <= 512
+        && !rest.contains('@')
+        && !rest.contains('/')
+        && !value
+            .chars()
+            .any(|character| character.is_control() || character.is_whitespace())
 }
 
 impl GitHubCampaignPolicy {
     fn verify(&self, spec: &CampaignSpec) -> Result<(), CampaignError> {
         if !self.cli_executable.is_absolute()
+            || self
+                .trust
+                .as_ref()
+                .is_some_and(|trust| trust.verify().is_err())
             || !valid_component(&self.account)
             || !valid_host(&self.host)
             || !valid_component(&self.owner)
@@ -3173,6 +3242,68 @@ fn bounded_identity(prefix: &str, campaign_id: &str, task_id: &str, sequence: u6
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    type TrustMutation = fn(&mut GitHubHostTrust);
+
+    #[test]
+    fn github_host_trust_is_optional_bounded_and_credential_free() {
+        let mut trust = GitHubHostTrust {
+            ca_bundle: Some(PathBuf::from("/etc/pki/enterprise-ca.pem")),
+            https_proxy: Some("https://proxy.example.internal:3128".to_owned()),
+            no_proxy: vec!["ghe.example.internal".to_owned()],
+        };
+        assert_eq!(trust.verify(), Ok(()));
+        let encoded = serde_json::to_string(&GitHubHostTrust {
+            ca_bundle: None,
+            https_proxy: None,
+            no_proxy: Vec::new(),
+        })
+        .unwrap();
+        assert_eq!(encoded, "{}", "empty declarations serialize to nothing");
+        let mutations: Vec<(&str, TrustMutation)> = vec![
+            ("empty", |trust| {
+                trust.ca_bundle = None;
+                trust.https_proxy = None;
+                trust.no_proxy.clear();
+            }),
+            ("relative-bundle", |trust| {
+                trust.ca_bundle = Some(PathBuf::from("certs/ca.pem"));
+            }),
+            ("escaping-bundle", |trust| {
+                trust.ca_bundle = Some(PathBuf::from("/etc/../ca.pem"));
+            }),
+            ("proxy-scheme", |trust| {
+                trust.https_proxy = Some("socks5://proxy:1080".to_owned());
+            }),
+            ("proxy-credentials", |trust| {
+                trust.https_proxy = Some("https://user:secret@proxy:3128".to_owned());
+            }),
+            ("proxy-path", |trust| {
+                trust.https_proxy = Some("https://proxy:3128/path".to_owned());
+            }),
+            ("no-proxy-host", |trust| {
+                trust.no_proxy = vec!["not a host".to_owned()];
+            }),
+            ("no-proxy-duplicate", |trust| {
+                trust.no_proxy = vec!["a.example".to_owned(), "a.example".to_owned()];
+            }),
+        ];
+        for (name, mutate) in mutations {
+            let mut changed = trust.clone();
+            mutate(&mut changed);
+            assert_eq!(
+                changed.verify(),
+                Err(CampaignError::InvalidAuthority),
+                "{name}"
+            );
+        }
+        trust.ca_bundle = None;
+        assert_eq!(
+            trust.verify(),
+            Ok(()),
+            "a proxy alone is a complete declaration"
+        );
+    }
     use crate::{
         CampaignAuthentication, CampaignGateTier, CampaignLimits, CampaignProvider,
         CampaignPublication, PodRisk,
@@ -3646,6 +3777,7 @@ mod tests {
             remote: "origin".to_owned(),
             destination_branch: "main".to_owned(),
             required_checks: vec!["workspace tests".to_owned()],
+            trust: None,
         });
         value.verify().unwrap();
 

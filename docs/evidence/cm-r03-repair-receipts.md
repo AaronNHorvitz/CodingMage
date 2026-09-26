@@ -111,8 +111,22 @@ contains the recipe as data, repair receipt, unconfigured gate refused without w
 | GitHub Enterprise host and CA policy | `GitHubCampaignPolicy.host` is an exact identity; no enterprise CA bundle, proxy or per-host trust policy field exists and no fixture exercises a non-`github.com` host | none | Gap: needs a new implementation row and fixtures before any claim |
 | Protected-branch behavior | Protected branches are refused as publication targets (`CampaignSpec.protected_branches`, preflight `default_branch_protected`) and destination promotion requires branch protection (Sub-task 24.3.1.5) | `sprint-25-multi-agent-local.md` | Local; remote protection observation needs authenticated fixtures (External 3) |
 
-Outcome: one genuine gap (enterprise host and CA policy) is recorded as new row CM-R03.5a in
-`TASKS.md`; everything else maps to existing rows or the open authenticated-GitHub evidence.
+Outcome: one genuine gap (enterprise host and CA policy) was recorded as new row CM-R03.5a in
+`TASKS.md` and is now implemented below; everything else maps to existing rows or the open
+authenticated-GitHub evidence.
+
+## CM-R03.5a - GitHub Enterprise host and CA trust policy
+
+`GitHubHostTrust` on the campaign `github` policy declares an absolute PEM `ca_bundle`, an exact
+credential-free `https_proxy` URL and `no_proxy` hosts; an empty declaration, a relative or
+escaping bundle path, a non-`http(s)` scheme, embedded credentials, a proxy path or malformed
+hosts are refused at authority verification, and absence serializes to nothing so existing
+digests are unchanged. The gh port builds `SSL_CERT_FILE`, `HTTPS_PROXY` and `NO_PROXY` only
+from that policy (`trust_environment`), after validating that the bundle is an absolute regular
+nonsymlink PEM file of at most one mebibyte that carries no private key; ambient variables still
+never reach the CLI. Tests: campaign unit test (eight mutations) and runtime unit test (variables
+produced exactly; missing, non-PEM and key-carrying bundles refused). Running the real port
+against a non-`github.com` host with a fake server remains part of External 3 evidence.
 
 ## Open
 

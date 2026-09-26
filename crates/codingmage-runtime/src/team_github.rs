@@ -1,6 +1,6 @@
 //! Guarded production GitHub task-publication adapter.
 
-use std::{collections::BTreeSet, path::PathBuf, thread, time::Duration};
+use std::{collections::BTreeSet, fs, path::PathBuf, thread, time::Duration};
 
 use codingmage_campaign::{CampaignSpec, GitHubCampaignPolicy};
 use codingmage_contracts::{EvidenceId, TaskId};
@@ -75,8 +75,9 @@ impl GhCliPublicationPort {
             &private_root.join("processes"),
         )
         .map_err(|_| TeamPublicationError::Authority)?;
-        let environment =
+        let mut environment =
             login_discovery_environment().map_err(|_| TeamPublicationError::Authority)?;
+        environment.extend(trust_environment(policy.trust.as_ref())?);
         let mut port = Self {
             policy,
             campaign_id: spec.campaign_id.clone(),
@@ -1345,6 +1346,55 @@ fn unique_record<T: for<'de> Deserialize<'de>>(
     Ok(values.pop())
 }
 
+/// Builds the certificate and proxy variables for the exact host trust policy.
+///
+/// Without a policy no variable is added, so ambient `SSL_CERT_FILE` or proxy settings never
+/// reach the CLI. A declared bundle must be an absolute regular nonsymlink PEM file of at most
+/// one mebibyte; anything else is an authority refusal before any process starts.
+///
+/// # Errors
+///
+/// Returns [`TeamPublicationError::Authority`] for an unreadable or non-PEM bundle.
+pub(crate) fn trust_environment(
+    trust: Option<&codingmage_campaign::GitHubHostTrust>,
+) -> Result<std::collections::BTreeMap<String, String>, TeamPublicationError> {
+    const MAX_BUNDLE_BYTES: u64 = 1024 * 1024;
+    let mut environment = std::collections::BTreeMap::new();
+    let Some(trust) = trust else {
+        return Ok(environment);
+    };
+    if let Some(bundle) = &trust.ca_bundle {
+        let metadata = fs::symlink_metadata(bundle).map_err(|_| TeamPublicationError::Authority)?;
+        if !bundle.is_absolute()
+            || !metadata.is_file()
+            || metadata.file_type().is_symlink()
+            || metadata.len() == 0
+            || metadata.len() > MAX_BUNDLE_BYTES
+        {
+            return Err(TeamPublicationError::Authority);
+        }
+        let contents = std::fs::read(bundle).map_err(|_| TeamPublicationError::Authority)?;
+        let text = std::str::from_utf8(&contents).map_err(|_| TeamPublicationError::Authority)?;
+        if !text.contains("-----BEGIN CERTIFICATE-----")
+            || !text.contains("-----END CERTIFICATE-----")
+            || text.contains("PRIVATE KEY")
+        {
+            return Err(TeamPublicationError::Authority);
+        }
+        environment.insert(
+            "SSL_CERT_FILE".to_owned(),
+            bundle.to_string_lossy().into_owned(),
+        );
+    }
+    if let Some(proxy) = &trust.https_proxy {
+        environment.insert("HTTPS_PROXY".to_owned(), proxy.clone());
+    }
+    if !trust.no_proxy.is_empty() {
+        environment.insert("NO_PROXY".to_owned(), trust.no_proxy.join(","));
+    }
+    Ok(environment)
+}
+
 fn parse_remote_url(url: &str) -> Result<(String, String, String), TeamPublicationError> {
     let without_suffix = url.strip_suffix(".git").unwrap_or(url);
     let path = if let Some(rest) = without_suffix.strip_prefix("https://") {
@@ -1401,6 +1451,86 @@ fn digest(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn host_trust_reaches_the_cli_only_through_a_validated_bundle_and_proxy() {
+        use codingmage_campaign::GitHubHostTrust;
+
+        assert!(trust_environment(None).unwrap().is_empty());
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-host-trust-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|value| value.as_nanos())
+                .unwrap_or_default()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let bundle = root.join("enterprise-ca.pem");
+        fs::write(
+            &bundle,
+            "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n",
+        )
+        .unwrap();
+        let trust = GitHubHostTrust {
+            ca_bundle: Some(bundle.clone()),
+            https_proxy: Some("https://proxy.example.internal:3128".to_owned()),
+            no_proxy: vec![
+                "ghe.example.internal".to_owned(),
+                "localhost.localdomain".to_owned(),
+            ],
+        };
+        let environment = trust_environment(Some(&trust)).unwrap();
+        assert_eq!(
+            environment.get("SSL_CERT_FILE").map(String::as_str),
+            Some(bundle.to_str().unwrap())
+        );
+        assert_eq!(
+            environment.get("HTTPS_PROXY").map(String::as_str),
+            Some("https://proxy.example.internal:3128")
+        );
+        assert_eq!(
+            environment.get("NO_PROXY").map(String::as_str),
+            Some("ghe.example.internal,localhost.localdomain")
+        );
+        assert_eq!(environment.len(), 3);
+
+        let missing = GitHubHostTrust {
+            ca_bundle: Some(root.join("missing.pem")),
+            ..trust.clone()
+        };
+        assert_eq!(
+            trust_environment(Some(&missing)),
+            Err(TeamPublicationError::Authority)
+        );
+        let key = root.join("key.pem");
+        let key_header = ["-----BEGIN ", "PRIVATE", " KEY-----"].concat();
+        fs::write(
+            &key,
+            format!("-----BEGIN CERTIFICATE-----\nx\n-----END CERTIFICATE-----\n{key_header}\n"),
+        )
+        .unwrap();
+        let leaking = GitHubHostTrust {
+            ca_bundle: Some(key),
+            ..trust.clone()
+        };
+        assert_eq!(
+            trust_environment(Some(&leaking)),
+            Err(TeamPublicationError::Authority),
+            "a bundle carrying a private key is never handed to the CLI"
+        );
+        let not_pem = root.join("not.pem");
+        fs::write(&not_pem, "hello\n").unwrap();
+        let invalid = GitHubHostTrust {
+            ca_bundle: Some(not_pem),
+            ..trust
+        };
+        assert_eq!(
+            trust_environment(Some(&invalid)),
+            Err(TeamPublicationError::Authority)
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
 
     #[test]
     fn exact_supported_remote_urls_parse_without_credentials() {

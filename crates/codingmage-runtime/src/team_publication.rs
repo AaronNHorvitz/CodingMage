@@ -1356,6 +1356,7 @@ mod tests {
                     remote: "origin".to_owned(),
                     destination_branch: "main".to_owned(),
                     required_checks: vec!["workspace".to_owned()],
+                    trust: None,
                 }),
                 concurrency: CampaignConcurrency::default(),
                 resources: TeamResourcePolicy::default(),

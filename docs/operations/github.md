@@ -27,6 +27,19 @@ preserved. Automated review is labeled as automated evidence and never impersona
 Remote task completion follows the canonical integrated task state; GitHub checkboxes never override
 the local plan.
 
+## Enterprise Hosts and Trust
+
+`host` is an exact identity passed to every CLI call as `--hostname`. The CLI runs with a fixed
+minimal environment, so ambient `SSL_CERT_FILE` or proxy settings never reach it. A GitHub
+Enterprise host behind a private certificate authority or an egress proxy needs an explicit
+`trust` table on the campaign's `github` policy: `ca_bundle` (absolute PEM file, validated at
+admission, passed as `SSL_CERT_FILE`), `https_proxy` (exact `http://` or `https://` URL without
+credentials or path, passed as `HTTPS_PROXY`) and `no_proxy` hosts (passed as `NO_PROXY`). A
+bundle that is missing, not PEM, oversized or carrying a private key is an authority refusal
+before any process starts. Absence of `trust` serializes to nothing, so existing authority
+digests are unchanged. Authenticated operation against an enterprise host still needs the
+separately admitted credentials and target of External 3.
+
 ## Uncertain Writes
 
 Every external write carries a content-derived idempotency key and expected remote version. A
