@@ -384,25 +384,30 @@ fn campaign_task_authority_reproduces_the_regression_before_the_pod_repairs_it()
 }
 
 #[test]
-fn a_base_that_already_passes_stops_the_invocation_with_a_typed_blocker() {
+fn a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues() {
     let campaign = Campaign::new(2);
     let outcome = campaign.json("campaign");
-    assert_eq!(outcome["state"], "blocked", "{outcome}");
-    assert_eq!(
-        outcome["blocker_code"], "codingmage.campaign.unit_repair_not_reproduced",
-        "{outcome}"
-    );
     assert_eq!(outcome["completed_units"], 0, "{outcome}");
     assert!(
         !campaign.implementer_called(),
-        "no provider ran for the task"
+        "no provider ran for the held task"
     );
     assert!(campaign.repair_receipts().is_empty());
     let lead_log = fs::read_to_string(campaign.fixture.root.join("lead.log")).unwrap();
-    assert_eq!(lead_log, "0.1.1.1\n", "the lead was consulted exactly once");
+    assert!(
+        lead_log.lines().count() >= 2 && lead_log.starts_with("0.1.1.1\n0.1.1.2\n"),
+        "independent work continued after the typed blocker: {lead_log}"
+    );
+    let explanation = campaign.json("campaign-explain-blocker");
+    let text = serde_json::to_string(&explanation).unwrap();
+    assert!(
+        text.contains("0.1.1.1") && text.contains("implementation_condition_outside_authority"),
+        "the exact task retains the typed blocker: {text}"
+    );
     let status = campaign.json("campaign-status");
-    assert_eq!(
-        status["blocker_code"], "codingmage.campaign.unit_repair_not_reproduced",
-        "{status}"
+    assert!(
+        !serde_json::to_string(&status)
+            .unwrap()
+            .contains("regression: value")
     );
 }

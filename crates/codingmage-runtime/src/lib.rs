@@ -2384,7 +2384,7 @@ pub fn run_serial_campaign_with_progress(
     let mut completed_units = checkpoint.completed_units;
     let mut last_task_id = checkpoint.last_task_id.clone();
     let mut mission_replans = 0_u32;
-    loop {
+    'campaign: loop {
         apply_pending_campaign_controls(&mut checkpoint, &campaign_root)?;
         if let Some(termination) = campaign_control_termination(&mut checkpoint, &campaign_root)? {
             return Ok(campaign_outcome(
@@ -3137,6 +3137,28 @@ pub fn run_serial_campaign_with_progress(
                             Some(blocker_code),
                         ),
                     ));
+                }
+                Err(RuntimeError::RepairNotReproduced) => {
+                    // The base already passes the task's regression gate, so nothing was
+                    // reproduced. Retain the typed blocker on the exact task and continue with
+                    // independent work instead of ending the invocation.
+                    record_campaign_task_blocker(
+                        &mut checkpoint,
+                        lease.task_id.clone(),
+                        codingmage_contracts::LeadBlockedReason::ImplementationConditionOutsideAuthority,
+                    )?;
+                    checkpoint.schedule_planning(PlanningTrigger::ProposalRejected);
+                    checkpoint.phase = CampaignPhase::Ready;
+                    checkpoint.active_unit = None;
+                    checkpoint.blocker_code =
+                        Some("codingmage.campaign.unit_repair_not_reproduced".to_owned());
+                    checkpoint.persist(&campaign_root)?;
+                    if lease_registered {
+                        scheduler
+                            .release(&lease.pod_id)
+                            .map_err(RuntimeError::Campaign)?;
+                    }
+                    continue 'campaign;
                 }
                 Err(error) => {
                     let (campaign_state, phase, stop_reason, blocker_code) =

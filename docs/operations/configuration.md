@@ -93,8 +93,8 @@ the failing base observation and the passing candidate observation under
 `<state>/gate-baselines/<repository_id>/`. Provider prose about a reproduction never satisfies the
 requirement, and an unknown gate identity is a spec refusal. A campaign binds the same requirement
 to one exact task with `regression_gate` on a `task_path_authority` entry; a base that already
-passes stops the campaign invocation with the typed blocker
-`codingmage.campaign.unit_repair_not_reproduced` before any provider runs.
+passes retains the typed blocker `codingmage.campaign.unit_repair_not_reproduced` on that task
+before any provider runs, and the campaign continues with independent work.
 
 An optional `context` string (at most 4096 bytes, no NUL) is appended to the implementer packet
 as data; it grants no authority.
