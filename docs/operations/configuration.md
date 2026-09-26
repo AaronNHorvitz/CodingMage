@@ -94,6 +94,22 @@ the failing base observation and the passing candidate observation under
 requirement, and an unknown gate identity is a spec refusal. Campaign task authority does not yet
 carry this requirement; it applies to supervised run specs.
 
+An optional `context` string (at most 4096 bytes, no NUL) is appended to the implementer packet
+as data; it grants no authority.
+
+## Recipes
+
+`codingmage recipe-instantiate --config <c> --recipe <recipe.toml> --template <run-spec.toml>
+--task <TASK_ID> --output <new-run-spec.toml>` renders a versioned recipe into an ordinary
+supervised run spec. The recipe declares a closed `kind` (`dependency_update`, `migration`,
+`security_repair`, `documentation`, `tests`), bounded `parameters`, the `scope_paths` the unit
+may own, `prerequisite_gates` that must exist in the configuration, an optional
+`verification_gate` that becomes the unit's reproduce-before-repair gate, and a `rollback`
+boundary. Only `git_recoverable = true` with no declared `external_effects` is admitted, because
+the coordinator will not claim to undo effects it cannot reverse. Providers, authentication and
+completion policy come from the operator's template, never from the recipe. An existing output
+file is never overwritten. Recipe text reaches the implementer as data only.
+
 The `existing_login` mode permits the provider CLIs to discover their own established login while
 CodingMage supplies empty setting sources, strict empty MCP configuration, no network tools, and
 file-only worktree permissions. The process receives only `HOME` and any present

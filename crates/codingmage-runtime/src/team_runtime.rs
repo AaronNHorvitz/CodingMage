@@ -529,6 +529,7 @@ impl ProductionTeamUnitRunner {
             },
             reviewer: provider_spec(reviewer),
             repair: None,
+            context: None,
         })
     }
 

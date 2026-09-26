@@ -3,6 +3,7 @@
 mod campaign_state;
 mod correction_state;
 mod gate_baseline;
+mod recipe;
 mod team_campaign;
 mod team_control;
 mod team_github;
@@ -17,6 +18,7 @@ mod team_state;
 pub use gate_baseline::{
     BaselineGate, GateBaseline, GateBaselineStore, GateComparison, RepairReceipt,
 };
+pub use recipe::{RECIPE_VERSION, RecipeKind, RecipeSpec, RollbackBoundary};
 pub use team_campaign::{
     TeamCampaignReport, TeamCompletionReconciliation, TeamTaskCompletionReport,
     run_team_campaign_with_progress, team_campaign_report,
@@ -366,6 +368,10 @@ pub struct RunSpec {
     /// Optional reproduce-before-repair requirement; absence preserves ordinary units.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repair: Option<RepairRequirement>,
+    /// Optional bounded context appended to the implementer packet as data, for example a
+    /// rendered recipe; it grants no authority.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context: Option<String>,
 }
 
 /// Reproduce-before-repair requirement bound to one unit.
@@ -419,6 +425,7 @@ impl RunSpec {
             || self.owned_paths.iter().any(|path| !safe_relative(path))
             || !valid_provider(&self.implementer.provider)
             || !valid_provider(&self.reviewer)
+            || validate_external_context(self.context.as_deref()).is_err()
             || self.repair.as_ref().is_some_and(|repair| {
                 repair.regression_gate.is_empty()
                     || repair.regression_gate.len() > 128
@@ -2932,6 +2939,7 @@ pub fn run_serial_campaign_with_progress(
             },
             reviewer: provider_spec(&spec.reviewer),
             repair: None,
+            context: None,
         };
         let mut provider_retry_budget = ProviderRetryBudget::default();
         let (unit, accepted_usage) = loop {
@@ -4232,6 +4240,7 @@ pub fn run_one_with_progress_for_id(
     run_id: RunId,
     mut observer: impl FnMut(RunProgress),
 ) -> Result<RunOutcome, RuntimeError> {
+    let context = spec.context.clone();
     run_one_with_progress_id_budget(
         config,
         spec,
@@ -4242,7 +4251,7 @@ pub fn run_one_with_progress_for_id(
         None,
         None,
         CancellationToken::default(),
-        None,
+        context,
     )
 }
 

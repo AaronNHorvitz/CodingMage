@@ -72,6 +72,39 @@ is unchanged).
 Outcome: every gap maps to an existing open row (Gate 15.1, Gate 20.2, External 3, Sub-tasks
 33.2.1.2 and 33.2.1.3); no new row is needed and no acceptance is claimed here.
 
+## CM-R03.4 - Engineering recipes
+
+Implemented in `crates/codingmage-runtime/src/recipe.rs` and the `recipe-instantiate` command:
+
+- `RecipeSpec` (version 1, `deny_unknown_fields`) declares a closed kind, bounded parameters,
+  repository-relative scope roots, prerequisite gate identities, an optional verification gate and
+  a rollback boundary. A recipe that is not Git-recoverable or that declares any external effect
+  is refused, so the coordinator never claims rollback it cannot perform.
+- Instantiation takes an operator run-spec template for providers, authentication and completion
+  policy; the recipe supplies only owned paths, the reproduce-before-repair gate and a bounded
+  rendered context that reaches the implementer packet as data. Every referenced gate must exist
+  among the configured gates, and an existing output file is never overwritten.
+- `RunSpec.context` (bounded, optional) carries the rendered recipe; ordinary units are unchanged.
+
+Tests: recipe unit tests (instantiation under template authority, TOML round trip, eleven
+refusal mutations, unknown-field refusal, context budget) and the real-process test
+`a_recipe_instantiates_into_a_repair_unit_under_template_authority` (rendered spec, packet
+contains the recipe as data, repair receipt, unconfigured gate refused without writing).
+
+## CM-R03.5 - Crosswalk of controlled Git delivery grants against CAP-14
+
+| Acceptance statement | Implementation | Evidence | Status |
+| --- | --- | --- | --- |
+| Branch, commit, push, PR, check and merge actions have separate exact grants | `CapabilityPolicy` grants (`network`, `push`, `issues`, `pull_requests`, `task_merge`, `destination_merge`, all denied by default), `PublicationPolicy`, campaign `publication`, `MultiAgentPolicy.publication_mode`, `task_integration_policy`, `destination_promotion_policy`, exact `GitHubCampaignPolicy` identities; preflight refuses disagreement between them | `docs/operations/configuration.md`, `docs/operations/github.md`, Sub-tasks 24.2.1.x, 24.3.1.x, `sprint-25-multi-agent-local.md` | Local; authenticated evidence is External 3 / Gate 15.1 (open) |
+| Coordinator-only commits, no model Git authority | Sprint 3 worktree isolation, coordinator author identity, no provider access to the authenticated CLI | `sprint-3.md`, `docs/operations/github.md` | Local |
+| Push only exact verified branches; draft PRs; no merge, release, deletion, settings, secrets or Actions administration | Sub-tasks 24.2.1.1, 24.2.1.3, 24.2.1.5 and the fixed `gh` argument vectors | `sprint-25-multi-agent-local.md`, fake GitHub server tests | Fake server only (External 3 open) |
+| Separate destination promotion authority bound to reviewed commits and one create-once request | Sub-tasks 24.3.1.4, 24.3.1.5, `campaign-approve-destination` | `sprint-25-multi-agent-local.md` | Local |
+| GitHub Enterprise host and CA policy | `GitHubCampaignPolicy.host` is an exact identity; no enterprise CA bundle, proxy or per-host trust policy field exists and no fixture exercises a non-`github.com` host | none | Gap: needs a new implementation row and fixtures before any claim |
+| Protected-branch behavior | Protected branches are refused as publication targets (`CampaignSpec.protected_branches`, preflight `default_branch_protected`) and destination promotion requires branch protection (Sub-task 24.3.1.5) | `sprint-25-multi-agent-local.md` | Local; remote protection observation needs authenticated fixtures (External 3) |
+
+Outcome: one genuine gap (enterprise host and CA policy) is recorded as new row CM-R03.5a in
+`TASKS.md`; everything else maps to existing rows or the open authenticated-GitHub evidence.
+
 ## Open
 
 - CM-R03.2 to CM-R03.6 remain open as listed in `TASKS.md`; CM-R03.6 needs separately admitted

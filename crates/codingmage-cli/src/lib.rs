@@ -17,13 +17,13 @@ use codingmage_core::{
 use codingmage_git::inventory_repository;
 use codingmage_plan::TaskPlan;
 use codingmage_runtime::{
-    RunProgress, RunSpec, RuntimeError, admit_campaign_mission, answer_campaign_decision,
-    approve_campaign_destination_promotion, approve_campaign_task_integration,
-    campaign_blocker_explanation, campaign_mission_preflight, campaign_mission_status,
-    campaign_preflight_with_mission, campaign_status, clear_campaign_blocker,
-    observe_campaign_deferral_trigger, request_campaign_control, revoke_campaign_mission,
-    run_one_with_progress, run_one_with_progress_for_id, run_team_campaign_with_progress,
-    team_campaign_report,
+    RecipeSpec, RunProgress, RunSpec, RuntimeError, admit_campaign_mission,
+    answer_campaign_decision, approve_campaign_destination_promotion,
+    approve_campaign_task_integration, campaign_blocker_explanation, campaign_mission_preflight,
+    campaign_mission_status, campaign_preflight_with_mission, campaign_status,
+    clear_campaign_blocker, observe_campaign_deferral_trigger, request_campaign_control,
+    revoke_campaign_mission, run_one_with_progress, run_one_with_progress_for_id,
+    run_team_campaign_with_progress, team_campaign_report,
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -54,6 +54,7 @@ Commands:
   campaign-mission-status       Read durable mission authority and decision counts
   campaign-mission-revoke       Revoke a mission irreversibly; no new effect may start
   campaign-mission-answer       Answer one pending owner decision (supervised modes)
+  recipe-instantiate            Render a versioned recipe into a supervised run spec
 
 Run `codingmage <COMMAND> --help` for exact command usage.";
 
@@ -85,6 +86,9 @@ fn command_help(command: &str) -> Option<&'static str> {
         ),
         "campaign-mission-revoke" => Some(
             "Usage: codingmage campaign-mission-revoke --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --request <REQUEST_ID>",
+        ),
+        "recipe-instantiate" => Some(
+            "Usage: codingmage recipe-instantiate --config <ABSOLUTE_FILE> \\\n  --recipe <ABSOLUTE_FILE> --template <ABSOLUTE_RUN_SPEC> --task <TASK_ID> \\\n  --output <ABSOLUTE_NEW_FILE>",
         ),
         "campaign-mission-answer" => Some(
             "Usage: codingmage campaign-mission-answer --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --decision <DECISION_ID> --request <REQUEST_ID> \\\n  --answer <ALTERNATIVE|block>",
@@ -147,6 +151,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign-mission-status" => inspect_mission(&arguments[1..]),
         "campaign-mission-revoke" => revoke_mission(&arguments[1..]),
         "campaign-mission-answer" => answer_mission_decision(&arguments[1..]),
+        "recipe-instantiate" => instantiate_recipe(&arguments[1..]),
         _ => Err(CliError::Usage),
     }
 }
@@ -298,6 +303,38 @@ fn preflight_campaign(arguments: &[String]) -> Result<String, CliError> {
     )
     .map_err(CliError::Runtime)?;
     serde_json::to_string_pretty(&report).map_err(|_| CliError::Internal)
+}
+
+fn instantiate_recipe(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(
+        arguments,
+        &["config", "recipe", "template", "task", "output"],
+    )?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let recipe = RecipeSpec::load(&parsed.absolute_file("recipe")?).map_err(CliError::Runtime)?;
+    let template = RunSpec::load(&parsed.absolute_file("template")?).map_err(CliError::Runtime)?;
+    let output = parsed.absolute_path("output")?;
+    if output.exists() || !output.parent().is_some_and(std::path::Path::is_dir) {
+        return Err(CliError::InvalidArgument);
+    }
+    let configured_gates = (1..=config.gate_commands.len())
+        .map(|index| format!("configured-gate-{index}"))
+        .collect::<Vec<_>>();
+    let spec = recipe
+        .instantiate(&template, parsed.value("task")?, &configured_gates)
+        .map_err(CliError::Runtime)?;
+    let encoded = toml::to_string(&spec).map_err(|_| CliError::Internal)?;
+    fs::write(&output, encoded).map_err(|_| CliError::InvalidArgument)?;
+    serde_json::to_string_pretty(&serde_json::json!({
+        "schema_version": 1,
+        "recipe_id": recipe.recipe_id,
+        "kind": recipe.kind.code(),
+        "task_id": spec.task_id,
+        "owned_path_count": spec.owned_paths.len(),
+        "regression_gate": spec.repair.as_ref().map(|repair| repair.regression_gate.clone()),
+        "written": true,
+    }))
+    .map_err(|_| CliError::Internal)
 }
 
 fn admit_mission(arguments: &[String]) -> Result<String, CliError> {

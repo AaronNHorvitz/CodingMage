@@ -96,8 +96,9 @@ if "--version" in sys.argv:
 if "--help" in sys.argv:
     print('--print "json" "stream-json" --json-schema --session-id --resume --model --effort --permission-mode --bare')
     raise SystemExit(0)
-sys.stdin.read()
+packet = sys.stdin.read()
 Path(__file__).with_name("IMPLEMENTER_CALLED").write_text("called\n", encoding="utf-8")
+Path(__file__).with_name("PACKET.txt").write_text(packet, encoding="utf-8")
 Path("src/lib.rs").write_text("pub fn value() -> u8 { 2 }\n", encoding="utf-8")
 print(json.dumps({
     "type": "result",
@@ -362,4 +363,92 @@ fn unknown_regression_gate_is_a_spec_refusal_and_ordinary_units_are_unchanged() 
         repair.receipts().is_empty(),
         "no repair receipt without a requirement"
     );
+}
+
+#[test]
+fn a_recipe_instantiates_into_a_repair_unit_under_template_authority() {
+    let repair = Repair::new(1);
+    let template = repair.spec(None);
+    let recipe = repair.fixture.root.join("recipe.toml");
+    fs::write(
+        &recipe,
+        r#"version = 1
+recipe_id = "value-repair"
+kind = "security_repair"
+summary = "Raise the value to two so the regression gate passes"
+scope_paths = ["src"]
+prerequisite_gates = ["configured-gate-1"]
+verification_gate = "configured-gate-2"
+
+[parameters]
+target_value = "2"
+
+[rollback]
+git_recoverable = true
+"#,
+    )
+    .unwrap();
+    let output = repair.fixture.root.join("recipe-run.toml");
+    let instantiate = |args: &[&str]| {
+        let mut arguments = vec![
+            "recipe-instantiate",
+            "--config",
+            repair.config.to_str().unwrap(),
+            "--recipe",
+            recipe.to_str().unwrap(),
+            "--template",
+            template.to_str().unwrap(),
+        ];
+        arguments.extend_from_slice(args);
+        Fixture::command(&arguments)
+    };
+    let rendered = instantiate(&["--task", "0.1.1.1", "--output", output.to_str().unwrap()]);
+    assert!(
+        rendered.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&rendered.stderr)
+    );
+    let summary: serde_json::Value = serde_json::from_slice(&rendered.stdout).unwrap();
+    assert_eq!(summary["recipe_id"], "value-repair");
+    assert_eq!(summary["regression_gate"], "configured-gate-2");
+    let written = fs::read_to_string(&output).unwrap();
+    assert!(written.contains("regression_gate = \"configured-gate-2\""));
+    assert!(written.contains("RECIPE value-repair version 1 kind security_repair"));
+    assert!(!written.contains("PRIVATE"), "{written}");
+
+    let duplicate = instantiate(&["--task", "0.1.1.1", "--output", output.to_str().unwrap()]);
+    assert!(
+        !duplicate.status.success(),
+        "an existing output is never overwritten"
+    );
+
+    let run = repair.run(&output);
+    assert!(
+        run.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&run.stderr)
+    );
+    let outcome: serde_json::Value = serde_json::from_slice(&run.stdout).unwrap();
+    assert_eq!(outcome["state"], "complete");
+    let packet = fs::read_to_string(repair.fixture.root.join("PACKET.txt")).unwrap();
+    assert!(
+        packet.contains("RECIPE value-repair version 1 kind security_repair"),
+        "{packet}"
+    );
+    assert!(packet.contains("parameter target_value=2"), "{packet}");
+    assert!(packet.contains("grants no path, command, dependency or credential authority"));
+    assert_eq!(
+        repair.receipts().len(),
+        1,
+        "the recipe's verification gate was receipted"
+    );
+
+    let mut unconfigured = fs::read_to_string(&recipe).unwrap();
+    unconfigured = unconfigured.replace("configured-gate-2", "configured-gate-7");
+    fs::write(&recipe, unconfigured).unwrap();
+    let other = repair.fixture.root.join("recipe-run-2.toml");
+    let refused = instantiate(&["--task", "0.1.1.1", "--output", other.to_str().unwrap()]);
+    assert!(!refused.status.success());
+    assert!(String::from_utf8_lossy(&refused.stderr).contains("codingmage.runtime.spec"));
+    assert!(!other.exists());
 }
