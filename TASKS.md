@@ -50,6 +50,15 @@ local implementation is complete and whose live gates (15.1, 20.2) stay external
 - [x] **CM-R03.5:** Controlled Git delivery grants (CAP-14, P1): crosswalk recorded; separate deny-first grants, coordinator-only commits, exact draft-PR publication and bound destination promotion map to Sprints 3, 15 and 24 with authenticated evidence still External 3; see `docs/evidence/cm-r03-repair-receipts.md`.
 - [x] **CM-R03.5a:** GitHub Enterprise host and CA policy (CAP-14): `GitHubHostTrust` (validated PEM bundle, credential-free proxy URL, no-proxy hosts) on the campaign GitHub authority feeds `SSL_CERT_FILE`, `HTTPS_PROXY` and `NO_PROXY` to the CLI only from policy; unit tests cover refusals and exact variables; a fake-server run against a non-`github.com` host stays with External 3; see `docs/evidence/cm-r03-repair-receipts.md`.
 - [ ] **CM-R03.6:** Real remote tests (External 3): blocked until separately admitted disposable credentials and a target exist; the fake GitHub server evidence of Sprint 15 is not this.
+
+#### CM-R07 - Native local experience, no-intervention matrix, support export and notices
+
+Bounded subtasks split on 2026-09-26 before coding. Human-only and live rows stay open.
+
+- [x] **CM-R07.1:** Manual redacted support bundle (CAP-47): one `support-bundle` command that writes only the existing content-minimized records (configuration view, campaign status, blocker explanation, final report, mission status) with a digest manifest into a new private directory, never overwriting, never including logs, prompts, source text or credentials, and never uploading anything. Implemented as `support-bundle` with a digest manifest and absent-record list; real-process test proves redaction, digests and overwrite refusal; see `docs/evidence/cm-r07-support-export.md`.
+- [ ] **CM-R07.2:** Apache notices and packaging metadata crosswalk (CAP-48): reconcile root licenses, SPDX and package metadata, third-party notices and contribution provenance against the current dependency set; licensing changes remain the owner's separate decision.
+- [ ] **CM-R07.3:** Native local experience qualification (CAP-45): human-only items H1 to H3 of `docs/evidence/sprint-36-human-only.md` on the declared distro matrix; not startable in the sandbox.
+- [ ] **CM-R07.4:** No-intervention campaign matrix (CAP-46): Sprint 35 live qualification with pinned models on real hardware; not startable in the sandbox.
 This file is the canonical implementation sequence for CodingMage. It is intentionally granular so a human or coding agent can select one bounded, dependency-ready unit without reconstructing the project from conversation history.
 
 CodingMage is under active implementation. A checked item means its complete implementation, tests, acceptance criteria, and required evidence genuinely exist in this repository. Documentation existence alone does not close an implementation item.

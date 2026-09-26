@@ -4,6 +4,7 @@ mod campaign_state;
 mod correction_state;
 mod gate_baseline;
 mod recipe;
+mod support;
 mod team_campaign;
 mod team_control;
 mod team_github;
@@ -19,6 +20,7 @@ pub use gate_baseline::{
     BaselineGate, GateBaseline, GateBaselineStore, GateComparison, RepairReceipt,
 };
 pub use recipe::{RECIPE_VERSION, RecipeKind, RecipeSpec, RollbackBoundary};
+pub use support::{SupportBundleEntry, SupportBundleManifest, export_support_bundle};
 pub use team_campaign::{
     TeamCampaignReport, TeamCompletionReconciliation, TeamTaskCompletionReport,
     run_team_campaign_with_progress, team_campaign_report,

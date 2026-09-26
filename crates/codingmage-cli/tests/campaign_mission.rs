@@ -1195,3 +1195,86 @@ fn unknown_gate_requirement_is_rejected_without_running_any_tool_or_provider() {
     assert_eq!(resumed["stop_reason"], "unit_limit", "{resumed}");
     campaign.state_files_are_content_free();
 }
+
+#[test]
+fn support_bundle_exports_only_redacted_records_and_never_overwrites() {
+    let campaign = Campaign::with_lead_script(DECIDING_LEAD);
+    fs::write(
+        campaign.fixture.root.join("decision-domain.txt"),
+        "layout\n",
+    )
+    .unwrap();
+    let charter = campaign.charter("mission.toml", 1, "hands_off", "block", "PRIVATE_OBJECTIVE");
+    let mission = charter.to_str().unwrap();
+    let output = campaign.fixture.root.join("support");
+
+    let before = campaign.json("support-bundle", &["--output", output.to_str().unwrap()]);
+    assert_eq!(before["redacted"], true);
+    assert_eq!(before["uploaded"], false);
+    assert_eq!(
+        before["absent"],
+        serde_json::json!([
+            "campaign-explain-blocker.json",
+            "campaign-report.json",
+            "campaign-status.json",
+            "mission-status.json"
+        ]),
+        "a never-started campaign exports only its configuration view"
+    );
+    assert!(output.join("configuration.json").exists());
+    assert!(output.join("manifest.json").exists());
+    assert!(output.join("README.txt").exists());
+    let refused = campaign.refused("support-bundle", &["--output", output.to_str().unwrap()]);
+    assert!(refused.contains("codingmage.runtime.spec"), "{refused}");
+
+    campaign.json("campaign", &["--mission", mission]);
+    let after_dir = campaign.fixture.root.join("support-after");
+    let after = campaign.json("support-bundle", &["--output", after_dir.to_str().unwrap()]);
+    let files = after["files"].as_array().unwrap();
+    let names = files
+        .iter()
+        .map(|entry| entry["name"].as_str().unwrap().to_owned())
+        .collect::<Vec<_>>();
+    assert!(
+        names.contains(&"campaign-status.json".to_owned()),
+        "{names:?}"
+    );
+    assert!(
+        names.contains(&"mission-status.json".to_owned()),
+        "{names:?}"
+    );
+    assert!(
+        names.contains(&"configuration.json".to_owned()),
+        "{names:?}"
+    );
+    for entry in files {
+        let path = after_dir.join(entry["name"].as_str().unwrap());
+        let bytes = fs::read(&path).unwrap();
+        let digest = {
+            let output = std::process::Command::new("/usr/bin/sha256sum")
+                .arg(&path)
+                .output()
+                .unwrap();
+            String::from_utf8(output.stdout)
+                .unwrap()
+                .split_whitespace()
+                .next()
+                .unwrap()
+                .to_owned()
+        };
+        assert_eq!(entry["sha256"], digest, "{path:?}");
+        assert_eq!(entry["bytes"], bytes.len() as u64);
+        let text = String::from_utf8_lossy(&bytes);
+        assert!(
+            !text.contains("PRIVATE_"),
+            "{path:?} leaked private content"
+        );
+        assert!(
+            !text.contains("/state/") && !text.contains("/tmp/"),
+            "{path:?} leaked a path"
+        );
+    }
+    let readme = fs::read_to_string(after_dir.join("README.txt")).unwrap();
+    assert!(readme.contains("was not transmitted anywhere"));
+    assert!(!readme.contains("PRIVATE_"));
+}

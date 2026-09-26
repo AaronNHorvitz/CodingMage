@@ -21,9 +21,9 @@ use codingmage_runtime::{
     answer_campaign_decision, approve_campaign_destination_promotion,
     approve_campaign_task_integration, campaign_blocker_explanation, campaign_mission_preflight,
     campaign_mission_status, campaign_preflight_with_mission, campaign_status,
-    clear_campaign_blocker, observe_campaign_deferral_trigger, request_campaign_control,
-    revoke_campaign_mission, run_one_with_progress, run_one_with_progress_for_id,
-    run_team_campaign_with_progress, team_campaign_report,
+    clear_campaign_blocker, export_support_bundle, observe_campaign_deferral_trigger,
+    request_campaign_control, revoke_campaign_mission, run_one_with_progress,
+    run_one_with_progress_for_id, run_team_campaign_with_progress, team_campaign_report,
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -55,6 +55,7 @@ Commands:
   campaign-mission-revoke       Revoke a mission irreversibly; no new effect may start
   campaign-mission-answer       Answer one pending owner decision (supervised modes)
   recipe-instantiate            Render a versioned recipe into a supervised run spec
+  support-bundle                Write a redacted support bundle into a new directory
 
 Run `codingmage <COMMAND> --help` for exact command usage.";
 
@@ -86,6 +87,9 @@ fn command_help(command: &str) -> Option<&'static str> {
         ),
         "campaign-mission-revoke" => Some(
             "Usage: codingmage campaign-mission-revoke --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --request <REQUEST_ID>",
+        ),
+        "support-bundle" => Some(
+            "Usage: codingmage support-bundle --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --output <ABSOLUTE_NEW_DIR>",
         ),
         "recipe-instantiate" => Some(
             "Usage: codingmage recipe-instantiate --config <ABSOLUTE_FILE> \\\n  --recipe <ABSOLUTE_FILE> --template <ABSOLUTE_RUN_SPEC> --task <TASK_ID> \\\n  --output <ABSOLUTE_NEW_FILE>",
@@ -152,6 +156,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign-mission-revoke" => revoke_mission(&arguments[1..]),
         "campaign-mission-answer" => answer_mission_decision(&arguments[1..]),
         "recipe-instantiate" => instantiate_recipe(&arguments[1..]),
+        "support-bundle" => write_support_bundle(&arguments[1..]),
         _ => Err(CliError::Usage),
     }
 }
@@ -303,6 +308,18 @@ fn preflight_campaign(arguments: &[String]) -> Result<String, CliError> {
     )
     .map_err(CliError::Runtime)?;
     serde_json::to_string_pretty(&report).map_err(|_| CliError::Internal)
+}
+
+fn write_support_bundle(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "campaign", "output"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let output = parsed.absolute_path("output")?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let manifest =
+        export_support_bundle(&config, &spec, &executable, &output).map_err(CliError::Runtime)?;
+    serde_json::to_string_pretty(&manifest).map_err(|_| CliError::Internal)
 }
 
 fn instantiate_recipe(arguments: &[String]) -> Result<String, CliError> {

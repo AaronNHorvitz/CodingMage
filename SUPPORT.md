@@ -31,3 +31,13 @@ commit until upgrade verification passes. See the [migration guide](docs/operati
 
 Report suspected vulnerabilities through the private process in [SECURITY.md](SECURITY.md). Do not
 put credentials, private source, personal data, or active exploit details in a public issue.
+
+## Manual Support Bundles
+
+`codingmage support-bundle --config <config> --campaign <campaign> --output <new directory>`
+writes a redacted bundle on explicit request only. It contains the configuration view, campaign
+status, blocker explanation, final report and mission status exactly as the corresponding
+commands print them, plus `manifest.json` with file digests and a `README.txt` naming absent
+records. It never contains logs, prompts, provider output, repository source, credentials or host
+identities, never overwrites an existing directory, and nothing is uploaded; sharing the directory
+is a manual decision by the operator.
