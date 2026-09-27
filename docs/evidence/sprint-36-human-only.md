@@ -18,10 +18,11 @@ Steps:
    the recorded commit.
 2. Launch `target/release/codingmage-ui` from a Wayland session (GNOME on Fedora) and from an
    X11 session (`XDG_SESSION_TYPE=x11` or an Xorg login); confirm a window with client-side
-   decorations appears, resizes to the 720x480 minimum, and remains usable at 200 percent
+   decorations appears, resizes to the 1024x640 logical-pixel minimum, and remains usable at 200 percent
    scaling.
-3. Confirm an idle window shows no CPU use in `top` after the first frame and after a campaign
-   is selected (the interface polls status every fifteen seconds).
+3. Measure an idle window for 60 seconds after the first frame and after a campaign is selected
+   (the interface polls status every fifteen seconds); compare the UI process to the frozen
+   1% of one-core budget, excluding the coordinator and providers.
 4. Close the window while a fixture coordinator is running and confirm the process survives.
 
 Evidence: screenshots from the real compositor (not the offscreen renderer), the `top` reading,
@@ -34,9 +35,10 @@ Who: a tester with Orca (GNOME) or another AT-SPI screen reader.
 Steps:
 
 1. Start Orca, then launch `codingmage-ui`.
-2. Navigate with `Tab`, `Shift+Tab`, `Ctrl+1` to `Ctrl+6` and arrow keys; confirm each
-   navigation button, text field, checkbox, combo box and status message is announced with its
-   label and state (the disabled source checkboxes must be announced as unavailable).
+2. Navigate with `Tab`, `Shift+Tab`, `Ctrl+1` to `Ctrl+7` and arrow keys; confirm each
+   navigation button, text field, checkbox, combo box, Settings appearance choice and status
+   message is announced with its label and state (the disabled source checkboxes must be
+   announced as unavailable).
 3. Open a fixture repository and confirm the failure box text and the readiness check results
    are reachable and announced.
 
@@ -79,11 +81,14 @@ interface must show them as failures, not retry with a different model.
 
 Who: an independent reviewer who did not author the interface.
 
-Steps: review the exact commits recorded in the handoff for the boundaries in Decisions 0015 and
-0016 (no authority in widgets, no coordinator adoption, no credential handling, strict contract
-models, export safeguards) and the evidence in
+Steps: review the exact commits recorded in the handoff for the boundaries in Decisions 0015,
+0016, 0020 and 0021 (no authority in widgets, no coordinator adoption, no credential handling,
+strict contract models, export safeguards, the shared visual tokens and truthful qualification)
+and the evidence in
 [the local evidence record](sprint-36-native-ui-local.md) and
-[the verification record](sprint-36-native-ui-verification.md).
+[the verification record](sprint-36-native-ui-verification.md), plus
+[the Story 36.3 baseline](sprint-36-ui-specification-baseline.md) and
+[appearance evidence](sprint-36-appearance.md).
 
 Evidence: findings on the exact commit; corrections are implemented separately and re-reviewed.
 
