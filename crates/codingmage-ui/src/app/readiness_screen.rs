@@ -141,7 +141,7 @@ impl App {
             ui.add(
                 egui::TextEdit::singleline(&mut self.authorization_input)
                     .hint_text("/absolute/path/operator-authorization.txt")
-                    .desired_width(420.0),
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_long),
             )
             .labelled_by(label.id);
             if ui.button("Use record").clicked() {
@@ -214,7 +214,7 @@ impl App {
         }
         egui::Grid::new("preflight-grid")
             .num_columns(2)
-            .spacing([12.0, 4.0])
+            .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
             .show(ui, |ui| {
                 ui.label("Authority sha256");
                 ui.monospace(&report.authority_sha256);

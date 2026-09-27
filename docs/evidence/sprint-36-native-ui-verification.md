@@ -64,6 +64,12 @@ start is refused as not admitted, and the target repository is untouched.
 
 ## Keyboard navigation
 
+This keyboard and window-size record was captured for the source at
+`8ea475c83b824e4b622988a12548c819da0f1d83`, before the appearance change. It is retained
+as historical evidence. The current navigation includes Settings at Ctrl+7 and the native
+minimum is 1024×640; see [appearance evidence](sprint-36-appearance.md). Current real-desktop
+keyboard and scaling qualification remains open in the human-only register.
+
 `keyboard_navigation_reaches_controls_in_order` presses `Tab` twelve times from a fresh window and
 records the focused node's accessible label each time:
 

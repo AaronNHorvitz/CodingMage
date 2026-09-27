@@ -717,9 +717,9 @@ impl App {
     fn navigation(&mut self, root: &mut egui::Ui) {
         egui::Panel::left("navigation")
             .resizable(false)
-            .default_size(170.0)
+            .default_size(current_tokens(root.ctx()).layout.navigation_width)
             .show(root, |ui| {
-                ui.add_space(4.0);
+                ui.add_space(current_tokens(ui.ctx()).layout.navigation_gap);
                 for screen in Screen::ALL {
                     if ui
                         .selectable_label(self.screen == screen, screen.label())
@@ -728,7 +728,7 @@ impl App {
                         self.screen = screen;
                     }
                 }
-                ui.add_space(12.0);
+                ui.add_space(current_tokens(ui.ctx()).layout.section_gap);
                 ui.separator();
                 ui.small("Ctrl+1 to Ctrl+7 switch screens");
                 ui.small(format!("Uptime {}s", self.started_at.elapsed().as_secs()));
@@ -806,7 +806,7 @@ impl App {
         };
         egui::Grid::new("overview-grid")
             .num_columns(2)
-            .spacing([12.0, 6.0])
+            .spacing(current_tokens(ui.ctx()).layout.grid)
             .show(ui, |ui| {
                 ui.label("Configuration");
                 ui.monospace(project.config_path.display().to_string());
@@ -929,7 +929,7 @@ impl App {
                 ui.small("Listing truncated; navigate into a narrower directory.");
             }
             egui::ScrollArea::vertical()
-                .max_height(240.0)
+                .max_height(current_tokens(ui.ctx()).layout.preview_tasks)
                 .id_salt("browser-entries")
                 .show(ui, |ui| {
                     for entry in &browser.entries {
@@ -1004,7 +1004,7 @@ impl App {
         let mut last_story: Option<&str> = None;
         egui::ScrollArea::vertical()
             .id_salt("plan-rows")
-            .max_height(360.0)
+            .max_height(current_tokens(ui.ctx()).layout.preview_tall)
             .show(ui, |ui| {
                 for row in &rows {
                     plan_group_headers(ui, index, row, &mut last_sprint, &mut last_story);
@@ -1040,7 +1040,7 @@ impl App {
             let label = ui.label("Configuration file");
             let edit = egui::TextEdit::singleline(&mut self.config_input)
                 .hint_text("/absolute/path/codingmage.toml")
-                .desired_width(420.0);
+                .desired_width(current_tokens(ui.ctx()).layout.field_long);
             let response = ui.add(edit).labelled_by(label.id);
             let submitted =
                 response.lost_focus() && ui.input(|input| input.key_pressed(egui::Key::Enter));
@@ -1089,7 +1089,7 @@ impl App {
 fn diagnosis_grid(ui: &mut egui::Ui, diagnosis: &Diagnosis) {
     egui::Grid::new("diagnosis-grid")
         .num_columns(2)
-        .spacing([12.0, 6.0])
+        .spacing(current_tokens(ui.ctx()).layout.grid)
         .show(ui, |ui| {
             ui.label("State");
             ui.label(&diagnosis.state);
@@ -1141,7 +1141,7 @@ fn plan_filter_controls(ui: &mut egui::Ui, filter: &mut PlanFilter) {
         ui.add(
             egui::TextEdit::singleline(&mut filter.query)
                 .hint_text("identifier or title")
-                .desired_width(240.0),
+                .desired_width(current_tokens(ui.ctx()).layout.field_medium),
         )
         .labelled_by(label.id);
         for state in StateFilter::ALL {
@@ -1227,7 +1227,7 @@ fn item_detail(ui: &mut egui::Ui, row: &PlanRow, index: &PlanIndex) {
     ui.heading(format!("Item {}", row.id));
     egui::Grid::new("item-detail")
         .num_columns(2)
-        .spacing([12.0, 6.0])
+        .spacing(current_tokens(ui.ctx()).layout.grid)
         .show(ui, |ui| {
             ui.label("Title");
             ui.label(&row.title);

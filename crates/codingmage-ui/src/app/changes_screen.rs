@@ -225,7 +225,7 @@ impl App {
             ui.label(format!("{} changed file(s)", changes.files.len()));
             egui::Grid::new("changed-files")
                 .num_columns(3)
-                .spacing([12.0, 2.0])
+                .spacing(super::current_tokens(ui.ctx()).layout.grid_dense)
                 .show(ui, |ui| {
                     for file in &changes.files {
                         ui.monospace(&file.path);

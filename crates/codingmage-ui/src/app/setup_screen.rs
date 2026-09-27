@@ -223,7 +223,7 @@ impl App {
             ui.add(
                 egui::TextEdit::singleline(&mut self.setup.workspace_root)
                     .hint_text("/absolute/path outside the repository")
-                    .desired_width(360.0),
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_path),
             )
             .labelled_by(label.id);
         });
@@ -275,7 +275,7 @@ impl App {
                 });
                 egui::ScrollArea::vertical()
                     .id_salt("target-browser")
-                    .max_height(180.0)
+                    .max_height(super::current_tokens(ui.ctx()).layout.preview_short)
                     .show(ui, |ui| {
                         for entry in browser.entries.iter().filter(|entry| entry.is_dir) {
                             if ui
@@ -328,7 +328,7 @@ impl App {
             ui.add(
                 egui::TextEdit::singleline(&mut self.setup.authorization_path)
                     .hint_text("/absolute/path/operator-authorization.txt")
-                    .desired_width(420.0),
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_long),
             )
             .labelled_by(label.id);
         });
@@ -338,7 +338,7 @@ impl App {
                     "I authorize campaign ... on repository ... with local-only publication.",
                 )
                 .desired_rows(3)
-                .desired_width(600.0),
+                .desired_width(super::current_tokens(ui.ctx()).layout.field_wide),
         );
         ui.horizontal(|ui| {
             ui.checkbox(
@@ -394,7 +394,7 @@ impl App {
             ui.add(
                 egui::TextEdit::singleline(&mut self.setup.export_path)
                     .hint_text("/absolute/path/copy.toml")
-                    .desired_width(420.0),
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_long),
             )
             .labelled_by(label.id);
             ui.checkbox(&mut self.setup.export_overwrite, "Replace");
@@ -429,7 +429,7 @@ fn config_form_body(ui: &mut egui::Ui, form: &mut ConfigForm) -> (bool, bool) {
         ui.strong("Repository configuration (version 1, deny-first)");
         egui::Grid::new("config-form")
             .num_columns(2)
-            .spacing([12.0, 6.0])
+            .spacing(super::current_tokens(ui.ctx()).layout.grid)
             .show(ui, |ui| {
                 for (label, value) in [
                     ("Configuration file", &mut form.config_path),
@@ -442,7 +442,7 @@ fn config_form_body(ui: &mut egui::Ui, form: &mut ConfigForm) -> (bool, bool) {
                     ("Correction limit", &mut form.correction_limit),
                 ] {
                     let caption = ui.label(label);
-                    ui.add(egui::TextEdit::singleline(value).desired_width(480.0))
+                    ui.add(egui::TextEdit::singleline(value).desired_width(super::current_tokens(ui.ctx()).layout.field_full))
                         .labelled_by(caption.id);
                     ui.end_row();
                 }
@@ -451,9 +451,9 @@ fn config_form_body(ui: &mut egui::Ui, form: &mut ConfigForm) -> (bool, bool) {
         let mut remove_profile = None;
         for (index, profile) in form.profiles.iter_mut().enumerate() {
             ui.horizontal(|ui| {
-                ui.add(egui::TextEdit::singleline(&mut profile.id).desired_width(160.0));
-                ui.add(egui::TextEdit::singleline(&mut profile.provider).desired_width(100.0));
-                ui.add(egui::TextEdit::singleline(&mut profile.model).desired_width(200.0));
+                ui.add(egui::TextEdit::singleline(&mut profile.id).desired_width(super::current_tokens(ui.ctx()).layout.field_short));
+                ui.add(egui::TextEdit::singleline(&mut profile.provider).desired_width(super::current_tokens(ui.ctx()).layout.field_tiny));
+                ui.add(egui::TextEdit::singleline(&mut profile.model).desired_width(super::current_tokens(ui.ctx()).layout.field_small));
                 if ui.button("Remove profile").clicked() {
                     remove_profile = Some(index);
                 }
@@ -469,8 +469,8 @@ fn config_form_body(ui: &mut egui::Ui, form: &mut ConfigForm) -> (bool, bool) {
         let mut remove_gate = None;
         for (index, gate) in form.gates.iter_mut().enumerate() {
             ui.horizontal(|ui| {
-                ui.add(egui::TextEdit::singleline(&mut gate.executable).desired_width(260.0));
-                ui.add(egui::TextEdit::singleline(&mut gate.arguments).desired_width(260.0));
+                ui.add(egui::TextEdit::singleline(&mut gate.executable).desired_width(super::current_tokens(ui.ctx()).layout.field_label));
+                ui.add(egui::TextEdit::singleline(&mut gate.arguments).desired_width(super::current_tokens(ui.ctx()).layout.field_label));
                 if ui.button("Remove gate").clicked() {
                     remove_gate = Some(index);
                 }
@@ -532,7 +532,7 @@ fn campaign_form_body(ui: &mut egui::Ui, form: &mut CampaignForm) -> (bool, bool
         ui.strong("Campaign authority (version 3, serial, local only)");
         egui::Grid::new("campaign-form")
             .num_columns(2)
-            .spacing([12.0, 6.0])
+            .spacing(super::current_tokens(ui.ctx()).layout.grid)
             .show(ui, |ui| {
                 for (label, value) in [
                     ("Specification file", &mut form.spec_path),
@@ -546,7 +546,7 @@ fn campaign_form_body(ui: &mut egui::Ui, form: &mut CampaignForm) -> (bool, bool
                     ("Gate profiles", &mut form.gate_profiles),
                 ] {
                     let caption = ui.label(label);
-                    ui.add(egui::TextEdit::singleline(value).desired_width(480.0))
+                    ui.add(egui::TextEdit::singleline(value).desired_width(super::current_tokens(ui.ctx()).layout.field_full))
                         .labelled_by(caption.id);
                     ui.end_row();
                 }
@@ -571,7 +571,7 @@ fn campaign_form_body(ui: &mut egui::Ui, form: &mut CampaignForm) -> (bool, bool
         ui.label("Aggregate limits");
         egui::Grid::new("campaign-limits")
             .num_columns(2)
-            .spacing([12.0, 4.0])
+            .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
             .show(ui, |ui| {
                 for (label, value) in [
                     ("Provider attempts", &mut form.limits.provider_attempts),
@@ -586,7 +586,7 @@ fn campaign_form_body(ui: &mut egui::Ui, form: &mut CampaignForm) -> (bool, bool
                     ("Execution milliseconds", &mut form.limits.execution_elapsed_ms),
                 ] {
                     let caption = ui.label(label);
-                    ui.add(egui::TextEdit::singleline(value).desired_width(200.0))
+                    ui.add(egui::TextEdit::singleline(value).desired_width(super::current_tokens(ui.ctx()).layout.field_small))
                         .labelled_by(caption.id);
                     ui.end_row();
                 }
@@ -623,12 +623,12 @@ fn provider_rows(ui: &mut egui::Ui, label: &str, provider: &mut ProviderForm) {
         ui.add(
             egui::TextEdit::singleline(&mut provider.executable)
                 .hint_text("/absolute/path/to/provider")
-                .desired_width(300.0),
+                .desired_width(super::current_tokens(ui.ctx()).layout.field_standard),
         );
         ui.add(
             egui::TextEdit::singleline(&mut provider.model)
                 .hint_text("model selector")
-                .desired_width(160.0),
+                .desired_width(super::current_tokens(ui.ctx()).layout.field_short),
         );
         egui::ComboBox::from_id_salt(format!("effort-{label}"))
             .selected_text(provider.effort.clone())

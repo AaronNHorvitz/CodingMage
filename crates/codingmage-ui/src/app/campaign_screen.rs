@@ -265,7 +265,7 @@ impl App {
         ui.heading(format!("Campaign {}", spec.campaign_id));
         egui::Grid::new("campaign-authority")
             .num_columns(2)
-            .spacing([12.0, 6.0])
+            .spacing(super::current_tokens(ui.ctx()).layout.grid)
             .show(ui, |ui| {
                 ui.label("Authority sha256");
                 ui.monospace(&campaign.authority_sha256);
@@ -323,7 +323,7 @@ impl App {
             ui.add(
                 egui::TextEdit::singleline(&mut self.campaign_input)
                     .hint_text("/absolute/path/campaign.toml")
-                    .desired_width(420.0),
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_long),
             )
             .labelled_by(label.id);
             if ui.button("Select campaign").clicked() {
@@ -358,7 +358,7 @@ impl App {
                 });
                 egui::ScrollArea::vertical()
                     .id_salt("campaign-browser")
-                    .max_height(200.0)
+                    .max_height(super::current_tokens(ui.ctx()).layout.preview_records)
                     .show(ui, |ui| {
                         for entry in &browser.entries {
                             let label = if entry.is_dir {
@@ -491,7 +491,7 @@ fn outcomes_grid(ui: &mut egui::Ui, status: &crate::backend::models::CampaignSta
     let outcomes = &status.outcomes;
     egui::Grid::new("campaign-outcomes")
         .num_columns(2)
-        .spacing([12.0, 4.0])
+        .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
         .show(ui, |ui| {
             ui.label("Completed and reconciled");
             ui.label(outcomes.completed.to_string());
@@ -545,7 +545,7 @@ fn active_tasks(ui: &mut egui::Ui, status: &crate::backend::models::CampaignStat
 fn status_grid(ui: &mut egui::Ui, status: &crate::backend::models::CampaignStatus) {
     egui::Grid::new("campaign-status")
         .num_columns(2)
-        .spacing([12.0, 4.0])
+        .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
         .show(ui, |ui| {
             ui.label("Phase");
             ui.label(&status.state);
@@ -620,7 +620,7 @@ fn utilization_grid(ui: &mut egui::Ui, status: &crate::backend::models::Campaign
     let limits = &status.limits;
     egui::Grid::new("campaign-utilization")
         .num_columns(2)
-        .spacing([12.0, 4.0])
+        .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
         .show(ui, |ui| {
             ui.label("Provider attempts");
             ui.label(format!(
@@ -691,7 +691,7 @@ fn roles_and_modes(
             ));
             egui::Grid::new("mission-status")
                 .num_columns(2)
-                .spacing([12.0, 4.0])
+                .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
                 .show(ui, |ui| {
                     ui.label("Involvement");
                     ui.label(mode);

@@ -88,7 +88,9 @@ and the evidence in
 [the local evidence record](sprint-36-native-ui-local.md) and
 [the verification record](sprint-36-native-ui-verification.md), plus
 [the Story 36.3 baseline](sprint-36-ui-specification-baseline.md) and
-[appearance evidence](sprint-36-appearance.md).
+[appearance evidence](sprint-36-appearance.md). The verification record's 720×480 and
+Ctrl+2/Ctrl+6 observations are historical at `8ea475c83b824e4b622988a12548c819da0f1d83`;
+use the appearance record for the current 1024×640 minimum and Ctrl+1 through Ctrl+7 shell.
 
 Evidence: findings on the exact commit; corrections are implemented separately and re-reviewed.
 

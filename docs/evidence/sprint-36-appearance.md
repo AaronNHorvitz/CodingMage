@@ -57,6 +57,7 @@ all-screen contrast or the frozen P1–P5 responsiveness budgets. Those remain o
 ```text
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
+cargo build --locked -p codingmage-cli
 CODINGMAGE_UI_EVIDENCE_DIR=<private directory> cargo test --locked -p codingmage-ui --lib --test verification -- --test-threads=1
 python3 scripts/docs_check.py
 python3 -m unittest discover -s tests -p 'test_*.py'
@@ -64,8 +65,10 @@ git diff --check
 ```
 
 All heavy Rust commands run with `CARGO_BUILD_JOBS=1`, `RUST_TEST_THREADS=1` and the shared
-build-slot wrapper in this worker. The Python suite's retained CM-R01.6 source-bound drift
-failure is separate from this UI change. The results for this source tree are:
+build-slot wrapper in this worker. The CLI build is required for a clean test target because
+the UI integration fixtures launch the sibling `codingmage` executable. The Python suite's
+retained CM-R01.6 source-bound drift failure is separate from this UI change. The results for
+this source tree are:
 
 | Check | Result |
 | --- | --- |

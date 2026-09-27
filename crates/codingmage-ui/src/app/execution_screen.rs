@@ -389,7 +389,7 @@ impl App {
             ui.add(
                 egui::TextEdit::singleline(&mut self.execution.confirmation)
                     .hint_text("first 12 or more characters")
-                    .desired_width(260.0),
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_label),
             )
             .labelled_by(label.id);
             if ui.button("Admit campaign").clicked() {

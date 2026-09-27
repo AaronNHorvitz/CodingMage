@@ -108,6 +108,8 @@ pub struct Tokens {
     pub item_spacing: Vec2,
     /// Button padding in logical pixels.
     pub button_padding: Vec2,
+    /// Named dimensions shared by all application screens.
+    pub layout: LayoutTokens,
     /// Control corner radius in logical pixels.
     pub radius: u8,
     /// Heading font size in logical pixels.
@@ -118,6 +120,81 @@ pub struct Tokens {
     pub small_size: f32,
     /// Monospace font size in logical pixels.
     pub mono_size: f32,
+}
+
+/// Screen layout dimensions in logical pixels.
+#[derive(Clone, Copy, Debug)]
+pub struct LayoutTokens {
+    /// Spacing for ordinary label/value grids.
+    pub grid: Vec2,
+    /// Spacing for compact label/value grids.
+    pub grid_compact: Vec2,
+    /// Spacing for dense lists of files.
+    pub grid_dense: Vec2,
+    /// Space between navigation groups.
+    pub navigation_gap: f32,
+    /// Width of the navigation rail.
+    pub navigation_width: f32,
+    /// Space between major sections.
+    pub section_gap: f32,
+    /// Maximum height of short previews.
+    pub preview_short: f32,
+    /// Maximum height of record previews.
+    pub preview_records: f32,
+    /// Maximum height of task previews.
+    pub preview_tasks: f32,
+    /// Maximum height of report previews.
+    pub preview_reports: f32,
+    /// Maximum height of expanded previews.
+    pub preview_tall: f32,
+    /// Width of the narrowest form field.
+    pub field_tiny: f32,
+    /// Width of a short form field.
+    pub field_short: f32,
+    /// Width of a small form field.
+    pub field_small: f32,
+    /// Width of a medium form field.
+    pub field_medium: f32,
+    /// Width of a label field.
+    pub field_label: f32,
+    /// Width of a standard form field.
+    pub field_standard: f32,
+    /// Width of a path field.
+    pub field_path: f32,
+    /// Width of a long form field.
+    pub field_long: f32,
+    /// Width of a full form field.
+    pub field_full: f32,
+    /// Width of a wide form field.
+    pub field_wide: f32,
+}
+
+impl Default for LayoutTokens {
+    fn default() -> Self {
+        Self {
+            grid: Vec2::new(12.0, 6.0),
+            grid_compact: Vec2::new(12.0, 4.0),
+            grid_dense: Vec2::new(12.0, 2.0),
+            navigation_gap: 4.0,
+            navigation_width: 170.0,
+            section_gap: 12.0,
+            preview_short: 180.0,
+            preview_records: 200.0,
+            preview_tasks: 240.0,
+            preview_reports: 300.0,
+            preview_tall: 360.0,
+            field_tiny: 100.0,
+            field_short: 160.0,
+            field_small: 200.0,
+            field_medium: 240.0,
+            field_label: 260.0,
+            field_standard: 300.0,
+            field_path: 360.0,
+            field_long: 420.0,
+            field_full: 480.0,
+            field_wide: 600.0,
+        }
+    }
 }
 
 impl Tokens {
@@ -176,6 +253,7 @@ impl Tokens {
             success: base.9,
             item_spacing: Vec2::new(8.0, 8.0),
             button_padding: Vec2::new(10.0, 6.0),
+            layout: LayoutTokens::default(),
             radius: 6,
             heading_size: 20.0,
             body_size: 14.0,

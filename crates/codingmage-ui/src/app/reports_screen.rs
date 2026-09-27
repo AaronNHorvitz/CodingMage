@@ -110,7 +110,7 @@ impl App {
             ui.add(
                 egui::TextEdit::singleline(&mut self.reports.export_path)
                     .hint_text("/absolute/path/outside/the/repository/report.json")
-                    .desired_width(420.0),
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_long),
             )
             .labelled_by(label.id);
         });
@@ -143,7 +143,7 @@ impl App {
         {
             egui::ScrollArea::vertical()
                 .id_salt("report-json")
-                .max_height(300.0)
+                .max_height(super::current_tokens(ui.ctx()).layout.preview_reports)
                 .show(ui, |ui| {
                     ui.monospace(String::from_utf8_lossy(&bytes).to_string());
                 });
@@ -156,7 +156,7 @@ fn outcome_summary(ui: &mut egui::Ui, report: &OutcomeReport) {
     let disposition = &report.disposition;
     egui::Grid::new("report-disposition")
         .num_columns(2)
-        .spacing([12.0, 4.0])
+        .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
         .show(ui, |ui| {
             ui.label("Campaign state");
             ui.label(
