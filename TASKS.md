@@ -2075,7 +2075,8 @@ admission and review prerequisites remain required; missing external artifacts c
 
 ## Sprint 36 - Native Linux Desktop Workspace
 
-**Status:** Planned, documentation only. Requirements CM-UI-001 through CM-UI-006. The owner
+**Status:** Planned, documentation only. Requirements CM-UI-001 through CM-UI-015; Story 36.3
+applies the [native UI specification](docs/architecture/native-ui-specification.md) under Decision 0020. The owner
 selected a native Linux app; no UI implementation or qualification is claimed. This is a separate
 local UI workstream over the existing backend, not a dependency on completion of Sprints 32
 through 35 or optional stack integrations. See the native UI agent brief in
@@ -2123,10 +2124,35 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
 
 - [ ] **AC 36.2:** The native app controls the supported real backend workflow, preserves authority and recovery boundaries, and presents inspectable outcomes without claiming unimplemented hands-off or ecosystem capabilities.
 
+### Story 36.3 - Native UI Specification and Qualification
+
+- [ ] **Task 36.3.1 - Freeze the specification, profiles and budgets**
+  - [ ] **Sub-task 36.3.1.1:** Map every implemented screen and state to the native UI specification and record gaps; pin hardware for profiles P1 to P5; freeze the numeric responsiveness budgets, trial protocol and scoring before any measurement (CM-UI-007, CM-UI-013).
+    <!-- depends-on: 36.2.3.1 -->
+- [ ] **Task 36.3.2 - Bring every screen to the specification**
+  - [ ] **Sub-task 36.3.2.1:** Implement the design system tokens, light, dark and high-contrast themes and shared components with contrast measured and screenshot baselines at 100% and 200% scaling and the minimum window (CM-UI-011).
+    <!-- depends-on: 36.3.1.1 -->
+  - [ ] **Sub-task 36.3.2.2:** Complete the section 5 state catalogue and the in-context depth on every screen, including "Show command" for every control, with no mode switch (CM-UI-008, CM-UI-009).
+    <!-- depends-on: 36.3.1.1 -->
+  - [ ] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010).
+    <!-- depends-on: 36.3.1.1 -->
+  - [ ] **Sub-task 36.3.2.4:** Externalize text with a pseudo-locale test for 40% expansion and right-to-left layout; add offline help, glossary, About licences and manual redacted diagnostics (CM-UI-014).
+    <!-- depends-on: 36.3.2.1 -->
+- [ ] **Task 36.3.3 - Qualify the native UI**
+  - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).
+    <!-- depends-on: 36.3.2.1, 36.3.2.2 -->
+  - [ ] **Sub-task 36.3.3.2:** Measure the frozen budgets on each available profile with fault injection for missing executable, provider sign-out, killed subprocess, malformed output, full disk and slow responses; record unavailable hardware as unqualified (CM-UI-013, CM-UI-015).
+    <!-- depends-on: 36.3.2.2 -->
+  - [ ] **Sub-task 36.3.3.3:** Run human trials on the real backend with disposable repositories: at least eight first-time owners and a round of experienced developers; record success, time, errors and severity-rated findings and retest fixes (CM-UI-015).
+    <!-- depends-on: 36.3.2.3, 36.3.3.1, 36.3.3.2 -->
+
+- [ ] **AC 36.3:** Every screen meets the native UI specification with one interface for all skill levels, the frozen budgets are met on the declared profiles, and human trials on the real backend pass without fake-provider substitution.
+
 ### Sprint 36 Gate
 
 - [ ] **Gate 36.1:** Native workspace, guided setup, actual local workflow and control/recovery acceptance pass on disposable targets; deterministic fixtures are explicitly distinguished from live-provider evidence.
 - [ ] **Gate 36.2:** Linux install/launch, native usability/accessibility checks, separately admitted live-provider scope and required independent review support M-UI-LOCAL; public-release and hands-off qualification remain separate.
+- [ ] **Gate 36.3:** The native UI specification is met: accessibility, responsiveness on declared profiles and human trials pass on the real backend; fake-provider evidence is not counted.
 
 ---
 

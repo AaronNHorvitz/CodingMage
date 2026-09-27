@@ -36,7 +36,9 @@ executable and fake providers; real-desktop, screen-reader, clean-installation, 
 independent-review verification remain open and are listed in
 [the human-only register](docs/evidence/sprint-36-human-only.md). Supervised, exception-only and
 hands-off controls become available only as their backend contracts are implemented and qualified.
-See the [native workspace guide](docs/operations/native-ui.md), Sprint 36 in
+The binding [native UI specification](docs/architecture/native-ui-specification.md) (Decision 0020) defines one interface for every
+skill level, accessibility, device budgets and human trials. See the
+[native workspace guide](docs/operations/native-ui.md), Sprint 36 in
 [TASKS.md](TASKS.md) and Decisions 0015 and 0016.
 
 The current local campaign path supports both durable serial execution and bounded parallel teams:

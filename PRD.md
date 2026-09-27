@@ -61,6 +61,18 @@ Opening the app or a repository must not start agents, edit task status or autho
 | CM-UI-004 | Explicit campaign admission, start/pause/resume/stop/cancel and truthful reconnect/recovery behavior; no silent authority expansion. | 36.2.1 |
 | CM-UI-005 | Inspectable changes, exact-commit review and test results, bounded activity, and exportable outcome reports from real backend records. | 36.2.2 |
 | CM-UI-006 | Native user-workflow, keyboard/accessibility, resizing, resource-use and installation verification with separate live-provider qualification. | 36.2.3 |
+| CM-UI-007 | Implement every screen, state and workflow of the [native UI specification](docs/architecture/native-ui-specification.md) and keep it current with the UI. | 36.3.1 |
+| CM-UI-008 | One interface for every skill level: simple by default with depth in context; no beginner, expert or advanced mode. | 36.3.2 |
+| CM-UI-009 | Every UI action goes through the `codingmage` command boundary and can show its exact command equivalent; no private state access. | 36.3.2 |
+| CM-UI-010 | Repository text, model output, findings and logs render inert; controls and confirmations only in trusted chrome; links confirmed; no secrets shown. | 36.3.2 |
+| CM-UI-011 | One design system with light, dark and high-contrast themes; status never shown by colour alone; labelled icons; reduced motion. | 36.3.2 |
+| CM-UI-012 | WCAG 2.2 level AA success criteria applied to the native app, including keyboard, Orca, 100% to 200% scaling and the minimum window. | 36.3.3 |
+| CM-UI-013 | Responsiveness on declared device profiles within frozen budgets for start-up, input latency, frame time, idle cost and large lists. | 36.3.3 |
+| CM-UI-014 | Externalized text and locale formatting, offline help and glossary, actionable errors, licences in About and redacted diagnostics. | 36.3.2 |
+| CM-UI-015 | Automated, fault-injection, performance and human-trial verification on the real backend, with fake-provider evidence labelled separately. | 36.3.3 |
+
+[Decision 0020](docs/decisions/0020-complete-native-ui-specification.md) makes the
+[native UI specification](docs/architecture/native-ui-specification.md) binding for every CM-UI row.
 
 The interface must keep completed work, accepted outcomes, blocked/deferred work, source checkboxes
 and delivery state separate. Unknown usage stays unknown; disconnected or stale observations must
