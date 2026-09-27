@@ -1,0 +1,112 @@
+# Sprint 36.3 native UI baseline and frozen qualification protocol
+
+Prepared against source commit `57f79133cc1dc67c7b3f9953fa9fb24dbf441b22` before any
+36.3 performance or human measurement. This is a source inventory and test plan, not a UI
+qualification result. The binding requirements are
+[the native UI specification](../architecture/native-ui-specification.md). Later source changes
+must update the implementation column without silently changing the frozen protocol below.
+
+## Screen and state inventory
+
+The current `Screen` enum in `crates/codingmage-ui/src/app/mod.rs` has six destinations. Embedded
+sections are listed separately because the specification requires their own complete workflows.
+
+| Specified screen | Current source surface | Gap against the specification |
+| --- | --- | --- |
+| First run | Overview without a project; `open_controls`, `CoordinatorBinary::sibling` | No dedicated first-run flow, provider sign-in explanation, storage explanation or clear recommended next step. |
+| Workspace | Overview and diagnosis grid | Repository and source-plan counts exist; objective, current campaign, attention and recent outcome summary are absent. |
+| Work plan | `work_plan`, `PlanIndex`, filters and source checkbox labels | Search, kind/state filters and dependencies exist; large-list virtualization and contextual outcome detail are absent. |
+| Task detail | `item_detail` below the selected row | Source title, line, checkbox, dependencies and identifier exist; source body, criteria, packets, attempts, review and test history are absent. |
+| Team activity | Campaign status, active tasks, `changes_screen` run records | Actor, model, pod, phase and some journaled records exist; one chronological filterable activity log and bounded output/timing detail are absent. |
+| Blockers | Campaign `holds_section`, blocker explanation and reports | Codes and affected task exist; recovery actions and a dedicated searchable view are absent. |
+| Changes and evidence | Changes screen, Git summaries and run records | Commit, changed files and known gate/review dispositions exist; exact diff hunks, full retained findings and logs are unavailable from the command boundary. Missing evidence is labelled. |
+| Reports | Reports screen and `report::export` | Inspect/export and overwrite/privacy refusal exist; explanatory outcome depth and broader report navigation remain. |
+| Configuration | Setup and campaign readiness sections | Guided configuration, validated writes, preflight and error explanations exist; schema/default view, every policy, and full mode setup are incomplete. |
+| Campaign controls | Campaign execution section | Admission, start, stop/resume/cancel and reconnect exist through the coordinator; every control lacks a visible exact `codingmage` command. |
+| Settings | No destination | Appearance, accessibility, language, storage and defaults are absent. |
+| Help and About | No destination | Offline help, glossary, shortcut reference, licence/attribution view and manual diagnostic action are absent. The backend `support-bundle` command exists. |
+
+| Required state | Current handling | Remaining gap |
+| --- | --- | --- |
+| Empty / not started | Overview, work plan, campaign and report empty text | Per-screen next step and help are inconsistent. |
+| Loading | `Observed<T>` and selected panels | Partial loading states and polite accessibility announcements are absent. |
+| Failure / malformed output | `BackendError`, `failure_box`, strict model parsers | Some failures are generic and their effect on the campaign is unclear. |
+| Stale / disconnected | `Observed<T>::freshness`, response-generation and binding checks | Not every panel labels a retained stale value; status bar lacks complete campaign freshness. |
+| Executable missing | `Connection::Unavailable` in Overview/status bar | First-run recovery path is incomplete. |
+| Provider unavailable / authentication required / permission denied | Preflight and backend error explanations | No consistent per-screen state and direct recovery action. |
+| Campaign and task outcomes | `CampaignStatus`, task overlay and independent counters | Some coordinator states are raw codes; task detail lacks the full history. Source checkboxes and verified outcomes are kept distinct. |
+
+Shell gaps apply to every screen: the navigation has no command palette; the status bar does not
+always show campaign identity/state, involvement, active pods, current gate and last update; the
+minimum window is currently 720 by 480 logical pixels rather than 1024 by 640. Text is embedded
+in Rust; themes, tokens, contrast evidence, pseudo-locale, right-to-left and reduced-motion
+support are absent. The current code uses plain egui labels for untrusted content, but a complete
+inert-content/confirmed-link adversarial matrix has not been run. The UI performs some local
+configuration, file and Git operations; Decision 0016's command boundary and the new section 2
+rule require those operations to be reconciled, with missing commands added to `codingmage`.
+
+## Frozen device profiles
+
+These are **target device configurations**, not claims that those devices were tested or are
+available. A measured machine must match its row's CPU class, memory, renderer, display and OS,
+or receive a new profile ID before testing. P1 records the currently available isolated builder:
+an Intel Core i9-13900KF Linux x86-64 host with 62 GiB physical RAM, a three-CPU quota and a
+6 GiB hard memory limit. No GPU or interactive display is exposed to this lane; P1 software
+offscreen results must be labelled as such and cannot qualify desktop input or Orca.
+
+| Profile | Pinned target hardware and environment | Availability now |
+| --- | --- | --- |
+| P1 | Intel Core i9-13900KF, at least 32 GiB physical RAM, Linux x86-64, 1920×1080 at 100%, software renderer; app measured outside the build scope for desktop qualification | CPU/offscreen only; desktop unavailable |
+| P2 | Intel Core i5-1235U, 16 GiB RAM, integrated Intel graphics, Linux x86-64, 1920×1080 at 125% and 150% | Unavailable |
+| P3 | Intel N100, 8 GiB RAM, Linux x86-64, 1920×1080 at 100%, software renderer with no usable GPU | Unavailable |
+| P4 | P2 CPU/RAM/graphics with a 3840×2160 display at 200% | Unavailable |
+| P5 | Intel Core i5-1235U, 16 GiB RAM, integrated Intel graphics, Windows 11 x64, 1920×1080 at 100% | Platform lane unavailable |
+
+The exact OS build, kernel, renderer version and device identifier are recorded with each future
+result. A different device or driver is a separate run, not a substitution for a pinned profile.
+The Windows profile remains an open future lane and does not extend the Linux demo claim.
+
+## Frozen numerical budgets and measurement
+
+The following numbers are fixed before measuring. A profile fails a budget when its qualifying
+run exceeds it; a missing device or inaccessible measurement is **unqualified**, never pass.
+
+| Measure | P1 | P2 | P3 | P4 | P5 | Method |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Process start to first interactive frame | 2 s | 3 s | 4 s | 3 s | 4 s | 20 cold launches; report worst and median; all must meet limit |
+| Input to visible response | 100 ms | 100 ms | 100 ms | 100 ms | 100 ms | p95 of at least 100 scripted actions across navigation, search and controls |
+| Live scroll frame time | 16.7 ms | 25 ms | 33 ms | 33 ms | 33 ms | p95 of at least 300 frames with live activity |
+| Idle cost | 1% of one CPU core | same | same | same | same | 60 s with an open idle window, app process tree only |
+| Resident memory at idle | 300 MB | same | same | same | same | peak RSS of app process after warm-up; exclude coordinator/providers |
+
+Run the input and frame checks at 1024×640 logical pixels and each profile's listed scale.
+Repeat with 10,000 tasks, 100,000 activity events and 1,000 blockers from deterministic,
+synthetic data, reporting load time, p95 input/frame times, memory and truncation. The scale
+case obeys the same latency and frame budgets. Use a release build, record its exact commit,
+binary digest, renderer, OS and hardware, warm-up procedure, run count, raw observations and
+failures. Offscreen software measurements are engineering diagnostics only when desktop input
+or presentation is part of the metric. CPU, memory, coordinator and provider measurements are
+reported separately; no result is silently merged across profiles.
+
+## Frozen human trial protocol
+
+Recruit at least eight representative first-time repository owners per round and a separate
+round of at least eight experienced developers. Use the installed native app, the real backend
+and disposable repositories. First-time participants receive only the objective and in-app help;
+experienced participants may use the in-context depth and in-app help, but no shell instructions.
+No fake-provider run is counted as a human trial or live-model qualification.
+
+Each person attempts: open a repository, identify a dependency-ready task and its source versus
+verified state, configure and diagnose a campaign, inspect exact command/authority before
+admission, start and detach/reconnect, resolve a presented blocker, inspect changes/tests/review,
+and export a redacted report. Record each task's completion without facilitator aid, time,
+errors, navigation path, accessibility needs and observed severity. A core workflow passes a
+first-time round only when at least seven of eight complete it unaided and no severity-1 finding
+remains open. The experienced round must record whether all relevant detail can be found in
+context and every action's command can be shown; any missing required detail is a failure to
+fix and retest. Severity 1 means loss of authority boundary, data, task control or access to a
+core workflow; severity 2 blocks a task with a workaround; severity 3 is confusing but usable.
+Record attempted and failed runs, exact build/profile, consent and privacy-safe aggregate data.
+After a fix, repeat the affected workflow with a new round; do not edit the thresholds after
+seeing results. Screen-reader and clean desktop installation checks remain separate required
+human evidence.

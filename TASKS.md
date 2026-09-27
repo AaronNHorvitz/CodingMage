@@ -2127,7 +2127,7 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
 ### Story 36.3 - Native UI Specification and Qualification
 
 - [ ] **Task 36.3.1 - Freeze the specification, profiles and budgets**
-  - [ ] **Sub-task 36.3.1.1:** Map every implemented screen and state to the native UI specification and record gaps; pin hardware for profiles P1 to P5; freeze the numeric responsiveness budgets, trial protocol and scoring before any measurement (CM-UI-007, CM-UI-013).
+  - [x] **Sub-task 36.3.1.1:** Map every implemented screen and state to the native UI specification and record gaps; pin hardware for profiles P1 to P5; freeze the numeric responsiveness budgets, trial protocol and scoring before any measurement (CM-UI-007, CM-UI-013). Source mapping, unavailable target-device declarations and frozen measurement/trial rules are in `docs/evidence/sprint-36-ui-specification-baseline.md`; this is a pre-measurement specification, not profile or human qualification.
     <!-- depends-on: 36.2.3.1 -->
 - [ ] **Task 36.3.2 - Bring every screen to the specification**
   - [ ] **Sub-task 36.3.2.1:** Implement the design system tokens, light, dark and high-contrast themes and shared components with contrast measured and screenshot baselines at 100% and 200% scaling and the minimum window (CM-UI-011).
