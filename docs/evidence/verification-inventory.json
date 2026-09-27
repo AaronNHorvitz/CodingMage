@@ -54578,6 +54578,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -55015,6 +55016,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -55911,6 +55913,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "positive": [
@@ -55953,6 +55956,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "positive": [
@@ -56726,6 +56730,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -56766,9 +56771,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:ALL:67",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:ALL:70",
       "kind": "const",
-      "line": 67,
+      "line": 70,
       "name": "ALL",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -56813,9 +56818,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:DIAGNOSIS_DEADLINE:38",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:DIAGNOSIS_DEADLINE:39",
       "kind": "const",
-      "line": 38,
+      "line": 39,
       "name": "DIAGNOSIS_DEADLINE",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -56859,9 +56864,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:GIT_DEADLINE:42",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:GIT_DEADLINE:43",
       "kind": "const",
-      "line": 42,
+      "line": 43,
       "name": "GIT_DEADLINE",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -56872,6 +56877,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "positive": [
@@ -56901,9 +56907,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:MIN_WINDOW:46",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:MIN_WINDOW:47",
       "kind": "const",
-      "line": 46,
+      "line": 47,
       "name": "MIN_WINDOW",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -56914,6 +56920,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "positive": [
@@ -56942,9 +56949,9 @@
         "positive",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:STATUS_DEADLINE:40",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:STATUS_DEADLINE:41",
       "kind": "const",
-      "line": 40,
+      "line": 41,
       "name": "STATUS_DEADLINE",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -56976,9 +56983,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:STATUS_POLL_INTERVAL:44",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:const:STATUS_POLL_INTERVAL:45",
       "kind": "const",
-      "line": 44,
+      "line": 45,
       "name": "STATUS_POLL_INTERVAL",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -56989,6 +56996,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "positive": [
@@ -57020,9 +57028,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:enum:Connection:104",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:enum:Connection:110",
       "kind": "enum",
-      "line": 104,
+      "line": 110,
       "name": "Connection",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57077,9 +57085,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:enum:Screen:50",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:enum:Screen:51",
       "kind": "enum",
-      "line": 50,
+      "line": 51,
       "name": "Screen",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57090,6 +57098,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -57132,9 +57141,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:binding:301",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:binding:313",
       "kind": "fn",
-      "line": 301,
+      "line": 313,
       "name": "binding",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57145,6 +57154,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -57194,26 +57204,15 @@
       "applicable_categories": [
         "positive",
         "negative",
-        "malformed_input",
-        "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:campaign:242",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:campaign:254",
       "kind": "fn",
-      "line": 242,
+      "line": 254,
       "name": "campaign",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
       "test_mappings": {
-        "malformed_input": [
-          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
-          "crates/codingmage-ui/src/records.rs::numstat_and_log_parse_including_binary_and_malformed_lines",
-          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
-          "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
-          "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
-          "crates/codingmage-ui/tests/verification.rs::stale_and_malformed_private_state_is_visible_and_never_fatal",
-          "crates/codingmage-ui/tests/workplan.rs::malformed_task_source_is_a_visible_failure_and_overview_still_works"
-        ],
         "negative": [
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
           "crates/codingmage-ui/src/campaign.rs::selection_rejects_relative_and_cross_repository_specifications",
@@ -57242,9 +57241,6 @@
           "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
           "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
-        ],
-        "unknown_field": [
-          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed"
         ]
       }
     },
@@ -57256,9 +57252,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:campaign_error:272",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:campaign_error:284",
       "kind": "fn",
-      "line": 272,
+      "line": 284,
       "name": "campaign_error",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57314,9 +57310,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:close_project:410",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:close_project:422",
       "kind": "fn",
-      "line": 410,
+      "line": 422,
       "name": "close_project",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57370,9 +57366,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:diagnosis:333",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:diagnosis:345",
       "kind": "fn",
-      "line": 333,
+      "line": 345,
       "name": "diagnosis",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57414,9 +57410,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:discarded_stale:339",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:discarded_stale:351",
       "kind": "fn",
-      "line": 339,
+      "line": 351,
       "name": "discarded_stale",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57459,9 +57455,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:failure_box:1254",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:failure_box:1287",
       "kind": "fn",
-      "line": 1254,
+      "line": 1287,
       "name": "failure_box",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57472,6 +57468,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -57511,9 +57508,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:generation:321",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:generation:333",
       "kind": "fn",
-      "line": 321,
+      "line": 333,
       "name": "generation",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57555,9 +57552,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:handle_response:475",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:handle_response:487",
       "kind": "fn",
-      "line": 475,
+      "line": 487,
       "name": "handle_response",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57601,9 +57598,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:head_plan:254",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:head_plan:266",
       "kind": "fn",
-      "line": 254,
+      "line": 266,
       "name": "head_plan",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57659,9 +57656,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:label:78",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:label:82",
       "kind": "fn",
-      "line": 78,
+      "line": 82,
       "name": "label",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57717,9 +57714,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:mission:266",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:mission:278",
       "kind": "fn",
-      "line": 266,
+      "line": 278,
       "name": "mission",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57775,9 +57772,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:new:158",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:new:167",
       "kind": "fn",
-      "line": 158,
+      "line": 167,
       "name": "new",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57833,9 +57830,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:open_project:355",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:open_project:367",
       "kind": "fn",
-      "line": 355,
+      "line": 367,
       "name": "open_project",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57892,9 +57889,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:plan_filter:284",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:plan_filter:296",
       "kind": "fn",
-      "line": 284,
+      "line": 296,
       "name": "plan_filter",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -57905,6 +57902,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -57958,9 +57956,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:plan_index:278",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:plan_index:290",
       "kind": "fn",
-      "line": 278,
+      "line": 290,
       "name": "plan_index",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58014,9 +58012,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:poll:586",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:poll:598",
       "kind": "fn",
-      "line": 586,
+      "line": 598,
       "name": "poll",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58058,9 +58056,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:project:327",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:project:339",
       "kind": "fn",
-      "line": 327,
+      "line": 339,
       "name": "project",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58104,9 +58102,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:refresh_diagnosis:427",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:refresh_diagnosis:439",
       "kind": "fn",
-      "line": 427,
+      "line": 439,
       "name": "refresh_diagnosis",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58160,9 +58158,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:render:611",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:render:623",
       "kind": "fn",
-      "line": 611,
+      "line": 623,
       "name": "render",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58206,9 +58204,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:report:260",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:report:272",
       "kind": "fn",
-      "line": 260,
+      "line": 272,
       "name": "report",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58264,9 +58262,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:screen:345",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:screen:357",
       "kind": "fn",
-      "line": 345,
+      "line": 357,
       "name": "screen",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58322,9 +58320,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:select_screen:350",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:select_screen:362",
       "kind": "fn",
-      "line": 350,
+      "line": 362,
       "name": "select_screen",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58381,9 +58379,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:selected_item:295",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:selected_item:307",
       "kind": "fn",
-      "line": 295,
+      "line": 307,
       "name": "selected_item",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58394,6 +58392,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -58446,9 +58445,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:set_plan_filter:289",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:set_plan_filter:301",
       "kind": "fn",
-      "line": 289,
+      "line": 301,
       "name": "set_plan_filter",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58459,6 +58458,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -58500,9 +58500,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:shortcut:91",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:shortcut:96",
       "kind": "fn",
-      "line": 91,
+      "line": 96,
       "name": "shortcut",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58556,9 +58556,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:status:248",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:status:260",
       "kind": "fn",
-      "line": 248,
+      "line": 260,
       "name": "status",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58600,9 +58600,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:submit:459",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:submit:471",
       "kind": "fn",
-      "line": 459,
+      "line": 471,
       "name": "submit",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58646,9 +58646,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:with_binary:165",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:with_binary:174",
       "kind": "fn",
-      "line": 165,
+      "line": 174,
       "name": "with_binary",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58704,9 +58704,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:with_state_dir:174",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:with_state_dir:183",
       "kind": "fn",
-      "line": 174,
+      "line": 183,
       "name": "with_state_dir",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -58762,9 +58762,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:struct:App:112",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:struct:App:118",
       "kind": "struct",
-      "line": 112,
+      "line": 118,
       "name": "App",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -59157,6 +59157,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -60283,6 +60284,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "positive": [
@@ -60325,6 +60327,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "positive": [
@@ -60367,6 +60370,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "positive": [
@@ -60498,6 +60502,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -60639,6 +60644,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -60694,6 +60700,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -62230,6 +62237,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -62355,6 +62363,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -62422,6 +62431,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -62489,6 +62499,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -62614,6 +62625,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -62855,6 +62867,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -63038,6 +63051,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -63221,6 +63235,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -63346,6 +63361,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -63412,6 +63428,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -63511,6 +63528,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -63608,6 +63626,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -63705,6 +63724,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -63758,6 +63778,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -63811,6 +63832,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -63866,6 +63888,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -64063,6 +64086,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -64115,6 +64139,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "positive": [
@@ -64422,6 +64447,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -64615,6 +64641,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -64828,6 +64855,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -64893,6 +64921,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -65039,6 +65068,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -65236,6 +65266,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -65555,6 +65586,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -65721,6 +65753,499 @@
         "positive",
         "repeatability"
       ],
+      "id": "rust:crates/codingmage-ui/src/design.rs:const:ALL:21",
+      "kind": "const",
+      "line": 21,
+      "name": "ALL",
+      "path": "crates/codingmage-ui/src/design.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "positive": [
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-ui/src/design.rs:enum:Appearance:7",
+      "kind": "enum",
+      "line": 7,
+      "name": "Appearance",
+      "path": "crates/codingmage-ui/src/design.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
+          "crates/codingmage-ui/src/campaign.rs::selection_rejects_relative_and_cross_repository_specifications",
+          "crates/codingmage-ui/src/controls.rs::ledger_blocks_pending_requests_and_replays_retryable_identities",
+          "crates/codingmage-ui/src/project.rs::opening_reports_config_and_plan_failures_distinctly",
+          "crates/codingmage-ui/src/setup.rs::campaign_form_binds_coordinator_values_and_refuses_records_inside_the_repository",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/tests/campaign.rs::blocked_task_shows_its_closed_reason_and_independent_progress",
+          "crates/codingmage-ui/tests/campaign.rs::cross_repository_campaign_is_refused_before_any_backend_request"
+        ],
+        "positive": [
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-ui/src/design.rs:enum:Palette:63",
+      "kind": "enum",
+      "line": 63,
+      "name": "Palette",
+      "path": "crates/codingmage-ui/src/design.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
+          "crates/codingmage-ui/src/campaign.rs::selection_rejects_relative_and_cross_repository_specifications",
+          "crates/codingmage-ui/src/controls.rs::ledger_blocks_pending_requests_and_replays_retryable_identities",
+          "crates/codingmage-ui/src/project.rs::opening_reports_config_and_plan_failures_distinctly",
+          "crates/codingmage-ui/src/setup.rs::campaign_form_binds_coordinator_values_and_refuses_records_inside_the_repository",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/tests/campaign.rs::blocked_task_shows_its_closed_reason_and_independent_progress",
+          "crates/codingmage-ui/tests/campaign.rs::cross_repository_campaign_is_refused_before_any_backend_request"
+        ],
+        "positive": [
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-ui/src/design.rs:fn:apply:188",
+      "kind": "fn",
+      "line": 188,
+      "name": "apply",
+      "path": "crates/codingmage-ui/src/design.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
+          "crates/codingmage-ui/src/fonts.rs::override_must_be_a_regular_bounded_file",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
+          "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
+          "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
+        ],
+        "negative": [
+          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
+          "crates/codingmage-ui/src/campaign.rs::selection_rejects_relative_and_cross_repository_specifications",
+          "crates/codingmage-ui/src/controls.rs::ledger_blocks_pending_requests_and_replays_retryable_identities",
+          "crates/codingmage-ui/src/project.rs::opening_reports_config_and_plan_failures_distinctly",
+          "crates/codingmage-ui/src/setup.rs::campaign_form_binds_coordinator_values_and_refuses_records_inside_the_repository",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/tests/campaign.rs::blocked_task_shows_its_closed_reason_and_independent_progress",
+          "crates/codingmage-ui/tests/campaign.rs::cross_repository_campaign_is_refused_before_any_backend_request"
+        ],
+        "positive": [
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-ui/src/design.rs:fn:contrast_ratio:248",
+      "kind": "fn",
+      "line": 248,
+      "name": "contrast_ratio",
+      "path": "crates/codingmage-ui/src/design.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
+          "crates/codingmage-ui/src/campaign.rs::selection_rejects_relative_and_cross_repository_specifications",
+          "crates/codingmage-ui/src/controls.rs::ledger_blocks_pending_requests_and_replays_retryable_identities",
+          "crates/codingmage-ui/src/project.rs::opening_reports_config_and_plan_failures_distinctly",
+          "crates/codingmage-ui/src/setup.rs::campaign_form_binds_coordinator_values_and_refuses_records_inside_the_repository",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/tests/campaign.rs::blocked_task_shows_its_closed_reason_and_independent_progress",
+          "crates/codingmage-ui/tests/campaign.rs::cross_repository_campaign_is_refused_before_any_backend_request"
+        ],
+        "positive": [
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-ui/src/design.rs:fn:current_tokens:240",
+      "kind": "fn",
+      "line": 240,
+      "name": "current_tokens",
+      "path": "crates/codingmage-ui/src/design.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
+          "crates/codingmage-ui/src/campaign.rs::selection_rejects_relative_and_cross_repository_specifications",
+          "crates/codingmage-ui/src/controls.rs::ledger_blocks_pending_requests_and_replays_retryable_identities",
+          "crates/codingmage-ui/src/project.rs::opening_reports_config_and_plan_failures_distinctly",
+          "crates/codingmage-ui/src/setup.rs::campaign_form_binds_coordinator_values_and_refuses_records_inside_the_repository",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/tests/campaign.rs::blocked_task_shows_its_closed_reason_and_independent_progress",
+          "crates/codingmage-ui/tests/campaign.rs::cross_repository_campaign_is_refused_before_any_backend_request"
+        ],
+        "positive": [
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-ui/src/design.rs:fn:for_palette:126",
+      "kind": "fn",
+      "line": 126,
+      "name": "for_palette",
+      "path": "crates/codingmage-ui/src/design.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
+          "crates/codingmage-ui/src/fonts.rs::override_must_be_a_regular_bounded_file",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
+          "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
+          "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
+        ],
+        "negative": [
+          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
+          "crates/codingmage-ui/src/campaign.rs::selection_rejects_relative_and_cross_repository_specifications",
+          "crates/codingmage-ui/src/controls.rs::ledger_blocks_pending_requests_and_replays_retryable_identities",
+          "crates/codingmage-ui/src/project.rs::opening_reports_config_and_plan_failures_distinctly",
+          "crates/codingmage-ui/src/setup.rs::campaign_form_binds_coordinator_values_and_refuses_records_inside_the_repository",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/tests/campaign.rs::blocked_task_shows_its_closed_reason_and_independent_progress",
+          "crates/codingmage-ui/tests/campaign.rs::cross_repository_campaign_is_refused_before_any_backend_request"
+        ],
+        "positive": [
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-ui/src/design.rs:fn:label:25",
+      "kind": "fn",
+      "line": 25,
+      "name": "label",
+      "path": "crates/codingmage-ui/src/design.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
+          "crates/codingmage-ui/src/campaign.rs::selection_rejects_relative_and_cross_repository_specifications",
+          "crates/codingmage-ui/src/controls.rs::ledger_blocks_pending_requests_and_replays_retryable_identities",
+          "crates/codingmage-ui/src/project.rs::opening_reports_config_and_plan_failures_distinctly",
+          "crates/codingmage-ui/src/setup.rs::campaign_form_binds_coordinator_values_and_refuses_records_inside_the_repository",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/tests/campaign.rs::blocked_task_shows_its_closed_reason_and_independent_progress",
+          "crates/codingmage-ui/tests/campaign.rs::cross_repository_campaign_is_refused_before_any_backend_request"
+        ],
+        "positive": [
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-ui/src/design.rs:fn:label:75",
+      "kind": "fn",
+      "line": 75,
+      "name": "label",
+      "path": "crates/codingmage-ui/src/design.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
+          "crates/codingmage-ui/src/campaign.rs::selection_rejects_relative_and_cross_repository_specifications",
+          "crates/codingmage-ui/src/controls.rs::ledger_blocks_pending_requests_and_replays_retryable_identities",
+          "crates/codingmage-ui/src/project.rs::opening_reports_config_and_plan_failures_distinctly",
+          "crates/codingmage-ui/src/setup.rs::campaign_form_binds_coordinator_values_and_refuses_records_inside_the_repository",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/tests/campaign.rs::blocked_task_shows_its_closed_reason_and_independent_progress",
+          "crates/codingmage-ui/tests/campaign.rs::cross_repository_campaign_is_refused_before_any_backend_request"
+        ],
+        "positive": [
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-ui/src/design.rs:fn:resolve:36",
+      "kind": "fn",
+      "line": 36,
+      "name": "resolve",
+      "path": "crates/codingmage-ui/src/design.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
+          "crates/codingmage-ui/src/campaign.rs::selection_rejects_relative_and_cross_repository_specifications",
+          "crates/codingmage-ui/src/controls.rs::ledger_blocks_pending_requests_and_replays_retryable_identities",
+          "crates/codingmage-ui/src/project.rs::opening_reports_config_and_plan_failures_distinctly",
+          "crates/codingmage-ui/src/setup.rs::campaign_form_binds_coordinator_values_and_refuses_records_inside_the_repository",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/tests/campaign.rs::blocked_task_shows_its_closed_reason_and_independent_progress",
+          "crates/codingmage-ui/tests/campaign.rs::cross_repository_campaign_is_refused_before_any_backend_request"
+        ],
+        "positive": [
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-ui/src/design.rs:struct:Tokens:86",
+      "kind": "struct",
+      "line": 86,
+      "name": "Tokens",
+      "path": "crates/codingmage-ui/src/design.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
+          "crates/codingmage-ui/src/campaign.rs::selection_rejects_relative_and_cross_repository_specifications",
+          "crates/codingmage-ui/src/controls.rs::ledger_blocks_pending_requests_and_replays_retryable_identities",
+          "crates/codingmage-ui/src/project.rs::opening_reports_config_and_plan_failures_distinctly",
+          "crates/codingmage-ui/src/setup.rs::campaign_form_binds_coordinator_values_and_refuses_records_inside_the_repository",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/tests/campaign.rs::blocked_task_shows_its_closed_reason_and_independent_progress",
+          "crates/codingmage-ui/tests/campaign.rs::cross_repository_campaign_is_refused_before_any_backend_request"
+        ],
+        "positive": [
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "repeatability"
+      ],
       "id": "rust:crates/codingmage-ui/src/fonts.rs:const:MAX_FONT_BYTES:13",
       "kind": "const",
       "line": 13,
@@ -65769,6 +66294,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -65866,6 +66392,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -65919,6 +66446,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -66352,6 +66880,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -67087,6 +67616,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -67154,6 +67684,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -67219,6 +67750,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -67274,6 +67806,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -67689,6 +68222,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -67811,6 +68345,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "positive": [
@@ -67855,6 +68390,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -67910,6 +68446,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -67965,6 +68502,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -68236,6 +68774,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -68302,6 +68841,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -68358,6 +68898,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -68414,6 +68955,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -68879,6 +69421,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -69327,6 +69870,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -69926,6 +70470,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -70415,6 +70960,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -70480,6 +71026,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -70592,6 +71139,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -70648,6 +71196,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -70703,6 +71252,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -70988,6 +71538,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -71043,6 +71594,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -71582,6 +72134,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -71635,6 +72188,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -71688,6 +72242,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -71875,6 +72430,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -71940,6 +72496,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -71993,6 +72550,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -72046,6 +72604,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -72099,6 +72658,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -72152,6 +72712,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -72251,6 +72812,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "malformed_input": [
@@ -72316,6 +72878,7 @@
           "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
           "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
           "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale",
           "crates/codingmage-ui/tests/verification.rs::resource_use_is_bounded_and_idle_repaint_is_reactive"
         ],
         "negative": [
@@ -72350,6 +72913,6 @@
       }
     }
   ],
-  "items_sha256": "46393b33502e1634de4ccf43e6808fdbd1415fc96c3e5004445c2220e48bab76",
+  "items_sha256": "130ddd11ebd6b4cd988391a013caee548ebc4f40b8f1aa9477037b233d25d7c5",
   "schema_version": 1
 }

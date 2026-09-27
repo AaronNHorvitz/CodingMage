@@ -545,7 +545,7 @@ fn window_sizes_and_high_dpi_keep_navigation_and_content_reachable() {
     let mut evidence = Evidence::new();
     let fixture = Fixture::new("verify-sizes", 3);
     for (name, size, ppp) in [
-        ("30-compact-720x480", [720.0, 480.0], 1.0),
+        ("30-minimum-1024x640", codingmage_ui::app::MIN_WINDOW, 1.0),
         ("31-default-1100x720", [1100.0, 720.0], 1.0),
         ("32-high-dpi-1100x720-at-2x", [1100.0, 720.0], 2.0),
         ("33-large-1920x1080", [1920.0, 1080.0], 1.0),
@@ -569,6 +569,53 @@ fn window_sizes_and_high_dpi_keep_navigation_and_content_reachable() {
         assert_eq!(last.height, expected_height);
     }
     evidence.finish("sizes");
+}
+
+#[test]
+fn appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale() {
+    let mut evidence = Evidence::new();
+    let fixture = Fixture::new("verify-appearance", 1);
+    assert_eq!(
+        codingmage_ui::app::MIN_WINDOW.map(f32::to_bits),
+        [1024.0_f32.to_bits(), 640.0_f32.to_bits()]
+    );
+    for (scale_name, ppp) in [("100", 1.0), ("200", 2.0)] {
+        let mut harness = rendering_harness(
+            codingmage_ui::app::MIN_WINDOW,
+            ppp,
+            fixture.root.join(format!("appearance-{scale_name}")),
+        );
+        harness.state_mut().select_screen(Screen::Settings);
+        harness.run_steps(2);
+        for (label, palette_name) in [
+            ("Light", "light"),
+            ("Dark", "dark"),
+            ("High contrast", "contrast"),
+        ] {
+            harness.get_by_label(label).click();
+            harness.run_steps(2);
+            harness.get_by_label_contains("Current palette:");
+            evidence.snapshot(
+                &mut harness,
+                &format!("appearance-{palette_name}-{scale_name}"),
+                ppp,
+            );
+            let artifact = evidence.artifacts.last().unwrap();
+            assert_eq!(artifact.width, pixel_extent(1024.0, ppp));
+            assert_eq!(artifact.height, pixel_extent(640.0, ppp));
+        }
+    }
+    let digests = evidence
+        .artifacts
+        .iter()
+        .map(|artifact| artifact.sha256.as_str())
+        .collect::<std::collections::HashSet<_>>();
+    assert_eq!(
+        digests.len(),
+        6,
+        "all six baselines must render differently"
+    );
+    evidence.finish("appearance-baselines");
 }
 
 #[test]

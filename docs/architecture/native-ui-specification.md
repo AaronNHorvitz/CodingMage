@@ -125,8 +125,9 @@ changes, verified with Orca; usable from 100% to 200% scaling and at a minimum w
 
 ## 11. Device profiles and responsiveness
 
-Task 36.3.1 pins the hardware for each profile and freezes the final numbers before any
-measurement. The proposed budgets are:
+Task 36.3.1 pinned target hardware and froze the full numerical matrix and trial scoring before
+measurement in [the Sprint 36.3 baseline](../evidence/sprint-36-ui-specification-baseline.md).
+Devices that are unavailable remain unqualified. The summary budgets are:
 
 | Profile | Description |
 |---|---|
@@ -136,11 +137,11 @@ measurement. The proposed budgets are:
 | P4 | High-DPI display at 200% scaling |
 | P5 | Windows 11 x64, when that platform lane opens |
 
-| Budget | Proposed target |
+| Budget | Frozen target |
 |---|---|
-| First interactive frame | Within 2 s on P1 and 4 s on P3 |
+| First interactive frame | Within 2 s on P1, 3 s on P2/P4 and 4 s on P3/P5 |
 | Input to visible response | p95 at most 100 ms |
-| Frame time during live activity and scrolling | p95 at most 16.7 ms on P1 and 33 ms on P3 |
+| Frame time during live activity and scrolling | p95 at most 16.7 ms on P1, 25 ms on P2 and 33 ms on P3/P4/P5 |
 | Idle cost | At most 1% of one CPU core and 300 MB resident memory, excluding the coordinator and providers |
 | Scale | 10,000 tasks, 100,000 activity events and 1,000 blockers scroll and filter within the budgets above |
 

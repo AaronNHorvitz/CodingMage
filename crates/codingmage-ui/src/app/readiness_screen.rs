@@ -164,9 +164,9 @@ impl App {
         ));
         for check in &checks {
             let color = match check.status {
-                CheckStatus::Pass => egui::Color32::from_rgb(120, 200, 120),
-                CheckStatus::Fail => egui::Color32::from_rgb(255, 150, 150),
-                CheckStatus::Unknown => egui::Color32::from_rgb(200, 200, 120),
+                CheckStatus::Pass => super::current_tokens(ui.ctx()).success,
+                CheckStatus::Fail => super::current_tokens(ui.ctx()).error,
+                CheckStatus::Unknown => super::current_tokens(ui.ctx()).warning,
             };
             ui.horizontal_wrapped(|ui| {
                 ui.colored_label(color, format!("{}: {}", check.name, check.status.label()));

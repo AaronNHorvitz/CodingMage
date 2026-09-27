@@ -127,7 +127,7 @@ impl App {
         if let Some(message) = &self.reports.message {
             match message {
                 Ok(text) => {
-                    ui.colored_label(egui::Color32::from_rgb(120, 200, 120), text);
+                    ui.colored_label(super::current_tokens(ui.ctx()).success, text);
                 }
                 Err(text) => failure_box(
                     ui,

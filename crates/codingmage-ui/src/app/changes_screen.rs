@@ -282,7 +282,7 @@ impl App {
                     }
                     None => {
                         ui.colored_label(
-                            egui::Color32::from_rgb(255, 150, 150),
+                            super::current_tokens(ui.ctx()).error,
                             record
                                 .checkpoint_problem
                                 .as_deref()
@@ -293,11 +293,11 @@ impl App {
                 ui.label(record.review_label());
                 ui.label(record.gate_label());
                 if let Some(problem) = &record.journal_problem {
-                    ui.colored_label(egui::Color32::from_rgb(255, 150, 150), problem);
+                    ui.colored_label(super::current_tokens(ui.ctx()).error, problem);
                 }
                 if record.malformed_journal_lines > 0 {
                     ui.colored_label(
-                        egui::Color32::from_rgb(255, 150, 150),
+                        super::current_tokens(ui.ctx()).error,
                         format!(
                             "{} malformed journal line(s) ignored",
                             record.malformed_journal_lines

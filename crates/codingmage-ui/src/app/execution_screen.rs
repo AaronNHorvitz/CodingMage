@@ -376,7 +376,7 @@ impl App {
             }
             (Some(_), Some(stale)) => {
                 ui.colored_label(
-                    egui::Color32::from_rgb(220, 160, 60),
+                    super::current_tokens(ui.ctx()).warning,
                     format!(
                         "Admission stale: {}. Run preflight again and re-admit.",
                         stale.explain()

@@ -11,9 +11,11 @@ review of the interface is pending.
 
 ## What It Is
 
-- A client of the `codingmage` executable installed next to it (Decision 0016). Every action
-  with repository, state or process authority runs that binary; the interface parses its JSON and
-  stable error codes and never links the runtime.
+- A client of the `codingmage` executable installed next to it (Decision 0016). Campaign
+  execution and controls run through that binary; the interface parses its JSON and stable
+  error codes and never links the runtime. Configuration writes, local browsing and read-only
+  Git inspection still occur in the UI process. Migrating those operations to the command
+  boundary is open under the [native UI specification](../architecture/native-ui-specification.md).
 - An observer and control surface. Opening the app or a repository starts no agent, edits no task
   status and authorizes no campaign. Closing the window never stops a coordinator.
 - Built with `egui`/`eframe` on `wgpu` with AccessKit accessibility (Decision 0015), reactive
@@ -40,6 +42,7 @@ review of the interface is pending.
 | Changes and reviews | Delivery boundary, coordinator commits and changed files, per-run verdicts and gate evidence, journaled phases, bounded activity | read-only `git log`/`git diff --numstat`, run checkpoints and journals |
 | Reports | Outcome and blocker reports with export | the observations above |
 | Setup | Open or create a configuration, write the owner's authorization record, author a campaign, import and export | `codingmage-core`, `codingmage-campaign`, `codingmage init` |
+| Settings | Light, dark, high-contrast or system appearance for the current window | Local presentation state only |
 
 ## Workflow
 
@@ -60,8 +63,13 @@ review of the interface is pending.
 
 ## Keyboard
 
-- `Ctrl+1` to `Ctrl+6` switch screens; `Tab` and `Shift+Tab` move focus; `Space` or `Enter`
+- `Ctrl+1` to `Ctrl+7` switch screens; `Tab` and `Shift+Tab` move focus; `Space` or `Enter`
   activate; `F5` refreshes the diagnosis and campaign observations.
+
+The native minimum window is 1024 by 640 logical pixels. Appearance uses shared visual tokens;
+its choice lasts until the window closes. Reduced motion is the default because the shell has no
+essential animation. The six appearance baselines are offscreen software renders; see
+[the Story 36.3 evidence](../evidence/sprint-36-appearance.md).
 
 ## Limits
 

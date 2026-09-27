@@ -10,6 +10,7 @@ pub mod backend;
 pub mod browser;
 pub mod campaign;
 pub mod controls;
+pub mod design;
 pub mod fonts;
 pub mod launch;
 pub mod observed;

@@ -421,7 +421,7 @@ impl App {
         } else {
             for line in drift {
                 ui.colored_label(
-                    egui::Color32::from_rgb(220, 160, 60),
+                    super::current_tokens(ui.ctx()).warning,
                     format!("Binding drift: {line}"),
                 );
             }
@@ -452,7 +452,7 @@ impl App {
             (Some(Some(status)), _) => {
                 if freshness == Freshness::Stale {
                     ui.colored_label(
-                        egui::Color32::from_rgb(180, 120, 0),
+                        super::current_tokens(ui.ctx()).warning,
                         "Stale observation: values below may no longer match the coordinator.",
                     );
                 }

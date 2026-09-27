@@ -28,6 +28,7 @@ use crate::{
     },
     browser::Browser,
     campaign::{CampaignSelection, SelectError},
+    design::{Appearance, Palette, Tokens, current_tokens},
     observed::{Freshness, Observed, age_label},
     project::{LoadedPlan, OpenError, Project},
     state_dir::{ProjectMemory, RecentProjects, StateError, user_config_dir},
@@ -43,7 +44,7 @@ pub const GIT_DEADLINE: Duration = Duration::from_secs(30);
 /// Campaign status polling interval while a campaign is selected.
 pub const STATUS_POLL_INTERVAL: Duration = Duration::from_secs(15);
 /// Minimum window size the layout supports.
-pub const MIN_WINDOW: [f32; 2] = [720.0, 480.0];
+pub const MIN_WINDOW: [f32; 2] = [1024.0, 640.0];
 
 /// Navigation destinations.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -60,17 +61,20 @@ pub enum Screen {
     Reports,
     /// Guided configuration and readiness.
     Setup,
+    /// Appearance and accessibility preferences.
+    Settings,
 }
 
 impl Screen {
     /// All screens in navigation order.
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 7] = [
         Self::Overview,
         Self::WorkPlan,
         Self::Campaign,
         Self::Changes,
         Self::Reports,
         Self::Setup,
+        Self::Settings,
     ];
 
     /// Navigation label.
@@ -83,6 +87,7 @@ impl Screen {
             Self::Changes => "Changes and reviews",
             Self::Reports => "Reports",
             Self::Setup => "Setup",
+            Self::Settings => "Settings",
         }
     }
 
@@ -96,6 +101,7 @@ impl Screen {
             Self::Changes => egui::Key::Num4,
             Self::Reports => egui::Key::Num5,
             Self::Setup => egui::Key::Num6,
+            Self::Settings => egui::Key::Num7,
         }
     }
 }
@@ -150,6 +156,9 @@ pub struct App {
     pending_changes_parts: u8,
     records: Observed<Vec<crate::records::RunRecord>>,
     reports: ReportsState,
+    appearance: Appearance,
+    system_dark: bool,
+    applied_palette: Option<Palette>,
 }
 
 impl App {
@@ -234,6 +243,9 @@ impl App {
             pending_changes_parts: 0,
             records: Observed::default(),
             reports: ReportsState::default(),
+            appearance: Appearance::System,
+            system_dark: ctx.system_theme().unwrap_or(egui::Theme::Dark) == egui::Theme::Dark,
+            applied_palette: None,
         }
     }
 
@@ -611,6 +623,11 @@ impl App {
     pub fn render(&mut self, root: &mut egui::Ui) {
         self.poll();
         let ctx = root.ctx().clone();
+        let palette = self.appearance.resolve(&ctx, self.system_dark);
+        if self.applied_palette != Some(palette) {
+            Tokens::for_palette(palette).apply(&ctx, palette);
+            self.applied_palette = Some(palette);
+        }
         self.handle_shortcuts(&ctx);
         self.top_bar(root);
         self.status_bar(root);
@@ -625,6 +642,7 @@ impl App {
                     Screen::Changes => self.changes_screen(ui),
                     Screen::Setup => self.setup(ui),
                     Screen::Reports => self.reports_screen(ui),
+                    Screen::Settings => self.settings_screen(ui),
                 });
         });
         if self.diagnosis.loading
@@ -712,7 +730,7 @@ impl App {
                 }
                 ui.add_space(12.0);
                 ui.separator();
-                ui.small("Ctrl+1 to Ctrl+6 switch screens");
+                ui.small("Ctrl+1 to Ctrl+7 switch screens");
                 ui.small(format!("Uptime {}s", self.started_at.elapsed().as_secs()));
             });
     }
@@ -722,16 +740,11 @@ impl App {
             ui.horizontal_wrapped(|ui| {
                 match &self.connection {
                     Connection::Ready(_) => {
-                        ui.label(format!(
-                            "Coordinator: {}",
-                            self.binary_path
-                                .as_ref()
-                                .map_or_else(String::new, |path| path.display().to_string())
-                        ));
+                        ui.label("Coordinator: ready");
                     }
                     Connection::Unavailable(error) => {
                         ui.colored_label(
-                            egui::Color32::RED,
+                            current_tokens(ui.ctx()).error,
                             format!("Coordinator unavailable: {error}"),
                         );
                     }
@@ -749,6 +762,26 @@ impl App {
                 }
             });
         });
+    }
+
+    fn settings_screen(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Settings");
+        ui.label("Appearance follows the desktop by default. Choose a palette for this window.");
+        let before = self.appearance;
+        ui.horizontal_wrapped(|ui| {
+            for appearance in Appearance::ALL {
+                ui.radio_value(&mut self.appearance, appearance, appearance.label());
+            }
+        });
+        if self.appearance != before {
+            self.applied_palette = None;
+            ui.ctx().request_repaint();
+        }
+        ui.label(format!(
+            "Current palette: {}",
+            self.appearance.resolve(ui.ctx(), self.system_dark).label()
+        ));
+        ui.small("This choice lasts until you close the window.");
     }
 
     fn overview(&mut self, ui: &mut egui::Ui) {
@@ -826,7 +859,7 @@ impl App {
                     );
                 } else if self.diagnosis.freshness(self.now) == Freshness::Stale {
                     ui.colored_label(
-                        egui::Color32::from_rgb(180, 120, 0),
+                        current_tokens(ui.ctx()).warning,
                         format!(
                             "Stale: observed {}",
                             age_label(self.diagnosis.age(self.now))
@@ -890,7 +923,7 @@ impl App {
                 ui.monospace(browser.current.display().to_string());
             });
             if let Some(error) = &browser.error {
-                ui.colored_label(egui::Color32::RED, error);
+                ui.colored_label(current_tokens(ui.ctx()).error, error);
             }
             if browser.truncated {
                 ui.small("Listing truncated; navigate into a narrower directory.");
@@ -1252,10 +1285,11 @@ fn item_detail(ui: &mut egui::Ui, row: &PlanRow, index: &PlanIndex) {
 
 /// Renders one failure state with what happened and what to do.
 pub fn failure_box(ui: &mut egui::Ui, title: &str, detail: &str, action: &str) {
+    let tokens = current_tokens(ui.ctx());
     egui::Frame::group(ui.style())
-        .fill(egui::Color32::from_rgb(60, 30, 30))
+        .fill(tokens.panel)
         .show(ui, |ui| {
-            ui.colored_label(egui::Color32::from_rgb(255, 180, 180), title);
+            ui.colored_label(tokens.error, title);
             ui.monospace(detail);
             ui.label(action);
         });
