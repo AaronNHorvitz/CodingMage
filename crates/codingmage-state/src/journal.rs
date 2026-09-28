@@ -1,7 +1,7 @@
 use std::{
     fmt,
     fs::{self, File, OpenOptions},
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, Read as _, Write},
     path::{Path, PathBuf},
 };
 
@@ -448,9 +448,59 @@ fn load_records(path: &Path) -> Result<Vec<JournalRecord>, JournalError> {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
         Err(_) => return Err(JournalError::Io),
     };
+    parse_records(BufReader::new(file))
+}
+
+/// Reads one existing journal without taking its writer lock or creating state.
+///
+/// The bound applies before parsing. A linked, nonregular, changing or oversized
+/// journal is refused as unavailable evidence.
+///
+/// # Errors
+///
+/// Returns a journal validation or I/O error when the file is not an intact,
+/// bounded record chain.
+pub fn read_verified_records(
+    root: &Path,
+    max_bytes: u64,
+) -> Result<Vec<JournalRecord>, JournalError> {
+    let path = root.join("events.jsonl");
+    let metadata = fs::symlink_metadata(&path).map_err(|_| JournalError::Io)?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        return Err(JournalError::Io);
+    }
+    if metadata.len() > max_bytes {
+        return Err(JournalError::TooLarge { sequence: 0 });
+    }
+    let file = File::open(&path).map_err(|_| JournalError::Io)?;
+    let opened = file.metadata().map_err(|_| JournalError::Io)?;
+    if !opened.is_file() || opened.len() != metadata.len() {
+        return Err(JournalError::Io);
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt as _;
+        if opened.dev() != metadata.dev() || opened.ino() != metadata.ino() {
+            return Err(JournalError::Io);
+        }
+    }
+    let mut bytes = Vec::new();
+    file.take(max_bytes.saturating_add(1))
+        .read_to_end(&mut bytes)
+        .map_err(|_| JournalError::Io)?;
+    if bytes.len() as u64 != metadata.len() {
+        return Err(JournalError::Io);
+    }
+    if !bytes.is_empty() && bytes.last() != Some(&b'\n') {
+        return Err(JournalError::Io);
+    }
+    parse_records(BufReader::new(bytes.as_slice()))
+}
+
+fn parse_records(reader: impl BufRead) -> Result<Vec<JournalRecord>, JournalError> {
     let mut records = Vec::new();
     let mut prior = GENESIS_HASH.to_owned();
-    for (index, line) in BufReader::new(file).split(b'\n').enumerate() {
+    for (index, line) in reader.split(b'\n').enumerate() {
         let line = line.map_err(|_| JournalError::Io)?;
         if line.is_empty() {
             continue;
@@ -1116,6 +1166,34 @@ mod tests {
             Err(JournalError::TooLarge { sequence: 1 })
         ));
         drop(journal);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn bounded_read_only_reader_validates_chain_without_taking_writer_lock() {
+        let root = root("read-only");
+        let mut writer = Journal::open(&root, "writer").unwrap();
+        writer.append(event(1)).unwrap();
+        let path = root.join("events.jsonl");
+        let original = fs::read(&path).unwrap();
+        let records = read_verified_records(&root, original.len() as u64).unwrap();
+        assert_eq!(records.len(), 1);
+        assert_eq!(fs::read(&path).unwrap(), original);
+        assert!(matches!(
+            read_verified_records(&root, original.len() as u64 - 1),
+            Err(JournalError::TooLarge { .. })
+        ));
+        drop(writer);
+        fs::write(&path, &original[..original.len() - 1]).unwrap();
+        assert!(read_verified_records(&root, original.len() as u64).is_err());
+        fs::write(&path, b"invalid\n").unwrap();
+        assert!(read_verified_records(&root, 100).is_err());
+        fs::remove_file(&path).unwrap();
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(root.join("journal.lock"), &path).unwrap();
+            assert!(read_verified_records(&root, 100).is_err());
+        }
         fs::remove_dir_all(root).unwrap();
     }
 }

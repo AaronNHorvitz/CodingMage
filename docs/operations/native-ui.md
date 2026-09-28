@@ -58,7 +58,7 @@ showing sample results.
 | Overview | Configuration summary, repository diagnosis (identity, head, branch, cleanliness, denied capabilities), task-source counts | `codingmage doctor`, `codingmage-core`, `codingmage-plan` |
 | Work plan | Searchable, filterable plan with dependencies, source anchors, readiness from the source, disabled source checkboxes and the coordinator overlay (completed at campaign head, accepted, active, blocked, deferred, human decision, unknown) | task parser, `campaign-status`, `campaign-head-plan` for authorized, content-minimized head states |
 | Campaign | Campaign authority, binding drift, readiness checks, preflight, admission, coordinator process state, controls, durable status, holds, utilization, roles the backend reports, unavailable involvement modes | `campaign-preflight`, `campaign-status`, `campaign-explain-blocker`, `campaign-control`, `/proc` |
-| Changes and reviews | Delivery boundary, coordinator commits and changed files, per-run verdicts and gate evidence, journaled phases, bounded activity | `campaign-changes`, local run checkpoints and journals |
+| Changes and reviews | Delivery boundary, coordinator commits and changed files, per-run verdicts and gate evidence, journaled phases, bounded activity | `campaign-changes`, `campaign-run-records` |
 | Reports | Outcome and blocker reports with export | the observations above |
 | Setup | Open or create a configuration, write the owner's authorization record, author a campaign, import and export | `codingmage-core`, `codingmage-campaign`, `codingmage init` |
 | Settings | Light, dark, high-contrast or system appearance for the current window | Local presentation state only |

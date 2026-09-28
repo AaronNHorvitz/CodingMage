@@ -156,6 +156,7 @@ pub struct App {
     changes: Observed<ChangeSet>,
     changes_range: Option<(String, String)>,
     records: Observed<Vec<crate::records::RunRecord>>,
+    records_truncated: bool,
     reports: ReportsState,
     appearance: Appearance,
     system_dark: bool,
@@ -241,6 +242,7 @@ impl App {
             changes: Observed::default(),
             changes_range: None,
             records: Observed::default(),
+            records_truncated: false,
             reports: ReportsState::default(),
             appearance: Appearance::System,
             system_dark: ctx.system_theme().unwrap_or(egui::Theme::Dark) == egui::Theme::Dark,
@@ -542,7 +544,7 @@ impl App {
                 self.accept_changes(response);
                 true
             }
-            "records" => {
+            "campaign-run-records" => {
                 self.accept_records(response);
                 true
             }

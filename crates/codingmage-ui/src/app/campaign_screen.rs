@@ -69,6 +69,7 @@ impl App {
         self.changes.clear();
         self.changes_range = None;
         self.records.clear();
+        self.records_truncated = false;
         self.status.clear();
         self.explanation.clear();
         self.report.clear();
@@ -84,9 +85,6 @@ impl App {
             return;
         };
         self.last_status_request = Some(self.now);
-        if !self.records.loading {
-            self.request_records();
-        }
         let base = [
             "--config".to_owned(),
             config_path.clone(),
@@ -170,6 +168,9 @@ impl App {
             Ok(status) => {
                 let head = status.as_ref().map(|status| status.head.clone());
                 self.status.accept(status, response.generation, self.now);
+                if !self.records.loading {
+                    self.request_records();
+                }
                 if head.is_none() {
                     self.head_plan.clear();
                     self.head_plan_commit = None;
@@ -195,6 +196,8 @@ impl App {
             Err(error) => {
                 self.set_status(format!("campaign status failed: {}", error.code()));
                 self.status.fail(error, self.now);
+                self.records.clear();
+                self.records_truncated = false;
                 self.head_plan.clear();
                 self.head_plan_commit = None;
                 self.changes.clear();

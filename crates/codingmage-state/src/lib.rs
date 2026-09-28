@@ -10,6 +10,7 @@ pub use document::{IntegrityDocument, IntegrityDocumentError};
 pub use journal::{
     CampaignCheckpointProjection, DurableIdentities, EffectClass, EventKind, EventOutcome, Journal,
     JournalError, JournalEvent, JournalLock, JournalRecord, MAX_RECORD_BYTES, RedactedField,
+    read_verified_records,
 };
 pub use recovery::{
     IdentitySet, LiveObservation, RecoveryDecision, RecoveryReason, reconcile_after_restart,

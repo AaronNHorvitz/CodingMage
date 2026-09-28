@@ -61,6 +61,8 @@ impl App {
             commits: changes.map_or(&empty_commits, |changes| &changes.commits),
             files: changes.map_or(&empty_files, |changes| &changes.files),
             runs: self.records.value.as_deref().unwrap_or(&empty_runs),
+            run_records_observed: self.records.value.is_some(),
+            run_records_truncated: self.records_truncated,
         };
         Some(OutcomeReport::assemble(&inputs, include_paths))
     }
@@ -99,6 +101,14 @@ impl App {
             return;
         };
         ui.label("Reports restate coordinator records. Viewing or exporting them changes no task status and creates no review authority.");
+        if !report.run_records_observed {
+            ui.colored_label(
+                super::current_tokens(ui.ctx()).error,
+                "Run evidence has not been observed; the run list is unknown.",
+            );
+        } else if report.run_records_truncated {
+            ui.label("Additional bound run records are omitted from this report.");
+        }
         ui.separator();
         outcome_summary(ui, &report);
         ui.separator();

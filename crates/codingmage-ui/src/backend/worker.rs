@@ -48,13 +48,6 @@ pub enum Job {
         /// Deadline after which the command is killed.
         deadline: Duration,
     },
-    /// Scan the durable run records beneath a campaign state directory.
-    ScanRecords {
-        /// Stable label for the interface.
-        label: &'static str,
-        /// Campaign state directory.
-        campaign_dir: PathBuf,
-    },
 }
 
 impl Job {
@@ -62,7 +55,7 @@ impl Job {
     #[must_use]
     pub const fn label(&self) -> &'static str {
         match self {
-            Self::Command { label, .. } | Self::ScanRecords { label, .. } => label,
+            Self::Command { label, .. } => label,
         }
     }
 }
@@ -231,10 +224,6 @@ fn run_loop(
                     deadline,
                     ..
                 } => binary.run(arguments, *deadline, &cancel),
-                Job::ScanRecords { campaign_dir, .. } => {
-                    let records = crate::records::scan_run_records(campaign_dir);
-                    serde_json::to_vec(&records).map_err(|_| BackendError::Spawn)
-                }
             };
             stop.store(true, Ordering::Release);
             let _ = watcher.join();

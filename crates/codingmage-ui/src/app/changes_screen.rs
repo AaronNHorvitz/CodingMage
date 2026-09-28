@@ -5,7 +5,7 @@ use crate::{
     backend::{BackendError, Job, Request, Response, explain_code},
     content,
     observed::{Freshness, age_label},
-    records::{CommitSummary, FileChange, RunRecord},
+    records::{CommitSummary, FileChange, RunRecord, parse_run_records},
 };
 use serde::Deserialize;
 
@@ -96,20 +96,37 @@ impl App {
         let (Some(project), Some(campaign)) = (&self.project, &self.campaign) else {
             return;
         };
-        let campaign_dir = project
-            .config
-            .state_root
-            .join("campaigns")
-            .join(&campaign.spec.campaign_id);
+        let (Some(config_path), Some(spec_path)) =
+            (project.config_path.to_str(), campaign.spec_path.to_str())
+        else {
+            self.records.clear();
+            self.records_truncated = false;
+            self.records.fail(
+                BackendError::Refused(
+                    "campaign paths cannot be represented in the command boundary".to_owned(),
+                ),
+                self.now,
+            );
+            return;
+        };
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
-            job: Job::ScanRecords {
-                label: "records",
-                campaign_dir,
+            job: Job::Command {
+                label: "campaign-run-records",
+                arguments: vec![
+                    "campaign-run-records".to_owned(),
+                    "--config".to_owned(),
+                    config_path.to_owned(),
+                    "--campaign".to_owned(),
+                    spec_path.to_owned(),
+                ],
+                deadline: GIT_DEADLINE,
             },
             request_id: None,
         };
+        self.records.clear();
+        self.records_truncated = false;
         match self.submit(request) {
             Ok(()) => self.records.loading = true,
             Err(error) => self.records.fail(error, self.now),
@@ -182,13 +199,42 @@ impl App {
     }
 
     pub(super) fn accept_records(&mut self, response: Response) {
-        match response.result.and_then(|bytes| {
-            serde_json::from_slice::<Vec<RunRecord>>(&bytes)
-                .map_err(|_| BackendError::Contract(crate::backend::models::ModelError::Malformed))
-        }) {
-            Ok(records) => self.records.accept(records, response.generation, self.now),
-            Err(error) => self.records.fail(error, self.now),
+        let parsed = response
+            .result
+            .and_then(|bytes| parse_run_records(&bytes).map_err(BackendError::from));
+        match parsed {
+            Ok(projection) if self.records_binding_matches(&projection) => {
+                self.records_truncated = projection.records_truncated;
+                self.records
+                    .accept(projection.records, response.generation, self.now);
+            }
+            Ok(_) => {
+                self.records.clear();
+                self.records_truncated = false;
+                self.records.fail(
+                    BackendError::Contract(crate::backend::models::ModelError::Malformed),
+                    self.now,
+                );
+            }
+            Err(error) => {
+                self.records.clear();
+                self.records_truncated = false;
+                self.records.fail(error, self.now);
+            }
         }
+    }
+
+    fn records_binding_matches(&self, projection: &crate::records::RunRecordsProjection) -> bool {
+        let (Some(campaign), Some(diagnosis), Some(status)) =
+            (&self.campaign, &self.diagnosis.value, &self.status.value)
+        else {
+            return false;
+        };
+        projection.campaign_id == campaign.spec.campaign_id
+            && projection.repository_id == campaign.spec.repository_id
+            && projection.repository_id == diagnosis.repository_id
+            && projection.head.as_deref() == status.as_ref().map(|status| status.head.as_str())
+            && projection.updated_at_ms == status.as_ref().map(|status| status.updated_at_ms)
     }
 
     pub(super) fn changes_screen(&mut self, ui: &mut egui::Ui) {
@@ -303,6 +349,9 @@ impl App {
             ui.label("No run records exist for this campaign. Nothing has been implemented, reviewed or tested.");
             return;
         }
+        if self.records_truncated {
+            ui.label("Additional campaign run records are omitted from this bounded view.");
+        }
         ui.small("Reviewer finding text is not retained by the backend; only the verdict, correction rounds and evidence identities are durable.");
         for record in records {
             egui::Frame::group(ui.style()).show(ui, |ui| {
@@ -335,14 +384,8 @@ impl App {
                 if let Some(problem) = &record.journal_problem {
                     ui.colored_label(super::current_tokens(ui.ctx()).error, problem);
                 }
-                if record.malformed_journal_lines > 0 {
-                    ui.colored_label(
-                        super::current_tokens(ui.ctx()).error,
-                        format!(
-                            "{} malformed journal line(s) ignored",
-                            record.malformed_journal_lines
-                        ),
-                    );
+                if record.phases_truncated {
+                    ui.label("Additional journal phases are omitted from this bounded view.");
                 }
                 let observed = record
                     .phases

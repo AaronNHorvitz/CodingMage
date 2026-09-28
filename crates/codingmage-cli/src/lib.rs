@@ -22,10 +22,11 @@ use codingmage_runtime::{
     RecipeSpec, RunProgress, RunSpec, RuntimeError, admit_campaign_mission,
     answer_campaign_decision, approve_campaign_destination_promotion,
     approve_campaign_task_integration, campaign_blocker_explanation, campaign_mission_preflight,
-    campaign_mission_status, campaign_preflight_with_mission, campaign_status,
-    clear_campaign_blocker, export_support_bundle, observe_campaign_deferral_trigger,
-    request_campaign_control, revoke_campaign_mission, run_one_with_progress,
-    run_one_with_progress_for_id, run_team_campaign_with_progress, team_campaign_report,
+    campaign_mission_status, campaign_preflight_with_mission, campaign_run_records,
+    campaign_status, clear_campaign_blocker, export_support_bundle,
+    observe_campaign_deferral_trigger, request_campaign_control, revoke_campaign_mission,
+    run_one_with_progress, run_one_with_progress_for_id, run_team_campaign_with_progress,
+    team_campaign_report,
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -47,6 +48,7 @@ Commands:
   campaign-status               Read durable campaign status
   campaign-head-plan            Read task states at the exact reconciled campaign head
   campaign-changes              Read bounded changes at the exact reconciled campaign head
+  campaign-run-records          Read bound, content-minimized run evidence
   campaign-report               Read the final campaign report
   campaign-explain-blocker      Read typed blocker and deferral details
   campaign-clear-blocker        Record one exact external-prerequisite change
@@ -91,6 +93,9 @@ fn command_help(command: &str) -> Option<&'static str> {
         ),
         "campaign-changes" => Some(
             "Usage: codingmage campaign-changes --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> --head <FULL_COMMIT_ID>",
+        ),
+        "campaign-run-records" => Some(
+            "Usage: codingmage campaign-run-records --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE>",
         ),
         "campaign-mission-admit" => Some(
             "Usage: codingmage campaign-mission-admit --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --mission <ABSOLUTE_FILE>",
@@ -156,6 +161,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign-status" => inspect_campaign(&arguments[1..]),
         "campaign-head-plan" => inspect_campaign_head_plan(&arguments[1..]),
         "campaign-changes" => inspect_campaign_changes(&arguments[1..]),
+        "campaign-run-records" => inspect_campaign_run_records(&arguments[1..]),
         "campaign-report" => inspect_campaign_report(&arguments[1..]),
         "campaign-explain-blocker" => explain_campaign_blocker(&arguments[1..]),
         "campaign-clear-blocker" => clear_blocker(&arguments[1..]),
@@ -533,6 +539,15 @@ fn inspect_campaign_changes(arguments: &[String]) -> Result<String, CliError> {
         return Err(CliError::Repository);
     }
     Ok(encoded)
+}
+
+fn inspect_campaign_run_records(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "campaign"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    campaign_run_records(&config, &spec, &executable).map_err(CliError::Runtime)
 }
 
 fn inspect_campaign_report(arguments: &[String]) -> Result<String, CliError> {

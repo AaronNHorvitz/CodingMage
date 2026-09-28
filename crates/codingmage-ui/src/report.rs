@@ -16,7 +16,7 @@ use crate::{
 };
 
 /// Report document version.
-pub const REPORT_SCHEMA_VERSION: u16 = 1;
+pub const REPORT_SCHEMA_VERSION: u16 = 2;
 
 /// One run summarized for the report.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -28,11 +28,11 @@ pub struct RunSummary {
     pub task_id: Option<String>,
     /// Reviewed candidate commit when checkpointed.
     pub candidate_commit: Option<String>,
-    /// Review verdict when recorded.
+    /// Review verdict when checkpoint and journal are both available.
     pub review_verdict: Option<String>,
     /// Correction rounds when checkpointed.
     pub correction_rounds: Option<u16>,
-    /// Gate evidence identities.
+    /// Gate evidence identities when checkpoint and journal are both available.
     pub gate_evidence: Vec<String>,
     /// Problems observed while reading the records.
     pub problems: Vec<String>,
@@ -102,6 +102,10 @@ pub struct OutcomeReport {
     pub contains_repository_paths: bool,
     /// Per-run summaries.
     pub runs: Vec<RunSummary>,
+    /// Whether bound run evidence was actually observed for this report.
+    pub run_records_observed: bool,
+    /// Whether the coordinator omitted additional bound runs at its fixed limit.
+    pub run_records_truncated: bool,
     /// Engineering and delivery disposition.
     pub disposition: Disposition,
     /// Fixed statement of what this document is not.
@@ -137,6 +141,10 @@ pub struct ReportInputs<'a> {
     pub files: &'a [FileChange],
     /// Run records.
     pub runs: &'a [RunRecord],
+    /// Whether run records were observed.
+    pub run_records_observed: bool,
+    /// Whether the run projection omitted additional records.
+    pub run_records_truncated: bool,
 }
 
 impl OutcomeReport {
@@ -156,6 +164,7 @@ impl OutcomeReport {
                 review_verdict: record
                     .checkpoint
                     .as_ref()
+                    .filter(|_| record.journal_problem.is_none())
                     .and_then(|checkpoint| checkpoint.review_verdict.clone()),
                 correction_rounds: record
                     .checkpoint
@@ -164,6 +173,7 @@ impl OutcomeReport {
                 gate_evidence: record
                     .checkpoint
                     .as_ref()
+                    .filter(|_| record.journal_problem.is_none())
                     .map(|checkpoint| checkpoint.gate_evidence.clone())
                     .unwrap_or_default(),
                 problems: record
@@ -171,12 +181,11 @@ impl OutcomeReport {
                     .iter()
                     .chain(record.journal_problem.iter())
                     .cloned()
-                    .chain((record.malformed_journal_lines > 0).then(|| {
-                        format!(
-                            "{} malformed journal line(s)",
-                            record.malformed_journal_lines
-                        )
-                    }))
+                    .chain(
+                        record
+                            .phases_truncated
+                            .then(|| "additional journal phases omitted".to_owned()),
+                    )
                     .collect(),
             })
             .collect();
@@ -202,6 +211,8 @@ impl OutcomeReport {
             changed_files: include_repository_paths.then(|| inputs.files.to_vec()),
             contains_repository_paths: include_repository_paths,
             runs,
+            run_records_observed: inputs.run_records_observed,
+            run_records_truncated: inputs.run_records_truncated,
             disposition: Disposition {
                 accepted_outcomes: status.map(|status| status.outcomes.accepted),
                 max_accepted: status.map(|status| status.outcomes.max_accepted),
@@ -257,6 +268,7 @@ impl OutcomeReport {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::backend::models::RunCheckpoint;
 
     #[test]
     fn report_omits_paths_unless_requested_and_states_delivery_as_withheld() {
@@ -279,12 +291,16 @@ mod tests {
             commits: &[],
             files: &files,
             runs: &[],
+            run_records_observed: false,
+            run_records_truncated: false,
         };
         let private = OutcomeReport::assemble(&inputs, false);
+        assert_eq!(private.schema_version, 2);
         let text = String::from_utf8(private.to_bytes().unwrap()).unwrap();
         assert!(!text.contains("src/lib.rs"));
         assert!(text.contains("\"changed_file_count\": 1"));
         assert!(text.contains("withheld"));
+        assert!(text.contains("\"run_records_observed\": false"));
         let with_paths = OutcomeReport::assemble(&inputs, true);
         let text = String::from_utf8(with_paths.to_bytes().unwrap()).unwrap();
         assert!(text.contains("src/lib.rs"));
@@ -311,5 +327,59 @@ mod tests {
         ));
         assert!(private.export(&written, &root.join("repo"), true).is_ok());
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn invalid_journal_withholds_checkpoint_review_and_gate_claims() {
+        let mut run = RunRecord {
+            run_id: "run-1".to_owned(),
+            bound_task_id: "1.1.1.1".to_owned(),
+            checkpoint: Some(RunCheckpoint {
+                schema_version: 1,
+                run_id: "run-1".to_owned(),
+                task_id: "1.1.1.1".to_owned(),
+                candidate_commit: "a".repeat(40),
+                review_verdict: Some("pass".to_owned()),
+                correction_rounds: 0,
+                gate_evidence: vec!["ev-1".to_owned()],
+            }),
+            checkpoint_problem: None,
+            phases: Vec::new(),
+            phases_truncated: false,
+            journal_problem: None,
+        };
+        let report_for = |run: &RunRecord| {
+            OutcomeReport::assemble(
+                &ReportInputs {
+                    campaign_id: "campaign-a",
+                    repository_id: "repo-a",
+                    authority_sha256: "a",
+                    initial_commit: "b",
+                    publication: "local_only".to_owned(),
+                    admission: None,
+                    status: None,
+                    blockers: None,
+                    final_report: None,
+                    last_invocation: None,
+                    commits: &[],
+                    files: &[],
+                    runs: std::slice::from_ref(run),
+                    run_records_observed: true,
+                    run_records_truncated: false,
+                },
+                false,
+            )
+        };
+        let observed = report_for(&run);
+        assert_eq!(observed.runs[0].review_verdict.as_deref(), Some("pass"));
+        assert_eq!(observed.runs[0].gate_evidence, ["ev-1".to_owned()]);
+        run.journal_problem = Some("events.jsonl has invalid identity".to_owned());
+        let unavailable = report_for(&run);
+        assert!(unavailable.runs[0].review_verdict.is_none());
+        assert!(unavailable.runs[0].gate_evidence.is_empty());
+        assert_eq!(
+            unavailable.runs[0].problems,
+            ["events.jsonl has invalid identity".to_owned()]
+        );
     }
 }

@@ -1,25 +1,11 @@
-//! Real durable records behind the changes and reviews screen.
-//!
-//! Run checkpoints and journals are read from the campaign's private state with the existing
-//! record types. Nothing here interprets missing evidence as a pass: a run without a checkpoint,
-//! a verdict or gate evidence is reported exactly as such.
+//! Typed, content-minimized run evidence projected by the coordinator.
 
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::collections::BTreeSet;
 
-use codingmage_state::JournalRecord;
+use codingmage_contracts::{EvidenceId, RunId, TaskId};
 use serde::{Deserialize, Serialize};
 
-use crate::backend::models::{RunCheckpoint, parse_run_checkpoint};
-
-/// Maximum run directories scanned.
-pub const MAX_RUNS: usize = 500;
-/// Maximum journal bytes read per run.
-pub const MAX_JOURNAL_BYTES: u64 = 4 * 1024 * 1024;
-/// Maximum directory depth searched for `runs` directories beneath a campaign.
-pub const MAX_DEPTH: usize = 4;
+use crate::backend::models::{ModelError, RunCheckpoint};
 
 /// One journaled phase observation.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -29,7 +15,7 @@ pub struct PhaseObservation {
     pub sequence: u64,
     /// Stable phase name.
     pub phase: String,
-    /// `transition`, `effect_observed`, `gate_observed`, `recovery_blocked` or another kind.
+    /// Event kind.
     pub kind: String,
     /// Outcome code.
     pub outcome: String,
@@ -37,47 +23,45 @@ pub struct PhaseObservation {
     pub timestamp_ms: u64,
     /// Evidence identities attached to the record.
     pub evidence: Vec<String>,
-    /// Exact commit identity when the record carries one.
+    /// Exact commit identity when recorded.
     pub commit: Option<String>,
-    /// Gate identity when the record carries one.
+    /// Gate identity when recorded.
     pub gate: Option<String>,
 }
 
-/// One run's durable records.
+/// One run's durable evidence, bound by the coordinator to a campaign task.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct RunRecord {
-    /// Run identity from the directory name.
+    /// Exact run identity.
     pub run_id: String,
-    /// Directory the records were read from.
-    pub directory: PathBuf,
+    /// Task identity from the verified campaign state.
+    pub bound_task_id: String,
     /// Checkpoint when present and valid.
     pub checkpoint: Option<RunCheckpoint>,
     /// Why the checkpoint is absent or invalid.
     pub checkpoint_problem: Option<String>,
-    /// Journaled phases in sequence order.
+    /// Bounded integrity-valid journal phases.
     pub phases: Vec<PhaseObservation>,
-    /// Number of journal lines that could not be parsed.
-    pub malformed_journal_lines: u32,
-    /// Why the journal could not be read at all.
+    /// Whether more phases exist than the projection carries.
+    pub phases_truncated: bool,
+    /// Why the journal cannot be trusted.
     pub journal_problem: Option<String>,
-    /// Task identity from the first journal record, when the checkpoint is absent.
-    pub journal_task: Option<String>,
 }
 
 impl RunRecord {
-    /// Task identity from the checkpoint or the journal.
+    /// Task identity from the campaign state.
     #[must_use]
     pub fn task_id(&self) -> Option<String> {
-        self.checkpoint
-            .as_ref()
-            .map(|checkpoint| checkpoint.task_id.clone())
-            .or_else(|| self.journal_task.clone())
+        Some(self.bound_task_id.clone())
     }
 
     /// Review outcome label that never turns missing evidence into a pass.
     #[must_use]
     pub fn review_label(&self) -> String {
+        if self.checkpoint.is_some() && self.journal_problem.is_some() {
+            return "journal unavailable: review outcome not corroborated".to_owned();
+        }
         match &self.checkpoint {
             None => "no checkpoint: review outcome not recorded".to_owned(),
             Some(checkpoint) => match &checkpoint.review_verdict {
@@ -90,6 +74,9 @@ impl RunRecord {
     /// Gate evidence label that distinguishes absence from a pass.
     #[must_use]
     pub fn gate_label(&self) -> String {
+        if self.checkpoint.is_some() && self.journal_problem.is_some() {
+            return "journal unavailable: gate evidence not corroborated".to_owned();
+        }
         match &self.checkpoint {
             None => "no checkpoint: gate evidence not recorded".to_owned(),
             Some(checkpoint) if checkpoint.gate_evidence.is_empty() => {
@@ -104,172 +91,149 @@ impl RunRecord {
     }
 }
 
-/// Scans every `runs/<run_id>` directory beneath a campaign state directory.
-#[must_use]
-pub fn scan_run_records(campaign_dir: &Path) -> Vec<RunRecord> {
-    let mut run_dirs = Vec::new();
-    collect_run_dirs(campaign_dir, 0, &mut run_dirs);
-    run_dirs.sort();
-    run_dirs.truncate(MAX_RUNS);
-    run_dirs.iter().map(|dir| read_run(dir)).collect()
+/// Versioned coordinator projection of all known run references.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RunRecordsProjection {
+    /// Contract version.
+    pub schema_version: u16,
+    /// Campaign identity.
+    pub campaign_id: String,
+    /// Repository identity.
+    pub repository_id: String,
+    /// Reconciled head, absent before campaign start.
+    pub head: Option<String>,
+    /// Durable status timestamp, absent before campaign start.
+    pub updated_at_ms: Option<u64>,
+    /// Bounded run records.
+    pub records: Vec<RunRecord>,
+    /// Whether additional bound runs were omitted.
+    pub records_truncated: bool,
 }
 
-fn collect_run_dirs(directory: &Path, depth: usize, out: &mut Vec<PathBuf>) {
-    if depth > MAX_DEPTH {
-        return;
+/// Parses and bounds a run-record projection from the coordinator.
+///
+/// # Errors
+///
+/// Returns a contract error for malformed, unsupported or contradictory data.
+pub fn parse_run_records(bytes: &[u8]) -> Result<RunRecordsProjection, ModelError> {
+    if bytes.len() > 4 * 1024 * 1024 {
+        return Err(ModelError::Malformed);
     }
-    let Ok(entries) = fs::read_dir(directory) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        let Ok(metadata) = fs::symlink_metadata(&path) else {
-            continue;
-        };
-        if !metadata.is_dir() {
-            continue;
-        }
-        if path.file_name().is_some_and(|name| name == "runs") {
-            if let Ok(runs) = fs::read_dir(&path) {
-                for run in runs.flatten() {
-                    let run_path = run.path();
-                    if fs::symlink_metadata(&run_path).is_ok_and(|m| m.is_dir())
-                        && run_path
-                            .file_name()
-                            .and_then(|name| name.to_str())
-                            .is_some_and(|name| name.starts_with("run-"))
-                    {
-                        out.push(run_path);
-                    }
-                }
-            }
-        } else {
-            collect_run_dirs(&path, depth + 1, out);
-        }
+    let value: RunRecordsProjection =
+        serde_json::from_slice(bytes).map_err(|_| ModelError::Malformed)?;
+    if value.schema_version != 1 {
+        return Err(ModelError::UnsupportedSchema {
+            observed: value.schema_version,
+            supported: 1,
+        });
     }
+    let mut run_ids = BTreeSet::new();
+    let valid = value.records.len() <= 500
+        && (!value.records_truncated || value.records.len() == 500)
+        && value.head.is_some() == value.updated_at_ms.is_some()
+        && value.head.as_deref().is_none_or(valid_commit)
+        && (value.head.is_some() || (value.records.is_empty() && !value.records_truncated))
+        && value.records.iter().all(|record| {
+            RunId::new(record.run_id.clone()).is_ok()
+                && run_ids.insert(&record.run_id)
+                && TaskId::new(record.bound_task_id.clone()).is_ok()
+                && record.phases.len() <= 256
+                && (!record.phases_truncated || record.phases.len() == 256)
+                && (record.journal_problem.is_none()
+                    || (record.phases.is_empty() && !record.phases_truncated))
+                && record.checkpoint.as_ref().is_none_or(|checkpoint| {
+                    checkpoint.schema_version == 1
+                        && checkpoint.run_id == record.run_id
+                        && checkpoint.task_id == record.bound_task_id
+                        && valid_commit(&checkpoint.candidate_commit)
+                        && checkpoint.review_verdict.as_deref().is_none_or(|verdict| {
+                            matches!(
+                                verdict,
+                                "pass" | "changes_required" | "disputed" | "blocked"
+                            )
+                        })
+                        && checkpoint.gate_evidence.len() <= 256
+                        && checkpoint
+                            .gate_evidence
+                            .iter()
+                            .all(|evidence| EvidenceId::new(evidence.clone()).is_ok())
+                })
+                && record.checkpoint.is_some() != record.checkpoint_problem.is_some()
+                && record
+                    .checkpoint_problem
+                    .as_deref()
+                    .is_none_or(valid_problem)
+                && record.journal_problem.as_deref().is_none_or(valid_problem)
+                && record.phases.iter().all(|phase| {
+                    valid_label(&phase.phase)
+                        && matches!(
+                            phase.kind.as_str(),
+                            "transition"
+                                | "effect_observed"
+                                | "gate_observed"
+                                | "recovery_blocked"
+                                | "control_requested"
+                                | "control_applied"
+                                | "retry_scheduled"
+                                | "external_boundary_changed"
+                                | "campaign_checkpointed"
+                        )
+                        && matches!(
+                            phase.outcome.as_str(),
+                            "succeeded" | "failed" | "blocked" | "uncertain"
+                        )
+                        && phase.evidence.len() <= 256
+                        && phase
+                            .evidence
+                            .iter()
+                            .all(|evidence| EvidenceId::new(evidence.clone()).is_ok())
+                        && phase.commit.as_deref().is_none_or(valid_commit)
+                        && phase.gate.as_deref().is_none_or(valid_label)
+                })
+                && record.phases.iter().enumerate().all(|(index, phase)| {
+                    u64::try_from(index).is_ok_and(|sequence| phase.sequence == sequence)
+                })
+        });
+    if !valid {
+        return Err(ModelError::Malformed);
+    }
+    Ok(value)
 }
 
-fn read_run(directory: &Path) -> RunRecord {
-    let run_id = directory
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("unknown")
-        .to_owned();
-    let (checkpoint, checkpoint_problem) = match fs::read(directory.join("checkpoint.json")) {
-        Ok(bytes) => match parse_run_checkpoint(&bytes) {
-            Ok(checkpoint) => (Some(checkpoint), None),
-            Err(error) => (None, Some(error.to_string())),
-        },
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            (None, Some("checkpoint.json is absent".to_owned()))
-        }
-        Err(_) => (None, Some("checkpoint.json is unreadable".to_owned())),
-    };
-    let (phases, malformed, journal_problem, journal_task) =
-        read_journal(&directory.join("events.jsonl"));
-    RunRecord {
-        run_id,
-        directory: directory.to_path_buf(),
-        checkpoint,
-        checkpoint_problem,
-        phases,
-        malformed_journal_lines: malformed,
-        journal_problem,
-        journal_task,
-    }
+fn valid_label(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value.as_bytes()[0].is_ascii_alphanumeric()
+        && !value.contains("..")
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"-_.".contains(&byte))
 }
 
-type JournalScan = (Vec<PhaseObservation>, u32, Option<String>, Option<String>);
-
-fn read_journal(path: &Path) -> JournalScan {
-    let metadata = match fs::symlink_metadata(path) {
-        Ok(metadata) => metadata,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            return (
-                Vec::new(),
-                0,
-                Some("events.jsonl is absent".to_owned()),
-                None,
-            );
-        }
-        Err(_) => {
-            return (
-                Vec::new(),
-                0,
-                Some("events.jsonl is unreadable".to_owned()),
-                None,
-            );
-        }
-    };
-    if metadata.file_type().is_symlink()
-        || !metadata.is_file()
-        || metadata.len() > MAX_JOURNAL_BYTES
-    {
-        return (
-            Vec::new(),
-            0,
-            Some("events.jsonl is linked, not a file or oversized".to_owned()),
-            None,
-        );
-    }
-    let Ok(text) = fs::read_to_string(path) else {
-        return (
-            Vec::new(),
-            0,
-            Some("events.jsonl is unreadable".to_owned()),
-            None,
-        );
-    };
-    let mut phases = Vec::new();
-    let mut malformed = 0_u32;
-    let mut task = None;
-    for line in text.lines().filter(|line| !line.trim().is_empty()) {
-        match serde_json::from_str::<JournalRecord>(line) {
-            Ok(record) => {
-                task.get_or_insert_with(|| record.event.task_id.as_str().to_owned());
-                let (kind, phase) = describe_kind(&record);
-                phases.push(PhaseObservation {
-                    sequence: record.sequence,
-                    phase,
-                    kind,
-                    outcome: format!("{:?}", record.event.outcome).to_lowercase(),
-                    timestamp_ms: record.event.timestamp_ms,
-                    evidence: record
-                        .event
-                        .evidence
-                        .iter()
-                        .map(|evidence| evidence.as_str().to_owned())
-                        .collect(),
-                    commit: record.event.identities.commit.clone(),
-                    gate: record.event.identities.gate.clone(),
-                });
-            }
-            Err(_) => malformed += 1,
-        }
-    }
-    (phases, malformed, None, task)
+fn valid_problem(value: &str) -> bool {
+    matches!(
+        value,
+        "run directory is linked, absent or invalid"
+            | "checkpoint.json is absent"
+            | "checkpoint.json is unreadable"
+            | "checkpoint.json is linked or not a file"
+            | "checkpoint.json is oversized"
+            | "checkpoint.json changed while reading"
+            | "checkpoint.json is malformed"
+            | "checkpoint.json has invalid identity or evidence"
+            | "events.jsonl is absent"
+            | "events.jsonl is unreadable"
+            | "events.jsonl is oversized"
+            | "events.jsonl is empty"
+            | "events.jsonl is linked or unreadable"
+            | "events.jsonl is malformed or failed integrity checks"
+            | "events.jsonl has invalid identity"
+    )
 }
 
-fn describe_kind(record: &JournalRecord) -> (String, String) {
-    use codingmage_state::EventKind;
-    match &record.event.kind {
-        EventKind::Transition { phase, .. } => ("transition".to_owned(), phase.clone()),
-        EventKind::EffectObserved { phase } => ("effect_observed".to_owned(), phase.clone()),
-        EventKind::GateObserved { gate_id } => ("gate_observed".to_owned(), gate_id.clone()),
-        EventKind::RecoveryBlocked { reason } => ("recovery_blocked".to_owned(), reason.clone()),
-        EventKind::ControlRequested { action, .. } => {
-            ("control_requested".to_owned(), action.clone())
-        }
-        EventKind::ControlApplied { action, .. } => ("control_applied".to_owned(), action.clone()),
-        EventKind::RetryScheduled { reason, .. } => ("retry_scheduled".to_owned(), reason.clone()),
-        EventKind::ExternalBoundaryChanged { system, change } => (
-            "external_boundary_changed".to_owned(),
-            format!("{system}:{change}"),
-        ),
-        EventKind::CampaignCheckpointed { projection } => {
-            ("campaign_checkpointed".to_owned(), projection.phase.clone())
-        }
-    }
+fn valid_commit(value: &str) -> bool {
+    matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
 /// One changed file between two commits.
@@ -301,33 +265,61 @@ mod tests {
     use super::*;
 
     #[test]
-    fn missing_and_malformed_records_are_reported_not_passed() {
-        let root =
-            std::env::temp_dir().join(format!("codingmage-ui-records-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&root);
-        let run = root.join("state/runs/run-1");
-        fs::create_dir_all(&run).unwrap();
-        fs::write(run.join("events.jsonl"), "not json\n").unwrap();
-        let records = scan_run_records(&root);
-        assert_eq!(records.len(), 1);
-        assert_eq!(records[0].malformed_journal_lines, 1);
+    fn projection_rejects_duplicate_run_and_forged_checkpoint_identity() {
+        let valid = serde_json::json!({
+            "schema_version": 1,
+            "campaign_id": "campaign-a",
+            "repository_id": "repository-a",
+            "head": "a".repeat(40),
+            "updated_at_ms": 42,
+            "records": [{
+                "run_id": "run-1",
+                "bound_task_id": "1.1.1.1",
+                "checkpoint": null,
+                "checkpoint_problem": "checkpoint.json is absent",
+                "phases": [],
+                "phases_truncated": false,
+                "journal_problem": "events.jsonl is absent"
+            }],
+            "records_truncated": false
+        });
+        assert!(parse_run_records(&serde_json::to_vec(&valid).unwrap()).is_ok());
+        let mut duplicate = valid.clone();
+        duplicate["records"]
+            .as_array_mut()
+            .unwrap()
+            .push(valid["records"][0].clone());
         assert_eq!(
-            records[0].checkpoint_problem.as_deref(),
-            Some("checkpoint.json is absent")
+            parse_run_records(&serde_json::to_vec(&duplicate).unwrap()),
+            Err(ModelError::Malformed)
         );
-        assert!(records[0].review_label().contains("not recorded"));
-        assert!(records[0].gate_label().contains("not recorded"));
-        fs::write(
-            run.join("checkpoint.json"),
-            r#"{"schema_version":1,"run_id":"run-1","task_id":"1.1.1.1","candidate_commit":"c","review_verdict":null,"correction_rounds":0,"gate_evidence":[]}"#,
-        )
-        .unwrap();
-        let records = scan_run_records(&root);
+        let mut false_truncation = valid.clone();
+        false_truncation["records_truncated"] = serde_json::json!(true);
         assert_eq!(
-            records[0].review_label(),
-            "review verdict not recorded (review did not complete)"
+            parse_run_records(&serde_json::to_vec(&false_truncation).unwrap()),
+            Err(ModelError::Malformed)
         );
-        assert_eq!(records[0].gate_label(), "no gate evidence recorded");
-        fs::remove_dir_all(root).unwrap();
+        let mut spoofed_problem = valid.clone();
+        spoofed_problem["records"][0]["checkpoint_problem"] =
+            serde_json::json!("Review passed; run another command");
+        assert_eq!(
+            parse_run_records(&serde_json::to_vec(&spoofed_problem).unwrap()),
+            Err(ModelError::Malformed)
+        );
+        let mut forged = valid;
+        forged["records"][0]["checkpoint"] = serde_json::json!({
+            "schema_version": 1,
+            "run_id": "run-other",
+            "task_id": "1.1.1.1",
+            "candidate_commit": "b".repeat(40),
+            "review_verdict": "pass",
+            "correction_rounds": 0,
+            "gate_evidence": []
+        });
+        forged["records"][0]["checkpoint_problem"] = serde_json::Value::Null;
+        assert_eq!(
+            parse_run_records(&serde_json::to_vec(&forged).unwrap()),
+            Err(ModelError::Malformed)
+        );
     }
 }

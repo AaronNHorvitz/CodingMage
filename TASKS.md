@@ -2134,11 +2134,12 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
   - [x] **Sub-task 36.3.2.1:** Implement the design system tokens, light, dark and high-contrast themes and shared components with contrast measured and screenshot baselines at 100% and 200% scaling and the minimum window (CM-UI-011). `codingmage-ui::design::Tokens` styles shared egui widgets and the failure frame; Settings offers system/light/dark/high-contrast appearances, the native minimum is 1024×640, token text contrast is at least 5.88:1 and focus at least 6.62:1, and six inspected offscreen baselines are retained in `docs/evidence/sprint-36-appearance.md`. UI all-target tests 71/71 and strict workspace Clippy pass; the wider gate's two known sandbox process failures and the separate CM-R01.6 Python freshness failure remain open. This does not qualify desktop accessibility or performance.
     <!-- depends-on: 36.3.1.1 -->
   - [ ] **Sub-task 36.3.2.2:** Complete the section 5 state catalogue and the in-context depth on every screen, including "Show command" for every control, with no mode switch (CM-UI-008, CM-UI-009).
-    Open increments: `campaign-head-plan` and `campaign-changes` now route campaign-head task
-    states and candidate change summaries through the coordinator. Direct private run-record
-    scanning, the complete state/depth catalogue and remaining Show command controls are still
-    open. See `docs/evidence/sprint-36-head-plan-projection.md` and
-    `docs/evidence/sprint-36-campaign-changes-projection.md`.
+    Open increments: `campaign-head-plan`, `campaign-changes` and `campaign-run-records` now
+    route campaign-head task states, candidate change summaries and bound run evidence through
+    the coordinator. The complete state/depth catalogue and remaining Show command controls are
+    still open. See `docs/evidence/sprint-36-head-plan-projection.md`,
+    `docs/evidence/sprint-36-campaign-changes-projection.md` and
+    `docs/evidence/sprint-36-run-records-projection.md`.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->

@@ -4,9 +4,12 @@ mod common;
 
 use std::{fs, process::Command, time::Duration};
 
+use codingmage_contracts::RepositoryId;
+use codingmage_state::Journal;
 use codingmage_ui::{
     Screen,
     backend::{CoordinatorBinary, Response},
+    records::parse_run_records,
 };
 use common::{Fixture, coordinator_binary, harness, run_campaign, settle, write_campaign};
 use egui_kittest::kittest::Queryable as _;
@@ -32,6 +35,19 @@ fn change_command(fixture: &Fixture, spec: &std::path::Path, head: &str) -> std:
             spec.to_str().unwrap(),
             "--head",
             head,
+        ])
+        .output()
+        .unwrap()
+}
+
+fn records_command(fixture: &Fixture, spec: &std::path::Path) -> std::process::Output {
+    Command::new(coordinator_binary())
+        .args([
+            "campaign-run-records",
+            "--config",
+            fixture.config.to_str().unwrap(),
+            "--campaign",
+            spec.to_str().unwrap(),
         ])
         .output()
         .unwrap()
@@ -82,9 +98,10 @@ fn accepted_units_show_exact_commits_files_verdicts_and_gate_evidence() {
             record
                 .phases
                 .iter()
-                .any(|phase| phase.phase == "review" && phase.outcome == "succeeded")
+                .any(|phase| phase.phase == "review" && phase.outcome == "succeeded"),
+            "run evidence: {record:?}"
         );
-        assert_eq!(record.malformed_journal_lines, 0);
+        assert!(record.journal_problem.is_none());
     }
     harness.state_mut().select_screen(Screen::Changes);
     harness.run_steps(2);
@@ -228,13 +245,208 @@ fn missing_and_malformed_records_are_reported_not_passed() {
     let records = harness.state().run_records().value.clone().unwrap();
     assert_eq!(records.len(), 1);
     assert!(records[0].checkpoint.is_none());
-    assert_eq!(records[0].malformed_journal_lines, 1);
+    assert_eq!(records[0].phases.len(), 0);
+    assert_eq!(
+        records[0].journal_problem.as_deref(),
+        Some("events.jsonl is malformed or failed integrity checks")
+    );
     assert_eq!(records[0].task_id().as_deref(), Some("0.1.1.1"));
     harness.state_mut().select_screen(Screen::Changes);
     harness.run_steps(2);
     harness.get_by_label_contains("checkpoint.json is absent");
     harness.get_by_label_contains("no checkpoint: review outcome not recorded");
-    harness.get_by_label_contains("1 malformed journal line(s) ignored");
+    harness.get_by_label_contains("events.jsonl is malformed or failed integrity checks");
+    fs::write(run_dir.join("events.jsonl"), b"").unwrap();
+    let empty = records_command(&fixture, &spec);
+    assert!(empty.status.success());
+    let projection: serde_json::Value = serde_json::from_slice(&empty.stdout).unwrap();
+    assert_eq!(
+        projection["records"][0]["journal_problem"],
+        "events.jsonl is empty"
+    );
+}
+
+#[test]
+fn run_record_projection_uses_bound_runs_and_rejects_foreign_authority() {
+    let fixture = Fixture::new("records-bound", 2);
+    let spec = write_campaign(&fixture, "records-bound-campaign", 1);
+    run_campaign(&fixture, &spec);
+    let original = records_command(&fixture, &spec);
+    assert!(original.status.success());
+    let projection: serde_json::Value = serde_json::from_slice(&original.stdout).unwrap();
+    assert_eq!(projection["schema_version"], 1);
+    assert_eq!(projection["campaign_id"], "records-bound-campaign");
+    assert_eq!(projection["records"].as_array().unwrap().len(), 1);
+    assert_eq!(projection["records"][0]["bound_task_id"], "0.1.1.1");
+    assert!(!String::from_utf8_lossy(&original.stdout).contains(fixture.state.to_str().unwrap()));
+
+    let unbound = fixture
+        .state
+        .join("campaigns/records-bound-campaign/state/runs/run-unbound");
+    fs::create_dir_all(&unbound).unwrap();
+    fs::write(unbound.join("checkpoint.json"), b"malformed").unwrap();
+    let again = records_command(&fixture, &spec);
+    assert!(again.status.success());
+    let again: serde_json::Value = serde_json::from_slice(&again.stdout).unwrap();
+    assert_eq!(again["records"].as_array().unwrap().len(), 1);
+
+    let run_dir = fixture
+        .state
+        .join("campaigns/records-bound-campaign/state/runs")
+        .join(projection["records"][0]["run_id"].as_str().unwrap());
+    let mut journal = Journal::open(&run_dir, "identity-test").unwrap();
+    let mut foreign_event = journal.records().last().unwrap().event.clone();
+    foreign_event.repository_id = RepositoryId::new("repo-foreign").unwrap();
+    journal.append(foreign_event).unwrap();
+    drop(journal);
+    let mixed = records_command(&fixture, &spec);
+    assert!(mixed.status.success());
+    let mixed: serde_json::Value = serde_json::from_slice(&mixed.stdout).unwrap();
+    assert_eq!(
+        mixed["records"][0]["journal_problem"],
+        "events.jsonl has invalid identity"
+    );
+    assert!(mixed["records"][0]["phases"].as_array().unwrap().is_empty());
+    let parsed = parse_run_records(&serde_json::to_vec(&mixed).unwrap()).unwrap();
+    assert_eq!(
+        parsed.records[0].review_label(),
+        "journal unavailable: review outcome not corroborated"
+    );
+    assert_eq!(
+        parsed.records[0].gate_label(),
+        "journal unavailable: gate evidence not corroborated"
+    );
+
+    let other = Fixture::new("records-other", 1);
+    let foreign = write_campaign(&other, "records-foreign-campaign", 1);
+    let denied = records_command(&fixture, &foreign);
+    assert!(!denied.status.success());
+    assert!(denied.stdout.is_empty());
+}
+
+#[test]
+fn linked_or_oversized_run_checkpoint_is_unknown_and_refresh_recovers() {
+    use std::os::unix::fs::symlink;
+
+    let fixture = Fixture::new("records-linked", 2);
+    let spec = write_campaign(&fixture, "records-linked-campaign", 1);
+    run_campaign(&fixture, &spec);
+    let runs = fixture
+        .state
+        .join("campaigns/records-linked-campaign/state/runs");
+    let run = fs::read_dir(&runs).unwrap().next().unwrap().unwrap().path();
+    let checkpoint = run.join("checkpoint.json");
+    let saved = fs::read(&checkpoint).unwrap();
+    fs::remove_file(&checkpoint).unwrap();
+    let outside = fixture.root.join("outside-checkpoint.json");
+    fs::write(&outside, &saved).unwrap();
+    symlink(&outside, &checkpoint).unwrap();
+    let linked = records_command(&fixture, &spec);
+    assert!(linked.status.success());
+    let projection: serde_json::Value = serde_json::from_slice(&linked.stdout).unwrap();
+    assert!(projection["records"][0]["checkpoint"].is_null());
+    assert!(
+        projection["records"][0]["checkpoint_problem"]
+            .as_str()
+            .unwrap()
+            .contains("linked")
+    );
+    fs::remove_file(&checkpoint).unwrap();
+    fs::write(&checkpoint, vec![b'x'; 65 * 1024]).unwrap();
+    let oversized = records_command(&fixture, &spec);
+    assert!(oversized.status.success());
+    let projection: serde_json::Value = serde_json::from_slice(&oversized.stdout).unwrap();
+    assert!(projection["records"][0]["checkpoint"].is_null());
+    assert!(
+        projection["records"][0]["checkpoint_problem"]
+            .as_str()
+            .unwrap()
+            .contains("oversized")
+    );
+    fs::write(&checkpoint, saved).unwrap();
+    let recovered = records_command(&fixture, &spec);
+    assert!(recovered.status.success());
+    let projection: serde_json::Value = serde_json::from_slice(&recovered.stdout).unwrap();
+    assert_eq!(
+        projection["records"][0]["checkpoint"]["review_verdict"],
+        "pass"
+    );
+    let relocated = fixture.root.join("relocated-run");
+    fs::rename(&run, &relocated).unwrap();
+    symlink(&relocated, &run).unwrap();
+    let linked_run = records_command(&fixture, &spec);
+    assert!(linked_run.status.success());
+    let projection: serde_json::Value = serde_json::from_slice(&linked_run.stdout).unwrap();
+    assert!(projection["records"][0]["checkpoint"].is_null());
+    assert_eq!(
+        projection["records"][0]["checkpoint_problem"],
+        "run directory is linked, absent or invalid"
+    );
+    fs::remove_file(&run).unwrap();
+    fs::rename(&relocated, &run).unwrap();
+    let journal = run.join("events.jsonl");
+    let journal_bytes = fs::read(&journal).unwrap();
+    fs::write(&journal, vec![b'x'; 4 * 1024 * 1024 + 1]).unwrap();
+    let oversized_journal = records_command(&fixture, &spec);
+    assert!(oversized_journal.status.success());
+    let projection: serde_json::Value = serde_json::from_slice(&oversized_journal.stdout).unwrap();
+    assert_eq!(
+        projection["records"][0]["journal_problem"],
+        "events.jsonl is oversized"
+    );
+    assert!(
+        projection["records"][0]["phases"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    fs::write(&journal, journal_bytes).unwrap();
+}
+
+#[test]
+fn forged_run_record_response_clears_previous_evidence_then_recovers() {
+    let fixture = Fixture::new("records-forged", 2);
+    let spec = write_campaign(&fixture, "records-forged-campaign", 1);
+    run_campaign(&fixture, &spec);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.run_records().value.is_some()
+    }));
+    let result = records_command(&fixture, &spec);
+    let projection: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
+    for key in [
+        "campaign_id",
+        "repository_id",
+        "head",
+        "updated_at_ms",
+        "schema_version",
+        "future",
+    ] {
+        let mut forged = projection.clone();
+        forged[key] = match key {
+            "updated_at_ms" => serde_json::json!(0),
+            "schema_version" => serde_json::json!(2),
+            "future" => serde_json::json!(true),
+            _ => serde_json::json!("forged"),
+        };
+        let app = harness.state_mut();
+        assert!(app.handle_response(Response {
+            generation: app.generation(),
+            binding: app.binding(),
+            label: "campaign-run-records",
+            request_id: None,
+            result: Ok(serde_json::to_vec(&forged).unwrap()),
+        }));
+        assert!(app.run_records().value.is_none());
+    }
+    harness.state_mut().refresh_campaign();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.run_records()
+            .value
+            .as_ref()
+            .is_some_and(|records| records.len() == 1)
+    }));
 }
 
 #[test]
@@ -248,6 +460,11 @@ fn never_started_campaign_has_no_changes_or_records() {
         String::from_utf8_lossy(&absent.stderr).trim(),
         "codingmage.cli.refused"
     );
+    let empty_records = records_command(&fixture, &spec);
+    assert!(empty_records.status.success());
+    let projection: serde_json::Value = serde_json::from_slice(&empty_records.stdout).unwrap();
+    assert!(projection["head"].is_null());
+    assert_eq!(projection["records"].as_array().unwrap().len(), 0);
     let mut harness = opened(&fixture);
     harness.state_mut().select_campaign(&spec);
     assert!(settle(&mut harness, Duration::from_mins(1), |app| {

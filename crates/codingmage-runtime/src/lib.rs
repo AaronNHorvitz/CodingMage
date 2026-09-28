@@ -1,5 +1,6 @@
 //! Concrete, fail-closed composition for one supervised `CodingMage` unit.
 
+mod campaign_records;
 mod campaign_state;
 mod correction_state;
 mod gate_baseline;
@@ -16,6 +17,7 @@ mod team_publication;
 mod team_runtime;
 mod team_state;
 
+pub use campaign_records::campaign_run_records;
 pub use gate_baseline::{
     BaselineGate, GateBaseline, GateBaselineStore, GateComparison, RepairReceipt,
 };

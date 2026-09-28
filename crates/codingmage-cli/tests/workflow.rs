@@ -1509,6 +1509,34 @@ print(json.dumps({"type": "turn.completed"}))
     let reported: serde_json::Value = serde_json::from_slice(&report_output.stdout).unwrap();
     assert_eq!(reported["final_commit"], outcome.head);
     assert_eq!(reported["tasks"].as_object().unwrap().len(), 5);
+    let records_output = Fixture::command(&[
+        "campaign-run-records",
+        "--config",
+        config.to_str().unwrap(),
+        "--campaign",
+        campaign_file.to_str().unwrap(),
+    ]);
+    assert!(
+        records_output.status.success(),
+        "parallel run evidence: {}",
+        String::from_utf8_lossy(&records_output.stderr)
+    );
+    let bound: serde_json::Value = serde_json::from_slice(&records_output.stdout).unwrap();
+    assert_eq!(bound["schema_version"], 1);
+    assert_eq!(bound["campaign_id"], spec.campaign_id);
+    assert_eq!(bound["repository_id"], spec.repository_id);
+    assert_eq!(bound["head"], outcome.head);
+    let runs = bound["records"].as_array().unwrap();
+    assert_eq!(runs.len(), 5);
+    for run in runs {
+        assert!(run["checkpoint"].is_object(), "parallel run: {run}");
+        assert!(run["journal_problem"].is_null(), "parallel run: {run}");
+        assert!(run["phases"].as_array().is_some_and(|phases| {
+            phases
+                .iter()
+                .any(|phase| phase["phase"] == "review" && phase["outcome"] == "succeeded")
+        }));
+    }
 
     let codex_log = fixture.root.join("parallel-codex.log");
     let codex_before = fs::read(&codex_log).unwrap();
