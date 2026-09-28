@@ -121,6 +121,75 @@ fn campaign_controls_show_exact_commands_without_recording_an_intent() {
 }
 
 #[test]
+fn combining_mark_paths_refuse_campaign_actions_before_any_intent_or_launch() {
+    for source in ["executable", "config", "specification"] {
+        let mut ready = ready(&format!("combining-{source}"));
+        let binary = if source == "executable" {
+            let marked = ready.fixture.root.join("coding\u{0345}mage");
+            fs::copy(coordinator_binary(), &marked).unwrap();
+            marked
+        } else {
+            coordinator_binary()
+        };
+        if source == "config" {
+            let marked = ready.fixture.root.join("coding\u{05b0}mage.toml");
+            fs::rename(&ready.fixture.config, &marked).unwrap();
+            ready.fixture.config = marked;
+        }
+        if source == "specification" {
+            let marked = ready.fixture.root.join("campaign\u{0345}.toml");
+            fs::rename(&ready.spec, &marked).unwrap();
+            ready.spec = marked;
+        }
+        let mut harness = harness_with_state(
+            CoordinatorBinary::at(&binary),
+            [1100.0, 900.0],
+            ready.state_home.clone(),
+        );
+        harness.state_mut().open_project(&ready.fixture.config);
+        harness.state_mut().select_campaign(&ready.spec);
+        harness.state_mut().set_authorization_record(&ready.record);
+        harness.state_mut().select_screen(Screen::Campaign);
+        harness.run_steps(2);
+        assert!(
+            codingmage_ui::command::format_command(
+                &binary,
+                &[
+                    "campaign".to_owned(),
+                    "--config".to_owned(),
+                    ready.fixture.config.to_str().unwrap().to_owned(),
+                    "--campaign".to_owned(),
+                    ready.spec.to_str().unwrap().to_owned(),
+                ],
+            )
+            .is_none(),
+            "{source} must make the exact command unavailable"
+        );
+        harness.get_by_label("Show command: Start coordinator");
+        for action in ControlAction::ALL {
+            assert!(harness.state_mut().preview_control(action).is_none());
+            harness.get_by_label(format!("Show command: {}", action.label()).as_str());
+            if action == ControlAction::Cancel {
+                assert_eq!(
+                    harness.state_mut().request_control(action),
+                    Err(ControlRefusal::ConfirmCancel)
+                );
+            }
+            assert_eq!(
+                harness.state_mut().request_control(action),
+                Err(ControlRefusal::CommandUnavailable),
+                "{source}: {}",
+                action.label()
+            );
+        }
+        harness.state_mut().start_campaign();
+        assert!(harness.state().execution().record.is_none());
+        assert!(harness.state().execution().ledger.entries.is_empty());
+        assert!(!ready.fixture.state.join("campaigns").exists());
+    }
+}
+
+#[test]
 fn admission_requires_the_reviewed_report_and_goes_stale_when_the_repository_moves() {
     let ready = ready("admit");
     let mut harness = open(&ready);

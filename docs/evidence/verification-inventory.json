@@ -66517,9 +66517,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/command.rs:fn:can_preview:50",
+      "id": "rust:crates/codingmage-ui/src/command.rs:fn:can_preview:60",
       "kind": "fn",
-      "line": 50,
+      "line": 60,
       "name": "can_preview",
       "path": "crates/codingmage-ui/src/command.rs",
       "surface": "rust_public_api",
@@ -66561,9 +66561,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/command.rs:fn:format_command:12",
+      "id": "rust:crates/codingmage-ui/src/command.rs:fn:format_command:13",
       "kind": "fn",
-      "line": 12,
+      "line": 13,
       "name": "format_command",
       "path": "crates/codingmage-ui/src/command.rs",
       "surface": "rust_public_api",
@@ -66605,9 +66605,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/command.rs:fn:show:57",
+      "id": "rust:crates/codingmage-ui/src/command.rs:fn:show:67",
       "kind": "fn",
-      "line": 57,
+      "line": 67,
       "name": "show",
       "path": "crates/codingmage-ui/src/command.rs",
       "surface": "rust_public_api",
@@ -66649,9 +66649,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/command.rs:fn:show_for:62",
+      "id": "rust:crates/codingmage-ui/src/command.rs:fn:show_for:72",
       "kind": "fn",
-      "line": 62,
+      "line": 72,
       "name": "show_for",
       "path": "crates/codingmage-ui/src/command.rs",
       "surface": "rust_public_api",
@@ -66693,9 +66693,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/command.rs:fn:show_unavailable_for:67",
+      "id": "rust:crates/codingmage-ui/src/command.rs:fn:show_unavailable_for:77",
       "kind": "fn",
-      "line": 67,
+      "line": 77,
       "name": "show_unavailable_for",
       "path": "crates/codingmage-ui/src/command.rs",
       "surface": "rust_public_api",
@@ -75176,6 +75176,6 @@
       }
     }
   ],
-  "items_sha256": "0836574f97693996da16134d285590cdf8d038cf0625a1eec4549fcc82aa3f3f",
+  "items_sha256": "ee641db66093edbe87842d9dc3843535aad53a91a92d4e347ff50d51fc201340",
   "schema_version": 1
 }

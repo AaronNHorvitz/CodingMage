@@ -3,6 +3,7 @@
 use std::path::Path;
 
 use egui::Ui;
+use unicode_general_category::{GeneralCategory, get_general_category};
 
 /// Formats the exact UTF-8 argument vector as a POSIX shell command.
 ///
@@ -41,8 +42,17 @@ fn display_safe_character(character: char) -> bool {
     if character.is_ascii() {
         return character == ' ' || character.is_ascii_graphic();
     }
-    character.is_alphanumeric()
-        && !matches!(character, '\u{115f}' | '\u{1160}' | '\u{3164}' | '\u{ffa0}')
+    matches!(
+        get_general_category(character),
+        GeneralCategory::UppercaseLetter
+            | GeneralCategory::LowercaseLetter
+            | GeneralCategory::TitlecaseLetter
+            | GeneralCategory::ModifierLetter
+            | GeneralCategory::OtherLetter
+            | GeneralCategory::DecimalNumber
+            | GeneralCategory::LetterNumber
+            | GeneralCategory::OtherNumber
+    ) && !matches!(character, '\u{115f}' | '\u{1160}' | '\u{3164}' | '\u{ffa0}')
 }
 
 /// Whether the exact command can be rendered for an enabled action.
@@ -78,7 +88,7 @@ fn show_with_label(ui: &mut Ui, label: &str, binary: Option<&Path>, arguments: &
                 ui.small("This is the command the app sends when you choose the action. Showing it does not run it.");
             }
             None => {
-                ui.label("No exact command is available until the coordinator and required inputs are selected, or a path contains an invisible control character.");
+                ui.label("No exact command is available until the coordinator and required inputs are selected, or a path contains a character that cannot be shown safely.");
             }
         }
     });
@@ -109,10 +119,14 @@ mod tests {
         );
         assert!(format_command(Path::new("/usr/bin/codingmage"), &["a\nb".to_owned()]).is_none());
         assert!(format_command(Path::new("/tmp/a\u{034f}b/codingmage"), &arguments).is_none());
+        assert!(format_command(Path::new("/tmp/a\u{0345}b/codingmage"), &arguments).is_none());
         assert!(format_command(Path::new("/tmp/a\u{180e}b/codingmage"), &arguments).is_none());
         assert!(format_command(Path::new("/tmp/a\u{115f}b/codingmage"), &arguments).is_none());
         assert!(
             format_command(Path::new("/usr/bin/codingmage"), &["a\u{034f}b".to_owned()]).is_none()
+        );
+        assert!(
+            format_command(Path::new("/usr/bin/codingmage"), &["a\u{05b0}b".to_owned()]).is_none()
         );
         assert!(
             format_command(Path::new("/usr/bin/codingmage"), &["a\u{180e}b".to_owned()]).is_none()

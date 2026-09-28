@@ -89,3 +89,25 @@ live-provider or desktop qualification.
 This increment is local implementation evidence only. Admission and configuration writes are
 still UI-local operations without command equivalents, and other screens still have missing
 section 5 states, contextual depth and Show-command affordances. Task 36.3.2.2 stays open.
+
+## Independent combining-mark finding and correction candidate
+
+The exact-commit independent report for `b3f211e67bae531902caedd086e16108c43bbf54`
+returned **FINDINGS**. It established that U+0345 passes Rust's `is_alphanumeric()` even though
+it is a combining mark, so the prior predicate could enable a command whose path was visually
+misleading. The reviewer could not acquire the shared heavy slot for independent Clippy or UI
+tests; its static and Python checks ran, with the same retained CM-R01.6 failure.
+
+The correction uses Unicode general categories and refuses every mark category. Unit cases cover
+U+0345 in an executable path and U+05B0 in an argument, while keeping ordinary international
+letters accepted. An offscreen fake-provider adversarial case supplies marked executable,
+configuration and campaign-specification paths in turn; it checks that start and all four control
+previews are unavailable and that no launch record or control intent is written. The focused
+offscreen test passed 1/1 under the shared build slot. The corrected source passed the sibling CLI
+build, strict workspace Clippy and all 90 native UI all-target tests under a labelled CPU software
+renderer. The Python suite ran 42 tests: 41 passed, while the same CM-R01.6 source-bound freshness
+test failed on its eight documented input-drift paths; no evidence digest was renewed. Formatting,
+documentation, architecture, diff and regenerated inventory checks passed (1,702 surfaces, 825
+explicit gaps). The private cumulative receipt is retained outside Git. An exact-commit re-review
+is still required before treating the independent finding as resolved. The full Task 36.3.2.2,
+desktop, human, live-provider, package and release gates remain open.

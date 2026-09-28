@@ -29,6 +29,14 @@ blank letters. Other Unicode marks, formatting characters, unusual whitespace an
 the exact preview unavailable and disable the matching action. This can refuse some legitimate
 paths; it avoids showing an apparently complete command while hiding an argument character.
 
+An independent review of the campaign-control increment found that Rust's alphanumeric
+predicate includes some combining marks. The display check now uses the pinned
+`unicode-general-category` 1.1.0 crate (Apache-2.0; crates.io registry origin already present
+transitively in the workspace lockfile) to admit only letter and number general categories.
+Marks are refused regardless of the language-specific alphabetic predicate. The explicit blank
+letter exclusions still apply. This changes only preview eligibility and its matching action;
+the coordinator's authority and command arguments are unchanged.
+
 The initial implementation covered **Refresh diagnosis** (`doctor`) and **Run preflight**
 (`campaign-preflight`). At that checkpoint, other controls remained open under Sub-task 36.3.2.2
 until each exact backend or local-operation equivalent was implemented and tested. A command
