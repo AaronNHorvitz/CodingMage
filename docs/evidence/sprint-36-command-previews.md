@@ -8,8 +8,8 @@ argument vectors in one method each. The same vector is submitted to the sibling
 worker and shown, on request, in a collapsed **Show command** section beside the action. The
 preview includes the resolved executable path, preserves argument boundaries with POSIX quoting,
 and never submits or copies the command. Non-UTF-8 paths or invisible controls disable the matching
-action and explain why no exact command is available. The app does not display the executable path until the owner expands
-the section.
+action and explain why no exact command is available. The app does not display the executable path
+until the **Show command** section is expanded.
 
 The previous "Refresh (F5)" button label was inaccurate: the button refreshed diagnosis only,
 while F5 also refreshes a selected campaign. The button is now labelled **Refresh diagnosis**;
@@ -31,7 +31,7 @@ observation path; the clickable Refresh action is disabled without an exact prev
 | --- | --- |
 | Sibling CLI build, then `cargo test --locked -p codingmage-ui --all-targets -- --test-threads=1` | 79 passed, 0 failed, including hostile work-plan titles, command previews and the missing-coordinator regression |
 | `cargo clippy --locked --workspace --all-targets -- -D warnings` | Passed |
-| `cargo fmt --all -- --check`, `python3 scripts/docs_check.py`, `python3 scripts/verification_inventory.py`, `git diff --check` | Passed; inventory contains 1,678 surfaces and 811 explicit gaps |
+| `cargo fmt --all -- --check`, `python3 scripts/docs_check.py`, `python3 scripts/verification_inventory.py`, `git diff --check` | Passed; inventory contains 1,679 surfaces and 811 explicit gaps |
 | Python unittest suite | 41 passed, 1 retained CM-R01.6 evidence input-drift failure on the same eight bound inputs |
 
 The heavy commands used the shared build slot with one Cargo job and one test thread. The UI

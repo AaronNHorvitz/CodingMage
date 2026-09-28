@@ -39,7 +39,7 @@ fn open_fixture_with_plan(
 }
 
 #[test]
-fn hostile_plan_titles_are_bounded_in_accessibility_labels() {
+fn hostile_plan_titles_are_sanitized_and_visible_item_label_is_bounded() {
     let title = format!(
         "\u{202e}\u{001b}{} https://later.example/path",
         "x".repeat(5_000)
@@ -64,7 +64,7 @@ fn hostile_plan_titles_are_bounded_in_accessibility_labels() {
         assert!(label.contains("[preview shortened]"), "{label}");
         assert!(!label.contains('\u{202e}') && !label.contains('\u{001b}'));
         assert!(!label.contains("https://"));
-        assert!(label.chars().count() < codingmage_ui::content::MAX_PREVIEW_CHARS + 120);
+        assert!(label.chars().count() < codingmage_ui::content::MAX_LIST_CHARS + 120);
     }
     assert!(harness.query_by_label("Review external link").is_none());
     let index = harness.state().plan_index().unwrap();
@@ -83,7 +83,7 @@ fn hostile_plan_titles_are_bounded_in_accessibility_labels() {
         assert!(sanitized.contains("��"));
         assert!(sanitized.contains("[preview shortened]"));
         assert!(!sanitized.contains('\u{202e}') && !sanitized.contains('\u{001b}'));
-        assert!(sanitized.chars().count() < codingmage_ui::content::MAX_PREVIEW_CHARS + 30);
+        assert!(sanitized.chars().count() < codingmage_ui::content::MAX_LIST_CHARS + 30);
     }
 }
 

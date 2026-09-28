@@ -20,8 +20,8 @@ model-influenced text:
 | Reports | Bounded JSON preview; guarded export retains the full report |
 
 The presenter replaces terminal and Unicode direction controls with a visible replacement
-character, displays at most 4,096 characters in one source field, and labels any shortening.
-List labels use the same bound without making link controls. The presenter offers
+character, displays at most 4,096 characters in one detail field, and labels any shortening.
+List titles use a tighter 240-character bound without making link controls. The presenter offers
 at most eight complete HTTPS link candidates per field. A candidate is shown in full next to
 **Review external link**; the trusted shell then shows the full destination and requires
 **Open in browser**. Neither rendering nor selecting a task, review or report opens the link.
@@ -41,9 +41,12 @@ Test fixtures cancel the dialog and make no browser request.
 The focused pure tests are in `crates/codingmage-ui/src/content.rs`; the offscreen trusted-chrome
 interaction test is in `crates/codingmage-ui/tests/content.rs`. The strict-plan accessibility
 regression is in `crates/codingmage-ui/tests/workplan.rs`: it supplies oversized sprint, story and
-item titles with direction and terminal controls. These use synthetic hostile text,
-not a live provider. The same screens still depend on the open command-boundary and complete
-state/depth work in Sub-task 36.3.2.2.
+item titles with direction and terminal controls. The offscreen accessibility tree exposes the
+selectable item label, which the test checks directly; the sprint and story source titles are
+checked through the same bounded sanitizer. Their static group widgets are absent from this
+offscreen tree, so assistive-tool heading behavior remains open under Sub-task 36.3.3.1. These
+fixtures use synthetic hostile text, not a live provider. The same screens still depend on the
+open command-boundary and complete state/depth work in Sub-task 36.3.2.2.
 
 ## Verification disposition
 

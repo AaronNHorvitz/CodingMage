@@ -22,6 +22,9 @@ formatting controls on the task detail, model/activity, changes/review and repor
 It makes Unicode direction controls and terminal control characters visible as replacement
 characters and bounds one displayed field to 4,096 characters. Shortening is labelled; the full
 report remains available through the existing guarded export action.
+The work-plan's sprint, story and item list titles use a tighter 240-character limit through the
+same sanitizer, with an explicit shortening label. Their selected item detail can still use the
+4,096-character preview.
 
 Only a complete ASCII HTTPS address with a simple DNS host is offered as a link candidate.
 User-info, local host names, numeric addresses, malformed hosts, control characters and addresses

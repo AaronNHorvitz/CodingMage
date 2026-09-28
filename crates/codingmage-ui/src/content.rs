@@ -7,6 +7,8 @@ use egui::{Context, Id, Ui};
 
 /// Maximum visible characters from one untrusted field.
 pub const MAX_PREVIEW_CHARS: usize = 4096;
+/// Maximum visible characters from one untrusted list title.
+pub const MAX_LIST_CHARS: usize = 240;
 /// Maximum number of candidate links offered from one field.
 pub const MAX_LINKS: usize = 8;
 const MAX_LINK_BYTES: usize = 2048;
@@ -26,21 +28,7 @@ impl ContentPreview {
     /// Sanitizes and bounds text before creating any widget or link affordance.
     #[must_use]
     pub fn new(source: &str) -> Self {
-        let mut text = String::new();
-        let mut truncated = false;
-        for (index, character) in source.chars().enumerate() {
-            if index == MAX_PREVIEW_CHARS {
-                truncated = true;
-                break;
-            }
-            if character == '\n' || character == '\t' {
-                text.push(character);
-            } else if character.is_control() || is_direction_override(character) {
-                text.push('�');
-            } else {
-                text.push(character);
-            }
-        }
+        let (text, truncated) = sanitized_prefix(source, MAX_PREVIEW_CHARS);
         let mut links = Vec::new();
         for word in text.split_whitespace() {
             let candidate = word
@@ -66,12 +54,29 @@ impl ContentPreview {
 /// A list label does not offer links. Its shortening marker remains visible to assistive tools.
 #[must_use]
 pub fn list_label(source: &str) -> String {
-    let preview = ContentPreview::new(source);
-    let mut label = preview.text.replace(['\n', '\t'], "�");
-    if preview.truncated {
+    let (text, truncated) = sanitized_prefix(source, MAX_LIST_CHARS);
+    let mut label = text.replace(['\n', '\t'], "�");
+    if truncated {
         label.push_str(" [preview shortened]");
     }
     label
+}
+
+fn sanitized_prefix(source: &str, max_chars: usize) -> (String, bool) {
+    let mut text = String::new();
+    for (index, character) in source.chars().enumerate() {
+        if index == max_chars {
+            return (text, true);
+        }
+        if character == '\n' || character == '\t' {
+            text.push(character);
+        } else if character.is_control() || is_direction_override(character) {
+            text.push('�');
+        } else {
+            text.push(character);
+        }
+    }
+    (text, false)
 }
 
 fn is_direction_override(character: char) -> bool {
@@ -220,8 +225,6 @@ mod tests {
         assert!(!label.contains('\u{202e}'));
         assert!(!label.contains('\u{001b}'));
         assert!(!label.contains("https://"));
-        assert!(
-            label.chars().count() <= MAX_PREVIEW_CHARS + " [preview shortened]".chars().count()
-        );
+        assert!(label.chars().count() <= MAX_LIST_CHARS + " [preview shortened]".chars().count());
     }
 }

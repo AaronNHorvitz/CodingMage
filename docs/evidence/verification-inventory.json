@@ -65269,10 +65269,54 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/content.rs:const:MAX_LINKS:11",
+      "id": "rust:crates/codingmage-ui/src/content.rs:const:MAX_LINKS:13",
+      "kind": "const",
+      "line": 13,
+      "name": "MAX_LINKS",
+      "path": "crates/codingmage-ui/src/content.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
+          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display",
+          "crates/codingmage-ui/src/content.rs::oversized_content_is_bounded_before_link_extraction",
+          "crates/codingmage-ui/src/fonts.rs::override_must_be_a_regular_bounded_file",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::never_started_campaign_is_an_explicit_empty_state",
+          "crates/codingmage-ui/tests/execution.rs::cancel_terminates_only_the_owned_provider_and_retains_state",
+          "crates/codingmage-ui/tests/verification.rs::appearance_baselines_cover_all_palettes_at_minimum_size_and_double_scale"
+        ],
+        "positive": [
+          "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
+          "crates/codingmage-ui/src/records.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/src/setup.rs::config_form_writes_only_loader_accepted_documents_and_refuses_overwrite",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/campaign.rs::completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree",
+          "crates/codingmage-ui/tests/changes.rs::accepted_units_show_exact_commits_files_verdicts_and_gate_evidence",
+          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model"
+        ],
+        "repeatability": [
+          "crates/codingmage-ui/src/launch.rs::exited_launch_reports_outcome_or_stable_code",
+          "crates/codingmage-ui/src/readiness.rs::short_and_digest_helpers_are_stable",
+          "crates/codingmage-ui/src/state_dir.rs::recent_list_round_trips_bounded_and_private",
+          "crates/codingmage-ui/tests/contract_parity.rs::campaign_status_round_trips_through_the_interface_model",
+          "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
+          "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
+          "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "boundary",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-ui/src/content.rs:const:MAX_LIST_CHARS:11",
       "kind": "const",
       "line": 11,
-      "name": "MAX_LINKS",
+      "name": "MAX_LIST_CHARS",
       "path": "crates/codingmage-ui/src/content.rs",
       "surface": "rust_public_api",
       "test_mappings": {
@@ -65357,9 +65401,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/content.rs:fn:confirmation:141",
+      "id": "rust:crates/codingmage-ui/src/content.rs:fn:confirmation:146",
       "kind": "fn",
-      "line": 141,
+      "line": 146,
       "name": "confirmation",
       "path": "crates/codingmage-ui/src/content.rs",
       "surface": "rust_public_api",
@@ -65402,9 +65446,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/content.rs:fn:list_label:68",
+      "id": "rust:crates/codingmage-ui/src/content.rs:fn:list_label:56",
       "kind": "fn",
-      "line": 68,
+      "line": 56,
       "name": "list_label",
       "path": "crates/codingmage-ui/src/content.rs",
       "surface": "rust_public_api",
@@ -65457,9 +65501,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/content.rs:fn:new:28",
+      "id": "rust:crates/codingmage-ui/src/content.rs:fn:new:30",
       "kind": "fn",
-      "line": 28,
+      "line": 30,
       "name": "new",
       "path": "crates/codingmage-ui/src/content.rs",
       "surface": "rust_public_api",
@@ -65511,9 +65555,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/content.rs:fn:render:122",
+      "id": "rust:crates/codingmage-ui/src/content.rs:fn:render:127",
       "kind": "fn",
-      "line": 122,
+      "line": 127,
       "name": "render",
       "path": "crates/codingmage-ui/src/content.rs",
       "surface": "rust_public_api",
@@ -65556,9 +65600,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/content.rs:struct:ContentPreview:16",
+      "id": "rust:crates/codingmage-ui/src/content.rs:struct:ContentPreview:18",
       "kind": "struct",
-      "line": 16,
+      "line": 18,
       "name": "ContentPreview",
       "path": "crates/codingmage-ui/src/content.rs",
       "surface": "rust_public_api",
@@ -73657,6 +73701,6 @@
       }
     }
   ],
-  "items_sha256": "f18074707b0bcb1f1230401d182adf14fe396f26651650ceabefdf6c6fd55be7",
+  "items_sha256": "8683c54fcac75b2e03d18d7ddd1d253fb7033573f48abbd37e506d7fc6eaf90d",
   "schema_version": 1
 }
