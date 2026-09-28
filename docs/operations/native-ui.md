@@ -6,8 +6,9 @@
 implemented locally with deterministic, display-less tests against the real `codingmage` binary
 and fake providers (Sprint 36 in [TASKS.md](../../TASKS.md)). It has not been verified on a real
 desktop session, with a screen reader, from a clean installation, or with real providers; those
-items are listed in [the human-only register](../evidence/sprint-36-human-only.md). Independent
-review of the interface is pending.
+items are listed in [the human-only register](../evidence/sprint-36-human-only.md). A bounded
+independent review of the current UI increment returned an inconclusive verdict with three
+corrective findings; re-review of a verified correction commit remains open.
 
 ## What It Is
 
@@ -31,6 +32,23 @@ review of the interface is pending.
   Open Sans, Cantarell or Ubuntu are found automatically), or `CODINGMAGE_UI_FONT` pointing at a
   font file. Without a font the app exits with status 2 and an explanation.
 - Vulkan or OpenGL through Mesa or a vendor driver for the window renderer.
+
+## Local development launch
+
+From this repository, build both executables from the same source tree and start the UI in an
+ordinary Linux desktop session:
+
+```sh
+export CARGO_BUILD_JOBS=1
+cargo build --locked -p codingmage-cli -p codingmage-ui
+target/debug/codingmage-ui
+```
+
+The application opens without starting a campaign. Select an existing validated configuration
+in Setup, or create one there for a disposable repository. The native window needs a Wayland or
+X11 session; this worker's headless offscreen tests do not qualify the commands above on an
+interactive desktop. The first screen explains a missing sibling executable or font instead of
+showing sample results.
 
 ## Screens
 

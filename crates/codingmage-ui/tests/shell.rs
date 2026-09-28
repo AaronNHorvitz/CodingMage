@@ -109,6 +109,32 @@ fn opening_a_repository_observes_real_diagnosis_without_side_effects() {
 }
 
 #[test]
+fn refresh_shows_the_exact_doctor_command_without_running_it() {
+    let fixture = Fixture::new("show-doctor", 3);
+    let binary = CoordinatorBinary::at(&coordinator_binary());
+    let mut harness = harness(binary, [1100.0, 720.0]);
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some()
+    }));
+    let before = tree_digest(&fixture.target);
+    harness.run_steps(2);
+    harness.get_by_label("Show command").click();
+    harness.run_steps(2);
+    let expected = codingmage_ui::command::format_command(
+        &coordinator_binary(),
+        &[
+            "doctor".to_owned(),
+            "--config".to_owned(),
+            fixture.config.display().to_string(),
+        ],
+    )
+    .unwrap();
+    harness.get_by_label(expected.as_str());
+    assert_eq!(tree_digest(&fixture.target), before);
+}
+
+#[test]
 fn invalid_configuration_is_reported_and_leaves_no_project_open() {
     let fixture = Fixture::new("invalid-config", 3);
     std::fs::write(&fixture.config, "version = 99\n").unwrap();

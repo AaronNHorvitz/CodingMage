@@ -52,6 +52,16 @@ These are synthetic offscreen baselines. They do not prove compositor, Orca, rea
 all-screen contrast or the frozen P1–P5 responsiveness budgets. Those remain open under Story
 36.3 and the human-only register.
 
+## Geometry-token follow-up audit
+
+The later content-confirmation window is outside the original screenshot baseline. The review of
+`a0e90436e5189149a319de16010eb3d9b1252f82` found its horizontal URL preview fixed at 600
+logical pixels. The corrective source now obtains that maximum from
+`current_tokens(ctx).layout.field_wide`, the same named `LayoutTokens` width used by ordinary wide
+fields. The source audit for this correction checked `max_width`, `max_height` and `desired_width`
+calls in the native UI for remaining numeric width/height literals; none remain. This is a source
+geometry audit, not a new interactive-desktop or screenshot qualification.
+
 ## Reproduction and disposition
 
 ```text

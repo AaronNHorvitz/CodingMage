@@ -10,13 +10,20 @@ use codingmage_ui::{
     workplan::{KindFilter, PlanFilter, SourceReadiness, StateFilter},
 };
 use common::{Fixture, coordinator_binary, git, harness, settle, tree_digest};
-use egui_kittest::kittest::Queryable as _;
+use egui_kittest::kittest::{NodeT as _, Queryable as _};
 
 const PLAN: &str = "# Tasks\n\n## Sprint 1 - Start\n\n**Sprint goal:** Start safely.\n\n### Story 1.1 - First\n\n- [ ] **Task 1.1.1 - Work**\n  - [x] **Sub-task 1.1.1.1:** Complete the first fixture operation safely.\n  - [ ] **Sub-task 1.1.1.2:** Complete the second fixture operation safely.\n    <!-- depends-on: 1.1.1.1 -->\n  - [ ] **Sub-task 1.1.1.3:** Complete the third fixture operation safely.\n    <!-- depends-on: 1.1.1.2 -->\n\n- [ ] **AC 1.1:** Given the fixture, when it runs, then the value changes.\n";
 
 fn open_fixture(label: &str) -> (Fixture, egui_kittest::Harness<'static, codingmage_ui::App>) {
+    open_fixture_with_plan(label, PLAN)
+}
+
+fn open_fixture_with_plan(
+    label: &str,
+    plan: &str,
+) -> (Fixture, egui_kittest::Harness<'static, codingmage_ui::App>) {
     let fixture = Fixture::new(label, 3);
-    fs::write(fixture.target.join("TASKS.md"), PLAN).unwrap();
+    fs::write(fixture.target.join("TASKS.md"), plan).unwrap();
     git(&fixture.target, &["add", "TASKS.md"]);
     git(&fixture.target, &["commit", "-q", "-m", "plan"]);
     let binary = CoordinatorBinary::at(&coordinator_binary());
@@ -29,6 +36,55 @@ fn open_fixture(label: &str) -> (Fixture, egui_kittest::Harness<'static, codingm
     harness.state_mut().select_screen(Screen::WorkPlan);
     harness.run_steps(2);
     (fixture, harness)
+}
+
+#[test]
+fn hostile_plan_titles_are_bounded_in_accessibility_labels() {
+    let title = format!(
+        "\u{202e}\u{001b}{} https://later.example/path",
+        "x".repeat(5_000)
+    );
+    let plan = format!(
+        "# Tasks\n\n## Sprint 1 - {title}\n\n**Sprint goal:** Start.\n\n### Story 1.1 - {title}\n\n- [ ] **Task 1.1.1 - {title}**\n  - [ ] **Sub-task 1.1.1.1:** {title}\n"
+    );
+    let (_fixture, harness) = open_fixture_with_plan("hostile-titles", &plan);
+    let labels = harness
+        .root()
+        .children_recursive()
+        .filter_map(|node| node.accesskit_node().label())
+        .filter(|label| {
+            label.contains("Sprint 1 - ")
+                || label.contains("Story 1.1 - ")
+                || label.contains("Sub-task 1.1.1.1")
+        })
+        .collect::<Vec<_>>();
+    assert!(!labels.is_empty(), "missing visible plan item label");
+    for label in labels {
+        assert!(label.contains("��"), "{label}");
+        assert!(label.contains("[preview shortened]"), "{label}");
+        assert!(!label.contains('\u{202e}') && !label.contains('\u{001b}'));
+        assert!(!label.contains("https://"));
+        assert!(label.chars().count() < codingmage_ui::content::MAX_PREVIEW_CHARS + 120);
+    }
+    assert!(harness.query_by_label("Review external link").is_none());
+    let index = harness.state().plan_index().unwrap();
+    for source in [
+        index.sprint_title("1").unwrap(),
+        index.story_title("1.1").unwrap(),
+        index
+            .rows()
+            .iter()
+            .find(|row| row.id == "1.1.1.1")
+            .unwrap()
+            .title
+            .as_str(),
+    ] {
+        let sanitized = codingmage_ui::content::list_label(source);
+        assert!(sanitized.contains("��"));
+        assert!(sanitized.contains("[preview shortened]"));
+        assert!(!sanitized.contains('\u{202e}') && !sanitized.contains('\u{001b}'));
+        assert!(sanitized.chars().count() < codingmage_ui::content::MAX_PREVIEW_CHARS + 30);
+    }
 }
 
 #[test]

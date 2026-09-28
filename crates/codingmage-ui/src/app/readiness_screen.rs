@@ -75,21 +75,10 @@ impl App {
 
     /// Requests `campaign-preflight` for the selected campaign and authorization record.
     pub fn run_preflight(&mut self) {
-        let (Some(project), Some(campaign), Some(record)) =
-            (&self.project, &self.campaign, &self.authorization_record)
-        else {
-            self.set_status("select a campaign and an authorization record before preflight");
+        let Some(arguments) = self.preflight_arguments() else {
+            self.set_status("select a campaign, authorization record and coordinator with paths that can be shown exactly before preflight");
             return;
         };
-        let arguments = vec![
-            "campaign-preflight".to_owned(),
-            "--config".to_owned(),
-            project.config_path.display().to_string(),
-            "--campaign".to_owned(),
-            campaign.spec_path.display().to_string(),
-            "--authorization".to_owned(),
-            record.display().to_string(),
-        ];
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
@@ -107,6 +96,24 @@ impl App {
             }
             Err(error) => self.preflight.fail(error, self.now),
         }
+    }
+
+    fn preflight_arguments(&self) -> Option<Vec<String>> {
+        let (project, campaign, record) = (
+            self.project.as_ref()?,
+            self.campaign.as_ref()?,
+            self.authorization_record.as_ref()?,
+        );
+        let arguments = vec![
+            "campaign-preflight".to_owned(),
+            "--config".to_owned(),
+            project.config_path.to_str()?.to_owned(),
+            "--campaign".to_owned(),
+            campaign.spec_path.to_str()?.to_owned(),
+            "--authorization".to_owned(),
+            record.to_str()?.to_owned(),
+        ];
+        Some(arguments)
     }
 
     pub(super) fn accept_preflight(&mut self, response: Response) {
@@ -176,12 +183,23 @@ impl App {
                 }
             });
         }
-        let can_run = self.authorization_record.is_some() && !self.preflight.loading;
+        let preflight_command = self.preflight_arguments();
+        let can_run = preflight_command.as_ref().is_some_and(|arguments| {
+            self.binary_path
+                .as_deref()
+                .and_then(|path| crate::command::format_command(path, arguments))
+                .is_some()
+        }) && !self.preflight.loading;
         if ui
             .add_enabled(can_run, egui::Button::new("Run preflight"))
             .clicked()
         {
             self.run_preflight();
+        }
+        if let Some(arguments) = preflight_command {
+            crate::command::show(ui, self.binary_path.as_deref(), &arguments);
+        } else if self.authorization_record.is_some() && self.campaign.is_some() {
+            ui.small("The coordinator or one selected path cannot be shown exactly as a command; choose UTF-8 paths without invisible controls.");
         }
         self.preflight_result(ui);
     }

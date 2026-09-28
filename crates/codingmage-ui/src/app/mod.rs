@@ -28,7 +28,7 @@ use crate::{
     },
     browser::Browser,
     campaign::{CampaignSelection, SelectError},
-    content,
+    command, content,
     design::{Appearance, Palette, Tokens, current_tokens},
     observed::{Freshness, Observed, age_label},
     project::{LoadedPlan, OpenError, Project},
@@ -438,14 +438,12 @@ impl App {
 
     /// Requests a fresh `doctor` observation for the opened project.
     pub fn refresh_diagnosis(&mut self) {
-        let Some(project) = &self.project else {
+        let Some(arguments) = self.doctor_arguments() else {
+            if self.project.is_some() {
+                self.set_status("diagnosis unavailable: the coordinator or configuration path cannot be shown exactly as a command");
+            }
             return;
         };
-        let arguments = vec![
-            "doctor".to_owned(),
-            "--config".to_owned(),
-            project.config_path.display().to_string(),
-        ];
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
@@ -462,6 +460,16 @@ impl App {
                 self.diagnosis.fail(error, self.now);
             }
         }
+    }
+
+    fn doctor_arguments(&self) -> Option<Vec<String>> {
+        let project = self.project.as_ref()?;
+        let arguments = vec![
+            "doctor".to_owned(),
+            "--config".to_owned(),
+            project.config_path.to_str()?.to_owned(),
+        ];
+        Some(arguments)
     }
 
     /// Queues one request through the worker.
@@ -706,11 +714,25 @@ impl App {
                 let freshness = self.diagnosis.freshness(self.now);
                 let age = age_label(self.diagnosis.age(self.now));
                 ui.label(format!("Diagnosis: {} ({age})", freshness.label()));
+                let doctor_command = self.doctor_arguments();
+                let can_preview = doctor_command.as_ref().is_some_and(|arguments| {
+                    self.binary_path.as_deref().and_then(|path| {
+                        command::format_command(path, arguments)
+                    }).is_some()
+                });
                 if ui
-                    .add_enabled(self.project.is_some(), egui::Button::new("Refresh (F5)"))
+                    .add_enabled(
+                        can_preview,
+                        egui::Button::new("Refresh diagnosis"),
+                    )
                     .clicked()
                 {
                     self.refresh_diagnosis();
+                }
+                if let Some(arguments) = doctor_command {
+                    command::show(ui, self.binary_path.as_deref(), &arguments);
+                } else if self.project.is_some() {
+                    ui.small("The coordinator or configuration path cannot be shown exactly as a command.");
                 }
             });
         });
@@ -1171,7 +1193,7 @@ fn plan_group_headers<'a>(
         ui.strong(format!(
             "Sprint {} - {}",
             row.sprint_id,
-            index.sprint_title(&row.sprint_id).unwrap_or("")
+            content::list_label(index.sprint_title(&row.sprint_id).unwrap_or(""))
         ));
     }
     if row.story_id.as_deref() != *last_story {
@@ -1180,7 +1202,7 @@ fn plan_group_headers<'a>(
             ui.label(format!(
                 "Story {} - {}",
                 story,
-                index.story_title(story).unwrap_or("")
+                content::list_label(index.story_title(story).unwrap_or(""))
             ));
         }
     }
@@ -1222,7 +1244,11 @@ fn row_label(row: &PlanRow) -> String {
         SourceReadiness::NotApplicable => String::new(),
         other => format!(" - {}", other.label()),
     };
-    format!("{checkbox} {kind} {} {}{readiness}", row.id, row.title)
+    format!(
+        "{checkbox} {kind} {} {}{readiness}",
+        row.id,
+        content::list_label(&row.title)
+    )
 }
 
 fn item_detail(ui: &mut egui::Ui, row: &PlanRow, index: &PlanIndex) {

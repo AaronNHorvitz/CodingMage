@@ -61,6 +61,19 @@ impl ContentPreview {
     }
 }
 
+/// Returns a bounded, single-line label for untrusted source text in list chrome.
+///
+/// A list label does not offer links. Its shortening marker remains visible to assistive tools.
+#[must_use]
+pub fn list_label(source: &str) -> String {
+    let preview = ContentPreview::new(source);
+    let mut label = preview.text.replace(['\n', '\t'], "�");
+    if preview.truncated {
+        label.push_str(" [preview shortened]");
+    }
+    label
+}
+
 fn is_direction_override(character: char) -> bool {
     matches!(
         character,
@@ -135,7 +148,9 @@ pub fn confirmation(ctx: &Context) {
         .resizable(false)
         .show(ctx, |ui| {
             ui.label("This address came from repository or backend content. Review the full destination before opening it in your browser.");
-            egui::ScrollArea::horizontal().max_width(600.0).show(ui, |ui| {
+            egui::ScrollArea::horizontal()
+                .max_width(crate::design::current_tokens(ctx).layout.field_wide)
+                .show(ui, |ui| {
                 ui.monospace(&url);
             });
             ui.horizontal(|ui| {
@@ -191,5 +206,22 @@ mod tests {
         assert_eq!(preview.text.chars().count(), MAX_PREVIEW_CHARS);
         assert!(preview.truncated);
         assert!(preview.links.is_empty());
+    }
+
+    #[test]
+    fn list_label_sanitizes_and_marks_shortening_without_links() {
+        let source = format!(
+            "\u{202e}\u{001b}{} https://later.example/x",
+            "x".repeat(MAX_PREVIEW_CHARS)
+        );
+        let label = list_label(&source);
+        assert!(label.starts_with("��"));
+        assert!(label.ends_with(" [preview shortened]"));
+        assert!(!label.contains('\u{202e}'));
+        assert!(!label.contains('\u{001b}'));
+        assert!(!label.contains("https://"));
+        assert!(
+            label.chars().count() <= MAX_PREVIEW_CHARS + " [preview shortened]".chars().count()
+        );
     }
 }

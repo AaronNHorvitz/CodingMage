@@ -106,6 +106,28 @@ fn real_preflight_passes_on_a_ready_fixture_and_binds_the_report_digest() {
         checks.iter().all(|check| check.status == CheckStatus::Pass),
         "{checks:?}"
     );
+    harness.state_mut().select_screen(Screen::Campaign);
+    harness.run_steps(2);
+    harness
+        .get_all_by_label("Show command")
+        .nth(1)
+        .expect("preflight command control")
+        .click();
+    harness.run_steps(2);
+    let expected = codingmage_ui::command::format_command(
+        &coordinator_binary(),
+        &[
+            "campaign-preflight".to_owned(),
+            "--config".to_owned(),
+            fixture.config.display().to_string(),
+            "--campaign".to_owned(),
+            spec.display().to_string(),
+            "--authorization".to_owned(),
+            record.display().to_string(),
+        ],
+    )
+    .unwrap();
+    harness.get_by_label(expected.as_str());
     harness.state_mut().run_preflight();
     assert!(settle(&mut harness, Duration::from_mins(3), |app| {
         app.preflight().last_error.is_some() || app.preflight().value.is_some()
