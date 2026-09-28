@@ -4,14 +4,17 @@
 //! contract change surfaces as an explicit "unsupported backend output" failure instead of a
 //! partially rendered screen.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
+use codingmage_plan::CheckState;
 use serde::{Deserialize, Serialize};
 
 /// Schema version accepted for `doctor` and `campaign-explain-blocker`.
 pub const SUPPORTED_SCHEMA_VERSION: u16 = 1;
 /// Schema version accepted for `campaign-status` (serial and parallel projections).
 pub const SUPPORTED_STATUS_SCHEMA_VERSION: u16 = 5;
+/// Schema version accepted for `campaign-head-plan`.
+pub const SUPPORTED_HEAD_PLAN_SCHEMA_VERSION: u16 = 1;
 /// Schema version accepted for `campaign-preflight`.
 pub const SUPPORTED_PREFLIGHT_SCHEMA_VERSION: u16 = 2;
 /// Report version accepted for `campaign-report`.
@@ -185,6 +188,34 @@ pub struct CampaignStatus {
     pub elapsed_ms: u64,
     /// Last checkpoint timestamp.
     pub updated_at_ms: u64,
+}
+
+/// Content-minimized sub-task states at one reconciled campaign head.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct HeadPlanProjection {
+    /// Projection schema version.
+    pub schema_version: u16,
+    /// Exact campaign identity.
+    pub campaign_id: String,
+    /// Exact repository identity.
+    pub repository_id: String,
+    /// Reconciled commit observed by the coordinator.
+    pub head: String,
+    /// Digest of the task source at that commit.
+    pub task_source_sha256: String,
+    /// Only sub-task IDs and their literal checkbox states.
+    pub items: Vec<HeadTaskState>,
+}
+
+/// One literal sub-task checkbox at the campaign head.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct HeadTaskState {
+    /// Stable sub-task identifier.
+    pub id: String,
+    /// Literal source checkbox state.
+    pub state: CheckState,
 }
 
 /// One active task projection.
@@ -711,6 +742,48 @@ pub fn parse_campaign_status(bytes: &[u8]) -> Result<Option<CampaignStatus>, Mod
     Ok(value)
 }
 
+/// Parses `campaign-head-plan` and rejects duplicate IDs or malformed bindings.
+///
+/// # Errors
+///
+/// Returns [`ModelError`] for malformed output or an unsupported schema.
+pub fn parse_head_plan(bytes: &[u8]) -> Result<HeadPlanProjection, ModelError> {
+    let value: HeadPlanProjection =
+        serde_json::from_slice(bytes).map_err(|_| ModelError::Malformed)?;
+    check_version(value.schema_version, SUPPORTED_HEAD_PLAN_SCHEMA_VERSION)?;
+    let full_hex = |text: &str| {
+        matches!(text.len(), 40 | 64) && text.bytes().all(|byte| byte.is_ascii_hexdigit())
+    };
+    if value.campaign_id.is_empty()
+        || value.repository_id.is_empty()
+        || !full_hex(&value.head)
+        || value.task_source_sha256.len() != 64
+        || !value
+            .task_source_sha256
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit())
+        || value.items.len() > 20_000
+    {
+        return Err(ModelError::Malformed);
+    }
+    let mut ids = BTreeSet::new();
+    if value.items.iter().any(|item| {
+        item.id.is_empty()
+            || item.id.len() > 64
+            || !item.id.split('.').all(|segment| {
+                !segment.is_empty()
+                    && (segment.bytes().all(|byte| byte.is_ascii_digit())
+                        || segment.strip_prefix("AC").is_some_and(|suffix| {
+                            !suffix.is_empty() && suffix.bytes().all(|byte| byte.is_ascii_digit())
+                        }))
+            })
+            || !ids.insert(&item.id)
+    }) {
+        return Err(ModelError::Malformed);
+    }
+    Ok(value)
+}
+
 /// Parses `campaign-explain-blocker` output.
 ///
 /// # Errors
@@ -855,5 +928,49 @@ mod tests {
             })
         );
         assert_eq!(parse_diagnosis(b"not json"), Err(ModelError::Malformed));
+    }
+
+    #[test]
+    fn head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema() {
+        let valid = serde_json::json!({
+            "schema_version": 1,
+            "campaign_id": "campaign-a",
+            "repository_id": "repo-a",
+            "head": "a".repeat(40),
+            "task_source_sha256": "b".repeat(64),
+            "items": [{"id":"1.1.1.1","state":"checked"}],
+        });
+        let parsed = parse_head_plan(&serde_json::to_vec(&valid).unwrap()).unwrap();
+        assert_eq!(parsed.items[0].state, CheckState::Checked);
+        let mut duplicate = valid.clone();
+        duplicate["items"] = serde_json::json!([
+            {"id":"1.1.1.1","state":"checked"},
+            {"id":"1.1.1.1","state":"open"}
+        ]);
+        assert_eq!(
+            parse_head_plan(&serde_json::to_vec(&duplicate).unwrap()),
+            Err(ModelError::Malformed)
+        );
+        let mut extra = valid.clone();
+        extra["source_text"] = serde_json::json!("private source");
+        assert_eq!(
+            parse_head_plan(&serde_json::to_vec(&extra).unwrap()),
+            Err(ModelError::Malformed)
+        );
+        let mut spoofed = valid.clone();
+        spoofed["items"][0]["id"] = serde_json::json!("1.1.1.1\u{202e}FAKE");
+        assert_eq!(
+            parse_head_plan(&serde_json::to_vec(&spoofed).unwrap()),
+            Err(ModelError::Malformed)
+        );
+        let mut future = valid;
+        future["schema_version"] = serde_json::json!(2);
+        assert_eq!(
+            parse_head_plan(&serde_json::to_vec(&future).unwrap()),
+            Err(ModelError::UnsupportedSchema {
+                observed: 2,
+                supported: 1
+            })
+        );
     }
 }

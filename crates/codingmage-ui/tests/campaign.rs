@@ -2,9 +2,13 @@
 
 mod common;
 
-use std::{fs, time::Duration};
+use std::{fs, path::Path, process::Command, time::Duration};
 
-use codingmage_ui::{Screen, backend::CoordinatorBinary, campaign::SelectError};
+use codingmage_ui::{
+    Screen,
+    backend::{CoordinatorBinary, Response},
+    campaign::SelectError,
+};
 use common::{
     Fixture, coordinator_binary, harness, harness_with_state, run_campaign, settle, write_campaign,
 };
@@ -19,6 +23,50 @@ fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::Ap
         app.diagnosis().value.is_some()
     }));
     harness
+}
+
+fn checked_head_projection(fixture: &Fixture, spec: &Path, head: &str) -> serde_json::Value {
+    let output = Command::new(coordinator_binary())
+        .args([
+            "campaign-head-plan",
+            "--config",
+            fixture.config.to_str().unwrap(),
+            "--campaign",
+            spec.to_str().unwrap(),
+            "--head",
+            head,
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let projection: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(projection["schema_version"], 1);
+    assert_eq!(projection["head"], head);
+    assert_eq!(projection["items"][0]["id"], "0.1.1.1");
+    assert_eq!(projection["items"][0]["state"], "checked");
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("Complete fixture operation"));
+    let stale = Command::new(coordinator_binary())
+        .args([
+            "campaign-head-plan",
+            "--config",
+            fixture.config.to_str().unwrap(),
+            "--campaign",
+            spec.to_str().unwrap(),
+            "--head",
+            &"0".repeat(40),
+        ])
+        .output()
+        .unwrap();
+    assert!(!stale.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&stale.stderr).trim(),
+        "codingmage.cli.stale_observation"
+    );
+    projection
 }
 
 #[test]
@@ -43,6 +91,24 @@ fn never_started_campaign_is_an_explicit_empty_state() {
     harness.get_by_label_contains("Hands-off: unavailable");
     harness
         .get_by_label_contains("Active checkout matches the campaign's bound repository identity");
+    let absent = Command::new(coordinator_binary())
+        .args([
+            "campaign-head-plan",
+            "--config",
+            fixture.config.to_str().unwrap(),
+            "--campaign",
+            spec.to_str().unwrap(),
+            "--head",
+            &"0".repeat(40),
+        ])
+        .output()
+        .unwrap();
+    assert!(!absent.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&absent.stderr).trim(),
+        "codingmage.cli.refused"
+    );
+    assert!(absent.stdout.is_empty());
     assert!(!fixture.state.join("campaigns").exists());
 }
 
@@ -71,6 +137,7 @@ fn completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree() {
     assert_eq!(status.outcomes.accepted, 1);
     assert_eq!(status.outcomes.max_accepted, 1);
     assert_eq!(status.state, "paused");
+    let projection = checked_head_projection(&fixture, &spec, &status.head);
     let overlay = harness.state().task_overlay();
     let first = overlay.get("0.1.1.1").unwrap().labels(true);
     assert_eq!(
@@ -98,6 +165,23 @@ fn completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree() {
             .query_by_label_contains(
                 "0.1.1.2 Complete fixture operation number 2 safely. - dependency-ready ["
             )
+            .is_none()
+    );
+    let mut wrong_head = projection;
+    wrong_head["head"] = serde_json::json!("0".repeat(40));
+    let binding = harness.state().binding();
+    let generation = harness.state().generation();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-head-plan",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&wrong_head).unwrap()),
+    }));
+    assert!(harness.state().head_plan().last_error.is_some());
+    assert!(
+        harness.state().task_overlay()["0.1.1.1"]
+            .campaign_head
             .is_none()
     );
 }
@@ -151,6 +235,20 @@ fn cross_repository_campaign_is_refused_before_any_backend_request() {
     harness.state_mut().select_screen(Screen::Campaign);
     harness.run_steps(2);
     harness.get_by_label_contains("Campaign specification refused");
+    let foreign_projection = Command::new(coordinator_binary())
+        .args([
+            "campaign-head-plan",
+            "--config",
+            second.config.to_str().unwrap(),
+            "--campaign",
+            foreign.to_str().unwrap(),
+            "--head",
+            &"0".repeat(40),
+        ])
+        .output()
+        .unwrap();
+    assert!(!foreign_projection.status.success());
+    assert!(foreign_projection.stdout.is_empty());
     let mut tampered = fs::read_to_string(&foreign).unwrap();
     tampered = tampered.replace(
         &format!("repository_path = \"{}\"", first.target.display()),

@@ -20,7 +20,9 @@ use std::{
 use codingmage_plan::{CheckState, PlanItemKind};
 
 use crate::{
-    backend::models::{BlockerExplanation, CampaignReport, CampaignStatus, MissionStatus},
+    backend::models::{
+        BlockerExplanation, CampaignReport, CampaignStatus, HeadPlanProjection, MissionStatus,
+    },
     backend::{
         BackendError, Binding, CoordinatorBinary, Generation, Job, QueueError, Request, Response,
         Worker, explain_code,
@@ -31,7 +33,7 @@ use crate::{
     command, content,
     design::{Appearance, Palette, Tokens, current_tokens},
     observed::{Freshness, Observed, age_label},
-    project::{LoadedPlan, OpenError, Project},
+    project::{OpenError, Project},
     state_dir::{ProjectMemory, RecentProjects, StateError, user_config_dir},
     workplan::{KindFilter, PlanFilter, PlanIndex, PlanRow, SourceReadiness, StateFilter},
 };
@@ -143,7 +145,7 @@ pub struct App {
     explanation: Observed<BlockerExplanation>,
     report: Observed<Option<CampaignReport>>,
     mission: Observed<Option<MissionStatus>>,
-    head_plan: Observed<Option<LoadedPlan>>,
+    head_plan: Observed<Option<HeadPlanProjection>>,
     head_plan_commit: Option<String>,
     last_status_request: Option<Instant>,
     setup: SetupState,
@@ -262,9 +264,9 @@ impl App {
         &self.status
     }
 
-    /// Latest task source observed at the campaign head.
+    /// Latest coordinator-validated sub-task states at the campaign head.
     #[must_use]
-    pub const fn head_plan(&self) -> &Observed<Option<LoadedPlan>> {
+    pub const fn head_plan(&self) -> &Observed<Option<HeadPlanProjection>> {
         &self.head_plan
     }
 
@@ -575,22 +577,8 @@ impl App {
                 }
                 true
             }
-            "git-head-plan" => {
-                match response.result {
-                    Ok(bytes) => match crate::project::parse_plan_bytes(&bytes) {
-                        Ok(plan) => {
-                            self.head_plan
-                                .accept(Some(plan), response.generation, self.now);
-                        }
-                        Err(_) => self.head_plan.fail(
-                            BackendError::Refused(
-                                "the task source at the campaign head does not parse".to_owned(),
-                            ),
-                            self.now,
-                        ),
-                    },
-                    Err(error) => self.head_plan.fail(error, self.now),
-                }
+            "campaign-head-plan" => {
+                self.accept_head_plan(response);
                 true
             }
             _ => false,

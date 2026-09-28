@@ -171,8 +171,13 @@ impl App {
             Ok(status) => {
                 let head = status.as_ref().map(|status| status.head.clone());
                 self.status.accept(status, response.generation, self.now);
+                if head.is_none() {
+                    self.head_plan.clear();
+                    self.head_plan_commit = None;
+                }
                 if let Some(head) = &head
-                    && self.head_plan_commit.as_deref() != Some(head.as_str())
+                    && (self.head_plan_commit.as_deref() != Some(head.as_str())
+                        || self.head_plan.freshness(self.now) == Freshness::Stale)
                 {
                     self.request_head_plan(head);
                 }
@@ -189,33 +194,88 @@ impl App {
             Err(error) => {
                 self.set_status(format!("campaign status failed: {}", error.code()));
                 self.status.fail(error, self.now);
+                self.head_plan.clear();
+                self.head_plan_commit = None;
             }
         }
     }
 
     fn request_head_plan(&mut self, head: &str) {
-        let Some(project) = &self.project else {
+        let Some((config_path, spec_path, _)) = self.campaign_arguments() else {
             return;
         };
-        let repository = project.config.target_path.clone();
-        let task_source = project.config.task_source.display().to_string();
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
-            job: Job::GitRead {
-                label: "git-head-plan",
-                repository,
-                arguments: vec!["show".to_owned(), format!("{head}:{task_source}")],
+            job: Job::Command {
+                label: "campaign-head-plan",
+                arguments: vec![
+                    "campaign-head-plan".to_owned(),
+                    "--config".to_owned(),
+                    config_path,
+                    "--campaign".to_owned(),
+                    spec_path,
+                    "--head".to_owned(),
+                    head.to_owned(),
+                ],
                 deadline: GIT_DEADLINE,
             },
             request_id: None,
         };
         match self.submit(request) {
             Ok(()) => {
+                self.head_plan.clear();
                 self.head_plan.loading = true;
                 self.head_plan_commit = Some(head.to_owned());
             }
-            Err(error) => self.head_plan.fail(error, self.now),
+            Err(error) => {
+                self.head_plan_commit = None;
+                self.head_plan.fail(error, self.now);
+            }
+        }
+    }
+
+    pub(super) fn accept_head_plan(&mut self, response: Response) {
+        match response.result.and_then(|bytes| {
+            crate::backend::models::parse_head_plan(&bytes).map_err(BackendError::from)
+        }) {
+            Ok(plan) => {
+                let status_head = self
+                    .status
+                    .value
+                    .as_ref()
+                    .and_then(Option::as_ref)
+                    .map(|status| status.head.as_str());
+                let campaign_id = self
+                    .campaign
+                    .as_ref()
+                    .map(|selection| selection.spec.campaign_id.as_str());
+                let repository_id = self
+                    .diagnosis
+                    .value
+                    .as_ref()
+                    .map(|diagnosis| diagnosis.repository_id.as_str());
+                if self.status.freshness(self.now) == Freshness::Live
+                    && status_head == Some(plan.head.as_str())
+                    && campaign_id == Some(plan.campaign_id.as_str())
+                    && repository_id == Some(plan.repository_id.as_str())
+                {
+                    self.head_plan
+                        .accept(Some(plan), response.generation, self.now);
+                } else {
+                    self.head_plan_commit = None;
+                    self.head_plan.fail(
+                        BackendError::Refused(
+                            "campaign head or identity changed while task states were observed; refresh the campaign".to_owned(),
+                        ),
+                        self.now,
+                    );
+                }
+            }
+            Err(error) => {
+                self.head_plan_commit = None;
+                self.head_plan.fail(error, self.now);
+            }
         }
     }
 
@@ -234,17 +294,20 @@ impl App {
                     .collect::<BTreeMap<String, CheckState>>()
             })
             .unwrap_or_default();
+        let status = self.status.value.as_ref().and_then(Option::as_ref);
         let head = self.head_plan.value.as_ref().and_then(|plan| {
-            plan.as_ref().map(|plan| {
-                plan.plan
-                    .items
-                    .iter()
-                    .filter(|item| item.kind == PlanItemKind::SubTask)
-                    .map(|item| (item.id.clone(), item.state))
-                    .collect::<BTreeMap<String, CheckState>>()
+            plan.as_ref().and_then(|plan| {
+                (self.status.freshness(self.now) == Freshness::Live
+                    && self.head_plan.freshness(self.now) == Freshness::Live
+                    && status.is_some_and(|status| status.head == plan.head))
+                .then(|| {
+                    plan.items
+                        .iter()
+                        .map(|item| (item.id.clone(), item.state))
+                        .collect::<BTreeMap<String, CheckState>>()
+                })
             })
         });
-        let status = self.status.value.as_ref().and_then(Option::as_ref);
         let report = self.report.value.as_ref().and_then(Option::as_ref);
         build_overlay(&source, head.as_ref(), status, report)
     }

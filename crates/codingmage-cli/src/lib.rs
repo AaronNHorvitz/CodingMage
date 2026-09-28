@@ -14,8 +14,8 @@ use codingmage_core::{
     AgentProfile, CapabilityPolicy, CommandSpec, Config, PublicationMode, PublicationPolicy,
     RepositoryAuthorization, load_config,
 };
-use codingmage_git::inventory_repository;
-use codingmage_plan::TaskPlan;
+use codingmage_git::{BlobReadError, inventory_repository, read_authorized_blob};
+use codingmage_plan::{PlanItemKind, TaskPlan};
 use codingmage_runtime::{
     RecipeSpec, RunProgress, RunSpec, RuntimeError, admit_campaign_mission,
     answer_campaign_decision, approve_campaign_destination_promotion,
@@ -43,6 +43,7 @@ Commands:
   campaign-preflight            Validate a campaign before provider inference
   campaign                      Execute a bounded serial or parallel campaign
   campaign-status               Read durable campaign status
+  campaign-head-plan            Read task states at the exact reconciled campaign head
   campaign-report               Read the final campaign report
   campaign-explain-blocker      Read typed blocker and deferral details
   campaign-clear-blocker        Record one exact external-prerequisite change
@@ -81,6 +82,9 @@ fn command_help(command: &str) -> Option<&'static str> {
         | "campaign-explain-blocker"
         | "campaign-mission-status" => Some(
             "Usage: codingmage <campaign-status|campaign-report|campaign-explain-blocker|campaign-mission-status> \\\n  --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE>",
+        ),
+        "campaign-head-plan" => Some(
+            "Usage: codingmage campaign-head-plan --config <ABSOLUTE_FILE> \\\n+  --campaign <ABSOLUTE_FILE> --head <FULL_COMMIT_ID>",
         ),
         "campaign-mission-admit" => Some(
             "Usage: codingmage campaign-mission-admit --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --mission <ABSOLUTE_FILE>",
@@ -144,6 +148,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign-preflight" => preflight_campaign(&arguments[1..]),
         "campaign" => execute_campaign(&arguments[1..]),
         "campaign-status" => inspect_campaign(&arguments[1..]),
+        "campaign-head-plan" => inspect_campaign_head_plan(&arguments[1..]),
         "campaign-report" => inspect_campaign_report(&arguments[1..]),
         "campaign-explain-blocker" => explain_campaign_blocker(&arguments[1..]),
         "campaign-clear-blocker" => clear_blocker(&arguments[1..]),
@@ -422,6 +427,61 @@ fn inspect_campaign(arguments: &[String]) -> Result<String, CliError> {
     let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
     let status = campaign_status(&config, &spec, &executable).map_err(CliError::Runtime)?;
     serde_json::to_string_pretty(&status).map_err(|_| CliError::Internal)
+}
+
+fn inspect_campaign_head_plan(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "campaign", "head"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let status = campaign_status(&config, &spec, &executable)
+        .map_err(CliError::Runtime)?
+        .ok_or(CliError::Refused)?;
+    let expected_head = parsed.value("head")?;
+    if expected_head != status.head {
+        return Err(CliError::StaleObservation);
+    }
+    let authorization = RepositoryAuthorization::authorize(&config, &executable_parent()?)
+        .map_err(|_| CliError::Repository)?;
+    if authorization.identity().repository_id.as_str() != spec.repository_id {
+        return Err(CliError::Repository);
+    }
+    let task_source = config.task_source.components().collect::<PathBuf>();
+    let source =
+        read_authorized_blob(&authorization, expected_head, &task_source).map_err(|error| {
+            match error {
+                BlobReadError::InvalidBinding => CliError::InvalidArgument,
+                BlobReadError::Identity => CliError::Repository,
+                BlobReadError::Command => CliError::Plan,
+            }
+        })?;
+    let plan = TaskPlan::parse(&source).map_err(|_| CliError::Plan)?;
+    let still_current = campaign_status(&config, &spec, &executable)
+        .map_err(CliError::Runtime)?
+        .is_some_and(|current| current.head == expected_head);
+    if !still_current {
+        return Err(CliError::StaleObservation);
+    }
+    let items = plan
+        .items
+        .iter()
+        .filter(|item| item.kind == PlanItemKind::SubTask)
+        .map(|item| serde_json::json!({ "id": item.id, "state": item.state }))
+        .collect::<Vec<_>>();
+    let projection = serde_json::json!({
+        "schema_version": 1,
+        "campaign_id": spec.campaign_id,
+        "repository_id": spec.repository_id,
+        "head": expected_head,
+        "task_source_sha256": plan.source_sha256,
+        "items": items,
+    });
+    let encoded = serde_json::to_string(&projection).map_err(|_| CliError::Internal)?;
+    if encoded.len() >= 8 * 1024 * 1024 {
+        return Err(CliError::Plan);
+    }
+    Ok(encoded)
 }
 
 fn inspect_campaign_report(arguments: &[String]) -> Result<String, CliError> {
@@ -742,6 +802,8 @@ pub enum CliError {
     NoReadyWork,
     /// A requested write would overwrite or broaden authority.
     Refused,
+    /// The exact campaign head changed after the caller observed it.
+    StaleObservation,
     /// Live orchestration is deliberately not enabled.
     ExecutionUnavailable,
     /// Supervised one-unit execution failed closed.
@@ -762,6 +824,7 @@ impl CliError {
             Self::Plan => "codingmage.cli.plan",
             Self::NoReadyWork => "codingmage.cli.no_ready_work",
             Self::Refused => "codingmage.cli.refused",
+            Self::StaleObservation => "codingmage.cli.stale_observation",
             Self::ExecutionUnavailable => "codingmage.cli.execution_unavailable",
             Self::Runtime(error) => error.code(),
             Self::Internal => "codingmage.cli.internal",
@@ -779,6 +842,7 @@ impl CliError {
             | Self::Repository
             | Self::Plan
             | Self::Refused
+            | Self::StaleObservation
             | Self::Runtime(_)
             | Self::Internal => 1,
         }
@@ -817,6 +881,7 @@ mod tests {
             "campaign-preflight",
             "campaign",
             "campaign-status",
+            "campaign-head-plan",
             "campaign-report",
             "campaign-explain-blocker",
             "campaign-clear-blocker",

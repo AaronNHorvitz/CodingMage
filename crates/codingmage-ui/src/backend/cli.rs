@@ -333,6 +333,10 @@ pub fn explain_code(code: &str) -> (&'static str, &'static str) {
             "The coordinator refused to overwrite or broaden authority.",
             "Choose a new configuration path or existing empty scratch and state roots.",
         ),
+        "codingmage.cli.stale_observation" => (
+            "The campaign head changed while task states were requested.",
+            "Refresh the campaign to observe its current reconciled head.",
+        ),
         "codingmage.runtime.spec"
         | "codingmage.runtime.campaign.spec"
         | "codingmage.runtime.campaign.authority" => (

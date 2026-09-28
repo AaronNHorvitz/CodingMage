@@ -14,6 +14,7 @@ use sha2::{Digest, Sha256};
 
 const GIT_EXECUTABLE: &str = "/usr/bin/git";
 const MAX_OUTPUT_BYTES: usize = 4 * 1024 * 1024;
+const MAX_BLOB_BYTES: usize = 8 * 1024 * 1024;
 const MAX_INPUT_BYTES: usize = 4 * 1024 * 1024;
 const COMMAND_TIMEOUT: Duration = Duration::from_secs(15);
 
@@ -45,6 +46,10 @@ pub(crate) enum GitCommand<'a> {
     },
     TreePaths(&'a str),
     Blob {
+        commit: &'a str,
+        path: &'a str,
+    },
+    TaskSourceBlob {
         commit: &'a str,
         path: &'a str,
     },
@@ -130,6 +135,11 @@ fn run_git_internal(
     }
     let executable = PathBuf::from(GIT_EXECUTABLE);
     let before = executable_identity(&executable)?;
+    let stdout_limit = if matches!(request, GitCommand::TaskSourceBlob { .. }) {
+        MAX_BLOB_BYTES
+    } else {
+        MAX_OUTPUT_BYTES
+    };
     let arguments = arguments(request);
     let mut command = Command::new(&executable);
     command
@@ -182,8 +192,8 @@ fn run_git_internal(
     let mut child = command.spawn().map_err(|_| CommandError::Spawn)?;
     let stdout = child.stdout.take().ok_or(CommandError::Spawn)?;
     let stderr = child.stderr.take().ok_or(CommandError::Spawn)?;
-    let stdout_reader = thread::spawn(move || capture(stdout));
-    let stderr_reader = thread::spawn(move || capture(stderr));
+    let stdout_reader = thread::spawn(move || capture(stdout, stdout_limit));
+    let stderr_reader = thread::spawn(move || capture(stderr, MAX_OUTPUT_BYTES));
     let stdin_writer = if let Some(bytes) = input {
         let mut stdin = child.stdin.take().ok_or(CommandError::Spawn)?;
         let bytes = bytes.to_vec();
@@ -342,7 +352,7 @@ fn arguments(request: GitCommand<'_>) -> Vec<OsString> {
             "--name-only".into(),
             commit.into(),
         ],
-        GitCommand::Blob { commit, path } => {
+        GitCommand::Blob { commit, path } | GitCommand::TaskSourceBlob { commit, path } => {
             vec!["show".into(), format!("{commit}:{path}").into()]
         }
         GitCommand::StagePaths { paths } => {
@@ -415,7 +425,7 @@ struct Captured {
     truncated: bool,
 }
 
-fn capture(mut reader: impl Read) -> Result<Captured, CommandError> {
+fn capture(mut reader: impl Read, limit: usize) -> Result<Captured, CommandError> {
     let mut retained = Vec::new();
     let mut digest = Sha256::new();
     let mut buffer = [0_u8; 8192];
@@ -428,14 +438,14 @@ fn capture(mut reader: impl Read) -> Result<Captured, CommandError> {
             break;
         }
         digest.update(&buffer[..count]);
-        let remaining = MAX_OUTPUT_BYTES.saturating_sub(retained.len());
+        let remaining = limit.saturating_sub(retained.len());
         retained.extend_from_slice(&buffer[..count.min(remaining)]);
         total = total.saturating_add(count);
     }
     Ok(Captured {
         bytes: retained,
         sha256: hex_bytes(digest.finalize().as_ref()),
-        truncated: total > MAX_OUTPUT_BYTES,
+        truncated: total > limit,
     })
 }
 

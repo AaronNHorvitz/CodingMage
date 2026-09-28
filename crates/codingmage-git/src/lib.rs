@@ -1,5 +1,6 @@
 //! Hostile-safe Git inventory and exact owned-worktree lifecycle operations.
 
+mod blob;
 mod command;
 mod commit;
 mod integration;
@@ -11,6 +12,7 @@ mod worktree;
 #[cfg(test)]
 mod test_support;
 
+pub use blob::{BlobReadError, read_authorized_blob};
 pub use commit::{
     CommitError, CommitReceipt, commit_owned_changes, observe_owned_changes,
     observe_owned_child_commit, reobserve_owned_commit,
