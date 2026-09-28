@@ -814,7 +814,9 @@ fn compose_task_paths(
 }
 
 fn valid_component(value: &str) -> bool {
+    // These identities also become private state directory components.
     !value.is_empty()
+        && !matches!(value, "." | "..")
         && value.len() <= 128
         && value
             .bytes()
@@ -930,6 +932,18 @@ impl std::error::Error for CampaignError {}
 mod tests {
     use super::*;
     use codingmage_plan::TaskPlan;
+
+    #[test]
+    fn campaign_state_directory_identity_refuses_dot_components() {
+        let mut candidate = spec(1);
+        candidate.verify().unwrap();
+        for invalid in [".", ".."] {
+            candidate.campaign_id = invalid.to_owned();
+            assert_eq!(candidate.verify(), Err(CampaignError::InvalidAuthority));
+        }
+        candidate.campaign_id = "campaign-1".to_owned();
+        candidate.verify().unwrap();
+    }
 
     #[test]
     fn task_regression_gate_is_optional_validated_and_looked_up_exactly() {

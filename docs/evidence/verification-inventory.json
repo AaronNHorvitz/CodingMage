@@ -4144,7 +4144,7 @@
       ],
       "id": "error:codingmage.campaign.authority",
       "kind": "error_code",
-      "line": 916,
+      "line": 918,
       "name": "codingmage.campaign.authority",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -4152,12 +4152,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -4185,7 +4185,7 @@
       ],
       "id": "error:codingmage.campaign.capacity",
       "kind": "error_code",
-      "line": 920,
+      "line": 922,
       "name": "codingmage.campaign.capacity",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -4193,12 +4193,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -4226,7 +4226,7 @@
       ],
       "id": "error:codingmage.campaign.conflict",
       "kind": "error_code",
-      "line": 919,
+      "line": 921,
       "name": "codingmage.campaign.conflict",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -4234,12 +4234,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -5167,7 +5167,7 @@
       ],
       "id": "error:codingmage.campaign.proposal",
       "kind": "error_code",
-      "line": 917,
+      "line": 919,
       "name": "codingmage.campaign.proposal",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5175,12 +5175,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -5433,7 +5433,7 @@
       ],
       "id": "error:codingmage.campaign.serialization",
       "kind": "error_code",
-      "line": 922,
+      "line": 924,
       "name": "codingmage.campaign.serialization",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5441,12 +5441,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -5474,7 +5474,7 @@
       ],
       "id": "error:codingmage.campaign.spec",
       "kind": "error_code",
-      "line": 915,
+      "line": 917,
       "name": "codingmage.campaign.spec",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5482,12 +5482,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -5515,7 +5515,7 @@
       ],
       "id": "error:codingmage.campaign.stale_proposal",
       "kind": "error_code",
-      "line": 918,
+      "line": 920,
       "name": "codingmage.campaign.stale_proposal",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5523,12 +5523,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -6726,7 +6726,7 @@
       ],
       "id": "error:codingmage.campaign.unknown_lease",
       "kind": "error_code",
-      "line": 921,
+      "line": 923,
       "name": "codingmage.campaign.unknown_lease",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -6734,12 +6734,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -13309,12 +13309,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -13440,12 +13440,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -13481,12 +13481,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -13747,12 +13747,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14238,12 +14238,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14279,12 +14279,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14500,12 +14500,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14541,12 +14541,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14582,12 +14582,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14623,12 +14623,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14709,12 +14709,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14750,12 +14750,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14791,12 +14791,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14832,12 +14832,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16063,12 +16063,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16098,9 +16098,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignError:893",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignError:895",
       "kind": "enum",
-      "line": 893,
+      "line": 895,
       "name": "CampaignError",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16118,12 +16118,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16164,12 +16164,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16224,12 +16224,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16268,12 +16268,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16309,12 +16309,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16361,12 +16361,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16418,12 +16418,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16473,12 +16473,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16514,12 +16514,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16555,12 +16555,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16596,12 +16596,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16653,12 +16653,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16697,12 +16697,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16749,12 +16749,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16780,9 +16780,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:valid_provider:843",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:valid_provider:845",
       "kind": "fn",
-      "line": 843,
+      "line": 845,
       "name": "valid_provider",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16790,12 +16790,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16836,12 +16836,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16880,12 +16880,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16921,12 +16921,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16967,12 +16967,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17027,12 +17027,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17076,12 +17076,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17125,12 +17125,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17185,12 +17185,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17229,12 +17229,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17286,12 +17286,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17341,12 +17341,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17436,12 +17436,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17485,12 +17485,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17545,12 +17545,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17594,12 +17594,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17638,12 +17638,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17679,12 +17679,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17720,12 +17720,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17761,12 +17761,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17802,12 +17802,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17848,12 +17848,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17903,12 +17903,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17949,12 +17949,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17993,12 +17993,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18034,12 +18034,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18075,12 +18075,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18127,12 +18127,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18173,12 +18173,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18228,12 +18228,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18285,12 +18285,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18345,12 +18345,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18495,12 +18495,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18550,12 +18550,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18602,12 +18602,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18659,12 +18659,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18719,12 +18719,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18779,12 +18779,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18839,12 +18839,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18899,12 +18899,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18948,12 +18948,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18997,12 +18997,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19046,12 +19046,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19106,12 +19106,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19150,12 +19150,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19191,12 +19191,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19232,12 +19232,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19273,12 +19273,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19325,12 +19325,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19366,12 +19366,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19407,12 +19407,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19448,12 +19448,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19489,12 +19489,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19530,12 +19530,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19571,12 +19571,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19623,12 +19623,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19664,12 +19664,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19705,12 +19705,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19757,12 +19757,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19798,12 +19798,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19839,12 +19839,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19880,12 +19880,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19937,12 +19937,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19981,12 +19981,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20022,12 +20022,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20063,12 +20063,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20120,12 +20120,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20164,12 +20164,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20205,12 +20205,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20257,12 +20257,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20298,12 +20298,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20350,12 +20350,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20402,12 +20402,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20443,12 +20443,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20484,12 +20484,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20536,12 +20536,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20577,12 +20577,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20618,12 +20618,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20670,12 +20670,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20711,12 +20711,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20763,12 +20763,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20804,12 +20804,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20856,12 +20856,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20897,12 +20897,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20954,12 +20954,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21003,12 +21003,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21063,12 +21063,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21107,12 +21107,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21148,12 +21148,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21189,12 +21189,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21230,12 +21230,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21282,12 +21282,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21334,12 +21334,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21386,12 +21386,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21432,12 +21432,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21481,12 +21481,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21541,12 +21541,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21590,12 +21590,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21634,12 +21634,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21680,12 +21680,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21740,12 +21740,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21800,12 +21800,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21849,12 +21849,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21909,12 +21909,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21958,12 +21958,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22007,12 +22007,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22056,12 +22056,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22116,12 +22116,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22176,12 +22176,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22225,12 +22225,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22274,12 +22274,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22329,12 +22329,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22386,12 +22386,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22446,12 +22446,12 @@
         "negative": [
           "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
           "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
           "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema",
-          "crates/codingmage-campaign/src/mission.rs::scope_class_risk_and_gate_expansion_are_blocked_in_every_mode"
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -74631,6 +74631,6 @@
       }
     }
   ],
-  "items_sha256": "6a728068b06cda41bc52ec579b89c67a0238e0805dc54e9365bbb980dd4909ee",
+  "items_sha256": "33c84a046555efedfaad8ffa2dc0d0461e48d03230211a6d73576134ebd7cd8a",
   "schema_version": 1
 }

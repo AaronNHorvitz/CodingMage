@@ -3243,6 +3243,18 @@ fn bounded_identity(prefix: &str, campaign_id: &str, task_id: &str, sequence: u6
 mod tests {
     use super::*;
 
+    #[test]
+    fn team_state_path_components_refuse_dot_segments() {
+        for invalid in [".", ".."] {
+            assert!(!valid_component(invalid));
+            let value = invalid.to_owned();
+            assert!(!valid_optional_component(Some(&value)));
+        }
+        assert!(valid_component("lease-1"));
+        let valid = "lease-1".to_owned();
+        assert!(valid_optional_component(Some(&valid)));
+    }
+
     type TrustMutation = fn(&mut GitHubHostTrust);
 
     #[test]
