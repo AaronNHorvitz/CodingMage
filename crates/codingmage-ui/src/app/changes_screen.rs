@@ -5,12 +5,20 @@ use crate::{
     backend::{BackendError, Job, Request, Response, explain_code},
     content,
     observed::{Freshness, age_label},
-    records::{CommitSummary, FileChange, RunRecord, parse_log, parse_numstat},
+    records::{CommitSummary, FileChange, RunRecord},
 };
+use serde::Deserialize;
 
 /// Exact changes between the campaign's initial commit and its head.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct ChangeSet {
+    /// Projection contract version.
+    pub schema_version: u16,
+    /// Campaign identity.
+    pub campaign_id: String,
+    /// Repository identity.
+    pub repository_id: String,
     /// Base commit.
     pub base: String,
     /// Head commit.
@@ -19,6 +27,10 @@ pub struct ChangeSet {
     pub commits: Vec<CommitSummary>,
     /// Changed files.
     pub files: Vec<FileChange>,
+    /// More commits exist than are shown.
+    pub commits_truncated: bool,
+    /// More changed paths exist than are shown.
+    pub files_truncated: bool,
 }
 
 impl App {
@@ -35,69 +47,49 @@ impl App {
     }
 
     pub(super) fn request_changes(&mut self, base: &str, head: &str) {
-        let Some(project) = &self.project else {
+        let (Some(project), Some(campaign)) = (&self.project, &self.campaign) else {
             return;
         };
-        if base == head {
-            self.changes.accept(
-                ChangeSet {
-                    base: base.to_owned(),
-                    head: head.to_owned(),
-                    commits: Vec::new(),
-                    files: Vec::new(),
-                },
-                self.generation,
+        let (Some(config_path), Some(spec_path)) =
+            (project.config_path.to_str(), campaign.spec_path.to_str())
+        else {
+            self.changes.fail(
+                BackendError::Refused(
+                    "campaign paths cannot be represented in the command boundary".to_owned(),
+                ),
                 self.now,
             );
-            self.changes_range = Some((base.to_owned(), head.to_owned()));
             return;
-        }
-        let repository = project.config.target_path.clone();
-        let jobs = [
-            (
-                "git-log",
-                vec![
-                    "log".to_owned(),
-                    "--format=%H%x1f%s%x1f%ct".to_owned(),
-                    format!("{base}..{head}"),
-                ],
-            ),
-            (
-                "git-numstat",
-                vec![
-                    "diff".to_owned(),
-                    "--numstat".to_owned(),
-                    "-z".to_owned(),
-                    base.to_owned(),
+        };
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::Command {
+                label: "campaign-changes",
+                arguments: vec![
+                    "campaign-changes".to_owned(),
+                    "--config".to_owned(),
+                    config_path.to_owned(),
+                    "--campaign".to_owned(),
+                    spec_path.to_owned(),
+                    "--head".to_owned(),
                     head.to_owned(),
                 ],
-            ),
-        ];
-        self.pending_changes = Some(ChangeSet {
-            base: base.to_owned(),
-            head: head.to_owned(),
-            commits: Vec::new(),
-            files: Vec::new(),
-        });
-        self.pending_changes_parts = 0;
-        for (label, arguments) in jobs {
-            let request = Request {
-                generation: self.generation,
-                binding: self.binding(),
-                job: Job::GitRead {
-                    label,
-                    repository: repository.clone(),
-                    arguments,
-                    deadline: GIT_DEADLINE,
-                },
-                request_id: None,
-            };
-            match self.submit(request) {
-                Ok(()) => self.changes.loading = true,
-                Err(error) => self.changes.fail(error, self.now),
+                deadline: GIT_DEADLINE,
+            },
+            request_id: None,
+        };
+        self.changes.clear();
+        match self.submit(request) {
+            Ok(()) => {
+                self.changes.loading = true;
+                self.changes_range = Some((base.to_owned(), head.to_owned()));
+            }
+            Err(error) => {
+                self.changes_range = None;
+                self.changes.fail(error, self.now);
             }
         }
-        self.changes_range = Some((base.to_owned(), head.to_owned()));
     }
 
     pub(super) fn request_records(&mut self) {
@@ -124,28 +116,69 @@ impl App {
         }
     }
 
-    pub(super) fn accept_changes_part(&mut self, response: Response) {
-        let Some(pending) = &mut self.pending_changes else {
-            return;
-        };
-        match response.result {
-            Ok(bytes) => {
-                if response.label == "git-log" {
-                    pending.commits = parse_log(&bytes);
-                } else {
-                    pending.files = parse_numstat(&bytes);
-                }
-                self.pending_changes_parts += 1;
-                if self.pending_changes_parts >= 2 {
-                    let complete = self.pending_changes.take().unwrap_or_default();
-                    self.changes.accept(complete, response.generation, self.now);
-                }
+    pub(super) fn accept_changes(&mut self, response: Response) {
+        let parsed = response.result.and_then(|bytes| {
+            serde_json::from_slice::<ChangeSet>(&bytes)
+                .map_err(|_| BackendError::Contract(crate::backend::models::ModelError::Malformed))
+        });
+        match parsed {
+            Ok(changes) if self.changes_binding_matches(&changes) => {
+                self.changes.accept(changes, response.generation, self.now);
+            }
+            Ok(_) => {
+                self.changes_range = None;
+                self.changes.clear();
+                self.changes.fail(
+                    BackendError::Contract(crate::backend::models::ModelError::Malformed),
+                    self.now,
+                );
             }
             Err(error) => {
-                self.pending_changes = None;
+                self.changes_range = None;
+                self.changes.clear();
                 self.changes.fail(error, self.now);
             }
         }
+    }
+
+    fn changes_binding_matches(&self, changes: &ChangeSet) -> bool {
+        let Some(status) = self.status.value.as_ref().and_then(Option::as_ref) else {
+            return false;
+        };
+        let (Some(campaign), Some(diagnosis)) = (&self.campaign, &self.diagnosis.value) else {
+            return false;
+        };
+        changes.schema_version == 1
+            && changes.campaign_id == campaign.spec.campaign_id
+            && changes.repository_id == campaign.spec.repository_id
+            && changes.repository_id == diagnosis.repository_id
+            && changes.base == campaign.spec.initial_commit
+            && changes.head == status.head
+            && matches!(changes.base.len(), 40 | 64)
+            && matches!(changes.head.len(), 40 | 64)
+            && changes.base.bytes().all(|byte| byte.is_ascii_hexdigit())
+            && changes.head.bytes().all(|byte| byte.is_ascii_hexdigit())
+            && changes.commits.len() <= 500
+            && changes.files.len() <= 500
+            && (changes.base != changes.head
+                || (changes.commits.is_empty() && changes.files.is_empty()))
+            && (changes.base == changes.head
+                || changes
+                    .commits
+                    .first()
+                    .is_some_and(|commit| commit.id == changes.head))
+            && changes.commits.iter().all(|commit| {
+                commit.id.len() == changes.head.len()
+                    && commit.id.bytes().all(|byte| byte.is_ascii_hexdigit())
+                    && commit.subject.len() <= 4096
+                    && !commit.subject.chars().any(char::is_control)
+            })
+            && changes.files.iter().all(|file| {
+                !file.path.is_empty()
+                    && file.path.len() <= 4096
+                    && !file.path.chars().any(char::is_control)
+                    && file.added.is_some() == file.deleted.is_some()
+            })
     }
 
     pub(super) fn accept_records(&mut self, response: Response) {
@@ -213,6 +246,9 @@ impl App {
         ));
         if changes.commits.is_empty() {
             ui.label("The campaign head equals the initial commit: no reviewed candidate has been integrated.");
+        }
+        if changes.commits_truncated || changes.files_truncated {
+            ui.label("This bounded change summary omits additional commits or paths; inspect the exact range with the coordinator for the complete set.");
         }
         for commit in &changes.commits {
             content::render(

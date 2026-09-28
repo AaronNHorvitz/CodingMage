@@ -2,9 +2,12 @@
 
 mod common;
 
-use std::{fs, time::Duration};
+use std::{fs, process::Command, time::Duration};
 
-use codingmage_ui::{Screen, backend::CoordinatorBinary};
+use codingmage_ui::{
+    Screen,
+    backend::{CoordinatorBinary, Response},
+};
 use common::{Fixture, coordinator_binary, harness, run_campaign, settle, write_campaign};
 use egui_kittest::kittest::Queryable as _;
 
@@ -17,6 +20,21 @@ fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::Ap
         app.diagnosis().value.is_some()
     }));
     harness
+}
+
+fn change_command(fixture: &Fixture, spec: &std::path::Path, head: &str) -> std::process::Output {
+    Command::new(coordinator_binary())
+        .args([
+            "campaign-changes",
+            "--config",
+            fixture.config.to_str().unwrap(),
+            "--campaign",
+            spec.to_str().unwrap(),
+            "--head",
+            head,
+        ])
+        .output()
+        .unwrap()
 }
 
 #[test]
@@ -97,6 +115,99 @@ fn accepted_units_show_exact_commits_files_verdicts_and_gate_evidence() {
 }
 
 #[test]
+fn coordinator_change_projection_binds_head_and_withholds_stale_or_cross_project_reads() {
+    let fixture = Fixture::new("changes-bound", 2);
+    let spec = write_campaign(&fixture, "changes-bound-campaign", 1);
+    run_campaign(&fixture, &spec);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.changes().value.is_some()
+    }));
+    let status = harness
+        .state()
+        .status()
+        .value
+        .as_ref()
+        .unwrap()
+        .as_ref()
+        .unwrap();
+    let head = status.head.clone();
+    let output = change_command(&fixture, &spec, &head);
+    assert!(output.status.success());
+    let projection: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(projection["schema_version"], 1);
+    assert_eq!(projection["head"], head);
+    assert_eq!(projection["base"], fixture.head());
+    assert_eq!(projection["campaign_id"], "changes-bound-campaign");
+    assert_eq!(projection["commits"][0]["id"], head);
+    assert_eq!(projection["commits_truncated"], false);
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("Complete fixture operation"));
+
+    let stale = change_command(&fixture, &spec, &"0".repeat(40));
+    assert!(!stale.status.success());
+    assert!(stale.stdout.is_empty());
+    assert_eq!(
+        String::from_utf8_lossy(&stale.stderr).trim(),
+        "codingmage.cli.stale_observation"
+    );
+
+    let other = Fixture::new("changes-other", 1);
+    let foreign = write_campaign(&other, "foreign-campaign", 1);
+    let wrong_repository = change_command(&fixture, &foreign, &head);
+    assert!(!wrong_repository.status.success());
+    assert!(wrong_repository.stdout.is_empty());
+}
+
+#[test]
+fn forged_change_projection_is_not_rendered_and_refresh_recovers() {
+    let fixture = Fixture::new("changes-forged", 2);
+    let spec = write_campaign(&fixture, "changes-forged-campaign", 1);
+    run_campaign(&fixture, &spec);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.changes().value.is_some()
+    }));
+    let head = harness
+        .state()
+        .changes()
+        .value
+        .as_ref()
+        .unwrap()
+        .head
+        .clone();
+    let output = change_command(&fixture, &spec, &head);
+    let projection: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    for mutation in ["repository_id", "head", "schema_version", "unexpected"] {
+        let mut forged = projection.clone();
+        forged[mutation] = match mutation {
+            "repository_id" => serde_json::json!("other-repository"),
+            "head" => serde_json::json!("0".repeat(40)),
+            "schema_version" => serde_json::json!(2),
+            _ => serde_json::json!(true),
+        };
+        let app = harness.state_mut();
+        let accepted = app.handle_response(Response {
+            generation: app.generation(),
+            binding: app.binding(),
+            label: "campaign-changes",
+            request_id: None,
+            result: Ok(serde_json::to_vec(&forged).unwrap()),
+        });
+        assert!(accepted);
+        assert!(app.changes().value.is_none());
+    }
+    harness.state_mut().refresh_campaign();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.changes()
+            .value
+            .as_ref()
+            .is_some_and(|changes| changes.head == head)
+    }));
+}
+
+#[test]
 fn missing_and_malformed_records_are_reported_not_passed() {
     let fixture = Fixture::new("changes-malformed", 2);
     let spec = write_campaign(&fixture, "malformed-campaign", 1);
@@ -130,6 +241,13 @@ fn missing_and_malformed_records_are_reported_not_passed() {
 fn never_started_campaign_has_no_changes_or_records() {
     let fixture = Fixture::new("changes-empty", 2);
     let spec = write_campaign(&fixture, "empty-campaign", 1);
+    let absent = change_command(&fixture, &spec, &"0".repeat(40));
+    assert!(!absent.status.success());
+    assert!(absent.stdout.is_empty());
+    assert_eq!(
+        String::from_utf8_lossy(&absent.stderr).trim(),
+        "codingmage.cli.refused"
+    );
     let mut harness = opened(&fixture);
     harness.state_mut().select_campaign(&spec);
     assert!(settle(&mut harness, Duration::from_mins(1), |app| {

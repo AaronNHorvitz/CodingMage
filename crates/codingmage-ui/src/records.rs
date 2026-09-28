@@ -296,64 +296,9 @@ pub struct CommitSummary {
     pub timestamp: u64,
 }
 
-/// Parses `git diff --numstat -z` output.
-#[must_use]
-pub fn parse_numstat(bytes: &[u8]) -> Vec<FileChange> {
-    let text = String::from_utf8_lossy(bytes);
-    let mut changes = Vec::new();
-    for entry in text.split('\0').filter(|entry| !entry.is_empty()) {
-        let mut parts = entry.splitn(3, '\t');
-        let (Some(added), Some(deleted), Some(path)) = (parts.next(), parts.next(), parts.next())
-        else {
-            continue;
-        };
-        changes.push(FileChange {
-            path: path.to_owned(),
-            added: added.parse().ok(),
-            deleted: deleted.parse().ok(),
-        });
-    }
-    changes
-}
-
-/// Parses `git log --format=%H%x1f%s%x1f%ct` output.
-#[must_use]
-pub fn parse_log(bytes: &[u8]) -> Vec<CommitSummary> {
-    String::from_utf8_lossy(bytes)
-        .lines()
-        .filter_map(|line| {
-            let mut parts = line.split('\u{1f}');
-            let id = parts.next()?.trim().to_owned();
-            let subject = parts.next()?.to_owned();
-            let timestamp = parts.next()?.trim().parse().ok()?;
-            (id.len() == 40).then_some(CommitSummary {
-                id,
-                subject,
-                timestamp,
-            })
-        })
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn numstat_and_log_parse_including_binary_and_malformed_lines() {
-        let numstat = b"3\t1\tsrc/lib.rs\0-\t-\timage.png\0garbage\0";
-        let changes = parse_numstat(numstat);
-        assert_eq!(changes.len(), 2);
-        assert_eq!(changes[0].added, Some(3));
-        assert_eq!(changes[1].added, None);
-        let log = format!(
-            "{}\u{1f}codingmage: complete 1\u{1f}1700000000\nshort\u{1f}x\u{1f}1\n",
-            "a".repeat(40)
-        );
-        let commits = parse_log(log.as_bytes());
-        assert_eq!(commits.len(), 1);
-        assert_eq!(commits[0].subject, "codingmage: complete 1");
-    }
 
     #[test]
     fn missing_and_malformed_records_are_reported_not_passed() {

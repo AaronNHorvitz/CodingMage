@@ -6,16 +6,17 @@
 implemented locally with deterministic, display-less tests against the real `codingmage` binary
 and fake providers (Sprint 36 in [TASKS.md](../../TASKS.md)). It has not been verified on a real
 desktop session, with a screen reader, from a clean installation, or with real providers; those
-items are listed in [the human-only register](../evidence/sprint-36-human-only.md). A bounded
-independent review of the current UI increment returned an inconclusive verdict with three
-corrective findings; re-review of a verified correction commit remains open.
+items are listed in [the human-only register](../evidence/sprint-36-human-only.md). Incremental
+independent review findings were corrected in later commits. The latest bounded review found no
+implementation finding but remained inconclusive because the shared build reservation prevented
+its Cargo checks; full UI independent acceptance remains open.
 
 ## What It Is
 
 - A client of the `codingmage` executable installed next to it (Decision 0016). Campaign
   execution and controls run through that binary; the interface parses its JSON and stable
   error codes and never links the runtime. Configuration writes, local browsing and read-only
-  Git inspection still occur in the UI process. Migrating those operations to the command
+  run-record inspection still occur in the UI process. Migrating those operations to the command
   boundary is open under the [native UI specification](../architecture/native-ui-specification.md).
 - An observer and control surface. Opening the app or a repository starts no agent, edits no task
   status and authorizes no campaign. Closing the window never stops a coordinator.
@@ -57,7 +58,7 @@ showing sample results.
 | Overview | Configuration summary, repository diagnosis (identity, head, branch, cleanliness, denied capabilities), task-source counts | `codingmage doctor`, `codingmage-core`, `codingmage-plan` |
 | Work plan | Searchable, filterable plan with dependencies, source anchors, readiness from the source, disabled source checkboxes and the coordinator overlay (completed at campaign head, accepted, active, blocked, deferred, human decision, unknown) | task parser, `campaign-status`, `campaign-head-plan` for authorized, content-minimized head states |
 | Campaign | Campaign authority, binding drift, readiness checks, preflight, admission, coordinator process state, controls, durable status, holds, utilization, roles the backend reports, unavailable involvement modes | `campaign-preflight`, `campaign-status`, `campaign-explain-blocker`, `campaign-control`, `/proc` |
-| Changes and reviews | Delivery boundary, coordinator commits and changed files, per-run verdicts and gate evidence, journaled phases, bounded activity | read-only `git log`/`git diff --numstat`, run checkpoints and journals |
+| Changes and reviews | Delivery boundary, coordinator commits and changed files, per-run verdicts and gate evidence, journaled phases, bounded activity | `campaign-changes`, local run checkpoints and journals |
 | Reports | Outcome and blocker reports with export | the observations above |
 | Setup | Open or create a configuration, write the owner's authorization record, author a campaign, import and export | `codingmage-core`, `codingmage-campaign`, `codingmage init` |
 | Settings | Light, dark, high-contrast or system appearance for the current window | Local presentation state only |

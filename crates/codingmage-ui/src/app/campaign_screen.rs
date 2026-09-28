@@ -68,7 +68,6 @@ impl App {
         self.preflight.clear();
         self.changes.clear();
         self.changes_range = None;
-        self.pending_changes = None;
         self.records.clear();
         self.status.clear();
         self.explanation.clear();
@@ -174,6 +173,8 @@ impl App {
                 if head.is_none() {
                     self.head_plan.clear();
                     self.head_plan_commit = None;
+                    self.changes.clear();
+                    self.changes_range = None;
                 }
                 if let Some(head) = &head
                     && (self.head_plan_commit.as_deref() != Some(head.as_str())
@@ -196,6 +197,8 @@ impl App {
                 self.status.fail(error, self.now);
                 self.head_plan.clear();
                 self.head_plan_commit = None;
+                self.changes.clear();
+                self.changes_range = None;
             }
         }
     }

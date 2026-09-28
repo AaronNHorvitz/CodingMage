@@ -14,7 +14,9 @@ use codingmage_core::{
     AgentProfile, CapabilityPolicy, CommandSpec, Config, PublicationMode, PublicationPolicy,
     RepositoryAuthorization, load_config,
 };
-use codingmage_git::{BlobReadError, inventory_repository, read_authorized_blob};
+use codingmage_git::{
+    BlobReadError, inventory_repository, read_authorized_blob, read_authorized_changes,
+};
 use codingmage_plan::{PlanItemKind, TaskPlan};
 use codingmage_runtime::{
     RecipeSpec, RunProgress, RunSpec, RuntimeError, admit_campaign_mission,
@@ -44,6 +46,7 @@ Commands:
   campaign                      Execute a bounded serial or parallel campaign
   campaign-status               Read durable campaign status
   campaign-head-plan            Read task states at the exact reconciled campaign head
+  campaign-changes              Read bounded changes at the exact reconciled campaign head
   campaign-report               Read the final campaign report
   campaign-explain-blocker      Read typed blocker and deferral details
   campaign-clear-blocker        Record one exact external-prerequisite change
@@ -84,7 +87,10 @@ fn command_help(command: &str) -> Option<&'static str> {
             "Usage: codingmage <campaign-status|campaign-report|campaign-explain-blocker|campaign-mission-status> \\\n  --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE>",
         ),
         "campaign-head-plan" => Some(
-            "Usage: codingmage campaign-head-plan --config <ABSOLUTE_FILE> \\\n+  --campaign <ABSOLUTE_FILE> --head <FULL_COMMIT_ID>",
+            "Usage: codingmage campaign-head-plan --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> --head <FULL_COMMIT_ID>",
+        ),
+        "campaign-changes" => Some(
+            "Usage: codingmage campaign-changes --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> --head <FULL_COMMIT_ID>",
         ),
         "campaign-mission-admit" => Some(
             "Usage: codingmage campaign-mission-admit --config <ABSOLUTE_FILE> \\\n  --campaign <ABSOLUTE_FILE> --mission <ABSOLUTE_FILE>",
@@ -149,6 +155,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign" => execute_campaign(&arguments[1..]),
         "campaign-status" => inspect_campaign(&arguments[1..]),
         "campaign-head-plan" => inspect_campaign_head_plan(&arguments[1..]),
+        "campaign-changes" => inspect_campaign_changes(&arguments[1..]),
         "campaign-report" => inspect_campaign_report(&arguments[1..]),
         "campaign-explain-blocker" => explain_campaign_blocker(&arguments[1..]),
         "campaign-clear-blocker" => clear_blocker(&arguments[1..]),
@@ -480,6 +487,50 @@ fn inspect_campaign_head_plan(arguments: &[String]) -> Result<String, CliError> 
     let encoded = serde_json::to_string(&projection).map_err(|_| CliError::Internal)?;
     if encoded.len() >= 8 * 1024 * 1024 {
         return Err(CliError::Plan);
+    }
+    Ok(encoded)
+}
+
+fn inspect_campaign_changes(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "campaign", "head"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let status = campaign_status(&config, &spec, &executable)
+        .map_err(CliError::Runtime)?
+        .ok_or(CliError::Refused)?;
+    let expected_head = parsed.value("head")?;
+    if status.head != expected_head {
+        return Err(CliError::StaleObservation);
+    }
+    let authorization = RepositoryAuthorization::authorize(&config, &executable_parent()?)
+        .map_err(|_| CliError::Repository)?;
+    if authorization.identity().repository_id.as_str() != spec.repository_id {
+        return Err(CliError::Repository);
+    }
+    let changes = read_authorized_changes(&authorization, &spec.initial_commit, expected_head)
+        .map_err(|_| CliError::Repository)?;
+    let still_current = campaign_status(&config, &spec, &executable)
+        .map_err(CliError::Runtime)?
+        .is_some_and(|current| current.head == expected_head);
+    if !still_current {
+        return Err(CliError::StaleObservation);
+    }
+    let encoded = serde_json::to_string(&serde_json::json!({
+        "schema_version": 1,
+        "campaign_id": spec.campaign_id,
+        "repository_id": spec.repository_id,
+        "base": spec.initial_commit,
+        "head": expected_head,
+        "commits": changes.commits,
+        "files": changes.files,
+        "commits_truncated": changes.commits_truncated,
+        "files_truncated": changes.files_truncated,
+    }))
+    .map_err(|_| CliError::Internal)?;
+    if encoded.len() >= 4 * 1024 * 1024 {
+        return Err(CliError::Repository);
     }
     Ok(encoded)
 }

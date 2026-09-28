@@ -55,17 +55,6 @@ pub enum Job {
         /// Campaign state directory.
         campaign_dir: PathBuf,
     },
-    /// Run one read-only Git object read against a repository.
-    GitRead {
-        /// Stable label for the interface.
-        label: &'static str,
-        /// Repository to read.
-        repository: PathBuf,
-        /// Exact argument vector after `--no-pager -C <repository>`.
-        arguments: Vec<String>,
-        /// Deadline after which the command is killed.
-        deadline: Duration,
-    },
 }
 
 impl Job {
@@ -73,9 +62,7 @@ impl Job {
     #[must_use]
     pub const fn label(&self) -> &'static str {
         match self {
-            Self::Command { label, .. }
-            | Self::GitRead { label, .. }
-            | Self::ScanRecords { label, .. } => label,
+            Self::Command { label, .. } | Self::ScanRecords { label, .. } => label,
         }
     }
 }
@@ -244,12 +231,6 @@ fn run_loop(
                     deadline,
                     ..
                 } => binary.run(arguments, *deadline, &cancel),
-                Job::GitRead {
-                    repository,
-                    arguments,
-                    deadline,
-                    ..
-                } => super::cli::run_git(repository, arguments, *deadline, &cancel),
                 Job::ScanRecords { campaign_dir, .. } => {
                     let records = crate::records::scan_run_records(campaign_dir);
                     serde_json::to_vec(&records).map_err(|_| BackendError::Spawn)

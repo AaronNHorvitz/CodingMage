@@ -155,8 +155,6 @@ pub struct App {
     execution: ExecutionState,
     changes: Observed<ChangeSet>,
     changes_range: Option<(String, String)>,
-    pending_changes: Option<ChangeSet>,
-    pending_changes_parts: u8,
     records: Observed<Vec<crate::records::RunRecord>>,
     reports: ReportsState,
     appearance: Appearance,
@@ -242,8 +240,6 @@ impl App {
             execution: ExecutionState::default(),
             changes: Observed::default(),
             changes_range: None,
-            pending_changes: None,
-            pending_changes_parts: 0,
             records: Observed::default(),
             reports: ReportsState::default(),
             appearance: Appearance::System,
@@ -542,8 +538,8 @@ impl App {
                 self.accept_control(response);
                 true
             }
-            "git-log" | "git-numstat" => {
-                self.accept_changes_part(response);
+            "campaign-changes" => {
+                self.accept_changes(response);
                 true
             }
             "records" => {
