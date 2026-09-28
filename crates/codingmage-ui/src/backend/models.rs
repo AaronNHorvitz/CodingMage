@@ -678,6 +678,8 @@ pub struct RunCheckpoint {
 pub enum ModelError {
     /// Output was not valid JSON for the expected model.
     Malformed,
+    /// Parsed output names a different selected campaign or authority.
+    AuthorityMismatch,
     /// Output carried an unsupported schema version.
     UnsupportedSchema {
         /// Version observed.
@@ -693,6 +695,9 @@ impl std::fmt::Display for ModelError {
             Self::Malformed => {
                 formatter.write_str("backend output did not match the expected contract")
             }
+            Self::AuthorityMismatch => formatter.write_str(
+                "backend output names a different campaign or authority; refresh the selected campaign",
+            ),
             Self::UnsupportedSchema {
                 observed,
                 supported,

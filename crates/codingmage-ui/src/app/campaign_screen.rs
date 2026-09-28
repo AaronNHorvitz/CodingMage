@@ -9,7 +9,7 @@ use super::{App, GIT_DEADLINE, STATUS_DEADLINE, failure_box};
 use crate::{
     backend::{
         BackendError, Job, Request, Response, explain_code,
-        models::{MissionStatus, parse_campaign_status, parse_mission_status},
+        models::{MissionStatus, ModelError, parse_campaign_status, parse_mission_status},
     },
     browser::Browser,
     campaign::{
@@ -146,10 +146,28 @@ impl App {
 
     /// Accepts a mission status; a `codingmage.runtime.state` refusal means no charter exists.
     pub(super) fn accept_mission(&mut self, response: Response) {
-        match response
+        let expected = self.campaign.as_ref().map(|campaign| {
+            (
+                campaign.spec.campaign_id.as_str(),
+                campaign.authority_sha256.as_str(),
+            )
+        });
+        let parsed = response
             .result
             .and_then(|bytes| parse_mission_status(&bytes).map_err(BackendError::from))
-        {
+            .and_then(|mission| {
+                if expected
+                    == Some((
+                        mission.campaign_id.as_str(),
+                        mission.authority_sha256.as_str(),
+                    ))
+                {
+                    Ok(mission)
+                } else {
+                    Err(BackendError::Contract(ModelError::AuthorityMismatch))
+                }
+            });
+        match parsed {
             Ok(mission) => self
                 .mission
                 .accept(Some(mission), response.generation, self.now),
@@ -161,10 +179,24 @@ impl App {
     }
 
     pub(super) fn accept_status(&mut self, response: Response) {
-        match response
+        let expected = self
+            .campaign
+            .as_ref()
+            .map(|campaign| campaign.spec.campaign_id.as_str());
+        let parsed = response
             .result
             .and_then(|bytes| parse_campaign_status(&bytes).map_err(BackendError::from))
-        {
+            .and_then(|status| {
+                if status
+                    .as_ref()
+                    .is_some_and(|status| expected != Some(status.campaign_id.as_str()))
+                {
+                    Err(BackendError::Contract(ModelError::AuthorityMismatch))
+                } else {
+                    Ok(status)
+                }
+            });
+        match parsed {
             Ok(status) => {
                 let head = status.as_ref().map(|status| status.head.clone());
                 self.status.accept(status, response.generation, self.now);
@@ -751,6 +783,22 @@ fn roles_and_modes(
         ui.label(format!("{code}: {description}"));
     }
     ui.heading("Owner involvement");
+    let freshness = mission.freshness(now);
+    ui.small(format!(
+        "Mission observation: {} ({})",
+        freshness.label(),
+        age_label(mission.age(now))
+    ));
+    if let Some((_, error)) = &mission.last_error {
+        let (what, action) = explain_code(&error.code());
+        failure_box(ui, what, &error.to_string(), action);
+    }
+    if freshness == Freshness::Stale {
+        ui.colored_label(
+            super::current_tokens(ui.ctx()).warning,
+            "Stale mission observation: the last refresh failed or this value is old. Refresh the campaign before relying on its involvement setting.",
+        );
+    }
     match &mission.value {
         Some(Some(status)) => {
             let mode = involvement_label(&status.involvement);
@@ -758,8 +806,10 @@ fn roles_and_modes(
                 "revoked; no new effect may start"
             } else if status.expired {
                 "expired; a re-issued charter generation is required"
-            } else {
+            } else if freshness == Freshness::Live {
                 "current"
+            } else {
+                "last observed as current; now unverified"
             };
             ui.label(format!(
                 "Mission {} generation {}: {mode} mode, authority {authority}",
@@ -810,10 +860,7 @@ fn roles_and_modes(
         None => {
             if mission.loading {
                 ui.label("Requesting mission authority through campaign-mission-status");
-            } else if let Some((_, error)) = &mission.last_error {
-                let (what, action) = explain_code(&error.code());
-                failure_box(ui, what, &error.to_string(), action);
-            } else {
+            } else if mission.last_error.is_none() {
                 ui.label("Mission authority not yet observed");
             }
         }

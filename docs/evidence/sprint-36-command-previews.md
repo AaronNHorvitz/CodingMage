@@ -111,3 +111,10 @@ documentation, architecture, diff and regenerated inventory checks passed (1,702
 explicit gaps). The private cumulative receipt is retained outside Git. An exact-commit re-review
 is still required before treating the independent finding as resolved. The full Task 36.3.2.2,
 desktop, human, live-provider, package and release gates remain open.
+
+The independent re-review of correction commit `7566479d834af958d8659da6a6e3cd2e6ad3bdcb`
+returned **PASS** for that scoped command-preview policy. It independently ran the focused
+adversarial case, native UI all-target 90/90, sibling CLI build, strict workspace Clippy and
+static checks from a clean source archive. Python retained only the documented CM-R01.6
+source-bound freshness failure. This bounded review does not close Task 36.3.2.2 or any
+human, live-provider, package or release gate.

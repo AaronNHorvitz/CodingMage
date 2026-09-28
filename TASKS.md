@@ -2138,7 +2138,9 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     route campaign-head task states, candidate change summaries and bound run evidence through
     the coordinator. The coordinator start and four campaign controls now have exact in-context
     Show-command previews with a stable bound idempotency identity, while the complete state/depth
-    catalogue and other action previews remain open. See `docs/evidence/sprint-36-command-previews.md`,
+    catalogue and other action previews remain open. The status and mission payload-binding
+    correction is recorded in `docs/evidence/sprint-36-status-payload-binding.md`. See
+    `docs/evidence/sprint-36-command-previews.md`,
     `docs/evidence/sprint-36-head-plan-projection.md`,
     `docs/evidence/sprint-36-campaign-changes-projection.md` and
     `docs/evidence/sprint-36-run-records-projection.md`.

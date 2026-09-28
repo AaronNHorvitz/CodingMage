@@ -6,7 +6,7 @@ use std::{fs, path::Path, process::Command, time::Duration};
 
 use codingmage_ui::{
     Screen,
-    backend::{CoordinatorBinary, Response},
+    backend::{CoordinatorBinary, Response, models::MissionStatus},
     campaign::SelectError,
 };
 use common::{
@@ -110,6 +110,93 @@ fn never_started_campaign_is_an_explicit_empty_state() {
     );
     assert!(absent.stdout.is_empty());
     assert!(!fixture.state.join("campaigns").exists());
+}
+
+#[test]
+fn foreign_campaign_status_and_mission_cannot_replace_selected_observations() {
+    let fixture = Fixture::new("foreign-projection", 1);
+    let spec = write_campaign(&fixture, "bound-campaign", 1);
+    run_campaign(&fixture, &spec);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.status().value.as_ref().is_some_and(Option::is_some) && app.mission().value.is_some()
+    }));
+    let original = harness.state().status().value.clone();
+    let selected = harness.state().campaign().unwrap();
+    let campaign_id = selected.spec.campaign_id.clone();
+    let authority = selected.authority_sha256.clone();
+    let binding = harness.state().binding();
+    let generation = harness.state().generation();
+    let mut foreign_status = original.clone().flatten().unwrap();
+    foreign_status.campaign_id = "foreign-campaign".to_owned();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding: binding.clone(),
+        label: "campaign-status",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&foreign_status).unwrap()),
+    }));
+    assert_eq!(harness.state().status().value, original);
+    assert!(harness.state().status().last_error.is_some());
+
+    let mut mission = MissionStatus {
+        schema_version: 1,
+        campaign_id: "foreign-campaign".to_owned(),
+        mission_id: "test-mission".to_owned(),
+        mission_sha256: "1".repeat(64),
+        authority_sha256: authority.clone(),
+        generation: 1,
+        involvement: "supervised".to_owned(),
+        issued_at_ms: 1,
+        expires_at_ms: 2,
+        expired: false,
+        revocation_epoch: 0,
+        revoked: false,
+        decisions_recorded: 0,
+        permitted_choices: 0,
+        held_decisions: 0,
+        pending_owner_decisions: 0,
+        owner_answers: 0,
+        observed_at_ms: 1,
+    };
+    for (id, digest) in [
+        ("foreign-campaign", authority.as_str()),
+        (campaign_id.as_str(), "wrong-authority"),
+    ] {
+        mission.campaign_id = id.to_owned();
+        mission.authority_sha256 = digest.to_owned();
+        assert!(harness.state_mut().handle_response(Response {
+            generation,
+            binding: binding.clone(),
+            label: "campaign-mission-status",
+            request_id: None,
+            result: Ok(serde_json::to_vec(&mission).unwrap()),
+        }));
+        assert_eq!(harness.state().mission().value, Some(None));
+        assert!(harness.state().mission().last_error.is_some());
+    }
+    harness.state_mut().select_screen(Screen::Campaign);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Stale mission observation");
+    mission.authority_sha256 = authority;
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding: binding.clone(),
+        label: "campaign-mission-status",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&mission).unwrap()),
+    }));
+    assert_eq!(harness.state().mission().value, Some(Some(mission)));
+    assert!(harness.state().mission().last_error.is_none());
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-status",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&original.unwrap()).unwrap()),
+    }));
+    assert!(harness.state().status().last_error.is_none());
 }
 
 #[test]
