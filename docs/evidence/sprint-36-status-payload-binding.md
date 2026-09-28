@@ -29,3 +29,10 @@ and cumulative receipts are retained outside Git.
 
 This is local implementation evidence. Exact-commit independent re-review is still required.
 Human, real-desktop, live-provider, package, release and CM-R01.6 gates remain open.
+
+The exact-commit independent review of `5a8b6d2f6393d205b59290f5f2daf9bf59f20c7d`
+returned **PASS** with no finding in the scoped payload-binding change. The reviewer ran the
+focused regression 1/1, native UI all-target 91/91, sibling CLI build, strict workspace Clippy
+and static checks from a clean archive. Python retained only the same CM-R01.6 eight-input
+source-bound freshness failure. This review did not qualify the status-bar follow-up, a live
+provider, human desktop behavior, package construction or release.

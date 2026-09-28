@@ -13,6 +13,7 @@ pub use reports_screen::ReportsState;
 pub use setup_screen::SetupState;
 
 use std::{
+    collections::BTreeSet,
     path::{Path, PathBuf},
     time::{Duration, Instant},
 };
@@ -29,7 +30,7 @@ use crate::{
         models::{Diagnosis, parse_diagnosis},
     },
     browser::Browser,
-    campaign::{CampaignSelection, SelectError},
+    campaign::{CampaignSelection, SelectError, involvement_label},
     command, content,
     design::{Appearance, Palette, Tokens, current_tokens},
     observed::{Freshness, Observed, age_label},
@@ -754,7 +755,94 @@ impl App {
             });
     }
 
+    fn status_bar_fields(&self) -> (String, String, String, String) {
+        let status_freshness = self.status.freshness(self.now);
+        let status_stale = if status_freshness == Freshness::Stale {
+            " (stale)"
+        } else {
+            ""
+        };
+        let (state, pods, backend_update) = if self.campaign.is_none() {
+            (
+                "State: no campaign selected".to_owned(),
+                "Active pods: unknown".to_owned(),
+                "Last backend update: none".to_owned(),
+            )
+        } else {
+            match &self.status.value {
+                Some(Some(status)) => {
+                    let pods: BTreeSet<&str> = status
+                        .active_tasks
+                        .iter()
+                        .filter_map(|task| task.pod_id.as_deref())
+                        .filter(|id| !id.is_empty())
+                        .collect();
+                    (
+                        format!(
+                            "State: {}{status_stale}",
+                            content::list_label(&status.state)
+                        ),
+                        format!("Active pods: {} identified{status_stale}", pods.len()),
+                        format!(
+                            "Last backend update: {} ms since 1970 UTC{status_stale}",
+                            status.updated_at_ms
+                        ),
+                    )
+                }
+                Some(None) => (
+                    format!("State: not started{status_stale}"),
+                    format!("Active pods: 0 (not started){status_stale}"),
+                    format!("Last backend update: none (not started){status_stale}"),
+                ),
+                None => (
+                    match status_freshness {
+                        Freshness::Loading => "State: loading from coordinator",
+                        Freshness::Failed => "State: unavailable (refresh failed)",
+                        _ => "State: not yet observed",
+                    }
+                    .to_owned(),
+                    "Active pods: unknown".to_owned(),
+                    "Last backend update: unknown".to_owned(),
+                ),
+            }
+        };
+        let mission_freshness = self.mission.freshness(self.now);
+        let mission_stale = if mission_freshness == Freshness::Stale {
+            " (stale)"
+        } else {
+            ""
+        };
+        let involvement = if self.campaign.is_none() {
+            "Involvement: no campaign selected".to_owned()
+        } else {
+            match &self.mission.value {
+                Some(Some(mission)) => {
+                    let authority = if mission.revoked {
+                        "; charter revoked"
+                    } else if mission.expired {
+                        "; charter expired"
+                    } else {
+                        ""
+                    };
+                    format!(
+                        "Involvement: {} (last observed{authority}){mission_stale}",
+                        content::list_label(involvement_label(&mission.involvement))
+                    )
+                }
+                Some(None) => format!("Involvement: no charter admitted{mission_stale}"),
+                None => match mission_freshness {
+                    Freshness::Loading => "Involvement: loading from coordinator",
+                    Freshness::Failed => "Involvement: unavailable (refresh failed)",
+                    _ => "Involvement: not yet observed",
+                }
+                .to_owned(),
+            }
+        };
+        (state, involvement, pods, backend_update)
+    }
+
     fn status_bar(&self, root: &mut egui::Ui) {
+        let (state, involvement, pods, backend_update) = self.status_bar_fields();
         egui::Panel::bottom("status-bar").show(root, |ui| {
             ui.horizontal_wrapped(|ui| {
                 match &self.connection {
@@ -768,9 +856,70 @@ impl App {
                         );
                     }
                 }
+                ui.separator();
+                if let Some(project) = &self.project {
+                    let name = project
+                        .config
+                        .target_path
+                        .file_name()
+                        .unwrap_or_else(|| project.config.target_path.as_os_str())
+                        .to_string_lossy();
+                    let repository_id = self
+                        .campaign
+                        .as_ref()
+                        .map(|campaign| campaign.spec.repository_id.as_str())
+                        .or_else(|| {
+                            self.diagnosis
+                                .value
+                                .as_ref()
+                                .map(|diagnosis| diagnosis.repository_id.as_str())
+                        });
+                    let identity = repository_id.map_or_else(
+                        || "identity pending".to_owned(),
+                        |id| {
+                            format!(
+                                "id {}…",
+                                content::list_label(&id.chars().take(12).collect::<String>())
+                            )
+                        },
+                    );
+                    ui.label(format!(
+                        "Repository: {} ({identity})",
+                        content::list_label(&name)
+                    ))
+                    .on_hover_text(format!(
+                        "Repository path: {}\nRepository ID: {}",
+                        project.config.target_path.display(),
+                        repository_id.unwrap_or("not yet observed")
+                    ));
+                } else {
+                    ui.label("Repository: none opened");
+                }
+                ui.separator();
+                ui.label(self.campaign.as_ref().map_or_else(
+                    || "Campaign: none selected".to_owned(),
+                    |campaign| {
+                        format!(
+                            "Campaign: {}",
+                            content::list_label(&campaign.spec.campaign_id)
+                        )
+                    },
+                ));
+            });
+            ui.horizontal_wrapped(|ui| {
+                ui.label(state);
+                ui.separator();
+                ui.label(involvement);
+                ui.separator();
+                ui.label(pods);
+            });
+            ui.horizontal_wrapped(|ui| {
+                ui.label("Current gate: not reported by coordinator");
+                ui.separator();
+                ui.label(backend_update);
                 if let Some((_, message)) = &self.status_line {
                     ui.separator();
-                    ui.label(message);
+                    ui.label(content::list_label(message));
                 }
                 if self.discarded_stale > 0 {
                     ui.separator();

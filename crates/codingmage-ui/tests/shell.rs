@@ -21,6 +21,11 @@ fn shell_renders_navigation_and_keyboard_switches_screens_without_a_project() {
         harness.get_by_role_and_label(egui::accesskit::Role::Button, screen.label());
     }
     harness.get_by_label_contains("No repository opened");
+    harness.get_by_label_contains("Repository: none opened");
+    harness.get_by_label_contains("Campaign: none selected");
+    harness.get_by_label_contains("State: no campaign selected");
+    harness.get_by_label_contains("Active pods: unknown");
+    harness.get_by_label_contains("Last backend update: none");
     harness
         .get_by_role_and_label(egui::accesskit::Role::Button, "Work plan")
         .click();

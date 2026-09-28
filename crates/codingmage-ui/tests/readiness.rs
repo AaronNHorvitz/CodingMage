@@ -174,7 +174,9 @@ fn real_preflight_passes_on_a_ready_fixture_and_binds_the_report_digest() {
         .get_all_by_label("Show command")
         .nth(1)
         .expect("preflight command control")
-        .click();
+        .focus();
+    harness.run_steps(2);
+    harness.key_press(egui::Key::Enter);
     harness.run_steps(2);
     let expected = codingmage_ui::command::format_command(
         &coordinator_binary(),

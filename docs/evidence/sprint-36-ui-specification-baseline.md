@@ -3,8 +3,9 @@
 Prepared against source commit `57f79133cc1dc67c7b3f9953fa9fb24dbf441b22` before any
 36.3 performance or human measurement. The implementation column was reconciled against
 `ee97ecd5e9dc60bd75858087801d3eb58af81608` and updated with the 2026-09-28 campaign-command
-preview and status-payload binding increments; the frozen profiles, budgets and trial protocol
-below are unchanged. This is a source inventory and test plan, not a UI qualification result.
+preview, status-payload binding and always-visible status-bar increments; the frozen profiles,
+budgets and trial protocol below are unchanged. This is a source inventory and test plan, not a
+UI qualification result.
 The binding requirements are
 [the native UI specification](../architecture/native-ui-specification.md). Later source changes
 must update the implementation column without silently changing the frozen protocol below.
@@ -35,13 +36,14 @@ their own complete workflows.
 | Empty / not started | Overview, work plan, campaign and report empty text | Per-screen next step and help are inconsistent. |
 | Loading | `Observed<T>` and selected panels | Some partial loading states and polite accessibility announcements are absent. |
 | Failure / malformed output | `BackendError`, `failure_box`, strict model parsers | Some failures are generic and their effect on the campaign is unclear. |
-| Stale / disconnected | `Observed<T>::freshness`, response-generation and binding checks; campaign status and mission payload identities are checked before acceptance, and a retained mission is labelled stale after refresh failure | Not every panel labels a retained stale value; status bar lacks complete campaign freshness. |
+| Stale / disconnected | `Observed<T>::freshness`, response-generation and binding checks; campaign status and mission payload identities are checked before acceptance; the status bar labels retained stale campaign and mission values | Not every panel labels a retained stale value; repository diagnosis and connection states still need complete recovery. |
 | Executable missing | `Connection::Unavailable` in Overview/status bar | First-run recovery path is incomplete. |
 | Provider unavailable / authentication required / permission denied | Preflight and backend error explanations | No consistent per-screen state and direct recovery action. |
 | Campaign and task outcomes | `CampaignStatus`, task overlay and independent counters | Some coordinator states are raw codes; task detail lacks the full history. Source checkboxes and verified outcomes are kept distinct. |
 
-Shell gaps apply to every screen: the navigation has no command palette; the status bar does not
-always show campaign identity/state, involvement, active pods, current gate and last update. The
+Shell gaps apply to every screen: the navigation has no command palette; the status bar now shows
+bound campaign identity/state, involvement, identified active pods and the coordinator's last
+checkpoint time, but the current gate remains unreported by the coordinator contract. The
 minimum window is now 1024 by 640 logical pixels. Shared design tokens, themes, contrast and
 offscreen screenshot evidence exist, as does the inert-content/confirmed-link adversarial matrix;
 these do not qualify real desktop accessibility. Text remains embedded in Rust, and pseudo-locale,

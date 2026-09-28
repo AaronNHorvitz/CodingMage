@@ -6,7 +6,10 @@ use std::{fs, path::Path, process::Command, time::Duration};
 
 use codingmage_ui::{
     Screen,
-    backend::{CoordinatorBinary, Response, models::MissionStatus},
+    backend::{
+        CoordinatorBinary, Response,
+        models::{ActiveTask, MissionStatus},
+    },
     campaign::SelectError,
 };
 use common::{
@@ -69,6 +72,36 @@ fn checked_head_projection(fixture: &Fixture, spec: &Path, head: &str) -> serde_
     projection
 }
 
+fn assert_one_identified_pod_for_two_active_tasks(
+    harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>,
+) {
+    let mut active = harness.state().status().value.clone().flatten().unwrap();
+    "running".clone_into(&mut active.state);
+    let task = ActiveTask {
+        task_id: "0.1.1.1".to_owned(),
+        pod_id: Some("pod-one".to_owned()),
+        state: "running".to_owned(),
+        actor: "implementer".to_owned(),
+        model: None,
+        correction_round: 0,
+        heartbeat_sequence: 1,
+    };
+    active.active_tasks = vec![task.clone(), task];
+    let binding = harness.state().binding();
+    let generation = harness.state().generation();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-status",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&active).unwrap()),
+    }));
+    harness.run_steps(2);
+    harness.get_by_label_contains("State: running");
+    harness.get_by_label_contains("Active pods: 1 identified");
+    harness.get_by_label_contains("Current gate: not reported by coordinator");
+}
+
 #[test]
 fn never_started_campaign_is_an_explicit_empty_state() {
     let fixture = Fixture::new("campaign-empty", 3);
@@ -86,6 +119,13 @@ fn never_started_campaign_is_an_explicit_empty_state() {
     );
     harness.state_mut().select_screen(Screen::Campaign);
     harness.run_steps(2);
+    harness.get_by_label_contains("Repository: target");
+    harness.get_by_label_contains("Campaign: empty-campaign");
+    harness.get_by_label_contains("State: not started");
+    harness.get_by_label_contains("Involvement: no charter admitted");
+    harness.get_by_label_contains("Active pods: 0 (not started)");
+    harness.get_by_label_contains("Current gate: not reported by coordinator");
+    harness.get_by_label_contains("Last backend update: none (not started)");
     harness.get_by_label_contains("No durable campaign state exists");
     harness.get_by_label_contains("No mission charter is admitted");
     harness.get_by_label_contains("Hands-off: unavailable");
@@ -139,6 +179,13 @@ fn foreign_campaign_status_and_mission_cannot_replace_selected_observations() {
     }));
     assert_eq!(harness.state().status().value, original);
     assert!(harness.state().status().last_error.is_some());
+    harness.state_mut().select_screen(Screen::Overview);
+    harness.run_steps(2);
+    harness.get_by_label_contains(&format!(
+        "State: {} (stale)",
+        original.as_ref().unwrap().as_ref().unwrap().state
+    ));
+    harness.get_by_label_contains("Last backend update:");
 
     let mut mission = MissionStatus {
         schema_version: 1,
@@ -179,6 +226,7 @@ fn foreign_campaign_status_and_mission_cannot_replace_selected_observations() {
     harness.state_mut().select_screen(Screen::Campaign);
     harness.run_steps(2);
     harness.get_by_label_contains("Stale mission observation");
+    harness.get_by_label_contains("Involvement: no charter admitted (stale)");
     mission.authority_sha256 = authority;
     assert!(harness.state_mut().handle_response(Response {
         generation,
@@ -189,6 +237,8 @@ fn foreign_campaign_status_and_mission_cannot_replace_selected_observations() {
     }));
     assert_eq!(harness.state().mission().value, Some(Some(mission)));
     assert!(harness.state().mission().last_error.is_none());
+    harness.run_steps(2);
+    harness.get_by_label_contains("Involvement: Supervised");
     assert!(harness.state_mut().handle_response(Response {
         generation,
         binding,
@@ -197,6 +247,7 @@ fn foreign_campaign_status_and_mission_cannot_replace_selected_observations() {
         result: Ok(serde_json::to_vec(&original.unwrap()).unwrap()),
     }));
     assert!(harness.state().status().last_error.is_none());
+    assert_one_identified_pod_for_two_active_tasks(&mut harness);
 }
 
 #[test]

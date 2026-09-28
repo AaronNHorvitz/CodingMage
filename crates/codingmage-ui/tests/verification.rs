@@ -561,6 +561,9 @@ fn window_sizes_and_high_dpi_keep_navigation_and_content_reachable() {
             harness.get_by_role_and_label(egui::accesskit::Role::Button, screen.label());
         }
         harness.get_by_label_contains("Repository diagnosis");
+        harness.get_by_label_contains("Repository: target");
+        harness.get_by_label_contains("Campaign: none selected");
+        harness.get_by_label_contains("Current gate: not reported by coordinator");
         evidence.snapshot(&mut harness, name, ppp);
         let last = evidence.artifacts.last().unwrap();
         let expected_width = pixel_extent(size[0], ppp);

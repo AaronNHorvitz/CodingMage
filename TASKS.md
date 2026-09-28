@@ -2139,7 +2139,10 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     the coordinator. The coordinator start and four campaign controls now have exact in-context
     Show-command previews with a stable bound idempotency identity, while the complete state/depth
     catalogue and other action previews remain open. The status and mission payload-binding
-    correction is recorded in `docs/evidence/sprint-36-status-payload-binding.md`. See
+    correction is recorded in `docs/evidence/sprint-36-status-payload-binding.md`. The
+    always-visible shell status projection shows bound state, involvement, identified pods,
+    last coordinator checkpoint and an explicit unreported current gate; its other screen
+    states and depth remain open. See `docs/evidence/sprint-36-status-bar.md` and
     `docs/evidence/sprint-36-command-previews.md`,
     `docs/evidence/sprint-36-head-plan-projection.md`,
     `docs/evidence/sprint-36-campaign-changes-projection.md` and
