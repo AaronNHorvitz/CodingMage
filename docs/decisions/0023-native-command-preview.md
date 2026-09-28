@@ -29,15 +29,24 @@ blank letters. Other Unicode marks, formatting characters, unusual whitespace an
 the exact preview unavailable and disable the matching action. This can refuse some legitimate
 paths; it avoids showing an apparently complete command while hiding an argument character.
 
-The initial implementation covers **Refresh diagnosis** (`doctor`) and **Run preflight**
-(`campaign-preflight`). Every other control remains open under Sub-task 36.3.2.2 until its exact
-backend or local-operation equivalent is implemented and tested. A command with a newly generated
-request identity must show the identity actually submitted, rather than a placeholder.
+The initial implementation covered **Refresh diagnosis** (`doctor`) and **Run preflight**
+(`campaign-preflight`). At that checkpoint, other controls remained open under Sub-task 36.3.2.2
+until each exact backend or local-operation equivalent was implemented and tested. A command
+with a newly generated request identity must show the identity actually submitted, rather than a
+placeholder.
+
+The later campaign-control increment prepares a display-only request identity for each action.
+Preparation writes no intent. Submission records that exact identity in the durable UI ledger
+and sends the same argument vector to the coordinator. A retry with an unknown outcome previews
+the prior idempotency identity. A changed campaign authority or a different action cannot reuse
+it. The coordinator start preview uses the same argument builder as the detached process launch;
+both refuse a path whose exact command cannot be displayed safely.
 
 ## Verification and limits
 
 A unit test checks shell quoting and visual-spoof refusal. Offscreen tests inspect the command
 shown beside Refresh and Preflight using the same paths the real coordinator command receives;
 viewing the preview must not modify the disposable target. These tests do not claim that all
-controls now meet the rule, and the existing direct Git, run-record, configuration and local
-state operations remain an open CLI boundary gap.
+controls meet the rule. Later Decisions 0024 through 0026 moved the campaign-head task, change
+and run-record observations through the coordinator. Configuration and other local state
+operations still need their command equivalents under Task 36.3.2.2.

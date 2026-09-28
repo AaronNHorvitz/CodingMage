@@ -15,9 +15,11 @@ The previous "Refresh (F5)" button label was inaccurate: the button refreshed di
 while F5 also refreshes a selected campaign. The button is now labelled **Refresh diagnosis**;
 F5 remains a separate broader shortcut whose exact command list is still open work.
 
-This slice adds no new backend operation or authority. Direct local Git reads, run-record scans,
-configuration and process-observation work, plus controls that create request IDs, remain open
-under Sub-task 36.3.2.2. Opening the preview does not admit or start a campaign.
+This first slice added no new backend operation or authority. At that checkpoint direct local Git
+reads, run-record scans, configuration and process-observation work, plus controls that create
+request IDs, remained open under Sub-task 36.3.2.2. Later Decisions 0024 through 0026 moved the
+campaign-head task, change and run-record observations through the coordinator. Opening a
+preview does not admit or start a campaign.
 
 ## Verification disposition
 
@@ -54,3 +56,36 @@ The Python suite ran 42 tests: 41 passed and the unchanged CM-R01.6 source-bound
 failed on the same eight input-drift paths. The full private gate log is retained outside Git.
 This local verification does not independently close the review finding; a fresh exact-commit
 review is required. Task 36.3.2.2 and all human/live/acceptance gates remain open.
+
+## Campaign process and control preview increment
+
+The **Start coordinator** button now shows the exact `codingmage campaign --config … --campaign …`
+argument vector built by the same function used for its detached process launch. An unsafe or
+non-UTF-8 command path disables the action before launch or private launch-file creation.
+
+The four campaign controls prepare display-only idempotency identities beside their buttons and
+show the exact `campaign-control` command including `--request`. Expanding a preview neither
+records an intent nor invokes the coordinator. Clicking the matching button records and submits
+that same identity; if an outcome is uncertain, the next preview uses the existing retryable
+identity. The identity is bound to the selected campaign authority and action. A pending control
+blocks another request. Cancel still needs two presses and keeps its shown identity between them.
+Action-specific preview labels identify which command belongs to which control.
+
+The first focused offscreen test compilation failed because the new test lacked the
+`egui_kittest::kittest::Queryable` import; the compiler receipt is retained privately. After the
+import was added, the focused fake-provider test passed 1/1, showing the exact start and pause
+commands, proving the preview recorded no intent, then proving the clicked pause request used the
+same shown identity. On the corrected source, the sibling CLI build and strict workspace Clippy
+passed. The UI all-target suite passed 89/89 tests, including start, detach, reconnect,
+cancellation, the new preview and software-rendered recovery fixtures. Python unittest ran 42
+tests: 41 passed and only the retained CM-R01.6 source-bound input-drift test failed on the same
+eight paths. No evidence digest was renewed; Python is not reported as green. The cumulative
+receipt is retained privately outside Git. Formatting, documentation, architecture, regenerated
+inventory (1,702 surfaces and 825 explicit gaps), and diff checks pass on the final source. The
+inventory added six UI functions and removed no explicit coverage gap; line-anchored identities
+moved with source lines. These checks are local engineering evidence, not independent,
+live-provider or desktop qualification.
+
+This increment is local implementation evidence only. Admission and configuration writes are
+still UI-local operations without command equivalents, and other screens still have missing
+section 5 states, contextual depth and Show-command affordances. Task 36.3.2.2 stays open.

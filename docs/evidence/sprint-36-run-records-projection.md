@@ -44,4 +44,13 @@ additional test source, strict workspace Clippy and CLI library tests (4/4) pass
 ran 42 tests: 41 passed and only the same CM-R01.6 eight-path input drift failed. The original
 failed Python receipt remains retained, and no evidence digest was renewed.
 
-This is a deterministic fake-provider result, not live-model or independent acceptance.
+This implementation receipt is deterministic fake-provider evidence, not live-model or broad
+product acceptance.
+
+The independent read-only review of exact commit
+`ee97ecd5e9dc60bd75858087801d3eb58af81608` returned `Verdict: PASS` with no findings for
+the run-record and path-component scope. It independently ran strict workspace Clippy, the CLI
+build, campaign, state and runtime library tests, the five-pod fake-provider workflow, and the UI
+all-target suite. Its Python run retained only the same CM-R01.6 source-bound input-drift failure.
+The report is in the private review lane; this result does not close Task 36.3.2.2, CM-R01.6 or
+any human, live, installation, package or release gate.

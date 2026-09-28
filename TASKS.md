@@ -2136,8 +2136,10 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
   - [ ] **Sub-task 36.3.2.2:** Complete the section 5 state catalogue and the in-context depth on every screen, including "Show command" for every control, with no mode switch (CM-UI-008, CM-UI-009).
     Open increments: `campaign-head-plan`, `campaign-changes` and `campaign-run-records` now
     route campaign-head task states, candidate change summaries and bound run evidence through
-    the coordinator. The complete state/depth catalogue and remaining Show command controls are
-    still open. See `docs/evidence/sprint-36-head-plan-projection.md`,
+    the coordinator. The coordinator start and four campaign controls now have exact in-context
+    Show-command previews with a stable bound idempotency identity, while the complete state/depth
+    catalogue and other action previews remain open. See `docs/evidence/sprint-36-command-previews.md`,
+    `docs/evidence/sprint-36-head-plan-projection.md`,
     `docs/evidence/sprint-36-campaign-changes-projection.md` and
     `docs/evidence/sprint-36-run-records-projection.md`.
     <!-- depends-on: 36.3.1.1 -->

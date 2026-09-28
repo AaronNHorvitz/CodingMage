@@ -70,6 +70,8 @@ pub enum LaunchState {
 /// Failure to launch or observe.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum LaunchError {
+    /// The exact command arguments cannot be represented safely.
+    CommandUnavailable,
     /// The process could not be spawned.
     Spawn,
     /// The process identity could not be read after spawning.
@@ -81,6 +83,9 @@ pub enum LaunchError {
 impl std::fmt::Display for LaunchError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::CommandUnavailable => {
+                formatter.write_str("the exact start command cannot be shown safely")
+            }
             Self::Spawn => formatter.write_str("the coordinator process could not be started"),
             Self::Identity => {
                 formatter.write_str("the coordinator process identity could not be read")
@@ -111,6 +116,18 @@ impl OwnedLaunch {
     }
 }
 
+/// Exact argument vector used by both the native preview and the detached launch.
+#[must_use]
+pub fn campaign_arguments(config_path: &Path, spec_path: &Path) -> Option<Vec<String>> {
+    Some(vec![
+        "campaign".to_owned(),
+        "--config".to_owned(),
+        config_path.to_str()?.to_owned(),
+        "--campaign".to_owned(),
+        spec_path.to_str()?.to_owned(),
+    ])
+}
+
 /// Starts `codingmage campaign` detached for one exact configuration and specification.
 ///
 /// # Errors
@@ -124,6 +141,11 @@ pub fn launch_campaign(
     authority_sha256: &str,
     launch_dir: &Path,
 ) -> Result<OwnedLaunch, LaunchError> {
+    let arguments =
+        campaign_arguments(config_path, spec_path).ok_or(LaunchError::CommandUnavailable)?;
+    if !crate::command::can_preview(Some(binary.path()), Some(&arguments)) {
+        return Err(LaunchError::CommandUnavailable);
+    }
     ensure_private_dir(launch_dir).map_err(LaunchError::State)?;
     let launch_id = format!("{}-{}", now_ms(), std::process::id());
     let stdout_path = launch_dir.join(format!("{launch_id}.stdout"));
@@ -132,11 +154,7 @@ pub fn launch_campaign(
     let stderr = private_file(&stderr_path)?;
     let mut command = Command::new(binary.path());
     command
-        .arg("campaign")
-        .arg("--config")
-        .arg(config_path)
-        .arg("--campaign")
-        .arg(spec_path)
+        .args(arguments)
         .stdin(Stdio::null())
         .stdout(Stdio::from(stdout))
         .stderr(Stdio::from(stderr))
@@ -289,6 +307,28 @@ fn process_is_zombie(pid: u32) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn campaign_arguments_are_exact_and_refuse_non_utf8_paths() {
+        use std::os::unix::ffi::OsStrExt as _;
+
+        let config = Path::new("/tmp/config with space.toml");
+        let spec = Path::new("/tmp/campaign.toml");
+        assert_eq!(
+            campaign_arguments(config, spec),
+            Some(vec![
+                "campaign".to_owned(),
+                "--config".to_owned(),
+                "/tmp/config with space.toml".to_owned(),
+                "--campaign".to_owned(),
+                "/tmp/campaign.toml".to_owned(),
+            ])
+        );
+        assert!(
+            campaign_arguments(Path::new(std::ffi::OsStr::from_bytes(b"/tmp/\xff")), spec)
+                .is_none()
+        );
+    }
 
     #[test]
     fn start_ticks_are_read_for_the_current_process_and_absent_for_none() {

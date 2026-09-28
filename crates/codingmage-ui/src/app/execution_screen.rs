@@ -9,8 +9,9 @@ use super::{App, STATUS_DEADLINE, failure_box};
 use crate::{
     admission::{Admission, CurrentBinding, Staleness},
     backend::{BackendError, Job, Request, Response, explain_code, models::parse_control_outcome},
+    command,
     controls::{ControlAction, ControlLedger, ControlRefusal},
-    launch::{LaunchRecord, LaunchState, OwnedLaunch, launch_campaign},
+    launch::{LaunchRecord, LaunchState, OwnedLaunch, campaign_arguments, launch_campaign},
     observed::age_label,
     state_dir::project_private_dir,
 };
@@ -39,6 +40,8 @@ pub struct ExecutionState {
     pub ledger: ControlLedger,
     /// Cancel needs a second press.
     pub cancel_armed: bool,
+    /// Display-only request identities, bound to the current campaign authority.
+    preview_ids: Vec<(ControlAction, String, String)>,
 }
 
 impl App {
@@ -224,6 +227,16 @@ impl App {
         else {
             return;
         };
+        let Some(arguments) = self.start_arguments() else {
+            self.execution.error =
+                Some("the exact start command cannot be shown safely".to_owned());
+            return;
+        };
+        if !command::can_preview(self.binary_path.as_deref(), Some(&arguments)) {
+            self.execution.error =
+                Some("the exact start command cannot be shown safely".to_owned());
+            return;
+        }
         let binary = match &self.connection {
             super::Connection::Ready(_) => self
                 .binary_path
@@ -264,7 +277,75 @@ impl App {
     ///
     /// Returns [`ControlRefusal`] when the request is refused before reaching the coordinator.
     pub fn request_control(&mut self, action: ControlAction) -> Result<String, ControlRefusal> {
-        let (Some(project), Some(campaign)) = (&self.project, &self.campaign) else {
+        let Some(campaign) = &self.campaign else {
+            return Err(ControlRefusal::NoCampaign);
+        };
+        let request_id = self
+            .execution
+            .ledger
+            .preview_id(action, &campaign.authority_sha256);
+        self.request_control_prepared(action, &request_id)
+    }
+
+    fn start_arguments(&self) -> Option<Vec<String>> {
+        campaign_arguments(
+            &self.project.as_ref()?.config_path,
+            &self.campaign.as_ref()?.spec_path,
+        )
+    }
+
+    fn control_arguments(&self, action: ControlAction, request_id: &str) -> Option<Vec<String>> {
+        Some(vec![
+            "campaign-control".to_owned(),
+            "--config".to_owned(),
+            self.project.as_ref()?.config_path.to_str()?.to_owned(),
+            "--campaign".to_owned(),
+            self.campaign.as_ref()?.spec_path.to_str()?.to_owned(),
+            "--action".to_owned(),
+            action.code().to_owned(),
+            "--request".to_owned(),
+            request_id.to_owned(),
+        ])
+    }
+
+    fn prepared_control_id(&mut self, action: ControlAction) -> Option<String> {
+        let authority = self.campaign.as_ref()?.authority_sha256.clone();
+        if let Some((_, _, id)) =
+            self.execution
+                .preview_ids
+                .iter()
+                .find(|(stored_action, stored_authority, _)| {
+                    *stored_action == action && *stored_authority == authority
+                })
+        {
+            return Some(id.clone());
+        }
+        let id = self.execution.ledger.preview_id(action, &authority);
+        self.execution
+            .preview_ids
+            .retain(|(stored_action, _, _)| *stored_action != action);
+        self.execution
+            .preview_ids
+            .push((action, authority, id.clone()));
+        Some(id)
+    }
+
+    /// Exact display-only coordinator command prepared for a campaign control.
+    ///
+    /// Preparing the command records no intent and does not start a process.
+    #[must_use]
+    pub fn preview_control(&mut self, action: ControlAction) -> Option<String> {
+        let id = self.prepared_control_id(action)?;
+        let arguments = self.control_arguments(action, &id)?;
+        command::format_command(self.binary_path.as_deref()?, &arguments)
+    }
+
+    fn request_control_prepared(
+        &mut self,
+        action: ControlAction,
+        request_id: &str,
+    ) -> Result<String, ControlRefusal> {
+        let Some(campaign) = &self.campaign else {
             return Err(ControlRefusal::NoCampaign);
         };
         if action == ControlAction::Cancel && !self.execution.cancel_armed {
@@ -273,18 +354,16 @@ impl App {
         }
         self.execution.cancel_armed = false;
         let authority = campaign.authority_sha256.clone();
-        let request_id = self.execution.ledger.begin(action, &authority)?;
-        let arguments = vec![
-            "campaign-control".to_owned(),
-            "--config".to_owned(),
-            project.config_path.display().to_string(),
-            "--campaign".to_owned(),
-            campaign.spec_path.display().to_string(),
-            "--action".to_owned(),
-            action.code().to_owned(),
-            "--request".to_owned(),
-            request_id.clone(),
-        ];
+        let arguments = self
+            .control_arguments(action, request_id)
+            .ok_or(ControlRefusal::CommandUnavailable)?;
+        if !command::can_preview(self.binary_path.as_deref(), Some(&arguments)) {
+            return Err(ControlRefusal::CommandUnavailable);
+        }
+        let request_id = self
+            .execution
+            .ledger
+            .begin_prepared(action, &authority, request_id)?;
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
@@ -450,7 +529,9 @@ impl App {
             }
         }
         let refusals = self.start_refusals();
-        let can_start = refusals.is_empty();
+        let arguments = self.start_arguments();
+        let can_start = refusals.is_empty()
+            && command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
         if ui
             .add_enabled(can_start, egui::Button::new("Start coordinator"))
             .clicked()
@@ -458,7 +539,21 @@ impl App {
             self.start_campaign();
         }
         if !can_start && self.campaign.is_some() {
-            ui.small(format!("Start unavailable: {}", refusals.join("; ")));
+            if refusals.is_empty() {
+                ui.small("Start unavailable: the exact command cannot be shown safely.");
+            } else {
+                ui.small(format!("Start unavailable: {}", refusals.join("; ")));
+            }
+        }
+        if let Some(arguments) = arguments {
+            command::show_for(
+                ui,
+                "Start coordinator",
+                self.binary_path.as_deref(),
+                &arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, "Start coordinator");
         }
     }
 
@@ -469,20 +564,43 @@ impl App {
         let pending = self.execution.ledger.pending().cloned();
         ui.horizontal_wrapped(|ui| {
             for action in ControlAction::ALL {
+                let preview_id = self.prepared_control_id(action);
+                let arguments = preview_id
+                    .as_deref()
+                    .and_then(|id| self.control_arguments(action, id));
                 let label = if action == ControlAction::Cancel && self.execution.cancel_armed {
                     "Confirm cancel"
                 } else {
                     action.label()
                 };
-                let enabled = self.campaign.is_some() && pending.is_none();
+                let enabled = pending.is_none()
+                    && command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
                 if ui.add_enabled(enabled, egui::Button::new(label)).clicked() {
-                    match self.request_control(action) {
-                        Ok(_) => self.execution.error = None,
+                    let id = preview_id
+                        .as_deref()
+                        .expect("enabled control has an identity");
+                    match self.request_control_prepared(action, id) {
+                        Ok(_) => {
+                            self.execution
+                                .preview_ids
+                                .retain(|(stored_action, _, _)| *stored_action != action);
+                            self.execution.error = None;
+                        }
                         Err(ControlRefusal::ConfirmCancel) => {
                             self.execution.error = None;
                         }
-                        Err(error) => self.execution.error = Some(error.to_string()),
+                        Err(error) => {
+                            self.execution
+                                .preview_ids
+                                .retain(|(stored_action, _, _)| *stored_action != action);
+                            self.execution.error = Some(error.to_string());
+                        }
                     }
+                }
+                if let Some(arguments) = arguments {
+                    command::show_for(ui, action.label(), self.binary_path.as_deref(), &arguments);
+                } else {
+                    command::show_unavailable_for(ui, action.label());
                 }
             }
         });

@@ -135,6 +135,10 @@ pub enum ControlRefusal {
     NoCampaign,
     /// The cancel action needs a second confirmation.
     ConfirmCancel,
+    /// The prepared request identity changed before submission.
+    InvalidIdentity,
+    /// The exact command cannot be rendered safely.
+    CommandUnavailable,
 }
 
 impl std::fmt::Display for ControlRefusal {
@@ -146,6 +150,11 @@ impl std::fmt::Display for ControlRefusal {
             ),
             Self::NoCampaign => formatter.write_str("select a campaign first"),
             Self::ConfirmCancel => formatter.write_str("press Cancel campaign again to confirm"),
+            Self::InvalidIdentity => formatter
+                .write_str("the prepared control request changed; review its command again"),
+            Self::CommandUnavailable => {
+                formatter.write_str("the exact control command cannot be shown safely")
+            }
         }
     }
 }
@@ -196,24 +205,13 @@ impl ControlLedger {
         self.entries.iter().find(|entry| entry.result.is_none())
     }
 
-    /// Chooses the request identity for an action: a retryable earlier identity for the same
-    /// action and authority, or a fresh one.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`ControlRefusal::Pending`] while another request has no outcome.
-    pub fn begin(
-        &mut self,
-        action: ControlAction,
-        authority_sha256: &str,
-    ) -> Result<String, ControlRefusal> {
-        if let Some(pending) = self.pending() {
-            return Err(ControlRefusal::Pending(pending.request_id.clone()));
-        }
-        let retryable = self.entries.iter_mut().rev().find(|entry| {
-            entry.action == action
-                && entry.authority_sha256 == authority_sha256
-                && entry.result.as_ref().is_some_and(|result| {
+    fn retryable_id(&self, action: ControlAction, authority_sha256: &str) -> Option<&str> {
+        self.entries
+            .iter()
+            .rev()
+            .find(|entry| entry.action == action && entry.authority_sha256 == authority_sha256)
+            .filter(|entry| {
+                entry.result.as_ref().is_some_and(|result| {
                     !result.created
                         && result.code.as_deref().is_some_and(|code| {
                             matches!(
@@ -225,22 +223,88 @@ impl ControlLedger {
                             )
                         })
                 })
-        });
-        if let Some(entry) = retryable {
+            })
+            .map(|entry| entry.request_id.as_str())
+    }
+
+    /// Returns the identity an action would use, without recording an intent.
+    #[must_use]
+    pub fn preview_id(&self, action: ControlAction, authority_sha256: &str) -> String {
+        self.retryable_id(action, authority_sha256).map_or_else(
+            || format!("ui-{}-{}", action.code().replace('_', "-"), fresh_suffix()),
+            str::to_owned,
+        )
+    }
+
+    /// Chooses the request identity for an action: a retryable earlier identity for the same
+    /// action and authority, or a fresh one.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ControlRefusal::Pending`] while another request has no outcome.
+    pub fn begin(
+        &mut self,
+        action: ControlAction,
+        authority_sha256: &str,
+    ) -> Result<String, ControlRefusal> {
+        let request_id = self.preview_id(action, authority_sha256);
+        self.begin_prepared(action, authority_sha256, &request_id)
+    }
+
+    /// Records an exact previously shown request identity when the action is submitted.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ControlRefusal`] when another request is pending or the prepared identity
+    /// no longer matches a retryable request.
+    pub fn begin_prepared(
+        &mut self,
+        action: ControlAction,
+        authority_sha256: &str,
+        request_id: &str,
+    ) -> Result<String, ControlRefusal> {
+        if let Some(pending) = self.pending() {
+            return Err(ControlRefusal::Pending(pending.request_id.clone()));
+        }
+        let retryable = self
+            .retryable_id(action, authority_sha256)
+            .map(str::to_owned);
+        if retryable.as_deref().is_some_and(|id| id != request_id) {
+            return Err(ControlRefusal::InvalidIdentity);
+        }
+        if let Some(entry) = self
+            .entries
+            .iter_mut()
+            .find(|entry| entry.request_id == request_id)
+        {
+            if retryable.as_deref() != Some(request_id)
+                || entry.action != action
+                || entry.authority_sha256 != authority_sha256
+            {
+                return Err(ControlRefusal::InvalidIdentity);
+            }
             entry.attempts += 1;
             entry.result = None;
-            return Ok(entry.request_id.clone());
+            return Ok(request_id.to_owned());
         }
-        let request_id = format!("ui-{}-{}", action.code().replace('_', "-"), fresh_suffix());
+        let prefix = format!("ui-{}-", action.code().replace('_', "-"));
+        if !request_id.starts_with(&prefix)
+            || request_id.len() != prefix.len() + 16
+            || !request_id[prefix.len()..]
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit())
+        {
+            return Err(ControlRefusal::InvalidIdentity);
+        }
         self.entries.push(ControlEntry {
-            request_id: request_id.clone(),
+            request_id: request_id.to_owned(),
             action,
             authority_sha256: authority_sha256.to_owned(),
             requested_at_ms: now_ms(),
             attempts: 1,
             result: None,
         });
-        Ok(request_id)
+        Ok(request_id.to_owned())
     }
 
     /// Marks every pending entry as having an unknown outcome so it can be replayed with the
@@ -320,5 +384,45 @@ mod tests {
         ledger.save(&root, "c").unwrap();
         assert_eq!(ControlLedger::load(&root, "c").unwrap(), ledger);
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn prepared_identity_is_inert_bound_and_replayed_exactly() {
+        let mut ledger = ControlLedger::default();
+        let id = ledger.preview_id(ControlAction::Pause, "authority-a");
+        assert!(
+            ledger.entries.is_empty(),
+            "preview must not record an intent"
+        );
+        assert_eq!(
+            ledger.begin_prepared(ControlAction::Resume, "authority-a", &id),
+            Err(ControlRefusal::InvalidIdentity)
+        );
+        assert_eq!(
+            ledger.begin_prepared(ControlAction::Pause, "authority-a", "ui-pause-bad"),
+            Err(ControlRefusal::InvalidIdentity)
+        );
+        assert_eq!(
+            ledger.begin_prepared(ControlAction::Pause, "authority-a", &id),
+            Ok(id.clone())
+        );
+        ledger.finish(&id, false, Some("codingmage.ui.outcome_unknown".to_owned()));
+        assert_eq!(ledger.preview_id(ControlAction::Pause, "authority-a"), id);
+        let other = ledger.preview_id(ControlAction::Pause, "authority-b");
+        assert_ne!(other, id);
+        assert_eq!(
+            ledger.begin_prepared(ControlAction::Pause, "authority-b", &id),
+            Err(ControlRefusal::InvalidIdentity)
+        );
+        assert_eq!(
+            ledger.begin_prepared(ControlAction::Pause, "authority-a", &other),
+            Err(ControlRefusal::InvalidIdentity)
+        );
+        assert_eq!(
+            ledger.begin_prepared(ControlAction::Pause, "authority-a", &id),
+            Ok(id.clone())
+        );
+        assert_eq!(ledger.entries.len(), 1);
+        assert_eq!(ledger.entries[0].attempts, 2);
     }
 }

@@ -55,7 +55,23 @@ pub fn can_preview(binary: Option<&Path>, arguments: Option<&[String]>) -> bool 
 
 /// Shows the exact command next to the matching UI action, without executing or copying it.
 pub fn show(ui: &mut Ui, binary: Option<&Path>, arguments: &[String]) {
-    ui.collapsing("Show command", |ui| {
+    show_with_label(ui, "Show command", binary, arguments);
+}
+
+/// Shows a command with an action-specific label for keyboard and assistive navigation.
+pub fn show_for(ui: &mut Ui, action: &str, binary: Option<&Path>, arguments: &[String]) {
+    show_with_label(ui, &format!("Show command: {action}"), binary, arguments);
+}
+
+/// Explains why a control cannot provide an exact command yet.
+pub fn show_unavailable_for(ui: &mut Ui, action: &str) {
+    ui.collapsing(format!("Show command: {action}"), |ui| {
+        ui.label("The exact command is unavailable because a coordinator, campaign or representable path is missing. The matching control is disabled.");
+    });
+}
+
+fn show_with_label(ui: &mut Ui, label: &str, binary: Option<&Path>, arguments: &[String]) {
+    ui.collapsing(label, |ui| {
         match binary.and_then(|path| format_command(path, arguments)) {
             Some(command) => {
                 ui.monospace(command);

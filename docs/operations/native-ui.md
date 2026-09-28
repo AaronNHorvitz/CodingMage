@@ -7,17 +7,18 @@ implemented locally with deterministic, display-less tests against the real `cod
 and fake providers (Sprint 36 in [TASKS.md](../../TASKS.md)). It has not been verified on a real
 desktop session, with a screen reader, from a clean installation, or with real providers; those
 items are listed in [the human-only register](../evidence/sprint-36-human-only.md). Incremental
-independent review findings were corrected in later commits. The latest bounded review found no
-implementation finding but remained inconclusive because the shared build reservation prevented
-its Cargo checks; full UI independent acceptance remains open.
+independent review findings were corrected in later commits. The read-only independent review of
+`ee97ecd5e9dc60bd75858087801d3eb58af81608` passed its bounded run-record and path-component
+scope with independent Cargo checks; full UI independent acceptance remains open.
 
 ## What It Is
 
 - A client of the `codingmage` executable installed next to it (Decision 0016). Campaign
   execution and controls run through that binary; the interface parses its JSON and stable
-  error codes and never links the runtime. Configuration writes, local browsing and read-only
-  run-record inspection still occur in the UI process. Migrating those operations to the command
-  boundary is open under the [native UI specification](../architecture/native-ui-specification.md).
+  error codes and never links the runtime. Read-only campaign-head task states, changes and
+  run-record evidence also use this command boundary.
+  Configuration writes and local browsing still occur in the UI process. Migrating those
+  operations is open under the [native UI specification](../architecture/native-ui-specification.md).
 - An observer and control surface. Opening the app or a repository starts no agent, edits no task
   status and authorizes no campaign. Closing the window never stops a coordinator.
 - Built with `egui`/`eframe` on `wgpu` with AccessKit accessibility (Decision 0015), reactive
@@ -73,10 +74,11 @@ showing sample results.
    campaign by typing the first twelve characters of the report digest. Admission records your
    review; it grants nothing.
 4. Start the coordinator. It runs `codingmage campaign` in its own process group; the interface
-   shows its pid, activity lines and outcome, and you may close the window at any time.
+   shows its exact command on request, pid, activity lines and outcome, and you may close the
+   window at any time.
 5. Pause, resume, stop after the current unit or cancel through `campaign-control`. Cancel
-   needs a second press. Resume records the intent; press Start again to continue a paused
-   campaign.
+   needs a second press. Each control can show its exact command and bound request identity
+   before submission. Resume records the intent; press Start again to continue a paused campaign.
 6. Inspect changes, review and test records, and export a report to a path outside the
    repository. Repository file paths are excluded unless you opt in.
 

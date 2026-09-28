@@ -4,8 +4,11 @@ mod common;
 
 use std::{fs, time::Duration};
 
+use egui_kittest::kittest::Queryable as _;
+
 use codingmage_ui::{
     admission::Staleness,
+    app::Screen,
     backend::CoordinatorBinary,
     controls::{ControlAction, ControlRefusal},
     launch::LaunchState,
@@ -77,6 +80,44 @@ fn admit(harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>) {
         "{:?}",
         harness.state().execution().error
     );
+}
+
+#[test]
+fn campaign_controls_show_exact_commands_without_recording_an_intent() {
+    let ready = ready("control-preview");
+    let mut harness = open(&ready);
+    admit(&mut harness);
+    harness.state_mut().select_screen(Screen::Campaign);
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: Start coordinator")
+        .click();
+    harness.run_steps(2);
+    let start = codingmage_ui::command::format_command(
+        &coordinator_binary(),
+        &[
+            "campaign".to_owned(),
+            "--config".to_owned(),
+            ready.fixture.config.to_str().unwrap().to_owned(),
+            "--campaign".to_owned(),
+            ready.spec.to_str().unwrap().to_owned(),
+        ],
+    )
+    .unwrap();
+    harness.get_by_label(start.as_str());
+    let pause = harness
+        .state_mut()
+        .preview_control(ControlAction::Pause)
+        .expect("campaign control command");
+    harness.get_by_label("Show command: Pause").click();
+    harness.run_steps(2);
+    harness.get_by_label(pause.as_str());
+    assert!(harness.state().execution().ledger.entries.is_empty());
+    assert!(harness.state().execution().record.is_none());
+    let id = pause.rsplit(' ').next().unwrap().to_owned();
+    harness.get_by_label("Pause").click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().execution().ledger.entries[0].request_id, id);
 }
 
 #[test]

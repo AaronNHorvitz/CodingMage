@@ -1,35 +1,38 @@
 # Sprint 36.3 native UI baseline and frozen qualification protocol
 
 Prepared against source commit `57f79133cc1dc67c7b3f9953fa9fb24dbf441b22` before any
-36.3 performance or human measurement. This is a source inventory and test plan, not a UI
-qualification result. The binding requirements are
+36.3 performance or human measurement. The implementation column was reconciled against
+`ee97ecd5e9dc60bd75858087801d3eb58af81608` and updated with the 2026-09-28 campaign-command
+preview increment; the frozen profiles, budgets and trial protocol below are unchanged. This is a
+source inventory and test plan, not a UI qualification result. The binding requirements are
 [the native UI specification](../architecture/native-ui-specification.md). Later source changes
 must update the implementation column without silently changing the frozen protocol below.
 
 ## Screen and state inventory
 
-The current `Screen` enum in `crates/codingmage-ui/src/app/mod.rs` has six destinations. Embedded
-sections are listed separately because the specification requires their own complete workflows.
+The `Screen` enum in `crates/codingmage-ui/src/app/mod.rs` has seven destinations at the
+reconciled commit. Embedded sections are listed separately because the specification requires
+their own complete workflows.
 
 | Specified screen | Current source surface | Gap against the specification |
 | --- | --- | --- |
 | First run | Overview without a project; `open_controls`, `CoordinatorBinary::sibling` | No dedicated first-run flow, provider sign-in explanation, storage explanation or clear recommended next step. |
 | Workspace | Overview and diagnosis grid | Repository and source-plan counts exist; objective, current campaign, attention and recent outcome summary are absent. |
-| Work plan | `work_plan`, `PlanIndex`, filters and source checkbox labels | Search, kind/state filters and dependencies exist; large-list virtualization and contextual outcome detail are absent. |
+| Work plan | `work_plan`, `PlanIndex`, filters, source checkbox labels and `campaign-head-plan` overlay | Search, kind/state filters, dependencies and coordinator-bound head states exist; large-list virtualization and contextual outcome history are absent. |
 | Task detail | `item_detail` below the selected row | Source title, line, checkbox, dependencies and identifier exist; source body, criteria, packets, attempts, review and test history are absent. |
-| Team activity | Campaign status, active tasks, `changes_screen` run records | Actor, model, pod, phase and some journaled records exist; one chronological filterable activity log and bounded output/timing detail are absent. |
+| Team activity | Campaign status, active tasks, `campaign-run-records` projection | Actor, model, pod, phase and bounded journal summaries exist; one chronological filterable activity log and complete output/timing detail are absent. |
 | Blockers | Campaign `holds_section`, blocker explanation and reports | Codes and affected task exist; recovery actions and a dedicated searchable view are absent. |
-| Changes and evidence | Changes screen, Git summaries and run records | Commit, changed files and known gate/review dispositions exist; exact diff hunks, full retained findings and logs are unavailable from the command boundary. Missing evidence is labelled. |
+| Changes and evidence | `campaign-changes` and `campaign-run-records` coordinator projections | Commit, changed files and known gate/review dispositions exist; exact diff hunks, full retained findings and logs are unavailable from the command boundary. Missing evidence is labelled. |
 | Reports | Reports screen and `report::export` | Inspect/export and overwrite/privacy refusal exist; explanatory outcome depth and broader report navigation remain. |
 | Configuration | Setup and campaign readiness sections | Guided configuration, validated writes, preflight and error explanations exist; schema/default view, every policy, and full mode setup are incomplete. |
-| Campaign controls | Campaign execution section | Admission, start, stop/resume/cancel and reconnect exist through the coordinator; every control lacks a visible exact `codingmage` command. |
-| Settings | No destination | Appearance, accessibility, language, storage and defaults are absent. |
+| Campaign controls | Campaign execution section | Admission, start, stop/resume/cancel and reconnect exist; diagnosis, preflight, start and four campaign controls have exact command previews. Admission and other local actions still lack command equivalents. |
+| Settings | Settings destination and design tokens | System, light, dark and high-contrast appearances work for this window; language, storage and defaults are absent. |
 | Help and About | No destination | Offline help, glossary, shortcut reference, licence/attribution view and manual diagnostic action are absent. The backend `support-bundle` command exists. |
 
 | Required state | Current handling | Remaining gap |
 | --- | --- | --- |
 | Empty / not started | Overview, work plan, campaign and report empty text | Per-screen next step and help are inconsistent. |
-| Loading | `Observed<T>` and selected panels | Partial loading states and polite accessibility announcements are absent. |
+| Loading | `Observed<T>` and selected panels | Some partial loading states and polite accessibility announcements are absent. |
 | Failure / malformed output | `BackendError`, `failure_box`, strict model parsers | Some failures are generic and their effect on the campaign is unclear. |
 | Stale / disconnected | `Observed<T>::freshness`, response-generation and binding checks | Not every panel labels a retained stale value; status bar lacks complete campaign freshness. |
 | Executable missing | `Connection::Unavailable` in Overview/status bar | First-run recovery path is incomplete. |
@@ -37,13 +40,14 @@ sections are listed separately because the specification requires their own comp
 | Campaign and task outcomes | `CampaignStatus`, task overlay and independent counters | Some coordinator states are raw codes; task detail lacks the full history. Source checkboxes and verified outcomes are kept distinct. |
 
 Shell gaps apply to every screen: the navigation has no command palette; the status bar does not
-always show campaign identity/state, involvement, active pods, current gate and last update; the
-minimum window is currently 720 by 480 logical pixels rather than 1024 by 640. Text is embedded
-in Rust; themes, tokens, contrast evidence, pseudo-locale, right-to-left and reduced-motion
-support are absent. The current code uses plain egui labels for untrusted content, but a complete
-inert-content/confirmed-link adversarial matrix has not been run. The UI performs some local
-configuration, file and Git operations; Decision 0016's command boundary and the new section 2
-rule require those operations to be reconciled, with missing commands added to `codingmage`.
+always show campaign identity/state, involvement, active pods, current gate and last update. The
+minimum window is now 1024 by 640 logical pixels. Shared design tokens, themes, contrast and
+offscreen screenshot evidence exist, as does the inert-content/confirmed-link adversarial matrix;
+these do not qualify real desktop accessibility. Text remains embedded in Rust, and pseudo-locale,
+right-to-left and locale formatting are absent. Reduced motion is the default because the shell
+has no essential animation. The UI still performs local configuration, browsing and process
+observation; Decision 0016's command boundary and section 2 require those operations to be
+reconciled, with missing commands added to `codingmage`.
 
 ## Frozen device profiles
 
