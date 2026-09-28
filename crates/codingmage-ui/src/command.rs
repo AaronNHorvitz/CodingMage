@@ -19,19 +19,7 @@ pub fn format_command(binary: &Path, arguments: &[String]) -> Option<String> {
 }
 
 fn quote_argument(argument: &str) -> Option<String> {
-    if argument.chars().any(|character| {
-        character.is_control()
-            || matches!(
-                character,
-                '\u{00ad}'
-                    | '\u{061c}'
-                    | '\u{200b}'..='\u{200f}'
-                    | '\u{202a}'..='\u{202e}'
-                    | '\u{2060}'
-                    | '\u{2066}'..='\u{2069}'
-                    | '\u{feff}'
-            )
-    }) {
+    if !argument.chars().all(display_safe_character) {
         return None;
     }
     if argument.is_empty() {
@@ -44,6 +32,25 @@ fn quote_argument(argument: &str) -> Option<String> {
         return Some(argument.to_owned());
     }
     Some(format!("'{}'", argument.replace('\'', "'\\''")))
+}
+
+// A command must remain legible without depending on the current font's treatment of
+// format characters, combining marks, unusual whitespace or invisible symbols. Admit
+// ordinary non-ASCII letters and numbers for international paths, except blank letters.
+fn display_safe_character(character: char) -> bool {
+    if character.is_ascii() {
+        return character == ' ' || character.is_ascii_graphic();
+    }
+    character.is_alphanumeric()
+        && !matches!(character, '\u{115f}' | '\u{1160}' | '\u{3164}' | '\u{ffa0}')
+}
+
+/// Whether the exact command can be rendered for an enabled action.
+#[must_use]
+pub fn can_preview(binary: Option<&Path>, arguments: Option<&[String]>) -> bool {
+    binary
+        .zip(arguments)
+        .is_some_and(|(path, args)| format_command(path, args).is_some())
 }
 
 /// Shows the exact command next to the matching UI action, without executing or copying it.
@@ -85,6 +92,40 @@ mod tests {
             .is_none()
         );
         assert!(format_command(Path::new("/usr/bin/codingmage"), &["a\nb".to_owned()]).is_none());
+        assert!(format_command(Path::new("/tmp/a\u{034f}b/codingmage"), &arguments).is_none());
+        assert!(format_command(Path::new("/tmp/a\u{180e}b/codingmage"), &arguments).is_none());
+        assert!(format_command(Path::new("/tmp/a\u{115f}b/codingmage"), &arguments).is_none());
+        assert!(
+            format_command(Path::new("/usr/bin/codingmage"), &["a\u{034f}b".to_owned()]).is_none()
+        );
+        assert!(
+            format_command(Path::new("/usr/bin/codingmage"), &["a\u{180e}b".to_owned()]).is_none()
+        );
+        assert!(
+            format_command(Path::new("/usr/bin/codingmage"), &["a\u{2800}b".to_owned()]).is_none()
+        );
+        assert!(
+            format_command(Path::new("/usr/bin/codingmage"), &["a\u{00a0}b".to_owned()]).is_none()
+        );
+        assert!(
+            format_command(Path::new("/usr/bin/codingmage"), &["a\u{fe0f}b".to_owned()]).is_none()
+        );
+        assert!(
+            format_command(Path::new("/usr/bin/codingmage"), &["a\u{200d}b".to_owned()]).is_none()
+        );
+        assert!(
+            format_command(Path::new("/usr/bin/codingmage"), &["a\u{202e}b".to_owned()]).is_none()
+        );
+        assert!(
+            format_command(Path::new("/usr/bin/codingmage"), &["a\u{3164}b".to_owned()]).is_none()
+        );
+        assert!(format_command(Path::new("/usr/bin/codingmage"), &["日本語".to_owned()]).is_some());
+        let hidden = Path::new("/tmp/a\u{034f}b/codingmage");
+        assert!(!can_preview(Some(hidden), Some(&arguments)));
+        assert!(!can_preview(
+            Some(hidden),
+            Some(&["campaign-preflight".to_owned()])
+        ));
         assert_eq!(quote_argument(""), Some("''".to_owned()));
     }
 }

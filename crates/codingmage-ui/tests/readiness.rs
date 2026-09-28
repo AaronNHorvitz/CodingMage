@@ -7,6 +7,7 @@ use std::time::Duration;
 use codingmage_ui::{
     Screen,
     backend::{BackendError, CoordinatorBinary},
+    observed::Freshness,
     readiness::CheckStatus,
 };
 use common::{
@@ -23,6 +24,67 @@ fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::Ap
         app.diagnosis().value.is_some()
     }));
     harness
+}
+
+#[test]
+fn invisible_executable_refuses_both_command_actions_and_direct_preflight() {
+    let fixture = Fixture::new("invisible-command", 10);
+    git(
+        &fixture.target,
+        &["switch", "-q", "-c", "controlled-target"],
+    );
+    let (spec, record) = write_controlled_campaign(&fixture, "invisible-command");
+    let hidden_binary = fixture.executable("coding\u{034f}mage", "#!/bin/sh\nexit 83\n");
+    let binary = CoordinatorBinary::at(&hidden_binary);
+    let mut harness = harness(binary, [1100.0, 900.0]);
+    harness.state_mut().open_project(&fixture.config);
+    harness.run_steps(2);
+    assert_eq!(
+        harness
+            .state()
+            .diagnosis()
+            .freshness(std::time::Instant::now()),
+        Freshness::NotRequested
+    );
+    harness.get_by_label("Refresh diagnosis").click();
+    harness.run_steps(2);
+    assert_eq!(
+        harness
+            .state()
+            .diagnosis()
+            .freshness(std::time::Instant::now()),
+        Freshness::NotRequested
+    );
+    harness.state_mut().refresh_diagnosis();
+    assert_eq!(
+        harness
+            .state()
+            .diagnosis()
+            .freshness(std::time::Instant::now()),
+        Freshness::NotRequested
+    );
+
+    harness.state_mut().select_campaign(&spec);
+    harness.state_mut().set_authorization_record(&record);
+    harness.state_mut().select_screen(Screen::Campaign);
+    harness.run_steps(2);
+    harness.get_by_label("Run preflight").click();
+    harness.run_steps(2);
+    assert_eq!(
+        harness
+            .state()
+            .preflight()
+            .freshness(std::time::Instant::now()),
+        Freshness::NotRequested
+    );
+    harness.state_mut().run_preflight();
+    assert_eq!(
+        harness
+            .state()
+            .preflight()
+            .freshness(std::time::Instant::now()),
+        Freshness::NotRequested
+    );
 }
 
 fn status_of<'a>(checks: &'a [codingmage_ui::readiness::Check], name: &str) -> &'a CheckStatus {

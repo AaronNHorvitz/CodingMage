@@ -444,6 +444,16 @@ impl App {
             }
             return;
         };
+        if self
+            .binary_path
+            .as_deref()
+            .is_some_and(|path| !command::can_preview(Some(path), Some(&arguments)))
+        {
+            self.set_status(
+                "diagnosis cannot run because the exact coordinator command cannot be shown safely",
+            );
+            return;
+        }
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
@@ -715,11 +725,10 @@ impl App {
                 let age = age_label(self.diagnosis.age(self.now));
                 ui.label(format!("Diagnosis: {} ({age})", freshness.label()));
                 let doctor_command = self.doctor_arguments();
-                let can_preview = doctor_command.as_ref().is_some_and(|arguments| {
-                    self.binary_path.as_deref().and_then(|path| {
-                        command::format_command(path, arguments)
-                    }).is_some()
-                });
+                let can_preview = command::can_preview(
+                    self.binary_path.as_deref(),
+                    doctor_command.as_deref(),
+                );
                 if ui
                     .add_enabled(
                         can_preview,

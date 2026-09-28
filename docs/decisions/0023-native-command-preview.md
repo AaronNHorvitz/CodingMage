@@ -23,6 +23,12 @@ or contains an invisible control or direction character. The matching action is 
 that case, so an executable action always has an exact preview. Showing a command never submits
 a request or copies text. The control remains governed by the existing backend authority.
 
+After independent review of the first implementation, the display check uses a conservative
+character policy: printable ASCII plus ordinary non-ASCII letters and numbers, excluding known
+blank letters. Other Unicode marks, formatting characters, unusual whitespace and symbols make
+the exact preview unavailable and disable the matching action. This can refuse some legitimate
+paths; it avoids showing an apparently complete command while hiding an argument character.
+
 The initial implementation covers **Refresh diagnosis** (`doctor`) and **Run preflight**
 (`campaign-preflight`). Every other control remains open under Sub-task 36.3.2.2 until its exact
 backend or local-operation equivalent is implemented and tested. A command with a newly generated

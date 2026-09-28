@@ -79,6 +79,12 @@ impl App {
             self.set_status("select a campaign, authorization record and coordinator with paths that can be shown exactly before preflight");
             return;
         };
+        if !crate::command::can_preview(self.binary_path.as_deref(), Some(&arguments)) {
+            self.set_status(
+                "preflight cannot run because the exact coordinator command cannot be shown safely",
+            );
+            return;
+        }
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
@@ -184,12 +190,9 @@ impl App {
             });
         }
         let preflight_command = self.preflight_arguments();
-        let can_run = preflight_command.as_ref().is_some_and(|arguments| {
-            self.binary_path
-                .as_deref()
-                .and_then(|path| crate::command::format_command(path, arguments))
-                .is_some()
-        }) && !self.preflight.loading;
+        let can_run =
+            crate::command::can_preview(self.binary_path.as_deref(), preflight_command.as_deref())
+                && !self.preflight.loading;
         if ui
             .add_enabled(can_run, egui::Button::new("Run preflight"))
             .clicked()

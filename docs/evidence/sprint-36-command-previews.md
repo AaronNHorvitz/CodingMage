@@ -39,3 +39,18 @@ all-target run used a labelled CPU software renderer. An earlier candidate run e
 missing-coordinator regression and was retained as a failure; the corrected focused shell test
 passed before the successful cumulative run. Independent re-review of the correction remains
 open. The remaining direct UI repository and state reads keep Sub-task 36.3.2.2 open.
+
+The independent report for `150bca34b59ba4a828dc0ec20b81b8ad870d388c` accepted the three
+earlier static corrections but found that the preview accepted U+034F, an invisible Unicode
+character. Its verdict was **INCONCLUSIVE**; the reviewer could not acquire the shared build
+reservation to reproduce Rust checks. A follow-up source correction now uses a conservative
+display-safe predicate shared by both clickable command previews and refuses direct diagnosis
+and preflight submission when a selected executable command is unsafe to display. The focused
+unit test passed 1/1; an offscreen test with an actual U+034F-named executable passed 1/1 and
+observed that neither button nor direct call submitted a request. The corrected candidate tree
+passed the sibling CLI build, UI all-target suite (80/80), strict workspace Clippy, formatting,
+documentation check, inventory validation (1,680 surfaces / 811 explicit gaps), and diff check.
+The Python suite ran 42 tests: 41 passed and the unchanged CM-R01.6 source-bound evidence test
+failed on the same eight input-drift paths. The full private gate log is retained outside Git.
+This local verification does not independently close the review finding; a fresh exact-commit
+review is required. Task 36.3.2.2 and all human/live/acceptance gates remain open.
