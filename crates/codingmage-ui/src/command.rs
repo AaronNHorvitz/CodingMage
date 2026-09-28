@@ -75,13 +75,16 @@ pub fn show_for(ui: &mut Ui, action: &str, binary: Option<&Path>, arguments: &[S
 
 /// Explains why a control cannot provide an exact command yet.
 pub fn show_unavailable_for(ui: &mut Ui, action: &str) {
-    ui.collapsing(format!("Show command: {action}"), |ui| {
+    let response = ui.collapsing(format!("Show command: {action}"), |ui| {
         ui.label("The exact command is unavailable because a coordinator, campaign or representable path is missing. The matching control is disabled.");
     });
+    if response.header_response.has_focus() {
+        response.header_response.scroll_to_me(None);
+    }
 }
 
 fn show_with_label(ui: &mut Ui, label: &str, binary: Option<&Path>, arguments: &[String]) {
-    ui.collapsing(label, |ui| {
+    let response = ui.collapsing(label, |ui| {
         match binary.and_then(|path| format_command(path, arguments)) {
             Some(command) => {
                 ui.monospace(command);
@@ -92,6 +95,9 @@ fn show_with_label(ui: &mut Ui, label: &str, binary: Option<&Path>, arguments: &
             }
         }
     });
+    if response.header_response.has_focus() {
+        response.header_response.scroll_to_me(None);
+    }
 }
 
 #[cfg(test)]

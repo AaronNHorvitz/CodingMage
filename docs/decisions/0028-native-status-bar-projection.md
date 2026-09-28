@@ -25,6 +25,9 @@ reported pod IDs and label that count as identified pods. Read involvement only 
 separately bound mission observation. Show no-charter, not-started, loading, failed and stale observations
 separately; retained values are explicitly marked stale. Display the coordinator's exact
 checkpoint time as milliseconds since 1970 UTC, with no inferred locale or clock adjustment.
+When a selected, identity-bound observation contains a state or involvement code outside the
+current producer's closed set, label it as an unknown coordinator value with a bounded inert
+preview of the code rather than presenting it as a recognized setting.
 
 Show “Current gate: not reported by coordinator” until a versioned coordinator command provides
 a bound current-gate field. Do not infer a gate from a run record, an active task, or a local

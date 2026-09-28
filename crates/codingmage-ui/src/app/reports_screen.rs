@@ -169,12 +169,10 @@ fn outcome_summary(ui: &mut egui::Ui, report: &OutcomeReport) {
         .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
         .show(ui, |ui| {
             ui.label("Campaign state");
-            ui.label(
-                disposition
-                    .campaign_state
-                    .as_deref()
-                    .unwrap_or("not observed"),
-            );
+            ui.label(disposition.campaign_state.as_deref().map_or_else(
+                || "not observed".to_owned(),
+                crate::campaign::campaign_state_label,
+            ));
             ui.end_row();
             ui.label("Accepted outcomes");
             ui.label(

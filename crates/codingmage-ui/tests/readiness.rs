@@ -2,7 +2,7 @@
 
 mod common;
 
-use std::time::Duration;
+use std::{fs, path::PathBuf, time::Duration};
 
 use codingmage_ui::{
     Screen,
@@ -13,11 +13,18 @@ use codingmage_ui::{
 use common::{
     Fixture, coordinator_binary, git, harness, settle, write_campaign, write_controlled_campaign,
 };
-use egui_kittest::kittest::Queryable as _;
+use egui_kittest::kittest::{NodeT as _, Queryable as _};
 
 fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::App> {
+    opened_at_size(fixture, [1100.0, 900.0])
+}
+
+fn opened_at_size(
+    fixture: &Fixture,
+    size: [f32; 2],
+) -> egui_kittest::Harness<'static, codingmage_ui::App> {
     let binary = CoordinatorBinary::at(&coordinator_binary());
-    let mut harness = harness(binary, [1100.0, 900.0]);
+    let mut harness = harness(binary, size);
     let config = fixture.config.clone();
     harness.state_mut().open_project(&config);
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {
@@ -152,6 +159,59 @@ fn local_checks_explain_the_preflight_failure_before_it_runs() {
     assert!(!fixture.state.join("campaigns").exists());
 }
 
+fn show_preflight_command_by_keyboard(
+    harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>,
+) {
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::Num3);
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Campaign);
+    let mut focused = Vec::new();
+    let mut reached = false;
+    for _ in 0..128 {
+        harness.key_press(egui::Key::Tab);
+        harness.run_steps(1);
+        let current = harness
+            .root()
+            .children_recursive()
+            .find(|node| node.accesskit_node().is_focused())
+            .and_then(|node| node.accesskit_node().label())
+            .unwrap_or_default();
+        focused.push(current);
+        if harness
+            .get_all_by_label("Show command")
+            .nth(1)
+            .expect("preflight command control")
+            .accesskit_node()
+            .is_focused()
+        {
+            reached = true;
+            break;
+        }
+    }
+    assert!(
+        reached,
+        "Tab traversal did not reach preflight: {focused:?}"
+    );
+    harness.run_steps(2);
+    let control = harness
+        .get_all_by_label("Show command")
+        .nth(1)
+        .expect("preflight command control");
+    assert!(control.accesskit_node().is_focused());
+    assert!(control.accesskit_node().has_bounds());
+    if let Some(directory) = std::env::var_os("CODINGMAGE_UI_EVIDENCE_DIR") {
+        let directory = PathBuf::from(directory);
+        fs::create_dir_all(&directory).unwrap();
+        harness
+            .render()
+            .expect("minimum-window keyboard frame")
+            .save(directory.join("preflight-command-keyboard-focus.png"))
+            .unwrap();
+    }
+    harness.key_press(egui::Key::Enter);
+    harness.run_steps(2);
+}
+
 #[test]
 fn real_preflight_passes_on_a_ready_fixture_and_binds_the_report_digest() {
     let fixture = Fixture::new("readiness-pass", 10);
@@ -160,7 +220,7 @@ fn real_preflight_passes_on_a_ready_fixture_and_binds_the_report_digest() {
         &["switch", "-q", "-c", "controlled-target"],
     );
     let (spec, record) = write_controlled_campaign(&fixture, "ready-campaign");
-    let mut harness = opened(&fixture);
+    let mut harness = opened_at_size(&fixture, codingmage_ui::app::MIN_WINDOW);
     harness.state_mut().select_campaign(&spec);
     harness.state_mut().set_authorization_record(&record);
     let checks = harness.state().readiness_checks();
@@ -168,16 +228,7 @@ fn real_preflight_passes_on_a_ready_fixture_and_binds_the_report_digest() {
         checks.iter().all(|check| check.status == CheckStatus::Pass),
         "{checks:?}"
     );
-    harness.state_mut().select_screen(Screen::Campaign);
-    harness.run_steps(2);
-    harness
-        .get_all_by_label("Show command")
-        .nth(1)
-        .expect("preflight command control")
-        .focus();
-    harness.run_steps(2);
-    harness.key_press(egui::Key::Enter);
-    harness.run_steps(2);
+    show_preflight_command_by_keyboard(&mut harness);
     let expected = codingmage_ui::command::format_command(
         &coordinator_binary(),
         &[

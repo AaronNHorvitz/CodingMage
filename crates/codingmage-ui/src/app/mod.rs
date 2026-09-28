@@ -30,7 +30,7 @@ use crate::{
         models::{Diagnosis, parse_diagnosis},
     },
     browser::Browser,
-    campaign::{CampaignSelection, SelectError, involvement_label},
+    campaign::{CampaignSelection, SelectError, campaign_state_label, involvement_label},
     command, content,
     design::{Appearance, Palette, Tokens, current_tokens},
     observed::{Freshness, Observed, age_label},
@@ -780,7 +780,7 @@ impl App {
                     (
                         format!(
                             "State: {}{status_stale}",
-                            content::list_label(&status.state)
+                            campaign_state_label(&status.state)
                         ),
                         format!("Active pods: {} identified{status_stale}", pods.len()),
                         format!(
@@ -826,7 +826,7 @@ impl App {
                     };
                     format!(
                         "Involvement: {} (last observed{authority}){mission_stale}",
-                        content::list_label(involvement_label(&mission.involvement))
+                        involvement_label(&mission.involvement)
                     )
                 }
                 Some(None) => format!("Involvement: no charter admitted{mission_stale}"),

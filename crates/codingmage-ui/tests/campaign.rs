@@ -76,11 +76,11 @@ fn assert_one_identified_pod_for_two_active_tasks(
     harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>,
 ) {
     let mut active = harness.state().status().value.clone().flatten().unwrap();
-    "running".clone_into(&mut active.state);
+    "implementing".clone_into(&mut active.state);
     let task = ActiveTask {
         task_id: "0.1.1.1".to_owned(),
         pod_id: Some("pod-one".to_owned()),
-        state: "running".to_owned(),
+        state: "implementing".to_owned(),
         actor: "implementer".to_owned(),
         model: None,
         correction_round: 0,
@@ -97,9 +97,42 @@ fn assert_one_identified_pod_for_two_active_tasks(
         result: Ok(serde_json::to_vec(&active).unwrap()),
     }));
     harness.run_steps(2);
-    harness.get_by_label_contains("State: running");
+    harness.get_by_label_contains("State: implementing");
     harness.get_by_label_contains("Active pods: 1 identified");
     harness.get_by_label_contains("Current gate: not reported by coordinator");
+}
+
+fn assert_unknown_bound_codes_are_labelled(
+    harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>,
+) {
+    let mut status = harness.state().status().value.clone().flatten().unwrap();
+    "future_state".clone_into(&mut status.state);
+    let mut mission = harness.state().mission().value.clone().flatten().unwrap();
+    "future_mode".clone_into(&mut mission.involvement);
+    let binding = harness.state().binding();
+    let generation = harness.state().generation();
+    for (label, bytes) in [
+        ("campaign-status", serde_json::to_vec(&status).unwrap()),
+        (
+            "campaign-mission-status",
+            serde_json::to_vec(&mission).unwrap(),
+        ),
+    ] {
+        assert!(harness.state_mut().handle_response(Response {
+            generation,
+            binding: binding.clone(),
+            label,
+            request_id: None,
+            result: Ok(bytes),
+        }));
+    }
+    harness.run_steps(2);
+    harness.get_by_label_contains("State: unknown coordinator value (future_state)");
+    harness.get_by_label_contains("Involvement: unknown coordinator value (future_mode)");
+    harness.state_mut().select_screen(Screen::Campaign);
+    harness.run_steps(2);
+    harness.get_by_label("unknown coordinator value (future_state)");
+    harness.get_by_label("unknown coordinator value (future_mode)");
 }
 
 #[test]
@@ -248,6 +281,7 @@ fn foreign_campaign_status_and_mission_cannot_replace_selected_observations() {
     }));
     assert!(harness.state().status().last_error.is_none());
     assert_one_identified_pod_for_two_active_tasks(&mut harness);
+    assert_unknown_bound_codes_are_labelled(&mut harness);
 }
 
 #[test]

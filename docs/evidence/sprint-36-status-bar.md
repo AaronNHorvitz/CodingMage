@@ -51,8 +51,9 @@ existing real preflight integration test failed 3/4: its offscreen click on “S
 not expand the preview after the status bar grew. The optional status message was moved into the
 timing row to restore vertical space without hiding required fields. A focused rerun still
 failed with a click; the control appeared in the accessibility tree. The test now focuses that
-control and presses Enter, proving keyboard access and expansion at the same viewport; its
-focused rerun passed 1/1. Both failed runs are retained privately. The final three-row
+control and presses Enter, proving programmatically focused expansion at the same viewport; its
+focused rerun passed 1/1. This did not prove Tab traversal or visibility. Both failed runs are
+retained privately. The final three-row
 minimum/default/high-DPI/large window check passed 1/1. The minimum and high-DPI frames were
 visually inspected, and the pixel digests above refer to that final layout. The final-source
 cumulative batch passed the sibling CLI build, strict workspace Clippy and native UI all-target
@@ -62,3 +63,33 @@ documentation, architecture, verification inventory (1,702 surfaces and 825 expl
 diff whitespace checks passed. No source-bound evidence digest was renewed. This evidence does
 not qualify a live provider, a desktop environment, Orca, human usability, the frozen performance
 budgets, packaging or release.
+
+## Independent review and correction candidate
+
+The exact-commit independent review of `9965b055891f2a3a92d1986df9751b8f74f4a2a9`
+returned **INCONCLUSIVE** with two applicable findings. First, the status and mission schemas
+carry string codes, so an identity-bound but unknown code could appear as an ordinary state or
+involvement setting. The corrected UI now recognizes the current producer's closed phase and
+involvement code sets and labels any other code as an **unknown coordinator value**, showing only
+a bounded inert preview of that code. The status bar, Campaign and report views use the same
+campaign-state label; the bar and Campaign mission view use the same involvement label. A bound
+synthetic `future_state`/`future_mode` regression passed 1/1. The raw coordinator codes remain in
+the observation and exported machine-readable report; this display correction grants no authority.
+
+Second, the reviewer found that direct focus in the prior readiness test bypassed keyboard
+traversal. The corrected test selects Campaign by shortcut, traverses with Tab at the 1024×640
+logical minimum, checks that the preflight control owns focus and has accessibility bounds, then
+opens its exact command with Enter. That focused test initially passed 1/1 while a private frame
+showed the focused control still offscreen. The shared command-preview widget now scrolls a
+focused header into view. The corrected focused test passed 1/1, and the private offscreen
+llvmpipe frame was visually inspected with the preflight control visible. Its raw-pixel digest is
+`ff8d439effff4c20ec6d3bd80df39b716fb1ea71cb36024154a64f8856cbbfe7`;
+the prior offscreen frame and compiler error remain private. This proves the tested software
+viewport, not real desktop or Orca accessibility. The final-source cumulative batch passed the
+sibling CLI build, strict workspace Clippy and native UI all-target tests (91/91), including the
+bound unknown-code regression, preflight keyboard traversal and resource/recovery tests. Python
+unittest ran 42 tests: 41 passed and the sole failure remained CM-R01.6's same eight source-bound
+input drifts; no digest was renewed. Formatting, docs, architecture, verification inventory
+(1,703 surfaces, 825 explicit gaps) and diff checks passed. Earlier compiler and Clippy failures
+remain in private receipts. Exact-commit independent re-review remains pending; this local batch
+does not close Task 36.3.2.2 or human, desktop, live-provider, package or release gates.

@@ -16,6 +16,7 @@ use codingmage_plan::CheckState;
 use crate::backend::models::{
     ActiveTask, CampaignReport, CampaignStatus, Deferral, TaskCompletion, TaskReason,
 };
+use crate::content;
 
 /// One selected campaign bound to the opened repository.
 #[derive(Clone, Debug)]
@@ -284,13 +285,51 @@ pub const INVOLVEMENT_MODES: &[(&str, &str, &str)] = &[
     ),
 ];
 
+/// Human label for a coordinator campaign state, preserving unknown codes as unknown.
+#[must_use]
+pub fn campaign_state_label(code: &str) -> String {
+    if matches!(
+        code,
+        "ready"
+            | "planning"
+            | "running_unit"
+            | "integrating"
+            | "paused"
+            | "blocked"
+            | "complete"
+            | "cancelled"
+            | "planned"
+            | "proposed"
+            | "leased"
+            | "implementing"
+            | "local_gates"
+            | "reviewing"
+            | "correcting"
+            | "publication_ready"
+            | "pr_open"
+            | "ci_waiting"
+            | "integration_queued"
+            | "merge_ready"
+            | "merged"
+            | "disputed"
+            | "failed"
+    ) {
+        code.to_owned()
+    } else {
+        format!("unknown coordinator value ({})", content::list_label(code))
+    }
+}
+
 /// Human label for an involvement mode code reported by the backend.
 #[must_use]
-pub fn involvement_label(code: &str) -> &str {
+pub fn involvement_label(code: &str) -> String {
     INVOLVEMENT_MODES
         .iter()
         .find(|(known, _, _)| *known == code)
-        .map_or(code, |(_, label, _)| label)
+        .map_or_else(
+            || format!("unknown coordinator value ({})", content::list_label(code)),
+            |(_, label, _)| (*label).to_owned(),
+        )
 }
 
 #[cfg(test)]

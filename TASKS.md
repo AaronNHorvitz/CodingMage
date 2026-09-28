@@ -2142,7 +2142,9 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     correction is recorded in `docs/evidence/sprint-36-status-payload-binding.md`. The
     always-visible shell status projection shows bound state, involvement, identified pods,
     last coordinator checkpoint and an explicit unreported current gate; its other screen
-    states and depth remain open. See `docs/evidence/sprint-36-status-bar.md` and
+    states and depth remain open. Its first independent review was inconclusive; the unknown-code
+    and keyboard-visibility corrections await exact-commit re-review. See
+    `docs/evidence/sprint-36-status-bar.md` and
     `docs/evidence/sprint-36-command-previews.md`,
     `docs/evidence/sprint-36-head-plan-projection.md`,
     `docs/evidence/sprint-36-campaign-changes-projection.md` and

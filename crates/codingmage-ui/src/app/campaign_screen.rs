@@ -653,7 +653,7 @@ fn status_grid(ui: &mut egui::Ui, status: &crate::backend::models::CampaignStatu
         .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
         .show(ui, |ui| {
             ui.label("Phase");
-            ui.label(&status.state);
+            ui.label(crate::campaign::campaign_state_label(&status.state));
             ui.end_row();
             ui.label("Actor");
             ui.label(&status.actor);

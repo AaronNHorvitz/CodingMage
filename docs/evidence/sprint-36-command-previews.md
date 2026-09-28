@@ -118,3 +118,15 @@ adversarial case, native UI all-target 90/90, sibling CLI build, strict workspac
 static checks from a clean source archive. Python retained only the documented CM-R01.6
 source-bound freshness failure. This bounded review does not close Task 36.3.2.2 or any
 human, live-provider, package or release gate.
+
+## Focused command visibility correction
+
+The status-bar increment exposed a keyboard defect at the 1024×640 minimum window: Tab could
+focus the Campaign preflight “Show command” header while it remained below the visible scroll
+region. The shared command-preview widget now scrolls its header into view when keyboard focus
+lands on it, including an unavailable command preview. A focused test uses the Campaign shortcut,
+bounded Tab traversal and Enter to reveal the exact preflight command; a private labelled
+software-rendered frame was inspected with the focused header visible. The initial offscreen frame
+is retained as a failure. The corrected full native UI suite passed 91/91 and strict workspace
+Clippy passed. See [the status-bar review correction](sprint-36-status-bar.md) for the exact
+receipt and open qualification limits.
