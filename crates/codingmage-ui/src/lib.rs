@@ -9,6 +9,7 @@ pub mod app;
 pub mod backend;
 pub mod browser;
 pub mod campaign;
+pub mod content;
 pub mod controls;
 pub mod design;
 pub mod fonts;

@@ -3,6 +3,7 @@
 use super::{App, GIT_DEADLINE, failure_box};
 use crate::{
     backend::{BackendError, Job, Request, Response, explain_code},
+    content,
     observed::{Freshness, age_label},
     records::{CommitSummary, FileChange, RunRecord, parse_log, parse_numstat},
 };
@@ -214,12 +215,15 @@ impl App {
             ui.label("The campaign head equals the initial commit: no reviewed candidate has been integrated.");
         }
         for commit in &changes.commits {
-            ui.monospace(format!(
-                "{} {} (unix {})",
-                &commit.id[..12],
-                commit.subject,
-                commit.timestamp
-            ));
+            content::render(
+                ui,
+                &format!(
+                    "{} {} (unix {})",
+                    &commit.id[..12],
+                    commit.subject,
+                    commit.timestamp
+                ),
+            );
         }
         if !changes.files.is_empty() {
             ui.label(format!("{} changed file(s)", changes.files.len()));
@@ -228,7 +232,7 @@ impl App {
                 .spacing(super::current_tokens(ui.ctx()).layout.grid_dense)
                 .show(ui, |ui| {
                     for file in &changes.files {
-                        ui.monospace(&file.path);
+                        content::render(ui, &file.path);
                         ui.label(match file.added {
                             Some(added) => format!("+{added}"),
                             None => "binary".to_owned(),
@@ -290,8 +294,8 @@ impl App {
                         );
                     }
                 }
-                ui.label(record.review_label());
-                ui.label(record.gate_label());
+                content::render(ui, &record.review_label());
+                content::render(ui, &record.gate_label());
                 if let Some(problem) = &record.journal_problem {
                     ui.colored_label(super::current_tokens(ui.ctx()).error, problem);
                 }
@@ -313,7 +317,7 @@ impl App {
                 if observed.is_empty() {
                     ui.label("No journaled phase observations.");
                 } else {
-                    ui.label(format!("Journaled phases: {}", observed.join(" > ")));
+                    content::render(ui, &format!("Journaled phases: {}", observed.join(" > ")));
                 }
             });
         }
@@ -328,7 +332,7 @@ impl App {
                     ui.label("The coordinator has not written activity lines yet.");
                 }
                 for line in tail {
-                    ui.monospace(line);
+                    content::render(ui, &line);
                 }
                 ui.small("Lines are the coordinator's own content-minimized stream: actor and stage only, never prompts, source or provider output.");
             }

@@ -28,6 +28,7 @@ use crate::{
     },
     browser::Browser,
     campaign::{CampaignSelection, SelectError},
+    content,
     design::{Appearance, Palette, Tokens, current_tokens},
     observed::{Freshness, Observed, age_label},
     project::{LoadedPlan, OpenError, Project},
@@ -645,6 +646,7 @@ impl App {
                     Screen::Settings => self.settings_screen(ui),
                 });
         });
+        content::confirmation(&ctx);
         if self.diagnosis.loading
             || self.status.loading
             || self.head_plan.loading
@@ -1230,7 +1232,7 @@ fn item_detail(ui: &mut egui::Ui, row: &PlanRow, index: &PlanIndex) {
         .spacing(current_tokens(ui.ctx()).layout.grid)
         .show(ui, |ui| {
             ui.label("Title");
-            ui.label(&row.title);
+            content::render(ui, &row.title);
             ui.end_row();
             ui.label("Source checkbox");
             ui.label(match row.state {

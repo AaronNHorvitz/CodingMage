@@ -19,10 +19,11 @@ python3 scripts/verification_inventory.py
 python3 -m unittest tests.test_verification_inventory -v
 ```
 
-At the 2026-09-27 source refresh, the registry contains 1,668 source surfaces and 811 explicit
-category gaps. The previous committed artifact contained 1,111 surfaces and 868 gaps; the
-generator found new campaign mission, runtime receipt/recipe/support, and native UI public
-surfaces after the original inventory was written, including Story 36.3 visual tokens. No files
+At the current 2026-09-27 source refresh, the registry contains 1,675 source surfaces and 811
+explicit category gaps. The immediately prior native UI artifact contained 1,668 surfaces and
+811 gaps; this refresh adds the shared inert-content presenter and its tests. The older original
+artifact contained 1,111 surfaces and 868 gaps; the generator also found new campaign mission,
+runtime receipt/recipe/support, and native UI visual-token surfaces in that earlier refresh. No files
 exist under the generator's `schemas/*.json` input, so this refresh contains no JSON schema
 entry. Line-number-based IDs
 also change when declarations move, accounting for much of the entry churn. The gap count is

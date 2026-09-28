@@ -19,7 +19,7 @@ pub struct ReportsState {
     pub overwrite: bool,
     /// Last export outcome.
     pub message: Option<Result<String, String>>,
-    /// Show the full JSON document inline.
+    /// Show a bounded JSON preview inline; export retains the full document.
     pub show_json: bool,
 }
 
@@ -137,7 +137,7 @@ impl App {
                 ),
             }
         }
-        ui.checkbox(&mut self.reports.show_json, "Show the full report document");
+        ui.checkbox(&mut self.reports.show_json, "Preview report document");
         if self.reports.show_json
             && let Ok(bytes) = report.to_bytes()
         {
@@ -145,7 +145,7 @@ impl App {
                 .id_salt("report-json")
                 .max_height(super::current_tokens(ui.ctx()).layout.preview_reports)
                 .show(ui, |ui| {
-                    ui.monospace(String::from_utf8_lossy(&bytes).to_string());
+                    crate::content::render(ui, &String::from_utf8_lossy(&bytes));
                 });
         }
     }

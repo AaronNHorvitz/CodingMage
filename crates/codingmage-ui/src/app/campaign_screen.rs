@@ -16,6 +16,7 @@ use crate::{
         CampaignSelection, INVOLVEMENT_MODES, SUPPORTED_ROLES, TaskOverlay, build_overlay,
         involvement_label,
     },
+    content,
     observed::Observed,
     observed::{Freshness, age_label},
 };
@@ -523,22 +524,25 @@ fn active_tasks(ui: &mut egui::Ui, status: &crate::backend::models::CampaignStat
         ui.label("No unit is active.");
     }
     for active in &status.active_tasks {
-        ui.monospace(format!(
-            "{} - {} by {}{} (round {}, heartbeat {}{})",
-            active.task_id,
-            active.state,
-            active.actor,
-            active
-                .model
-                .as_ref()
-                .map_or(String::new(), |model| format!(" using {model}")),
-            active.correction_round,
-            active.heartbeat_sequence,
-            active
-                .pod_id
-                .as_ref()
-                .map_or(String::new(), |pod| format!(", pod {pod}")),
-        ));
+        content::render(
+            ui,
+            &format!(
+                "{} - {} by {}{} (round {}, heartbeat {}{})",
+                active.task_id,
+                active.state,
+                active.actor,
+                active
+                    .model
+                    .as_ref()
+                    .map_or(String::new(), |model| format!(" using {model}")),
+                active.correction_round,
+                active.heartbeat_sequence,
+                active
+                    .pod_id
+                    .as_ref()
+                    .map_or(String::new(), |pod| format!(", pod {pod}")),
+            ),
+        );
     }
 }
 
@@ -554,7 +558,10 @@ fn status_grid(ui: &mut egui::Ui, status: &crate::backend::models::CampaignStatu
             ui.label(&status.actor);
             ui.end_row();
             ui.label("Model");
-            ui.label(status.model.as_deref().unwrap_or("not owned by a provider"));
+            content::render(
+                ui,
+                status.model.as_deref().unwrap_or("not owned by a provider"),
+            );
             ui.end_row();
             ui.label("Campaign branch");
             ui.monospace(&status.branch);

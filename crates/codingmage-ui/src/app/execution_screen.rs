@@ -445,7 +445,7 @@ impl App {
             if !tail.is_empty() {
                 ui.small("Recent coordinator activity (content-minimized stream):");
                 for line in tail {
-                    ui.monospace(line);
+                    crate::content::render(ui, &line);
                 }
             }
         }
