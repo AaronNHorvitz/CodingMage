@@ -8,7 +8,7 @@ use codingmage_ui::{
     Screen,
     backend::{
         BackendError, CoordinatorBinary, Response,
-        models::{ActiveTask, MissionStatus},
+        models::{ActiveTask, BlockerExplanation, MissionStatus, ModelError},
     },
     campaign::SelectError,
 };
@@ -26,6 +26,54 @@ fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::Ap
         app.diagnosis().value.is_some()
     }));
     harness
+}
+
+#[test]
+fn blocker_explanation_rejects_foreign_payload_with_current_request_binding() {
+    let fixture = Fixture::new("blocker-payload-binding", 1);
+    let spec = write_campaign(&fixture, "bound", 1);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    let retained = BlockerExplanation {
+        schema_version: 1,
+        campaign_id: "bound".to_owned(),
+        state: "paused".to_owned(),
+        blocker_code: Some("bound-blocker".to_owned()),
+        blockers: vec![],
+        deferrals: vec![],
+        human_decisions: vec![],
+    };
+    let binding = harness.state().binding();
+    let generation = harness.state().generation();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding: binding.clone(),
+        label: "campaign-explain-blocker",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&retained).unwrap()),
+    }));
+    assert_eq!(
+        harness.state().explanation().value.as_ref(),
+        Some(&retained)
+    );
+    let mut foreign = retained.clone();
+    foreign.campaign_id = "other-campaign".to_owned();
+    foreign.blocker_code = Some("foreign-blocker".to_owned());
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-explain-blocker",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&foreign).unwrap()),
+    }));
+    assert_eq!(
+        harness.state().explanation().value.as_ref(),
+        Some(&retained)
+    );
+    assert!(matches!(
+        harness.state().explanation().last_error.as_ref(),
+        Some((_, BackendError::Contract(ModelError::AuthorityMismatch)))
+    ));
 }
 
 fn checked_head_projection(fixture: &Fixture, spec: &Path, head: &str) -> serde_json::Value {

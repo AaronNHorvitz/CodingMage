@@ -280,6 +280,12 @@ impl App {
         &self.status
     }
 
+    /// Latest blocker explanation for the selected campaign.
+    #[must_use]
+    pub const fn explanation(&self) -> &Observed<BlockerExplanation> {
+        &self.explanation
+    }
+
     /// Latest coordinator-validated sub-task states at the campaign head.
     #[must_use]
     pub const fn head_plan(&self) -> &Observed<Option<HeadPlanProjection>> {
@@ -580,10 +586,26 @@ impl App {
                 true
             }
             "campaign-explain-blocker" => {
-                match response.result.and_then(|bytes| {
-                    crate::backend::models::parse_blocker_explanation(&bytes)
-                        .map_err(BackendError::from)
-                }) {
+                match response
+                    .result
+                    .and_then(|bytes| {
+                        crate::backend::models::parse_blocker_explanation(&bytes)
+                            .map_err(BackendError::from)
+                    })
+                    .and_then(|explanation| {
+                        if self
+                            .campaign
+                            .as_ref()
+                            .map(|selection| selection.spec.campaign_id.as_str())
+                            == Some(explanation.campaign_id.as_str())
+                        {
+                            Ok(explanation)
+                        } else {
+                            Err(BackendError::Contract(
+                                crate::backend::models::ModelError::AuthorityMismatch,
+                            ))
+                        }
+                    }) {
                     Ok(explanation) => {
                         self.explanation
                             .accept(explanation, response.generation, self.now);
