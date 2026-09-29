@@ -152,7 +152,7 @@ pub struct App {
     campaign_error: Option<SelectError>,
     campaign_browser: Option<Browser>,
     status: Observed<Option<CampaignStatus>>,
-    explanation: Observed<BlockerExplanation>,
+    explanation: Observed<Option<BlockerExplanation>>,
     report: Observed<Option<CampaignReport>>,
     mission: Observed<Option<MissionStatus>>,
     head_plan: Observed<Option<HeadPlanProjection>>,
@@ -282,7 +282,7 @@ impl App {
 
     /// Latest blocker explanation for the selected campaign.
     #[must_use]
-    pub const fn explanation(&self) -> &Observed<BlockerExplanation> {
+    pub const fn explanation(&self) -> &Observed<Option<BlockerExplanation>> {
         &self.explanation
     }
 
@@ -586,32 +586,7 @@ impl App {
                 true
             }
             "campaign-explain-blocker" => {
-                match response
-                    .result
-                    .and_then(|bytes| {
-                        crate::backend::models::parse_blocker_explanation(&bytes)
-                            .map_err(BackendError::from)
-                    })
-                    .and_then(|explanation| {
-                        if self
-                            .campaign
-                            .as_ref()
-                            .map(|selection| selection.spec.campaign_id.as_str())
-                            == Some(explanation.campaign_id.as_str())
-                        {
-                            Ok(explanation)
-                        } else {
-                            Err(BackendError::Contract(
-                                crate::backend::models::ModelError::AuthorityMismatch,
-                            ))
-                        }
-                    }) {
-                    Ok(explanation) => {
-                        self.explanation
-                            .accept(explanation, response.generation, self.now);
-                    }
-                    Err(error) => self.explanation.fail(error, self.now),
-                }
+                self.accept_explanation(response);
                 true
             }
             "campaign-mission-status" => {

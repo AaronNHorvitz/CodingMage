@@ -118,11 +118,15 @@ fn explanation_outcome_and_control_round_trip() {
         deferrals: Vec::new(),
         human_decisions: Vec::new(),
     };
-    let parsed = parse_blocker_explanation(&serde_json::to_vec(&explanation).unwrap()).unwrap();
+    let parsed = parse_blocker_explanation(&serde_json::to_vec(&explanation).unwrap())
+        .unwrap()
+        .unwrap();
     assert_eq!(
         parsed.blocker_code.as_deref(),
         Some("codingmage.campaign.no_unblocked_ready_work")
     );
+    assert_eq!(parse_blocker_explanation(b"null"), Ok(None));
+    assert!(parse_blocker_explanation(b"false").is_err());
     let outcome = CampaignOutcome {
         campaign_id: "c".to_owned(),
         state: CampaignState::Paused,

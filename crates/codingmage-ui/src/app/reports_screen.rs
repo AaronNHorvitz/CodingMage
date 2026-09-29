@@ -56,7 +56,7 @@ impl App {
             publication: format!("{:?}", campaign.spec.publication),
             admission: self.execution.admission.as_ref(),
             status: self.status.value.as_ref().and_then(Option::as_ref),
-            blockers: self.explanation.value.as_ref(),
+            blockers: self.explanation.value.as_ref().and_then(Option::as_ref),
             final_report: self.report.value.as_ref().and_then(Option::as_ref),
             last_invocation: last_invocation.as_ref(),
             commits: changes.map_or(&empty_commits, |changes| &changes.commits),
@@ -244,7 +244,7 @@ fn blocker_report(ui: &mut egui::Ui, report: &OutcomeReport) {
     ui.strong("Blocker report");
     match &report.blockers {
         None => {
-            ui.label("No blocker explanation has been observed.");
+            ui.label("No blocker explanation is available in these observations.");
         }
         Some(explanation) => {
             ui.label(format!(

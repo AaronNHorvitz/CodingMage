@@ -875,15 +875,17 @@ pub fn parse_task_detail(bytes: &[u8]) -> Result<TaskDetailProjection, ModelErro
     Ok(value)
 }
 
-/// Parses `campaign-explain-blocker` output.
+/// Parses `campaign-explain-blocker` output; `null` means no durable campaign state exists.
 ///
 /// # Errors
 ///
 /// Returns [`ModelError`] for malformed output or an unsupported schema.
-pub fn parse_blocker_explanation(bytes: &[u8]) -> Result<BlockerExplanation, ModelError> {
-    let value: BlockerExplanation =
+pub fn parse_blocker_explanation(bytes: &[u8]) -> Result<Option<BlockerExplanation>, ModelError> {
+    let value: Option<BlockerExplanation> =
         serde_json::from_slice(bytes).map_err(|_| ModelError::Malformed)?;
-    check_version(value.schema_version, SUPPORTED_SCHEMA_VERSION)?;
+    if let Some(explanation) = &value {
+        check_version(explanation.schema_version, SUPPORTED_SCHEMA_VERSION)?;
+    }
     Ok(value)
 }
 

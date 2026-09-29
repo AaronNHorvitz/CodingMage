@@ -53,7 +53,12 @@ fn blocker_explanation_rejects_foreign_payload_with_current_request_binding() {
         result: Ok(serde_json::to_vec(&retained).unwrap()),
     }));
     assert_eq!(
-        harness.state().explanation().value.as_ref(),
+        harness
+            .state()
+            .explanation()
+            .value
+            .as_ref()
+            .and_then(Option::as_ref),
         Some(&retained)
     );
     let mut foreign = retained.clone();
@@ -67,7 +72,12 @@ fn blocker_explanation_rejects_foreign_payload_with_current_request_binding() {
         result: Ok(serde_json::to_vec(&foreign).unwrap()),
     }));
     assert_eq!(
-        harness.state().explanation().value.as_ref(),
+        harness
+            .state()
+            .explanation()
+            .value
+            .as_ref()
+            .and_then(Option::as_ref),
         Some(&retained)
     );
     assert!(matches!(
@@ -271,9 +281,13 @@ fn never_started_campaign_is_an_explicit_empty_state() {
     let mut harness = opened(&fixture);
     harness.state_mut().select_campaign(&spec);
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {
-        app.status().value.is_some() && app.mission().value.is_some()
+        app.status().value.is_some()
+            && app.mission().value.is_some()
+            && app.explanation().value.is_some()
     }));
     assert_eq!(harness.state().status().value, Some(None));
+    assert_eq!(harness.state().explanation().value, Some(None));
+    assert!(harness.state().explanation().last_error.is_none());
     assert_eq!(
         harness.state().mission().value,
         Some(None),

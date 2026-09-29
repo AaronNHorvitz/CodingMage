@@ -9,7 +9,10 @@ use super::{App, GIT_DEADLINE, STATUS_DEADLINE, failure_box};
 use crate::{
     backend::{
         BackendError, Job, Request, Response, explain_code,
-        models::{MissionStatus, ModelError, parse_campaign_status, parse_mission_status},
+        models::{
+            MissionStatus, ModelError, parse_blocker_explanation, parse_campaign_status,
+            parse_mission_status,
+        },
     },
     browser::Browser,
     campaign::{
@@ -218,6 +221,33 @@ impl App {
                 self.mission.accept(None, response.generation, self.now);
             }
             Err(error) => self.mission.fail(error, self.now),
+        }
+    }
+
+    pub(super) fn accept_explanation(&mut self, response: Response) {
+        let selected = self
+            .campaign
+            .as_ref()
+            .map(|selection| selection.spec.campaign_id.as_str());
+        let parsed = response
+            .result
+            .and_then(|bytes| parse_blocker_explanation(&bytes).map_err(BackendError::from))
+            .and_then(|explanation| {
+                if selected.is_some()
+                    && explanation
+                        .as_ref()
+                        .is_none_or(|value| selected == Some(value.campaign_id.as_str()))
+                {
+                    Ok(explanation)
+                } else {
+                    Err(BackendError::Contract(ModelError::AuthorityMismatch))
+                }
+            });
+        match parsed {
+            Ok(explanation) => self
+                .explanation
+                .accept(explanation, response.generation, self.now),
+            Err(error) => self.explanation.fail(error, self.now),
         }
     }
 
@@ -740,7 +770,7 @@ impl App {
                 utilization_grid(ui, status);
             }
         }
-        if let Some(explanation) = &self.explanation.value
+        if let Some(Some(explanation)) = &self.explanation.value
             && explanation.blocker_code.is_some()
         {
             ui.label(format!(
