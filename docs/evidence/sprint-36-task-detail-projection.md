@@ -19,6 +19,26 @@ This is a local read-only feature. It does not start a provider, authorize a cam
 qualify a real desktop or satisfy human-only acceptance. The complete state/depth catalogue,
 all other command previews and localization remain open.
 
+## Bound task run history increment
+
+The Work plan now places a collapsed run-evidence view beside the selected source item.
+It uses the existing `campaign-run-records` response, displays the exact command, and filters
+on the coordinator's bound task ID. The view requires a live status and a run-record response
+bound to the same head and durable status timestamp. It distinguishes an absent record from
+review or test success; checkpoint failures, journal failures, omitted runs and phase limits
+remain visible. Up to 20 matching runs and 16 phases per run are rendered at once, with an
+explicit route to the wider Changes and reviews screen. Packet/prompt text, reviewer finding
+text and full test logs are not retained in this coordinator projection and are stated as
+unavailable rather than invented.
+
+The independent review of the prior source-detail commit
+`99f648bbf3e5e591485050527a3b240bd0aefe66` returned **PASS** with one Low finding:
+the UI model accepted criterion IDs containing direction and terminal controls. This
+increment applies the same ASCII dotted-ID validation as the head-plan response to both
+the selected item and criterion IDs, and routes the displayed criterion ID through the
+inert content presenter as a second boundary. The review applies to the prior commit only;
+the correction and run-history increment require their own exact-source verification.
+
 ## Verification disposition
 
 The cumulative candidate run passed CLI library 5/5, native UI all targets 100/100 under
@@ -30,5 +50,21 @@ rejection after selecting another item. Formatting,
 `docs_check.py`, architecture checks, the regenerated no-write verification inventory
 (1,718 items, 825 explicit gaps) and diff whitespace checks pass. Python unittest runs 42:
 41 pass, while the retained CM-R01.6 source-bound freshness test fails on the same eight
-drifted inputs. This work did not renew those digests. The independent reviewer,
-live-provider, real desktop, Orca and release gates remain open.
+drifted inputs. This work did not renew those digests. Real-provider, real desktop, Orca and
+release gates remain open; the subsequent independent review is recorded above.
+
+## Verification of the run-history and ID correction candidate
+
+The candidate tree passed the focused UI model regression 1/1 and the
+disposable real-process campaign test 1/1. The latter exercises selection, source-detail
+rendering, a bound task run, its command preview, and rejection of a direction-control ID
+before it can appear. The model regression rejects direction, terminal and non-ASCII-digit
+IDs in both selected item and criterion fields. The full native UI all-target suite passed
+100/100 under software GL, and strict workspace Clippy passed with warnings denied.
+Formatting, documentation, architecture, whitespace and the regenerated inventory check
+passed (1,720 public items, 825 explicit gaps; two surfaces added, none removed). Python
+unittest ran 42: 41 passed and the sole CM-R01.6 source-bound freshness test failed on the
+same eight retained input drifts. No digest or review record was renewed. The initial
+test-only type mismatch and off-viewport pointer-disclosure failure were corrected and
+their private receipts retained. This candidate still requires its own independent review;
+no real desktop, Orca, human trial, provider or release result is claimed.

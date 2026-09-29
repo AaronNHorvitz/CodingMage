@@ -35,7 +35,7 @@ Who: a tester with Orca (GNOME) or another AT-SPI screen reader.
 Steps:
 
 1. Start Orca, then launch `codingmage-ui`.
-2. Navigate with `Tab`, `Shift+Tab`, `Ctrl+1` to `Ctrl+7` and arrow keys; confirm each
+2. Navigate with `Tab`, `Shift+Tab`, `Ctrl+1` to `Ctrl+8` and arrow keys; confirm each
    navigation button, text field, checkbox, combo box, Settings appearance choice and status
    message is announced with its label and state (the disabled source checkboxes must be
    announced as unavailable).
@@ -90,7 +90,7 @@ and the evidence in
 [the Story 36.3 baseline](sprint-36-ui-specification-baseline.md) and
 [appearance evidence](sprint-36-appearance.md). The verification record's 720×480 and
 Ctrl+2/Ctrl+6 observations are historical at `8ea475c83b824e4b622988a12548c819da0f1d83`;
-use the appearance record for the current 1024×640 minimum and Ctrl+1 through Ctrl+7 shell.
+use the appearance record for the current 1024×640 minimum and Ctrl+1 through Ctrl+8 shell.
 
 Evidence: findings on the exact commit; corrections are implemented separately and re-reviewed.
 

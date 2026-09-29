@@ -460,9 +460,44 @@ fn assert_task_detail_workflow(
     let first_detail = harness.state().task_detail().value.clone().unwrap();
     assert_eq!(first_detail.head, head);
     assert_eq!(first_detail.item_id, "0.1.1.1");
+    assert!(settle(harness, Duration::from_secs(30), |app| {
+        app.run_records().value.is_some()
+    }));
     harness.get_by_label("Source excerpt").click();
     harness.run_steps(2);
     harness.get_by_label("Complete fixture operation number 1 safely.");
+    harness.get_by_label("Task run evidence").focus();
+    harness.key_press(egui::Key::Enter);
+    harness.run_steps(2);
+    harness.get_by_label("Show command: Inspect task runs");
+    let first_run = harness
+        .state()
+        .run_records()
+        .value
+        .as_ref()
+        .unwrap()
+        .iter()
+        .find(|record| record.bound_task_id == first_detail.item_id)
+        .expect("bound task run");
+    harness.get_by_label(&format!("Run {}", first_run.run_id));
+    harness.get_by_label_contains("Candidate commit");
+    let mut malformed = serde_json::to_value(&first_detail).unwrap();
+    malformed["story_criteria"] = serde_json::json!([{
+        "id":"\u{202e}0.1.AC1", "title":"spoofed", "title_truncated":false,
+        "source_state":"open"
+    }]);
+    let binding = harness.state().binding();
+    let generation = harness.state().generation();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-task-detail",
+        request_id: Some(first_detail.item_id.clone()),
+        result: Ok(serde_json::to_vec(&malformed).unwrap()),
+    }));
+    harness.run_steps(2);
+    harness.get_by_label_contains("Source detail unavailable");
+    assert!(harness.query_by_label("spoofed").is_none());
     harness
         .get_by_label_contains("[ ] Sub-task 0.1.1.2 Complete fixture operation number 2 safely.")
         .click();

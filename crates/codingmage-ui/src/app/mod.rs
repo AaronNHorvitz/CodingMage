@@ -167,6 +167,7 @@ pub struct App {
     changes: Observed<ChangeSet>,
     changes_range: Option<(String, String)>,
     records: Observed<Vec<crate::records::RunRecord>>,
+    records_status: Option<(String, u64)>,
     records_truncated: bool,
     reports: ReportsState,
     support: SupportState,
@@ -256,6 +257,7 @@ impl App {
             changes: Observed::default(),
             changes_range: None,
             records: Observed::default(),
+            records_status: None,
             records_truncated: false,
             reports: ReportsState::default(),
             support: SupportState::default(),
@@ -1316,7 +1318,7 @@ impl App {
             }
             for criterion in &detail.story_criteria {
                 ui.horizontal_wrapped(|ui| {
-                    ui.monospace(&criterion.id);
+                    content::render(ui, &criterion.id);
                     ui.label(format!("{:?} in source", criterion.source_state));
                     content::render(ui, &criterion.title);
                     if criterion.title_truncated {
@@ -1328,7 +1330,7 @@ impl App {
                 ui.small("Additional story criteria were omitted after the first 100.");
             }
         });
-        ui.small("Packets, attempts, reviews and tests are coordinator evidence; inspect Changes and reviews for available run records. Missing records are not a pass.");
+        self.task_run_evidence(ui, &row.id);
     }
 
     fn open_controls(&mut self, ui: &mut egui::Ui) {

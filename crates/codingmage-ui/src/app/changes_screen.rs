@@ -3,7 +3,7 @@
 use super::{App, GIT_DEADLINE, failure_box};
 use crate::{
     backend::{BackendError, Job, Request, Response, explain_code},
-    content,
+    command, content,
     observed::{Freshness, age_label},
     records::{CommitSummary, FileChange, RunRecord, parse_run_records},
 };
@@ -100,6 +100,7 @@ impl App {
             (project.config_path.to_str(), campaign.spec_path.to_str())
         else {
             self.records.clear();
+            self.records_status = None;
             self.records_truncated = false;
             self.records.fail(
                 BackendError::Refused(
@@ -126,6 +127,7 @@ impl App {
             request_id: None,
         };
         self.records.clear();
+        self.records_status = None;
         self.records_truncated = false;
         match self.submit(request) {
             Ok(()) => self.records.loading = true,
@@ -204,12 +206,14 @@ impl App {
             .and_then(|bytes| parse_run_records(&bytes).map_err(BackendError::from));
         match parsed {
             Ok(projection) if self.records_binding_matches(&projection) => {
+                self.records_status = projection.head.clone().zip(projection.updated_at_ms);
                 self.records_truncated = projection.records_truncated;
                 self.records
                     .accept(projection.records, response.generation, self.now);
             }
             Ok(_) => {
                 self.records.clear();
+                self.records_status = None;
                 self.records_truncated = false;
                 self.records.fail(
                     BackendError::Contract(crate::backend::models::ModelError::Malformed),
@@ -218,6 +222,7 @@ impl App {
             }
             Err(error) => {
                 self.records.clear();
+                self.records_status = None;
                 self.records_truncated = false;
                 self.records.fail(error, self.now);
             }
@@ -235,6 +240,93 @@ impl App {
             && projection.repository_id == diagnosis.repository_id
             && projection.head.as_deref() == status.as_ref().map(|status| status.head.as_str())
             && projection.updated_at_ms == status.as_ref().map(|status| status.updated_at_ms)
+    }
+
+    /// Shows only run evidence bound to the currently observed status and selected task.
+    pub(super) fn task_run_evidence(&self, ui: &mut egui::Ui, task_id: &str) {
+        ui.collapsing("Task run evidence", |ui| {
+            if let Some((config, campaign, _)) = self.campaign_arguments() {
+                let arguments = vec![
+                    "campaign-run-records".to_owned(),
+                    "--config".to_owned(),
+                    config,
+                    "--campaign".to_owned(),
+                    campaign,
+                ];
+                command::show_for(
+                    ui,
+                    "Inspect task runs",
+                    self.binary_path.as_deref(),
+                    &arguments,
+                );
+            }
+            let current = self.status.value.as_ref().and_then(Option::as_ref);
+            let bound = current.is_some_and(|status| {
+                self.records_status.as_ref()
+                    == Some(&(status.head.clone(), status.updated_at_ms))
+            });
+            if self.status.freshness(self.now) != Freshness::Live
+                || self.records.freshness(self.now) != Freshness::Live
+                || !bound
+            {
+                ui.label("Current task run evidence is unavailable or stale. Refresh the campaign to inspect its records.");
+                return;
+            }
+            let Some(records) = self.records.value.as_ref() else {
+                return;
+            };
+            if self.records_truncated {
+                ui.label("Only the first 500 campaign run records are shown; this task may have omitted runs.");
+            }
+            let matching = records.iter().filter(|record| record.bound_task_id == task_id).collect::<Vec<_>>();
+            if matching.is_empty() {
+                ui.label("No retained run record for this task. No review or test result is inferred.");
+                return;
+            }
+            ui.small("Packet and prompt text, reviewer finding text and full test logs are not retained in this projection.");
+            if matching.len() > 20 {
+                ui.label(format!(
+                    "Showing 20 of {} retained task runs. Inspect Changes and reviews for the wider record.",
+                    matching.len()
+                ));
+            }
+            for record in matching.into_iter().take(20) {
+                egui::Frame::group(ui.style()).show(ui, |ui| {
+                    ui.label(format!("Run {}", content::list_label(&record.run_id)));
+                    if let Some(checkpoint) = &record.checkpoint {
+                        ui.label(format!(
+                            "Candidate commit {} · {} correction round(s)",
+                            checkpoint.candidate_commit,
+                            checkpoint.correction_rounds
+                        ));
+                    } else {
+                        ui.label(format!(
+                            "Checkpoint unavailable: {}",
+                            record.checkpoint_problem.as_deref().unwrap_or("unknown cause")
+                        ));
+                    }
+                    content::render(ui, &record.review_label());
+                    content::render(ui, &record.gate_label());
+                    if let Some(problem) = &record.journal_problem {
+                        ui.label(format!("Journal unavailable: {problem}"));
+                    } else {
+                        ui.label(format!("{} journal phase(s) retained", record.phases.len()));
+                        if record.phases_truncated {
+                            ui.label("Later phases were omitted from this bounded projection.");
+                        }
+                        if record.phases.len() > 16 {
+                            ui.label("Showing the first 16 retained phases; inspect Changes and reviews for the wider record.");
+                        }
+                        for phase in record.phases.iter().take(16) {
+                            ui.small(format!(
+                                "{} · {} · {} · {}",
+                                phase.timestamp_ms, phase.phase, phase.kind, phase.outcome
+                            ));
+                        }
+                    }
+                });
+            }
+        });
     }
 
     pub(super) fn changes_screen(&mut self, ui: &mut egui::Ui) {

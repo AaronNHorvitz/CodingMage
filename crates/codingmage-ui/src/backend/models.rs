@@ -820,21 +820,26 @@ pub fn parse_head_plan(bytes: &[u8]) -> Result<HeadPlanProjection, ModelError> {
         return Err(ModelError::Malformed);
     }
     let mut ids = BTreeSet::new();
-    if value.items.iter().any(|item| {
-        item.id.is_empty()
-            || item.id.len() > 64
-            || !item.id.split('.').all(|segment| {
-                !segment.is_empty()
-                    && (segment.bytes().all(|byte| byte.is_ascii_digit())
-                        || segment.strip_prefix("AC").is_some_and(|suffix| {
-                            !suffix.is_empty() && suffix.bytes().all(|byte| byte.is_ascii_digit())
-                        }))
-            })
-            || !ids.insert(&item.id)
-    }) {
+    if value
+        .items
+        .iter()
+        .any(|item| !valid_plan_id(&item.id) || !ids.insert(&item.id))
+    {
         return Err(ModelError::Malformed);
     }
     Ok(value)
+}
+
+fn valid_plan_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 64
+        && id.split('.').all(|segment| {
+            !segment.is_empty()
+                && (segment.bytes().all(|byte| byte.is_ascii_digit())
+                    || segment.strip_prefix("AC").is_some_and(|suffix| {
+                        !suffix.is_empty() && suffix.bytes().all(|byte| byte.is_ascii_digit())
+                    }))
+        })
 }
 
 /// Parses a bounded task excerpt from the coordinator.
@@ -854,15 +859,13 @@ pub fn parse_task_detail(bytes: &[u8]) -> Result<TaskDetailProjection, ModelErro
         || !(hex(&value.head, 40) || hex(&value.head, 64))
         || !hex(&value.task_source_sha256, 64)
         || !hex(&value.source_line_sha256, 64)
-        || value.item_id.is_empty()
-        || value.item_id.len() > 64
+        || !valid_plan_id(&value.item_id)
         || value.source_line == 0
         || value.excerpt.is_empty()
         || value.excerpt.len() > 16 * 1024
         || value.story_criteria.len() > 100
         || value.story_criteria.iter().any(|criterion| {
-            criterion.id.is_empty()
-                || criterion.id.len() > 64
+            !valid_plan_id(&criterion.id)
                 || criterion.title.is_empty()
                 || criterion.title.len() > 4096
         })
@@ -1037,6 +1040,20 @@ mod tests {
             "story_criteria_truncated": false
         });
         assert!(parse_task_detail(&serde_json::to_vec(&valid).unwrap()).is_ok());
+        for forged in ["\u{202e}1.1.AC1", "1.1.AC1\u{001b}[31m", "1.1.AC١"] {
+            let mut hostile = valid.clone();
+            hostile["story_criteria"][0]["id"] = serde_json::json!(forged);
+            assert_eq!(
+                parse_task_detail(&serde_json::to_vec(&hostile).unwrap()),
+                Err(ModelError::Malformed)
+            );
+            hostile["story_criteria"][0]["id"] = serde_json::json!("1.1.AC1");
+            hostile["item_id"] = serde_json::json!(forged);
+            assert_eq!(
+                parse_task_detail(&serde_json::to_vec(&hostile).unwrap()),
+                Err(ModelError::Malformed)
+            );
+        }
         let mut oversized = valid.clone();
         oversized["excerpt"] = serde_json::json!("x".repeat(16 * 1024 + 1));
         assert_eq!(

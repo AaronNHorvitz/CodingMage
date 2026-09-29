@@ -80,6 +80,7 @@ impl App {
         self.changes.clear();
         self.changes_range = None;
         self.records.clear();
+        self.records_status = None;
         self.records_truncated = false;
         self.status.clear();
         self.explanation.clear();
@@ -142,7 +143,7 @@ impl App {
         }
     }
 
-    fn campaign_arguments(&self) -> Option<(String, String, bool)> {
+    pub(super) fn campaign_arguments(&self) -> Option<(String, String, bool)> {
         let project = self.project.as_ref()?;
         let campaign = self.campaign.as_ref()?;
         let parallel = campaign
@@ -252,6 +253,7 @@ impl App {
                 self.set_status(format!("campaign status failed: {}", error.code()));
                 self.status.fail(error, self.now);
                 self.records.clear();
+                self.records_status = None;
                 self.records_truncated = false;
                 self.head_plan.clear();
                 self.head_plan_commit = None;
