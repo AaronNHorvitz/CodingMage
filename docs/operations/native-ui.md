@@ -56,13 +56,14 @@ showing sample results.
 
 | Screen | Content | Source |
 | --- | --- | --- |
-| Overview | Configuration summary, repository diagnosis (identity, head, branch, cleanliness, denied capabilities), task-source counts | `codingmage doctor`, `codingmage-core`, `codingmage-plan` |
+| Overview | First-run storage and provider sign-in guidance; configuration summary, repository diagnosis (identity, head, branch, cleanliness, denied capabilities), task-source counts | `codingmage doctor`, `codingmage-core`, `codingmage-plan` |
 | Work plan | Searchable, filterable plan with dependencies, source anchors, readiness from the source, disabled source checkboxes and the coordinator overlay (completed at campaign head, accepted, active, blocked, deferred, human decision, unknown) | task parser, `campaign-status`, `campaign-head-plan` for authorized, content-minimized head states |
 | Campaign | Campaign authority, binding drift, readiness checks, preflight, admission, coordinator process state, controls, durable status, holds, utilization, roles the backend reports, unavailable involvement modes | `campaign-preflight`, `campaign-status`, `campaign-explain-blocker`, `campaign-control`, `/proc` |
 | Changes and reviews | Delivery boundary, coordinator commits and changed files, per-run verdicts and gate evidence, journaled phases, bounded activity | `campaign-changes`, `campaign-run-records` |
-| Reports | Outcome and blocker reports with export | the observations above |
+| Reports | Outcome and blocker reports with export and explicit source-observation freshness | the observations above |
 | Setup | Open or create a configuration, write the owner's authorization record, author a campaign, import and export | `codingmage-core`, `codingmage-campaign`, `codingmage init` |
 | Settings | Light, dark, high-contrast or system appearance for the current window | Local presentation state only |
+| Help and About | Offline getting-started and recovery guidance, keyboard shortcuts, glossary, source licence and third-party source notices; explicit copyable path-free diagnostic summary and redacted support bundle for a selected campaign | Bundled first-party text, plus the coordinator's `support-bundle` command only after an explicit request; nothing is uploaded |
 
 ## Workflow
 
@@ -84,7 +85,7 @@ showing sample results.
 
 ## Keyboard
 
-- `Ctrl+1` to `Ctrl+7` switch screens; `Tab` and `Shift+Tab` move focus; `Space` or `Enter`
+- `Ctrl+1` to `Ctrl+8` switch screens; `Tab` and `Shift+Tab` move focus; `Space` or `Enter`
   activate; `F5` refreshes the diagnosis and campaign observations.
 
 The native minimum window is 1024 by 640 logical pixels. Appearance uses shared visual tokens;

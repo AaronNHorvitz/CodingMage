@@ -6,7 +6,8 @@
 //! rendered as the current one.
 
 use std::{
-    path::PathBuf,
+    fs,
+    path::{Component, Path, PathBuf},
     sync::{
         Arc,
         atomic::{AtomicBool, AtomicU64, Ordering},
@@ -48,6 +49,17 @@ pub enum Job {
         /// Deadline after which the command is killed.
         deadline: Duration,
     },
+    /// Validate a fresh support-bundle destination off the UI thread, then run the coordinator.
+    SupportBundle {
+        /// Exact command arguments displayed by the UI.
+        arguments: Vec<String>,
+        /// New output directory requested by the owner.
+        destination: PathBuf,
+        /// Repository that must remain untouched by the bundle.
+        repository: PathBuf,
+        /// Deadline for the coordinator command.
+        deadline: Duration,
+    },
 }
 
 impl Job {
@@ -56,6 +68,7 @@ impl Job {
     pub const fn label(&self) -> &'static str {
         match self {
             Self::Command { label, .. } => label,
+            Self::SupportBundle { .. } => "support-bundle",
         }
     }
 }
@@ -224,6 +237,13 @@ fn run_loop(
                     deadline,
                     ..
                 } => binary.run(arguments, *deadline, &cancel),
+                Job::SupportBundle {
+                    arguments,
+                    destination,
+                    repository,
+                    deadline,
+                } => validate_support_destination(destination, repository)
+                    .and_then(|()| binary.run(arguments, *deadline, &cancel)),
             };
             stop.store(true, Ordering::Release);
             let _ = watcher.join();
@@ -243,10 +263,62 @@ fn run_loop(
     }
 }
 
+fn validate_support_destination(destination: &Path, repository: &Path) -> Result<(), BackendError> {
+    let refuse = |message: &str| BackendError::Refused(message.to_owned());
+    if !destination.is_absolute()
+        || destination
+            .components()
+            .any(|part| matches!(part, Component::ParentDir))
+    {
+        return Err(refuse(
+            "choose an absolute new directory without parent-path components",
+        ));
+    }
+    let parent = destination
+        .parent()
+        .ok_or_else(|| refuse("choose a directory with an existing parent"))?;
+    let parent = fs::canonicalize(parent)
+        .map_err(|_| refuse("the destination parent must already exist and be readable"))?;
+    let repository = fs::canonicalize(repository)
+        .map_err(|_| refuse("the repository path must be readable before creating diagnostics"))?;
+    if parent.starts_with(repository) {
+        return Err(refuse(
+            "the support bundle destination must be outside the target repository",
+        ));
+    }
+    match fs::symlink_metadata(destination) {
+        Ok(_) => Err(refuse("the support bundle destination already exists")),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(_) => Err(refuse(
+            "the support bundle destination could not be checked safely",
+        )),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::fs;
+
+    #[test]
+    fn support_destination_refuses_repository_alias_and_existing_output() {
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-ui-support-destination-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("repo")).unwrap();
+        fs::create_dir_all(root.join("outside")).unwrap();
+        let repository = root.join("repo");
+        let outside = root.join("outside/new");
+        assert!(validate_support_destination(&outside, &repository).is_ok());
+        assert!(validate_support_destination(&repository.join("new"), &repository).is_err());
+        std::os::unix::fs::symlink(&repository, root.join("repo-alias")).unwrap();
+        assert!(validate_support_destination(&root.join("repo-alias/new"), &repository).is_err());
+        fs::create_dir(&outside).unwrap();
+        assert!(validate_support_destination(&outside, &repository).is_err());
+        fs::remove_dir_all(root).unwrap();
+    }
 
     fn fake_binary(root: &std::path::Path) -> CoordinatorBinary {
         use std::os::unix::fs::PermissionsExt as _;

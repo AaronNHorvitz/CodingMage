@@ -4,7 +4,10 @@ mod common;
 
 use std::{fs, time::Duration};
 
-use codingmage_ui::{Screen, backend::CoordinatorBinary};
+use codingmage_ui::{
+    Screen,
+    backend::{BackendError, CoordinatorBinary, Response},
+};
 use common::{
     Fixture, coordinator_binary, harness, run_campaign, settle, tree_digest, write_campaign,
 };
@@ -96,6 +99,49 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
             .unwrap()
             .contains("- [ ] **Sub-task 0.1.1.2:**")
     );
+}
+
+#[test]
+fn report_and_export_label_retained_status_after_failed_refresh() {
+    let fixture = Fixture::new("report-stale", 2);
+    let spec = write_campaign(&fixture, "report-stale-campaign", 2);
+    let before = tree_digest(&fixture.target);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.status().value.is_some()
+    }));
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-status",
+        request_id: None,
+        result: Err(BackendError::Timeout),
+    }));
+    harness.state_mut().select_screen(Screen::Reports);
+    harness.run_steps(2);
+    assert!(
+        harness
+            .get_all_by_label_contains("campaign status stale")
+            .count()
+            >= 1
+    );
+    harness.get_by_label_contains("Some source observations are loading, missing, stale or failed");
+    let report = harness.state().assemble_report(false).unwrap();
+    assert!(
+        report
+            .limits
+            .iter()
+            .any(|line| line.contains("campaign status stale"))
+    );
+    let destination = fixture.root.join("stale-report.json");
+    harness.state_mut().reports_state_mut().export_path = destination.display().to_string();
+    harness.state_mut().export_report();
+    let exported = fs::read_to_string(&destination).unwrap();
+    assert!(exported.contains("campaign status stale"));
+    assert_eq!(tree_digest(&fixture.target), before);
 }
 
 #[test]

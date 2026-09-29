@@ -10,7 +10,7 @@ use codingmage_ui::{
     observed::Freshness,
 };
 use common::{Fixture, coordinator_binary, harness, settle, tree_digest};
-use egui_kittest::kittest::Queryable as _;
+use egui_kittest::kittest::{NodeT as _, Queryable as _};
 
 #[test]
 fn shell_renders_navigation_and_keyboard_switches_screens_without_a_project() {
@@ -37,6 +37,100 @@ fn shell_renders_navigation_and_keyboard_switches_screens_without_a_project() {
     harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::Num1);
     harness.run_steps(2);
     assert_eq!(harness.state().screen(), Screen::Overview);
+    assert!(harness.state().project().is_none());
+    assert_eq!(
+        harness
+            .state()
+            .diagnosis()
+            .freshness(std::time::Instant::now()),
+        Freshness::NotRequested
+    );
+}
+
+#[test]
+fn offline_help_is_reachable_and_does_not_start_a_coordinator() {
+    let mut harness = harness(
+        Err(BackendError::BinaryUnavailable {
+            expected: PathBuf::from("/nonexistent/codingmage"),
+        }),
+        [1024.0, 640.0],
+    );
+    harness.run_steps(2);
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::Num8);
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Help);
+    harness.get_by_label_contains("without a repository, coordinator connection or network");
+    harness.get_by_label("Glossary");
+    harness.get_by_label_contains("Source checkbox:");
+    harness.get_by_label_contains("CodingMage native interface");
+    harness.get_by_label("Copy diagnostic summary");
+    harness
+        .get_by_role_and_label(egui::accesskit::Role::Button, "Return to Overview")
+        .click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Overview);
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::Num8);
+    harness.run_steps(2);
+    let mut licence_reached = false;
+    for _ in 0..128 {
+        harness.key_press(egui::Key::Tab);
+        harness.run_steps(1);
+        if harness
+            .get_by_label("CodingMage source licence (Apache-2.0)")
+            .accesskit_node()
+            .is_focused()
+        {
+            licence_reached = true;
+            break;
+        }
+    }
+    assert!(
+        licence_reached,
+        "keyboard focus never reached the source licence"
+    );
+    harness.key_press(egui::Key::Enter);
+    harness.run_steps(2);
+    harness.get_by_label_contains("TERMS AND CONDITIONS FOR USE");
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::Num1);
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Overview);
+    assert!(harness.state().project().is_none());
+    assert_eq!(
+        harness
+            .state()
+            .diagnosis()
+            .freshness(std::time::Instant::now()),
+        Freshness::NotRequested
+    );
+}
+
+#[test]
+fn first_run_explains_storage_sign_in_and_next_step_without_a_coordinator() {
+    let mut harness = harness(
+        Err(BackendError::BinaryUnavailable {
+            expected: PathBuf::from("/nonexistent/codingmage"),
+        }),
+        [1024.0, 640.0],
+    );
+    harness.run_steps(2);
+    harness.get_by_label_contains("What should the team do?");
+    harness.get_by_label_contains("configured local state directory");
+    harness.get_by_label_contains("provider uses its own existing sign-in");
+    harness
+        .get_by_role_and_label(
+            egui::accesskit::Role::Button,
+            "Create configuration in Setup",
+        )
+        .click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Setup);
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::Num1);
+    harness.run_steps(2);
+    harness
+        .get_by_role_and_label(egui::accesskit::Role::Button, "Open Help and About")
+        .click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Help);
     assert!(harness.state().project().is_none());
     assert_eq!(
         harness

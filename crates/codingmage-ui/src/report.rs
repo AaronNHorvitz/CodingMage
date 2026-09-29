@@ -108,7 +108,7 @@ pub struct OutcomeReport {
     pub run_records_truncated: bool,
     /// Engineering and delivery disposition.
     pub disposition: Disposition,
-    /// Fixed statement of what this document is not.
+    /// Limitations and source freshness at assembly time.
     pub limits: Vec<String>,
 }
 

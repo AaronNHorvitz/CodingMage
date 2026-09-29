@@ -1,10 +1,11 @@
 //! Reports: inspect and export outcome and blocker reports assembled from real records.
 
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Instant};
 
 use super::{App, failure_box};
 use crate::{
     launch::LaunchState,
+    observed::Freshness,
     report::{OutcomeReport, ReportInputs},
 };
 
@@ -64,7 +65,21 @@ impl App {
             run_records_observed: self.records.value.is_some(),
             run_records_truncated: self.records_truncated,
         };
-        Some(OutcomeReport::assemble(&inputs, include_paths))
+        let mut report = OutcomeReport::assemble(&inputs, include_paths);
+        report.limits.push(self.report_source_freshness());
+        Some(report)
+    }
+
+    fn report_source_freshness(&self) -> String {
+        let now = Instant::now();
+        format!(
+            "Source observation freshness at assembly: campaign status {}, blockers {}, final report {}, changes {}, run records {}.",
+            self.status.freshness(now).label(),
+            self.explanation.freshness(now).label(),
+            self.report.freshness(now).label(),
+            self.changes.freshness(now).label(),
+            self.records.freshness(now).label(),
+        )
     }
 
     /// Exports the report to the configured destination.
@@ -101,6 +116,20 @@ impl App {
             return;
         };
         ui.label("Reports restate coordinator records. Viewing or exporting them changes no task status and creates no review authority.");
+        let freshness = self.report_source_freshness();
+        let source_states = [
+            self.status.freshness(self.now),
+            self.explanation.freshness(self.now),
+            self.report.freshness(self.now),
+            self.changes.freshness(self.now),
+            self.records.freshness(self.now),
+        ];
+        if source_states.iter().any(|state| *state != Freshness::Live) {
+            ui.colored_label(super::current_tokens(ui.ctx()).warning, &freshness);
+            ui.small("Some source observations are loading, missing, stale or failed. Refresh the campaign before relying on retained data; an export retains this freshness statement.");
+        } else {
+            ui.label(freshness);
+        }
         if !report.run_records_observed {
             ui.colored_label(
                 super::current_tokens(ui.ctx()).error,

@@ -65,6 +65,7 @@ impl App {
     }
 
     pub(super) fn clear_campaign_observations(&mut self) {
+        self.support = super::SupportState::default();
         self.preflight.clear();
         self.changes.clear();
         self.changes_range = None;

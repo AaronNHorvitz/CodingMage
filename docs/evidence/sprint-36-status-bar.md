@@ -91,5 +91,10 @@ bound unknown-code regression, preflight keyboard traversal and resource/recover
 unittest ran 42 tests: 41 passed and the sole failure remained CM-R01.6's same eight source-bound
 input drifts; no digest was renewed. Formatting, docs, architecture, verification inventory
 (1,703 surfaces, 825 explicit gaps) and diff checks passed. Earlier compiler and Clippy failures
-remain in private receipts. Exact-commit independent re-review remains pending; this local batch
+remain in private receipts. The exact-commit independent re-review of
+`210201bcc669e3d17f2f6e3875127d67c6d90794` found both prior defects corrected by static
+inspection and no new applicable finding, but returned **INCONCLUSIVE**: the reviewer could not
+acquire the required shared build slot to rerun the focused Rust tests and strict Clippy. The
+reviewer independently passed documentation, architecture, formatting, inventory and the
+source-bound provenance check and verified the supplied screenshot digest. This scoped review
 does not close Task 36.3.2.2 or human, desktop, live-provider, package or release gates.

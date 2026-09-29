@@ -3,12 +3,14 @@
 mod campaign_screen;
 mod changes_screen;
 mod execution_screen;
+mod help_screen;
 mod readiness_screen;
 mod reports_screen;
 mod setup_screen;
 
 pub use changes_screen::ChangeSet;
 pub use execution_screen::{ExecutionState, LAUNCH_OBSERVE_INTERVAL};
+pub use help_screen::SupportState;
 pub use reports_screen::ReportsState;
 pub use setup_screen::SetupState;
 
@@ -67,11 +69,13 @@ pub enum Screen {
     Setup,
     /// Appearance and accessibility preferences.
     Settings,
+    /// Offline help, glossary and source licence notices.
+    Help,
 }
 
 impl Screen {
     /// All screens in navigation order.
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 8] = [
         Self::Overview,
         Self::WorkPlan,
         Self::Campaign,
@@ -79,6 +83,7 @@ impl Screen {
         Self::Reports,
         Self::Setup,
         Self::Settings,
+        Self::Help,
     ];
 
     /// Navigation label.
@@ -92,6 +97,7 @@ impl Screen {
             Self::Reports => "Reports",
             Self::Setup => "Setup",
             Self::Settings => "Settings",
+            Self::Help => "Help and About",
         }
     }
 
@@ -106,6 +112,7 @@ impl Screen {
             Self::Reports => egui::Key::Num5,
             Self::Setup => egui::Key::Num6,
             Self::Settings => egui::Key::Num7,
+            Self::Help => egui::Key::Num8,
         }
     }
 }
@@ -159,6 +166,7 @@ pub struct App {
     records: Observed<Vec<crate::records::RunRecord>>,
     records_truncated: bool,
     reports: ReportsState,
+    support: SupportState,
     appearance: Appearance,
     system_dark: bool,
     applied_palette: Option<Palette>,
@@ -245,6 +253,7 @@ impl App {
             records: Observed::default(),
             records_truncated: false,
             reports: ReportsState::default(),
+            support: SupportState::default(),
             appearance: Appearance::System,
             system_dark: ctx.system_theme().unwrap_or(egui::Theme::Dark) == egui::Theme::Dark,
             applied_palette: None,
@@ -580,6 +589,10 @@ impl App {
                 self.accept_head_plan(response);
                 true
             }
+            "support-bundle" => {
+                self.accept_support_bundle(response);
+                true
+            }
             _ => false,
         }
     }
@@ -649,6 +662,7 @@ impl App {
                     Screen::Setup => self.setup(ui),
                     Screen::Reports => self.reports_screen(ui),
                     Screen::Settings => self.settings_screen(ui),
+                    Screen::Help => self.help_screen(ui),
                 });
         });
         content::confirmation(&ctx);
@@ -658,6 +672,7 @@ impl App {
             || self.preflight.loading
             || self.changes.loading
             || self.records.loading
+            || self.support.pending()
         {
             ctx.request_repaint_after(Duration::from_millis(250));
         } else if self.launch_is_live() || self.execution.ledger.pending().is_some() {
@@ -750,7 +765,7 @@ impl App {
                 }
                 ui.add_space(current_tokens(ui.ctx()).layout.section_gap);
                 ui.separator();
-                ui.small("Ctrl+1 to Ctrl+7 switch screens");
+                ui.small("Ctrl+1 to Ctrl+8 switch screens");
                 ui.small(format!("Uptime {}s", self.started_at.elapsed().as_secs()));
             });
     }
@@ -963,10 +978,22 @@ impl App {
             );
         }
         if self.project.is_none() {
-            ui.label(
-                "Open a repository configuration to see its identity, readiness and work plan.",
+            ui.heading("Start with a repository");
+            ui.label("What should the team do? Begin with the task source named by a repository configuration. Opening it shows readiness and the work plan; it starts no campaign or agent.");
+            ui.strong(
+                "Next: open an existing repository configuration below, or create one in Setup.",
             );
             self.open_controls(ui);
+            ui.horizontal(|ui| {
+                if ui.button("Create configuration in Setup").clicked() {
+                    self.screen = Screen::Setup;
+                }
+                if ui.button("Open Help and About").clicked() {
+                    self.screen = Screen::Help;
+                }
+            });
+            ui.small("CodingMage keeps campaign records in the configured local state directory and working files in the configured scratch directory. Choose both in Setup before admitting a campaign.");
+            ui.small("A provider uses its own existing sign-in. Check the provider and model in Setup, then run preflight; no provider or model is selected silently.");
             return;
         }
         let Some(project) = &self.project else {

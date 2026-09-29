@@ -2143,16 +2143,31 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     always-visible shell status projection shows bound state, involvement, identified pods,
     last coordinator checkpoint and an explicit unreported current gate; its other screen
     states and depth remain open. Its first independent review was inconclusive; the unknown-code
-    and keyboard-visibility corrections await exact-commit re-review. See
+    and keyboard-visibility corrections were found sound by static independent re-review, but
+    that verdict remained inconclusive because the reviewer could not acquire the shared build
+    slot for independent Rust checks. Reports now include per-source observation freshness in
+    the view and exported limitation text. Empty Overview now offers a first-run path to Setup and
+    offline Help with storage and provider sign-in explanations; the wider catalogue remains open. See
     `docs/evidence/sprint-36-status-bar.md` and
     `docs/evidence/sprint-36-command-previews.md`,
     `docs/evidence/sprint-36-head-plan-projection.md`,
     `docs/evidence/sprint-36-campaign-changes-projection.md` and
-    `docs/evidence/sprint-36-run-records-projection.md`.
+    `docs/evidence/sprint-36-run-records-projection.md`, plus
+    `docs/evidence/sprint-36-report-freshness.md` and
+    `docs/evidence/sprint-36-first-run.md`.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->
   - [ ] **Sub-task 36.3.2.4:** Externalize text with a pseudo-locale test for 40% expansion and right-to-left layout; add offline help, glossary, About licences and manual redacted diagnostics (CM-UI-014).
+    Open increment: the Help and About destination provides offline getting-started, recovery,
+    keyboard and glossary text with the source licence and source notices, plus an explicit
+    path-free copyable diagnostic summary. A manual redacted
+    support-bundle control now requests the existing coordinator command for one bound campaign,
+    with a fresh external destination and no automatic retry. Focused backend/UI checks, strict
+    workspace Clippy and the native UI all-target suite (98/98) passed; Python unittest remains
+    41/42 solely for the separate CM-R01.6 source-bound evidence drift. Full text
+    externalization, 40%/right-to-left verification and exact packaged third-party licences
+    remain open. See `docs/evidence/sprint-36-offline-help.md`.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).
