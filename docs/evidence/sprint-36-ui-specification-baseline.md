@@ -21,13 +21,13 @@ their own complete workflows.
 | First run | Empty Overview with repository opening, Setup and Help links, storage/sign-in guidance; `CoordinatorBinary::sibling` | No dedicated first-run flow, objective capture contract or complete per-error recovery path. |
 | Workspace | Overview and diagnosis grid | Repository and source-plan counts exist; objective, current campaign, attention and recent outcome summary are absent. |
 | Work plan | `work_plan`, `PlanIndex`, filters, source checkbox labels and `campaign-head-plan` overlay | Search, kind/state filters, dependencies and coordinator-bound head states exist; large-list virtualization and contextual outcome history are absent. |
-| Task detail | `item_detail` below the selected row | Source title, line, checkbox, dependencies and identifier exist; source body, criteria, packets, attempts, review and test history are absent. |
+| Task detail | `item_detail` below the selected row, `campaign-task-detail` and status-bound `campaign-run-records` | A bounded source excerpt, source-stated criteria and selected-task run phases exist; packet and prompt text, full review findings and test logs remain unavailable from the command boundary. |
 | Team activity | Campaign status, active tasks, `campaign-run-records` projection | Actor, model, pod, phase and bounded journal summaries exist; one chronological filterable activity log and complete output/timing detail are absent. |
 | Blockers | Campaign `holds_section`, blocker explanation and reports | Codes and affected task exist; recovery actions and a dedicated searchable view are absent. |
 | Changes and evidence | `campaign-changes` and `campaign-run-records` coordinator projections | Commit, changed files and known gate/review dispositions exist; exact diff hunks, full retained findings and logs are unavailable from the command boundary. Missing evidence is labelled. |
 | Reports | Reports screen and `report::export` | Inspect/export, overwrite/privacy refusal and per-source observation freshness in view/export exist; explanatory outcome depth and broader report navigation remain. |
 | Configuration | Setup and campaign readiness sections | Guided configuration, validated writes, preflight and error explanations exist; schema/default view, every policy, and full mode setup are incomplete. |
-| Campaign controls | Campaign execution section | Admission, start, stop/resume/cancel and reconnect exist; diagnosis, preflight, start and four campaign controls have exact command previews. Admission and other local actions still lack command equivalents. |
+| Campaign controls | Campaign execution and durable status sections | Admission, start, stop/resume/cancel, reconnect and explicit read-only status refresh exist; diagnosis, preflight, start, four campaign controls and status refresh have exact command previews. Admission and other local actions still lack command equivalents. |
 | Settings | Settings destination and design tokens | System, light, dark and high-contrast appearances work for this window; language, storage and defaults are absent. |
 | Help and About | Help destination with Ctrl+8, offline guidance, glossary, shortcuts, bundled source licence/notices, a path-free copyable diagnostic summary and a manual coordinator `support-bundle` request | Full locale catalogue, 40% expansion and right-to-left tests, exact packaged third-party licence list and broader in-context diagnostics remain. |
 
@@ -35,11 +35,11 @@ their own complete workflows.
 | --- | --- | --- |
 | Empty / not started | Overview, work plan, campaign and report empty text | Per-screen next step and help are inconsistent. |
 | Loading | `Observed<T>` and selected panels | Some partial loading states and polite accessibility announcements are absent. |
-| Failure / malformed output | `BackendError`, `failure_box`, strict model parsers | Some failures are generic and their effect on the campaign is unclear. |
+| Failure / malformed output | `BackendError`, `failure_box`, strict model parsers; Campaign status failure labels uncertain progress and offers a bound read-only refresh | Other failures remain generic and their effect on the campaign is unclear. |
 | Stale / disconnected | `Observed<T>::freshness`, response-generation and binding checks; campaign status and mission payload identities are checked before acceptance; the status bar labels retained stale campaign and mission values | Not every panel labels a retained stale value; repository diagnosis and connection states still need complete recovery. |
-| Executable missing | `Connection::Unavailable` in Overview/status bar | First-run recovery path is incomplete. |
+| Executable missing | `Connection::Unavailable` in Overview/status bar; error guidance requires the sibling `codingmage` executable | First-run recovery path is incomplete. |
 | Provider unavailable / authentication required / permission denied | Preflight and backend error explanations | No consistent per-screen state and direct recovery action. |
-| Campaign and task outcomes | `CampaignStatus`, task overlay and independent counters | Some coordinator states are raw codes; task detail lacks the full history. Source checkboxes and verified outcomes are kept distinct. |
+| Campaign and task outcomes | `CampaignStatus`, task overlay, selected-task run phases and independent counters | Some coordinator states are raw codes; packet, prompt, finding and log history is absent from the projection. Source checkboxes and verified outcomes are kept distinct. |
 
 Shell gaps apply to every screen: the navigation has no command palette; the status bar now shows
 bound campaign identity/state, involvement, identified active pods and the coordinator's last

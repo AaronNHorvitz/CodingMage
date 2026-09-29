@@ -366,6 +366,61 @@ fn foreign_campaign_status_and_mission_cannot_replace_selected_observations() {
 }
 
 #[test]
+fn malformed_status_has_an_exact_read_only_recovery_action() {
+    let fixture = Fixture::new("status-recovery", 1);
+    let spec = write_campaign(&fixture, "bound-campaign", 1);
+    run_campaign(&fixture, &spec);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.status().value.as_ref().is_some_and(Option::is_some)
+    }));
+    let expected = harness.state().status().value.clone();
+    let mut malformed = expected.clone().flatten().unwrap();
+    malformed.campaign_id = "another-campaign".to_owned();
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-status",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&malformed).unwrap()),
+    }));
+    assert_eq!(harness.state().status().value, expected);
+    assert!(harness.state().status().last_error.is_some());
+    let prior_observation = harness.state().status().observed_at;
+    let original = expected.clone().flatten().unwrap();
+    harness.state_mut().select_screen(Screen::Campaign);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Observation: stale");
+    harness.get_by_label_contains("Current campaign progress cannot be confirmed");
+    harness
+        .get_by_label("Show command: Refresh campaign status")
+        .focus();
+    harness.key_press(egui::Key::Enter);
+    harness.run_steps(2);
+    harness.get_by_label_contains("codingmage campaign-status --config");
+    harness.get_by_label("Refresh campaign status").focus();
+    harness.key_press(egui::Key::Enter);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.status()
+            .value
+            .as_ref()
+            .and_then(Option::as_ref)
+            .is_some_and(|status| {
+                status.campaign_id == original.campaign_id
+                    && status.head == original.head
+                    && status.state == original.state
+            })
+            && app.status().last_error.is_none()
+            && app.status().observed_at != prior_observation
+    }));
+    assert_eq!(harness.state().generation(), generation);
+    harness.get_by_label_contains("Observation: live");
+}
+
+#[test]
 fn completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree() {
     let fixture = Fixture::new("campaign-complete", 2);
     let spec = write_campaign(&fixture, "one-unit", 1);

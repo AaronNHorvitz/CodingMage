@@ -364,7 +364,7 @@ fn explain_interface_code(code: &str) -> (&'static str, &'static str) {
     match code {
         "codingmage.ui.binary_unavailable" => (
             "The coordinator executable is not installed next to this interface.",
-            "Install codingmage in the same directory or select its path in Setup.",
+            "Install codingmage next to codingmage-ui, then restart the app.",
         ),
         "codingmage.ui.timeout" => (
             "The coordinator command did not finish within the interface deadline.",

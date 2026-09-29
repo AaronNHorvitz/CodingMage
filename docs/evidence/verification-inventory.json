@@ -55503,6 +55503,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -55554,6 +55555,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -55791,6 +55793,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -55951,6 +55954,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -56047,15 +56051,16 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:accept_head_plan:302",
+      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:accept_head_plan:331",
       "kind": "fn",
-      "line": 302,
+      "line": 331,
       "name": "accept_head_plan",
       "path": "crates/codingmage-ui/src/app/campaign_screen.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -56108,15 +56113,16 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:accept_mission:162",
+      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:accept_mission:191",
       "kind": "fn",
-      "line": 162,
+      "line": 191,
       "name": "accept_mission",
       "path": "crates/codingmage-ui/src/app/campaign_screen.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -56169,15 +56175,16 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:accept_status:194",
+      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:accept_status:223",
       "kind": "fn",
-      "line": 194,
+      "line": 223,
       "name": "accept_status",
       "path": "crates/codingmage-ui/src/app/campaign_screen.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -56230,15 +56237,16 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:accept_task_detail:390",
+      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:accept_task_detail:419",
       "kind": "fn",
-      "line": 390,
+      "line": 419,
       "name": "accept_task_detail",
       "path": "crates/codingmage-ui/src/app/campaign_screen.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -56287,25 +56295,15 @@
       "applicable_categories": [
         "positive",
         "negative",
-        "malformed_input",
-        "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:campaign_arguments:145",
+      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:campaign_arguments:174",
       "kind": "fn",
-      "line": 145,
+      "line": 174,
       "name": "campaign_arguments",
       "path": "crates/codingmage-ui/src/app/campaign_screen.rs",
       "surface": "rust_public_api",
       "test_mappings": {
-        "malformed_input": [
-          "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
-          "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
-          "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
-          "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
-          "crates/codingmage-ui/tests/verification.rs::stale_and_malformed_private_state_is_visible_and_never_fatal",
-          "crates/codingmage-ui/tests/workplan.rs::malformed_task_source_is_a_visible_failure_and_overview_still_works"
-        ],
         "negative": [
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56334,13 +56332,6 @@
           "crates/codingmage-ui/tests/contract_parity.rs::explanation_outcome_and_control_round_trip",
           "crates/codingmage-ui/tests/contract_parity.rs::preflight_report_round_trips",
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
-        ],
-        "unknown_field": [
-          "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
-          "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
-          "crates/codingmage-ui/src/content.rs::oversized_content_is_bounded_before_link_extraction",
-          "crates/codingmage-ui/tests/changes.rs::linked_or_oversized_run_checkpoint_is_unknown_and_refresh_recovers"
         ]
       }
     },
@@ -56352,15 +56343,16 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:campaign_screen:470",
+      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:campaign_screen:499",
       "kind": "fn",
-      "line": 470,
+      "line": 499,
       "name": "campaign_screen",
       "path": "crates/codingmage-ui/src/app/campaign_screen.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -56510,6 +56502,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -56562,15 +56555,16 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:request_task_detail:365",
+      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:request_task_detail:394",
       "kind": "fn",
-      "line": 365,
+      "line": 394,
       "name": "request_task_detail",
       "path": "crates/codingmage-ui/src/app/campaign_screen.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -56667,15 +56661,16 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:task_detail_arguments:346",
+      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:task_detail_arguments:375",
       "kind": "fn",
-      "line": 346,
+      "line": 375,
       "name": "task_detail_arguments",
       "path": "crates/codingmage-ui/src/app/campaign_screen.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -56726,9 +56721,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:task_overlay:440",
+      "id": "rust:crates/codingmage-ui/src/app/campaign_screen.rs:fn:task_overlay:469",
       "kind": "fn",
-      "line": 440,
+      "line": 469,
       "name": "task_overlay",
       "path": "crates/codingmage-ui/src/app/campaign_screen.rs",
       "surface": "rust_public_api",
@@ -56781,6 +56776,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -56842,6 +56838,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -56991,6 +56988,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -57052,6 +57050,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -57168,6 +57167,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -57229,6 +57229,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -57378,6 +57379,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -57483,6 +57485,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -57544,6 +57547,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -57880,6 +57884,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -58029,6 +58034,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -58277,6 +58283,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -58568,6 +58575,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -58618,6 +58626,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -58834,6 +58843,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -59005,6 +59015,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -59110,6 +59121,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -59171,6 +59183,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -59507,6 +59520,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -59568,6 +59582,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -59629,6 +59644,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -59690,6 +59706,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -59762,6 +59779,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -59823,6 +59841,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -59972,6 +59991,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -60077,6 +60097,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -60138,6 +60159,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -60199,6 +60221,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -60271,6 +60294,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -60387,6 +60411,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -60536,6 +60561,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -60597,6 +60623,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -60658,6 +60685,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -60719,6 +60747,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -60813,6 +60842,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61006,6 +61036,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61210,6 +61241,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61271,6 +61303,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61332,6 +61365,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61404,6 +61438,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61465,6 +61500,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61526,6 +61562,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61587,6 +61624,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61692,6 +61730,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61753,6 +61792,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61814,6 +61854,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61875,6 +61916,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61936,6 +61978,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -61997,6 +62040,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -62058,6 +62102,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -62119,6 +62164,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -62180,6 +62226,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -62241,6 +62288,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -62774,6 +62822,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -62824,6 +62873,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -62874,6 +62924,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -62924,6 +62975,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -62974,6 +63026,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63024,6 +63077,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63075,6 +63129,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63180,6 +63235,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63241,6 +63297,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63302,6 +63359,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63363,6 +63421,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63424,6 +63483,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63485,6 +63545,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63546,6 +63607,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63607,6 +63669,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63668,6 +63731,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63729,6 +63793,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63801,6 +63866,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63873,6 +63939,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63934,6 +64001,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -63995,6 +64063,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64056,6 +64125,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64117,6 +64187,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64178,6 +64249,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64239,6 +64311,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64300,6 +64373,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64361,6 +64435,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64422,6 +64497,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64494,6 +64570,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64566,6 +64643,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64627,6 +64705,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64699,6 +64778,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64771,6 +64851,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64843,6 +64924,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64904,6 +64986,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -64976,6 +65059,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65037,6 +65121,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65098,6 +65183,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65159,6 +65245,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65231,6 +65318,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65292,6 +65380,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65353,6 +65442,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65425,6 +65515,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65486,6 +65577,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65547,6 +65639,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65619,6 +65712,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65691,6 +65785,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65763,6 +65858,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65824,6 +65920,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65896,6 +65993,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -65967,6 +66065,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -66436,6 +66535,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -67079,6 +67179,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -67130,6 +67231,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -67202,6 +67304,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -67307,6 +67410,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -67467,6 +67571,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -67583,6 +67688,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -68293,6 +68399,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -68904,6 +69011,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -68965,6 +69073,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -69026,6 +69135,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -70000,6 +70110,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -70061,6 +70172,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -70122,6 +70234,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -70458,6 +70571,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -70991,6 +71105,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71053,6 +71168,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71125,6 +71241,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71252,6 +71369,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71313,6 +71431,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71374,6 +71493,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71435,6 +71555,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71496,6 +71617,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71557,6 +71679,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71618,6 +71741,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71690,6 +71814,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71751,6 +71876,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71866,6 +71992,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -71983,6 +72110,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -72088,6 +72216,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -72193,6 +72322,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -72265,6 +72395,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -72381,6 +72512,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -72552,6 +72684,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -72613,6 +72746,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -72674,6 +72808,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -72746,6 +72881,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -72807,6 +72943,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -72867,6 +73004,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -72918,6 +73056,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -73023,6 +73162,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -73084,6 +73224,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -73145,6 +73286,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -73217,6 +73359,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -73278,6 +73421,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -73371,6 +73515,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -73466,6 +73611,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -73571,6 +73717,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -73764,6 +73911,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -73836,6 +73984,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -73897,6 +74046,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74046,6 +74196,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74107,6 +74258,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74168,6 +74320,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74273,6 +74426,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74345,6 +74499,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74461,6 +74616,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74532,6 +74688,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74593,6 +74750,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74699,6 +74857,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74760,6 +74919,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74821,6 +74981,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -74882,6 +75043,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -75009,6 +75171,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -75070,6 +75233,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -75131,6 +75295,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -75236,6 +75401,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -75297,6 +75463,7 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -75864,6 +76031,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -76255,6 +76423,7 @@
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/report.rs::invalid_journal_withholds_checkpoint_review_and_gate_claims",
+          "crates/codingmage-ui/tests/campaign.rs::malformed_status_has_an_exact_read_only_recovery_action",
           "crates/codingmage-ui/tests/changes.rs::missing_and_malformed_records_are_reported_not_passed",
           "crates/codingmage-ui/tests/shell.rs::invalid_configuration_is_reported_and_leaves_no_project_open",
           "crates/codingmage-ui/tests/shell.rs::malformed_backend_output_is_an_explicit_contract_failure",
@@ -76355,6 +76524,6 @@
       }
     }
   ],
-  "items_sha256": "77d822580805260ce5e1e97e281529737bbaac23f3457991da811bbb2a951bad",
+  "items_sha256": "0e0f9b558e25353a16943ca78da8a26b61a37087a1f9461587c38ec5a2486358",
   "schema_version": 1
 }

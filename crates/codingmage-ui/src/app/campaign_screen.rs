@@ -16,7 +16,7 @@ use crate::{
         CampaignSelection, INVOLVEMENT_MODES, SUPPORTED_ROLES, TaskOverlay, build_overlay,
         involvement_label,
     },
-    content,
+    command, content,
     observed::Observed,
     observed::{Freshness, age_label},
 };
@@ -98,7 +98,7 @@ impl App {
         let Some((config_path, spec_path, parallel)) = self.campaign_arguments() else {
             return;
         };
-        self.last_status_request = Some(self.now);
+        self.request_status();
         let base = [
             "--config".to_owned(),
             config_path.clone(),
@@ -106,7 +106,6 @@ impl App {
             spec_path.clone(),
         ];
         let mut jobs = vec![
-            ("campaign-status", "campaign-status"),
             ("campaign-explain-blocker", "campaign-explain-blocker"),
             ("campaign-mission-status", "campaign-mission-status"),
         ];
@@ -128,18 +127,48 @@ impl App {
             };
             match self.submit(request) {
                 Ok(()) => match label {
-                    "campaign-status" => self.status.loading = true,
                     "campaign-explain-blocker" => self.explanation.loading = true,
                     "campaign-mission-status" => self.mission.loading = true,
                     _ => self.report.loading = true,
                 },
                 Err(error) => match label {
-                    "campaign-status" => self.status.fail(error, self.now),
                     "campaign-explain-blocker" => self.explanation.fail(error, self.now),
                     "campaign-mission-status" => self.mission.fail(error, self.now),
                     _ => self.report.fail(error, self.now),
                 },
             }
+        }
+    }
+
+    fn status_arguments(&self) -> Option<Vec<String>> {
+        let (config, campaign, _) = self.campaign_arguments()?;
+        Some(vec![
+            "campaign-status".to_owned(),
+            "--config".to_owned(),
+            config,
+            "--campaign".to_owned(),
+            campaign,
+        ])
+    }
+
+    fn request_status(&mut self) {
+        let Some(arguments) = self.status_arguments() else {
+            return;
+        };
+        self.last_status_request = Some(self.now);
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::Command {
+                label: "campaign-status",
+                arguments,
+                deadline: STATUS_DEADLINE,
+            },
+            request_id: None,
+        };
+        match self.submit(request) {
+            Ok(()) => self.status.loading = true,
+            Err(error) => self.status.fail(error, self.now),
         }
     }
 
@@ -649,8 +678,32 @@ impl App {
         }
     }
 
-    fn status_section(&self, ui: &mut egui::Ui) {
+    fn status_section(&mut self, ui: &mut egui::Ui) {
         ui.heading("Durable campaign status");
+        let arguments = self.status_arguments();
+        let can_refresh = command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
+        if ui
+            .add_enabled(
+                can_refresh && !self.status.loading,
+                egui::Button::new("Refresh campaign status"),
+            )
+            .clicked()
+        {
+            self.request_status();
+        }
+        if let Some(arguments) = &arguments {
+            command::show_for(
+                ui,
+                "Refresh campaign status",
+                self.binary_path.as_deref(),
+                arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, "Refresh campaign status");
+        }
+        if self.status.loading && self.status.value.is_some() {
+            ui.small("Refreshing; values below are from the last completed observation.");
+        }
         let freshness = self.status.freshness(self.now);
         ui.label(format!(
             "Observation: {} ({})",
@@ -660,6 +713,7 @@ impl App {
         if let Some((_, error)) = &self.status.last_error {
             let (what, action) = explain_code(&error.code());
             failure_box(ui, what, &error.to_string(), action);
+            ui.small("Current campaign progress cannot be confirmed. Refreshing status reads the coordinator; it does not change the campaign or grant authority.");
         }
         match (&self.status.value, freshness) {
             (None, Freshness::Loading) => {

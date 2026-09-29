@@ -66,5 +66,8 @@ passed (1,720 public items, 825 explicit gaps; two surfaces added, none removed)
 unittest ran 42: 41 passed and the sole CM-R01.6 source-bound freshness test failed on the
 same eight retained input drifts. No digest or review record was renewed. The initial
 test-only type mismatch and off-viewport pointer-disclosure failure were corrected and
-their private receipts retained. This candidate still requires its own independent review;
-no real desktop, Orca, human trial, provider or release result is claimed.
+their private receipts retained. Independent read-only review of exact commit
+`7fd9d5a42d2f1f4531469216a5c52bfb65973b33` returned **PASS**, with no findings;
+the reviewer reran the focused model and real-process campaign cases, all 100 UI tests,
+strict Clippy and light checks. This narrow result does not qualify a real desktop, Orca,
+human trial, provider or release.
