@@ -59353,9 +59353,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:failure_box:1621",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:failure_box:1715",
       "kind": "fn",
-      "line": 1621,
+      "line": 1715,
       "name": "failure_box",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -70800,9 +70800,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:english:129",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:english:148",
       "kind": "fn",
-      "line": 129,
+      "line": 148,
       "name": "english",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -70871,9 +70871,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:pseudo:106",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:pseudo:125",
       "kind": "fn",
-      "line": 106,
+      "line": 125,
       "name": "pseudo",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -70915,9 +70915,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:text:98",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:text:117",
       "kind": "fn",
-      "line": 98,
+      "line": 117,
       "name": "text",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -70961,9 +70961,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:struct:Catalogue:73",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:struct:Catalogue:92",
       "kind": "struct",
-      "line": 73,
+      "line": 92,
       "name": "Catalogue",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -76935,6 +76935,6 @@
       }
     }
   ],
-  "items_sha256": "5f351cb2c6b45158598741b0c7c0d7fb7e3931a45ee3c2d31ecfc32a687abcdd",
+  "items_sha256": "b3daa407673ed380faed33dc6c5efb56b6c6aaef755a159ec8ae6edc62dacf00",
   "schema_version": 1
 }

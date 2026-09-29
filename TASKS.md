@@ -2147,14 +2147,22 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     that verdict remained inconclusive because the reviewer could not acquire the shared build
     slot for independent Rust checks. Reports now include per-source observation freshness in
     the view and exported limitation text. Empty Overview now offers a first-run path to Setup and
-    offline Help with storage and provider sign-in explanations; the wider catalogue remains open. See
+    offline Help with storage and provider sign-in explanations. The selected Workspace campaign
+    summary uses real coordinator status for recorded outcome counts, attention, absent/stale
+    state and navigation to Campaign. The first focused campaign suite passed 7/7 and first
+    cumulative native suite passed 105/105; a final correction for stale retained absence and
+    hold counts passed another focused 7/7 and final native all-target 105/105 with strict
+    workspace Clippy. Python retains only CM-R01.6's eight-input freshness failure. Loading and
+    failed states remain as explicit wording but lack a focused assertion. It is not a
+    recent-outcome history. The wider catalogue remains open. See
     `docs/evidence/sprint-36-status-bar.md` and
     `docs/evidence/sprint-36-command-previews.md`,
     `docs/evidence/sprint-36-head-plan-projection.md`,
     `docs/evidence/sprint-36-campaign-changes-projection.md` and
     `docs/evidence/sprint-36-run-records-projection.md`, plus
     `docs/evidence/sprint-36-report-freshness.md` and
-    `docs/evidence/sprint-36-first-run.md`. An explicit `campaign-task-detail` read now binds one
+    `docs/evidence/sprint-36-first-run.md` and
+    `docs/evidence/sprint-36-overview-campaign.md`. An explicit `campaign-task-detail` read now binds one
     selected item's bounded source excerpt and story criteria to the coordinator's exact head;
     Work plan shows its exact command and discards a response after task reselection. The
     focused real-process campaign test and 100 native UI all-target tests pass, while the
@@ -2194,10 +2202,13 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     `docs/evidence/sprint-36-offline-help.md`, Decision 0031 and
     `docs/evidence/sprint-36-message-catalogue.md`. Independent review of that exact Help
     increment returned a narrow PASS with one Low baseline wording finding, now corrected.
-    The next open increment moves manual-diagnostics and Settings appearance labels into the
+    The previous increment moved manual-diagnostics and Settings appearance labels into the
     same catalogue; focused synthetic 40% expansion/right-alignment checks, 105 native UI
     all-target tests and strict workspace Clippy pass. The Python suite retains only the
-    separate CM-R01.6 freshness failure; independent review of the new source is pending.
+    separate CM-R01.6 freshness failure; independent review of that exact source returned a
+    narrow PASS without findings. The Workspace campaign-at-a-glance increment is verified locally:
+    it presents only selected coordinator state, outcome counters and attention with freshness,
+    plus a navigation action; full section-5 coverage remains open.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).

@@ -1050,6 +1050,8 @@ impl App {
             ui.small("A provider uses its own existing sign-in. Check the provider and model in Setup, then run preflight; no provider or model is selected silently.");
             return;
         }
+        self.overview_campaign(ui);
+        ui.separator();
         let Some(project) = &self.project else {
             return;
         };
@@ -1080,6 +1082,98 @@ impl App {
         self.overview_diagnosis(ui);
         ui.separator();
         self.overview_plan(ui);
+    }
+
+    fn overview_campaign(&mut self, ui: &mut egui::Ui) {
+        let catalogue = messages::english();
+        ui.heading(catalogue.text("overview_campaign_title"));
+        let Some(campaign) = &self.campaign else {
+            ui.label(catalogue.text("overview_campaign_none"));
+            if ui
+                .button(catalogue.text("overview_campaign_open"))
+                .clicked()
+            {
+                self.screen = Screen::Campaign;
+            }
+            return;
+        };
+        ui.label(format!(
+            "{} {}",
+            catalogue.text("overview_campaign_selected"),
+            content::list_label(&campaign.spec.campaign_id)
+        ));
+        let freshness = self.status.freshness(self.now);
+        ui.small(format!(
+            "{} {} ({})",
+            catalogue.text("overview_campaign_observation"),
+            freshness.label(),
+            age_label(self.status.age(self.now))
+        ));
+        match &self.status.value {
+            Some(Some(status)) => {
+                ui.label(format!(
+                    "{} {}",
+                    catalogue.text("overview_campaign_state"),
+                    campaign_state_label(&status.state)
+                ));
+                ui.label(format!(
+                    "{} {} {}, {} {}, {} {}, {} {}",
+                    catalogue.text("overview_campaign_outcomes"),
+                    status.outcomes.completed,
+                    catalogue.text("overview_campaign_completed"),
+                    status.outcomes.blocked,
+                    catalogue.text("overview_campaign_blocked"),
+                    status.outcomes.deferred,
+                    catalogue.text("overview_campaign_deferred"),
+                    status.outcomes.pending_human_decision,
+                    catalogue.text("overview_campaign_decisions")
+                ));
+                if let Some(code) = &status.blocker_code {
+                    ui.colored_label(
+                        current_tokens(ui.ctx()).warning,
+                        format!(
+                            "{} {}",
+                            catalogue.text("overview_campaign_attention"),
+                            content::list_label(code)
+                        ),
+                    );
+                } else if status.blocker_count > 0
+                    || status.outcomes.blocked > 0
+                    || status.outcomes.deferred > 0
+                    || status.outcomes.pending_human_decision > 0
+                {
+                    ui.colored_label(
+                        current_tokens(ui.ctx()).warning,
+                        catalogue.text("overview_campaign_attention_counts"),
+                    );
+                } else {
+                    ui.label(catalogue.text("overview_campaign_no_attention"));
+                }
+            }
+            Some(None) => {
+                ui.label(catalogue.text("overview_campaign_not_started"));
+            }
+            None => {
+                let key = match freshness {
+                    Freshness::Loading => "overview_campaign_loading",
+                    Freshness::Failed => "overview_campaign_failed",
+                    _ => "overview_campaign_unobserved",
+                };
+                ui.label(catalogue.text(key));
+            }
+        }
+        if freshness == Freshness::Stale {
+            ui.colored_label(
+                current_tokens(ui.ctx()).warning,
+                catalogue.text("overview_campaign_stale"),
+            );
+        }
+        if ui
+            .button(catalogue.text("overview_campaign_open"))
+            .clicked()
+        {
+            self.screen = Screen::Campaign;
+        }
     }
 
     fn overview_diagnosis(&self, ui: &mut egui::Ui) {

@@ -19,7 +19,7 @@ their own complete workflows.
 | Specified screen | Current source surface | Gap against the specification |
 | --- | --- | --- |
 | First run | Empty Overview with repository opening, Setup and Help links, storage/sign-in guidance; `CoordinatorBinary::sibling` | No dedicated first-run flow, objective capture contract or complete per-error recovery path. |
-| Workspace | Overview and diagnosis grid | Repository and source-plan counts exist; objective, current campaign, attention and recent outcome summary are absent. |
+| Workspace | Overview, diagnosis grid and selected-campaign summary | Repository and source-plan counts, selected campaign, coordinator state, recorded outcome counters, attention and freshness are present; objective capture and a chronological recent-outcome history are absent. |
 | Work plan | `work_plan`, `PlanIndex`, filters, source checkbox labels and `campaign-head-plan` overlay | Search, kind/state filters, dependencies and coordinator-bound head states exist; large-list virtualization and contextual outcome history are absent. |
 | Task detail | `item_detail` below the selected row, `campaign-task-detail` and status-bound `campaign-run-records` | A bounded source excerpt, source-stated criteria and selected-task run phases exist; packet and prompt text, full review findings and test logs remain unavailable from the command boundary. |
 | Team activity | Campaign status, active tasks, `campaign-run-records` projection | Actor, model, pod, phase and bounded journal summaries exist; one chronological filterable activity log and complete output/timing detail are absent. |

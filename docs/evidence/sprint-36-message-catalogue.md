@@ -62,4 +62,13 @@ suite passed 105/105 and strict workspace Clippy passed. Formatting, documentati
 architecture, no-write inventory and diff whitespace checks passed. Python unittest ran 42
 tests: 41 passed and the sole failure was the retained CM-R01.6 source-bound freshness check
 on the same eight input drifts. No evidence digest was renewed. Fresh independent review of
-the second slice remains pending.
+exact commit `5b643b01558204bde1dfa1b4cfe9b464fa4e9b5e` returned a narrow PASS with no
+findings. It did not qualify human, live or full-product gates.
+
+The next open slice adds authored English keys for the Workspace selected-campaign summary. Its
+labels distinguish current versus retained status, recorded counters versus recent history, and
+known attention versus an unavailable observation. The existing catalogue parser and synthetic
+40% expansion unit test cover the new keys; real-process rendering passed in the focused
+campaign suite, the final native UI all-target suite passed 105/105, and strict workspace Clippy
+passed. Python retains only CM-R01.6's eight-input freshness failure. No new language selector or
+broader right-to-left claim is made.

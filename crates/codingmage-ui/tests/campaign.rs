@@ -7,7 +7,7 @@ use std::{fs, path::Path, process::Command, time::Duration};
 use codingmage_ui::{
     Screen,
     backend::{
-        CoordinatorBinary, Response,
+        BackendError, CoordinatorBinary, Response,
         models::{ActiveTask, MissionStatus},
     },
     campaign::SelectError,
@@ -231,6 +231,26 @@ fn never_started_campaign_is_an_explicit_empty_state() {
         Some(None),
         "no charter admitted is an explicit absent state, not a failure"
     );
+    harness.state_mut().select_screen(Screen::Overview);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Selected campaign: empty-campaign");
+    harness.get_by_label_contains("No durable campaign state was observed");
+    let binding = harness.state().binding();
+    let generation = harness.state().generation();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-status",
+        request_id: None,
+        result: Err(BackendError::Timeout),
+    }));
+    harness.run_steps(2);
+    harness.get_by_label_contains("This is an earlier observation");
+    harness
+        .get_by_role_and_label(egui::accesskit::Role::Button, "Open Campaign")
+        .click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Campaign);
     harness.state_mut().select_screen(Screen::Campaign);
     harness.run_steps(2);
     harness.get_by_label_contains("Repository: target");
@@ -295,6 +315,7 @@ fn foreign_campaign_status_and_mission_cannot_replace_selected_observations() {
     assert!(harness.state().status().last_error.is_some());
     harness.state_mut().select_screen(Screen::Overview);
     harness.run_steps(2);
+    harness.get_by_label_contains("This is an earlier observation");
     harness.get_by_label_contains(&format!(
         "State: {} (stale)",
         original.as_ref().unwrap().as_ref().unwrap().state
@@ -445,6 +466,10 @@ fn completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree() {
     assert_eq!(status.outcomes.accepted, 1);
     assert_eq!(status.outcomes.max_accepted, 1);
     assert_eq!(status.state, "paused");
+    harness.state_mut().select_screen(Screen::Overview);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Recorded outcomes: 1 completed, 0 blocked");
+    harness.get_by_label_contains("Attention: coordinator blocker code");
     let projection = checked_head_projection(&fixture, &spec, &status.head);
     let overlay = harness.state().task_overlay();
     let first = overlay.get("0.1.1.1").unwrap().labels(true);
@@ -493,6 +518,21 @@ fn completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree() {
             .campaign_head
             .is_none()
     );
+    let mut hold = status;
+    hold.blocker_code = None;
+    hold.blocker_count = 1;
+    let binding = harness.state().binding();
+    let generation = harness.state().generation();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-status",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&hold).unwrap()),
+    }));
+    harness.state_mut().select_screen(Screen::Overview);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Attention: the coordinator reports a hold");
 }
 
 fn assert_task_detail_workflow(
@@ -586,6 +626,10 @@ fn blocked_task_shows_its_closed_reason_and_independent_progress() {
     assert_eq!(status.outcomes.blocked, 1);
     assert_eq!(status.outcomes.completed, 1);
     assert_eq!(status.blockers[0].task_id, "0.1.1.1");
+    harness.state_mut().select_screen(Screen::Overview);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Recorded outcomes: 1 completed, 1 blocked");
+    harness.get_by_label_contains("Attention:");
     let overlay = harness.state().task_overlay();
     assert_eq!(
         overlay.get("0.1.1.1").unwrap().labels(true),
