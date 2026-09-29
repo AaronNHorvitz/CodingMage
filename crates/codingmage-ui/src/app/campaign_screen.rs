@@ -87,6 +87,8 @@ impl App {
         self.mission.clear();
         self.head_plan.clear();
         self.head_plan_commit = None;
+        self.task_detail.clear();
+        self.task_detail_key = None;
         self.last_status_request = None;
     }
 
@@ -217,6 +219,8 @@ impl App {
                 if head.is_none() {
                     self.head_plan.clear();
                     self.head_plan_commit = None;
+                    self.task_detail.clear();
+                    self.task_detail_key = None;
                     self.changes.clear();
                     self.changes_range = None;
                 }
@@ -224,6 +228,14 @@ impl App {
                     && (self.head_plan_commit.as_deref() != Some(head.as_str())
                         || self.head_plan.freshness(self.now) == Freshness::Stale)
                 {
+                    if self
+                        .task_detail_key
+                        .as_ref()
+                        .is_some_and(|(known, _)| known != head)
+                    {
+                        self.task_detail.clear();
+                        self.task_detail_key = None;
+                    }
                     self.request_head_plan(head);
                 }
                 let base = self
@@ -243,6 +255,8 @@ impl App {
                 self.records_truncated = false;
                 self.head_plan.clear();
                 self.head_plan_commit = None;
+                self.task_detail.clear();
+                self.task_detail_key = None;
                 self.changes.clear();
                 self.changes_range = None;
             }
@@ -325,6 +339,97 @@ impl App {
                 self.head_plan_commit = None;
                 self.head_plan.fail(error, self.now);
             }
+        }
+    }
+
+    pub(super) fn task_detail_arguments(&self, item_id: &str) -> Option<Vec<String>> {
+        let (config, campaign, _) = self.campaign_arguments()?;
+        if self.status.freshness(self.now) != Freshness::Live {
+            return None;
+        }
+        let head = &self.status.value.as_ref()?.as_ref()?.head;
+        Some(vec![
+            "campaign-task-detail".to_owned(),
+            "--config".to_owned(),
+            config,
+            "--campaign".to_owned(),
+            campaign,
+            "--head".to_owned(),
+            head.clone(),
+            "--item".to_owned(),
+            item_id.to_owned(),
+        ])
+    }
+
+    pub(super) fn request_task_detail(&mut self, item_id: &str) {
+        let Some(arguments) = self.task_detail_arguments(item_id) else {
+            return;
+        };
+        let head = arguments[6].clone();
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::Command {
+                label: "campaign-task-detail",
+                arguments,
+                deadline: GIT_DEADLINE,
+            },
+            request_id: Some(item_id.to_owned()),
+        };
+        match self.submit(request) {
+            Ok(()) => {
+                self.task_detail.clear();
+                self.task_detail.loading = true;
+                self.task_detail_key = Some((head, item_id.to_owned()));
+            }
+            Err(error) => self.task_detail.fail(error, self.now),
+        }
+    }
+
+    pub(super) fn accept_task_detail(&mut self, response: Response) {
+        if response.request_id.as_deref() != self.selected_item.as_deref() {
+            return;
+        }
+        let result = response.result.and_then(|bytes| {
+            crate::backend::models::parse_task_detail(&bytes).map_err(BackendError::from)
+        });
+        match result {
+            Ok(detail) => {
+                let status_head = self
+                    .status
+                    .value
+                    .as_ref()
+                    .and_then(Option::as_ref)
+                    .map(|status| status.head.as_str());
+                let campaign_id = self
+                    .campaign
+                    .as_ref()
+                    .map(|value| value.spec.campaign_id.as_str());
+                let repository_id = self
+                    .diagnosis
+                    .value
+                    .as_ref()
+                    .map(|value| value.repository_id.as_str());
+                let expected_key = Some((detail.head.clone(), detail.item_id.clone()));
+                if self.status.freshness(self.now) == Freshness::Live
+                    && status_head == Some(detail.head.as_str())
+                    && campaign_id == Some(detail.campaign_id.as_str())
+                    && repository_id == Some(detail.repository_id.as_str())
+                    && self.task_detail_key == expected_key
+                    && response.request_id.as_deref() == Some(detail.item_id.as_str())
+                {
+                    self.task_detail
+                        .accept(detail, response.generation, self.now);
+                } else {
+                    self.task_detail.fail(
+                        BackendError::Refused(
+                            "task source detail belongs to a changed campaign, head or selection; refresh the campaign".to_owned(),
+                        ),
+                        self.now,
+                    );
+                }
+            }
+            Err(error) => self.task_detail.fail(error, self.now),
         }
     }
 

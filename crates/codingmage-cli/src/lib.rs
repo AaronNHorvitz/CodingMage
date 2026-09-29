@@ -17,7 +17,7 @@ use codingmage_core::{
 use codingmage_git::{
     BlobReadError, inventory_repository, read_authorized_blob, read_authorized_changes,
 };
-use codingmage_plan::{PlanItemKind, TaskPlan};
+use codingmage_plan::{PlanItem, PlanItemKind, TaskPlan};
 use codingmage_runtime::{
     RecipeSpec, RunProgress, RunSpec, RuntimeError, admit_campaign_mission,
     answer_campaign_decision, approve_campaign_destination_promotion,
@@ -47,6 +47,7 @@ Commands:
   campaign                      Execute a bounded serial or parallel campaign
   campaign-status               Read durable campaign status
   campaign-head-plan            Read task states at the exact reconciled campaign head
+  campaign-task-detail          Read one bounded task excerpt at that head
   campaign-changes              Read bounded changes at the exact reconciled campaign head
   campaign-run-records          Read bound, content-minimized run evidence
   campaign-report               Read the final campaign report
@@ -90,6 +91,9 @@ fn command_help(command: &str) -> Option<&'static str> {
         ),
         "campaign-head-plan" => Some(
             "Usage: codingmage campaign-head-plan --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> --head <FULL_COMMIT_ID>",
+        ),
+        "campaign-task-detail" => Some(
+            "Usage: codingmage campaign-task-detail --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> --head <FULL_COMMIT_ID> --item <TASK_ID>",
         ),
         "campaign-changes" => Some(
             "Usage: codingmage campaign-changes --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> --head <FULL_COMMIT_ID>",
@@ -160,6 +164,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign" => execute_campaign(&arguments[1..]),
         "campaign-status" => inspect_campaign(&arguments[1..]),
         "campaign-head-plan" => inspect_campaign_head_plan(&arguments[1..]),
+        "campaign-task-detail" => inspect_campaign_task_detail(&arguments[1..]),
         "campaign-changes" => inspect_campaign_changes(&arguments[1..]),
         "campaign-run-records" => inspect_campaign_run_records(&arguments[1..]),
         "campaign-report" => inspect_campaign_report(&arguments[1..]),
@@ -495,6 +500,161 @@ fn inspect_campaign_head_plan(arguments: &[String]) -> Result<String, CliError> 
         return Err(CliError::Plan);
     }
     Ok(encoded)
+}
+
+// Task prose is read only from the authorized Git blob at the reconciled head. It is
+// bounded before serialization because the UI's command worker has a separate output cap.
+const MAX_TASK_DETAIL_BYTES: usize = 16 * 1024;
+const MAX_TASK_CRITERIA: usize = 100;
+const MAX_CRITERION_TITLE_BYTES: usize = 4096;
+
+fn inspect_campaign_task_detail(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(arguments, &["config", "campaign", "head", "item"])?;
+    let config = load_config(&parsed.absolute_file("config")?).map_err(|_| CliError::Config)?;
+    let spec = CampaignSpec::load(&parsed.absolute_file("campaign")?)
+        .map_err(|_| CliError::InvalidArgument)?;
+    let executable = std::env::current_exe().map_err(|_| CliError::Internal)?;
+    let expected_head = parsed.value("head")?;
+    let status = campaign_status(&config, &spec, &executable)
+        .map_err(CliError::Runtime)?
+        .ok_or(CliError::Refused)?;
+    if status.head != expected_head {
+        return Err(CliError::StaleObservation);
+    }
+    let authorization = RepositoryAuthorization::authorize(&config, &executable_parent()?)
+        .map_err(|_| CliError::Repository)?;
+    if authorization.identity().repository_id.as_str() != spec.repository_id {
+        return Err(CliError::Repository);
+    }
+    let task_source = config.task_source.components().collect::<PathBuf>();
+    let source =
+        read_authorized_blob(&authorization, expected_head, &task_source).map_err(|error| {
+            match error {
+                BlobReadError::InvalidBinding => CliError::InvalidArgument,
+                BlobReadError::Identity => CliError::Repository,
+                BlobReadError::Command => CliError::Plan,
+            }
+        })?;
+    let plan = TaskPlan::parse(&source).map_err(|_| CliError::Plan)?;
+    let requested_item = parsed.value("item")?;
+    let mut matches = plan.items.iter().filter(|item| item.id == requested_item);
+    let item = matches.next().ok_or(CliError::InvalidArgument)?;
+    if matches.next().is_some() {
+        return Err(CliError::InvalidArgument);
+    }
+    let (excerpt, truncated) = task_detail_excerpt(&source, &plan, item.anchor.line)?;
+    let criteria_items = story_criteria_for(&plan, item);
+    let criteria_truncated = criteria_items.len() > MAX_TASK_CRITERIA;
+    let criteria = criteria_items
+        .into_iter()
+        .take(MAX_TASK_CRITERIA)
+        .map(|candidate| {
+            let (title, title_truncated) =
+                bounded_utf8_prefix(&candidate.title, MAX_CRITERION_TITLE_BYTES);
+            serde_json::json!({
+                "id": candidate.id,
+                "title": title,
+                "title_truncated": title_truncated,
+                "source_state": candidate.state,
+            })
+        })
+        .collect::<Vec<_>>();
+    let still_current = campaign_status(&config, &spec, &executable)
+        .map_err(CliError::Runtime)?
+        .is_some_and(|current| current.head == expected_head);
+    if !still_current {
+        return Err(CliError::StaleObservation);
+    }
+    serde_json::to_string(&serde_json::json!({
+        "schema_version": 1,
+        "campaign_id": spec.campaign_id,
+        "repository_id": spec.repository_id,
+        "head": expected_head,
+        "task_source_sha256": plan.source_sha256,
+        "item_id": item.id,
+        "kind": item.kind,
+        "source_state": item.state,
+        "source_line": item.anchor.line,
+        "source_line_sha256": item.anchor.line_sha256,
+        "excerpt": excerpt,
+        "truncated": truncated,
+        "story_criteria": criteria,
+        "story_criteria_truncated": criteria_truncated,
+    }))
+    .map_err(|_| CliError::Internal)
+}
+
+fn task_detail_excerpt(
+    source: &[u8],
+    plan: &TaskPlan,
+    line: usize,
+) -> Result<(String, bool), CliError> {
+    let text = std::str::from_utf8(source).map_err(|_| CliError::Plan)?;
+    let lines = text.split_inclusive('\n').collect::<Vec<_>>();
+    let start = line.checked_sub(1).ok_or(CliError::Plan)?;
+    if start >= lines.len() {
+        return Err(CliError::Plan);
+    }
+    let next_anchor = plan
+        .items
+        .iter()
+        .map(|item| item.anchor.line)
+        .chain(plan.stories.iter().map(|story| story.anchor.line))
+        .chain(plan.sprints.iter().map(|sprint| sprint.anchor.line))
+        .filter(|candidate| *candidate > line)
+        .min()
+        .unwrap_or(lines.len() + 1);
+    let end = lines
+        .iter()
+        .enumerate()
+        .skip(start + 1)
+        .find(|(index, value)| {
+            *index + 1 >= next_anchor || value.starts_with("## ") || value.starts_with("### ")
+        })
+        .map_or(lines.len(), |(index, _)| index);
+    let mut excerpt = String::new();
+    let mut truncated = false;
+    for part in &lines[start..end] {
+        let remaining = MAX_TASK_DETAIL_BYTES - excerpt.len();
+        if part.len() > remaining {
+            excerpt.push_str(bounded_utf8_prefix(part, remaining).0);
+            truncated = true;
+            break;
+        }
+        excerpt.push_str(part);
+    }
+    Ok((excerpt, truncated))
+}
+
+fn bounded_utf8_prefix(text: &str, limit: usize) -> (&str, bool) {
+    if text.len() <= limit {
+        return (text, false);
+    }
+    let boundary = (0..=limit)
+        .rev()
+        .find(|offset| text.is_char_boundary(*offset))
+        .unwrap_or(0);
+    (&text[..boundary], true)
+}
+
+fn story_criteria_for<'a>(plan: &'a TaskPlan, item: &PlanItem) -> Vec<&'a PlanItem> {
+    let story_id = match item.kind {
+        PlanItemKind::Task | PlanItemKind::AcceptanceCriterion => Some(item.parent_id.as_str()),
+        PlanItemKind::SubTask => item.parent_id.rsplit_once('.').map(|(story, _)| story),
+        PlanItemKind::Gate => None,
+    };
+    let Some(story_id) =
+        story_id.filter(|id| plan.stories.iter().any(|story| story.id.as_str() == *id))
+    else {
+        return Vec::new();
+    };
+    plan.items
+        .iter()
+        .filter(|candidate| {
+            candidate.kind == PlanItemKind::AcceptanceCriterion && candidate.parent_id == story_id
+        })
+        .take(MAX_TASK_CRITERIA + 1)
+        .collect()
 }
 
 fn inspect_campaign_changes(arguments: &[String]) -> Result<String, CliError> {
@@ -948,6 +1108,7 @@ mod tests {
             "campaign",
             "campaign-status",
             "campaign-head-plan",
+            "campaign-task-detail",
             "campaign-report",
             "campaign-explain-blocker",
             "campaign-clear-blocker",
@@ -977,6 +1138,59 @@ mod tests {
             let arguments = arguments.into_iter().map(str::to_owned).collect::<Vec<_>>();
             assert!(run(&arguments).is_err());
         }
+    }
+
+    #[test]
+    fn task_detail_excerpt_stops_at_next_item_and_bounds_unicode() {
+        let source = "### [ ] Sprint 1 - Demo\n\n**Sprint goal:** Prove a task.\n\n#### [ ] Story 1.1 - Test\n\n- [ ] **Task 1.1.1 - Do work**\n  - [ ] **Sub-task 1.1.1.1:** First item.\n    detail line\n  - [ ] **Sub-task 1.1.1.2:** Second item.\n";
+        let plan = TaskPlan::parse(source.as_bytes()).unwrap();
+        let line = plan
+            .items
+            .iter()
+            .find(|item| item.id == "1.1.1.1")
+            .unwrap()
+            .anchor
+            .line;
+        let (excerpt, truncated) = task_detail_excerpt(source.as_bytes(), &plan, line).unwrap();
+        assert!(excerpt.contains("detail line"));
+        assert!(!excerpt.contains("Second item"));
+        assert!(!truncated);
+        assert_eq!(
+            task_detail_excerpt(source.as_bytes(), &plan, 0),
+            Err(CliError::Plan)
+        );
+
+        let large = format!(
+            "### [ ] Sprint 1 - Demo\n\n**Sprint goal:** Prove a task.\n\n#### [ ] Story 1.1 - Test\n\n- [ ] **Task 1.1.1 - Do work**\n  - [ ] **Sub-task 1.1.1.1:** First item.\n    {}\n",
+            "界".repeat(6000)
+        );
+        let plan = TaskPlan::parse(large.as_bytes()).unwrap();
+        let line = plan
+            .items
+            .iter()
+            .find(|item| item.id == "1.1.1.1")
+            .unwrap()
+            .anchor
+            .line;
+        let (excerpt, truncated) = task_detail_excerpt(large.as_bytes(), &plan, line).unwrap();
+        assert!(truncated);
+        assert!(excerpt.len() <= MAX_TASK_DETAIL_BYTES);
+        assert!(excerpt.is_char_boundary(excerpt.len()));
+    }
+
+    #[test]
+    fn task_detail_criteria_follow_story_parent_not_gate_identifier() {
+        let source = "### [ ] Sprint 1 - Demo\n\n**Sprint goal:** Prove a task.\n\n#### [ ] Story 1.1 - Test\n\n- [ ] **Task 1.1.1 - Do work**\n  - [ ] **Sub-task 1.1.1.1:** First item.\n- [ ] **Story AC 1.1.AC1:** Story outcome.\n- [ ] **Sprint AC 1.AC1:** Sprint outcome.\n- [ ] **Gate 1.1:** Verify sprint.\n";
+        let plan = TaskPlan::parse(source.as_bytes()).unwrap();
+        let subtask = plan.items.iter().find(|item| item.id == "1.1.1.1").unwrap();
+        let criterion = plan.items.iter().find(|item| item.id == "1.1.AC1").unwrap();
+        let gate = plan
+            .items
+            .iter()
+            .find(|item| item.kind == PlanItemKind::Gate)
+            .unwrap();
+        assert_eq!(story_criteria_for(&plan, subtask), vec![criterion]);
+        assert!(story_criteria_for(&plan, gate).is_empty());
     }
 
     #[test]

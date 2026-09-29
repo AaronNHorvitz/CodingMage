@@ -25,6 +25,7 @@ use codingmage_plan::{CheckState, PlanItemKind};
 use crate::{
     backend::models::{
         BlockerExplanation, CampaignReport, CampaignStatus, HeadPlanProjection, MissionStatus,
+        TaskDetailProjection,
     },
     backend::{
         BackendError, Binding, CoordinatorBinary, Generation, Job, QueueError, Request, Response,
@@ -155,6 +156,8 @@ pub struct App {
     mission: Observed<Option<MissionStatus>>,
     head_plan: Observed<Option<HeadPlanProjection>>,
     head_plan_commit: Option<String>,
+    task_detail: Observed<TaskDetailProjection>,
+    task_detail_key: Option<(String, String)>,
     last_status_request: Option<Instant>,
     setup: SetupState,
     authorization_record: Option<PathBuf>,
@@ -242,6 +245,8 @@ impl App {
             mission: Observed::default(),
             head_plan: Observed::default(),
             head_plan_commit: None,
+            task_detail: Observed::default(),
+            task_detail_key: None,
             last_status_request: None,
             setup: SetupState::default(),
             authorization_record: None,
@@ -276,6 +281,12 @@ impl App {
     #[must_use]
     pub const fn head_plan(&self) -> &Observed<Option<HeadPlanProjection>> {
         &self.head_plan
+    }
+
+    /// Latest requested source detail for one campaign-head task.
+    #[must_use]
+    pub const fn task_detail(&self) -> &Observed<TaskDetailProjection> {
+        &self.task_detail
     }
 
     /// Latest final report observation.
@@ -596,6 +607,10 @@ impl App {
                 self.accept_head_plan(response);
                 true
             }
+            "campaign-task-detail" => {
+                self.accept_task_detail(response);
+                true
+            }
             "support-bundle" => self.accept_support_bundle(response),
             _ => false,
         }
@@ -673,6 +688,7 @@ impl App {
         if self.diagnosis.loading
             || self.status.loading
             || self.head_plan.loading
+            || self.task_detail.loading
             || self.preflight.loading
             || self.changes.loading
             || self.records.loading
@@ -1223,15 +1239,96 @@ impl App {
                 }
             });
         self.plan_filter = filter;
+        if self.selected_item != selected {
+            self.task_detail.clear();
+            self.task_detail_key = None;
+        }
         self.selected_item = selected;
         if let Some(row) = self
             .selected_item
             .as_ref()
             .and_then(|id| index.rows().iter().find(|row| &row.id == id))
+            .cloned()
         {
             ui.separator();
-            item_detail(ui, row, index);
+            item_detail(ui, &row, index);
+            self.task_source_detail(ui, &row);
         }
+    }
+
+    fn task_source_detail(&mut self, ui: &mut egui::Ui, row: &PlanRow) {
+        let arguments = self.task_detail_arguments(&row.id);
+        let can_load = command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
+        if ui
+            .add_enabled(
+                can_load && !self.task_detail.loading,
+                egui::Button::new("Load source detail"),
+            )
+            .clicked()
+        {
+            self.request_task_detail(&row.id);
+        }
+        if let Some(arguments) = &arguments {
+            command::show_for(
+                ui,
+                "Load source detail",
+                self.binary_path.as_deref(),
+                arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, "Load source detail");
+            ui.small("Select a campaign and refresh its live status to inspect source at its reconciled head.");
+        }
+        if self.task_detail.loading {
+            ui.label("Loading source detail from the coordinator…");
+        }
+        if let Some((_, error)) = &self.task_detail.last_error {
+            ui.label(format!(
+                "Source detail unavailable: {}. Refresh the campaign and try again.",
+                error.code()
+            ));
+        }
+        let Some(detail) = self.task_detail.value.as_ref().filter(|detail| {
+            self.task_detail_key.as_ref() == Some(&(detail.head.clone(), detail.item_id.clone()))
+                && detail.item_id == row.id
+                && self.status.freshness(self.now) == Freshness::Live
+                && self.task_detail.freshness(self.now) == Freshness::Live
+        }) else {
+            return;
+        };
+        ui.small(format!(
+            "Source at campaign head {}…; checkbox is {:?}, not a verified outcome.",
+            &detail.head[..12],
+            detail.source_state
+        ));
+        ui.collapsing("Source excerpt", |ui| {
+            let characters = detail.excerpt.chars().collect::<Vec<_>>();
+            for chunk in characters.chunks(content::MAX_PREVIEW_CHARS) {
+                content::render(ui, &chunk.iter().collect::<String>());
+            }
+            if detail.truncated {
+                ui.small("Source excerpt ends at the 16 KiB display boundary.");
+            }
+        });
+        ui.collapsing("Story acceptance criteria from source", |ui| {
+            if detail.story_criteria.is_empty() {
+                ui.label("No story criteria were parsed at this source head.");
+            }
+            for criterion in &detail.story_criteria {
+                ui.horizontal_wrapped(|ui| {
+                    ui.monospace(&criterion.id);
+                    ui.label(format!("{:?} in source", criterion.source_state));
+                    content::render(ui, &criterion.title);
+                    if criterion.title_truncated {
+                        ui.small("Criterion title shortened at 4 KiB.");
+                    }
+                });
+            }
+            if detail.story_criteria_truncated {
+                ui.small("Additional story criteria were omitted after the first 100.");
+            }
+        });
+        ui.small("Packets, attempts, reviews and tests are coordinator evidence; inspect Changes and reviews for available run records. Missing records are not a pass.");
     }
 
     fn open_controls(&mut self, ui: &mut egui::Ui) {

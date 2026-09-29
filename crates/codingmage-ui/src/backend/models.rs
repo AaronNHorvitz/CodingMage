@@ -218,6 +218,54 @@ pub struct HeadTaskState {
     pub state: CheckState,
 }
 
+/// Bounded source detail for one item at a reconciled campaign head.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TaskDetailProjection {
+    /// Projection schema version.
+    pub schema_version: u16,
+    /// Exact campaign identity.
+    pub campaign_id: String,
+    /// Exact repository identity.
+    pub repository_id: String,
+    /// Reconciled commit.
+    pub head: String,
+    /// Exact task-source digest at the commit.
+    pub task_source_sha256: String,
+    /// Requested item identity.
+    pub item_id: String,
+    /// Parsed source kind.
+    pub kind: codingmage_plan::PlanItemKind,
+    /// Literal source checkbox state.
+    pub source_state: CheckState,
+    /// One-based source line.
+    pub source_line: usize,
+    /// Digest of the exact source line.
+    pub source_line_sha256: String,
+    /// Bounded inert source excerpt.
+    pub excerpt: String,
+    /// Whether the excerpt was clipped at its byte limit.
+    pub truncated: bool,
+    /// Story-level criteria from the same exact source.
+    pub story_criteria: Vec<TaskCriterion>,
+    /// Whether additional story criteria were omitted at the response limit.
+    pub story_criteria_truncated: bool,
+}
+
+/// One source-stated story acceptance criterion.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TaskCriterion {
+    /// Criterion identifier.
+    pub id: String,
+    /// Source title, not verified outcome.
+    pub title: String,
+    /// Whether the title was clipped at the response limit.
+    pub title_truncated: bool,
+    /// Literal source checkbox.
+    pub source_state: CheckState,
+}
+
 /// One active task projection.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -789,6 +837,41 @@ pub fn parse_head_plan(bytes: &[u8]) -> Result<HeadPlanProjection, ModelError> {
     Ok(value)
 }
 
+/// Parses a bounded task excerpt from the coordinator.
+///
+/// # Errors
+///
+/// Returns [`ModelError`] for malformed output, invalid identities or an unsupported schema.
+pub fn parse_task_detail(bytes: &[u8]) -> Result<TaskDetailProjection, ModelError> {
+    let value: TaskDetailProjection =
+        serde_json::from_slice(bytes).map_err(|_| ModelError::Malformed)?;
+    check_version(value.schema_version, 1)?;
+    let hex = |text: &str, size: usize| {
+        text.len() == size && text.bytes().all(|byte| byte.is_ascii_hexdigit())
+    };
+    if value.campaign_id.is_empty()
+        || value.repository_id.is_empty()
+        || !(hex(&value.head, 40) || hex(&value.head, 64))
+        || !hex(&value.task_source_sha256, 64)
+        || !hex(&value.source_line_sha256, 64)
+        || value.item_id.is_empty()
+        || value.item_id.len() > 64
+        || value.source_line == 0
+        || value.excerpt.is_empty()
+        || value.excerpt.len() > 16 * 1024
+        || value.story_criteria.len() > 100
+        || value.story_criteria.iter().any(|criterion| {
+            criterion.id.is_empty()
+                || criterion.id.len() > 64
+                || criterion.title.is_empty()
+                || criterion.title.len() > 4096
+        })
+    {
+        return Err(ModelError::Malformed);
+    }
+    Ok(value)
+}
+
 /// Parses `campaign-explain-blocker` output.
 ///
 /// # Errors
@@ -933,6 +1016,48 @@ mod tests {
             })
         );
         assert_eq!(parse_diagnosis(b"not json"), Err(ModelError::Malformed));
+    }
+
+    #[test]
+    fn task_detail_requires_bounded_source_and_exact_schema() {
+        let valid = serde_json::json!({
+            "schema_version": 1,
+            "campaign_id": "campaign-one",
+            "repository_id": "repo-one",
+            "head": "a".repeat(40),
+            "task_source_sha256": "b".repeat(64),
+            "item_id": "1.1.1.1",
+            "kind": "sub_task",
+            "source_state": "open",
+            "source_line": 8,
+            "source_line_sha256": "c".repeat(64),
+            "excerpt": "- [ ] source text\n",
+            "truncated": false,
+            "story_criteria": [{"id":"1.1.AC1","title":"Story goal","title_truncated":false,"source_state":"open"}],
+            "story_criteria_truncated": false
+        });
+        assert!(parse_task_detail(&serde_json::to_vec(&valid).unwrap()).is_ok());
+        let mut oversized = valid.clone();
+        oversized["excerpt"] = serde_json::json!("x".repeat(16 * 1024 + 1));
+        assert_eq!(
+            parse_task_detail(&serde_json::to_vec(&oversized).unwrap()),
+            Err(ModelError::Malformed)
+        );
+        let mut unknown = valid.clone();
+        unknown["untrusted_action"] = serde_json::json!("approve");
+        assert_eq!(
+            parse_task_detail(&serde_json::to_vec(&unknown).unwrap()),
+            Err(ModelError::Malformed)
+        );
+        let mut future = valid;
+        future["schema_version"] = serde_json::json!(2);
+        assert_eq!(
+            parse_task_detail(&serde_json::to_vec(&future).unwrap()),
+            Err(ModelError::UnsupportedSchema {
+                observed: 2,
+                supported: 1
+            })
+        );
     }
 
     #[test]

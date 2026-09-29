@@ -69,7 +69,88 @@ fn checked_head_projection(fixture: &Fixture, spec: &Path, head: &str) -> serde_
         String::from_utf8_lossy(&stale.stderr).trim(),
         "codingmage.cli.stale_observation"
     );
+    assert_task_detail_projection(fixture, spec, head, &projection);
     projection
+}
+
+fn assert_task_detail_projection(
+    fixture: &Fixture,
+    spec: &Path,
+    head: &str,
+    projection: &serde_json::Value,
+) {
+    let detail = Command::new(coordinator_binary())
+        .args([
+            "campaign-task-detail",
+            "--config",
+            fixture.config.to_str().unwrap(),
+            "--campaign",
+            spec.to_str().unwrap(),
+            "--head",
+            head,
+            "--item",
+            "0.1.1.1",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        detail.status.success(),
+        "{}",
+        String::from_utf8_lossy(&detail.stderr)
+    );
+    let detail: serde_json::Value = serde_json::from_slice(&detail.stdout).unwrap();
+    assert_eq!(detail["head"], head);
+    assert_eq!(detail["item_id"], "0.1.1.1");
+    assert_eq!(detail["source_state"], "checked");
+    assert!(
+        detail["excerpt"]
+            .as_str()
+            .unwrap()
+            .contains("Complete fixture operation")
+    );
+    assert!(!detail["truncated"].as_bool().unwrap());
+    assert_eq!(
+        detail["task_source_sha256"],
+        projection["task_source_sha256"]
+    );
+    let stale_detail = Command::new(coordinator_binary())
+        .args([
+            "campaign-task-detail",
+            "--config",
+            fixture.config.to_str().unwrap(),
+            "--campaign",
+            spec.to_str().unwrap(),
+            "--head",
+            &"0".repeat(40),
+            "--item",
+            "0.1.1.1",
+        ])
+        .output()
+        .unwrap();
+    assert!(!stale_detail.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&stale_detail.stderr).trim(),
+        "codingmage.cli.stale_observation"
+    );
+    let unknown = Command::new(coordinator_binary())
+        .args([
+            "campaign-task-detail",
+            "--config",
+            fixture.config.to_str().unwrap(),
+            "--campaign",
+            spec.to_str().unwrap(),
+            "--head",
+            head,
+            "--item",
+            "0.1.1.999",
+        ])
+        .output()
+        .unwrap();
+    assert!(!unknown.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&unknown.stderr).trim(),
+        "codingmage.cli.invalid_argument"
+    );
 }
 
 fn assert_one_identified_pod_for_two_active_tasks(
@@ -339,6 +420,7 @@ fn completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree() {
             )
             .is_none()
     );
+    assert_task_detail_workflow(&mut harness, &status.head);
     let mut wrong_head = projection;
     wrong_head["head"] = serde_json::json!("0".repeat(40));
     let binding = harness.state().binding();
@@ -356,6 +438,46 @@ fn completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree() {
             .campaign_head
             .is_none()
     );
+}
+
+fn assert_task_detail_workflow(
+    harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>,
+    head: &str,
+) {
+    harness
+        .get_by_label_contains("[ ] Sub-task 0.1.1.1 Complete fixture operation number 1 safely.")
+        .click();
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: Load source detail")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("campaign-task-detail");
+    harness.get_by_label("Load source detail").click();
+    assert!(settle(harness, Duration::from_secs(30), |app| {
+        app.task_detail().value.is_some()
+    }));
+    let first_detail = harness.state().task_detail().value.clone().unwrap();
+    assert_eq!(first_detail.head, head);
+    assert_eq!(first_detail.item_id, "0.1.1.1");
+    harness.get_by_label("Source excerpt").click();
+    harness.run_steps(2);
+    harness.get_by_label("Complete fixture operation number 1 safely.");
+    harness
+        .get_by_label_contains("[ ] Sub-task 0.1.1.2 Complete fixture operation number 2 safely.")
+        .click();
+    harness.run_steps(2);
+    assert!(harness.state().task_detail().value.is_none());
+    let binding = harness.state().binding();
+    let generation = harness.state().generation();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-task-detail",
+        request_id: Some("0.1.1.1".to_owned()),
+        result: Ok(serde_json::to_vec(&first_detail).unwrap()),
+    }));
+    assert!(harness.state().task_detail().value.is_none());
 }
 
 #[test]
