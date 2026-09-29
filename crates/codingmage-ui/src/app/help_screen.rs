@@ -24,6 +24,7 @@ pub struct SupportState {
     /// Last outcome or refusal; a failed request may have left a partial directory.
     pub message: Option<Result<String, String>>,
     pending: Option<PendingSupport>,
+    next_request: u64,
 }
 
 impl SupportState {
@@ -35,6 +36,7 @@ impl SupportState {
 }
 
 struct PendingSupport {
+    request_id: String,
     destination: PathBuf,
     repository_path: PathBuf,
     campaign_id: String,
@@ -151,10 +153,11 @@ impl App {
                 repository: pending.repository_path.clone(),
                 deadline: Duration::from_mins(2),
             },
-            request_id: None,
+            request_id: Some(pending.request_id.clone()),
         };
         match self.submit(request) {
             Ok(()) => {
+                self.support.next_request += 1;
                 self.support.pending = Some(pending);
                 self.support.message = None;
             }
@@ -168,6 +171,11 @@ impl App {
     }
 
     fn support_arguments(&self) -> Result<(Vec<String>, PendingSupport), String> {
+        let next_request = self
+            .support
+            .next_request
+            .checked_add(1)
+            .ok_or("Too many support bundle requests in this session.")?;
         let project = self.project.as_ref().ok_or("Open a repository first.")?;
         let campaign = self.campaign.as_ref().ok_or("Select a campaign first.")?;
         if self.binding().repository_id.as_deref() != Some(campaign.spec.repository_id.as_str()) {
@@ -202,6 +210,7 @@ impl App {
         Ok((
             arguments,
             PendingSupport {
+                request_id: format!("support:{}:{next_request}", self.generation.0),
                 destination,
                 repository_path: project.config.target_path.clone(),
                 campaign_id: campaign.spec.campaign_id.clone(),
@@ -211,9 +220,21 @@ impl App {
         ))
     }
 
-    pub(super) fn accept_support_bundle(&mut self, response: Response) {
+    pub(super) fn accept_support_bundle(&mut self, response: Response) -> bool {
+        if self
+            .support
+            .pending
+            .as_ref()
+            .map(|pending| pending.request_id.as_str())
+            != response.request_id.as_deref()
+            || response.request_id.is_none()
+        {
+            self.discarded_stale += 1;
+            return false;
+        }
         let Some(pending) = self.support.pending.take() else {
-            return;
+            self.discarded_stale += 1;
+            return false;
         };
         let result = response.result.and_then(|bytes| {
             serde_json::from_slice::<SupportManifest>(&bytes)
@@ -240,6 +261,7 @@ impl App {
                 ))
             }
         });
+        true
     }
 
     fn support_bundle_controls(&mut self, ui: &mut egui::Ui) {
@@ -416,6 +438,7 @@ mod tests {
     #[test]
     fn support_receipt_must_match_authority_and_redaction_contract() {
         let pending = PendingSupport {
+            request_id: "support:1:1".to_owned(),
             destination: PathBuf::from("/tmp/new-support-bundle"),
             repository_path: PathBuf::from("/tmp/repository"),
             campaign_id: "campaign-a".to_owned(),

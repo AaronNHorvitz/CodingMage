@@ -510,6 +510,13 @@ impl App {
         }
     }
 
+    pub(super) fn advance_selection_generation(&mut self) {
+        self.generation = Generation(self.generation.0 + 1);
+        if let Connection::Ready(worker) = &self.connection {
+            worker.advance(self.generation);
+        }
+    }
+
     /// Applies one worker response, discarding any whose binding or generation is stale.
     ///
     /// Returns true when the response was accepted.
@@ -589,10 +596,7 @@ impl App {
                 self.accept_head_plan(response);
                 true
             }
-            "support-bundle" => {
-                self.accept_support_bundle(response);
-                true
-            }
+            "support-bundle" => self.accept_support_bundle(response),
             _ => false,
         }
     }

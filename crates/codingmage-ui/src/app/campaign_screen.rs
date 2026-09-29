@@ -35,6 +35,8 @@ impl App {
             .as_ref()
             .map(|diagnosis| diagnosis.repository_id.clone());
         let target = project.config.target_path.clone();
+        let diagnosis_loading = self.diagnosis.loading;
+        self.advance_selection_generation();
         self.clear_campaign_observations();
         self.campaign = None;
         match CampaignSelection::load(spec_path, &target, observed.as_deref()) {
@@ -52,16 +54,24 @@ impl App {
                 self.campaign_error = Some(error);
             }
         }
+        if diagnosis_loading {
+            self.refresh_diagnosis();
+        }
     }
 
     /// Clears the campaign selection without affecting any coordinator process.
     pub fn clear_campaign(&mut self) {
+        let diagnosis_loading = self.diagnosis.loading;
+        self.advance_selection_generation();
         self.clear_campaign_observations();
         self.campaign = None;
         self.campaign_error = None;
         self.execution = super::ExecutionState::default();
         self.persist_campaign_memory();
         self.set_status("campaign selection cleared; no coordinator process was affected");
+        if diagnosis_loading {
+            self.refresh_diagnosis();
+        }
     }
 
     pub(super) fn clear_campaign_observations(&mut self) {

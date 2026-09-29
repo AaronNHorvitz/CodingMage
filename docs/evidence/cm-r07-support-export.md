@@ -36,6 +36,23 @@ ran 42 tests: 41 passed; the sole failure remains CM-R01.6's eight source-bound 
 which were not renewed. Documentation, architecture, formatting and inventory checks passed.
 Independent, human and release qualification remain open.
 
+## Independent review correction
+
+The independent review of `37a133691b1f916271433e5eeeb9c36e6d41d1c2` returned
+**FINDINGS**. It identified a parent-path replacement window between validation and bundle
+creation, and a native request-response mix-up after campaign reselection. The correction
+correction retains a validated parent directory handle, creates the private directory and files
+relative to that handle, checks whether the requested parent still names it, and gives each UI
+export an exact request ID and a new selection generation. A deterministic parent-alias swap
+test and a prior-receipt replay test passed 1/1 each, alongside the existing runtime support
+unit 1/1 and native Help integration 2/2. The first compiler attempt failed on the pinned `nix`
+descriptor API and was corrected before these passes; that failure remains in the private
+receipt. The cumulative runtime library passed 131/131, the direct CLI support-bundle process
+regression passed 1/1, the software-rendered native UI suite passed 99/99 and strict workspace
+Clippy passed. Python unittest passed 41/42 with only CM-R01.6's eight source-bound input
+drifts; no digest was renewed. Exact-commit independent re-review remains pending, so the
+earlier local pass is not independent approval.
+
 ## CM-R07.2 - Licensing, notices and packaging metadata crosswalk
 
 Observed on the current locked dependency graph (`cargo metadata --locked --offline`):

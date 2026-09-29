@@ -32,6 +32,15 @@ release qualification.
 
 The focused offline Help and manual-diagnostic tests passed 1/1 each; strict workspace Clippy
 passed; the software-rendered native UI all-target suite passed 98/98. Python unittest passed
-41/42, with only CM-R01.6's eight source-bound input drifts. The exact staged diff was inspected;
-exact-commit independent review remains pending. No task or gate is marked complete by this
-increment.
+41/42, with only CM-R01.6's eight source-bound input drifts. The exact staged diff was inspected.
+The first exact-commit independent review returned FINDINGS as recorded below. No task or gate is
+marked complete by this increment.
+
+The independent review of the initial Help commit found that campaign reselection could let a
+delayed support response satisfy a later request to the same campaign. A correction candidate
+now cancels older selection generations and requires an exact support request ID before consuming
+pending state. Focused native Help integration passed 2/2, including a replayed real prior bundle
+receipt. The cumulative software-rendered native UI suite passed 99/99 and strict workspace
+Clippy passed. Python unittest passed 41/42 with only CM-R01.6's eight source-bound input
+drifts. Independent exact-commit re-review remains open; the original commit's local test
+result is not a review PASS.

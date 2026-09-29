@@ -7,12 +7,21 @@
 //! credentials or any host identity, and nothing is transmitted anywhere.
 
 use std::{
-    fs,
+    fs::{self, File},
+    io::Write as _,
+    os::{
+        fd::{AsRawFd as _, OwnedFd},
+        unix::{ffi::OsStrExt as _, fs::MetadataExt as _},
+    },
     path::{Component, Path, PathBuf},
 };
 
 use codingmage_campaign::CampaignSpec;
 use codingmage_core::Config;
+use nix::{
+    fcntl::{OFlag, open, openat},
+    sys::stat::{Mode, mkdirat},
+};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
@@ -75,7 +84,7 @@ pub fn export_support_bundle(
 ) -> Result<SupportBundleManifest, RuntimeError> {
     spec.verify().map_err(RuntimeError::Campaign)?;
     let authority_sha256 = spec.authority_sha256().map_err(RuntimeError::Campaign)?;
-    validate_support_output(&config.target_path, output)?;
+    let destination = validate_support_output(&config.target_path, output)?;
     let status = campaign_status(config, spec, codingmage_binary)?;
     let explanation = if status.is_some() {
         campaign_blocker_explanation(config, spec, codingmage_binary)?
@@ -101,38 +110,38 @@ pub fn export_support_bundle(
         Err(error) => return Err(error),
     };
 
-    create_private_support_directory(output)?;
+    let directory = create_private_support_directory(&destination)?;
     let mut files = Vec::new();
     let mut absent = Vec::new();
     write_record(
-        output,
+        &directory,
         "configuration.json",
         &config.redacted_view(),
         &mut files,
     )?;
     write_optional(
-        output,
+        &directory,
         "campaign-status.json",
         status.as_ref(),
         &mut files,
         &mut absent,
     )?;
     write_optional(
-        output,
+        &directory,
         "campaign-explain-blocker.json",
         explanation.as_ref(),
         &mut files,
         &mut absent,
     )?;
     write_optional(
-        output,
+        &directory,
         "campaign-report.json",
         report.as_ref(),
         &mut files,
         &mut absent,
     )?;
     write_optional(
-        output,
+        &directory,
         "mission-status.json",
         mission.as_ref(),
         &mut files,
@@ -166,13 +175,33 @@ pub fn export_support_bundle(
             manifest.absent.join(", ")
         }
     );
-    write_bytes(output, "README.txt", readme.as_bytes())?;
+    write_bytes(&directory, "README.txt", readme.as_bytes())?;
     let encoded = serde_json::to_vec_pretty(&manifest).map_err(|_| RuntimeError::State)?;
-    write_bytes(output, "manifest.json", &encoded)?;
+    write_bytes(&directory, "manifest.json", &encoded)?;
+    if !destination.parent_is_unchanged() {
+        return Err(RuntimeError::State);
+    }
     Ok(manifest)
 }
 
-fn validate_support_output(target: &Path, output: &Path) -> Result<(), RuntimeError> {
+struct SupportDestination {
+    parent: OwnedFd,
+    parent_path: PathBuf,
+    leaf: std::ffi::OsString,
+}
+
+impl SupportDestination {
+    fn parent_is_unchanged(&self) -> bool {
+        let handle = fs::metadata(format!("/proc/self/fd/{}", self.parent.as_raw_fd()));
+        let path = fs::metadata(&self.parent_path);
+        matches!((handle, path), (Ok(handle), Ok(path)) if handle.dev() == path.dev() && handle.ino() == path.ino())
+    }
+}
+
+fn validate_support_output(
+    target: &Path,
+    output: &Path,
+) -> Result<SupportDestination, RuntimeError> {
     if !output.is_absolute()
         || output
             .components()
@@ -182,37 +211,70 @@ fn validate_support_output(target: &Path, output: &Path) -> Result<(), RuntimeEr
     }
     let target = fs::canonicalize(target).map_err(|_| RuntimeError::Authority)?;
     let parent = output.parent().ok_or(RuntimeError::Spec)?;
-    let parent = fs::canonicalize(parent).map_err(|_| RuntimeError::Spec)?;
-    if parent.starts_with(target) {
+    let parent_path = fs::canonicalize(parent).map_err(|_| RuntimeError::Spec)?;
+    if parent_path.starts_with(&target) {
         return Err(RuntimeError::Spec);
     }
-    match fs::symlink_metadata(output) {
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        _ => Err(RuntimeError::Spec),
+    let parent_fd = open(
+        &parent_path,
+        OFlag::O_RDONLY | OFlag::O_DIRECTORY | OFlag::O_NOFOLLOW | OFlag::O_CLOEXEC,
+        Mode::empty(),
+    )
+    .map_err(|_| RuntimeError::Spec)?;
+    // Check the inode reached by the retained handle, rather than trusting a path that
+    // could have been replaced after canonicalization.
+    let handle_path = fs::canonicalize(format!("/proc/self/fd/{}", parent_fd.as_raw_fd()))
+        .map_err(|_| RuntimeError::Spec)?;
+    if handle_path.starts_with(&target) {
+        return Err(RuntimeError::Spec);
     }
+    if !matches!(
+        fs::symlink_metadata(output),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound
+    ) {
+        return Err(RuntimeError::Spec);
+    }
+    let leaf = output.file_name().ok_or(RuntimeError::Spec)?.to_os_string();
+    if leaf.as_bytes().is_empty() {
+        return Err(RuntimeError::Spec);
+    }
+    let destination = SupportDestination {
+        parent: parent_fd,
+        parent_path: parent.to_path_buf(),
+        leaf,
+    };
+    if !destination.parent_is_unchanged() {
+        return Err(RuntimeError::Spec);
+    }
+    Ok(destination)
 }
 
-fn create_private_support_directory(output: &Path) -> Result<(), RuntimeError> {
-    #[cfg(unix)]
-    let mut builder = fs::DirBuilder::new();
-    #[cfg(not(unix))]
-    let builder = fs::DirBuilder::new();
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::DirBuilderExt as _;
-        builder.mode(0o700);
+fn create_private_support_directory(
+    destination: &SupportDestination,
+) -> Result<File, RuntimeError> {
+    if !destination.parent_is_unchanged() {
+        return Err(RuntimeError::Spec);
     }
-    builder.create(output).map_err(|error| {
-        if error.kind() == std::io::ErrorKind::AlreadyExists {
+    let leaf = Path::new(&destination.leaf);
+    mkdirat(&destination.parent, leaf, Mode::S_IRWXU).map_err(|error| {
+        if error == nix::errno::Errno::EEXIST {
             RuntimeError::Spec
         } else {
             RuntimeError::State
         }
-    })
+    })?;
+    let fd = openat(
+        &destination.parent,
+        leaf,
+        OFlag::O_RDONLY | OFlag::O_DIRECTORY | OFlag::O_NOFOLLOW | OFlag::O_CLOEXEC,
+        Mode::empty(),
+    )
+    .map_err(|_| RuntimeError::State)?;
+    Ok(File::from(fd))
 }
 
 fn write_optional<T: Serialize>(
-    output: &Path,
+    output: &File,
     name: &str,
     record: Option<&T>,
     files: &mut Vec<SupportBundleEntry>,
@@ -227,7 +289,7 @@ fn write_optional<T: Serialize>(
 }
 
 fn write_record<T: Serialize>(
-    output: &Path,
+    output: &File,
     name: &str,
     record: &T,
     files: &mut Vec<SupportBundleEntry>,
@@ -242,13 +304,17 @@ fn write_record<T: Serialize>(
     Ok(())
 }
 
-fn write_bytes(output: &Path, name: &str, bytes: &[u8]) -> Result<PathBuf, RuntimeError> {
-    let path = output.join(name);
-    if path.exists() {
-        return Err(RuntimeError::State);
-    }
-    fs::write(&path, bytes).map_err(|_| RuntimeError::State)?;
-    Ok(path)
+fn write_bytes(output: &File, name: &str, bytes: &[u8]) -> Result<(), RuntimeError> {
+    let fd = openat(
+        output,
+        name,
+        OFlag::O_WRONLY | OFlag::O_CREAT | OFlag::O_EXCL | OFlag::O_NOFOLLOW | OFlag::O_CLOEXEC,
+        Mode::S_IRUSR | Mode::S_IWUSR,
+    )
+    .map_err(|_| RuntimeError::State)?;
+    File::from(fd)
+        .write_all(bytes)
+        .map_err(|_| RuntimeError::State)
 }
 
 fn hex(bytes: &[u8]) -> String {
@@ -263,7 +329,7 @@ fn hex(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::validate_support_output;
+    use super::{create_private_support_directory, validate_support_output};
     use crate::RuntimeError;
     use std::{fs, path::Path};
 
@@ -278,28 +344,52 @@ mod tests {
         fs::create_dir_all(&external).unwrap();
         let output = external.join("bundle");
         assert!(validate_support_output(&target, &output).is_ok());
-        assert_eq!(
+        assert!(matches!(
             validate_support_output(&target, &target.join("bundle")),
             Err(RuntimeError::Spec)
-        );
+        ));
         std::os::unix::fs::symlink(&target, root.join("target-alias")).unwrap();
-        assert_eq!(
+        assert!(matches!(
             validate_support_output(&target, &root.join("target-alias/bundle")),
             Err(RuntimeError::Spec)
-        );
-        assert_eq!(
+        ));
+        assert!(matches!(
             validate_support_output(&target, Path::new("relative-bundle")),
             Err(RuntimeError::Spec)
-        );
-        assert_eq!(
+        ));
+        assert!(matches!(
             validate_support_output(&target, &external.join("../bundle")),
             Err(RuntimeError::Spec)
-        );
+        ));
         fs::create_dir(&output).unwrap();
-        assert_eq!(
+        assert!(matches!(
             validate_support_output(&target, &output),
             Err(RuntimeError::Spec)
-        );
+        ));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn retained_parent_handle_rejects_replacement_with_target_alias() {
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-support-parent-race-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let target = root.join("target");
+        let external = root.join("external");
+        fs::create_dir_all(&target).unwrap();
+        fs::create_dir_all(&external).unwrap();
+        let prepared = validate_support_output(&target, &external.join("bundle")).unwrap();
+        let moved = root.join("moved-external");
+        fs::rename(&external, &moved).unwrap();
+        std::os::unix::fs::symlink(&target, &external).unwrap();
+        assert!(matches!(
+            create_private_support_directory(&prepared),
+            Err(RuntimeError::Spec)
+        ));
+        assert!(!target.join("bundle").exists());
+        assert!(!moved.join("bundle").exists());
         fs::remove_dir_all(root).unwrap();
     }
 }
