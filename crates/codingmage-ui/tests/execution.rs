@@ -2,9 +2,9 @@
 
 mod common;
 
-use std::{fs, time::Duration};
+use std::{fs, os::unix::fs::PermissionsExt as _, time::Duration};
 
-use egui_kittest::kittest::Queryable as _;
+use egui_kittest::kittest::{NodeT as _, Queryable as _};
 
 use codingmage_ui::{
     admission::Staleness,
@@ -58,7 +58,8 @@ fn open(ready: &Ready) -> egui_kittest::Harness<'static, codingmage_ui::App> {
 fn admit(harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>) {
     harness.state_mut().run_preflight();
     assert!(settle(harness, Duration::from_mins(3), |app| {
-        app.preflight().value.is_some() || app.preflight().last_error.is_some()
+        !app.preflight().loading
+            && (app.preflight().value.is_some() || app.preflight().last_error.is_some())
     }));
     let digest = harness
         .state()
@@ -80,6 +81,105 @@ fn admit(harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>) {
         "{:?}",
         harness.state().execution().error
     );
+}
+
+#[test]
+fn failed_refresh_cannot_admit_a_retained_ready_preflight_report() {
+    let ready = ready("preflight-permission-recovery");
+    let binary = ready.fixture.root.join("bin/codingmage");
+    fs::create_dir_all(binary.parent().unwrap()).unwrap();
+    fs::copy(coordinator_binary(), &binary).unwrap();
+    let mut harness = harness_with_state(
+        CoordinatorBinary::at(&binary),
+        [1100.0, 900.0],
+        ready.state_home.clone(),
+    );
+    harness.state_mut().open_project(&ready.fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some()
+    }));
+    harness.state_mut().select_campaign(&ready.spec);
+    harness.state_mut().set_authorization_record(&ready.record);
+    harness.state_mut().run_preflight();
+    assert!(settle(&mut harness, Duration::from_mins(3), |app| {
+        app.preflight().value.is_some() && !app.preflight().loading
+    }));
+    let digest = harness
+        .state()
+        .preflight()
+        .value
+        .as_ref()
+        .unwrap()
+        .report_sha256
+        .clone();
+
+    fs::set_permissions(&binary, fs::Permissions::from_mode(0o600)).unwrap();
+    harness.state_mut().run_preflight();
+    harness.state_mut().set_confirmation(&digest[..12]);
+    harness.state_mut().admit_campaign();
+    assert!(harness.state().execution().admission.is_none());
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.preflight().last_error.is_some() && !app.preflight().loading
+    }));
+    assert_eq!(
+        harness
+            .state()
+            .preflight()
+            .last_error
+            .as_ref()
+            .unwrap()
+            .1
+            .code(),
+        "codingmage.ui.permission_denied"
+    );
+    assert_eq!(
+        harness
+            .state()
+            .preflight()
+            .value
+            .as_ref()
+            .unwrap()
+            .report_sha256,
+        digest
+    );
+    harness.state_mut().admit_campaign();
+    assert!(harness.state().execution().admission.is_none());
+    harness.state_mut().select_screen(Screen::Campaign);
+    harness.run_steps(2);
+    harness.get_by_label("Permission denied");
+    harness.get_by_label_contains(
+        "earlier report is retained for inspection but cannot be used for admission",
+    );
+    assert!(
+        harness
+            .get_by_label("Admit campaign")
+            .accesskit_node()
+            .is_disabled()
+    );
+
+    fs::set_permissions(
+        &binary,
+        fs::metadata(coordinator_binary()).unwrap().permissions(),
+    )
+    .unwrap();
+    harness.state_mut().run_preflight();
+    assert!(settle(&mut harness, Duration::from_mins(3), |app| {
+        app.preflight().last_error.is_none() && !app.preflight().loading
+    }));
+    let recovered_digest = harness
+        .state()
+        .preflight()
+        .value
+        .as_ref()
+        .unwrap()
+        .report_sha256
+        .clone();
+    harness
+        .state_mut()
+        .set_confirmation(&recovered_digest[..12]);
+    harness.state_mut().admit_campaign();
+    assert!(harness.state().execution().admission.is_some());
+    assert!(!ready.fixture.state.join("campaigns").exists());
 }
 
 #[test]

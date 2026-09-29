@@ -100,7 +100,13 @@ impl CoordinatorBinary {
                 command.env(name, value);
             }
         }
-        let mut child = command.spawn().map_err(|_| BackendError::Spawn)?;
+        let mut child = command.spawn().map_err(|error| {
+            if error.kind() == std::io::ErrorKind::PermissionDenied {
+                BackendError::PermissionDenied
+            } else {
+                BackendError::Spawn
+            }
+        })?;
         let stdout = child.stdout.take().ok_or(BackendError::Spawn)?;
         let stderr = child.stderr.take().ok_or(BackendError::Spawn)?;
         let stdout_reader = thread::spawn(move || read_bounded(stdout));
@@ -188,6 +194,8 @@ pub enum BackendError {
     },
     /// The subprocess could not be started or its streams could not be read.
     Spawn,
+    /// The coordinator file exists but the operating system denied execution.
+    PermissionDenied,
     /// The command exceeded its deadline and was terminated.
     Timeout,
     /// The request was cancelled before completion.
@@ -214,6 +222,7 @@ impl BackendError {
         match self {
             Self::BinaryUnavailable { .. } => "codingmage.ui.binary_unavailable".to_owned(),
             Self::Spawn => "codingmage.ui.spawn".to_owned(),
+            Self::PermissionDenied => "codingmage.ui.permission_denied".to_owned(),
             Self::Timeout => "codingmage.ui.timeout".to_owned(),
             Self::Cancelled => "codingmage.ui.cancelled".to_owned(),
             Self::OutputTooLarge => "codingmage.ui.output_too_large".to_owned(),
@@ -233,6 +242,9 @@ impl fmt::Display for BackendError {
                 expected.display()
             ),
             Self::Spawn => formatter.write_str("the coordinator process could not be started"),
+            Self::PermissionDenied => {
+                formatter.write_str("the operating system denied execution of the coordinator")
+            }
             Self::Timeout => formatter.write_str("the coordinator command exceeded its deadline"),
             Self::Cancelled => formatter.write_str("the request was cancelled"),
             Self::OutputTooLarge => {
@@ -369,6 +381,10 @@ fn explain_interface_code(code: &str) -> (&'static str, &'static str) {
         "codingmage.ui.timeout" => (
             "The coordinator command did not finish within the interface deadline.",
             "Retry; if it repeats, run the same command in a terminal to inspect it.",
+        ),
+        "codingmage.ui.permission_denied" => (
+            "The coordinator file exists, but the operating system denied execution.",
+            "Restore execute permission for the installed codingmage binary outside the app, then retry the action.",
         ),
         "codingmage.ui.git_read" => (
             "A read-only Git object read failed.",

@@ -12,7 +12,7 @@ use crate::{
     command,
     controls::{ControlAction, ControlLedger, ControlRefusal},
     launch::{LaunchRecord, LaunchState, OwnedLaunch, campaign_arguments, launch_campaign},
-    observed::age_label,
+    observed::{Freshness, age_label},
     state_dir::project_private_dir,
 };
 
@@ -93,6 +93,13 @@ impl App {
 
     /// Records the admission after the owner confirms the reviewed report digest.
     pub fn admit_campaign(&mut self) {
+        if !self.preflight_can_admit() && self.preflight.value.is_some() {
+            self.execution.error = Some(
+                "the latest preflight is pending, stale or failed; rerun it successfully before admission"
+                    .to_owned(),
+            );
+            return;
+        }
         let (Some(campaign), Some(binding), Some(record)) = (
             &self.campaign,
             self.current_binding(),
@@ -128,6 +135,10 @@ impl App {
             }
             Err(error) => self.execution.error = Some(error.to_string()),
         }
+    }
+
+    fn preflight_can_admit(&self) -> bool {
+        !self.preflight.loading && self.preflight.freshness(self.now) == Freshness::Live
     }
 
     /// Restores admission, launch record and ledger for the selected campaign.
@@ -471,10 +482,19 @@ impl App {
                     .desired_width(super::current_tokens(ui.ctx()).layout.field_label),
             )
             .labelled_by(label.id);
-            if ui.button("Admit campaign").clicked() {
+            if ui
+                .add_enabled(
+                    self.preflight_can_admit(),
+                    egui::Button::new("Admit campaign"),
+                )
+                .clicked()
+            {
                 self.admit_campaign();
             }
         });
+        if self.preflight.value.is_some() && !self.preflight_can_admit() {
+            ui.small("Admission is unavailable until a fresh preflight succeeds; any earlier report is retained only for inspection.");
+        }
     }
 
     fn launch_block(&mut self, ui: &mut egui::Ui) {

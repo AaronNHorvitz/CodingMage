@@ -214,14 +214,7 @@ impl App {
             freshness.label(),
             age_label(self.preflight.age(self.now))
         ));
-        if let Some((_, error)) = &self.preflight.last_error {
-            let (what, action) = explain_code(&error.code());
-            failure_box(ui, what, &error.to_string(), action);
-            ui.small("Preflight probes version and help surfaces only; it never starts model inference, and a failure leaves no campaign state behind.");
-        }
-        if freshness == Freshness::Loading {
-            ui.label("Probing providers, gates, guard and storage through the coordinator...");
-        }
+        self.preflight_progress(ui, freshness);
         let Some(observation) = &self.preflight.value else {
             return;
         };
@@ -308,5 +301,33 @@ impl App {
                 ui.label(report.source_free.to_string());
                 ui.end_row();
             });
+    }
+
+    fn preflight_progress(&self, ui: &mut egui::Ui, freshness: Freshness) {
+        if let Some((_, error)) = &self.preflight.last_error {
+            let (what, action) = explain_code(&error.code());
+            let state = if matches!(error, BackendError::PermissionDenied) {
+                "Permission denied"
+            } else {
+                "Preflight failed"
+            };
+            failure_box(ui, state, what, action);
+            ui.small(format!("Cause code: {}. {error}", error.code()));
+            ui.small(if self.preflight.value.is_some() {
+                "Effect: the earlier report is retained for inspection but cannot be used for admission until a fresh preflight succeeds. No campaign was admitted or started by this request."
+            } else {
+                "Effect: no preflight report is available for admission. No campaign was admitted or started by this request."
+            });
+        }
+        if self.preflight.loading {
+            ui.label(if self.preflight.value.is_some() {
+                "Refreshing preflight; the earlier report is retained for inspection and cannot be used for admission until this request succeeds."
+            } else {
+                "Probing providers, gates, guard and storage through the coordinator..."
+            });
+        }
+        if freshness == Freshness::Stale && self.preflight.last_error.is_none() {
+            ui.label("This preflight report is older than the observation window. It remains inspectable but cannot be used for admission; rerun preflight.");
+        }
     }
 }
