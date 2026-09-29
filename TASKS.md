@@ -2192,7 +2192,12 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     only CM-R01.6's eight-input freshness failure. The remaining screens, dynamic text and
     full bidirectional navigation remain open. See
     `docs/evidence/sprint-36-offline-help.md`, Decision 0031 and
-    `docs/evidence/sprint-36-message-catalogue.md`.
+    `docs/evidence/sprint-36-message-catalogue.md`. Independent review of that exact Help
+    increment returned a narrow PASS with one Low baseline wording finding, now corrected.
+    The next open increment moves manual-diagnostics and Settings appearance labels into the
+    same catalogue; focused synthetic 40% expansion/right-alignment checks, 105 native UI
+    all-target tests and strict workspace Clippy pass. The Python suite retains only the
+    separate CM-R01.6 freshness failure; independent review of the new source is pending.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).

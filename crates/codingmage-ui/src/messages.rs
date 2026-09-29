@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, sync::OnceLock};
 use serde::Deserialize;
 
 const SOURCE: &str = include_str!("../assets/messages/en.toml");
-const HELP_KEYS: &[&str] = &[
+const REQUIRED_KEYS: &[&str] = &[
     "help_title",
     "help_offline",
     "help_return",
@@ -45,6 +45,23 @@ const HELP_KEYS: &[&str] = &[
     "help_about_source_notice",
     "help_about_source_license",
     "help_about_third_party",
+    "help_manual_diagnostics_title",
+    "help_manual_diagnostics_description",
+    "help_bundle_directory_label",
+    "help_bundle_directory_hint",
+    "help_bundle_create",
+    "help_bundle_command_label",
+    "help_bundle_pending",
+    "help_bundle_unconfirmed",
+    "help_bundle_recovery",
+    "settings_title",
+    "settings_intro",
+    "settings_system",
+    "settings_light",
+    "settings_dark",
+    "settings_high_contrast",
+    "settings_palette_prefix",
+    "settings_session_only",
 ];
 
 #[derive(Deserialize)]
@@ -64,8 +81,8 @@ impl Catalogue {
         if document.schema_version != 1 {
             return Err("unsupported message catalogue schema".to_owned());
         }
-        if document.messages.len() != HELP_KEYS.len()
-            || HELP_KEYS.iter().any(|key| {
+        if document.messages.len() != REQUIRED_KEYS.len()
+            || REQUIRED_KEYS.iter().any(|key| {
                 document
                     .messages
                     .get(*key)
@@ -126,7 +143,7 @@ mod tests {
         let english = english();
         let expanded = english.pseudo(false);
         let rtl = english.pseudo(true);
-        for key in HELP_KEYS {
+        for key in REQUIRED_KEYS {
             let base = english.text(key);
             let minimum = base.chars().count().saturating_mul(7).div_ceil(5);
             assert!(expanded.text(key).chars().count() >= minimum);

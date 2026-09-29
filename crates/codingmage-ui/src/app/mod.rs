@@ -36,6 +36,7 @@ use crate::{
     campaign::{CampaignSelection, SelectError, campaign_state_label, involvement_label},
     command, content,
     design::{Appearance, Palette, Tokens, current_tokens},
+    messages::{self, Catalogue},
     observed::{Freshness, Observed, age_label},
     project::{OpenError, Project},
     state_dir::{ProjectMemory, RecentProjects, StateError, user_config_dir},
@@ -970,23 +971,54 @@ impl App {
     }
 
     fn settings_screen(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Settings");
-        ui.label("Appearance follows the desktop by default. Choose a palette for this window.");
+        self.settings_screen_with_catalogue(ui, messages::english(), false);
+    }
+
+    fn settings_screen_with_catalogue(
+        &mut self,
+        ui: &mut egui::Ui,
+        catalogue: &Catalogue,
+        right_to_left: bool,
+    ) {
+        if right_to_left {
+            ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                self.settings_content(ui, catalogue);
+            });
+        } else {
+            self.settings_content(ui, catalogue);
+        }
+    }
+
+    fn settings_content(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        ui.heading(catalogue.text("settings_title"));
+        ui.label(catalogue.text("settings_intro"));
         let before = self.appearance;
         ui.horizontal_wrapped(|ui| {
             for appearance in Appearance::ALL {
-                ui.radio_value(&mut self.appearance, appearance, appearance.label());
+                let key = match appearance {
+                    Appearance::System => "settings_system",
+                    Appearance::Light => "settings_light",
+                    Appearance::Dark => "settings_dark",
+                    Appearance::HighContrast => "settings_high_contrast",
+                };
+                ui.radio_value(&mut self.appearance, appearance, catalogue.text(key));
             }
         });
         if self.appearance != before {
             self.applied_palette = None;
             ui.ctx().request_repaint();
         }
+        let palette_key = match self.appearance.resolve(ui.ctx(), self.system_dark) {
+            Palette::Light => "settings_light",
+            Palette::Dark => "settings_dark",
+            Palette::HighContrast => "settings_high_contrast",
+        };
         ui.label(format!(
-            "Current palette: {}",
-            self.appearance.resolve(ui.ctx(), self.system_dark).label()
+            "{} {}",
+            catalogue.text("settings_palette_prefix"),
+            catalogue.text(palette_key)
         ));
-        ui.small("This choice lasts until you close the window.");
+        ui.small(catalogue.text("settings_session_only"));
     }
 
     fn overview(&mut self, ui: &mut egui::Ui) {
@@ -1600,5 +1632,71 @@ pub fn failure_box(ui: &mut egui::Ui, title: &str, detail: &str, action: &str) {
 impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.render(ui);
+    }
+}
+
+#[cfg(test)]
+mod settings_tests {
+    use super::*;
+    use egui_kittest::kittest::{NodeT as _, Queryable as _};
+
+    struct SettingsPreviewApp {
+        app: App,
+        catalogue: Catalogue,
+        right_to_left: bool,
+    }
+
+    impl eframe::App for SettingsPreviewApp {
+        fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
+            egui::CentralPanel::default().show(root, |ui| {
+                self.app
+                    .settings_screen_with_catalogue(ui, &self.catalogue, self.right_to_left);
+            });
+        }
+    }
+
+    #[test]
+    fn settings_choices_remain_labelled_with_expanded_right_aligned_text() {
+        for right_to_left in [false, true] {
+            let catalogue = messages::english().pseudo(right_to_left);
+            let radio_labels = [
+                "settings_system",
+                "settings_light",
+                "settings_dark",
+                "settings_high_contrast",
+            ]
+            .map(|key| catalogue.text(key).to_owned());
+            let mut harness = egui_kittest::Harness::builder()
+                .with_size(egui::Vec2::new(1024.0, 640.0))
+                .with_pixels_per_point(2.0)
+                .with_max_steps(4)
+                .build_eframe(move |creation| SettingsPreviewApp {
+                    app: App::with_state_dir(
+                        &creation.egui_ctx,
+                        Err(BackendError::BinaryUnavailable {
+                            expected: PathBuf::from("/example/missing/codingmage"),
+                        }),
+                        Ok(std::env::temp_dir().join("codingmage-ui-settings-preview")),
+                    ),
+                    catalogue,
+                    right_to_left,
+                });
+            harness.run_steps(2);
+            assert!(
+                harness
+                    .get_by_label_contains("Settings")
+                    .accesskit_node()
+                    .has_bounds()
+            );
+            for label in &radio_labels {
+                assert!(
+                    harness
+                        .get_by_role_and_label(egui::accesskit::Role::RadioButton, label)
+                        .accesskit_node()
+                        .has_bounds(),
+                    "missing bounds for {label}"
+                );
+            }
+        }
     }
 }

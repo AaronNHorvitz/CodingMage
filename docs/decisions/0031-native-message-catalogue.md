@@ -33,3 +33,11 @@ are available offline and provide a bounded first slice of this migration.
 The catalogue becomes the source for the migrated Help text. The rest of the text inventory,
 locale formatting, full right-to-left navigation, packaged third-party licence list and human
 accessibility checks remain open under Task 36.3.2.4 and Story 36.3.3.
+
+## Subsequent incremental use
+
+The next increment adds the Help manual-diagnostics labels and Settings appearance labels to
+the same bundled catalogue. The schema shape stays at version one; key additions ship in the
+same binary as their callers and the exact-key validator rejects incomplete bundles. The
+Settings preview exercises 40% longer and right-aligned synthetic text at the minimum window
+and 200% scale. This does not add a language selector or qualify application-wide RTL.

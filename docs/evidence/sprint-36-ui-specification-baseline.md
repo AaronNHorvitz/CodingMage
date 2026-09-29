@@ -28,8 +28,8 @@ their own complete workflows.
 | Reports | Reports screen and `report::export` | Inspect/export, overwrite/privacy refusal and per-source observation freshness in view/export exist; explanatory outcome depth and broader report navigation remain. |
 | Configuration | Setup and campaign readiness sections | Guided configuration, validated writes, preflight and error explanations exist; schema/default view, every policy, and full mode setup are incomplete. |
 | Campaign controls | Campaign execution and durable status sections | Admission, start, stop/resume/cancel, reconnect and explicit read-only status refresh exist; diagnosis, preflight, start, four campaign controls and status refresh have exact command previews. Admission and other local actions still lack command equivalents. |
-| Settings | Settings destination and design tokens | System, light, dark and high-contrast appearances work for this window; language, storage and defaults are absent. |
-| Help and About | Help destination with Ctrl+8, offline guidance, glossary, shortcuts, bundled source licence/notices, a path-free copyable diagnostic summary and a manual coordinator `support-bundle` request; informational Help labels use a versioned English catalogue | Full UI text externalization, locale formatting, complete right-to-left behavior, exact packaged third-party licence list and broader in-context diagnostics remain. Synthetic Help expansion and right alignment do not qualify these gaps. |
+| Settings | Settings destination and design tokens | System, light, dark and high-contrast appearances work for this window; appearance controls use the bundled English catalogue. Language, storage and defaults are absent. |
+| Help and About | Help destination with Ctrl+8, offline guidance, glossary, shortcuts, bundled source licence/notices, a path-free copyable diagnostic summary and a manual coordinator `support-bundle` request; informational and manual-diagnostics control labels use the bundled English catalogue | Full UI text externalization, locale formatting, complete right-to-left behavior, exact packaged third-party licence list and broader in-context diagnostics remain. Synthetic Help and Settings expansion/right alignment do not qualify these gaps. |
 
 | Required state | Current handling | Remaining gap |
 | --- | --- | --- |
@@ -46,8 +46,10 @@ bound campaign identity/state, involvement, identified active pods and the coord
 checkpoint time, but the current gate remains unreported by the coordinator contract. The
 minimum window is now 1024 by 640 logical pixels. Shared design tokens, themes, contrast and
 offscreen screenshot evidence exist, as does the inert-content/confirmed-link adversarial matrix;
-these do not qualify real desktop accessibility. Text remains embedded in Rust, and pseudo-locale,
-right-to-left and locale formatting are absent. Reduced motion is the default because the shell
+these do not qualify real desktop accessibility. Most user-facing text remains embedded in Rust;
+application-wide pseudo-locale coverage, complete right-to-left behavior and locale formatting
+are absent. The Help and Settings synthetic expansion and right-alignment tests above do not qualify
+those gaps. Reduced motion is the default because the shell
 has no essential animation. The UI still performs local configuration, browsing and process
 observation; Decision 0016's command boundary and section 2 require those operations to be
 reconciled, with missing commands added to `codingmage`.

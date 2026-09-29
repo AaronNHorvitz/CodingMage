@@ -33,3 +33,33 @@ test mappings changed mechanically when the new tests were added and do not esta
 coverage or qualification. Python unittest ran 42 tests: 41 passed and the sole failure
 was the retained CM-R01.6 source-bound freshness check on the same eight input drifts.
 No evidence digest was renewed. Independent review of this increment is pending.
+
+## Independent review and next catalogue slice
+
+Independent read-only review of exact commit
+`ea5bf8a27b0407e4ec16ade0482c6be3908eaf3b` returned a narrow **PASS**. It confirmed
+the earlier Decision 0016 Setup-picker correction and the catalogue boundary. Its one Low
+finding was that the specification baseline's later summary still called pseudo-locale and
+right-to-left tests absent. The baseline now distinguishes the existing Help-only synthetic
+test from the still missing application-wide coverage and full bidirectional behavior.
+
+The next implementation slice moves Help's manual-diagnostics headings, form labels, command
+disclosure label and pending/failure guidance, plus Settings' appearance labels and explanatory
+text, into the same bundled English catalogue. Settings continues to change only this window's
+palette. It has no language or expertise selector, and Help's dynamic coordinator outcomes
+still come from Rust formatting and remain to be externalized. Synthetic Settings labels are
+checked at 1024×640 logical pixels and 200% scale with right alignment and AccessKit radio
+roles; the Help preview also checks the manual-diagnostics labels. These are limited local
+stress checks, not complete RTL navigation or human accessibility results.
+
+The focused Settings preview passed 1/1 after an initial test query matched both a radio and
+the current-palette label; the failed attempt is retained privately. Extended catalogue
+validation and synthetic expansion passed 2/2, and the expanded Help preview passed 1/1.
+Inventory regeneration is deterministic at 1,724 items and 825 explicit gaps; the changed
+source lines move 45 line-based item IDs, while common-item applicability and capped test
+mappings are unchanged. For this second slice, the software-rendered native UI all-target
+suite passed 105/105 and strict workspace Clippy passed. Formatting, documentation,
+architecture, no-write inventory and diff whitespace checks passed. Python unittest ran 42
+tests: 41 passed and the sole failure was the retained CM-R01.6 source-bound freshness check
+on the same eight input drifts. No evidence digest was renewed. Fresh independent review of
+the second slice remains pending.

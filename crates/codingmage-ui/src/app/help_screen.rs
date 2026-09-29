@@ -115,7 +115,7 @@ impl App {
         ui.separator();
         glossary(ui, catalogue);
         ui.separator();
-        self.support_bundle_controls(ui);
+        self.support_bundle_controls(ui, catalogue);
         ui.separator();
         let summary = diagnostic_summary(&self.connection);
         ui.heading(catalogue.text("help_diagnostics_title"));
@@ -284,14 +284,14 @@ impl App {
         true
     }
 
-    fn support_bundle_controls(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Manual diagnostics");
-        ui.label("For a selected campaign, the coordinator can write a redacted support bundle into a new private directory. It excludes source, prompts, provider output and credentials, and uploads nothing. Review the files before sharing them yourself.");
+    fn support_bundle_controls(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        ui.heading(catalogue.text("help_manual_diagnostics_title"));
+        ui.label(catalogue.text("help_manual_diagnostics_description"));
         ui.horizontal(|ui| {
-            let label = ui.label("New directory outside the repository");
+            let label = ui.label(catalogue.text("help_bundle_directory_label"));
             ui.add(
                 egui::TextEdit::singleline(&mut self.support.output_path)
-                    .hint_text("/absolute/path/to/new-support-directory")
+                    .hint_text(catalogue.text("help_bundle_directory_hint"))
                     .desired_width(super::current_tokens(ui.ctx()).layout.field_long),
             )
             .labelled_by(label.id);
@@ -300,7 +300,10 @@ impl App {
         let ready = prepared.as_ref().is_ok_and(|(arguments, _)| {
             command::can_preview(self.binary_path.as_deref(), Some(arguments))
         }) && !self.support.pending();
-        let create = ui.add_enabled(ready, egui::Button::new("Create redacted support bundle"));
+        let create = ui.add_enabled(
+            ready,
+            egui::Button::new(catalogue.text("help_bundle_create")),
+        );
         if create.has_focus() {
             create.scroll_to_me(None);
         }
@@ -310,17 +313,17 @@ impl App {
         match prepared {
             Ok((arguments, _)) => command::show_for(
                 ui,
-                "Create support bundle",
+                catalogue.text("help_bundle_command_label"),
                 self.binary_path.as_deref(),
                 &arguments,
             ),
             Err(reason) => {
                 ui.small(reason);
-                command::show_unavailable_for(ui, "Create support bundle");
+                command::show_unavailable_for(ui, catalogue.text("help_bundle_command_label"));
             }
         }
         if self.support.pending() {
-            ui.label("The coordinator is creating the bundle. This window does not upload it.");
+            ui.label(catalogue.text("help_bundle_pending"));
         }
         if let Some(message) = &self.support.message {
             match message {
@@ -329,9 +332,9 @@ impl App {
                 }
                 Err(text) => failure_box(
                     ui,
-                    "Support bundle not confirmed",
+                    catalogue.text("help_bundle_unconfirmed"),
                     text,
-                    "Choose a fresh directory outside the repository and retry only after inspecting any partial output.",
+                    catalogue.text("help_bundle_recovery"),
                 ),
             }
         }
@@ -479,6 +482,8 @@ mod tests {
             assert!(return_button.accesskit_node().has_bounds());
             harness.get_by_label_contains("Open Setup");
             harness.get_by_label_contains("Get started");
+            harness.get_by_label_contains("Manual diagnostics");
+            harness.get_by_label_contains("Create redacted support bundle");
         }
     }
 
