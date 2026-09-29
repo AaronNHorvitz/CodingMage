@@ -2190,7 +2190,13 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     deferred-task and human-decision codes, offers exact-command refresh and explicit
     empty/stale/failure guidance. It never invents evidence digests or clears holds;
     complete per-code clearance actions and broader section-5 coverage remain open.
-    See `docs/evidence/sprint-36-blockers-view.md`.
+    See `docs/evidence/sprint-36-blockers-view.md`. A further read-only guidance increment
+    distinguishes the coordinator's seven blocked-task reason codes, human-decision codes and
+    six deferral reason/trigger pairs. Only three triggers accept an explicit evidence-bound
+    observation; the other three are coordinator-observed. Unknown or mismatched codes receive
+    neutral guidance and no clearance request is invented. See Decision 0032 and
+    `docs/evidence/sprint-36-blocker-action-guidance.md`. Full section-5 state/depth/action
+    coverage remains open.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->

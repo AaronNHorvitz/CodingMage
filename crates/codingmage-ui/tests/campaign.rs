@@ -28,6 +28,63 @@ fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::Ap
     harness
 }
 
+fn blocker_explanation_fixture() -> BlockerExplanation {
+    BlockerExplanation {
+        schema_version: 1,
+        campaign_id: "bound".to_owned(),
+        state: "paused".to_owned(),
+        blocker_code: Some("bound-blocker".to_owned()),
+        blockers: vec![
+            TaskReason {
+                task_id: "0.1.1.1".to_owned(),
+                reason_code: "task-block".to_owned(),
+            },
+            TaskReason {
+                task_id: "0.1.1.1".to_owned(),
+                reason_code: "blocked_prerequisite".to_owned(),
+            },
+        ],
+        deferrals: vec![
+            Deferral {
+                task_id: "0.1.1.2".to_owned(),
+                reason_code: "waiting".to_owned(),
+                trigger_code: "source_changed".to_owned(),
+                trigger_state: "pending".to_owned(),
+            },
+            Deferral {
+                task_id: "0.1.1.2".to_owned(),
+                reason_code: "temporary_provider_capacity".to_owned(),
+                trigger_code: "provider_reset".to_owned(),
+                trigger_state: "pending".to_owned(),
+            },
+            Deferral {
+                task_id: "0.1.1.2".to_owned(),
+                reason_code: "active_path_lease".to_owned(),
+                trigger_code: "lease_release".to_owned(),
+                trigger_state: "pending".to_owned(),
+            },
+        ],
+        human_decisions: vec![
+            TaskReason {
+                task_id: "0.1.1.3".to_owned(),
+                reason_code: "review_disputed".to_owned(),
+            },
+            TaskReason {
+                task_id: "0.1.1.3".to_owned(),
+                reason_code: "release_decision".to_owned(),
+            },
+        ],
+    }
+}
+
+fn filter_blockers(harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>, query: &str) {
+    let search = harness.get_by_role_and_label(egui::accesskit::Role::TextInput, "Search blockers");
+    search.focus();
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::A);
+    search.type_text(query);
+    harness.run_steps(2);
+}
+
 #[test]
 fn blocker_explanation_rejects_foreign_payload_with_current_request_binding() {
     let fixture = Fixture::new("blocker-payload-binding", 1);
@@ -37,26 +94,7 @@ fn blocker_explanation_rejects_foreign_payload_with_current_request_binding() {
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {
         app.explanation().value.is_some()
     }));
-    let retained = BlockerExplanation {
-        schema_version: 1,
-        campaign_id: "bound".to_owned(),
-        state: "paused".to_owned(),
-        blocker_code: Some("bound-blocker".to_owned()),
-        blockers: vec![TaskReason {
-            task_id: "0.1.1.1".to_owned(),
-            reason_code: "task-block".to_owned(),
-        }],
-        deferrals: vec![Deferral {
-            task_id: "0.1.1.2".to_owned(),
-            reason_code: "waiting".to_owned(),
-            trigger_code: "source_changed".to_owned(),
-            trigger_state: "pending".to_owned(),
-        }],
-        human_decisions: vec![TaskReason {
-            task_id: "0.1.1.3".to_owned(),
-            reason_code: "review_disputed".to_owned(),
-        }],
-    };
+    let retained = blocker_explanation_fixture();
     let binding = harness.state().binding();
     let generation = harness.state().generation();
     assert!(harness.state_mut().handle_response(Response {
@@ -111,18 +149,19 @@ fn blocker_explanation_rejects_foreign_payload_with_current_request_binding() {
         .click();
     harness.run_steps(2);
     harness.get_by_label_contains("campaign-explain-blocker");
-    let search = harness.get_by_role_and_label(egui::accesskit::Role::TextInput, "Search blockers");
-    search.focus();
-    search.type_text("source_changed");
-    harness.run_steps(2);
+    filter_blockers(&mut harness, "source_changed");
     harness.get_by_label_contains("Deferred tasks (1)");
     harness.get_by_label_contains("source_changed");
-    let search = harness.get_by_role_and_label(egui::accesskit::Role::TextInput, "Search blockers");
-    search.focus();
-    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::A);
-    search.type_text("no-such-hold");
-    harness.run_steps(2);
+    filter_blockers(&mut harness, "no-such-hold");
     harness.get_by_label_contains("No recorded hold matches this search");
+    filter_blockers(&mut harness, "provider_reset");
+    harness.get_by_label_contains("an authorized operator can record provider_reset");
+    filter_blockers(&mut harness, "lease_release");
+    harness.get_by_label_contains("operator evidence command cannot mark this trigger");
+    filter_blockers(&mut harness, "blocked_prerequisite");
+    harness.get_by_label_contains("canonical outcome must be accepted");
+    filter_blockers(&mut harness, "release_decision");
+    harness.get_by_label_contains("campaign completion is not release approval");
 }
 
 fn checked_head_projection(fixture: &Fixture, spec: &Path, head: &str) -> serde_json::Value {

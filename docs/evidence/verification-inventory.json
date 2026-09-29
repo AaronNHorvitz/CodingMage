@@ -55530,6 +55530,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -55593,6 +55594,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -55832,6 +55834,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -55994,6 +55997,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56156,6 +56160,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56219,6 +56224,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56282,6 +56288,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56345,6 +56352,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56408,6 +56416,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56515,6 +56524,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56666,6 +56676,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56729,6 +56740,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56792,6 +56804,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56855,6 +56868,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -56962,6 +56976,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -57069,6 +57084,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -57132,6 +57148,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -57283,6 +57300,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -57346,6 +57364,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -57464,6 +57483,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -57527,6 +57547,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -57678,6 +57699,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -57785,6 +57807,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -57848,6 +57871,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -58186,6 +58210,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -58337,6 +58362,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -58587,6 +58613,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -58870,6 +58897,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -58922,6 +58950,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -59150,6 +59179,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -59323,6 +59353,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -59430,6 +59461,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -59493,6 +59525,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -59875,6 +59908,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -59938,6 +59972,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60001,6 +60036,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60064,6 +60100,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60138,6 +60175,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60201,6 +60239,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60352,6 +60391,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60459,6 +60499,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60522,6 +60563,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60585,6 +60627,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60659,6 +60702,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60777,6 +60821,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60928,6 +60973,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -60991,6 +61037,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -61054,6 +61101,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -61117,6 +61165,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -61213,6 +61262,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -61408,6 +61458,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -61614,6 +61665,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -61677,6 +61729,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -61740,6 +61793,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -61814,6 +61868,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -61877,6 +61932,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -61940,6 +61996,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -62003,6 +62060,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -62110,6 +62168,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -62173,6 +62232,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -62236,6 +62296,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -62299,6 +62360,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -62362,6 +62424,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -62425,6 +62488,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -62488,6 +62552,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -62551,6 +62616,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -62614,6 +62680,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -62677,6 +62744,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63202,6 +63270,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63254,6 +63323,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63306,6 +63376,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63358,6 +63429,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63410,6 +63482,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63462,6 +63535,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63525,6 +63599,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63632,6 +63707,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63695,6 +63771,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63758,6 +63835,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63821,6 +63899,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63884,6 +63963,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -63947,6 +64027,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64010,6 +64091,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64073,6 +64155,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64136,6 +64219,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64199,6 +64283,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64273,6 +64358,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64347,6 +64433,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64410,6 +64497,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64473,6 +64561,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64536,6 +64625,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64599,6 +64689,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64662,6 +64753,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64725,6 +64817,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64788,6 +64881,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64851,6 +64945,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64914,6 +65009,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -64988,6 +65084,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65062,6 +65159,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65125,6 +65223,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65199,6 +65298,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65273,6 +65373,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65347,6 +65448,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65410,6 +65512,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65484,6 +65587,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65547,6 +65651,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65610,6 +65715,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65673,6 +65779,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65747,6 +65854,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65810,6 +65918,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65873,6 +65982,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -65947,6 +66057,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -66010,6 +66121,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -66073,6 +66185,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -66147,6 +66260,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -66221,6 +66335,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -66295,6 +66410,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -66358,6 +66474,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -66432,6 +66549,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -66495,6 +66613,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -66976,6 +67095,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -67611,6 +67731,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -67674,6 +67795,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -67748,6 +67870,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -67855,6 +67978,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -68017,6 +68141,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -68135,6 +68260,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -68847,6 +68973,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -69460,6 +69587,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -69523,6 +69651,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -69586,6 +69715,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -70562,6 +70692,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -70625,6 +70756,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -70688,6 +70820,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -71026,6 +71159,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -71088,9 +71222,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:english:183",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:english:202",
       "kind": "fn",
-      "line": 183,
+      "line": 202,
       "name": "english",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -71144,6 +71278,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -71159,9 +71294,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:pseudo:160",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:pseudo:179",
       "kind": "fn",
-      "line": 160,
+      "line": 179,
       "name": "pseudo",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -71203,9 +71338,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:text:152",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:text:171",
       "kind": "fn",
-      "line": 152,
+      "line": 171,
       "name": "text",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -71249,9 +71384,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:struct:Catalogue:127",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:struct:Catalogue:146",
       "kind": "struct",
-      "line": 127,
+      "line": 146,
       "name": "Catalogue",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -71295,6 +71430,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -71776,6 +71912,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -71850,6 +71987,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -71924,6 +72062,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72053,6 +72192,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72116,6 +72256,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72179,6 +72320,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72242,6 +72384,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72305,6 +72448,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72368,6 +72512,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72431,6 +72576,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72505,6 +72651,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72568,6 +72715,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72675,6 +72823,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72804,6 +72953,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -72911,6 +73061,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73018,6 +73169,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73092,6 +73244,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73210,6 +73363,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73383,6 +73537,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73446,6 +73601,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73509,6 +73665,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73583,6 +73740,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73646,6 +73804,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73698,6 +73857,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73761,6 +73921,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73868,6 +74029,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73931,6 +74093,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -73994,6 +74157,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -74068,6 +74232,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -74131,6 +74296,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -74216,6 +74382,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -74323,6 +74490,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -74430,6 +74598,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -74625,6 +74794,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -74699,6 +74869,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -74762,6 +74933,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -74913,6 +75085,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -74976,6 +75149,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75039,6 +75213,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75146,6 +75321,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75220,6 +75396,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75338,6 +75515,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75401,6 +75579,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75464,6 +75643,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75582,6 +75762,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75645,6 +75826,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75708,6 +75890,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75771,6 +75954,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75900,6 +76084,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -75963,6 +76148,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -76026,6 +76212,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -76133,6 +76320,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -76196,6 +76384,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -76765,6 +76954,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -77158,6 +77348,7 @@
           "crates/codingmage-ui/tests/contract_parity.rs::team_report_round_trips"
         ],
         "unknown_field": [
+          "crates/codingmage-ui/src/app/blockers_screen.rs::unknown_and_prerequisite_codes_do_not_offer_external_clearance",
           "crates/codingmage-ui/src/backend/models.rs::head_plan_rejects_duplicate_ids_unknown_fields_and_wrong_schema",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
           "crates/codingmage-ui/src/backend/models.rs::unknown_fields_and_wrong_schema_fail_closed",
@@ -77223,6 +77414,6 @@
       }
     }
   ],
-  "items_sha256": "482fa4f72f8d7282bcbbeafef19d123cdb6b9dd5bbf94667288a237a217ec4a9",
+  "items_sha256": "a87ec54b089cb1061013284368bcfe44ab8b72efb867b284cb21c870428b598e",
   "schema_version": 1
 }
