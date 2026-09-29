@@ -37,6 +37,15 @@ fn shell_renders_navigation_and_keyboard_switches_screens_without_a_project() {
     harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::Num1);
     harness.run_steps(2);
     assert_eq!(harness.state().screen(), Screen::Overview);
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::Num9);
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Blockers);
+    harness.get_by_label_contains("Open a repository in Setup before inspecting");
+    harness
+        .get_by_role_and_label(egui::accesskit::Role::Button, "Open Setup")
+        .click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Setup);
     assert!(harness.state().project().is_none());
     assert_eq!(
         harness

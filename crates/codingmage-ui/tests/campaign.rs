@@ -8,7 +8,7 @@ use codingmage_ui::{
     Screen,
     backend::{
         BackendError, CoordinatorBinary, Response,
-        models::{ActiveTask, BlockerExplanation, MissionStatus, ModelError},
+        models::{ActiveTask, BlockerExplanation, Deferral, MissionStatus, ModelError, TaskReason},
     },
     campaign::SelectError,
 };
@@ -34,14 +34,28 @@ fn blocker_explanation_rejects_foreign_payload_with_current_request_binding() {
     let spec = write_campaign(&fixture, "bound", 1);
     let mut harness = opened(&fixture);
     harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.explanation().value.is_some()
+    }));
     let retained = BlockerExplanation {
         schema_version: 1,
         campaign_id: "bound".to_owned(),
         state: "paused".to_owned(),
         blocker_code: Some("bound-blocker".to_owned()),
-        blockers: vec![],
-        deferrals: vec![],
-        human_decisions: vec![],
+        blockers: vec![TaskReason {
+            task_id: "0.1.1.1".to_owned(),
+            reason_code: "task-block".to_owned(),
+        }],
+        deferrals: vec![Deferral {
+            task_id: "0.1.1.2".to_owned(),
+            reason_code: "waiting".to_owned(),
+            trigger_code: "source_changed".to_owned(),
+            trigger_state: "pending".to_owned(),
+        }],
+        human_decisions: vec![TaskReason {
+            task_id: "0.1.1.3".to_owned(),
+            reason_code: "review_disputed".to_owned(),
+        }],
     };
     let binding = harness.state().binding();
     let generation = harness.state().generation();
@@ -84,6 +98,31 @@ fn blocker_explanation_rejects_foreign_payload_with_current_request_binding() {
         harness.state().explanation().last_error.as_ref(),
         Some((_, BackendError::Contract(ModelError::AuthorityMismatch)))
     ));
+    harness.state_mut().select_screen(Screen::Blockers);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Blocker observation: stale");
+    harness.get_by_label_contains("bound-blocker");
+    harness.get_by_label_contains("task-block");
+    harness.get_by_label_contains("source_changed");
+    harness.get_by_label_contains("review_disputed");
+    harness.get_by_label_contains("operator-supplied request identity");
+    harness
+        .get_by_label("Show command: Refresh blockers")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("campaign-explain-blocker");
+    let search = harness.get_by_role_and_label(egui::accesskit::Role::TextInput, "Search blockers");
+    search.focus();
+    search.type_text("source_changed");
+    harness.run_steps(2);
+    harness.get_by_label_contains("Deferred tasks (1)");
+    harness.get_by_label_contains("source_changed");
+    let search = harness.get_by_role_and_label(egui::accesskit::Role::TextInput, "Search blockers");
+    search.focus();
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::A);
+    search.type_text("no-such-hold");
+    harness.run_steps(2);
+    harness.get_by_label_contains("No recorded hold matches this search");
 }
 
 fn checked_head_projection(fixture: &Fixture, spec: &Path, head: &str) -> serde_json::Value {
@@ -293,6 +332,15 @@ fn never_started_campaign_is_an_explicit_empty_state() {
         Some(None),
         "no charter admitted is an explicit absent state, not a failure"
     );
+    harness.state_mut().select_screen(Screen::Blockers);
+    harness.run_steps(2);
+    harness.get_by_label_contains("No durable campaign state was observed");
+    harness.get_by_label_contains("Blocker observation: live");
+    harness
+        .get_by_label("Show command: Refresh blockers")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("campaign-explain-blocker");
     harness.state_mut().select_screen(Screen::Overview);
     harness.run_steps(2);
     harness.get_by_label_contains("Selected campaign: empty-campaign");

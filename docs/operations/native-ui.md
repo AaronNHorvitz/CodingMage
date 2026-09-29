@@ -59,6 +59,7 @@ showing sample results.
 | Overview | First-run storage and provider sign-in guidance; configuration summary, repository diagnosis (identity, head, branch, cleanliness, denied capabilities), task-source counts | `codingmage doctor`, `codingmage-core`, `codingmage-plan` |
 | Work plan | Searchable, filterable plan with dependencies, source anchors, readiness from the source, disabled source checkboxes and the coordinator overlay (completed at campaign head, accepted, active, blocked, deferred, human decision, unknown) | task parser, `campaign-status`, `campaign-head-plan` for authorized, content-minimized head states |
 | Campaign | Campaign authority, binding drift, readiness checks, preflight, admission, coordinator process state, controls, durable status, holds, utilization, roles the backend reports, unavailable involvement modes | `campaign-preflight`, `campaign-status`, `campaign-explain-blocker`, `campaign-control`, `/proc` |
+| Blockers | Searchable bound campaign hold, blocked, deferred and human-decision codes; explicit empty, stale and failed observations; read-only exact-command refresh and manual recovery guidance | `campaign-explain-blocker`; clearance still requires operator-supplied evidence through coordinator commands |
 | Changes and reviews | Delivery boundary, coordinator commits and changed files, per-run verdicts and gate evidence, journaled phases, bounded activity | `campaign-changes`, `campaign-run-records` |
 | Reports | Outcome and blocker reports with export and explicit source-observation freshness | the observations above |
 | Setup | Open or create a configuration, write the owner's authorization record, author a campaign, import and export | `codingmage-core`, `codingmage-campaign`, `codingmage init` |
@@ -85,8 +86,9 @@ showing sample results.
 
 ## Keyboard
 
-- `Ctrl+1` to `Ctrl+8` switch screens; `Tab` and `Shift+Tab` move focus; `Space` or `Enter`
-  activate; `F5` refreshes the diagnosis and campaign observations.
+- `Ctrl+1` to `Ctrl+8` switch existing screens; `Ctrl+9` opens Blockers. `Tab` and
+  `Shift+Tab` move focus; `Space` or `Enter` activate. `F5` refreshes the diagnosis and
+  campaign observations.
 
 The native minimum window is 1024 by 640 logical pixels. Appearance uses shared visual tokens;
 its choice lasts until the window closes. Reduced motion is the default because the shell has no

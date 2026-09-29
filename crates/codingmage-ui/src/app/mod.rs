@@ -1,5 +1,6 @@
 //! Application shell: navigation, project selection and bounded backend observation.
 
+mod blockers_screen;
 mod campaign_screen;
 mod changes_screen;
 mod execution_screen;
@@ -63,6 +64,8 @@ pub enum Screen {
     WorkPlan,
     /// Campaign and team activity.
     Campaign,
+    /// Bound campaign holds and recovery guidance.
+    Blockers,
     /// Exact changes, review and test results.
     Changes,
     /// Outcome and blocker reports.
@@ -77,10 +80,11 @@ pub enum Screen {
 
 impl Screen {
     /// All screens in navigation order.
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 9] = [
         Self::Overview,
         Self::WorkPlan,
         Self::Campaign,
+        Self::Blockers,
         Self::Changes,
         Self::Reports,
         Self::Setup,
@@ -95,6 +99,7 @@ impl Screen {
             Self::Overview => "Overview",
             Self::WorkPlan => "Work plan",
             Self::Campaign => "Campaign",
+            Self::Blockers => "Blockers",
             Self::Changes => "Changes and reviews",
             Self::Reports => "Reports",
             Self::Setup => "Setup",
@@ -110,6 +115,7 @@ impl Screen {
             Self::Overview => egui::Key::Num1,
             Self::WorkPlan => egui::Key::Num2,
             Self::Campaign => egui::Key::Num3,
+            Self::Blockers => egui::Key::Num9,
             Self::Changes => egui::Key::Num4,
             Self::Reports => egui::Key::Num5,
             Self::Setup => egui::Key::Num6,
@@ -151,6 +157,7 @@ pub struct App {
     campaign_input: String,
     campaign_error: Option<SelectError>,
     campaign_browser: Option<Browser>,
+    blocker_query: String,
     status: Observed<Option<CampaignStatus>>,
     explanation: Observed<Option<BlockerExplanation>>,
     report: Observed<Option<CampaignReport>>,
@@ -241,6 +248,7 @@ impl App {
             campaign_input: String::new(),
             campaign_error: None,
             campaign_browser: None,
+            blocker_query: String::new(),
             status: Observed::default(),
             explanation: Observed::default(),
             report: Observed::default(),
@@ -677,6 +685,7 @@ impl App {
                     Screen::Overview => self.overview(ui),
                     Screen::WorkPlan => self.work_plan(ui),
                     Screen::Campaign => self.campaign_screen(ui),
+                    Screen::Blockers => self.blockers_screen(ui),
                     Screen::Changes => self.changes_screen(ui),
                     Screen::Setup => self.setup(ui),
                     Screen::Reports => self.reports_screen(ui),
@@ -687,6 +696,7 @@ impl App {
         content::confirmation(&ctx);
         if self.diagnosis.loading
             || self.status.loading
+            || self.explanation.loading
             || self.head_plan.loading
             || self.task_detail.loading
             || self.preflight.loading
@@ -785,7 +795,7 @@ impl App {
                 }
                 ui.add_space(current_tokens(ui.ctx()).layout.section_gap);
                 ui.separator();
-                ui.small("Ctrl+1 to Ctrl+8 switch screens");
+                ui.small(messages::english().text("navigation_shortcuts"));
                 ui.small(format!("Uptime {}s", self.started_at.elapsed().as_secs()));
             });
     }

@@ -78,6 +78,7 @@ impl App {
     }
 
     pub(super) fn clear_campaign_observations(&mut self) {
+        self.blocker_query.clear();
         self.support = super::SupportState::default();
         self.preflight.clear();
         self.changes.clear();
@@ -102,16 +103,14 @@ impl App {
             return;
         };
         self.request_status();
+        self.request_explanation();
         let base = [
             "--config".to_owned(),
             config_path.clone(),
             "--campaign".to_owned(),
             spec_path.clone(),
         ];
-        let mut jobs = vec![
-            ("campaign-explain-blocker", "campaign-explain-blocker"),
-            ("campaign-mission-status", "campaign-mission-status"),
-        ];
+        let mut jobs = vec![("campaign-mission-status", "campaign-mission-status")];
         if parallel {
             jobs.push(("campaign-report", "campaign-report"));
         }
@@ -130,16 +129,48 @@ impl App {
             };
             match self.submit(request) {
                 Ok(()) => match label {
-                    "campaign-explain-blocker" => self.explanation.loading = true,
                     "campaign-mission-status" => self.mission.loading = true,
                     _ => self.report.loading = true,
                 },
                 Err(error) => match label {
-                    "campaign-explain-blocker" => self.explanation.fail(error, self.now),
                     "campaign-mission-status" => self.mission.fail(error, self.now),
                     _ => self.report.fail(error, self.now),
                 },
             }
+        }
+    }
+
+    pub(super) fn explanation_arguments(&self) -> Option<Vec<String>> {
+        let (config, campaign, _) = self.campaign_arguments()?;
+        Some(vec![
+            "campaign-explain-blocker".to_owned(),
+            "--config".to_owned(),
+            config,
+            "--campaign".to_owned(),
+            campaign,
+        ])
+    }
+
+    pub(super) fn request_explanation(&mut self) {
+        let Some(arguments) = self.explanation_arguments() else {
+            return;
+        };
+        if self.explanation.loading {
+            return;
+        }
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::Command {
+                label: "campaign-explain-blocker",
+                arguments,
+                deadline: STATUS_DEADLINE,
+            },
+            request_id: None,
+        };
+        match self.submit(request) {
+            Ok(()) => self.explanation.loading = true,
+            Err(error) => self.explanation.fail(error, self.now),
         }
     }
 
