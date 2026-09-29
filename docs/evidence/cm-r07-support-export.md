@@ -50,8 +50,19 @@ descriptor API and was corrected before these passes; that failure remains in th
 receipt. The cumulative runtime library passed 131/131, the direct CLI support-bundle process
 regression passed 1/1, the software-rendered native UI suite passed 99/99 and strict workspace
 Clippy passed. Python unittest passed 41/42 with only CM-R01.6's eight source-bound input
-drifts; no digest was renewed. Exact-commit independent re-review remains pending, so the
-earlier local pass is not independent approval.
+drifts; no digest was renewed. That exact-commit re-review returned the second FINDINGS below,
+so the earlier local pass is not independent approval.
+
+The exact-commit re-review of `40fa6a5ce6892c3f4c9e60c3422e8a3ac4984f3c` returned a
+second **FINDINGS** verdict: after the child directory was opened, its name could be replaced
+while descriptor-relative writes continued, causing a false success path. A correction candidate
+now compares the no-follow, parent-relative named child identity to the opened directory before
+returning success. The deterministic focused regression passed 1/1 for both a target symlink and
+another-directory replacement, with an unchanged target. The cumulative runtime library passed
+132/132, direct CLI support process 1/1, software-rendered native UI 99/99 and strict workspace
+Clippy. Python unittest passed 41/42 solely for the retained CM-R01.6 eight-input drift; no
+source-bound digest was renewed. Exact-commit independent re-review of this correction is
+pending; no review or release gate is closed.
 
 ## CM-R07.2 - Licensing, notices and packaging metadata crosswalk
 

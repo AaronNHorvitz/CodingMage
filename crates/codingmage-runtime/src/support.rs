@@ -19,8 +19,8 @@ use std::{
 use codingmage_campaign::CampaignSpec;
 use codingmage_core::Config;
 use nix::{
-    fcntl::{OFlag, open, openat},
-    sys::stat::{Mode, mkdirat},
+    fcntl::{AtFlags, OFlag, open, openat},
+    sys::stat::{Mode, SFlag, fstatat, mkdirat},
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -178,9 +178,7 @@ pub fn export_support_bundle(
     write_bytes(&directory, "README.txt", readme.as_bytes())?;
     let encoded = serde_json::to_vec_pretty(&manifest).map_err(|_| RuntimeError::State)?;
     write_bytes(&directory, "manifest.json", &encoded)?;
-    if !destination.parent_is_unchanged() {
-        return Err(RuntimeError::State);
-    }
+    verify_requested_destination(&destination, &directory)?;
     Ok(manifest)
 }
 
@@ -273,6 +271,30 @@ fn create_private_support_directory(
     Ok(File::from(fd))
 }
 
+fn verify_requested_destination(
+    destination: &SupportDestination,
+    directory: &File,
+) -> Result<(), RuntimeError> {
+    if !destination.parent_is_unchanged() {
+        return Err(RuntimeError::State);
+    }
+    let child = directory.metadata().map_err(|_| RuntimeError::State)?;
+    let named = fstatat(
+        &destination.parent,
+        Path::new(&destination.leaf),
+        AtFlags::AT_SYMLINK_NOFOLLOW,
+    )
+    .map_err(|_| RuntimeError::State)?;
+    if !child.is_dir()
+        || !SFlag::from_bits_truncate(named.st_mode).contains(SFlag::S_IFDIR)
+        || child.dev() != named.st_dev
+        || child.ino() != named.st_ino
+    {
+        return Err(RuntimeError::State);
+    }
+    Ok(())
+}
+
 fn write_optional<T: Serialize>(
     output: &File,
     name: &str,
@@ -329,7 +351,9 @@ fn hex(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{create_private_support_directory, validate_support_output};
+    use super::{
+        create_private_support_directory, validate_support_output, verify_requested_destination,
+    };
     use crate::RuntimeError;
     use std::{fs, path::Path};
 
@@ -391,5 +415,36 @@ mod tests {
         assert!(!target.join("bundle").exists());
         assert!(!moved.join("bundle").exists());
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn replaced_output_leaf_is_uncertain_after_its_directory_was_opened() {
+        for replacement in ["target-symlink", "other-directory"] {
+            let root = std::env::temp_dir().join(format!(
+                "codingmage-support-leaf-race-{}-{replacement}",
+                std::process::id()
+            ));
+            let _ = fs::remove_dir_all(&root);
+            let target = root.join("target");
+            let external = root.join("external");
+            fs::create_dir_all(&target).unwrap();
+            fs::create_dir_all(&external).unwrap();
+            let output = external.join("bundle");
+            let prepared = validate_support_output(&target, &output).unwrap();
+            let child = create_private_support_directory(&prepared).unwrap();
+            assert!(verify_requested_destination(&prepared, &child).is_ok());
+            fs::rename(&output, external.join("moved-bundle")).unwrap();
+            if replacement == "target-symlink" {
+                std::os::unix::fs::symlink(&target, &output).unwrap();
+            } else {
+                fs::create_dir(&output).unwrap();
+            }
+            assert!(matches!(
+                verify_requested_destination(&prepared, &child),
+                Err(RuntimeError::State)
+            ));
+            assert!(fs::read_dir(&target).unwrap().next().is_none());
+            fs::remove_dir_all(root).unwrap();
+        }
     }
 }
