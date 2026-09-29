@@ -75,7 +75,8 @@ without duplicating coordinator logic or acquiring authority of its own.
 - The UI shows exactly what the CLI can report. Records the backend does not retain (for example
   reviewer finding text) are displayed as "not retained by the backend", never invented.
 - The `codingmage` binary must be installed next to `codingmage-ui`; a missing binary is a real
-  failure screen with the expected path and a way to select the executable in setup.
+  failure screen. Install the regular sibling executable and restart the app. Setup does not
+  select a coordinator executable; allowing an arbitrary path would change this command boundary.
 - Subprocess calls are bounded by a per-command timeout; the campaign launch is the only
   unbounded process and it is not waited on.
 - Repository identity is derived from `doctor` output, not from path text, so moved or replaced
@@ -89,3 +90,7 @@ without duplicating coordinator logic or acquiring authority of its own.
   detach, reconnect and inspect outcomes.
 - Negative tests cover stale bindings, duplicate requests, cross-project requests, malformed
   backend output, missing binary, killed coordinator and unreadable state.
+
+The 2026-09-29 consequence correction above resolves the stale Setup-picker sentence found by
+independent review of the status-recovery UI commit. It records the existing sibling-only
+implementation and does not add a new executable selection or authority path.

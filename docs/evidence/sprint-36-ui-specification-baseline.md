@@ -29,7 +29,7 @@ their own complete workflows.
 | Configuration | Setup and campaign readiness sections | Guided configuration, validated writes, preflight and error explanations exist; schema/default view, every policy, and full mode setup are incomplete. |
 | Campaign controls | Campaign execution and durable status sections | Admission, start, stop/resume/cancel, reconnect and explicit read-only status refresh exist; diagnosis, preflight, start, four campaign controls and status refresh have exact command previews. Admission and other local actions still lack command equivalents. |
 | Settings | Settings destination and design tokens | System, light, dark and high-contrast appearances work for this window; language, storage and defaults are absent. |
-| Help and About | Help destination with Ctrl+8, offline guidance, glossary, shortcuts, bundled source licence/notices, a path-free copyable diagnostic summary and a manual coordinator `support-bundle` request | Full locale catalogue, 40% expansion and right-to-left tests, exact packaged third-party licence list and broader in-context diagnostics remain. |
+| Help and About | Help destination with Ctrl+8, offline guidance, glossary, shortcuts, bundled source licence/notices, a path-free copyable diagnostic summary and a manual coordinator `support-bundle` request; informational Help labels use a versioned English catalogue | Full UI text externalization, locale formatting, complete right-to-left behavior, exact packaged third-party licence list and broader in-context diagnostics remain. Synthetic Help expansion and right alignment do not qualify these gaps. |
 
 | Required state | Current handling | Remaining gap |
 | --- | --- | --- |

@@ -11,6 +11,7 @@ use super::{App, Connection, Screen, failure_box};
 use crate::{
     backend::{BackendError, Job, Request, Response},
     command,
+    messages::{self, Catalogue},
 };
 
 const SOURCE_LICENSE: &str = include_str!("../../../../LICENSE");
@@ -68,40 +69,59 @@ struct SupportEntry {
 
 impl App {
     pub(super) fn help_screen(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Help and About");
-        ui.label("This help is available without a repository, coordinator connection or network access.");
+        self.help_screen_with_catalogue(ui, messages::english(), false);
+    }
+
+    fn help_screen_with_catalogue(
+        &mut self,
+        ui: &mut egui::Ui,
+        catalogue: &Catalogue,
+        right_to_left: bool,
+    ) {
+        if right_to_left {
+            ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                self.help_content(ui, catalogue);
+            });
+        } else {
+            self.help_content(ui, catalogue);
+        }
+    }
+
+    fn help_content(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        ui.heading(catalogue.text("help_title"));
+        ui.label(catalogue.text("help_offline"));
         ui.horizontal(|ui| {
-            if ui.button("Return to Overview").clicked() {
+            if ui.button(catalogue.text("help_return")).clicked() {
                 self.screen = Screen::Overview;
             }
-            if ui.button("Open Setup").clicked() {
+            if ui.button(catalogue.text("help_setup")).clicked() {
                 self.screen = Screen::Setup;
             }
         });
         ui.separator();
-        ui.heading("Get started");
-        ui.label("Open an existing configuration in Setup, or create one for a disposable repository. Opening it observes readiness and starts no agent.");
-        ui.label("Select a campaign on the Campaign screen, review preflight, and explicitly admit and start it. Closing this window leaves coordinator work under coordinator control.");
+        ui.heading(catalogue.text("help_get_started"));
+        ui.label(catalogue.text("help_open_configuration"));
+        ui.label(catalogue.text("help_select_campaign"));
         ui.separator();
-        ui.heading("If something needs attention");
-        ui.label("Coordinator missing: install the matching codingmage executable beside this app, then reopen the app.");
-        ui.label("Provider unavailable or sign-in required: check the provider in Setup and rerun preflight. No other provider is selected silently.");
-        ui.label("Stale or disconnected: reconnect or refresh before acting. A retained observation is labelled stale until the coordinator supplies a new one.");
-        ui.label("Blocked campaign: read its explanation on Campaign and clear only the stated cause. A block is not a completed task.");
+        ui.heading(catalogue.text("help_attention"));
+        ui.label(catalogue.text("help_missing_coordinator"));
+        ui.label(catalogue.text("help_provider"));
+        ui.label(catalogue.text("help_stale"));
+        ui.label(catalogue.text("help_blocked"));
         ui.separator();
-        ui.heading("Keyboard");
-        ui.label("Ctrl+1 through Ctrl+8 select a destination. Tab and Shift+Tab move focus; Enter or Space activates the focused control.");
-        ui.label("F5 requests a new diagnosis and campaign observation. A Show command section reveals the exact supported coordinator command without running it.");
+        ui.heading(catalogue.text("help_keyboard_title"));
+        ui.label(catalogue.text("help_keyboard_navigation"));
+        ui.label(catalogue.text("help_keyboard_commands"));
         ui.separator();
-        glossary(ui);
+        glossary(ui, catalogue);
         ui.separator();
         self.support_bundle_controls(ui);
         ui.separator();
         let summary = diagnostic_summary(&self.connection);
-        ui.heading("Copyable diagnostic summary");
-        ui.label("This summary contains only the interface version, platform and sibling coordinator availability. It omits paths, repository content, prompts and credentials.");
+        ui.heading(catalogue.text("help_diagnostics_title"));
+        ui.label(catalogue.text("help_diagnostics_description"));
         ui.monospace(&summary);
-        let copy = ui.button("Copy diagnostic summary");
+        let copy = ui.button(catalogue.text("help_diagnostics_copy"));
         if copy.has_focus() {
             copy.scroll_to_me(None);
         }
@@ -109,7 +129,7 @@ impl App {
             ui.ctx().copy_text(summary);
         }
         ui.separator();
-        about(ui);
+        about(ui, catalogue);
     }
 
     /// Manual support-bundle form state for an opened campaign.
@@ -373,60 +393,36 @@ fn diagnostic_summary(connection: &Connection) -> String {
     )
 }
 
-fn glossary(ui: &mut egui::Ui) {
-    ui.heading("Glossary");
+fn glossary(ui: &mut egui::Ui, catalogue: &Catalogue) {
+    ui.heading(catalogue.text("help_glossary_title"));
     for (term, meaning) in [
-        (
-            "Campaign",
-            "A coordinator-owned run against one exact repository and campaign specification.",
-        ),
-        (
-            "Admission",
-            "A record that the owner reviewed one bound preflight result. It grants no extra permission.",
-        ),
-        (
-            "Preflight",
-            "Checks that the selected campaign meets the coordinator's current prerequisites before starting.",
-        ),
-        (
-            "Source checkbox",
-            "A mark in the task source document. It is separate from verified completion and accepted outcomes.",
-        ),
-        (
-            "Gate",
-            "A registered verification command and its recorded result. An unreported gate remains unknown.",
-        ),
-        (
-            "Stale",
-            "A previous observation retained after a failed or overdue refresh. Confirm it before acting.",
-        ),
-        (
-            "Blocker",
-            "A recorded reason work cannot advance until its stated cause is resolved.",
-        ),
-        (
-            "Support bundle",
-            "A manually requested redacted directory of selected coordinator records; sharing it is a separate owner action.",
-        ),
+        ("help_term_campaign", "help_meaning_campaign"),
+        ("help_term_admission", "help_meaning_admission"),
+        ("help_term_preflight", "help_meaning_preflight"),
+        ("help_term_source_checkbox", "help_meaning_source_checkbox"),
+        ("help_term_gate", "help_meaning_gate"),
+        ("help_term_stale", "help_meaning_stale"),
+        ("help_term_blocker", "help_meaning_blocker"),
+        ("help_term_support_bundle", "help_meaning_support_bundle"),
     ] {
         ui.horizontal_wrapped(|ui| {
-            ui.strong(format!("{term}:"));
-            ui.label(meaning);
+            ui.strong(format!("{}:", catalogue.text(term)));
+            ui.label(catalogue.text(meaning));
         });
     }
 }
 
-fn about(ui: &mut egui::Ui) {
-    ui.heading("About");
+fn about(ui: &mut egui::Ui, catalogue: &Catalogue) {
+    ui.heading(catalogue.text("help_about_title"));
     ui.label(format!(
         "CodingMage native interface {}",
         env!("CARGO_PKG_VERSION")
     ));
-    ui.label("CodingMage source is licensed under Apache-2.0. The exact packaged third-party licence set is generated from the locked dependency graph for a release candidate; this source view is not a package qualification.");
-    ui.collapsing("CodingMage source licence (Apache-2.0)", |ui| {
+    ui.label(catalogue.text("help_about_source_notice"));
+    ui.collapsing(catalogue.text("help_about_source_license"), |ui| {
         ui.label(SOURCE_LICENSE);
     });
-    ui.collapsing("Third-party source notices", |ui| {
+    ui.collapsing(catalogue.text("help_about_third_party"), |ui| {
         ui.label(SOURCE_NOTICES);
     });
 }
@@ -434,6 +430,57 @@ fn about(ui: &mut egui::Ui) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use egui_kittest::kittest::{NodeT as _, Queryable as _};
+
+    struct HelpPreviewApp {
+        app: App,
+        catalogue: Catalogue,
+        right_to_left: bool,
+    }
+
+    impl eframe::App for HelpPreviewApp {
+        fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
+            egui::CentralPanel::default().show(root, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    self.app
+                        .help_screen_with_catalogue(ui, &self.catalogue, self.right_to_left);
+                });
+            });
+        }
+    }
+
+    #[test]
+    fn expanded_and_right_aligned_help_remain_reachable_at_minimum_window() {
+        for right_to_left in [false, true] {
+            let catalogue = messages::english().pseudo(right_to_left);
+            let mut harness = egui_kittest::Harness::builder()
+                .with_size(egui::Vec2::new(1024.0, 640.0))
+                .with_pixels_per_point(2.0)
+                .with_max_steps(4)
+                .build_eframe(move |creation| HelpPreviewApp {
+                    app: App::with_state_dir(
+                        &creation.egui_ctx,
+                        Err(BackendError::BinaryUnavailable {
+                            expected: PathBuf::from("/example/missing/codingmage"),
+                        }),
+                        Ok(std::env::temp_dir().join("codingmage-ui-message-preview")),
+                    ),
+                    catalogue,
+                    right_to_left,
+                });
+            harness.run_steps(2);
+            let title = harness.get_by_label_contains(if right_to_left {
+                "אבג ⟦Help and About⟧"
+            } else {
+                "⟦Help and About⟧"
+            });
+            assert!(title.accesskit_node().has_bounds());
+            let return_button = harness.get_by_label_contains("Return to Overview");
+            assert!(return_button.accesskit_node().has_bounds());
+            harness.get_by_label_contains("Open Setup");
+            harness.get_by_label_contains("Get started");
+        }
+    }
 
     #[test]
     fn support_receipt_must_match_authority_and_redaction_contract() {

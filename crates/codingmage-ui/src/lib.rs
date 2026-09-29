@@ -15,6 +15,7 @@ pub mod controls;
 pub mod design;
 pub mod fonts;
 pub mod launch;
+mod messages;
 pub mod observed;
 pub mod project;
 pub mod readiness;

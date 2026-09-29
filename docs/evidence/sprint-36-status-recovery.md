@@ -34,4 +34,11 @@ diff whitespace checks passed. The deterministic verification inventory reports 
 and 825 explicit gaps, unchanged in count; its broad test mappings are heuristic and do not
 establish qualification. Python unittest ran 42 tests: 41 passed, and the sole failure was the
 existing CM-R01.6 source-bound evidence freshness check on the same eight drifted inputs.
-No evidence digest was renewed. Independent review of this batch remains pending.
+No evidence digest was renewed. At the candidate checkpoint, independent review was pending.
+
+Independent read-only review of exact commit
+`75b65274a09350f1efbffaafa14126df869f3249` returned **PASS** for the narrow
+status-recovery scope, with one Low documentation finding: Decision 0016 still described a
+Setup executable picker that the sibling-only implementation does not provide. The next
+increment corrects that decision consequence and retains the fixed executable boundary;
+it does not claim whole-product or human/live qualification.
