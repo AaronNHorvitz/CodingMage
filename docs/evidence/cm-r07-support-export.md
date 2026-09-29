@@ -21,6 +21,21 @@ into the same directory is refused; after a hands-off mission campaign the bundl
 and mission records whose manifest digests and sizes match the files, and no file contains charter
 prose, private markers or sandbox paths.
 
+The coordinator now checks the canonical target and destination parent before writing. It refuses
+a bundle inside the target, including a parent symlink that resolves into the target. This is a
+coordinator-side restriction for direct CLI use as well as native UI requests. The fresh private
+directory is created with one create call that refuses a destination appearing after validation.
+A focused runtime test and a direct CLI process regression for ordinary and linked in-target paths
+passed on this candidate source: `cargo build --locked -p codingmage-cli`,
+`cargo test --locked -p codingmage-runtime support_output_must_be_new_and_outside_the_target_even_through_an_alias -- --test-threads=1`
+(1/1) and
+`cargo test --locked -p codingmage-cli --test campaign_mission support_bundle_exports_only_redacted_records_and_never_overwrites -- --test-threads=1`
+(1/1). The target repository is not changed by a refusal. On the same corrected candidate tree,
+strict workspace Clippy passed and the native UI all-target suite passed 98/98. Python unittest
+ran 42 tests: 41 passed; the sole failure remains CM-R01.6's eight source-bound input drifts,
+which were not renewed. Documentation, architecture, formatting and inventory checks passed.
+Independent, human and release qualification remain open.
+
 ## CM-R07.2 - Licensing, notices and packaging metadata crosswalk
 
 Observed on the current locked dependency graph (`cargo metadata --locked --offline`):

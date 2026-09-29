@@ -1227,6 +1227,20 @@ fn support_bundle_exports_only_redacted_records_and_never_overwrites() {
     let refused = campaign.refused("support-bundle", &["--output", output.to_str().unwrap()]);
     assert!(refused.contains("codingmage.runtime.spec"), "{refused}");
 
+    let inside = campaign.fixture.root.join("target/support-bundle");
+    let refused = campaign.refused("support-bundle", &["--output", inside.to_str().unwrap()]);
+    assert!(refused.contains("codingmage.runtime.spec"), "{refused}");
+    assert!(!inside.exists());
+    let alias = campaign.fixture.root.join("target-alias");
+    std::os::unix::fs::symlink(campaign.fixture.root.join("target"), &alias).unwrap();
+    let linked_inside = alias.join("support-bundle");
+    let refused = campaign.refused(
+        "support-bundle",
+        &["--output", linked_inside.to_str().unwrap()],
+    );
+    assert!(refused.contains("codingmage.runtime.spec"), "{refused}");
+    assert!(!linked_inside.exists());
+
     campaign.json("campaign", &["--mission", mission]);
     let after_dir = campaign.fixture.root.join("support-after");
     let after = campaign.json("support-bundle", &["--output", after_dir.to_str().unwrap()]);

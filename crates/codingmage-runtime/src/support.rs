@@ -8,7 +8,7 @@
 
 use std::{
     fs,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
 };
 
 use codingmage_campaign::CampaignSpec;
@@ -17,7 +17,7 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    RuntimeError, campaign_blocker_explanation, campaign_status, private_directory,
+    RuntimeError, campaign_blocker_explanation, campaign_status,
     team_campaign::team_campaign_report, team_mission::campaign_mission_status,
 };
 
@@ -75,15 +75,7 @@ pub fn export_support_bundle(
 ) -> Result<SupportBundleManifest, RuntimeError> {
     spec.verify().map_err(RuntimeError::Campaign)?;
     let authority_sha256 = spec.authority_sha256().map_err(RuntimeError::Campaign)?;
-    if !output.is_absolute()
-        || output.exists()
-        || !output.parent().is_some_and(Path::is_dir)
-        || output
-            .components()
-            .any(|part| matches!(part, std::path::Component::ParentDir))
-    {
-        return Err(RuntimeError::Spec);
-    }
+    validate_support_output(&config.target_path, output)?;
     let status = campaign_status(config, spec, codingmage_binary)?;
     let explanation = if status.is_some() {
         campaign_blocker_explanation(config, spec, codingmage_binary)?
@@ -109,7 +101,7 @@ pub fn export_support_bundle(
         Err(error) => return Err(error),
     };
 
-    private_directory(output)?;
+    create_private_support_directory(output)?;
     let mut files = Vec::new();
     let mut absent = Vec::new();
     write_record(
@@ -180,6 +172,45 @@ pub fn export_support_bundle(
     Ok(manifest)
 }
 
+fn validate_support_output(target: &Path, output: &Path) -> Result<(), RuntimeError> {
+    if !output.is_absolute()
+        || output
+            .components()
+            .any(|part| matches!(part, Component::ParentDir))
+    {
+        return Err(RuntimeError::Spec);
+    }
+    let target = fs::canonicalize(target).map_err(|_| RuntimeError::Authority)?;
+    let parent = output.parent().ok_or(RuntimeError::Spec)?;
+    let parent = fs::canonicalize(parent).map_err(|_| RuntimeError::Spec)?;
+    if parent.starts_with(target) {
+        return Err(RuntimeError::Spec);
+    }
+    match fs::symlink_metadata(output) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        _ => Err(RuntimeError::Spec),
+    }
+}
+
+fn create_private_support_directory(output: &Path) -> Result<(), RuntimeError> {
+    #[cfg(unix)]
+    let mut builder = fs::DirBuilder::new();
+    #[cfg(not(unix))]
+    let builder = fs::DirBuilder::new();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::DirBuilderExt as _;
+        builder.mode(0o700);
+    }
+    builder.create(output).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::AlreadyExists {
+            RuntimeError::Spec
+        } else {
+            RuntimeError::State
+        }
+    })
+}
+
 fn write_optional<T: Serialize>(
     output: &Path,
     name: &str,
@@ -228,4 +259,47 @@ fn hex(bytes: &[u8]) -> String {
         encoded.push(char::from(HEX[usize::from(byte & 0x0f)]));
     }
     encoded
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_support_output;
+    use crate::RuntimeError;
+    use std::{fs, path::Path};
+
+    #[test]
+    fn support_output_must_be_new_and_outside_the_target_even_through_an_alias() {
+        let root =
+            std::env::temp_dir().join(format!("codingmage-support-output-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let target = root.join("target");
+        let external = root.join("external");
+        fs::create_dir_all(&target).unwrap();
+        fs::create_dir_all(&external).unwrap();
+        let output = external.join("bundle");
+        assert!(validate_support_output(&target, &output).is_ok());
+        assert_eq!(
+            validate_support_output(&target, &target.join("bundle")),
+            Err(RuntimeError::Spec)
+        );
+        std::os::unix::fs::symlink(&target, root.join("target-alias")).unwrap();
+        assert_eq!(
+            validate_support_output(&target, &root.join("target-alias/bundle")),
+            Err(RuntimeError::Spec)
+        );
+        assert_eq!(
+            validate_support_output(&target, Path::new("relative-bundle")),
+            Err(RuntimeError::Spec)
+        );
+        assert_eq!(
+            validate_support_output(&target, &external.join("../bundle")),
+            Err(RuntimeError::Spec)
+        );
+        fs::create_dir(&output).unwrap();
+        assert_eq!(
+            validate_support_output(&target, &output),
+            Err(RuntimeError::Spec)
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
 }
