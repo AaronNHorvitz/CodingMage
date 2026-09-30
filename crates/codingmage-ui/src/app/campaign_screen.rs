@@ -78,6 +78,7 @@ impl App {
     }
 
     pub(super) fn clear_campaign_observations(&mut self) {
+        self.invalidate_evidence_requests();
         self.blocker_query.clear();
         self.support = super::SupportState::default();
         self.preflight.clear();
@@ -189,6 +190,7 @@ impl App {
         let Some(arguments) = self.status_arguments() else {
             return;
         };
+        self.invalidate_evidence_requests();
         self.last_status_request = Some(self.now);
         let request = Request {
             generation: self.generation,
@@ -283,6 +285,7 @@ impl App {
     }
 
     pub(super) fn accept_status(&mut self, response: Response) {
+        self.invalidate_evidence_requests();
         let expected = self
             .campaign
             .as_ref()

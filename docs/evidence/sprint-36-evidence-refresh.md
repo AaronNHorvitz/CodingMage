@@ -40,6 +40,40 @@ explicit gaps: two new UI refresh methods, no removed surface, 333 stable error 
 unittest ran 42 tests: 41 passed, and only the retained CM-R01.6 eight-input source-bound drift
 failed. No evidence digest or candidate-construction binding was renewed.
 
-Independent exact-commit review remains pending. CM-R01.6 qualified-human candidate
+At this original checkpoint, independent exact-commit review was pending. CM-R01.6 qualified-human candidate
 construction, real desktop and assistive-tool verification, human trials, live-provider
 qualification and release remain open.
+
+## Independent finding and correction
+
+The exact-commit independent review of `994b90c5febd775cdcd696ef42082bc296d456b8`
+returned `FINDINGS`: a valid change or run-record response could arrive after campaign-status
+failed, match its retained stale value and be shown as live. The original failed review
+remains in the private review record; this note does not turn it into a pass.
+
+The correction correlates each evidence response with its own request identity and the
+status observation that issued it. A status request or response invalidates pending
+evidence reads. A late response cannot clear a newer read's loading marker or restore
+evidence after status failure or head/checkpoint change. Evidence refresh and display
+also require a current, settled status; retained evidence is withheld while status
+is being refreshed. Disposable-repository fault tests deliver valid coordinator change
+and run-record bytes after synthetic timeout and changed-status responses. These are
+synthetic orderings around a real coordinator and fake provider, not live qualification.
+
+## Correction verification disposition
+
+The first focused Changes target passed 12/12 before a narrow same-ticket stale-response
+cleanup and display withholding correction. The corrected production source passed the
+software-rendered native UI all-target suite 117/117, including both new late-response
+cases and the prior forged/malformed recovery cases. One final test-only assertion then
+confirmed an old response leaves a newer request identity and loading marker intact;
+the exact-final-source late-response pair passed 2/2 and strict workspace Clippy with
+warnings denied passed. Formatting, documentation,
+architecture and diff whitespace checks passed. The regenerated inventory has 1,738
+items and the same 825 explicit gaps; it adds three UI Rust surfaces and removes none.
+Its 405 changed heuristic test mappings and two changed heuristic applicability entries
+come from source/test adjacency, not newly claimed coverage. The 333 stable error codes
+are unchanged. The Python suite ran 42 tests: 41 passed, with only the retained
+CM-R01.6 eight-input source-bound drift failure. No digest was renewed. This correction
+still needs fresh exact-commit independent review and does not meet human, desktop,
+live-provider, release or delivery gates.

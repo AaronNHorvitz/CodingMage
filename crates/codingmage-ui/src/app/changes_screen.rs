@@ -34,6 +34,48 @@ pub struct ChangeSet {
 }
 
 impl App {
+    fn next_evidence_ticket(&mut self) -> Option<super::EvidenceTicket> {
+        self.next_evidence_request = self.next_evidence_request.checked_add(1)?;
+        Some(super::EvidenceTicket {
+            request_id: format!(
+                "evidence-{}-{}",
+                self.generation.0, self.next_evidence_request
+            ),
+            status_epoch: self.status_epoch,
+        })
+    }
+
+    pub(super) fn invalidate_evidence_requests(&mut self) {
+        self.status_epoch = self.status_epoch.wrapping_add(1);
+        if self.changes_request.is_some() {
+            self.changes_range = None;
+        }
+        self.changes_request = None;
+        self.records_request = None;
+        self.changes.loading = false;
+        self.records.loading = false;
+    }
+
+    fn status_live_at(&self, now: std::time::Instant) -> bool {
+        !self.status.loading && self.status.freshness(now) == Freshness::Live
+    }
+
+    /// Opaque identity of the pending change read, for bounded response correlation.
+    #[must_use]
+    pub fn pending_changes_request_id(&self) -> Option<&str> {
+        self.changes_request
+            .as_ref()
+            .map(|ticket| ticket.request_id.as_str())
+    }
+
+    /// Opaque identity of the pending run-record read, for bounded response correlation.
+    #[must_use]
+    pub fn pending_run_records_request_id(&self) -> Option<&str> {
+        self.records_request
+            .as_ref()
+            .map(|ticket| ticket.request_id.as_str())
+    }
+
     fn change_arguments(&self, head: &str) -> Option<Vec<String>> {
         let project = self.project.as_ref()?;
         let campaign = self.campaign.as_ref()?;
@@ -62,9 +104,7 @@ impl App {
 
     /// Requests a new exact-head change projection only from a live campaign status.
     pub fn refresh_change_evidence(&mut self) {
-        if self.status.freshness(std::time::Instant::now()) != Freshness::Live
-            || self.changes.loading
-        {
+        if !self.status_live_at(std::time::Instant::now()) || self.changes.loading {
             return;
         }
         let Some(status) = self.status.value.as_ref().and_then(Option::as_ref) else {
@@ -89,9 +129,7 @@ impl App {
 
     /// Requests current run evidence only from a live campaign status.
     pub fn refresh_run_evidence(&mut self) {
-        if self.status.freshness(std::time::Instant::now()) != Freshness::Live
-            || self.records.loading
-        {
+        if !self.status_live_at(std::time::Instant::now()) || self.records.loading {
             return;
         }
         if !command::can_preview(
@@ -125,6 +163,13 @@ impl App {
             );
             return;
         };
+        let Some(ticket) = self.next_evidence_ticket() else {
+            self.changes.fail(
+                BackendError::Refused("evidence request identity exhausted".to_owned()),
+                self.now,
+            );
+            return;
+        };
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
@@ -133,13 +178,14 @@ impl App {
                 arguments,
                 deadline: GIT_DEADLINE,
             },
-            request_id: None,
+            request_id: Some(ticket.request_id.clone()),
         };
         self.changes.clear();
         match self.submit(request) {
             Ok(()) => {
                 self.changes.loading = true;
                 self.changes_range = Some((base.to_owned(), head.to_owned()));
+                self.changes_request = Some(ticket);
             }
             Err(error) => {
                 self.changes_range = None;
@@ -161,6 +207,13 @@ impl App {
             );
             return;
         };
+        let Some(ticket) = self.next_evidence_ticket() else {
+            self.records.fail(
+                BackendError::Refused("evidence request identity exhausted".to_owned()),
+                self.now,
+            );
+            return;
+        };
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
@@ -169,18 +222,39 @@ impl App {
                 arguments,
                 deadline: GIT_DEADLINE,
             },
-            request_id: None,
+            request_id: Some(ticket.request_id.clone()),
         };
         self.records.clear();
         self.records_status = None;
         self.records_truncated = false;
         match self.submit(request) {
-            Ok(()) => self.records.loading = true,
+            Ok(()) => {
+                self.records.loading = true;
+                self.records_request = Some(ticket);
+            }
             Err(error) => self.records.fail(error, self.now),
         }
     }
 
-    pub(super) fn accept_changes(&mut self, response: Response) {
+    pub(super) fn accept_changes(&mut self, response: Response) -> bool {
+        let Some(ticket) = self.changes_request.as_ref() else {
+            self.discarded_stale += 1;
+            return false;
+        };
+        if response.request_id.as_deref() != Some(ticket.request_id.as_str())
+            || ticket.status_epoch != self.status_epoch
+        {
+            self.discarded_stale += 1;
+            return false;
+        }
+        if !self.status_live_at(self.now) {
+            self.changes_request = None;
+            self.changes_range = None;
+            self.changes.clear();
+            self.discarded_stale += 1;
+            return false;
+        }
+        self.changes_request = None;
         let parsed = response.result.and_then(|bytes| {
             serde_json::from_slice::<ChangeSet>(&bytes)
                 .map_err(|_| BackendError::Contract(crate::backend::models::ModelError::Malformed))
@@ -203,6 +277,7 @@ impl App {
                 self.changes.fail(error, self.now);
             }
         }
+        true
     }
 
     fn changes_binding_matches(&self, changes: &ChangeSet) -> bool {
@@ -245,7 +320,26 @@ impl App {
             })
     }
 
-    pub(super) fn accept_records(&mut self, response: Response) {
+    pub(super) fn accept_records(&mut self, response: Response) -> bool {
+        let Some(ticket) = self.records_request.as_ref() else {
+            self.discarded_stale += 1;
+            return false;
+        };
+        if response.request_id.as_deref() != Some(ticket.request_id.as_str())
+            || ticket.status_epoch != self.status_epoch
+        {
+            self.discarded_stale += 1;
+            return false;
+        }
+        if !self.status_live_at(self.now) {
+            self.records_request = None;
+            self.records.clear();
+            self.records_status = None;
+            self.records_truncated = false;
+            self.discarded_stale += 1;
+            return false;
+        }
+        self.records_request = None;
         let parsed = response
             .result
             .and_then(|bytes| parse_run_records(&bytes).map_err(BackendError::from));
@@ -272,6 +366,7 @@ impl App {
                 self.records.fail(error, self.now);
             }
         }
+        true
     }
 
     fn records_binding_matches(&self, projection: &crate::records::RunRecordsProjection) -> bool {
@@ -310,7 +405,7 @@ impl App {
                 self.records_status.as_ref()
                     == Some(&(status.head.clone(), status.updated_at_ms))
             });
-            if self.status.freshness(self.now) != Freshness::Live
+            if !self.status_live_at(self.now)
                 || self.records.freshness(self.now) != Freshness::Live
                 || !bound
             {
@@ -408,7 +503,7 @@ impl App {
 
     fn evidence_refresh_controls(&mut self, ui: &mut egui::Ui) {
         let catalogue = messages::english();
-        let status_live = self.status.freshness(self.now) == Freshness::Live;
+        let status_live = self.status_live_at(self.now);
         let change_arguments = self
             .status
             .value
@@ -474,6 +569,10 @@ impl App {
 
     fn changes_block(&self, ui: &mut egui::Ui) {
         ui.strong("Exact candidate changes (campaign branch)");
+        if !self.status_live_at(self.now) {
+            ui.label("Current campaign status is unavailable or refreshing; candidate changes are withheld until it is observed again.");
+            return;
+        }
         let freshness = self.changes.freshness(self.now);
         match (&self.status.value, freshness) {
             (Some(None), _) => {
@@ -552,6 +651,10 @@ impl App {
 
     fn records_block(&self, ui: &mut egui::Ui) {
         ui.strong("Independent review and test records (per run, from durable checkpoints)");
+        if !self.status_live_at(self.now) {
+            ui.label("Current campaign status is unavailable or refreshing; review and test records are withheld until it is observed again.");
+            return;
+        }
         let freshness = self.records.freshness(self.now);
         ui.label(format!(
             "Observation: {} ({})",

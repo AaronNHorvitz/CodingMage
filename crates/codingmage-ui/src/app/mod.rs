@@ -133,6 +133,12 @@ pub enum Connection {
     Unavailable(BackendError),
 }
 
+#[derive(Clone, Debug)]
+struct EvidenceTicket {
+    request_id: String,
+    status_epoch: u64,
+}
+
 /// Interface state.
 pub struct App {
     connection: Connection,
@@ -167,6 +173,8 @@ pub struct App {
     task_detail: Observed<TaskDetailProjection>,
     task_detail_key: Option<(String, String)>,
     last_status_request: Option<Instant>,
+    status_epoch: u64,
+    next_evidence_request: u64,
     setup: SetupState,
     authorization_record: Option<PathBuf>,
     authorization_input: String,
@@ -174,7 +182,9 @@ pub struct App {
     execution: ExecutionState,
     changes: Observed<ChangeSet>,
     changes_range: Option<(String, String)>,
+    changes_request: Option<EvidenceTicket>,
     records: Observed<Vec<crate::records::RunRecord>>,
+    records_request: Option<EvidenceTicket>,
     records_status: Option<(String, u64)>,
     records_truncated: bool,
     reports: ReportsState,
@@ -258,6 +268,8 @@ impl App {
             task_detail: Observed::default(),
             task_detail_key: None,
             last_status_request: None,
+            status_epoch: 0,
+            next_evidence_request: 0,
             setup: SetupState::default(),
             authorization_record: None,
             authorization_input: String::new(),
@@ -265,7 +277,9 @@ impl App {
             execution: ExecutionState::default(),
             changes: Observed::default(),
             changes_range: None,
+            changes_request: None,
             records: Observed::default(),
+            records_request: None,
             records_status: None,
             records_truncated: false,
             reports: ReportsState::default(),
@@ -585,14 +599,8 @@ impl App {
                 self.accept_control(response);
                 true
             }
-            "campaign-changes" => {
-                self.accept_changes(response);
-                true
-            }
-            "campaign-run-records" => {
-                self.accept_records(response);
-                true
-            }
+            "campaign-changes" => self.accept_changes(response),
+            "campaign-run-records" => self.accept_records(response),
             "campaign-explain-blocker" => {
                 self.accept_explanation(response);
                 true

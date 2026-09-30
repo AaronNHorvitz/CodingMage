@@ -96,11 +96,17 @@ fn evidence_refresh_shows_exact_commands_and_recovers_from_failed_reads() {
     }));
     let generation = harness.state().generation();
     let binding = harness.state().binding();
+    harness.state_mut().refresh_change_evidence();
+    let request_id = harness
+        .state()
+        .pending_changes_request_id()
+        .unwrap()
+        .to_owned();
     assert!(harness.state_mut().handle_response(Response {
         generation,
         binding,
         label: "campaign-changes",
-        request_id: None,
+        request_id: Some(request_id),
         result: Ok(b"{".to_vec()),
     }));
     harness.run_steps(2);
@@ -112,11 +118,17 @@ fn evidence_refresh_shows_exact_commands_and_recovers_from_failed_reads() {
 
     let generation = harness.state().generation();
     let binding = harness.state().binding();
+    harness.state_mut().refresh_run_evidence();
+    let request_id = harness
+        .state()
+        .pending_run_records_request_id()
+        .unwrap()
+        .to_owned();
     assert!(harness.state_mut().handle_response(Response {
         generation,
         binding,
         label: "campaign-run-records",
-        request_id: None,
+        request_id: Some(request_id),
         result: Ok(b"{".to_vec()),
     }));
     harness.run_steps(2);
@@ -162,6 +174,156 @@ fn records_command(fixture: &Fixture, spec: &std::path::Path) -> std::process::O
         ])
         .output()
         .unwrap()
+}
+
+#[test]
+fn late_valid_evidence_cannot_revive_failed_status() {
+    let fixture = Fixture::new("evidence-late-timeout", 1);
+    let spec = write_campaign(&fixture, "evidence-late-timeout-campaign", 1);
+    run_campaign(&fixture, &spec);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.changes().value.is_some() && app.run_records().value.is_some()
+    }));
+    let head = harness
+        .state()
+        .status()
+        .value
+        .as_ref()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .head
+        .clone();
+    let changes = change_command(&fixture, &spec, &head).stdout;
+    let records = records_command(&fixture, &spec).stdout;
+    let app = harness.state_mut();
+    app.refresh_change_evidence();
+    app.refresh_run_evidence();
+    let change_id = app.pending_changes_request_id().unwrap().to_owned();
+    let record_id = app.pending_run_records_request_id().unwrap().to_owned();
+    let generation = app.generation();
+    let binding = app.binding();
+    assert!(app.handle_response(Response {
+        generation,
+        binding: binding.clone(),
+        label: "campaign-status",
+        request_id: None,
+        result: Err(BackendError::Timeout),
+    }));
+    for (label, request_id, result) in [
+        ("campaign-changes", change_id, changes),
+        ("campaign-run-records", record_id, records),
+    ] {
+        assert!(!app.handle_response(Response {
+            generation,
+            binding: binding.clone(),
+            label,
+            request_id: Some(request_id),
+            result: Ok(result),
+        }));
+    }
+    assert_eq!(
+        app.status().freshness(std::time::Instant::now()),
+        Freshness::Stale
+    );
+    assert!(app.changes().value.is_none());
+    assert!(app.run_records().value.is_none());
+    assert!(app.pending_changes_request_id().is_none());
+    assert!(app.pending_run_records_request_id().is_none());
+    assert_ne!(
+        app.changes().freshness(std::time::Instant::now()),
+        Freshness::Live
+    );
+    assert_ne!(
+        app.run_records().freshness(std::time::Instant::now()),
+        Freshness::Live
+    );
+}
+
+#[test]
+fn late_valid_evidence_cannot_cross_head_or_checkpoint_observation() {
+    let fixture = Fixture::new("evidence-late-status", 1);
+    let spec = write_campaign(&fixture, "evidence-late-status-campaign", 1);
+    run_campaign(&fixture, &spec);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    for changed_field in ["head", "updated_at_ms"] {
+        harness.state_mut().refresh_campaign();
+        assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+            app.status().freshness(std::time::Instant::now()) == Freshness::Live
+                && app.changes().value.is_some()
+                && app.run_records().value.is_some()
+        }));
+        let status = harness
+            .state()
+            .status()
+            .value
+            .as_ref()
+            .unwrap()
+            .as_ref()
+            .unwrap();
+        let head = status.head.clone();
+        let mut changed_status = serde_json::to_value(status).unwrap();
+        changed_status[changed_field] = if changed_field == "head" {
+            serde_json::json!(fixture.head())
+        } else {
+            serde_json::json!(status.updated_at_ms + 1)
+        };
+        let changes = change_command(&fixture, &spec, &head).stdout;
+        let records = records_command(&fixture, &spec).stdout;
+        let app = harness.state_mut();
+        app.refresh_change_evidence();
+        app.refresh_run_evidence();
+        let change_id = app.pending_changes_request_id().unwrap().to_owned();
+        let record_id = app.pending_run_records_request_id().unwrap().to_owned();
+        let generation = app.generation();
+        let binding = app.binding();
+        assert!(app.handle_response(Response {
+            generation,
+            binding: binding.clone(),
+            label: "campaign-status",
+            request_id: None,
+            result: Ok(serde_json::to_vec(&changed_status).unwrap()),
+        }));
+        let newer_change_id = app.pending_changes_request_id().unwrap().to_owned();
+        let newer_record_id = app.pending_run_records_request_id().unwrap().to_owned();
+        assert_ne!(newer_change_id, change_id);
+        assert_ne!(newer_record_id, record_id);
+        for (label, request_id, result) in [
+            ("campaign-changes", change_id, changes),
+            ("campaign-run-records", record_id, records),
+        ] {
+            assert!(!app.handle_response(Response {
+                generation,
+                binding: binding.clone(),
+                label,
+                request_id: Some(request_id),
+                result: Ok(result),
+            }));
+        }
+        assert!(app.changes().value.is_none());
+        assert!(app.run_records().value.is_none());
+        assert_eq!(
+            app.pending_changes_request_id(),
+            Some(newer_change_id.as_str())
+        );
+        assert_eq!(
+            app.pending_run_records_request_id(),
+            Some(newer_record_id.as_str())
+        );
+        assert!(app.changes().loading);
+        assert!(app.run_records().loading);
+        assert_ne!(
+            app.changes().freshness(std::time::Instant::now()),
+            Freshness::Live
+        );
+        assert_ne!(
+            app.run_records().freshness(std::time::Instant::now()),
+            Freshness::Live
+        );
+    }
 }
 
 #[test]
@@ -316,11 +478,13 @@ fn forged_change_projection_is_not_rendered_and_refresh_recovers() {
             _ => serde_json::json!(true),
         };
         let app = harness.state_mut();
+        app.refresh_change_evidence();
+        let request_id = app.pending_changes_request_id().unwrap().to_owned();
         let accepted = app.handle_response(Response {
             generation: app.generation(),
             binding: app.binding(),
             label: "campaign-changes",
-            request_id: None,
+            request_id: Some(request_id),
             result: Ok(serde_json::to_vec(&forged).unwrap()),
         });
         assert!(accepted);
@@ -542,11 +706,13 @@ fn forged_run_record_response_clears_previous_evidence_then_recovers() {
             _ => serde_json::json!("forged"),
         };
         let app = harness.state_mut();
+        app.refresh_run_evidence();
+        let request_id = app.pending_run_records_request_id().unwrap().to_owned();
         assert!(app.handle_response(Response {
             generation: app.generation(),
             binding: app.binding(),
             label: "campaign-run-records",
-            request_id: None,
+            request_id: Some(request_id),
             result: Ok(serde_json::to_vec(&forged).unwrap()),
         }));
         assert!(app.run_records().value.is_none());
