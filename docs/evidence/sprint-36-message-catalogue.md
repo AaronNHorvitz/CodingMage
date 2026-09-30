@@ -72,3 +72,31 @@ known attention versus an unavailable observation. The existing catalogue parser
 campaign suite, the final native UI all-target suite passed 105/105, and strict workspace Clippy
 passed. Python retains only CM-R01.6's eight-input freshness failure. No new language selector or
 broader right-to-left claim is made.
+
+## Reports static text increment
+
+The Reports destination now uses the same bundled English catalogue for its static headings,
+source-freshness warning, outcome and blocker labels, export form, privacy guidance and
+recovery instruction. The catalogue retains exact-key and nonempty validation; no runtime
+locale or language selector is introduced. The English text and coordinator authority are
+unchanged. A synthetic 40% expansion and right-aligned right-to-left preview checks the empty
+Reports state plus outcome and blocker summary labels at 1024×640 logical pixels and 200% scale.
+This tests accessible label presence and bounds, not complete screen-reader navigation or
+bidirectional layout. Dynamic export results, observation wording, coordinator codes, report
+document content, dates and numbers still need externalization. The export command and
+render-thread report assembly/JSON preview remain separate open Task 36.3.2.2 work.
+
+The first focused preview failed because a partial AccessKit label query matched both the
+expanded label and existing report content; the corrected test queries the full catalogue
+message. The corrected focused test passed 1/1. The software-GL native UI all-target suite
+passed 132/132 across 14 targets, including the disposable real-coordinator Reports and
+setup-to-outcome workflows. Strict workspace Clippy (`-D warnings`), formatting,
+documentation, architecture, inventory and diff-whitespace checks passed. Python unittest
+passed 41/42; the sole failure is the unchanged CM-R01.6 eight-input source-bound evidence
+drift. No digest was renewed. This increment has not received independent exact-commit review.
+
+The inventory extractor and schema were reviewed before regeneration. It still has 1,751
+items and 825 explicit gaps, with no semantic public surface or stable error-code change.
+Twelve line-derived public item IDs moved and 107 capped, crate-wide heuristic test
+mappings changed after the new Reports test. These mappings are an index, not evidence
+that the mapped tests cover each listed public item.

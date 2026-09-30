@@ -50,3 +50,11 @@ rename races remain.
 Report assembly, inline JSON preview, exact public `codingmage` export command and the
 wider section-5 state/action catalogue remain open. No acceptance criterion or gate is
 closed by this correction.
+
+Independent read-only re-review of exact commit
+`889c8c7db4bca2338d5466637ea2e4e9ba34b962` returned **PASS** with no findings for
+this bounded isolation correction. The reviewer rebuilt both sibling binaries from an
+exact-source archive, reran the stalled-helper and real-coordinator Reports targets,
+strict workspace Clippy and the 131-test native suite. Its report explicitly leaves
+filesystem-fault, installed-desktop, full-product, human, live and release qualification
+open. This does not complete Task 36.3.2.2.

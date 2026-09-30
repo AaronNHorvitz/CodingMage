@@ -87,8 +87,10 @@ showing sample results.
    excluded unless you opt in. An export without overwrite consent cannot replace a file
    created concurrently at the destination. A report's changed-file count is "not observed"
    until its coordinator projection arrives; a truncated projection is labelled a lower bound.
-   Export runs on the bounded background worker. Wait for its result before relying on the
-   file; changing the selected view does not cancel a write that already started.
+   Export is dispatched from the bounded background worker to a supervised one-shot writer
+   process. Wait for its result before relying on the file; changing the selected repository
+   or campaign signals cancellation, though a write may have completed before that signal
+   was observed. Changing screens alone does not cancel it.
 
 ## Keyboard
 

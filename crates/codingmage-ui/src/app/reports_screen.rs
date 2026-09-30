@@ -9,6 +9,7 @@ use super::{App, failure_box};
 use crate::{
     backend::{BackendError, Job, Request, Response},
     launch::LaunchState,
+    messages::{self, Catalogue},
     observed::Freshness,
     report::{ChangeCoverage, OutcomeReport, ReportInputs},
 };
@@ -191,12 +192,31 @@ impl App {
     }
 
     pub(super) fn reports_screen(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Reports");
+        self.reports_screen_with_catalogue(ui, messages::english(), false);
+    }
+
+    fn reports_screen_with_catalogue(
+        &mut self,
+        ui: &mut egui::Ui,
+        catalogue: &Catalogue,
+        right_to_left: bool,
+    ) {
+        if right_to_left {
+            ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                self.reports_content(ui, catalogue);
+            });
+        } else {
+            self.reports_content(ui, catalogue);
+        }
+    }
+
+    fn reports_content(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        ui.heading(catalogue.text("reports_title"));
         let Some(report) = self.assemble_report(self.reports.include_paths) else {
-            ui.label("Open a repository and select a campaign to assemble its reports.");
+            ui.label(catalogue.text("reports_open_campaign"));
             return;
         };
-        ui.label("Reports restate coordinator records. Viewing or exporting them changes no task status and creates no review authority.");
+        ui.label(catalogue.text("reports_intro"));
         let freshness = self.report_source_freshness();
         let source_states = [
             self.status.freshness(self.now),
@@ -207,31 +227,31 @@ impl App {
         ];
         if source_states.iter().any(|state| *state != Freshness::Live) {
             ui.colored_label(super::current_tokens(ui.ctx()).warning, &freshness);
-            ui.small("Some source observations are loading, missing, stale or failed. Refresh the campaign before relying on retained data; an export retains this freshness statement.");
+            ui.small(catalogue.text("reports_source_warning"));
         } else {
             ui.label(freshness);
         }
         if !report.run_records_observed {
             ui.colored_label(
                 super::current_tokens(ui.ctx()).error,
-                "Run evidence has not been observed; the run list is unknown.",
+                catalogue.text("reports_run_unknown"),
             );
         } else if report.run_records_truncated {
-            ui.label("Additional bound run records are omitted from this report.");
+            ui.label(catalogue.text("reports_run_truncated"));
         }
         ui.separator();
-        outcome_summary(ui, &report);
+        outcome_summary(ui, &report, catalogue);
         ui.separator();
-        blocker_report(ui, &report);
+        blocker_report(ui, &report, catalogue);
         ui.separator();
-        ui.strong("Export");
-        ui.small("Choose a file in an existing directory outside the target repository. Linked directories that lead into the repository are refused.");
-        ui.small("This local report export has no matching codingmage command yet.");
+        ui.strong(catalogue.text("reports_export_title"));
+        ui.small(catalogue.text("reports_destination_guidance"));
+        ui.small(catalogue.text("reports_command_unavailable"));
         ui.horizontal(|ui| {
-            let label = ui.label("Destination");
+            let label = ui.label(catalogue.text("reports_destination"));
             ui.add(
                 egui::TextEdit::singleline(&mut self.reports.export_path)
-                    .hint_text("/absolute/path/outside/the/repository/report.json")
+                    .hint_text(catalogue.text("reports_destination_hint"))
                     .desired_width(super::current_tokens(ui.ctx()).layout.field_long),
             )
             .labelled_by(label.id);
@@ -239,13 +259,16 @@ impl App {
         ui.horizontal(|ui| {
             ui.checkbox(
                 &mut self.reports.include_paths,
-                "Include repository file paths",
+                catalogue.text("reports_include_paths"),
             );
-            ui.checkbox(&mut self.reports.overwrite, "Replace an existing file");
+            ui.checkbox(
+                &mut self.reports.overwrite,
+                catalogue.text("reports_overwrite"),
+            );
             if ui
                 .add_enabled(
                     !self.report_export_pending(),
-                    egui::Button::new("Export report"),
+                    egui::Button::new(catalogue.text("reports_export")),
                 )
                 .clicked()
             {
@@ -253,7 +276,7 @@ impl App {
             }
         });
         if self.report_export_pending() {
-            ui.label("Export pending; the report snapshot was captured when you requested it.");
+            ui.label(catalogue.text("reports_pending"));
         }
         if let Some(message) = &self.reports.message {
             match message {
@@ -262,13 +285,16 @@ impl App {
                 }
                 Err(text) => failure_box(
                     ui,
-                    "Export refused",
+                    catalogue.text("reports_refused"),
                     text,
-                    "Check the stated cause and inspect any existing destination before retrying.",
+                    catalogue.text("reports_recovery"),
                 ),
             }
         }
-        ui.checkbox(&mut self.reports.show_json, "Preview report document");
+        ui.checkbox(
+            &mut self.reports.show_json,
+            catalogue.text("reports_preview"),
+        );
         if self.reports.show_json
             && let Ok(bytes) = report.to_bytes()
         {
@@ -282,57 +308,61 @@ impl App {
     }
 }
 
-fn outcome_summary(ui: &mut egui::Ui, report: &OutcomeReport) {
-    ui.strong("Outcome report");
+fn outcome_summary(ui: &mut egui::Ui, report: &OutcomeReport, catalogue: &Catalogue) {
+    ui.strong(catalogue.text("reports_outcome_title"));
     let disposition = &report.disposition;
     egui::Grid::new("report-disposition")
         .num_columns(2)
         .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
         .show(ui, |ui| {
-            ui.label("Campaign state");
+            ui.label(catalogue.text("reports_campaign_state"));
             ui.label(disposition.campaign_state.as_deref().map_or_else(
-                || "not observed".to_owned(),
+                || catalogue.text("reports_not_observed").to_owned(),
                 crate::campaign::campaign_state_label,
             ));
             ui.end_row();
-            ui.label("Accepted outcomes");
+            ui.label(catalogue.text("reports_accepted"));
             ui.label(
                 match (disposition.accepted_outcomes, disposition.max_accepted) {
-                    (Some(accepted), Some(max)) => format!("{accepted} of {max}"),
-                    _ => "not observed".to_owned(),
+                    (Some(accepted), Some(max)) => {
+                        format!("{accepted} {} {max}", catalogue.text("reports_of"))
+                    }
+                    _ => catalogue.text("reports_not_observed").to_owned(),
                 },
             );
             ui.end_row();
-            ui.label("Completed units");
-            ui.label(count(disposition.completed_units));
+            ui.label(catalogue.text("reports_completed"));
+            ui.label(count(disposition.completed_units, catalogue));
             ui.end_row();
-            ui.label("Blocked / deferred / human decision");
+            ui.label(catalogue.text("reports_hold_counts"));
             ui.label(format!(
                 "{} / {} / {}",
-                count(disposition.blocked),
-                count(disposition.deferred),
-                count(disposition.pending_human_decision)
+                count(disposition.blocked, catalogue),
+                count(disposition.deferred, catalogue),
+                count(disposition.pending_human_decision, catalogue)
             ));
             ui.end_row();
-            ui.label("Coordinator commits");
+            ui.label(catalogue.text("reports_commits"));
             ui.label(observed_count(
                 report
                     .change_coverage
                     .observed
                     .then_some(report.commits.len()),
                 report.change_coverage.commits_truncated,
+                catalogue,
             ));
             ui.end_row();
-            ui.label("Changed files");
+            ui.label(catalogue.text("reports_files"));
             ui.label(observed_count(
                 report.changed_file_count,
                 report.change_coverage.files_truncated,
+                catalogue,
             ));
             ui.end_row();
-            ui.label("Runs with records");
+            ui.label(catalogue.text("reports_runs"));
             ui.label(report.runs.len().to_string());
             ui.end_row();
-            ui.label("Delivery");
+            ui.label(catalogue.text("reports_delivery"));
             ui.label(&disposition.delivery);
             ui.end_row();
         });
@@ -341,69 +371,179 @@ fn outcome_summary(ui: &mut egui::Ui, report: &OutcomeReport) {
     }
 }
 
-fn blocker_report(ui: &mut egui::Ui, report: &OutcomeReport) {
-    ui.strong("Blocker report");
+fn blocker_report(ui: &mut egui::Ui, report: &OutcomeReport, catalogue: &Catalogue) {
+    ui.strong(catalogue.text("reports_blocker_title"));
     match &report.blockers {
         None => {
-            ui.label("No blocker explanation is available in these observations.");
+            ui.label(catalogue.text("reports_blocker_absent"));
         }
         Some(explanation) => {
             ui.label(format!(
-                "Campaign-level blocker: {}",
-                explanation.blocker_code.as_deref().unwrap_or("none")
+                "{} {}",
+                catalogue.text("reports_blocker_prefix"),
+                explanation
+                    .blocker_code
+                    .as_deref()
+                    .unwrap_or(catalogue.text("reports_none"))
             ));
             if explanation.blockers.is_empty()
                 && explanation.deferrals.is_empty()
                 && explanation.human_decisions.is_empty()
             {
-                ui.label("No blocked, deferred or human-decision tasks.");
+                ui.label(catalogue.text("reports_no_holds"));
             }
             for blocker in &explanation.blockers {
                 ui.monospace(format!(
-                    "blocked {} - {}",
-                    blocker.task_id, blocker.reason_code
+                    "{} {} - {}",
+                    catalogue.text("reports_blocked_prefix"),
+                    blocker.task_id,
+                    blocker.reason_code
                 ));
             }
             for deferral in &explanation.deferrals {
                 ui.monospace(format!(
-                    "deferred {} - {} until {} ({})",
+                    "{} {} - {} {} {} ({})",
+                    catalogue.text("reports_deferred_prefix"),
                     deferral.task_id,
                     deferral.reason_code,
+                    catalogue.text("reports_until"),
                     deferral.trigger_code,
                     deferral.trigger_state
                 ));
             }
             for decision in &explanation.human_decisions {
                 ui.monospace(format!(
-                    "human decision {} - {}",
-                    decision.task_id, decision.reason_code
+                    "{} {} - {}",
+                    catalogue.text("reports_human_prefix"),
+                    decision.task_id,
+                    decision.reason_code
                 ));
             }
-            ui.small("Clearing a blocker or observing a trigger needs operator-controlled evidence digests through the campaign-clear-blocker and campaign-observe-trigger commands; this interface does not run them and never clears a blocker on its own.");
+            ui.small(catalogue.text("reports_clearance_boundary"));
         }
     }
 }
 
-fn count(value: Option<u32>) -> String {
-    value.map_or_else(|| "not observed".to_owned(), |value| value.to_string())
+fn count(value: Option<u32>, catalogue: &Catalogue) -> String {
+    value.map_or_else(
+        || catalogue.text("reports_not_observed").to_owned(),
+        |value| value.to_string(),
+    )
 }
 
-fn observed_count(value: Option<usize>, truncated: bool) -> String {
+fn observed_count(value: Option<usize>, truncated: bool, catalogue: &Catalogue) -> String {
     match value {
-        None => "not observed".to_owned(),
-        Some(count) if truncated => format!("at least {count}; more omitted"),
+        None => catalogue.text("reports_not_observed").to_owned(),
+        Some(count) if truncated => format!(
+            "{} {count}; {}",
+            catalogue.text("reports_at_least"),
+            catalogue.text("reports_more_omitted")
+        ),
         Some(count) => count.to_string(),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::observed_count;
+    use super::*;
+    use crate::{backend::BackendError, report::ReportInputs};
+    use egui_kittest::kittest::{NodeT as _, Queryable as _};
+
+    struct ReportsPreviewApp {
+        app: App,
+        catalogue: Catalogue,
+        right_to_left: bool,
+        report: OutcomeReport,
+    }
+
+    impl eframe::App for ReportsPreviewApp {
+        fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
+            egui::CentralPanel::default().show(root, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    self.app
+                        .reports_screen_with_catalogue(ui, &self.catalogue, self.right_to_left);
+                    outcome_summary(ui, &self.report, &self.catalogue);
+                    blocker_report(ui, &self.report, &self.catalogue);
+                });
+            });
+        }
+    }
+
+    fn empty_report() -> OutcomeReport {
+        OutcomeReport::assemble(
+            &ReportInputs {
+                campaign_id: "preview-campaign",
+                repository_id: "preview-repository",
+                authority_sha256: "preview-authority",
+                initial_commit: "preview-commit",
+                publication: "withheld".to_owned(),
+                admission: None,
+                status: None,
+                blockers: None,
+                final_report: None,
+                last_invocation: None,
+                commits: &[],
+                files: &[],
+                change_coverage: ChangeCoverage {
+                    observed: false,
+                    commits_truncated: false,
+                    files_truncated: false,
+                },
+                runs: &[],
+                run_records_observed: false,
+                run_records_truncated: false,
+            },
+            false,
+        )
+    }
+
+    #[test]
+    fn reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text() {
+        for right_to_left in [false, true] {
+            let catalogue = messages::english().pseudo(right_to_left);
+            let mut harness = egui_kittest::Harness::builder()
+                .with_size(egui::Vec2::new(1024.0, 640.0))
+                .with_pixels_per_point(2.0)
+                .with_max_steps(4)
+                .build_eframe(move |creation| ReportsPreviewApp {
+                    app: App::with_state_dir(
+                        &creation.egui_ctx,
+                        Err(BackendError::BinaryUnavailable {
+                            expected: PathBuf::from("/example/missing/codingmage"),
+                        }),
+                        Ok(std::env::temp_dir().join("codingmage-ui-reports-preview")),
+                    ),
+                    catalogue,
+                    right_to_left,
+                    report: empty_report(),
+                });
+            harness.run_steps(2);
+            for key in [
+                "reports_title",
+                "reports_open_campaign",
+                "reports_outcome_title",
+                "reports_accepted",
+                "reports_blocker_title",
+            ] {
+                let label = harness.state().catalogue.text(key).to_owned();
+                assert!(
+                    harness
+                        .get_by_label_contains(&label)
+                        .accesskit_node()
+                        .has_bounds()
+                );
+            }
+        }
+    }
 
     #[test]
     fn change_count_labels_do_not_turn_unknown_or_truncated_into_exact_zero() {
-        assert_eq!(observed_count(None, false), "not observed");
-        assert_eq!(observed_count(Some(0), false), "0");
-        assert_eq!(observed_count(Some(1), true), "at least 1; more omitted");
+        let catalogue = messages::english();
+        assert_eq!(observed_count(None, false, catalogue), "not observed");
+        assert_eq!(observed_count(Some(0), false, catalogue), "0");
+        assert_eq!(
+            observed_count(Some(1), true, catalogue),
+            "at least 1; more omitted"
+        );
     }
 }

@@ -2258,7 +2258,9 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     Decision 0041 moves the unchanged guarded writer into a bounded one-shot helper process
     dispatched outside the coordinator worker; synthetic stalled-helper control, shutdown
     and timeout checks plus the retained real-coordinator Reports workflows are recorded in
-    `docs/evidence/sprint-36-report-isolation.md`. Exact-commit re-review, the public
+    `docs/evidence/sprint-36-report-isolation.md`. Exact-commit re-review of
+    `889c8c7db4bca2338d5466637ea2e4e9ba34b962` returned a bounded PASS with no findings;
+    the public
     `codingmage` export command, report assembly/preview responsiveness and full catalogue
     remain open; no acceptance or gate is ticked by this correction.
     <!-- depends-on: 36.3.1.1 -->
@@ -2288,7 +2290,12 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     separate CM-R01.6 freshness failure; independent review of that exact source returned a
     narrow PASS without findings. The Workspace campaign-at-a-glance increment is verified locally:
     it presents only selected coordinator state, outcome counters and attention with freshness,
-    plus a navigation action; full section-5 coverage remains open.
+    plus a navigation action; full section-5 coverage remains open. Reports static labels,
+    privacy/export guidance and recovery copy now use the validated bundled catalogue; a
+    minimum-window synthetic 40%-expanded and right-aligned right-to-left preview checks the
+    empty state and outcome/blocker summary labels. Dynamic export/status text, whole-app
+    bidirectional navigation, locale formats and packaged third-party licences remain open;
+    see `docs/evidence/sprint-36-message-catalogue.md`.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).
