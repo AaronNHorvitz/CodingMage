@@ -54,4 +54,9 @@ surface, no applicability change and no semantic gap change. These heuristic tes
 mappings are an index, not a coverage claim. The Python unittest suite ran 42 tests:
 41 passed, with the sole unchanged CM-R01.6 eight-input source-bound evidence freshness
 failure. Its original receipt and drift remain open; no digest was renewed. Independent
-review is pending, and this does not complete Task 36.3.2.2 or any human/live gate.
+review was pending at this checkpoint; it did not complete Task 36.3.2.2 or any human/live gate.
+
+The exact-commit independent review subsequently returned a high-severity finding:
+a bind-mounted target alias could bypass the path-only export guard. Decision 0045
+and `docs/evidence/sprint-36-report-mount-boundary.md` record the correction and
+its separate verification. The original finding is not recast as a passing review.

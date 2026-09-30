@@ -81,6 +81,7 @@ static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(0);
 
 struct Destination {
     directory: File,
+    repository_directory: File,
     requested_parent: PathBuf,
     repository_path: PathBuf,
     repository: PathBuf,
@@ -108,7 +109,17 @@ impl Destination {
             field_error("create an existing, readable parent directory before exporting")
         })?;
         let resolved_repository = fs::canonicalize(repository).map_err(|_| WriteError::Io)?;
-        let repository_metadata = fs::metadata(repository).map_err(|_| WriteError::Io)?;
+        let repository_directory = File::from(
+            open(
+                &resolved_repository,
+                OFlag::O_RDONLY | OFlag::O_DIRECTORY | OFlag::O_NOFOLLOW | OFlag::O_CLOEXEC,
+                Mode::empty(),
+            )
+            .map_err(|_| WriteError::Io)?,
+        );
+        let repository_metadata = repository_directory
+            .metadata()
+            .map_err(|_| WriteError::Io)?;
         if resolved_parent.starts_with(&resolved_repository) {
             return Err(WriteError::InsideRepository(path.to_path_buf()));
         }
@@ -122,6 +133,7 @@ impl Destination {
         );
         let destination = Self {
             directory,
+            repository_directory,
             requested_parent,
             repository_path: repository.to_path_buf(),
             repository: resolved_repository,
@@ -142,7 +154,10 @@ impl Destination {
     }
 
     fn check_parent(&self) -> Result<(), WriteError> {
-        let repository = fs::metadata(&self.repository_path)
+        let repository_path = File::open(&self.repository_path)
+            .map_err(|_| field_error_at("repository", "target repository changed; reopen it"))?;
+        let repository = repository_path
+            .metadata()
             .map_err(|_| field_error_at("repository", "target repository changed; reopen it"))?;
         if (repository.dev(), repository.ino()) != self.repository_identity {
             return Err(field_error_at(
@@ -150,14 +165,34 @@ impl Destination {
                 "target repository changed; reopen it",
             ));
         }
+        let repository_mount = mount_id(&self.repository_directory)?;
+        if mount_id(&repository_path)? != repository_mount {
+            return Err(field_error_at(
+                "repository",
+                "target repository mount changed; reopen it",
+            ));
+        }
+        if mount_id(&self.directory)? != repository_mount {
+            return Err(field_error(
+                "choose a destination on the same mount as the target repository",
+            ));
+        }
         let repository_path =
             fs::canonicalize(&self.repository_path).map_err(|_| WriteError::Io)?;
         let held = self.directory.metadata().map_err(|_| WriteError::Io)?;
-        let requested = fs::metadata(&self.requested_parent)
+        let requested_parent = File::open(&self.requested_parent)
+            .map_err(|_| field_error("destination directory changed; choose it again"))?;
+        let requested = requested_parent
+            .metadata()
             .map_err(|_| field_error("destination directory changed; choose it again"))?;
         if held.dev() != requested.dev() || held.ino() != requested.ino() {
             return Err(field_error(
                 "destination directory changed; choose it again",
+            ));
+        }
+        if mount_id(&requested_parent)? != repository_mount {
+            return Err(field_error(
+                "destination directory mount changed; choose it again",
             ));
         }
         let current = fs::canonicalize(self.fd_path()).map_err(|_| WriteError::Io)?;
@@ -165,6 +200,19 @@ impl Destination {
             return Err(WriteError::InsideRepository(self.requested_path.clone()));
         }
         Ok(())
+    }
+}
+
+fn mount_id(directory: &File) -> Result<u64, WriteError> {
+    let fdinfo = fs::read_to_string(format!("/proc/self/fdinfo/{}", directory.as_raw_fd()))
+        .map_err(|_| WriteError::Io)?;
+    let mut ids = fdinfo
+        .lines()
+        .filter_map(|line| line.strip_prefix("mnt_id:"))
+        .map(|value| value.trim().parse::<u64>().ok());
+    match (ids.next(), ids.next()) {
+        (Some(Some(id)), None) if id != 0 => Ok(id),
+        _ => Err(WriteError::Io),
     }
 }
 
@@ -266,7 +314,11 @@ pub(super) fn write_report(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::os::unix::fs::symlink;
+    use std::{
+        os::unix::fs::symlink,
+        process::{Command, Stdio},
+        time::{Duration, Instant},
+    };
 
     fn root(label: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!(
@@ -277,6 +329,91 @@ mod tests {
         fs::create_dir_all(root.join("repo")).unwrap();
         fs::create_dir_all(root.join("outside")).unwrap();
         root
+    }
+
+    #[test]
+    fn bind_mounted_repository_root_and_child_are_refused() {
+        const CASE: &str = "CODINGMAGE_TEST_UI_REPORT_BIND_CASE";
+        const ROOT: &str = "CODINGMAGE_TEST_UI_REPORT_BIND_ROOT";
+        if let Some(case) = std::env::var_os(CASE) {
+            let root = PathBuf::from(std::env::var_os(ROOT).unwrap());
+            let source = match case.to_str() {
+                Some("root") => root.join("repo"),
+                Some("child") => root.join("repo/child"),
+                _ => panic!("unknown bind test case"),
+            };
+            let alias = root.join("alias");
+            assert!(
+                Command::new("mount")
+                    .arg("--bind")
+                    .arg(&source)
+                    .arg(&alias)
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            assert_ne!(
+                mount_id(&File::open(root.join("repo")).unwrap()).unwrap(),
+                mount_id(&File::open(&alias).unwrap()).unwrap()
+            );
+            for overwrite in [false, true] {
+                assert!(matches!(
+                    write_report(
+                        &alias.join("report.json"),
+                        &root.join("repo"),
+                        b"private",
+                        overwrite,
+                        || {},
+                        || {}
+                    ),
+                    Err(WriteError::Fields(_))
+                ));
+                assert!(!source.join("report.json").exists());
+            }
+            return;
+        }
+        for case in ["root", "child"] {
+            let root = root(&format!("bind-{case}"));
+            fs::create_dir(root.join("repo/child")).unwrap();
+            fs::create_dir(root.join("alias")).unwrap();
+            let mut child = Command::new("unshare")
+                .args(["-Urnm", "--"])
+                .arg(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "report_export::tests::bind_mounted_repository_root_and_child_are_refused",
+                    "--nocapture",
+                ])
+                .env(CASE, case)
+                .env(ROOT, &root)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .unwrap();
+            let start = Instant::now();
+            loop {
+                if child.try_wait().unwrap().is_some() {
+                    break;
+                }
+                if start.elapsed() >= Duration::from_secs(15) {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    panic!("bind-mount test child timed out");
+                }
+                std::thread::sleep(Duration::from_millis(25));
+            }
+            let output = child.wait_with_output().unwrap();
+            assert!(
+                output.status.success(),
+                "bind case {case} failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            assert!(
+                String::from_utf8_lossy(&output.stdout).contains("1 passed"),
+                "bind case {case} did not run the child assertion"
+            );
+            fs::remove_dir_all(root).unwrap();
+        }
     }
 
     #[test]

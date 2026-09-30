@@ -46,6 +46,8 @@ open. The document's bounded change and run projections retain their truncation
 indicators; they are not a full evidence archive. The guarded writer and the native
 writer currently repeat the same first-party containment checks; unifying that code is
 follow-up work before treating the two paths as one contract.
+Decision 0045 adds a same-mount restriction to both writers after independent
+review found a bind-mount alias outside the path-only containment check.
 
 ## Verification
 

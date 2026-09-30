@@ -74,6 +74,9 @@ target repository. Changed-file paths require `--include-paths true`; replacemen
 existing regular file requires `--overwrite true`. The document never claims an
 interface-only admission or invocation result. The Reports control still uses its
 isolated native writer and a different schema; it does not yet delegate to this command.
+Both export writers require the selected destination parent to be outside the target
+repository and on the same Linux mount as its root. A destination on another mount is
+refused, even when outside the repository.
 
 ## Workflow
 

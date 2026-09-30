@@ -45,3 +45,6 @@ still performs this file I/O on the presentation thread and has no exact `coding
 command equivalent. Those section-2 and section-7 requirements remain open under Task
 36.3.2.2, and stronger concurrent-adversary guarantees require a separate design and
 verification boundary.
+
+Decision 0045 adds a mount-ID boundary after an independent review found that a
+bind-mounted repository alias was not covered by these path checks.
