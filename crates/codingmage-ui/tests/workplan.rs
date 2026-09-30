@@ -9,7 +9,7 @@ use codingmage_ui::{
     backend::CoordinatorBinary,
     workplan::{KindFilter, PlanFilter, SourceReadiness, StateFilter},
 };
-use common::{Fixture, coordinator_binary, git, harness, settle, tree_digest};
+use common::{Fixture, coordinator_binary, git, harness, settle, task_source, tree_digest};
 use egui_kittest::kittest::{NodeT as _, Queryable as _};
 
 const PLAN: &str = "# Tasks\n\n## Sprint 1 - Start\n\n**Sprint goal:** Start safely.\n\n### Story 1.1 - First\n\n- [ ] **Task 1.1.1 - Work**\n  - [x] **Sub-task 1.1.1.1:** Complete the first fixture operation safely.\n  - [ ] **Sub-task 1.1.1.2:** Complete the second fixture operation safely.\n    <!-- depends-on: 1.1.1.1 -->\n  - [ ] **Sub-task 1.1.1.3:** Complete the third fixture operation safely.\n    <!-- depends-on: 1.1.1.2 -->\n\n- [ ] **AC 1.1:** Given the fixture, when it runs, then the value changes.\n";
@@ -22,12 +22,20 @@ fn open_fixture_with_plan(
     label: &str,
     plan: &str,
 ) -> (Fixture, egui_kittest::Harness<'static, codingmage_ui::App>) {
+    open_fixture_with_plan_at_size(label, plan, [1100.0, 720.0])
+}
+
+fn open_fixture_with_plan_at_size(
+    label: &str,
+    plan: &str,
+    size: [f32; 2],
+) -> (Fixture, egui_kittest::Harness<'static, codingmage_ui::App>) {
     let fixture = Fixture::new(label, 3);
     fs::write(fixture.target.join("TASKS.md"), plan).unwrap();
     git(&fixture.target, &["add", "TASKS.md"]);
     git(&fixture.target, &["commit", "-q", "-m", "plan"]);
     let binary = CoordinatorBinary::at(&coordinator_binary());
-    let mut harness = harness(binary, [1100.0, 720.0]);
+    let mut harness = harness(binary, size);
     let config = fixture.config.clone();
     harness.state_mut().open_project(&config);
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {
@@ -165,6 +173,42 @@ fn filters_and_search_narrow_the_plan() {
             .unwrap()
             .readiness,
         SourceReadiness::Waiting
+    );
+}
+
+#[test]
+fn large_plan_renders_a_bounded_viewport_and_keeps_distant_items_searchable() {
+    let source = task_source(10_000);
+    let (fixture, mut harness) =
+        open_fixture_with_plan_at_size("large-plan", &source, [1024.0, 640.0]);
+    assert_eq!(harness.state().plan_index().unwrap().counts().items, 10_002);
+    let visible = harness
+        .root()
+        .children_recursive()
+        .filter_map(|node| node.accesskit_node().label())
+        .filter(|label| label.contains("[ ] Sub-task 0.1.1."))
+        .count();
+    assert!((1..100).contains(&visible), "rendered {visible} task rows");
+    assert!(
+        harness
+            .query_by_label_contains("[ ] Sub-task 0.1.1.10000")
+            .is_none()
+    );
+
+    harness.state_mut().set_plan_filter(PlanFilter {
+        query: "0.1.1.10000".to_owned(),
+        ..PlanFilter::default()
+    });
+    harness.run_steps(2);
+    harness.get_by_label_contains("1 of 10002 items shown");
+    harness
+        .get_by_label_contains("[ ] Sub-task 0.1.1.10000")
+        .click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().selected_item(), Some("0.1.1.10000"));
+    assert_eq!(
+        fs::read_to_string(fixture.target.join("TASKS.md")).unwrap(),
+        source
     );
 }
 

@@ -59900,9 +59900,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:failure_box:1723",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:failure_box:1777",
       "kind": "fn",
-      "line": 1723,
+      "line": 1777,
       "name": "failure_box",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -77781,6 +77781,6 @@
       }
     }
   ],
-  "items_sha256": "e6886d08c8fe3a9ccf06c1f4d4c23f01f2066b6457a883b2ef5ce57c8c021b6a",
+  "items_sha256": "8defa95f19456ecfdb9e05f3224bf825349b7ab79e4e7b0e138101c41fe5d28b",
   "schema_version": 1
 }

@@ -694,7 +694,8 @@ fn assert_task_detail_workflow(
     harness.run_steps(2);
     harness
         .get_by_label("Show command: Load source detail")
-        .click();
+        .focus();
+    harness.key_press(egui::Key::Enter);
     harness.run_steps(2);
     harness.get_by_label_contains("campaign-task-detail");
     harness.get_by_label("Load source detail").click();

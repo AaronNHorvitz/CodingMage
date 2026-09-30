@@ -1351,29 +1351,7 @@ impl App {
             ));
         }
         let mut selected = self.selected_item.clone();
-        let mut last_sprint: Option<&str> = None;
-        let mut last_story: Option<&str> = None;
-        egui::ScrollArea::vertical()
-            .id_salt("plan-rows")
-            .max_height(current_tokens(ui.ctx()).layout.preview_tall)
-            .show(ui, |ui| {
-                for row in &rows {
-                    plan_group_headers(ui, index, row, &mut last_sprint, &mut last_story);
-                    let is_selected = selected.as_deref() == Some(row.id.as_str());
-                    let label = overlay_label(row, overlay.get(&row.id), observation_known);
-                    ui.horizontal(|ui| {
-                        let mut checked = row.state == CheckState::Checked;
-                        ui.add_enabled(false, egui::Checkbox::without_text(&mut checked))
-                            .on_disabled_hover_text(
-                                "Source checkbox, read from the task source; the interface never edits it.",
-                            );
-                        let response = ui.selectable_label(is_selected, label);
-                        if response.clicked() {
-                            selected = Some(row.id.clone());
-                        }
-                    });
-                }
-            });
+        render_plan_rows(ui, index, &rows, &overlay, observation_known, &mut selected);
         self.plan_filter = filter;
         if self.selected_item != selected {
             self.task_detail.clear();
@@ -1588,32 +1566,108 @@ fn plan_filter_controls(ui: &mut egui::Ui, filter: &mut PlanFilter) {
     });
 }
 
-fn plan_group_headers<'a>(
+fn render_plan_rows(
     ui: &mut egui::Ui,
     index: &PlanIndex,
-    row: &'a PlanRow,
-    last_sprint: &mut Option<&'a str>,
-    last_story: &mut Option<&'a str>,
+    rows: &[&PlanRow],
+    overlay: &std::collections::BTreeMap<String, crate::campaign::TaskOverlay>,
+    observation_known: bool,
+    selected: &mut Option<String>,
 ) {
-    if *last_sprint != Some(row.sprint_id.as_str()) {
-        *last_sprint = Some(row.sprint_id.as_str());
-        *last_story = None;
-        ui.strong(format!(
-            "Sprint {} - {}",
-            row.sprint_id,
-            content::list_label(index.sprint_title(&row.sprint_id).unwrap_or(""))
-        ));
-    }
-    if row.story_id.as_deref() != *last_story {
-        *last_story = row.story_id.as_deref();
-        if let Some(story) = *last_story {
-            ui.label(format!(
-                "Story {} - {}",
-                story,
-                content::list_label(index.story_title(story).unwrap_or(""))
-            ));
+    let display_rows = plan_display_rows(rows);
+    let row_height = ui
+        .spacing()
+        .interact_size
+        .y
+        .max(ui.text_style_height(&egui::TextStyle::Body))
+        + 4.0;
+    egui::ScrollArea::vertical()
+        .id_salt("plan-rows")
+        .max_height(current_tokens(ui.ctx()).layout.preview_tall)
+        .show_rows(ui, row_height, display_rows.len(), |ui, range| {
+            for entry in &display_rows[range] {
+                let row = rows[entry.index];
+                ui.allocate_ui_with_layout(
+                    egui::vec2(ui.available_width(), row_height),
+                    egui::Layout::left_to_right(egui::Align::Center),
+                    |ui| {
+                        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
+                        match entry.kind {
+                            PlanDisplayKind::Sprint => {
+                                ui.strong(format!(
+                                    "Sprint {} - {}",
+                                    row.sprint_id,
+                                    content::list_label(index.sprint_title(&row.sprint_id).unwrap_or(""))
+                                ));
+                            }
+                            PlanDisplayKind::Story => {
+                                if let Some(story) = &row.story_id {
+                                    ui.label(format!(
+                                        "Story {} - {}",
+                                        story,
+                                        content::list_label(index.story_title(story).unwrap_or(""))
+                                    ));
+                                }
+                            }
+                            PlanDisplayKind::Item => {
+                                let mut checked = row.state == CheckState::Checked;
+                                ui.add_enabled(false, egui::Checkbox::without_text(&mut checked))
+                                    .on_disabled_hover_text(
+                                        "Source checkbox, read from the task source; the interface never edits it.",
+                                    );
+                                let label = overlay_label(row, overlay.get(&row.id), observation_known);
+                                if ui.selectable_label(selected.as_deref() == Some(row.id.as_str()), label).clicked() {
+                                    *selected = Some(row.id.clone());
+                                }
+                            }
+                        }
+                    },
+                );
+            }
+        });
+}
+
+#[derive(Clone, Copy)]
+enum PlanDisplayKind {
+    Sprint,
+    Story,
+    Item,
+}
+
+#[derive(Clone, Copy)]
+struct PlanDisplayRow {
+    kind: PlanDisplayKind,
+    index: usize,
+}
+
+fn plan_display_rows(rows: &[&PlanRow]) -> Vec<PlanDisplayRow> {
+    let mut display = Vec::with_capacity(rows.len());
+    let mut last_sprint = None;
+    let mut last_story = None;
+    for (index, row) in rows.iter().enumerate() {
+        if last_sprint != Some(row.sprint_id.as_str()) {
+            display.push(PlanDisplayRow {
+                kind: PlanDisplayKind::Sprint,
+                index,
+            });
+            last_sprint = Some(row.sprint_id.as_str());
+            last_story = None;
         }
+        if last_story != row.story_id.as_deref() {
+            if row.story_id.is_some() {
+                display.push(PlanDisplayRow {
+                    kind: PlanDisplayKind::Story,
+                    index,
+                });
+            }
+            last_story = row.story_id.as_deref();
+        }
+        display.push(PlanDisplayRow {
+            kind: PlanDisplayKind::Item,
+            index,
+        });
     }
+    display
 }
 
 fn overlay_label(
