@@ -1,9 +1,9 @@
 //! Changes and reviews: exact candidate changes, review and test records, bounded activity.
 
-use super::{App, GIT_DEADLINE, failure_box};
+use super::{App, GIT_DEADLINE, Screen, backend_failure_box};
 use crate::{
-    backend::{BackendError, Job, Request, Response, explain_code},
-    command, content,
+    backend::{BackendError, Job, Request, Response},
+    command, content, messages,
     observed::{Freshness, age_label},
     records::{CommitSummary, FileChange, RunRecord, parse_run_records},
 };
@@ -34,6 +34,75 @@ pub struct ChangeSet {
 }
 
 impl App {
+    fn change_arguments(&self, head: &str) -> Option<Vec<String>> {
+        let project = self.project.as_ref()?;
+        let campaign = self.campaign.as_ref()?;
+        Some(vec![
+            "campaign-changes".to_owned(),
+            "--config".to_owned(),
+            project.config_path.to_str()?.to_owned(),
+            "--campaign".to_owned(),
+            campaign.spec_path.to_str()?.to_owned(),
+            "--head".to_owned(),
+            head.to_owned(),
+        ])
+    }
+
+    fn run_record_arguments(&self) -> Option<Vec<String>> {
+        let project = self.project.as_ref()?;
+        let campaign = self.campaign.as_ref()?;
+        Some(vec![
+            "campaign-run-records".to_owned(),
+            "--config".to_owned(),
+            project.config_path.to_str()?.to_owned(),
+            "--campaign".to_owned(),
+            campaign.spec_path.to_str()?.to_owned(),
+        ])
+    }
+
+    /// Requests a new exact-head change projection only from a live campaign status.
+    pub fn refresh_change_evidence(&mut self) {
+        if self.status.freshness(std::time::Instant::now()) != Freshness::Live
+            || self.changes.loading
+        {
+            return;
+        }
+        let Some(status) = self.status.value.as_ref().and_then(Option::as_ref) else {
+            return;
+        };
+        let head = status.head.clone();
+        let Some(base) = self
+            .campaign
+            .as_ref()
+            .map(|campaign| campaign.spec.initial_commit.clone())
+        else {
+            return;
+        };
+        if !command::can_preview(
+            self.binary_path.as_deref(),
+            self.change_arguments(&head).as_deref(),
+        ) {
+            return;
+        }
+        self.request_changes(&base, &head);
+    }
+
+    /// Requests current run evidence only from a live campaign status.
+    pub fn refresh_run_evidence(&mut self) {
+        if self.status.freshness(std::time::Instant::now()) != Freshness::Live
+            || self.records.loading
+        {
+            return;
+        }
+        if !command::can_preview(
+            self.binary_path.as_deref(),
+            self.run_record_arguments().as_deref(),
+        ) {
+            return;
+        }
+        self.request_records();
+    }
+
     /// Latest change-set observation.
     #[must_use]
     pub const fn changes(&self) -> &crate::observed::Observed<ChangeSet> {
@@ -47,12 +116,7 @@ impl App {
     }
 
     pub(super) fn request_changes(&mut self, base: &str, head: &str) {
-        let (Some(project), Some(campaign)) = (&self.project, &self.campaign) else {
-            return;
-        };
-        let (Some(config_path), Some(spec_path)) =
-            (project.config_path.to_str(), campaign.spec_path.to_str())
-        else {
+        let Some(arguments) = self.change_arguments(head) else {
             self.changes.fail(
                 BackendError::Refused(
                     "campaign paths cannot be represented in the command boundary".to_owned(),
@@ -66,15 +130,7 @@ impl App {
             binding: self.binding(),
             job: Job::Command {
                 label: "campaign-changes",
-                arguments: vec![
-                    "campaign-changes".to_owned(),
-                    "--config".to_owned(),
-                    config_path.to_owned(),
-                    "--campaign".to_owned(),
-                    spec_path.to_owned(),
-                    "--head".to_owned(),
-                    head.to_owned(),
-                ],
+                arguments,
                 deadline: GIT_DEADLINE,
             },
             request_id: None,
@@ -93,12 +149,7 @@ impl App {
     }
 
     pub(super) fn request_records(&mut self) {
-        let (Some(project), Some(campaign)) = (&self.project, &self.campaign) else {
-            return;
-        };
-        let (Some(config_path), Some(spec_path)) =
-            (project.config_path.to_str(), campaign.spec_path.to_str())
-        else {
+        let Some(arguments) = self.run_record_arguments() else {
             self.records.clear();
             self.records_status = None;
             self.records_truncated = false;
@@ -115,13 +166,7 @@ impl App {
             binding: self.binding(),
             job: Job::Command {
                 label: "campaign-run-records",
-                arguments: vec![
-                    "campaign-run-records".to_owned(),
-                    "--config".to_owned(),
-                    config_path.to_owned(),
-                    "--campaign".to_owned(),
-                    spec_path.to_owned(),
-                ],
+                arguments,
                 deadline: GIT_DEADLINE,
             },
             request_id: None,
@@ -330,9 +375,20 @@ impl App {
     }
 
     pub(super) fn changes_screen(&mut self, ui: &mut egui::Ui) {
+        let catalogue = messages::english();
         ui.heading("Changes and reviews");
-        let (Some(_), Some(campaign)) = (&self.project, &self.campaign) else {
-            ui.label("Open a repository and select a campaign to inspect its changes.");
+        if self.project.is_none() {
+            ui.label(catalogue.text("changes_no_project"));
+            if ui.button(catalogue.text("changes_open_setup")).clicked() {
+                self.screen = Screen::Setup;
+            }
+            return;
+        }
+        let Some(campaign) = &self.campaign else {
+            ui.label(catalogue.text("changes_no_campaign"));
+            if ui.button(catalogue.text("changes_open_campaign")).clicked() {
+                self.screen = Screen::Campaign;
+            }
             return;
         };
         ui.strong("Delivery boundary");
@@ -341,11 +397,79 @@ impl App {
             campaign.spec.publication
         ));
         ui.separator();
+        self.evidence_refresh_controls(ui);
+        ui.separator();
         self.changes_block(ui);
         ui.separator();
         self.records_block(ui);
         ui.separator();
         self.activity_block(ui);
+    }
+
+    fn evidence_refresh_controls(&mut self, ui: &mut egui::Ui) {
+        let catalogue = messages::english();
+        let status_live = self.status.freshness(self.now) == Freshness::Live;
+        let change_arguments = self
+            .status
+            .value
+            .as_ref()
+            .and_then(Option::as_ref)
+            .and_then(|status| self.change_arguments(&status.head));
+        let record_arguments = self.run_record_arguments();
+        let change_enabled = status_live
+            && !self.changes.loading
+            && command::can_preview(self.binary_path.as_deref(), change_arguments.as_deref());
+        let records_enabled = status_live
+            && !self.records.loading
+            && command::can_preview(self.binary_path.as_deref(), record_arguments.as_deref());
+        ui.horizontal(|ui| {
+            if ui
+                .add_enabled(
+                    change_enabled,
+                    egui::Button::new(catalogue.text("changes_refresh_changes")),
+                )
+                .clicked()
+            {
+                self.refresh_change_evidence();
+            }
+            if ui
+                .add_enabled(
+                    records_enabled,
+                    egui::Button::new(catalogue.text("changes_refresh_runs")),
+                )
+                .clicked()
+            {
+                self.refresh_run_evidence();
+            }
+        });
+        if let Some(arguments) = change_arguments {
+            command::show_for(
+                ui,
+                catalogue.text("changes_refresh_changes"),
+                self.binary_path.as_deref(),
+                &arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, catalogue.text("changes_refresh_changes"));
+        }
+        if let Some(arguments) = record_arguments {
+            command::show_for(
+                ui,
+                catalogue.text("changes_refresh_runs"),
+                self.binary_path.as_deref(),
+                &arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, catalogue.text("changes_refresh_runs"));
+        }
+        if !status_live {
+            ui.label(catalogue.text("changes_status_needed"));
+        } else if !change_enabled || !records_enabled {
+            ui.label(catalogue.text("changes_command_unavailable"));
+        }
+        if ui.button(catalogue.text("changes_open_campaign")).clicked() {
+            self.screen = Screen::Campaign;
+        }
     }
 
     fn changes_block(&self, ui: &mut egui::Ui) {
@@ -368,15 +492,19 @@ impl App {
             age_label(self.changes.age(self.now))
         ));
         if let Some((_, error)) = &self.changes.last_error {
-            let (what, action) = explain_code(&error.code());
-            failure_box(ui, what, &error.to_string(), action);
+            backend_failure_box(ui, error, "failure_changes_no_observation");
         }
         let Some(changes) = &self.changes.value else {
             if freshness == Freshness::Loading {
                 ui.label("Reading the campaign branch objects...");
+            } else if freshness == Freshness::NotRequested {
+                ui.label(messages::english().text("changes_unobserved"));
             }
             return;
         };
+        if freshness == Freshness::Stale {
+            ui.label(messages::english().text("changes_stale"));
+        }
         ui.monospace(format!(
             "{}..{}",
             &changes.base[..12.min(changes.base.len())],
@@ -431,12 +559,19 @@ impl App {
             age_label(self.records.age(self.now))
         ));
         if let Some((_, error)) = &self.records.last_error {
-            let (what, action) = explain_code(&error.code());
-            failure_box(ui, what, &error.to_string(), action);
+            backend_failure_box(ui, error, "failure_records_no_observation");
         }
         let Some(records) = &self.records.value else {
+            if freshness == Freshness::Loading {
+                ui.label(messages::english().text("records_loading"));
+            } else if freshness == Freshness::NotRequested {
+                ui.label(messages::english().text("records_unobserved"));
+            }
             return;
         };
+        if freshness == Freshness::Stale {
+            ui.label(messages::english().text("records_stale"));
+        }
         if records.is_empty() {
             ui.label("No run records exist for this campaign. Nothing has been implemented, reviewed or tested.");
             return;

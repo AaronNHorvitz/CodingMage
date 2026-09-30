@@ -8,7 +8,8 @@ use codingmage_contracts::RepositoryId;
 use codingmage_state::Journal;
 use codingmage_ui::{
     Screen,
-    backend::{CoordinatorBinary, Response},
+    backend::{BackendError, CoordinatorBinary, Response},
+    observed::Freshness,
     records::parse_run_records,
 };
 use common::{Fixture, coordinator_binary, harness, run_campaign, settle, write_campaign};
@@ -38,6 +39,116 @@ fn change_command(fixture: &Fixture, spec: &std::path::Path, head: &str) -> std:
         ])
         .output()
         .unwrap()
+}
+
+#[test]
+fn evidence_empty_state_routes_to_setup_then_campaign() {
+    let fixture = Fixture::new("evidence-empty", 1);
+    let mut harness = harness(
+        CoordinatorBinary::at(&coordinator_binary()),
+        [1100.0, 900.0],
+    );
+    harness.state_mut().select_screen(Screen::Changes);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Open a repository in Setup");
+    harness.get_by_label("Open Setup").click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Setup);
+
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some()
+    }));
+    harness.state_mut().select_screen(Screen::Changes);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Select a campaign on Campaign");
+    harness.get_by_label("Open Campaign").click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Campaign);
+}
+
+#[test]
+fn evidence_refresh_shows_exact_commands_and_recovers_from_failed_reads() {
+    let fixture = Fixture::new("evidence-refresh", 1);
+    let spec = write_campaign(&fixture, "evidence-refresh-campaign", 1);
+    run_campaign(&fixture, &spec);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.changes().value.is_some() && app.run_records().value.is_some()
+    }));
+    harness.state_mut().select_screen(Screen::Changes);
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: Refresh changes")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("campaign-changes --config");
+    harness
+        .get_by_label("Show command: Refresh run evidence")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("campaign-run-records --config");
+
+    harness.get_by_label("Refresh changes").click();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.changes().value.is_some() && !app.changes().loading
+    }));
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-changes",
+        request_id: None,
+        result: Ok(b"{".to_vec()),
+    }));
+    harness.run_steps(2);
+    harness.get_by_label_contains("No review, completion or delivery is inferred");
+    harness.get_by_label("Refresh changes").click();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.changes().value.is_some() && app.changes().last_error.is_none()
+    }));
+
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-run-records",
+        request_id: None,
+        result: Ok(b"{".to_vec()),
+    }));
+    harness.run_steps(2);
+    harness.get_by_label_contains("Malformed backend output");
+    harness.get_by_label_contains("No pass or accepted outcome is inferred");
+    harness.get_by_label("Refresh run evidence").click();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.run_records().value.is_some() && app.run_records().last_error.is_none()
+    }));
+
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-status",
+        request_id: None,
+        result: Err(BackendError::Timeout),
+    }));
+    assert_eq!(
+        harness
+            .state()
+            .status()
+            .freshness(std::time::Instant::now()),
+        Freshness::Stale
+    );
+    harness.state_mut().refresh_change_evidence();
+    harness.state_mut().refresh_run_evidence();
+    assert!(!harness.state().changes().loading);
+    assert!(!harness.state().run_records().loading);
+    harness.run_steps(2);
+    harness.get_by_label_contains("A live campaign status is required");
 }
 
 fn records_command(fixture: &Fixture, spec: &std::path::Path) -> std::process::Output {
