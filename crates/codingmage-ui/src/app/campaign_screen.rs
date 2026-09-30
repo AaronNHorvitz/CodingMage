@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, path::Path};
 use codingmage_campaign::CampaignExecutionMode;
 use codingmage_plan::{CheckState, PlanItemKind};
 
-use super::{App, GIT_DEADLINE, STATUS_DEADLINE, failure_box};
+use super::{App, GIT_DEADLINE, STATUS_DEADLINE, Screen, failure_box};
 use crate::{
     backend::{
         BackendError, Job, Request, Response, explain_code,
@@ -20,6 +20,7 @@ use crate::{
         involvement_label,
     },
     command, content,
+    messages::{self, Catalogue},
     observed::Observed,
     observed::{Freshness, age_label},
 };
@@ -563,15 +564,28 @@ impl App {
     }
 
     pub(super) fn campaign_screen(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Campaign");
+        self.campaign_screen_with_catalogue(ui, messages::english());
+    }
+
+    fn campaign_screen_with_catalogue(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        ui.heading(catalogue.text("campaign_title"));
         if self.project.is_none() {
-            ui.label("Open a repository before selecting a campaign.");
+            ui.label(catalogue.text("campaign_no_project"));
+            if ui.button(catalogue.text("campaign_open_setup")).clicked() {
+                self.screen = Screen::Setup;
+            }
+            if ui.button(catalogue.text("campaign_open_help")).clicked() {
+                self.screen = Screen::Help;
+            }
             return;
         }
-        self.campaign_selection_controls(ui);
+        self.campaign_selection_controls(ui, catalogue);
         let Some(campaign) = &self.campaign else {
-            ui.label("No campaign selected. Select the campaign specification that binds this repository, or create one in Setup.");
-            roles_and_modes(ui, &self.mission, self.now);
+            ui.label(catalogue.text("campaign_no_selection"));
+            if ui.button(catalogue.text("campaign_open_setup")).clicked() {
+                self.screen = Screen::Setup;
+            }
+            roles_and_modes(ui, &self.mission, self.now, catalogue);
             return;
         };
         let spec = &campaign.spec;
@@ -581,19 +595,19 @@ impl App {
             .num_columns(2)
             .spacing(super::current_tokens(ui.ctx()).layout.grid)
             .show(ui, |ui| {
-                ui.label("Authority sha256");
+                ui.label(catalogue.text("campaign_authority_sha256"));
                 ui.monospace(&campaign.authority_sha256);
                 ui.end_row();
-                ui.label("Repository id");
+                ui.label(catalogue.text("campaign_repository_id"));
                 ui.monospace(&spec.repository_id);
                 ui.end_row();
-                ui.label("Initial commit");
+                ui.label(catalogue.text("campaign_initial_commit"));
                 ui.monospace(&spec.initial_commit);
                 ui.end_row();
-                ui.label("Task source sha256");
+                ui.label(catalogue.text("campaign_task_source_sha256"));
                 ui.monospace(&spec.task_source_sha256);
                 ui.end_row();
-                ui.label("Execution");
+                ui.label(catalogue.text("campaign_execution"));
                 ui.label(match &spec.multi_agent {
                     Some(policy) if policy.execution_mode == CampaignExecutionMode::Parallel => {
                         format!("parallel, up to {} pods", spec.max_parallel_pods)
@@ -601,21 +615,21 @@ impl App {
                     _ => "serial, one pod".to_owned(),
                 });
                 ui.end_row();
-                ui.label("Accepted-outcome ceiling");
+                ui.label(catalogue.text("campaign_accepted_outcome_ceiling"));
                 ui.label(spec.max_units.to_string());
                 ui.end_row();
-                ui.label("Publication");
+                ui.label(catalogue.text("campaign_publication"));
                 ui.label(format!("{:?}", spec.publication));
                 ui.end_row();
             });
-        self.authority_drift(ui);
+        self.authority_drift(ui, catalogue);
         ui.separator();
         let admitted_or_launched =
             self.execution.admission.is_some() || self.execution.record.is_some();
         if admitted_or_launched {
             self.execution_section(ui);
             ui.separator();
-            self.status_section(ui);
+            self.status_section(ui, catalogue);
             ui.separator();
             self.readiness_section(ui);
         } else {
@@ -623,34 +637,41 @@ impl App {
             ui.separator();
             self.execution_section(ui);
             ui.separator();
-            self.status_section(ui);
+            self.status_section(ui, catalogue);
         }
         ui.separator();
-        roles_and_modes(ui, &self.mission, self.now);
+        roles_and_modes(ui, &self.mission, self.now, catalogue);
     }
 
-    fn campaign_selection_controls(&mut self, ui: &mut egui::Ui) {
+    fn campaign_selection_controls(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
         let mut select: Option<std::path::PathBuf> = None;
         let mut clear = false;
         ui.horizontal(|ui| {
-            let label = ui.label("Campaign specification");
+            let label = ui.label(catalogue.text("campaign_specification"));
             ui.add(
                 egui::TextEdit::singleline(&mut self.campaign_input)
-                    .hint_text("/absolute/path/campaign.toml")
+                    .hint_text(catalogue.text("campaign_path_hint"))
                     .desired_width(super::current_tokens(ui.ctx()).layout.field_long),
             )
             .labelled_by(label.id);
-            if ui.button("Select campaign").clicked() {
+            if ui
+                .button(catalogue.text("campaign_select_campaign"))
+                .clicked()
+            {
                 select = Some(std::path::PathBuf::from(self.campaign_input.trim()));
             }
-            if self.campaign.is_some() && ui.button("Clear campaign").clicked() {
+            if self.campaign.is_some()
+                && ui
+                    .button(catalogue.text("campaign_clear_campaign"))
+                    .clicked()
+            {
                 clear = true;
             }
             if ui
                 .button(if self.campaign_browser.is_some() {
-                    "Hide campaign browser"
+                    catalogue.text("campaign_hide_browser")
                 } else {
-                    "Browse campaigns"
+                    catalogue.text("campaign_browse")
                 })
                 .clicked()
             {
@@ -665,7 +686,7 @@ impl App {
             let mut up = false;
             egui::Frame::group(ui.style()).show(ui, |ui| {
                 ui.horizontal(|ui| {
-                    if ui.button("Up").clicked() {
+                    if ui.button(catalogue.text("campaign_up")).clicked() {
                         up = true;
                     }
                     ui.monospace(browser.current.display().to_string());
@@ -703,9 +724,9 @@ impl App {
         if let Some(error) = &self.campaign_error {
             failure_box(
                 ui,
-                "Campaign specification refused",
+                catalogue.text("campaign_spec_refused"),
                 &error.to_string(),
-                "Select a specification whose repository path and identity match the opened repository.",
+                catalogue.text("campaign_spec_refused_action"),
             );
         }
         if let Some(path) = select {
@@ -716,7 +737,7 @@ impl App {
         }
     }
 
-    fn authority_drift(&self, ui: &mut egui::Ui) {
+    fn authority_drift(&self, ui: &mut egui::Ui, catalogue: &Catalogue) {
         let (Some(campaign), Some(diagnosis)) = (&self.campaign, &self.diagnosis.value) else {
             return;
         };
@@ -731,7 +752,7 @@ impl App {
             drift.push("active checkout head differs from the campaign's initial commit");
         }
         if drift.is_empty() {
-            ui.label("Active checkout matches the campaign's bound repository identity, head and task-source digest.");
+            ui.label(catalogue.text("campaign_binding_matches"));
         } else {
             for line in drift {
                 ui.colored_label(
@@ -739,18 +760,18 @@ impl App {
                     format!("Binding drift: {line}"),
                 );
             }
-            ui.small("Drift is reported, not corrected. A campaign already started keeps its own branch; a campaign not yet started must be re-authored against the current head.");
+            ui.small(catalogue.text("campaign_binding_drift_action"));
         }
     }
 
-    fn status_section(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Durable campaign status");
+    fn status_section(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        ui.heading(catalogue.text("campaign_durable_campaign_status"));
         let arguments = self.status_arguments();
         let can_refresh = command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
         if ui
             .add_enabled(
                 can_refresh && !self.status.loading,
-                egui::Button::new("Refresh campaign status"),
+                egui::Button::new(catalogue.text("campaign_refresh_campaign_status")),
             )
             .clicked()
         {
@@ -759,15 +780,15 @@ impl App {
         if let Some(arguments) = &arguments {
             command::show_for(
                 ui,
-                "Refresh campaign status",
+                catalogue.text("campaign_refresh_campaign_status"),
                 self.binary_path.as_deref(),
                 arguments,
             );
         } else {
-            command::show_unavailable_for(ui, "Refresh campaign status");
+            command::show_unavailable_for(ui, catalogue.text("campaign_refresh_campaign_status"));
         }
         if self.status.loading && self.status.value.is_some() {
-            ui.small("Refreshing; values below are from the last completed observation.");
+            ui.small(catalogue.text("campaign_refreshing_retained"));
         }
         let freshness = self.status.freshness(self.now);
         ui.label(format!(
@@ -778,31 +799,31 @@ impl App {
         if let Some((_, error)) = &self.status.last_error {
             let (what, action) = explain_code(&error.code());
             failure_box(ui, what, &error.to_string(), action);
-            ui.small("Current campaign progress cannot be confirmed. Refreshing status reads the coordinator; it does not change the campaign or grant authority.");
+            ui.small(catalogue.text("campaign_status_unconfirmed"));
         }
         match (&self.status.value, freshness) {
             (None, Freshness::Loading) => {
-                ui.label("Reading durable campaign state from the coordinator...");
+                ui.label(catalogue.text("campaign_status_loading"));
             }
             (None, _) => {}
             (Some(None), _) => {
-                ui.label("No durable campaign state exists for this authority. The campaign has never been started; nothing is running and no outcome exists.");
+                ui.label(catalogue.text("campaign_status_not_started"));
             }
             (Some(Some(status)), _) => {
                 if freshness == Freshness::Stale {
                     ui.colored_label(
                         super::current_tokens(ui.ctx()).warning,
-                        "Stale observation: values below may no longer match the coordinator.",
+                        catalogue.text("campaign_status_stale"),
                     );
                 }
-                status_grid(ui, status);
+                status_grid(ui, status, catalogue);
                 ui.separator();
-                outcomes_grid(ui, status);
+                outcomes_grid(ui, status, catalogue);
                 ui.separator();
-                active_tasks(ui, status);
-                holds_section(ui, status);
+                active_tasks(ui, status, catalogue);
+                holds_section(ui, status, catalogue);
                 ui.separator();
-                utilization_grid(ui, status);
+                utilization_grid(ui, status, catalogue);
             }
         }
         if let Some(Some(explanation)) = &self.explanation.value
@@ -815,7 +836,7 @@ impl App {
         }
         if let Some(Some(report)) = &self.report.value {
             ui.separator();
-            ui.strong("Final report exists");
+            ui.strong(catalogue.text("campaign_final_report_exists"));
             ui.monospace(format!(
                 "final commit {} with {} accepted tasks",
                 report.final_commit,
@@ -825,29 +846,33 @@ impl App {
     }
 }
 
-fn outcomes_grid(ui: &mut egui::Ui, status: &crate::backend::models::CampaignStatus) {
-    ui.strong("Outcome counters (independent, never merged)");
+fn outcomes_grid(
+    ui: &mut egui::Ui,
+    status: &crate::backend::models::CampaignStatus,
+    catalogue: &Catalogue,
+) {
+    ui.strong(catalogue.text("campaign_outcomes_title"));
     let outcomes = &status.outcomes;
     egui::Grid::new("campaign-outcomes")
         .num_columns(2)
         .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
         .show(ui, |ui| {
-            ui.label("Completed and reconciled");
+            ui.label(catalogue.text("campaign_completed_and_reconciled"));
             ui.label(outcomes.completed.to_string());
             ui.end_row();
-            ui.label("Blocked");
+            ui.label(catalogue.text("campaign_blocked"));
             ui.label(outcomes.blocked.to_string());
             ui.end_row();
-            ui.label("Deferred");
+            ui.label(catalogue.text("campaign_deferred"));
             ui.label(outcomes.deferred.to_string());
             ui.end_row();
-            ui.label("Awaiting human decision");
+            ui.label(catalogue.text("campaign_awaiting_human_decision"));
             ui.label(outcomes.pending_human_decision.to_string());
             ui.end_row();
-            ui.label("Rejected proposals (no ceiling use)");
+            ui.label(catalogue.text("campaign_rejected_proposals_no_ceiling_use"));
             ui.label(outcomes.rejected_proposals.to_string());
             ui.end_row();
-            ui.label("Accepted against ceiling");
+            ui.label(catalogue.text("campaign_accepted_against_ceiling"));
             ui.label(format!(
                 "{} of {}",
                 outcomes.accepted, outcomes.max_accepted
@@ -856,10 +881,14 @@ fn outcomes_grid(ui: &mut egui::Ui, status: &crate::backend::models::CampaignSta
         });
 }
 
-fn active_tasks(ui: &mut egui::Ui, status: &crate::backend::models::CampaignStatus) {
-    ui.strong("Active tasks");
+fn active_tasks(
+    ui: &mut egui::Ui,
+    status: &crate::backend::models::CampaignStatus,
+    catalogue: &Catalogue,
+) {
+    ui.strong(catalogue.text("campaign_active_tasks"));
     if status.active_tasks.is_empty() {
-        ui.label("No unit is active.");
+        ui.label(catalogue.text("campaign_no_unit_is_active"));
     }
     for active in &status.active_tasks {
         content::render(
@@ -884,65 +913,73 @@ fn active_tasks(ui: &mut egui::Ui, status: &crate::backend::models::CampaignStat
     }
 }
 
-fn status_grid(ui: &mut egui::Ui, status: &crate::backend::models::CampaignStatus) {
+fn status_grid(
+    ui: &mut egui::Ui,
+    status: &crate::backend::models::CampaignStatus,
+    catalogue: &Catalogue,
+) {
     egui::Grid::new("campaign-status")
         .num_columns(2)
         .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
         .show(ui, |ui| {
-            ui.label("Phase");
+            ui.label(catalogue.text("campaign_phase"));
             ui.label(crate::campaign::campaign_state_label(&status.state));
             ui.end_row();
-            ui.label("Actor");
+            ui.label(catalogue.text("campaign_actor"));
             ui.label(&status.actor);
             ui.end_row();
-            ui.label("Model");
+            ui.label(catalogue.text("campaign_model"));
             content::render(
                 ui,
                 status.model.as_deref().unwrap_or("not owned by a provider"),
             );
             ui.end_row();
-            ui.label("Campaign branch");
+            ui.label(catalogue.text("campaign_branch"));
             ui.monospace(&status.branch);
             ui.end_row();
-            ui.label("Campaign head");
+            ui.label(catalogue.text("campaign_head"));
             ui.monospace(&status.head);
             ui.end_row();
-            ui.label("Current task");
+            ui.label(catalogue.text("campaign_current_task"));
             ui.label(status.current_task_id.as_deref().unwrap_or("none"));
             ui.end_row();
-            ui.label("Last task");
+            ui.label(catalogue.text("campaign_last_task"));
             ui.label(status.last_task_id.as_deref().unwrap_or("none"));
             ui.end_row();
-            ui.label("Watchdog");
+            ui.label(catalogue.text("campaign_watchdog"));
             ui.label(&status.watchdog_state);
             ui.end_row();
-            ui.label("Reconciliation");
+            ui.label(catalogue.text("campaign_reconciliation"));
             ui.label(&status.reconciliation_state);
             ui.end_row();
-            ui.label("Blocker code");
+            ui.label(catalogue.text("campaign_blocker_code"));
             ui.label(status.blocker_code.as_deref().unwrap_or("none"));
             ui.end_row();
-            ui.label("Elapsed");
+            ui.label(catalogue.text("campaign_elapsed"));
             ui.label(format!("{} s since creation", status.elapsed_ms / 1000));
             ui.end_row();
-            ui.label("Updated");
+            ui.label(catalogue.text("campaign_updated"));
             ui.label(format!("unix {} ms", status.updated_at_ms));
             ui.end_row();
         });
 }
 
-fn holds_section(ui: &mut egui::Ui, status: &crate::backend::models::CampaignStatus) {
+fn holds_section(
+    ui: &mut egui::Ui,
+    status: &crate::backend::models::CampaignStatus,
+    catalogue: &Catalogue,
+) {
     ui.separator();
-    ui.strong("Blocked tasks");
+    ui.strong(catalogue.text("campaign_blocked_tasks"));
     if status.blockers.is_empty() {
-        ui.label("none");
+        ui.label(catalogue.text("campaign_none"));
     }
     for blocker in &status.blockers {
         ui.monospace(format!("{} - {}", blocker.task_id, blocker.reason_code));
     }
-    ui.strong("Deferred tasks");
+    ui.strong(catalogue.text("campaign_deferred_tasks"));
     if status.deferrals.is_empty() {
-        ui.label("none");
+        ui.label(catalogue.text("campaign_none"));
     }
     for deferral in &status.deferrals {
         ui.monospace(format!(
@@ -950,76 +987,81 @@ fn holds_section(ui: &mut egui::Ui, status: &crate::backend::models::CampaignSta
             deferral.task_id, deferral.reason_code, deferral.trigger_code, deferral.trigger_state
         ));
     }
-    ui.strong("Human decisions required");
+    ui.strong(catalogue.text("campaign_human_decisions_required"));
     if status.human_decisions.is_empty() {
-        ui.label("none");
+        ui.label(catalogue.text("campaign_none"));
     }
     for decision in &status.human_decisions {
         ui.monospace(format!("{} - {}", decision.task_id, decision.reason_code));
     }
 }
 
-fn utilization_grid(ui: &mut egui::Ui, status: &crate::backend::models::CampaignStatus) {
-    ui.strong("Utilization against limits");
+fn utilization_grid(
+    ui: &mut egui::Ui,
+    status: &crate::backend::models::CampaignStatus,
+    catalogue: &Catalogue,
+) {
+    ui.strong(catalogue.text("campaign_utilization_against_limits"));
     let used = &status.utilization;
     let limits = &status.limits;
     egui::Grid::new("campaign-utilization")
         .num_columns(2)
         .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
         .show(ui, |ui| {
-            ui.label("Provider attempts");
+            ui.label(catalogue.text("campaign_provider_attempts"));
             ui.label(format!(
                 "{} of {}",
                 used.provider_attempts, limits.provider_attempts
             ));
             ui.end_row();
-            ui.label("Malformed-report repairs");
+            ui.label(catalogue.text("campaign_malformed_report_repairs"));
             ui.label(format!(
                 "{} of {}",
                 used.malformed_report_repairs, limits.malformed_report_repairs
             ));
             ui.end_row();
-            ui.label("Correction rounds");
+            ui.label(catalogue.text("campaign_correction_rounds"));
             ui.label(format!(
                 "{} of {}",
                 used.correction_rounds, limits.correction_rounds
             ));
             ui.end_row();
-            ui.label("Process invocations");
+            ui.label(catalogue.text("campaign_process_invocations"));
             ui.label(format!(
                 "{} of {}",
                 used.process_invocations, limits.process_invocations
             ));
             ui.end_row();
-            ui.label("Output bytes");
+            ui.label(catalogue.text("campaign_output_bytes"));
             ui.label(format!("{} of {}", used.output_bytes, limits.output_bytes));
             ui.end_row();
-            ui.label("Retained state bytes");
+            ui.label(catalogue.text("campaign_retained_state_bytes"));
             ui.label(format!(
                 "{} of {}",
                 used.retained_state_bytes, limits.retained_state_bytes
             ));
             ui.end_row();
-            ui.label("Execution time");
+            ui.label(catalogue.text("campaign_execution_time"));
             ui.label(format!(
                 "{} ms of {} ms",
                 used.execution_elapsed_ms, limits.execution_elapsed_ms
             ));
             ui.end_row();
         });
-    ui.small("Token usage is not reported by this backend and is shown as unknown rather than estimated.");
+    ui.small(catalogue.text("campaign_tokens_unknown"));
 }
 
 fn roles_and_modes(
     ui: &mut egui::Ui,
     mission: &Observed<Option<MissionStatus>>,
     now: std::time::Instant,
+    catalogue: &Catalogue,
 ) {
-    ui.heading("Roles this backend reports");
+    ui.heading(catalogue.text("campaign_roles_this_backend_reports"));
     for (code, description) in SUPPORTED_ROLES {
         ui.label(format!("{code}: {description}"));
     }
-    ui.heading("Owner involvement");
+    ui.heading(catalogue.text("campaign_owner_involvement"));
     let freshness = mission.freshness(now);
     ui.small(format!(
         "Mission observation: {} ({})",
@@ -1056,28 +1098,28 @@ fn roles_and_modes(
                 .num_columns(2)
                 .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
                 .show(ui, |ui| {
-                    ui.label("Involvement");
+                    ui.label(catalogue.text("campaign_involvement"));
                     ui.label(mode);
                     ui.end_row();
-                    ui.label("Revocation epoch");
+                    ui.label(catalogue.text("campaign_revocation_epoch"));
                     ui.label(status.revocation_epoch.to_string());
                     ui.end_row();
-                    ui.label("Expires (Unix ms)");
+                    ui.label(catalogue.text("campaign_expires_unix_ms"));
                     ui.label(status.expires_at_ms.to_string());
                     ui.end_row();
-                    ui.label("Decisions recorded");
+                    ui.label(catalogue.text("campaign_decisions_recorded"));
                     ui.label(format!(
                         "{} ({} permitted, {} held)",
                         status.decisions_recorded, status.permitted_choices, status.held_decisions
                     ));
                     ui.end_row();
-                    ui.label("Pending owner decisions");
+                    ui.label(catalogue.text("campaign_pending_owner_decisions"));
                     ui.label(status.pending_owner_decisions.to_string());
                     ui.end_row();
-                    ui.label("Owner answers");
+                    ui.label(catalogue.text("campaign_owner_answers"));
                     ui.label(status.owner_answers.to_string());
                     ui.end_row();
-                    ui.label("Charter digest");
+                    ui.label(catalogue.text("campaign_charter_digest"));
                     ui.label(&status.mission_sha256);
                     ui.end_row();
                 });
@@ -1087,7 +1129,7 @@ fn roles_and_modes(
             ));
         }
         Some(None) => {
-            ui.label("No mission charter is admitted for this campaign; it runs under its recorded authority and the legacy human-decision path.");
+            ui.label(catalogue.text("campaign_no_mission"));
             for (_, label, description) in INVOLVEMENT_MODES {
                 ui.label(format!(
                     "{label}: unavailable until a charter is admitted with codingmage campaign-mission-admit; {description}"
@@ -1096,10 +1138,77 @@ fn roles_and_modes(
         }
         None => {
             if mission.loading {
-                ui.label("Requesting mission authority through campaign-mission-status");
+                ui.label(catalogue.text("campaign_mission_loading"));
             } else if mission.last_error.is_none() {
-                ui.label("Mission authority not yet observed");
+                ui.label(catalogue.text("campaign_mission_authority_not_yet_observed"));
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use egui_kittest::kittest::{NodeT as _, Queryable as _};
+    use std::path::PathBuf;
+
+    struct CampaignPreview {
+        app: App,
+        catalogue: Catalogue,
+        right_to_left: bool,
+    }
+
+    impl eframe::App for CampaignPreview {
+        fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
+            egui::CentralPanel::default().show(root, |ui| {
+                if self.right_to_left {
+                    ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                        self.app.campaign_screen_with_catalogue(ui, &self.catalogue);
+                    });
+                } else {
+                    self.app.campaign_screen_with_catalogue(ui, &self.catalogue);
+                }
+            });
+        }
+    }
+
+    #[test]
+    fn campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text() {
+        for right_to_left in [false, true] {
+            let catalogue = messages::english().pseudo(right_to_left);
+            let title = catalogue.text("campaign_title").to_owned();
+            let guidance = catalogue.text("campaign_no_project").to_owned();
+            let setup = catalogue.text("campaign_open_setup").to_owned();
+            let help = catalogue.text("campaign_open_help").to_owned();
+            let mut harness = egui_kittest::Harness::builder()
+                .with_size(egui::Vec2::new(1024.0, 640.0))
+                .with_pixels_per_point(2.0)
+                .with_max_steps(4)
+                .build_eframe(move |creation| CampaignPreview {
+                    app: App::with_state_dir(
+                        &creation.egui_ctx,
+                        Err(BackendError::BinaryUnavailable {
+                            expected: PathBuf::from("/example/missing/codingmage"),
+                        }),
+                        Ok(std::env::temp_dir().join("codingmage-ui-campaign-preview")),
+                    ),
+                    catalogue,
+                    right_to_left,
+                });
+            harness.run_steps(2);
+            for label in [&title, &guidance, &setup, &help] {
+                assert!(
+                    harness
+                        .get_by_label_contains(label)
+                        .accesskit_node()
+                        .has_bounds()
+                );
+            }
+            harness
+                .get_by_role_and_label(egui::accesskit::Role::Button, &setup)
+                .click();
+            harness.run_steps(1);
+            assert_eq!(harness.state().app.screen, Screen::Setup);
         }
     }
 }

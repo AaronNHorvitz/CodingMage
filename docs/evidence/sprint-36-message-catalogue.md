@@ -111,3 +111,41 @@ correction changes only the evidence count. The reviewer did not complete a sepa
 Python suite because its shared build reservation did not become available; the
 builder's 41/42 receipt remains the stated Python evidence. The review does not
 qualify installed accessibility, full RTL, human trials, live providers or release.
+
+## Campaign static-copy increment
+
+The Campaign destination now reads 77 additional static headings, authority and outcome
+labels, status and mission-state guidance, browser controls and recovery actions from the
+version-one English catalogue. The no-repository state offers direct Setup and Help actions;
+the no-campaign state offers Setup. Browsing and these navigation actions still start no
+coordinator or agent. The validated catalogue remains the single source for the migrated
+copy, and its existing unit check expands every key by at least 40% with a right-to-left
+stress variant. A display-less Campaign empty-state render checks the expanded labels,
+AccessKit bounds and Setup navigation at 1024×640 logical pixels and 200% scale.
+
+Dynamic status and mission sentences, dates, durations, numbers and some other Campaign
+copy still come from Rust formatting. Other destinations and full bidirectional keyboard
+navigation also remain open under Task 36.3.2.4. This synthetic preview does not qualify
+installed Orca, desktop use, the frozen device budgets, human trials or live providers.
+
+The preceding report-assembly commit `8bd04ba10fc6e2428d78aaf297ec9b7e52f4910a`
+received an independent **INCONCLUSIVE** verdict: the reviewer found no static code issue,
+but could not acquire the shared build reservation to run the required Cargo checks. The
+builder's prior passing checks do not replace those independent checks. The review report
+remains private and unchanged; a later exact-commit review must resolve this limit.
+
+The first exact-filter focused run selected zero tests and was not counted. The corrected
+focused Campaign preview selected and passed 1/1. The exact-source software-GL native UI
+all-target suite passed 137/137 across 14 targets, including the real-coordinator disposable
+campaign, reports and recovery cases. Strict workspace Clippy with warnings denied passed.
+The Python suite ran 42 tests: 41 passed and only the unchanged CM-R01.6 source-bound
+freshness check failed on the same eight input drifts. No evidence digest was renewed.
+
+The inventory generator and schema were reviewed before regeneration. It still lists 1,759
+items and 825 explicit gaps: 23 line-derived IDs moved with the code, 112 shared entries
+changed by line/context or capped heuristic test mapping, and no semantic public item,
+schema or gap was added or removed. Those mappings do not prove coverage. Final-source
+formatting, documentation, architecture, no-write inventory and staged diff whitespace checks
+passed. The exact seven-file staged diff was inspected; its 680 added lines contained no
+private-root path, credential assignment or private-key marker. Independent exact-commit
+review remains pending. No task, acceptance criterion or gate is closed by this increment.

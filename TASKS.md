@@ -2305,6 +2305,12 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     empty state and outcome/blocker summary labels. Dynamic export/status text, whole-app
     bidirectional navigation, locale formats and packaged third-party licences remain open;
     see `docs/evidence/sprint-36-message-catalogue.md`.
+    Campaign now uses the same validated English catalogue for 77 more static labels and
+    recovery controls, and its missing-repository state offers Setup and Help navigation.
+    A 40%-expanded, right-aligned synthetic empty-state check has accessible bounds at the
+    frozen minimum window and 200% scale. Dynamic Campaign copy, broader destinations,
+    bidirectional keyboard behavior and human screen-reader qualification remain open;
+    see `docs/evidence/sprint-36-message-catalogue.md`.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).
