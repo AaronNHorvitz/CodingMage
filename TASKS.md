@@ -2234,7 +2234,13 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     14 targets and strict workspace Clippy passed after one retained style-lint correction;
     Python remains 41/42 solely for the separate CM-R01.6 eight-input source-bound drift.
     `docs/evidence/sprint-36-workplan-viewport.md` retains the scope and limitations.
-    Independent re-review of the correction remains open.
+    Independent exact-SHA re-review of the correction (`ead20d79bc98298a16b1d175c88475255285cd57`)
+    returned a narrow PASS with no findings; it does not qualify desktop, accessibility,
+    performance or human gates. A further Reports export increment validates a resolved
+    existing parent before writing, refusing parent-directory traversal and linked parents
+    into the target repository; static-path regressions and remaining race/thread/command
+    limits are recorded in Decision 0037 and
+    `docs/evidence/sprint-36-report-export-parent.md`.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->

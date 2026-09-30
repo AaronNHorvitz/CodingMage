@@ -4,7 +4,10 @@
 //! It never contains configuration paths, environment values, provider executables or
 //! credentials, and it includes repository file paths only when the owner opts in.
 
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Component, Path, PathBuf},
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -258,7 +261,28 @@ impl OutcomeReport {
         repository: &Path,
         overwrite: bool,
     ) -> Result<PathBuf, WriteError> {
-        if destination.starts_with(repository) {
+        if !destination.is_absolute()
+            || destination
+                .components()
+                .any(|part| matches!(part, Component::ParentDir))
+        {
+            return Err(WriteError::Fields(vec![crate::setup::FieldError {
+                field: "destination",
+                message: "choose an absolute path without parent-directory components".to_owned(),
+            }]));
+        }
+        // Do not create a parent directory before checking where it resolves. A linked
+        // parent could otherwise put the export inside the target repository.
+        let parent = destination.parent().ok_or(WriteError::Io)?;
+        let parent = fs::canonicalize(parent).map_err(|_| {
+            WriteError::Fields(vec![crate::setup::FieldError {
+                field: "destination",
+                message: "create an existing, readable parent directory before exporting"
+                    .to_owned(),
+            }])
+        })?;
+        let repository = fs::canonicalize(repository).map_err(|_| WriteError::Io)?;
+        if parent.starts_with(repository) {
             return Err(WriteError::InsideRepository(destination.to_path_buf()));
         }
         crate::setup::export_bytes(destination, &self.to_bytes()?, overwrite)
@@ -327,6 +351,62 @@ mod tests {
         ));
         assert!(private.export(&written, &root.join("repo"), true).is_ok());
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn report_export_refuses_traversal_and_linked_parent_into_repository() {
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-ui-report-parent-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let repository = root.join("repo");
+        fs::create_dir_all(&repository).unwrap();
+        fs::create_dir_all(root.join("outside")).unwrap();
+        std::os::unix::fs::symlink(&repository, root.join("linked-repo")).unwrap();
+        let report = OutcomeReport::assemble(
+            &ReportInputs {
+                campaign_id: "campaign",
+                repository_id: "repo",
+                authority_sha256: "a",
+                initial_commit: "b",
+                publication: "local_only".to_owned(),
+                admission: None,
+                status: None,
+                blockers: None,
+                final_report: None,
+                last_invocation: None,
+                commits: &[],
+                files: &[],
+                runs: &[],
+                run_records_observed: false,
+                run_records_truncated: false,
+            },
+            false,
+        );
+        let linked = root.join("linked-repo/report.json");
+        assert!(matches!(
+            report.export(&linked, &repository, false),
+            Err(WriteError::InsideRepository(_))
+        ));
+        let traversed = root.join("outside/../repo/report.json");
+        assert!(matches!(
+            report.export(&traversed, &repository, false),
+            Err(WriteError::Fields(_))
+        ));
+        let missing_parent = root.join("new-directory/report.json");
+        assert!(matches!(
+            report.export(&missing_parent, &repository, false),
+            Err(WriteError::Fields(_))
+        ));
+        assert!(!missing_parent.parent().unwrap().exists());
+        assert!(!repository.join("report.json").exists());
+        assert!(
+            report
+                .export(&root.join("outside/report.json"), &repository, false)
+                .is_ok()
+        );
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

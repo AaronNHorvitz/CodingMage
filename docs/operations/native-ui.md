@@ -81,8 +81,9 @@ showing sample results.
 5. Pause, resume, stop after the current unit or cancel through `campaign-control`. Cancel
    needs a second press. Each control can show its exact command and bound request identity
    before submission. Resume records the intent; press Start again to continue a paused campaign.
-6. Inspect changes, review and test records, and export a report to a path outside the
-   repository. Repository file paths are excluded unless you opt in.
+6. Inspect changes, review and test records, and export a report to a file in an existing
+   directory outside the repository. A linked parent that resolves into the repository is
+   refused. Repository file paths are excluded unless you opt in.
 
 ## Keyboard
 

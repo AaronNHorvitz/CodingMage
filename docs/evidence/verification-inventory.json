@@ -74188,9 +74188,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/report.rs:const:REPORT_SCHEMA_VERSION:19",
+      "id": "rust:crates/codingmage-ui/src/report.rs:const:REPORT_SCHEMA_VERSION:22",
       "kind": "const",
-      "line": 19,
+      "line": 22,
       "name": "REPORT_SCHEMA_VERSION",
       "path": "crates/codingmage-ui/src/report.rs",
       "surface": "rust_public_api",
@@ -74242,9 +74242,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/report.rs:fn:assemble:153",
+      "id": "rust:crates/codingmage-ui/src/report.rs:fn:assemble:156",
       "kind": "fn",
-      "line": 153,
+      "line": 156,
       "name": "assemble",
       "path": "crates/codingmage-ui/src/report.rs",
       "surface": "rust_public_api",
@@ -74304,9 +74304,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/report.rs:fn:export:255",
+      "id": "rust:crates/codingmage-ui/src/report.rs:fn:export:258",
       "kind": "fn",
-      "line": 255,
+      "line": 258,
       "name": "export",
       "path": "crates/codingmage-ui/src/report.rs",
       "surface": "rust_public_api",
@@ -74350,9 +74350,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/report.rs:fn:to_bytes:245",
+      "id": "rust:crates/codingmage-ui/src/report.rs:fn:to_bytes:248",
       "kind": "fn",
-      "line": 245,
+      "line": 248,
       "name": "to_bytes",
       "path": "crates/codingmage-ui/src/report.rs",
       "surface": "rust_public_api",
@@ -74414,9 +74414,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/report.rs:struct:Disposition:44",
+      "id": "rust:crates/codingmage-ui/src/report.rs:struct:Disposition:47",
       "kind": "struct",
-      "line": 44,
+      "line": 47,
       "name": "Disposition",
       "path": "crates/codingmage-ui/src/report.rs",
       "surface": "rust_public_api",
@@ -74478,9 +74478,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/report.rs:struct:OutcomeReport:68",
+      "id": "rust:crates/codingmage-ui/src/report.rs:struct:OutcomeReport:71",
       "kind": "struct",
-      "line": 68,
+      "line": 71,
       "name": "OutcomeReport",
       "path": "crates/codingmage-ui/src/report.rs",
       "surface": "rust_public_api",
@@ -74543,9 +74543,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/report.rs:struct:ReportInputs:117",
+      "id": "rust:crates/codingmage-ui/src/report.rs:struct:ReportInputs:120",
       "kind": "struct",
-      "line": 117,
+      "line": 120,
       "name": "ReportInputs",
       "path": "crates/codingmage-ui/src/report.rs",
       "surface": "rust_public_api",
@@ -74617,9 +74617,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/report.rs:struct:RunSummary:24",
+      "id": "rust:crates/codingmage-ui/src/report.rs:struct:RunSummary:27",
       "kind": "struct",
-      "line": 24,
+      "line": 27,
       "name": "RunSummary",
       "path": "crates/codingmage-ui/src/report.rs",
       "surface": "rust_public_api",
@@ -77781,6 +77781,6 @@
       }
     }
   ],
-  "items_sha256": "d5293a9e424e8c8566d779e5f3e4179cc6c4dd199351fcadd0fafc4b1d50c33c",
+  "items_sha256": "70f7e1dc8c07b9b0d8381333d7e3ec9472bea37e64036abdd287f0c9483eca06",
   "schema_version": 1
 }

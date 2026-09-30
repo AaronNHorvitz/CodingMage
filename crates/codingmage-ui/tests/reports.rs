@@ -68,8 +68,17 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
     harness.run_steps(2);
     harness.get_by_label_contains("is inside the target repository");
     assert!(!fixture.target.join("report.json").exists());
+    let linked_parent = fixture.root.join("linked-target");
+    std::os::unix::fs::symlink(&fixture.target, &linked_parent).unwrap();
+    harness.state_mut().reports_state_mut().export_path =
+        linked_parent.join("report.json").display().to_string();
+    harness.state_mut().export_report();
+    harness.run_steps(2);
+    harness.get_by_label_contains("is inside the target repository");
+    assert!(!fixture.target.join("report.json").exists());
     // Export outside works once; the second export is refused without overwrite.
     let destination = fixture.root.join("exports/report.json");
+    fs::create_dir_all(destination.parent().unwrap()).unwrap();
     {
         let reports = harness.state_mut().reports_state_mut();
         reports.export_path = destination.display().to_string();

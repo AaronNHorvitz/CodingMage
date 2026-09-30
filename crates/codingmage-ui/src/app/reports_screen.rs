@@ -144,6 +144,7 @@ impl App {
         blocker_report(ui, &report);
         ui.separator();
         ui.strong("Export");
+        ui.small("Choose a file in an existing directory outside the target repository. Linked directories that lead into the repository are refused.");
         ui.horizontal(|ui| {
             let label = ui.label("Destination");
             ui.add(
