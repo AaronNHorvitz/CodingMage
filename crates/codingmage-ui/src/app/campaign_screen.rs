@@ -176,7 +176,7 @@ impl App {
         }
     }
 
-    fn status_arguments(&self) -> Option<Vec<String>> {
+    pub(super) fn status_arguments(&self) -> Option<Vec<String>> {
         let (config, campaign, _) = self.campaign_arguments()?;
         Some(vec![
             "campaign-status".to_owned(),
@@ -187,7 +187,7 @@ impl App {
         ])
     }
 
-    fn request_status(&mut self) {
+    pub(super) fn request_status(&mut self) {
         let Some(arguments) = self.status_arguments() else {
             return;
         };

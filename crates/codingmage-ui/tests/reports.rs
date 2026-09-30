@@ -24,6 +24,102 @@ fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::Ap
     harness
 }
 
+#[test]
+fn report_empty_states_route_to_setup_campaign_and_help() {
+    let fixture = Fixture::new("report-empty", 1);
+    let mut harness = harness(
+        CoordinatorBinary::at(&coordinator_binary()),
+        [1100.0, 900.0],
+    );
+    harness.state_mut().select_screen(Screen::Reports);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Open a repository in Setup");
+    harness.get_by_label("Open Help").click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Help);
+    harness.state_mut().select_screen(Screen::Reports);
+    harness.run_steps(2);
+    harness.get_by_label("Open Setup").click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Setup);
+
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some()
+    }));
+    harness.state_mut().select_screen(Screen::Reports);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Select a campaign on Campaign");
+    harness.get_by_label("Open Campaign").click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Campaign);
+}
+
+#[test]
+fn report_sources_show_exact_refresh_commands_and_recover_from_malformed_reads() {
+    let fixture = Fixture::new("report-source-recovery", 1);
+    let spec = write_campaign(&fixture, "report-source-recovery-campaign", 1);
+    let before = tree_digest(&fixture.target);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.status().value.is_some() && app.explanation().value.is_some()
+    }));
+    harness.state_mut().select_screen(Screen::Reports);
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: Refresh report status")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("codingmage campaign-status --config");
+    harness
+        .get_by_label("Show command: Refresh report blockers")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("codingmage campaign-explain-blocker --config");
+
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding: binding.clone(),
+        label: "campaign-status",
+        request_id: None,
+        result: Ok(b"{".to_vec()),
+    }));
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-explain-blocker",
+        request_id: None,
+        result: Ok(b"{".to_vec()),
+    }));
+    harness.run_steps(2);
+    harness.get_by_label("Campaign status refresh failed");
+    harness.get_by_label("Blocker explanation refresh failed");
+    assert!(
+        harness
+            .get_all_by_label_contains("codingmage.ui.contract")
+            .count()
+            >= 2
+    );
+    harness.get_by_label_contains("retained campaign status may no longer match");
+    harness.get_by_label_contains("retained blocker explanation may no longer match");
+
+    harness.get_by_label("Refresh report status").click();
+    harness.get_by_label("Refresh report blockers").click();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.status().value.is_some()
+            && app.status().last_error.is_none()
+            && app.explanation().value.is_some()
+            && app.explanation().last_error.is_none()
+    }));
+    harness.run_steps(2);
+    harness.get_by_label_contains("Campaign status observation: live");
+    harness.get_by_label_contains("Blocker explanation observation: live");
+    assert_eq!(tree_digest(&fixture.target), before);
+}
+
 fn export_and_settle(harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>) {
     harness.state_mut().export_report();
     assert!(harness.state().report_export_pending());

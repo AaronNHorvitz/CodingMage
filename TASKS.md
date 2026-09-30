@@ -2262,7 +2262,11 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     `889c8c7db4bca2338d5466637ea2e4e9ba34b962` returned a bounded PASS with no findings;
     the public
     `codingmage` export command, report assembly/preview responsiveness and full catalogue
-    remain open; no acceptance or gate is ticked by this correction.
+    remain open; no acceptance or gate is ticked by this correction. Reports now offers
+    direct empty-state navigation and separate coordinator status/blocker observation,
+    failure, stale and recovery controls with exact command disclosures. The malformed
+    response and real-process refresh fixture is recorded in
+    `docs/evidence/sprint-36-report-source-recovery.md`; the wider state catalogue remains open.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->

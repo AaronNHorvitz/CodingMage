@@ -93,10 +93,21 @@ passed 132/132 across 14 targets, including the disposable real-coordinator Repo
 setup-to-outcome workflows. Strict workspace Clippy (`-D warnings`), formatting,
 documentation, architecture, inventory and diff-whitespace checks passed. Python unittest
 passed 41/42; the sole failure is the unchanged CM-R01.6 eight-input source-bound evidence
-drift. No digest was renewed. This increment has not received independent exact-commit review.
+drift. No digest was renewed. At the original checkpoint, independent exact-commit review
+was pending; its later result is recorded below.
 
 The inventory extractor and schema were reviewed before regeneration. It still has 1,751
 items and 825 explicit gaps, with no semantic public surface or stable error-code change.
-Twelve line-derived public item IDs moved and 107 capped, crate-wide heuristic test
+Fourteen line-derived public item IDs moved and 107 capped, crate-wide heuristic test
 mappings changed after the new Reports test. These mappings are an index, not evidence
 that the mapped tests cover each listed public item.
+
+Independent read-only review of exact commit
+`b3360ebce8700f1c42033b3386c48697b83547df` returned a bounded **PASS** with one Low
+finding: the previous sentence counted twelve relocated line-derived IDs instead of
+fourteen. Comparing the committed base and candidate inventories by semantic facet
+confirmed nine relocations in `reports_screen.rs` and five in `messages.rs`; this
+correction changes only the evidence count. The reviewer did not complete a separate
+Python suite because its shared build reservation did not become available; the
+builder's 41/42 receipt remains the stated Python evidence. The review does not
+qualify installed accessibility, full RTL, human trials, live providers or release.

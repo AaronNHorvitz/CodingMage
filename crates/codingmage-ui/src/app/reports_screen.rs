@@ -5,12 +5,13 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::{App, failure_box};
+use super::{App, Screen, failure_box};
 use crate::{
-    backend::{BackendError, Job, Request, Response},
+    backend::{BackendError, Job, Request, Response, explain_code},
+    command, content,
     launch::LaunchState,
     messages::{self, Catalogue},
-    observed::Freshness,
+    observed::{Freshness, age_label},
     report::{ChangeCoverage, OutcomeReport, ReportInputs},
 };
 
@@ -212,11 +213,27 @@ impl App {
 
     fn reports_content(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
         ui.heading(catalogue.text("reports_title"));
+        if self.project.is_none() {
+            ui.label(catalogue.text("reports_no_project"));
+            self.report_navigation(ui, catalogue, Screen::Setup, "reports_open_setup");
+            return;
+        }
+        if self.campaign.is_none() {
+            ui.label(catalogue.text("reports_open_campaign"));
+            self.report_navigation(
+                ui,
+                catalogue,
+                Screen::Campaign,
+                "reports_open_campaign_action",
+            );
+            return;
+        }
         let Some(report) = self.assemble_report(self.reports.include_paths) else {
             ui.label(catalogue.text("reports_open_campaign"));
             return;
         };
         ui.label(catalogue.text("reports_intro"));
+        self.report_source_controls(ui, catalogue);
         let freshness = self.report_source_freshness();
         let source_states = [
             self.status.freshness(self.now),
@@ -244,6 +261,15 @@ impl App {
         ui.separator();
         blocker_report(ui, &report, catalogue);
         ui.separator();
+        self.report_export_section(ui, catalogue, &report);
+    }
+
+    fn report_export_section(
+        &mut self,
+        ui: &mut egui::Ui,
+        catalogue: &Catalogue,
+        report: &OutcomeReport,
+    ) {
         ui.strong(catalogue.text("reports_export_title"));
         ui.small(catalogue.text("reports_destination_guidance"));
         ui.small(catalogue.text("reports_command_unavailable"));
@@ -304,6 +330,161 @@ impl App {
                 .show(ui, |ui| {
                     crate::content::render(ui, &String::from_utf8_lossy(&bytes));
                 });
+        }
+    }
+
+    fn report_navigation(
+        &mut self,
+        ui: &mut egui::Ui,
+        catalogue: &Catalogue,
+        target: Screen,
+        key: &str,
+    ) {
+        if ui.button(catalogue.text(key)).clicked() {
+            self.screen = target;
+        }
+        if ui.button(catalogue.text("reports_open_help")).clicked() {
+            self.screen = Screen::Help;
+        }
+    }
+
+    fn report_source_controls(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        ui.strong(catalogue.text("reports_sources_title"));
+        self.report_status_source(ui, catalogue);
+        self.report_blocker_source(ui, catalogue);
+        ui.small(catalogue.text("reports_other_sources"));
+        if ui.button(catalogue.text("reports_open_changes")).clicked() {
+            self.screen = Screen::Changes;
+        }
+        if ui
+            .button(catalogue.text("reports_open_campaign_action"))
+            .clicked()
+        {
+            self.screen = Screen::Campaign;
+        }
+    }
+
+    fn report_status_source(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        let arguments = self.status_arguments();
+        let previewable = command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
+        if ui
+            .add_enabled(
+                previewable && !self.status.loading,
+                egui::Button::new(catalogue.text("reports_refresh_status")),
+            )
+            .clicked()
+        {
+            self.request_status();
+        }
+        if let Some(arguments) = arguments {
+            command::show_for(
+                ui,
+                catalogue.text("reports_refresh_status"),
+                self.binary_path.as_deref(),
+                &arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, catalogue.text("reports_refresh_status"));
+        }
+        if !previewable {
+            ui.label(catalogue.text("reports_refresh_unavailable"));
+        }
+        let freshness = self.status.freshness(self.now);
+        ui.label(format!(
+            "{} {} ({})",
+            catalogue.text("reports_status_observation"),
+            freshness.label(),
+            age_label(self.status.age(self.now))
+        ));
+        if self.status.loading {
+            ui.label(catalogue.text("reports_status_loading"));
+        }
+        if freshness == Freshness::Stale {
+            ui.label(catalogue.text("reports_status_stale"));
+        }
+        if let Some((_, error)) = &self.status.last_error {
+            let code = error.code();
+            let (cause, action) = explain_code(&code);
+            failure_box(
+                ui,
+                catalogue.text("reports_status_failed"),
+                &format!("{} ({})", cause, content::list_label(&code)),
+                action,
+            );
+        }
+        match (&self.status.value, freshness) {
+            (None, Freshness::NotRequested) => {
+                ui.label(catalogue.text("reports_status_unobserved"));
+            }
+            (None, Freshness::Failed) => {
+                ui.label(catalogue.text("reports_status_unknown"));
+            }
+            (Some(None), _) => {
+                ui.label(catalogue.text("reports_status_not_started"));
+            }
+            _ => {}
+        }
+    }
+
+    fn report_blocker_source(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        let arguments = self.explanation_arguments();
+        let previewable = command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
+        if ui
+            .add_enabled(
+                previewable && !self.explanation.loading,
+                egui::Button::new(catalogue.text("reports_refresh_blockers")),
+            )
+            .clicked()
+        {
+            self.request_explanation();
+        }
+        if let Some(arguments) = arguments {
+            command::show_for(
+                ui,
+                catalogue.text("reports_refresh_blockers"),
+                self.binary_path.as_deref(),
+                &arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, catalogue.text("reports_refresh_blockers"));
+        }
+        if !previewable {
+            ui.label(catalogue.text("reports_refresh_unavailable"));
+        }
+        let freshness = self.explanation.freshness(self.now);
+        ui.label(format!(
+            "{} {} ({})",
+            catalogue.text("reports_blocker_observation"),
+            freshness.label(),
+            age_label(self.explanation.age(self.now))
+        ));
+        if self.explanation.loading {
+            ui.label(catalogue.text("reports_blockers_loading"));
+        }
+        if freshness == Freshness::Stale {
+            ui.label(catalogue.text("reports_blockers_stale"));
+        }
+        if let Some((_, error)) = &self.explanation.last_error {
+            let code = error.code();
+            let (cause, action) = explain_code(&code);
+            failure_box(
+                ui,
+                catalogue.text("reports_blockers_failed"),
+                &format!("{} ({})", cause, content::list_label(&code)),
+                action,
+            );
+        }
+        match (&self.explanation.value, freshness) {
+            (None, Freshness::NotRequested) => {
+                ui.label(catalogue.text("reports_blockers_unobserved"));
+            }
+            (None, Freshness::Failed) => {
+                ui.label(catalogue.text("reports_blockers_unknown"));
+            }
+            (Some(None), _) => {
+                ui.label(catalogue.text("reports_blockers_none"));
+            }
+            _ => {}
         }
     }
 }
@@ -520,7 +701,8 @@ mod tests {
             harness.run_steps(2);
             for key in [
                 "reports_title",
-                "reports_open_campaign",
+                "reports_no_project",
+                "reports_open_setup",
                 "reports_outcome_title",
                 "reports_accepted",
                 "reports_blocker_title",
