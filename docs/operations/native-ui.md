@@ -87,6 +87,8 @@ showing sample results.
    excluded unless you opt in. An export without overwrite consent cannot replace a file
    created concurrently at the destination. A report's changed-file count is "not observed"
    until its coordinator projection arrives; a truncated projection is labelled a lower bound.
+   Export runs on the bounded background worker. Wait for its result before relying on the
+   file; changing the selected view does not cancel a write that already started.
 
 ## Keyboard
 
@@ -115,7 +117,8 @@ essential animation. The six appearance baselines are offscreen software renders
   rounds and evidence identities only.
 - Report export retains a directory handle and checks the selected repository identity, but
   another local process may still race a directory rename between checks. Export file I/O
-  remains on the UI thread and has no exact `codingmage` command equivalent.
+  runs on the UI worker and has no exact `codingmage` command equivalent. Report assembly
+  and the on-screen JSON preview still run during rendering.
 - The interface keeps private state under `$XDG_CONFIG_HOME/codingmage-ui` (or
   `~/.config/codingmage-ui`): recent configurations, per-configuration campaign memory,
   admissions, launch records with private stdout/stderr captures, and control ledgers.

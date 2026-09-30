@@ -24,6 +24,46 @@ fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::Ap
     harness
 }
 
+fn export_and_settle(harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>) {
+    harness.state_mut().export_report();
+    assert!(harness.state().report_export_pending());
+    assert!(settle(harness, Duration::from_secs(30), |app| {
+        !app.report_export_pending()
+    }));
+}
+
+fn reject_duplicate_and_foreign_export_completion(
+    harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>,
+) {
+    harness.state_mut().export_report();
+    assert!(harness.state().report_export_pending());
+    harness.state_mut().export_report();
+    assert!(harness.state().report_export_pending());
+    assert!(
+        harness
+            .state()
+            .reports_state()
+            .message
+            .as_ref()
+            .is_some_and(|message| message
+                .as_ref()
+                .is_err_and(|error| error.contains("already pending")))
+    );
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(!harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "report-export",
+        request_id: Some("other-export".to_owned()),
+        result: Ok(Vec::new()),
+    }));
+    assert!(harness.state().report_export_pending());
+    assert!(settle(harness, Duration::from_secs(30), |app| {
+        !app.report_export_pending()
+    }));
+}
+
 #[test]
 fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safeguards() {
     let fixture = Fixture::new("reports", 2);
@@ -68,7 +108,7 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
         let reports = harness.state_mut().reports_state_mut();
         reports.export_path = fixture.target.join("report.json").display().to_string();
     }
-    harness.state_mut().export_report();
+    reject_duplicate_and_foreign_export_completion(&mut harness);
     harness.run_steps(2);
     harness.get_by_label_contains("is inside the target repository");
     assert!(!fixture.target.join("report.json").exists());
@@ -76,7 +116,7 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
     std::os::unix::fs::symlink(&fixture.target, &linked_parent).unwrap();
     harness.state_mut().reports_state_mut().export_path =
         linked_parent.join("report.json").display().to_string();
-    harness.state_mut().export_report();
+    export_and_settle(&mut harness);
     harness.run_steps(2);
     harness.get_by_label_contains("is inside the target repository");
     assert!(!fixture.target.join("report.json").exists());
@@ -87,12 +127,12 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
         let reports = harness.state_mut().reports_state_mut();
         reports.export_path = destination.display().to_string();
     }
-    harness.state_mut().export_report();
+    export_and_settle(&mut harness);
     harness.run_steps(2);
     harness.get_by_label_contains("report exported to");
     let exported = fs::read_to_string(&destination).unwrap();
     assert!(!exported.contains("src/lib.rs"));
-    harness.state_mut().export_report();
+    export_and_settle(&mut harness);
     harness.run_steps(2);
     harness.get_by_label_contains("already exists");
     // With paths and overwrite, the file is replaced and marked as containing paths.
@@ -101,7 +141,7 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
         reports.include_paths = true;
         reports.overwrite = true;
     }
-    harness.state_mut().export_report();
+    export_and_settle(&mut harness);
     harness.run_steps(2);
     let exported = fs::read_to_string(&destination).unwrap();
     assert!(exported.contains("src/lib.rs"));
@@ -151,7 +191,7 @@ fn report_and_export_label_retained_status_after_failed_refresh() {
     );
     let destination = fixture.root.join("stale-report.json");
     harness.state_mut().reports_state_mut().export_path = destination.display().to_string();
-    harness.state_mut().export_report();
+    export_and_settle(&mut harness);
     let exported = fs::read_to_string(&destination).unwrap();
     assert!(exported.contains("campaign status stale"));
     assert_eq!(tree_digest(&fixture.target), before);

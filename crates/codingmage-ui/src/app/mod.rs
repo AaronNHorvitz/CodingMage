@@ -628,6 +628,7 @@ impl App {
                 true
             }
             "support-bundle" => self.accept_support_bundle(response),
+            "report-export" => self.accept_report_export(response),
             _ => false,
         }
     }
@@ -711,6 +712,7 @@ impl App {
             || self.changes.loading
             || self.records.loading
             || self.support.pending()
+            || self.report_export_pending()
         {
             ctx.request_repaint_after(Duration::from_millis(250));
         } else if self.launch_is_live() || self.execution.ledger.pending().is_some() {

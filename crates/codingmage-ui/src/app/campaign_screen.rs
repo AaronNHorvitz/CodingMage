@@ -81,6 +81,7 @@ impl App {
         self.invalidate_evidence_requests();
         self.blocker_query.clear();
         self.support = super::SupportState::default();
+        self.clear_report_export();
         self.preflight.clear();
         self.changes.clear();
         self.changes_range = None;

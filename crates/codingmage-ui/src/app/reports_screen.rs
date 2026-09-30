@@ -4,10 +4,18 @@ use std::{path::PathBuf, time::Instant};
 
 use super::{App, failure_box};
 use crate::{
+    backend::{BackendError, Job, Request, Response},
     launch::LaunchState,
     observed::Freshness,
     report::{ChangeCoverage, OutcomeReport, ReportInputs},
 };
+
+#[derive(Debug)]
+struct PendingExport {
+    request_id: String,
+    destination: PathBuf,
+    contains_repository_paths: bool,
+}
 
 /// Reports screen state.
 #[derive(Default)]
@@ -22,6 +30,7 @@ pub struct ReportsState {
     pub message: Option<Result<String, String>>,
     /// Show a bounded JSON preview inline; export retains the full document.
     pub show_json: bool,
+    pending: Option<PendingExport>,
 }
 
 impl App {
@@ -34,6 +43,17 @@ impl App {
     /// Mutable reports screen state (used by tests).
     pub const fn reports_state_mut(&mut self) -> &mut ReportsState {
         &mut self.reports
+    }
+
+    /// Whether an explicitly requested export is queued or running.
+    #[must_use]
+    pub fn report_export_pending(&self) -> bool {
+        self.reports.pending.is_some()
+    }
+
+    pub(super) fn clear_report_export(&mut self) {
+        self.reports.pending = None;
+        self.reports.message = None;
     }
 
     /// Assembles the outcome report from the current observations.
@@ -89,29 +109,73 @@ impl App {
 
     /// Exports the report to the configured destination.
     pub fn export_report(&mut self) {
+        if self.reports.pending.is_some() {
+            self.reports.message = Some(Err("a report export is already pending".to_owned()));
+            return;
+        }
         let Some(report) = self.assemble_report(self.reports.include_paths) else {
             self.reports.message = Some(Err("select a campaign first".to_owned()));
             return;
         };
-        let Some(project) = &self.project else {
+        let Some(repository) = self
+            .project
+            .as_ref()
+            .map(|project| project.config.target_path.clone())
+        else {
             return;
         };
         let destination = PathBuf::from(self.reports.export_path.trim());
-        let repository = project.config.target_path.clone();
-        self.reports.message = Some(
-            match report.export(&destination, &repository, self.reports.overwrite) {
-                Ok(path) => Ok(format!(
-                    "report exported to {} ({} repository paths)",
-                    path.display(),
-                    if report.contains_repository_paths {
-                        "with"
-                    } else {
-                        "without"
-                    }
-                )),
-                Err(error) => Err(error.to_string()),
+        let contains_repository_paths = report.contains_repository_paths;
+        self.next_evidence_request += 1;
+        let request_id = format!("report-export-{}", self.next_evidence_request);
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::ReportExport {
+                report: Box::new(report),
+                destination: destination.clone(),
+                repository,
+                overwrite: self.reports.overwrite,
             },
-        );
+            request_id: Some(request_id.clone()),
+        };
+        self.reports.message = None;
+        match self.submit(request) {
+            Ok(()) => {
+                self.reports.pending = Some(PendingExport {
+                    request_id,
+                    destination,
+                    contains_repository_paths,
+                });
+            }
+            Err(error) => self.reports.message = Some(Err(error.to_string())),
+        }
+    }
+
+    pub(super) fn accept_report_export(&mut self, response: Response) -> bool {
+        let Some(pending) = self.reports.pending.as_ref() else {
+            return false;
+        };
+        if response.request_id.as_deref() != Some(pending.request_id.as_str()) {
+            return false;
+        }
+        let Some(pending) = self.reports.pending.take() else {
+            return false;
+        };
+        self.reports.message = Some(match response.result {
+            Ok(_) => Ok(format!(
+                "report exported to {} ({} repository paths)",
+                pending.destination.display(),
+                if pending.contains_repository_paths {
+                    "with"
+                } else {
+                    "without"
+                }
+            )),
+            Err(BackendError::Refused(reason)) => Err(reason),
+            Err(error) => Err(error.to_string()),
+        });
+        true
     }
 
     pub(super) fn reports_screen(&mut self, ui: &mut egui::Ui) {
@@ -150,6 +214,7 @@ impl App {
         ui.separator();
         ui.strong("Export");
         ui.small("Choose a file in an existing directory outside the target repository. Linked directories that lead into the repository are refused.");
+        ui.small("This local report export has no matching codingmage command yet.");
         ui.horizontal(|ui| {
             let label = ui.label("Destination");
             ui.add(
@@ -165,10 +230,19 @@ impl App {
                 "Include repository file paths",
             );
             ui.checkbox(&mut self.reports.overwrite, "Replace an existing file");
-            if ui.button("Export report").clicked() {
+            if ui
+                .add_enabled(
+                    !self.report_export_pending(),
+                    egui::Button::new("Export report"),
+                )
+                .clicked()
+            {
                 self.export_report();
             }
         });
+        if self.report_export_pending() {
+            ui.label("Export pending; the report snapshot was captured when you requested it.");
+        }
         if let Some(message) = &self.reports.message {
             match message {
                 Ok(text) => {

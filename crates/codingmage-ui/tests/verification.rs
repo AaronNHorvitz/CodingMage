@@ -320,7 +320,10 @@ fn setup_to_outcome_workflow_through_the_interface() {
         reports.export_path = workspace.join("outcome-report.json").display().to_string();
     }
     harness.state_mut().export_report();
-    harness.run_steps(2);
+    assert!(harness.state().report_export_pending());
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        !app.report_export_pending()
+    }));
     evidence.snapshot(&mut harness, "13-reports-exported", 1.0);
     let exported = fs::read_to_string(workspace.join("outcome-report.json")).unwrap();
     assert!(exported.contains("\"delivery\": \"withheld"));

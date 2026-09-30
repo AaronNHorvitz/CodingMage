@@ -18,6 +18,7 @@ use std::{
 };
 
 use super::cli::{BackendError, CoordinatorBinary};
+use crate::report::OutcomeReport;
 
 /// Maximum queued requests before new requests are refused.
 pub const QUEUE_CAPACITY: usize = 8;
@@ -60,6 +61,17 @@ pub enum Job {
         /// Deadline for the coordinator command.
         deadline: Duration,
     },
+    /// Export an already assembled observation off the render thread.
+    ReportExport {
+        /// Snapshot captured when the owner requested export.
+        report: Box<OutcomeReport>,
+        /// Exact destination selected by the owner.
+        destination: PathBuf,
+        /// Repository that the destination must remain outside.
+        repository: PathBuf,
+        /// Whether replacement was explicitly requested.
+        overwrite: bool,
+    },
 }
 
 impl Job {
@@ -69,6 +81,7 @@ impl Job {
         match self {
             Self::Command { label, .. } => label,
             Self::SupportBundle { .. } => "support-bundle",
+            Self::ReportExport { .. } => "report-export",
         }
     }
 }
@@ -244,6 +257,15 @@ fn run_loop(
                     deadline,
                 } => validate_support_destination(destination, repository)
                     .and_then(|()| binary.run(arguments, *deadline, &cancel)),
+                Job::ReportExport {
+                    report,
+                    destination,
+                    repository,
+                    overwrite,
+                } => report
+                    .export(destination, repository, *overwrite)
+                    .map(|_| Vec::new())
+                    .map_err(|error| BackendError::Refused(error.to_string())),
             };
             stop.store(true, Ordering::Release);
             let _ = watcher.join();
