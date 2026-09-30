@@ -16,7 +16,7 @@ use crate::{
 };
 
 /// Report document version.
-pub const REPORT_SCHEMA_VERSION: u16 = 2;
+pub const REPORT_SCHEMA_VERSION: u16 = 3;
 
 /// One run summarized for the report.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -62,6 +62,40 @@ pub struct Disposition {
     pub delivery: String,
 }
 
+/// Completeness of the coordinator's change projection used by this report.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ChangeCoverage {
+    /// Whether the projection was observed at all.
+    pub observed: bool,
+    /// Whether the coordinator omitted additional commits.
+    pub commits_truncated: bool,
+    /// Whether the coordinator omitted additional changed files.
+    pub files_truncated: bool,
+}
+
+impl ChangeCoverage {
+    fn normalized(self) -> Self {
+        Self {
+            observed: self.observed,
+            commits_truncated: self.observed && self.commits_truncated,
+            files_truncated: self.observed && self.files_truncated,
+        }
+    }
+
+    fn limitation(self) -> Option<&'static str> {
+        if !self.observed {
+            Some("Changes were not observed; commit and changed-file counts are unknown.")
+        } else if self.commits_truncated || self.files_truncated {
+            Some(
+                "The coordinator omitted additional changes; affected displayed counts are lower bounds.",
+            )
+        } else {
+            None
+        }
+    }
+}
+
 /// The exportable report.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -94,8 +128,10 @@ pub struct OutcomeReport {
     pub last_invocation: Option<CampaignOutcome>,
     /// Coordinator commits on the campaign branch.
     pub commits: Vec<CommitSummary>,
-    /// Number of changed files.
-    pub changed_file_count: usize,
+    /// Observation and truncation state of the coordinator's change projection.
+    pub change_coverage: ChangeCoverage,
+    /// Number of observed changed files, or unknown when changes were not observed.
+    pub changed_file_count: Option<usize>,
     /// Changed files, present only when repository paths were included.
     pub changed_files: Option<Vec<FileChange>>,
     /// Whether the document contains repository paths.
@@ -139,6 +175,8 @@ pub struct ReportInputs<'a> {
     pub commits: &'a [CommitSummary],
     /// Changed files.
     pub files: &'a [FileChange],
+    /// Observation and truncation state of the coordinator's change projection.
+    pub change_coverage: ChangeCoverage,
     /// Run records.
     pub runs: &'a [RunRecord],
     /// Whether run records were observed.
@@ -147,50 +185,53 @@ pub struct ReportInputs<'a> {
     pub run_records_truncated: bool,
 }
 
+impl RunSummary {
+    fn from_record(record: &RunRecord) -> Self {
+        Self {
+            run_id: record.run_id.clone(),
+            task_id: record.task_id(),
+            candidate_commit: record
+                .checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.candidate_commit.clone()),
+            review_verdict: record
+                .checkpoint
+                .as_ref()
+                .filter(|_| record.journal_problem.is_none())
+                .and_then(|checkpoint| checkpoint.review_verdict.clone()),
+            correction_rounds: record
+                .checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.correction_rounds),
+            gate_evidence: record
+                .checkpoint
+                .as_ref()
+                .filter(|_| record.journal_problem.is_none())
+                .map(|checkpoint| checkpoint.gate_evidence.clone())
+                .unwrap_or_default(),
+            problems: record
+                .checkpoint_problem
+                .iter()
+                .chain(record.journal_problem.iter())
+                .cloned()
+                .chain(
+                    record
+                        .phases_truncated
+                        .then(|| "additional journal phases omitted".to_owned()),
+                )
+                .collect(),
+        }
+    }
+}
+
 impl OutcomeReport {
     /// Assembles the report; repository paths are included only when requested.
     #[must_use]
     pub fn assemble(inputs: &ReportInputs<'_>, include_repository_paths: bool) -> Self {
-        let runs = inputs
-            .runs
-            .iter()
-            .map(|record| RunSummary {
-                run_id: record.run_id.clone(),
-                task_id: record.task_id(),
-                candidate_commit: record
-                    .checkpoint
-                    .as_ref()
-                    .map(|checkpoint| checkpoint.candidate_commit.clone()),
-                review_verdict: record
-                    .checkpoint
-                    .as_ref()
-                    .filter(|_| record.journal_problem.is_none())
-                    .and_then(|checkpoint| checkpoint.review_verdict.clone()),
-                correction_rounds: record
-                    .checkpoint
-                    .as_ref()
-                    .map(|checkpoint| checkpoint.correction_rounds),
-                gate_evidence: record
-                    .checkpoint
-                    .as_ref()
-                    .filter(|_| record.journal_problem.is_none())
-                    .map(|checkpoint| checkpoint.gate_evidence.clone())
-                    .unwrap_or_default(),
-                problems: record
-                    .checkpoint_problem
-                    .iter()
-                    .chain(record.journal_problem.iter())
-                    .cloned()
-                    .chain(
-                        record
-                            .phases_truncated
-                            .then(|| "additional journal phases omitted".to_owned()),
-                    )
-                    .collect(),
-            })
-            .collect();
+        let runs = inputs.runs.iter().map(RunSummary::from_record).collect();
         let status = inputs.status;
-        Self {
+        let coverage = inputs.change_coverage.normalized();
+        let mut report = Self {
             schema_version: REPORT_SCHEMA_VERSION,
             generated_at_ms: now_ms(),
             interface_version: env!("CARGO_PKG_VERSION").to_owned(),
@@ -206,10 +247,18 @@ impl OutcomeReport {
             blockers: inputs.blockers.cloned(),
             final_report: inputs.final_report.cloned(),
             last_invocation: inputs.last_invocation.cloned(),
-            commits: inputs.commits.to_vec(),
-            changed_file_count: inputs.files.len(),
-            changed_files: include_repository_paths.then(|| inputs.files.to_vec()),
-            contains_repository_paths: include_repository_paths,
+            commits: if coverage.observed {
+                inputs.commits.to_vec()
+            } else {
+                Vec::new()
+            },
+            change_coverage: coverage,
+            changed_file_count: coverage.observed.then_some(inputs.files.len()),
+            changed_files: (include_repository_paths && coverage.observed)
+                .then(|| inputs.files.to_vec()),
+            contains_repository_paths: include_repository_paths
+                && coverage.observed
+                && !inputs.files.is_empty(),
             runs,
             run_records_observed: inputs.run_records_observed,
             run_records_truncated: inputs.run_records_truncated,
@@ -234,7 +283,11 @@ impl OutcomeReport {
             .into_iter()
             .map(str::to_owned)
             .collect(),
+        };
+        if let Some(limit) = coverage.limitation() {
+            report.limits.push(limit.to_owned());
         }
+        report
     }
 
     /// Pretty JSON bytes.
@@ -296,12 +349,17 @@ mod tests {
             last_invocation: None,
             commits: &[],
             files: &files,
+            change_coverage: ChangeCoverage {
+                observed: true,
+                commits_truncated: false,
+                files_truncated: false,
+            },
             runs: &[],
             run_records_observed: false,
             run_records_truncated: false,
         };
         let private = OutcomeReport::assemble(&inputs, false);
-        assert_eq!(private.schema_version, 2);
+        assert_eq!(private.schema_version, 3);
         let text = String::from_utf8(private.to_bytes().unwrap()).unwrap();
         assert!(!text.contains("src/lib.rs"));
         assert!(text.contains("\"changed_file_count\": 1"));
@@ -336,6 +394,72 @@ mod tests {
     }
 
     #[test]
+    fn missing_and_truncated_change_observations_keep_distinct_counts() {
+        let file = FileChange {
+            path: "src/one.rs".to_owned(),
+            added: Some(1),
+            deleted: Some(0),
+        };
+        let mut inputs = ReportInputs {
+            campaign_id: "c",
+            repository_id: "repo-1",
+            authority_sha256: "a",
+            initial_commit: "b",
+            publication: "local_only".to_owned(),
+            admission: None,
+            status: None,
+            blockers: None,
+            final_report: None,
+            last_invocation: None,
+            commits: &[],
+            files: std::slice::from_ref(&file),
+            change_coverage: ChangeCoverage {
+                observed: false,
+                commits_truncated: true,
+                files_truncated: true,
+            },
+            runs: &[],
+            run_records_observed: false,
+            run_records_truncated: false,
+        };
+        let missing = OutcomeReport::assemble(&inputs, true);
+        assert_eq!(missing.changed_file_count, None);
+        assert!(!missing.change_coverage.observed);
+        assert!(!missing.change_coverage.commits_truncated);
+        assert!(!missing.change_coverage.files_truncated);
+        assert!(missing.changed_files.is_none());
+        assert!(!missing.contains_repository_paths);
+        assert!(missing.limits.iter().any(|line| line.contains("unknown")));
+        inputs.files = &[];
+        inputs.change_coverage = ChangeCoverage {
+            observed: true,
+            commits_truncated: false,
+            files_truncated: false,
+        };
+        let observed_zero = OutcomeReport::assemble(&inputs, false);
+        assert_eq!(observed_zero.changed_file_count, Some(0));
+        assert!(observed_zero.change_coverage.observed);
+        assert!(!OutcomeReport::assemble(&inputs, true).contains_repository_paths);
+        inputs.files = std::slice::from_ref(&file);
+        inputs.change_coverage.commits_truncated = true;
+        inputs.change_coverage.files_truncated = true;
+        let truncated = OutcomeReport::assemble(&inputs, true);
+        assert_eq!(truncated.changed_file_count, Some(1));
+        assert!(truncated.change_coverage.commits_truncated);
+        assert!(truncated.change_coverage.files_truncated);
+        assert!(
+            truncated
+                .limits
+                .iter()
+                .any(|line| line.contains("lower bounds"))
+        );
+        let json: serde_json::Value =
+            serde_json::from_slice(&truncated.to_bytes().unwrap()).unwrap();
+        assert_eq!(json["changed_file_count"], 1);
+        assert_eq!(json["change_coverage"]["files_truncated"], true);
+    }
+
+    #[test]
     fn report_export_refuses_traversal_and_linked_parent_into_repository() {
         let root = std::env::temp_dir().join(format!(
             "codingmage-ui-report-parent-{}",
@@ -360,6 +484,11 @@ mod tests {
                 last_invocation: None,
                 commits: &[],
                 files: &[],
+                change_coverage: ChangeCoverage {
+                    observed: false,
+                    commits_truncated: false,
+                    files_truncated: false,
+                },
                 runs: &[],
                 run_records_observed: false,
                 run_records_truncated: false,
@@ -425,6 +554,11 @@ mod tests {
                     last_invocation: None,
                     commits: &[],
                     files: &[],
+                    change_coverage: ChangeCoverage {
+                        observed: false,
+                        commits_truncated: false,
+                        files_truncated: false,
+                    },
                     runs: std::slice::from_ref(run),
                     run_records_observed: true,
                     run_records_truncated: false,

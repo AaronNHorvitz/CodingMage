@@ -85,7 +85,8 @@ showing sample results.
    directory outside the repository. A linked parent that resolves into the repository or
    changes identity during an observed export step is refused. Repository file paths are
    excluded unless you opt in. An export without overwrite consent cannot replace a file
-   created concurrently at the destination.
+   created concurrently at the destination. A report's changed-file count is "not observed"
+   until its coordinator projection arrives; a truncated projection is labelled a lower bound.
 
 ## Keyboard
 

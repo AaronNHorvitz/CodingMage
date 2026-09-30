@@ -6,7 +6,7 @@ use super::{App, failure_box};
 use crate::{
     launch::LaunchState,
     observed::Freshness,
-    report::{OutcomeReport, ReportInputs},
+    report::{ChangeCoverage, OutcomeReport, ReportInputs},
 };
 
 /// Reports screen state.
@@ -61,6 +61,11 @@ impl App {
             last_invocation: last_invocation.as_ref(),
             commits: changes.map_or(&empty_commits, |changes| &changes.commits),
             files: changes.map_or(&empty_files, |changes| &changes.files),
+            change_coverage: ChangeCoverage {
+                observed: changes.is_some(),
+                commits_truncated: changes.is_some_and(|changes| changes.commits_truncated),
+                files_truncated: changes.is_some_and(|changes| changes.files_truncated),
+            },
             runs: self.records.value.as_deref().unwrap_or(&empty_runs),
             run_records_observed: self.records.value.is_some(),
             run_records_truncated: self.records_truncated,
@@ -224,10 +229,19 @@ fn outcome_summary(ui: &mut egui::Ui, report: &OutcomeReport) {
             ));
             ui.end_row();
             ui.label("Coordinator commits");
-            ui.label(report.commits.len().to_string());
+            ui.label(observed_count(
+                report
+                    .change_coverage
+                    .observed
+                    .then_some(report.commits.len()),
+                report.change_coverage.commits_truncated,
+            ));
             ui.end_row();
             ui.label("Changed files");
-            ui.label(report.changed_file_count.to_string());
+            ui.label(observed_count(
+                report.changed_file_count,
+                report.change_coverage.files_truncated,
+            ));
             ui.end_row();
             ui.label("Runs with records");
             ui.label(report.runs.len().to_string());
@@ -286,4 +300,24 @@ fn blocker_report(ui: &mut egui::Ui, report: &OutcomeReport) {
 
 fn count(value: Option<u32>) -> String {
     value.map_or_else(|| "not observed".to_owned(), |value| value.to_string())
+}
+
+fn observed_count(value: Option<usize>, truncated: bool) -> String {
+    match value {
+        None => "not observed".to_owned(),
+        Some(count) if truncated => format!("at least {count}; more omitted"),
+        Some(count) => count.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::observed_count;
+
+    #[test]
+    fn change_count_labels_do_not_turn_unknown_or_truncated_into_exact_zero() {
+        assert_eq!(observed_count(None, false), "not observed");
+        assert_eq!(observed_count(Some(0), false), "0");
+        assert_eq!(observed_count(Some(1), true), "at least 1; more omitted");
+    }
 }

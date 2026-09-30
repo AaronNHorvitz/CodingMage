@@ -33,6 +33,9 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
     assert_eq!(outcome["completed_units"], 1);
     let mut harness = opened(&fixture);
     harness.state_mut().select_campaign(&spec);
+    let pending = harness.state().assemble_report(false).unwrap();
+    assert!(!pending.change_coverage.observed);
+    assert_eq!(pending.changed_file_count, None);
     assert!(settle(&mut harness, Duration::from_mins(1), |app| {
         app.changes().value.is_some()
             && app.run_records().value.is_some()
@@ -45,7 +48,8 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
     assert_eq!(report.runs.len(), 1);
     assert_eq!(report.runs[0].review_verdict.as_deref(), Some("pass"));
     assert!(report.disposition.delivery.starts_with("withheld"));
-    assert_eq!(report.changed_file_count, 2);
+    assert_eq!(report.changed_file_count, Some(2));
+    assert!(report.change_coverage.observed);
     assert!(report.changed_files.is_none());
     let text = String::from_utf8(report.to_bytes().unwrap()).unwrap();
     assert!(!text.contains("src/lib.rs"));
