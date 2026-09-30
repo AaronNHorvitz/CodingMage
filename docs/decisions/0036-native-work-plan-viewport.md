@@ -24,3 +24,15 @@ The UI still filters and groups all matching entries in memory on each render. T
 does not claim the frozen input, scroll, memory or installed-desktop budgets; measure those under
 the specified profiles and workloads before qualification. It adds no command, execution path,
 authority, dependency or licence change.
+
+## Outcome visibility correction
+
+The independent review of the viewport commit found that a long title could use the row's
+entire visual width and conceal an outcome appended at its end. Keep the disabled source
+checkbox at the front, place a compact, nontruncated coordinator outcome label before the
+truncatable item text, and show every observed coordinator state in the selected item's detail.
+When several states coexist, the row chooses accepted, completed, human decision, blocked,
+deferred, then active as its short summary. The selected detail retains every observed state;
+inert hover text offers a bounded preview.
+Unknown coordinator state and an observed item with no recorded outcome have different labels.
+The row summary never changes the task source or coordinator record.

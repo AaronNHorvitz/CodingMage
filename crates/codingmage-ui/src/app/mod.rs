@@ -1341,7 +1341,7 @@ impl App {
             index.counts().items
         ));
         let overlay = self.task_overlay();
-        let observation_known = self.status.value.is_some();
+        let observation_known = self.status.value.as_ref().is_some_and(Option::is_some);
         if self.campaign.is_some() {
             ui.small(format!(
                 "Coordinator overlay: status {} ({}), campaign-head source {}",
@@ -1366,6 +1366,7 @@ impl App {
         {
             ui.separator();
             item_detail(ui, &row, index);
+            coordinator_detail(ui, overlay.get(&row.id), observation_known);
             self.task_source_detail(ui, &row);
         }
     }
@@ -1615,7 +1616,19 @@ fn render_plan_rows(
                                     .on_disabled_hover_text(
                                         "Source checkbox, read from the task source; the interface never edits it.",
                                     );
-                                let label = overlay_label(row, overlay.get(&row.id), observation_known);
+                                let task = overlay.get(&row.id);
+                                let badge = outcome_badge(task, observation_known);
+                                let labels = coordinator_labels(task, observation_known);
+                                let hover = if labels.is_empty() {
+                                    "No coordinator outcome recorded for this item.".to_owned()
+                                } else {
+                                    labels.join("; ")
+                                };
+                                ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                                ui.label(format!("Outcome: {badge}"))
+                                    .on_hover_text(content::list_label(&hover));
+                                ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
+                                let label = row_label(row);
                                 if ui.selectable_label(selected.as_deref() == Some(row.id.as_str()), label).clicked() {
                                     *selected = Some(row.id.clone());
                                 }
@@ -1670,25 +1683,67 @@ fn plan_display_rows(rows: &[&PlanRow]) -> Vec<PlanDisplayRow> {
     display
 }
 
-fn overlay_label(
-    row: &PlanRow,
+fn coordinator_labels(
     overlay: Option<&crate::campaign::TaskOverlay>,
     observation_known: bool,
-) -> String {
-    let mut label = row_label(row);
-    if let Some(task) = overlay {
-        let states = task
-            .labels(observation_known)
-            .into_iter()
-            .filter(|state| !state.ends_with("in source"))
-            .collect::<Vec<_>>();
-        if !states.is_empty() {
-            label.push_str(" [");
-            label.push_str(&states.join("; "));
-            label.push(']');
+) -> Vec<String> {
+    let Some(task) = overlay else {
+        return if observation_known {
+            Vec::new()
+        } else {
+            vec!["coordinator state unknown".to_owned()]
+        };
+    };
+    task.labels(observation_known)
+        .into_iter()
+        .filter(|state| !state.ends_with("in source"))
+        .collect()
+}
+
+fn outcome_badge(
+    overlay: Option<&crate::campaign::TaskOverlay>,
+    observation_known: bool,
+) -> &'static str {
+    let Some(task) = overlay else {
+        return if observation_known {
+            "none recorded"
+        } else {
+            "unknown"
+        };
+    };
+    if task.accepted.is_some() {
+        "accepted"
+    } else if task.campaign_head == Some(CheckState::Checked) {
+        "completed"
+    } else if task.human_decision.is_some() {
+        "human decision"
+    } else if task.blocked.is_some() {
+        "blocked"
+    } else if task.deferred.is_some() {
+        "deferred"
+    } else if task.active.is_some() {
+        "active"
+    } else if observation_known {
+        "none recorded"
+    } else {
+        "unknown"
+    }
+}
+
+fn coordinator_detail(
+    ui: &mut egui::Ui,
+    overlay: Option<&crate::campaign::TaskOverlay>,
+    observation_known: bool,
+) {
+    ui.label("Coordinator outcome");
+    let labels = coordinator_labels(overlay, observation_known);
+    if labels.is_empty() {
+        ui.label("No outcome recorded for this item in the current observation.");
+    } else {
+        for label in labels {
+            content::render(ui, &label);
         }
     }
-    label
 }
 
 fn row_label(row: &PlanRow) -> String {

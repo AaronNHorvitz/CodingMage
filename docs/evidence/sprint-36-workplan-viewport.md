@@ -36,5 +36,45 @@ verification inventory has 1,738 public items and 825 explicit gaps, with only o
 line-derived identifier; no public surface, stable error code, heuristic test mapping or gap
 changed. Python unittest ran 42 tests: 41 passed, and only the retained CM-R01.6
 eight-input source-bound evidence drift failed. No evidence digest was renewed.
-Independent exact-commit review is pending. No human, live-provider, release or delivery
-gate changes.
+At that checkpoint, independent exact-commit review was pending. No human, live-provider,
+release or delivery gate changed.
+
+## Independent review correction
+
+The exact-SHA independent review of viewport commit
+`e430b127d5d90360d22b1643945f1fc2bd754fbf` gave `PASS` with one Medium
+finding: a maximum-length source title could visually conceal the coordinator outcome appended
+after it, and selected-item detail repeated only source state. The finding is applicable. The
+correction puts a compact, nontruncated outcome label before the truncatable item title; the
+disabled checkbox and `[ ]`/`[x]` source prefix remain separate. Selected detail lists every
+bound coordinator state, while the row's summary and inert hover text keep the visible list
+short. Unknown coordinator state and no recorded outcome are labelled differently. Decision
+0036 records the priority used when several coordinator states coexist.
+
+A disposable one-unit campaign with fake providers produced a completed campaign-head source
+while the active checkout's source checkbox stayed open. At the 1024×640 minimum window, its
+240-character title and separate outcome label were present as distinct accessibility nodes
+with geometry in the rendered frame. The focused test passed 1/1 and asserted the selected
+source and complete campaign-head detail. An offscreen, software-rendered screenshot was
+inspected: the source checkbox, `Outcome: completed` and truncated title were visible in order.
+The screenshot stays in private runtime state because application chrome includes the
+disposable repository path; it is not a human desktop or assistive-technology result.
+
+The correction has no new coordinator request, authority, provider, dependency or licence.
+Task 36.3.2.2 and all frozen performance, human, live and release gates remain open. This
+correction requires a new exact-commit independent review.
+
+The corrected native UI all-target suite passed 119/119 across 14 targets both before and after
+the equivalent helper rewrite; the latter run covers the exact final production and test source.
+The deterministic verification inventory has 1,738 items and 825 explicit gaps. Public API,
+schema, stable error-code, heuristic test-mapping and gap sets are unchanged; one line-derived
+API identifier shifted. The new minimum-window regression sorts after the inventory's mapped
+boundary-test prefix, so its presence does not masquerade as coverage of unrelated APIs. The
+first strict workspace Clippy run rejected one `map`/`unwrap_or_else` style in the new helper.
+An equivalent early-return rewrite passed strict workspace Clippy with warnings denied.
+Python unittest ran 42 tests: 41 passed, and the sole failure was the retained CM-R01.6
+evidence-binding case with the same eight
+source-bound input drifts. No digest was renewed. Final formatting, documentation, architecture,
+no-write inventory and whitespace checks passed. The private 1024×640 screenshot and failing
+pre-correction Clippy output remain retained. The correction awaits independent exact-commit
+re-review; no human, live-provider, installation, performance or release qualification is claimed.

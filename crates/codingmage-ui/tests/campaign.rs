@@ -13,9 +13,10 @@ use codingmage_ui::{
     campaign::SelectError,
 };
 use common::{
-    Fixture, coordinator_binary, harness, harness_with_state, run_campaign, settle, write_campaign,
+    Fixture, coordinator_binary, git, harness, harness_with_state, run_campaign, settle,
+    write_campaign,
 };
-use egui_kittest::kittest::Queryable as _;
+use egui_kittest::kittest::{NodeT as _, Queryable as _};
 
 fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::App> {
     let binary = CoordinatorBinary::at(&coordinator_binary());
@@ -638,7 +639,10 @@ fn completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree() {
     harness.get_by_label("No unit is active.");
     harness.state_mut().select_screen(Screen::WorkPlan);
     harness.run_steps(2);
-    harness.get_by_label_contains("[ ] Sub-task 0.1.1.1 Complete fixture operation number 1 safely. - dependency-ready [completed at campaign head (verified, not yet in active checkout)]");
+    harness.get_by_label("Outcome: completed");
+    harness.get_by_label_contains(
+        "[ ] Sub-task 0.1.1.1 Complete fixture operation number 1 safely. - dependency-ready",
+    );
     harness.get_by_label_contains(
         "[ ] Sub-task 0.1.1.2 Complete fixture operation number 2 safely. - dependency-ready",
     );
@@ -682,6 +686,64 @@ fn completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree() {
     harness.state_mut().select_screen(Screen::Overview);
     harness.run_steps(2);
     harness.get_by_label_contains("Attention: the coordinator reports a hold");
+}
+
+#[test]
+fn work_plan_long_title_preserves_head_outcome_at_minimum_window() {
+    let fixture = Fixture::new("long-outcome", 1);
+    let source = fs::read_to_string(fixture.target.join("TASKS.md")).unwrap();
+    let long_title = "L".repeat(codingmage_ui::content::MAX_LIST_CHARS);
+    let source = source.replace("Complete fixture operation number 1 safely.", &long_title);
+    fs::write(fixture.target.join("TASKS.md"), source).unwrap();
+    git(&fixture.target, &["add", "TASKS.md"]);
+    git(&fixture.target, &["commit", "-q", "-m", "long title"]);
+    let spec = write_campaign(&fixture, "long-outcome", 1);
+    let outcome = run_campaign(&fixture, &spec);
+    assert_eq!(outcome["completed_units"], 1);
+
+    let binary = CoordinatorBinary::at(&coordinator_binary());
+    let state_dir = fixture.root.join("ui-state");
+    let mut harness = egui_kittest::Harness::builder()
+        .with_size(egui::Vec2::new(1024.0, 640.0))
+        .with_max_steps(4)
+        .wgpu()
+        .build_eframe(move |creation| {
+            creation.egui_ctx.set_fonts(common::fonts());
+            codingmage_ui::App::with_state_dir(&creation.egui_ctx, binary, Ok(state_dir))
+        });
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some()
+    }));
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.status().value.as_ref().is_some_and(Option::is_some) && app.head_plan().value.is_some()
+    }));
+    harness.state_mut().select_screen(Screen::WorkPlan);
+    harness.run_steps(2);
+
+    let badge = harness.get_by_label("Outcome: completed");
+    let item = harness.get_by_label_contains("[ ] Sub-task 0.1.1.1");
+    assert!(badge.accesskit_node().has_bounds());
+    assert!(item.accesskit_node().has_bounds());
+    assert!(item.accesskit_node().label().unwrap().contains(&long_title));
+    let image = harness.render().expect("software render");
+    assert_eq!((image.width(), image.height()), (1024, 640));
+    if let Some(directory) = std::env::var_os("CODINGMAGE_UI_SNAPSHOT_DIR") {
+        let directory = std::path::PathBuf::from(directory);
+        fs::create_dir_all(&directory).unwrap();
+        image
+            .save(directory.join("work-plan-long-completed-outcome.png"))
+            .unwrap();
+    }
+    harness
+        .get_by_label_contains("[ ] Sub-task 0.1.1.1")
+        .focus();
+    harness.key_press(egui::Key::Enter);
+    harness.run_steps(2);
+    harness.get_by_label("Coordinator outcome");
+    harness.get_by_label("completed at campaign head (verified, not yet in active checkout)");
+    harness.get_by_label("Source checkbox");
 }
 
 fn assert_task_detail_workflow(
