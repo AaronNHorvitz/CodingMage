@@ -117,8 +117,12 @@ essential animation. The six appearance baselines are offscreen software renders
   rounds and evidence identities only.
 - Report export retains a directory handle and checks the selected repository identity, but
   another local process may still race a directory rename between checks. Export file I/O
-  runs on the UI worker and has no exact `codingmage` command equivalent. Report assembly
-  and the on-screen JSON preview still run during rendering.
+  runs in a one-shot `codingmage-ui` helper process supervised outside the coordinator
+  control worker. A stalled helper is signaled after 30 seconds or on window shutdown;
+  termination may wait on the filesystem. After a timeout, inspect the destination and
+  any `.codingmage-report-*.candidate` file in its parent before retrying. Export still
+  has no exact `codingmage` command equivalent. Report assembly and the on-screen JSON
+  preview still run during rendering.
 - The interface keeps private state under `$XDG_CONFIG_HOME/codingmage-ui` (or
   `~/.config/codingmage-ui`): recent configurations, per-configuration campaign memory,
   admissions, launch records with private stdout/stderr captures, and control ledgers.

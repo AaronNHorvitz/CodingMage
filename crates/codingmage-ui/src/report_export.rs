@@ -2,7 +2,7 @@
 
 use std::{
     fs::{self, File, OpenOptions},
-    io::{ErrorKind, Write as _},
+    io::{ErrorKind, Read as _, Write as _},
     os::{
         fd::AsRawFd as _,
         unix::fs::{MetadataExt as _, OpenOptionsExt as _},
@@ -12,12 +12,70 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use serde::{Deserialize, Serialize};
+
 use nix::{
     fcntl::{OFlag, open},
     sys::stat::Mode,
 };
 
 use crate::setup::{FieldError, WriteError};
+
+/// Maximum bytes accepted by the isolated export process, including the destination.
+pub(crate) const MAX_EXPORT_INPUT: usize = 32 * 1024 * 1024;
+
+/// Immutable request transferred over the private child stdin pipe.
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ExportRequest {
+    pub(crate) report: crate::report::OutcomeReport,
+    pub(crate) destination: PathBuf,
+    pub(crate) repository: PathBuf,
+    pub(crate) overwrite: bool,
+}
+
+/// Small result transferred over the private child stdout pipe.
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ExportResult {
+    pub(crate) error: Option<String>,
+}
+
+/// Executes one export in the isolated `codingmage-ui --report-export-helper` process.
+/// This entry point is an internal process boundary, not an owner-facing command.
+pub(crate) fn helper_main() -> std::process::ExitCode {
+    let mut input = Vec::new();
+    let result = std::io::stdin()
+        .take((MAX_EXPORT_INPUT + 1) as u64)
+        .read_to_end(&mut input)
+        .map_err(|_| "the report request could not be read".to_owned())
+        .and_then(|_| {
+            if input.len() > MAX_EXPORT_INPUT {
+                return Err("the report request exceeds the export limit".to_owned());
+            }
+            let request: ExportRequest = serde_json::from_slice(&input)
+                .map_err(|_| "the report request is malformed".to_owned())?;
+            if request.report.schema_version != crate::report::REPORT_SCHEMA_VERSION {
+                return Err("the report schema is unsupported".to_owned());
+            }
+            request
+                .report
+                .export(&request.destination, &request.repository, request.overwrite)
+                .map(|_| ())
+                .map_err(|error| error.to_string())
+        });
+    let response = ExportResult {
+        error: result.err(),
+    };
+    if serde_json::to_writer(std::io::stdout(), &response).is_err() {
+        return std::process::ExitCode::from(2);
+    }
+    if response.error.is_some() {
+        std::process::ExitCode::from(1)
+    } else {
+        std::process::ExitCode::SUCCESS
+    }
+}
 
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(0);
 

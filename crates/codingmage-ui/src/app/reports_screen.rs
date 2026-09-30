@@ -1,6 +1,9 @@
 //! Reports: inspect and export outcome and blocker reports assembled from real records.
 
-use std::{path::PathBuf, time::Instant};
+use std::{
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 use super::{App, failure_box};
 use crate::{
@@ -136,6 +139,7 @@ impl App {
                 destination: destination.clone(),
                 repository,
                 overwrite: self.reports.overwrite,
+                deadline: Duration::from_secs(30),
             },
             request_id: Some(request_id.clone()),
         };
@@ -173,6 +177,14 @@ impl App {
                 }
             )),
             Err(BackendError::Refused(reason)) => Err(reason),
+            Err(BackendError::Timeout) => Err(
+                "report export timed out. The destination is uncertain; inspect it and any .codingmage-report-*.candidate file in that directory before retrying."
+                    .to_owned(),
+            ),
+            Err(BackendError::Spawn) => Err(
+                "the report writer could not start or returned an unreadable result; inspect the destination and retry after checking the desktop installation"
+                    .to_owned(),
+            ),
             Err(error) => Err(error.to_string()),
         });
         true
@@ -252,7 +264,7 @@ impl App {
                     ui,
                     "Export refused",
                     text,
-                    "Choose an absolute destination outside the repository, or confirm replacement.",
+                    "Check the stated cause and inspect any existing destination before retrying.",
                 ),
             }
         }

@@ -12,6 +12,10 @@ use std::{
 use codingmage_ui::{App, backend::CoordinatorBinary};
 use egui_kittest::Harness;
 
+// The UI binary is a separate prerequisite because the private writer runs in that
+// executable; build it beside `codingmage` before executing integration tests.
+const UI_BINARY_PATH: &str = env!("CARGO_BIN_EXE_codingmage-ui");
+
 /// Resolves the real `codingmage` executable built by this workspace.
 pub fn coordinator_binary() -> PathBuf {
     if let Some(explicit) = std::env::var_os("CODINGMAGE_TEST_BINARY") {
@@ -182,6 +186,10 @@ pub fn harness_with_state(
     size: [f32; 2],
     state_dir: PathBuf,
 ) -> Harness<'static, App> {
+    assert!(
+        Path::new(UI_BINARY_PATH).is_file(),
+        "build codingmage-ui --bin codingmage-ui before running native integration tests"
+    );
     Harness::builder()
         .with_size(egui::Vec2::new(size[0], size[1]))
         .with_max_steps(4)

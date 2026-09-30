@@ -27,3 +27,12 @@ pub mod state_dir;
 pub mod workplan;
 
 pub use app::{App, Screen};
+
+/// Runs the private one-shot report writer process selected by the desktop executable.
+///
+/// This is a process isolation boundary for an already authorized local export. It is not
+/// a public coordinator command or a source of campaign authority.
+#[must_use]
+pub fn run_report_export_helper() -> std::process::ExitCode {
+    report_export::helper_main()
+}

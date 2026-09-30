@@ -17,8 +17,11 @@ use std::{
     time::Duration,
 };
 
-use super::cli::{BackendError, CoordinatorBinary};
-use crate::report::OutcomeReport;
+use super::{
+    cli::{BackendError, CoordinatorBinary},
+    export_process,
+};
+use crate::{report::OutcomeReport, report_export::ExportRequest};
 
 /// Maximum queued requests before new requests are refused.
 pub const QUEUE_CAPACITY: usize = 8;
@@ -71,6 +74,8 @@ pub enum Job {
         repository: PathBuf,
         /// Whether replacement was explicitly requested.
         overwrite: bool,
+        /// Maximum time allowed before the isolated writer is terminated.
+        deadline: Duration,
     },
 }
 
@@ -130,7 +135,17 @@ pub struct Worker {
     receiver: Receiver<Response>,
     current: Arc<AtomicU64>,
     cancel_flag: Arc<AtomicBool>,
+    shutdown: Arc<AtomicBool>,
     handle: Option<thread::JoinHandle<()>>,
+}
+
+struct WorkerContext {
+    current: Arc<AtomicU64>,
+    cancel_flag: Arc<AtomicBool>,
+    shutdown: Arc<AtomicBool>,
+    export_busy: Arc<AtomicBool>,
+    helper: Result<PathBuf, BackendError>,
+    wake: Arc<dyn Fn() + Send + Sync>,
 }
 
 impl Worker {
@@ -138,31 +153,39 @@ impl Worker {
     ///
     /// `wake` is invoked after each response so the interface can request a repaint.
     #[must_use]
-    pub fn start(binary: CoordinatorBinary, wake: impl Fn() + Send + 'static) -> Self {
+    pub fn start(binary: CoordinatorBinary, wake: impl Fn() + Send + Sync + 'static) -> Self {
+        Self::start_with_helper(binary, export_process::helper_path(), wake)
+    }
+
+    fn start_with_helper(
+        binary: CoordinatorBinary,
+        helper: Result<PathBuf, BackendError>,
+        wake: impl Fn() + Send + Sync + 'static,
+    ) -> Self {
         let (sender, requests) = sync_channel::<Request>(QUEUE_CAPACITY);
         let (responses, receiver) = std::sync::mpsc::channel::<Response>();
         let current = Arc::new(AtomicU64::new(0));
         let cancel_flag = Arc::new(AtomicBool::new(false));
-        let worker_current = Arc::clone(&current);
-        let worker_cancel = Arc::clone(&cancel_flag);
+        let shutdown = Arc::new(AtomicBool::new(false));
+        let export_busy = Arc::new(AtomicBool::new(false));
+        let context = WorkerContext {
+            current: Arc::clone(&current),
+            cancel_flag: Arc::clone(&cancel_flag),
+            shutdown: Arc::clone(&shutdown),
+            export_busy,
+            helper,
+            wake: Arc::new(wake),
+        };
         let handle = thread::Builder::new()
             .name("codingmage-ui-backend".to_owned())
-            .spawn(move || {
-                run_loop(
-                    &binary,
-                    &requests,
-                    &responses,
-                    &worker_current,
-                    &worker_cancel,
-                    &wake,
-                );
-            })
+            .spawn(move || run_loop(&binary, &requests, &responses, &context))
             .ok();
         Self {
             sender,
             receiver,
             current,
             cancel_flag,
+            shutdown,
             handle,
         }
     }
@@ -206,9 +229,11 @@ impl Worker {
 impl Drop for Worker {
     fn drop(&mut self) {
         self.cancel_flag.store(true, Ordering::Release);
+        self.shutdown.store(true, Ordering::Release);
         self.current.store(u64::MAX, Ordering::Release);
         if let Some(handle) = self.handle.take() {
-            // Dropping the sender ends the loop; joining keeps no subprocess orphaned.
+            // The coordinator thread stops; isolated export children are signaled and
+            // reaped separately, so a wedged filesystem cannot hold this join.
             drop(std::mem::replace(&mut self.sender, sync_channel(1).0));
             let _ = handle.join();
         }
@@ -219,18 +244,20 @@ fn run_loop(
     binary: &CoordinatorBinary,
     requests: &Receiver<Request>,
     responses: &Sender<Response>,
-    current: &Arc<AtomicU64>,
-    cancel_flag: &Arc<AtomicBool>,
-    wake: &(impl Fn() + Send),
+    context: &WorkerContext,
 ) {
     while let Ok(request) = requests.recv() {
+        if matches!(request.job, Job::ReportExport { .. }) {
+            dispatch_export(request, responses, context);
+            continue;
+        }
         let label = request.job.label();
-        let result = if request.generation.0 < current.load(Ordering::Acquire) {
+        let result = if request.generation.0 < context.current.load(Ordering::Acquire) {
             Err(BackendError::Cancelled)
         } else {
-            cancel_flag.store(false, Ordering::Release);
-            let cancel = Arc::clone(cancel_flag);
-            let watcher_current = Arc::clone(current);
+            context.cancel_flag.store(false, Ordering::Release);
+            let cancel = Arc::clone(&context.cancel_flag);
+            let watcher_current = Arc::clone(&context.current);
             let issued = request.generation.0;
             let stop = Arc::new(AtomicBool::new(false));
             let watcher_stop = Arc::clone(&stop);
@@ -257,15 +284,9 @@ fn run_loop(
                     deadline,
                 } => validate_support_destination(destination, repository)
                     .and_then(|()| binary.run(arguments, *deadline, &cancel)),
-                Job::ReportExport {
-                    report,
-                    destination,
-                    repository,
-                    overwrite,
-                } => report
-                    .export(destination, repository, *overwrite)
-                    .map(|_| Vec::new())
-                    .map_err(|error| BackendError::Refused(error.to_string())),
+                Job::ReportExport { .. } => {
+                    unreachable!("export requests are dispatched separately")
+                }
             };
             stop.store(true, Ordering::Release);
             let _ = watcher.join();
@@ -281,7 +302,96 @@ fn run_loop(
         if let Err(SendError(_)) = responses.send(response) {
             return;
         }
-        wake();
+        (context.wake)();
+    }
+}
+
+fn dispatch_export(request: Request, responses: &Sender<Response>, context: &WorkerContext) {
+    let failed = if request.generation.0 < context.current.load(Ordering::Acquire) {
+        Some(BackendError::Cancelled)
+    } else if context
+        .export_busy
+        .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+        .is_err()
+    {
+        Some(BackendError::Refused(
+            "a previous report writer has not exited; try again after it stops".to_owned(),
+        ))
+    } else {
+        None
+    };
+    if let Some(error) = failed {
+        let _ = responses.send(Response {
+            generation: request.generation,
+            binding: request.binding,
+            label: "report-export",
+            request_id: request.request_id,
+            result: Err(error),
+        });
+        (context.wake)();
+        return;
+    }
+    let response_fallback = Response {
+        generation: request.generation,
+        binding: request.binding.clone(),
+        label: "report-export",
+        request_id: request.request_id.clone(),
+        result: Err(BackendError::Spawn),
+    };
+    let completion_sender = responses.clone();
+    let current = Arc::clone(&context.current);
+    let shutdown = Arc::clone(&context.shutdown);
+    let busy_for_thread = Arc::clone(&context.export_busy);
+    let wake_for_thread = Arc::clone(&context.wake);
+    let helper = context.helper.clone();
+    let spawn = thread::Builder::new()
+        .name("codingmage-ui-export-supervisor".to_owned())
+        .spawn(move || {
+            let Job::ReportExport {
+                report,
+                destination,
+                repository,
+                overwrite,
+                deadline,
+            } = request.job
+            else {
+                unreachable!("only report exports enter the export supervisor")
+            };
+            let result = match helper {
+                Ok(helper) => export_process::run(
+                    &helper,
+                    &ExportRequest {
+                        report: *report,
+                        destination,
+                        repository,
+                        overwrite,
+                    },
+                    deadline,
+                    request.generation.0,
+                    &current,
+                    &shutdown,
+                    Arc::clone(&busy_for_thread),
+                ),
+                Err(error) => {
+                    busy_for_thread.store(false, Ordering::Release);
+                    Err(error)
+                }
+            };
+            let _ = completion_sender.send(Response {
+                generation: request.generation,
+                binding: request.binding,
+                label: "report-export",
+                request_id: request.request_id,
+                result,
+            });
+            wake_for_thread();
+        });
+    if spawn.is_err() {
+        context.export_busy.store(false, Ordering::Release);
+        // A failed thread spawn cannot have started a writer.
+        // The response receiver may already have gone away during shutdown.
+        let _ = responses.send(response_fallback);
+        (context.wake)();
     }
 }
 
@@ -321,6 +431,9 @@ fn validate_support_destination(destination: &Path, repository: &Path) -> Result
 mod tests {
     use super::*;
     use std::fs;
+    use std::time::Instant;
+
+    use crate::report::{ChangeCoverage, OutcomeReport, ReportInputs};
 
     #[test]
     fn support_destination_refuses_repository_alias_and_existing_output() {
@@ -370,6 +483,128 @@ mod tests {
             },
             request_id: None,
         }
+    }
+
+    fn empty_report() -> OutcomeReport {
+        OutcomeReport::assemble(
+            &ReportInputs {
+                campaign_id: "campaign",
+                repository_id: "repository",
+                authority_sha256: "authority",
+                initial_commit: "initial",
+                publication: "local_only".to_owned(),
+                admission: None,
+                status: None,
+                blockers: None,
+                final_report: None,
+                last_invocation: None,
+                commits: &[],
+                files: &[],
+                change_coverage: ChangeCoverage {
+                    observed: false,
+                    commits_truncated: false,
+                    files_truncated: false,
+                },
+                runs: &[],
+                run_records_observed: false,
+                run_records_truncated: false,
+            },
+            false,
+        )
+    }
+
+    #[test]
+    fn stalled_export_helper_does_not_starve_control_or_window_shutdown() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-ui-stalled-export-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("repo")).unwrap();
+        let helper = root.join("stalled-helper");
+        let marker = root.join("started");
+        fs::write(
+            &helper,
+            format!(
+                "#!/bin/sh\nprintf started > '{}'\nexec sleep 30\n",
+                marker.display()
+            ),
+        )
+        .unwrap();
+        fs::set_permissions(&helper, fs::Permissions::from_mode(0o700)).unwrap();
+        let worker = Worker::start_with_helper(fake_binary(&root), Ok(helper), || {});
+        worker
+            .submit(Request {
+                generation: Generation(0),
+                binding: Binding::default(),
+                job: Job::ReportExport {
+                    report: Box::new(empty_report()),
+                    destination: root.join("report.json"),
+                    repository: root.join("repo"),
+                    overwrite: false,
+                    deadline: Duration::from_secs(5),
+                },
+                request_id: Some("export-1".to_owned()),
+            })
+            .unwrap();
+        let started = Instant::now();
+        while !marker.exists() && started.elapsed() < Duration::from_secs(2) {
+            thread::sleep(Duration::from_millis(10));
+        }
+        assert!(marker.exists(), "the controlled helper never started");
+        worker.submit(request(0, "stop", "stop")).unwrap();
+        let control = worker.wait(Duration::from_secs(2)).unwrap();
+        assert_eq!(control.label, "stop");
+        assert_eq!(control.result.unwrap(), b"stop\n");
+        assert!(!root.join("report.json").exists());
+        let closing = Instant::now();
+        drop(worker);
+        assert!(closing.elapsed() < Duration::from_secs(1));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn stalled_export_helper_returns_a_finite_timeout() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-ui-export-deadline-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("repo")).unwrap();
+        let helper = root.join("stalled-helper");
+        fs::write(&helper, "#!/bin/sh\nexec sleep 30\n").unwrap();
+        fs::set_permissions(&helper, fs::Permissions::from_mode(0o700)).unwrap();
+        let worker = Worker::start_with_helper(fake_binary(&root), Ok(helper), || {});
+        worker
+            .submit(Request {
+                generation: Generation(0),
+                binding: Binding::default(),
+                job: Job::ReportExport {
+                    report: Box::new(empty_report()),
+                    destination: root.join("report.json"),
+                    repository: root.join("repo"),
+                    overwrite: false,
+                    deadline: Duration::from_millis(150),
+                },
+                request_id: Some("export-timeout".to_owned()),
+            })
+            .unwrap();
+        let response = worker.wait(Duration::from_secs(2)).unwrap();
+        assert_eq!(response.label, "report-export");
+        assert_eq!(response.request_id.as_deref(), Some("export-timeout"));
+        assert_eq!(response.result, Err(BackendError::Timeout));
+        assert!(!root.join("report.json").exists());
+        worker.submit(request(0, "stop", "stop")).unwrap();
+        assert_eq!(
+            worker.wait(Duration::from_secs(2)).unwrap().result.unwrap(),
+            b"stop\n"
+        );
+        drop(worker);
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
