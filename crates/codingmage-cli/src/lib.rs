@@ -29,6 +29,9 @@ use codingmage_runtime::{
     team_campaign_report,
 };
 
+mod outcome_report;
+mod report_writer;
+
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const HELP: &str = r"CodingMage local multi-agent engineering coordinator
 
@@ -51,6 +54,8 @@ Commands:
   campaign-changes              Read bounded changes at the exact reconciled campaign head
   campaign-run-records          Read bound, content-minimized run evidence
   campaign-report               Read the final campaign report
+  campaign-outcome-report       Assemble a source-bound outcome and blocker report
+  report-export                 Write a source-bound report outside the repository
   campaign-explain-blocker      Read typed blocker and deferral details
   campaign-clear-blocker        Record one exact external-prerequisite change
   campaign-observe-trigger      Record one exact deferral trigger
@@ -82,6 +87,12 @@ fn command_help(command: &str) -> Option<&'static str> {
         ),
         "campaign" => Some(
             "Usage: codingmage campaign --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> \\\n  [--mission <ABSOLUTE_FILE>]",
+        ),
+        "campaign-outcome-report" => Some(
+            "Usage: codingmage campaign-outcome-report --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> [--include-paths true|false]",
+        ),
+        "report-export" => Some(
+            "Usage: codingmage report-export --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> --output <ABSOLUTE_FILE> [--include-paths true|false] [--overwrite true|false]",
         ),
         "campaign-status"
         | "campaign-report"
@@ -168,6 +179,8 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign-changes" => inspect_campaign_changes(&arguments[1..]),
         "campaign-run-records" => inspect_campaign_run_records(&arguments[1..]),
         "campaign-report" => inspect_campaign_report(&arguments[1..]),
+        "campaign-outcome-report" => outcome_report::inspect(&arguments[1..]),
+        "report-export" => outcome_report::export(&arguments[1..]),
         "campaign-explain-blocker" => explain_campaign_blocker(&arguments[1..]),
         "campaign-clear-blocker" => clear_blocker(&arguments[1..]),
         "campaign-observe-trigger" => observe_trigger(&arguments[1..]),

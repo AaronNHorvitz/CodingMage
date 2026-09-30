@@ -662,6 +662,7 @@ dependencies = [
  "codingmage-process",
  "codingmage-runtime",
  "codingmage-soak",
+ "nix",
  "serde_json",
  "toml",
 ]

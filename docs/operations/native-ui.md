@@ -66,6 +66,15 @@ showing sample results.
 | Settings | Light, dark, high-contrast or system appearance for the current window | Local presentation state only |
 | Help and About | Offline getting-started and recovery guidance, keyboard shortcuts, glossary, source licence and third-party source notices; explicit copyable path-free diagnostic summary and redacted support bundle for a selected campaign | Bundled first-party text, plus the coordinator's `support-bundle` command only after an explicit request; nothing is uploaded |
 
+The read-only `codingmage campaign-outcome-report --config <absolute-file> --campaign
+<absolute-file>` command assembles a bounded coordinator and exact-head repository
+projection for shell inspection. `codingmage report-export` takes the same config and
+campaign arguments plus `--output <absolute-file>` to write that projection outside the
+target repository. Changed-file paths require `--include-paths true`; replacement of an
+existing regular file requires `--overwrite true`. The document never claims an
+interface-only admission or invocation result. The Reports control still uses its
+isolated native writer and a different schema; it does not yet delegate to this command.
+
 ## Workflow
 
 1. Open a configuration (path, recent list or browser), or choose a repository directory in

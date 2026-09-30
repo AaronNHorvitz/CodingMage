@@ -1292,3 +1292,93 @@ fn support_bundle_exports_only_redacted_records_and_never_overwrites() {
     assert!(readme.contains("was not transmitted anywhere"));
     assert!(!readme.contains("PRIVATE_"));
 }
+
+#[test]
+fn outcome_report_is_bound_and_does_not_invent_unobserved_evidence() {
+    let campaign = Campaign::with_lead_script(DECIDING_LEAD);
+    fs::write(
+        campaign.fixture.root.join("decision-domain.txt"),
+        "layout\n",
+    )
+    .unwrap();
+    let before = campaign.json("campaign-outcome-report", &[]);
+    assert_eq!(before["schema_version"], 1);
+    assert_eq!(before["campaign_id"], campaign.id);
+    assert_eq!(before["repository_id"], campaign.repository_id);
+    assert_eq!(before["authority_sha256"], campaign.authority_sha256);
+    assert!(before["status"].is_null());
+    assert!(before["run_records"].is_null());
+    assert_eq!(before["changes"]["observed"], false);
+    assert!(before["changes"]["changed_file_count"].is_null());
+    assert!(before["final_report"].is_null());
+
+    let charter = campaign.charter("mission.toml", 1, "hands_off", "block", "PRIVATE_OBJECTIVE");
+    campaign.json("campaign", &["--mission", charter.to_str().unwrap()]);
+    let after = campaign.json("campaign-outcome-report", &[]);
+    assert_eq!(after["campaign_id"], campaign.id);
+    assert_eq!(after["status"]["campaign_id"], campaign.id);
+    assert_eq!(after["changes"]["observed"], true);
+    assert_eq!(after["changes"]["repository_paths_included"], false);
+    assert!(after["changes"]["changed_files"].is_null());
+    assert_eq!(after["run_records"]["campaign_id"], campaign.id);
+    assert_eq!(after["run_records"]["head"], after["observed_head"]);
+    assert!(after["final_report"].is_null());
+    let encoded = serde_json::to_string(&after).unwrap();
+    assert!(!encoded.contains("PRIVATE_OBJECTIVE"));
+    assert!(!encoded.contains(campaign.config.to_str().unwrap()));
+    assert!(!encoded.contains(campaign.state.to_str().unwrap()));
+
+    let destination = campaign.fixture.root.join("outcome.json");
+    let output = destination.to_str().unwrap();
+    let receipt = campaign.json("report-export", &["--output", output]);
+    assert_eq!(receipt["written"], true);
+    assert_eq!(receipt["repository_paths_requested"], false);
+    let saved: serde_json::Value =
+        serde_json::from_slice(&fs::read(&destination).unwrap()).unwrap();
+    assert_eq!(saved["campaign_id"], campaign.id);
+    assert_eq!(saved["observed_head"], after["observed_head"]);
+    assert_eq!(saved["repository_paths_included"], false);
+    assert!(saved["changes"]["changed_files"].is_null());
+    assert!(
+        !fs::read_to_string(&destination)
+            .unwrap()
+            .contains("PRIVATE_OBJECTIVE")
+    );
+    let refused = campaign.refused("report-export", &["--output", output]);
+    assert!(refused.contains("codingmage.cli.refused"), "{refused}");
+    assert_eq!(
+        saved,
+        serde_json::from_slice::<serde_json::Value>(&fs::read(&destination).unwrap()).unwrap()
+    );
+
+    let inside = campaign.fixture.root.join("target/outcome.json");
+    let refused = campaign.refused("report-export", &["--output", inside.to_str().unwrap()]);
+    assert!(refused.contains("codingmage.cli.refused"), "{refused}");
+    assert!(!inside.exists());
+    let alias = campaign.fixture.root.join("target-alias");
+    std::os::unix::fs::symlink(campaign.fixture.root.join("target"), &alias).unwrap();
+    let linked = alias.join("outcome.json");
+    let refused = campaign.refused("report-export", &["--output", linked.to_str().unwrap()]);
+    assert!(refused.contains("codingmage.cli.refused"), "{refused}");
+
+    let receipt = campaign.json(
+        "report-export",
+        &[
+            "--output",
+            output,
+            "--include-paths",
+            "true",
+            "--overwrite",
+            "true",
+        ],
+    );
+    assert_eq!(receipt["repository_paths_requested"], true);
+    let replaced: serde_json::Value =
+        serde_json::from_slice(&fs::read(&destination).unwrap()).unwrap();
+    assert!(replaced["changes"]["changed_files"].is_array());
+    let refused = campaign.refused(
+        "report-export",
+        &["--output", output, "--overwrite", "maybe"],
+    );
+    assert!(refused.contains("codingmage.cli.usage"), "{refused}");
+}

@@ -2272,6 +2272,13 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     snapshot. Decision 0042 and `docs/evidence/sprint-36-report-assembly.md` retain the local
     checks and limits. The public `codingmage` export equivalent and the wider state/depth/action
     catalogue remain open.
+    A subsequent read-only `campaign-outcome-report` command assembles a bounded
+    source-backed projection from coordinator and exact-head repository records.
+    `report-export` writes the same projection through a guarded outside-repository
+    destination with explicit privacy and overwrite choices. The native Reports action
+    does not yet invoke this public command or share its schema, so exact Show-command
+    equivalence and this sub-task remain open. See Decision 0044 and
+    `docs/evidence/sprint-36-outcome-command.md`.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->
@@ -2316,8 +2323,10 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     summaries from Rust prose into those templates. Other dynamic text, locale-aware
     values and full right-to-left behavior remain open. Final-source native UI all-target
     tests passed 139/139 and strict workspace Clippy passed; Python remains 41/42 solely
-    for the unchanged CM-R01.6 evidence-binding hold. Independent review is pending; see
-    the same evidence record.
+    for the unchanged CM-R01.6 evidence-binding hold. Exact-SHA independent review of
+    `5049622c82cb4a4c7a7538c0f60996e86711c75b` returned a bounded PASS with no findings;
+    reviewer Clippy could not obtain the shared slot, while builder strict Clippy passed.
+    See the same evidence record.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).
