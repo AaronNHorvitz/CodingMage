@@ -5,9 +5,9 @@ use std::{
     time::Duration,
 };
 
-use super::{App, failure_box};
+use super::{App, backend_failure_box};
 use crate::{
-    backend::{BackendError, Job, Request, Response, explain_code, models::parse_preflight},
+    backend::{BackendError, Job, Request, Response, models::parse_preflight},
     observed::{Freshness, age_label},
     readiness::{Check, CheckStatus, PreflightObservation, ReadinessInput, evaluate},
     state_dir::ProjectMemory,
@@ -305,19 +305,12 @@ impl App {
 
     fn preflight_progress(&self, ui: &mut egui::Ui, freshness: Freshness) {
         if let Some((_, error)) = &self.preflight.last_error {
-            let (what, action) = explain_code(&error.code());
-            let state = if matches!(error, BackendError::PermissionDenied) {
-                "Permission denied"
+            let effect = if self.preflight.value.is_some() {
+                "failure_preflight_retained"
             } else {
-                "Preflight failed"
+                "failure_preflight_no_observation"
             };
-            failure_box(ui, state, what, action);
-            ui.small(format!("Cause code: {}. {error}", error.code()));
-            ui.small(if self.preflight.value.is_some() {
-                "Effect: the earlier report is retained for inspection but cannot be used for admission until a fresh preflight succeeds. No campaign was admitted or started by this request."
-            } else {
-                "Effect: no preflight report is available for admission. No campaign was admitted or started by this request."
-            });
+            backend_failure_box(ui, error, effect);
         }
         if self.preflight.loading {
             ui.label(if self.preflight.value.is_some() {

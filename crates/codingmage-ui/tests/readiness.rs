@@ -6,7 +6,7 @@ use std::{fs, path::PathBuf, time::Duration};
 
 use codingmage_ui::{
     Screen,
-    backend::{BackendError, CoordinatorBinary},
+    backend::{BackendError, CoordinatorBinary, Response},
     observed::Freshness,
     readiness::CheckStatus,
 };
@@ -319,4 +319,73 @@ fn provider_probe_failure_is_actionable_and_names_no_substitute() {
             .query_by_label_contains("Preflight state ready")
             .is_none()
     );
+}
+
+#[test]
+fn preflight_failure_states_keep_authority_unconfirmed_and_offer_recovery() {
+    let fixture = Fixture::new("preflight-states", 10);
+    let spec = write_campaign(&fixture, "preflight-states", 1);
+    let record = fixture.root.join("authorization.txt");
+    fs::write(&record, b"synthetic test authorization\n").unwrap();
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    harness.state_mut().set_authorization_record(&record);
+    harness.state_mut().select_screen(Screen::Campaign);
+
+    for (code, heading, recovery) in [
+        (
+            "codingmage.provider.codex.authentication",
+            "Provider authentication required",
+            "rerun preflight or resume the campaign",
+        ),
+        (
+            "codingmage.provider.claude.capability_missing",
+            "Provider unavailable",
+            "Install a supported provider version",
+        ),
+        (
+            "codingmage.provider.future.authentication",
+            "Request failed",
+            "provider's own version command",
+        ),
+    ] {
+        let generation = harness.state().generation();
+        let binding = harness.state().binding();
+        assert!(harness.state_mut().handle_response(Response {
+            generation,
+            binding,
+            label: "campaign-preflight",
+            request_id: None,
+            result: Err(BackendError::Command {
+                code: code.to_owned(),
+                exit_code: Some(1),
+            }),
+        }));
+        harness.run_steps(2);
+        harness.get_by_label(heading);
+        harness.get_by_label_contains(recovery);
+        harness.get_by_label_contains("no preflight report is available for admission");
+        assert_eq!(
+            harness
+                .state()
+                .preflight()
+                .freshness(std::time::Instant::now()),
+            Freshness::Failed
+        );
+    }
+
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-preflight",
+        request_id: None,
+        result: Ok(b"not json".to_vec()),
+    }));
+    harness.run_steps(2);
+    harness.get_by_label("Malformed backend output");
+    harness.get_by_label_contains("matching versions of codingmage and codingmage-ui");
+    assert!(harness.state().preflight().value.is_none());
+    assert!(!fixture.state.join("campaigns").exists());
 }

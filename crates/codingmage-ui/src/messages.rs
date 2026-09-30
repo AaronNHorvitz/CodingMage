@@ -4,8 +4,30 @@ use std::{collections::BTreeMap, sync::OnceLock};
 
 use serde::Deserialize;
 
+use crate::backend::FailureState;
+
 const SOURCE: &str = include_str!("../assets/messages/en.toml");
 const REQUIRED_KEYS: &[&str] = &[
+    "failure_executable_missing",
+    "failure_permission_denied",
+    "failure_authentication_required",
+    "failure_provider_unavailable",
+    "failure_malformed_output",
+    "failure_identity_mismatch",
+    "failure_unsupported_schema",
+    "failure_identity_mismatch_what",
+    "failure_identity_mismatch_action",
+    "failure_unsupported_schema_what",
+    "failure_unsupported_schema_action",
+    "failure_output_too_large",
+    "failure_coordinator_unavailable",
+    "failure_coordinator_timed_out",
+    "failure_request_failed",
+    "failure_diagnosis_no_observation",
+    "failure_diagnosis_retained",
+    "failure_preflight_no_observation",
+    "failure_preflight_retained",
+    "status_coordinator_configured",
     "help_title",
     "help_offline",
     "help_return",
@@ -173,6 +195,23 @@ impl Catalogue {
         self.messages
             .get(key)
             .unwrap_or_else(|| panic!("missing bundled UI message: {key}"))
+    }
+
+    pub(crate) fn failure_title(&self, state: FailureState) -> &str {
+        let key = match state {
+            FailureState::ExecutableMissing => "failure_executable_missing",
+            FailureState::PermissionDenied => "failure_permission_denied",
+            FailureState::AuthenticationRequired => "failure_authentication_required",
+            FailureState::ProviderUnavailable => "failure_provider_unavailable",
+            FailureState::MalformedOutput => "failure_malformed_output",
+            FailureState::IdentityMismatch => "failure_identity_mismatch",
+            FailureState::UnsupportedSchema => "failure_unsupported_schema",
+            FailureState::OutputTooLarge => "failure_output_too_large",
+            FailureState::CoordinatorUnavailable => "failure_coordinator_unavailable",
+            FailureState::CoordinatorTimedOut => "failure_coordinator_timed_out",
+            FailureState::RequestFailed => "failure_request_failed",
+        };
+        self.text(key)
     }
 
     #[cfg(test)]

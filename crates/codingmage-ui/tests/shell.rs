@@ -337,7 +337,9 @@ fn malformed_backend_output_is_an_explicit_contract_failure() {
         Some((_, BackendError::Contract(_)))
     ));
     harness.run_steps(2);
+    harness.get_by_label("Malformed backend output");
     harness.get_by_label_contains("does not match the contract");
+    harness.get_by_label_contains("no current repository diagnosis is available");
     drop(harness);
     let unsupported =
         fixture.executable("codingmage", "#!/bin/sh\necho '{\"schema_version\":7}'\n");
@@ -351,6 +353,55 @@ fn malformed_backend_output_is_an_explicit_contract_failure() {
         second.state().diagnosis().last_error,
         Some((_, BackendError::Contract(_)))
     ));
+}
+
+#[test]
+fn failed_diagnosis_refresh_keeps_earlier_observation_stale() {
+    let fixture = Fixture::new("diagnosis-retained", 3);
+    let mut harness = harness(
+        CoordinatorBinary::at(&coordinator_binary()),
+        [1100.0, 720.0],
+    );
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some()
+    }));
+    let earlier = harness.state().diagnosis().value.clone();
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "doctor",
+        request_id: None,
+        result: Err(BackendError::Spawn),
+    }));
+    harness.run_steps(2);
+    assert_eq!(harness.state().diagnosis().value, earlier);
+    assert_eq!(
+        harness
+            .state()
+            .diagnosis()
+            .freshness(std::time::Instant::now()),
+        Freshness::Stale
+    );
+    harness.get_by_label("Coordinator unavailable");
+    harness.get_by_label_contains("earlier diagnosis remains visible but is stale");
+    harness.get_by_label_contains("Refresh diagnosis before relying on it");
+
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "doctor",
+        request_id: None,
+        result: Ok(b"not json".to_vec()),
+    }));
+    harness.run_steps(2);
+    assert_eq!(harness.state().diagnosis().value, earlier);
+    harness.get_by_label("Malformed backend output");
+    harness.get_by_label_contains("earlier diagnosis remains visible but is stale");
 }
 
 #[test]

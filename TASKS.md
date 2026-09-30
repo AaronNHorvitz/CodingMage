@@ -2201,6 +2201,14 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     admission while refresh is pending, failed or stale. Its disposable real-process recovery
     test and verification limits are in Decision 0033 and
     `docs/evidence/sprint-36-preflight-recovery.md`; wider state and action coverage remains open.
+    Known backend failure kinds and exact provider codes now produce distinct preflight and
+    repository-diagnosis headings for sign-in, provider unavailability, malformed output,
+    identity/schema mismatch, executable and process failures; retained diagnosis is marked
+    stale and unknown codes stay neutral. The shared labels and effects live in the bundled
+    catalogue. Decision 0034 and `docs/evidence/sprint-36-failure-state-guidance.md` record
+    the synthetic fault-injection limits. The corrected-tree native UI suite passed 113/113
+    and strict workspace Clippy passed; Python remains 41/42 solely for CM-R01.6 source-bound
+    drift. Other screens, in-context depth and commands remain open.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->

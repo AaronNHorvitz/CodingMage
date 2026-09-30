@@ -12,7 +12,7 @@ must update the implementation column without silently changing the frozen proto
 
 ## Screen and state inventory
 
-The `Screen` enum in `crates/codingmage-ui/src/app/mod.rs` has eight destinations in the current
+The `Screen` enum in `crates/codingmage-ui/src/app/mod.rs` has nine destinations in the current
 source. Embedded sections are listed separately because the specification requires
 their own complete workflows.
 
@@ -35,10 +35,10 @@ their own complete workflows.
 | --- | --- | --- |
 | Empty / not started | Overview, work plan, campaign and report empty text | Per-screen next step and help are inconsistent. |
 | Loading | `Observed<T>` and selected panels | Some partial loading states and polite accessibility announcements are absent. |
-| Failure / malformed output | `BackendError`, `failure_box`, strict model parsers; Campaign status failure labels uncertain progress and offers a bound read-only refresh | Other failures remain generic and their effect on the campaign is unclear. |
+| Failure / malformed output | `BackendError`, known-code failure states, `failure_box`, strict model parsers; preflight and diagnosis show cause, observation effect and recovery; Campaign status failure labels uncertain progress and offers a bound read-only refresh | Other screens still have generic failures and incomplete effect wording. |
 | Stale / disconnected | `Observed<T>::freshness`, response-generation and binding checks; campaign status and mission payload identities are checked before acceptance; the status bar labels retained stale campaign and mission values | Not every panel labels a retained stale value; repository diagnosis and connection states still need complete recovery. |
 | Executable missing | `Connection::Unavailable` in Overview/status bar; error guidance requires the sibling `codingmage` executable | First-run recovery path is incomplete. |
-| Provider unavailable / authentication required / permission denied | Preflight and backend error explanations | No consistent per-screen state and direct recovery action. |
+| Provider unavailable / authentication required / permission denied | Preflight has distinct known-code states and recovery text; diagnosis has shared backend failure states | Other screens lack consistent state and direct recovery action; no live-provider qualification. |
 | Campaign and task outcomes | `CampaignStatus`, task overlay, selected-task run phases and independent counters | Some coordinator states are raw codes; packet, prompt, finding and log history is absent from the projection. Source checkboxes and verified outcomes are kept distinct. |
 
 Shell gaps apply to every screen: the navigation has no command palette; the status bar now shows

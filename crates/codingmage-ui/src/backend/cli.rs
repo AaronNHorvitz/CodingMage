@@ -231,6 +231,76 @@ impl BackendError {
             Self::Refused(_) => "codingmage.ui.refused".to_owned(),
         }
     }
+
+    /// Presentation state derived only from the known failure kind or stable coordinator code.
+    #[must_use]
+    pub fn failure_state(&self) -> FailureState {
+        match self {
+            Self::BinaryUnavailable { .. } => FailureState::ExecutableMissing,
+            Self::PermissionDenied => FailureState::PermissionDenied,
+            Self::Contract(error) => match error {
+                super::models::ModelError::Malformed => FailureState::MalformedOutput,
+                super::models::ModelError::AuthorityMismatch => FailureState::IdentityMismatch,
+                super::models::ModelError::UnsupportedSchema { .. } => {
+                    FailureState::UnsupportedSchema
+                }
+            },
+            Self::OutputTooLarge => FailureState::OutputTooLarge,
+            Self::Spawn => FailureState::CoordinatorUnavailable,
+            Self::Timeout => FailureState::CoordinatorTimedOut,
+            Self::Command { code, .. } => provider_failure_state(code),
+            Self::Cancelled | Self::Refused(_) => FailureState::RequestFailed,
+        }
+    }
+}
+
+/// Truthful, user-visible failure category; the stable code remains available for detail.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FailureState {
+    /// The expected sibling coordinator file is absent or unusable.
+    ExecutableMissing,
+    /// Execution was denied by the operating system.
+    PermissionDenied,
+    /// A configured provider needs its own login renewed.
+    AuthenticationRequired,
+    /// A known provider process or capability is unavailable.
+    ProviderUnavailable,
+    /// Successful backend output violated the expected schema.
+    MalformedOutput,
+    /// Backend output named a different selected campaign or authority.
+    IdentityMismatch,
+    /// Backend output uses a schema this interface does not support.
+    UnsupportedSchema,
+    /// Backend output exceeded the bounded capture size.
+    OutputTooLarge,
+    /// The coordinator could not be started or contacted.
+    CoordinatorUnavailable,
+    /// The coordinator did not respond before the request deadline.
+    CoordinatorTimedOut,
+    /// A refusal or unclassified stable error occurred.
+    RequestFailed,
+}
+
+fn provider_failure_state(code: &str) -> FailureState {
+    match code {
+        "codingmage.provider.codex.authentication"
+        | "codingmage.provider.claude.authentication" => FailureState::AuthenticationRequired,
+        "codingmage.provider.codex.capability_missing"
+        | "codingmage.provider.claude.capability_missing"
+        | "codingmage.provider.codex.unsupported_version"
+        | "codingmage.provider.claude.unsupported_version"
+        | "codingmage.provider.codex.invalid_profile"
+        | "codingmage.provider.claude.invalid_profile"
+        | "codingmage.provider.codex.process"
+        | "codingmage.provider.claude.process"
+        | "codingmage.provider.codex.failed"
+        | "codingmage.provider.claude.failed"
+        | "codingmage.provider.codex.timeout"
+        | "codingmage.provider.claude.timeout"
+        | "codingmage.provider.codex.quota"
+        | "codingmage.provider.claude.quota" => FailureState::ProviderUnavailable,
+        _ => FailureState::RequestFailed,
+    }
 }
 
 impl fmt::Display for BackendError {
@@ -336,7 +406,7 @@ fn explain_provider_code(code: &str) -> (&'static str, &'static str) {
         "codingmage.provider.codex.authentication"
         | "codingmage.provider.claude.authentication" => (
             "A provider login is missing or expired.",
-            "Log in to the provider CLI outside CodingMage, then resume.",
+            "Log in to the configured provider CLI outside CodingMage, then rerun preflight or resume the campaign.",
         ),
         "codingmage.provider.codex.quota" | "codingmage.provider.claude.quota" => (
             "A provider reported exhausted quota.",
@@ -386,6 +456,18 @@ fn explain_interface_code(code: &str) -> (&'static str, &'static str) {
             "The coordinator file exists, but the operating system denied execution.",
             "Restore execute permission for the installed codingmage binary outside the app, then retry the action.",
         ),
+        "codingmage.ui.spawn" => (
+            "The coordinator process could not be started or read.",
+            "Check the installed coordinator and retry the read. Refresh campaign status before repeating a control whose outcome is unknown.",
+        ),
+        "codingmage.ui.output_too_large" => (
+            "The coordinator returned more output than this interface can safely retain.",
+            "Inspect the same command with the coordinator CLI; reduce the requested scope before retrying.",
+        ),
+        "codingmage.ui.unreadable_failure" => (
+            "The coordinator exited without a readable stable failure code.",
+            "Check that codingmage and codingmage-ui are matching versions, then rerun the exact shown command in a terminal.",
+        ),
         "codingmage.ui.git_read" => (
             "A read-only Git object read failed.",
             "The campaign head or initial commit may be missing from this repository; refresh after the coordinator checkpoints.",
@@ -396,11 +478,11 @@ fn explain_interface_code(code: &str) -> (&'static str, &'static str) {
         ),
         "codingmage.ui.contract" => (
             "The coordinator output does not match the contract this interface was built for.",
-            "Install matching versions of codingmage and codingmage-ui.",
+            "Refresh this observation; if the mismatch repeats, install matching versions of codingmage and codingmage-ui.",
         ),
         _ => (
-            "The interface refused or lost a request.",
-            "Retry the action; nothing was changed by the refusal.",
+            "The interface could not confirm this request's outcome.",
+            "Refresh coordinator status before retrying any control; an unknown outcome does not prove no effect.",
         ),
     }
 }
@@ -493,5 +575,61 @@ mod tests {
             let (what, action) = explain_code(code);
             assert!(!what.is_empty() && !action.is_empty());
         }
+    }
+
+    #[test]
+    fn failure_states_follow_known_error_kinds_and_codes_only() {
+        let command = |code: &str| BackendError::Command {
+            code: code.to_owned(),
+            exit_code: Some(1),
+        };
+        assert_eq!(
+            BackendError::BinaryUnavailable {
+                expected: PathBuf::from("/missing/codingmage"),
+            }
+            .failure_state(),
+            FailureState::ExecutableMissing
+        );
+        assert_eq!(
+            BackendError::PermissionDenied.failure_state(),
+            FailureState::PermissionDenied
+        );
+        assert_eq!(
+            BackendError::Contract(super::super::models::ModelError::Malformed).failure_state(),
+            FailureState::MalformedOutput
+        );
+        assert_eq!(
+            BackendError::Contract(super::super::models::ModelError::AuthorityMismatch)
+                .failure_state(),
+            FailureState::IdentityMismatch
+        );
+        assert_eq!(
+            BackendError::Contract(super::super::models::ModelError::UnsupportedSchema {
+                observed: 9,
+                supported: 2,
+            })
+            .failure_state(),
+            FailureState::UnsupportedSchema
+        );
+        assert_eq!(
+            command("codingmage.provider.codex.authentication").failure_state(),
+            FailureState::AuthenticationRequired
+        );
+        assert_eq!(
+            command("codingmage.provider.claude.capability_missing").failure_state(),
+            FailureState::ProviderUnavailable
+        );
+        assert_eq!(
+            command("codingmage.provider.codex.quota").failure_state(),
+            FailureState::ProviderUnavailable
+        );
+        assert_eq!(
+            BackendError::Spawn.failure_state(),
+            FailureState::CoordinatorUnavailable
+        );
+        assert_eq!(
+            BackendError::OutputTooLarge.failure_state(),
+            FailureState::OutputTooLarge
+        );
     }
 }

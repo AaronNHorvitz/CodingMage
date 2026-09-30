@@ -892,7 +892,7 @@ impl App {
             ui.horizontal_wrapped(|ui| {
                 match &self.connection {
                     Connection::Ready(_) => {
-                        ui.label("Coordinator: ready");
+                        ui.label(messages::english().text("status_coordinator_configured"));
                     }
                     Connection::Unavailable(error) => {
                         ui.colored_label(
@@ -1194,19 +1194,12 @@ impl App {
             }
             Freshness::Failed => {
                 if let Some((_, error)) = &self.diagnosis.last_error {
-                    let (what, action) = explain_code(&error.code());
-                    failure_box(ui, what, &error.to_string(), action);
+                    backend_failure_box(ui, error, "failure_diagnosis_no_observation");
                 }
             }
             Freshness::Live | Freshness::Stale => {
                 if let Some((_, error)) = &self.diagnosis.last_error {
-                    let (what, action) = explain_code(&error.code());
-                    failure_box(
-                        ui,
-                        &format!("Last refresh failed; showing the earlier observation. {what}"),
-                        &error.to_string(),
-                        action,
-                    );
+                    backend_failure_box(ui, error, "failure_diagnosis_retained");
                 } else if self.diagnosis.freshness(self.now) == Freshness::Stale {
                     ui.colored_label(
                         current_tokens(ui.ctx()).warning,
@@ -1728,6 +1721,31 @@ pub fn failure_box(ui: &mut egui::Ui, title: &str, detail: &str, action: &str) {
             ui.monospace(detail);
             ui.label(action);
         });
+}
+
+fn backend_failure_box(ui: &mut egui::Ui, error: &BackendError, effect_key: &str) {
+    let catalogue = messages::english();
+    let (what, action) = match error {
+        BackendError::Contract(crate::backend::models::ModelError::AuthorityMismatch) => (
+            catalogue.text("failure_identity_mismatch_what"),
+            catalogue.text("failure_identity_mismatch_action"),
+        ),
+        BackendError::Contract(crate::backend::models::ModelError::UnsupportedSchema {
+            ..
+        }) => (
+            catalogue.text("failure_unsupported_schema_what"),
+            catalogue.text("failure_unsupported_schema_action"),
+        ),
+        _ => explain_code(&error.code()),
+    };
+    failure_box(
+        ui,
+        catalogue.failure_title(error.failure_state()),
+        what,
+        action,
+    );
+    ui.small(format!("Cause code: {}. {error}", error.code()));
+    ui.small(catalogue.text(effect_key));
 }
 
 impl eframe::App for App {
