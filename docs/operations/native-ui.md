@@ -102,6 +102,11 @@ The native minimum window is 1024 by 640 logical pixels. Appearance uses shared 
 its choice lasts until the window closes. Reduced motion is the default because the shell has no
 essential animation. The six appearance baselines are offscreen software renders; see
 [the Story 36.3 evidence](../evidence/sprint-36-appearance.md).
+The bundled English catalogue supplies static Help, Settings, Workspace, Blockers, Reports
+and Campaign labels plus selected dynamic Campaign summaries. Dynamic fields are validated
+before rendering. The synthetic expanded/right-aligned checks are local layout tests; a
+runtime language choice, locale-specific number/date formatting and full right-to-left
+qualification remain open.
 
 ## Limits
 

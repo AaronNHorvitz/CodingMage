@@ -2311,6 +2311,13 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     frozen minimum window and 200% scale. Dynamic Campaign copy, broader destinations,
     bidirectional keyboard behavior and human screen-reader qualification remain open;
     see `docs/evidence/sprint-36-message-catalogue.md`.
+    Decision 0043 adds strict named-field validation to the English catalogue and moves
+    selected Campaign identity, observation, active work, hold, utilization and mission
+    summaries from Rust prose into those templates. Other dynamic text, locale-aware
+    values and full right-to-left behavior remain open. Final-source native UI all-target
+    tests passed 139/139 and strict workspace Clippy passed; Python remains 41/42 solely
+    for the unchanged CM-R01.6 evidence-binding hold. Independent review is pending; see
+    the same evidence record.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).

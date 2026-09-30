@@ -148,4 +148,64 @@ schema or gap was added or removed. Those mappings do not prove coverage. Final-
 formatting, documentation, architecture, no-write inventory and staged diff whitespace checks
 passed. The exact seven-file staged diff was inspected; its 680 added lines contained no
 private-root path, credential assignment or private-key marker. Independent exact-commit
-review remains pending. No task, acceptance criterion or gate is closed by this increment.
+review was pending at that checkpoint. No task, acceptance criterion or gate was closed by
+this increment.
+
+The independent read-only review of exact commit
+`923b14f2b1f806dfaefbd7b059e2153395d7087e` later returned a bounded **PASS**
+with no findings. It independently rebuilt and passed 137/137 native UI all-target tests,
+including the inherited report-assembly increment. Reviewer Clippy remained unrun after
+the shared build reservation did not become available; the builder's strict workspace
+Clippy receipt is separate. The verdict does not qualify the full native product or any
+human, live or release gate.
+
+## Campaign dynamic-template increment
+
+Decision 0043 adds declared named fields to the existing version-one English catalogue.
+The parser refuses missing, unknown, repeated and malformed fields, including fields
+inserted into a static message. Field order can change without changing the meaning;
+backend values are inserted as literal text and remain inert in the native renderer.
+
+The selected Campaign screen now obtains dynamic campaign identity, execution shape,
+binding drift, observation, active work, coordinator blocker, final commit, hold and
+utilization rows, and mission status/authority summaries from validated templates.
+The values still come from the same bound coordinator and campaign records. This batch
+adds no language selector, coordinator command, authority or dependency. Other screens,
+remaining Campaign/Help dynamic copy, locale-specific numbers, dates and durations,
+full right-to-left behavior and installed screen-reader checks remain open.
+
+The template mutation and literal-value tests exercise missing/forged/repeated fields,
+unbalanced delimiters, reordered fields and brace-like backend text. The existing
+synthetic 40% expansion applies to the new keys. Final exact-source check results for
+this increment are recorded below after the cumulative suite completes.
+
+The inventory generator and version-one schema were reviewed before regeneration.
+The source-consistent inventory has 1,760 items and 825 explicit gaps: the new formatter
+adds one public surface, five line-derived IDs move, and 437 common entries receive
+crate-wide capped heuristic test-map changes after the named tests were added. No public
+surface was removed and no applicability category or gap was added or closed. These
+heuristic mappings are an index, not a claim that each mapped test covers its entry.
+
+The first focused Rust attempt reached compilation and failed because the mission mode
+`String` was supplied where a borrowed field value was required. The call site now
+borrows that value. The failed compiler output is retained in the private build record.
+The corrected focused catalogue suite passed 4/4; the cumulative checks follow below.
+
+The first cumulative native UI run passed 139/139 across 14 targets on the source after
+that correction. Strict workspace Clippy then rejected two new number arguments passed
+by value and a mission-rendering function two lines above the workspace limit. The
+arguments are now borrowed and the mission authority label is selected in a small
+helper. That failed Clippy result is retained privately. The Python suite had not
+started because the script stopped at Clippy; the corrected-source checks below
+supersede this failed attempt.
+
+On the corrected final source, `cargo clippy --locked --workspace --all-targets -- -D warnings`
+passed. The software-rendered native UI all-target suite passed 139/139 across 14 targets,
+including the four catalogue unit tests and the disposable coordinator workflows.
+Formatting, documentation, architecture, no-write inventory and diff whitespace checks
+passed. Python unittest ran 42 tests: 41 passed and the sole failure was the unchanged
+CM-R01.6 eight-input source-bound evidence freshness check. No digest or binding was
+renewed. The tests used one Cargo build job, one Rust test thread, software GL and the
+shared heavy-check reservation; they do not qualify an installed desktop, Orca, device
+budgets, human trials or a live provider. Task 36.3.2.4 and all higher acceptance/gates
+remain open. Independent review of this exact increment is pending.

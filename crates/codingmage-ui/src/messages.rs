@@ -1,6 +1,9 @@
 //! Bundled message catalogue and synthetic layout-stress variants.
 
-use std::{collections::BTreeMap, sync::OnceLock};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::OnceLock,
+};
 
 use serde::Deserialize;
 
@@ -319,7 +322,122 @@ const REQUIRED_KEYS: &[&str] = &[
     "campaign_spec_refused",
     "campaign_spec_refused_action",
     "campaign_status_stale",
+    "campaign_named",
+    "campaign_execution_parallel",
+    "campaign_execution_serial",
+    "campaign_binding_drift",
+    "campaign_observation",
+    "campaign_level_blocker",
+    "campaign_final_summary",
+    "campaign_active_line",
+    "campaign_active_model",
+    "campaign_active_pod",
+    "campaign_elapsed_value",
+    "campaign_updated_value",
+    "campaign_used_of_limit",
+    "campaign_used_time",
+    "campaign_deferral_line",
+    "campaign_reason_line",
+    "campaign_roles_line",
+    "campaign_mission_observation",
+    "campaign_mission_stale",
+    "campaign_mission_summary",
+    "campaign_mission_revoked",
+    "campaign_mission_expired",
+    "campaign_mission_current",
+    "campaign_mission_unverified",
+    "campaign_mission_decisions",
+    "campaign_mission_age",
+    "campaign_mode_unavailable",
+    "campaign_model_absent",
+    "campaign_code_absent",
 ];
+
+// Each named field is required exactly once in a template. A future translation may reorder
+// fields, but cannot silently omit or invent an identity, count or authority state.
+const TEMPLATE_FIELDS: &[(&str, &[&str])] = &[
+    ("campaign_named", &["campaign_id"]),
+    ("campaign_execution_parallel", &["pods"]),
+    ("campaign_binding_drift", &["reason"]),
+    ("campaign_observation", &["freshness", "age"]),
+    ("campaign_level_blocker", &["code"]),
+    ("campaign_final_summary", &["commit", "accepted"]),
+    (
+        "campaign_active_line",
+        &[
+            "task",
+            "state",
+            "actor",
+            "model",
+            "round",
+            "heartbeat",
+            "pod",
+        ],
+    ),
+    ("campaign_active_model", &["model"]),
+    ("campaign_active_pod", &["pod"]),
+    ("campaign_elapsed_value", &["seconds"]),
+    ("campaign_updated_value", &["timestamp"]),
+    ("campaign_used_of_limit", &["used", "limit"]),
+    ("campaign_used_time", &["used", "limit"]),
+    (
+        "campaign_deferral_line",
+        &["task", "reason", "trigger", "state"],
+    ),
+    ("campaign_reason_line", &["task", "reason"]),
+    ("campaign_roles_line", &["code", "description"]),
+    ("campaign_mission_observation", &["freshness", "age"]),
+    (
+        "campaign_mission_summary",
+        &["id", "generation", "mode", "authority"],
+    ),
+    (
+        "campaign_mission_decisions",
+        &["recorded", "permitted", "held"],
+    ),
+    ("campaign_mission_age", &["age"]),
+    ("campaign_mode_unavailable", &["label", "description"]),
+];
+
+enum Segment<'a> {
+    Literal(&'a str),
+    Field(&'a str),
+}
+
+fn segments(template: &str) -> Result<Vec<Segment<'_>>, String> {
+    let mut parts = Vec::new();
+    let mut cursor = 0;
+    while cursor < template.len() {
+        let tail = &template[cursor..];
+        let Some(offset) = tail.find(['{', '}']) else {
+            parts.push(Segment::Literal(tail));
+            break;
+        };
+        let brace = cursor + offset;
+        if brace > cursor {
+            parts.push(Segment::Literal(&template[cursor..brace]));
+        }
+        if template.as_bytes()[brace] != b'{' {
+            return Err("unmatched closing brace in message".to_owned());
+        }
+        let name_start = brace + 1;
+        let Some(end_offset) = template[name_start..].find('}') else {
+            return Err("unclosed message field".to_owned());
+        };
+        let end = name_start + end_offset;
+        let name = &template[name_start..end];
+        if name.is_empty()
+            || !name
+                .bytes()
+                .all(|byte| byte.is_ascii_lowercase() || byte == b'_')
+        {
+            return Err("invalid message field".to_owned());
+        }
+        parts.push(Segment::Field(name));
+        cursor = end + 1;
+    }
+    Ok(parts)
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -348,6 +466,26 @@ impl Catalogue {
         {
             return Err("message catalogue has a missing, unknown or empty key".to_owned());
         }
+        for (key, value) in &document.messages {
+            let actual = segments(value)?
+                .into_iter()
+                .filter_map(|part| match part {
+                    Segment::Field(name) => Some(name),
+                    Segment::Literal(_) => None,
+                })
+                .collect::<Vec<_>>();
+            let expected = TEMPLATE_FIELDS
+                .iter()
+                .find_map(|(candidate, fields)| (*candidate == key.as_str()).then_some(*fields))
+                .unwrap_or(&[]);
+            let actual_set: BTreeSet<_> = actual.iter().copied().collect();
+            let expected_set: BTreeSet<_> = expected.iter().copied().collect();
+            if actual.len() != actual_set.len() || actual_set != expected_set {
+                return Err(format!(
+                    "message {key} has missing, unknown or repeated fields"
+                ));
+            }
+        }
         Ok(Self {
             messages: document.messages,
         })
@@ -357,6 +495,42 @@ impl Catalogue {
         self.messages
             .get(key)
             .unwrap_or_else(|| panic!("missing bundled UI message: {key}"))
+    }
+
+    pub(crate) fn format(&self, key: &str, values: &[(&str, &str)]) -> String {
+        let expected = TEMPLATE_FIELDS
+            .iter()
+            .find_map(|(candidate, fields)| (*candidate == key).then_some(*fields))
+            .unwrap_or_else(|| panic!("missing message template declaration: {key}"));
+        assert_eq!(
+            values.len(),
+            expected.len(),
+            "message arguments differ: {key}"
+        );
+        assert!(
+            expected.iter().all(|name| {
+                values
+                    .iter()
+                    .filter(|(candidate, _)| candidate == name)
+                    .count()
+                    == 1
+            }),
+            "message arguments differ: {key}"
+        );
+        let template = self.text(key);
+        let mut rendered = String::with_capacity(template.len());
+        for part in segments(template).expect("validated bundled message template") {
+            match part {
+                Segment::Literal(text) => rendered.push_str(text),
+                Segment::Field(name) => rendered.push_str(
+                    values
+                        .iter()
+                        .find_map(|(candidate, value)| (*candidate == name).then_some(*value))
+                        .unwrap_or_else(|| panic!("missing value for message field {name}")),
+                ),
+            }
+        }
+        rendered
     }
 
     pub(crate) fn failure_title(&self, state: FailureState) -> &str {
@@ -440,5 +614,53 @@ mod tests {
         );
         assert!(Catalogue::parse(&format!("{SOURCE}\nhelp_extra = \"unexpected\"\n")).is_err());
         assert!(Catalogue::parse(&format!("{SOURCE}\nhelp_title = \"duplicate\"\n")).is_err());
+    }
+
+    #[test]
+    fn dynamic_messages_reject_dropped_or_forged_identity_fields() {
+        let original = "campaign_named = \"Campaign {campaign_id}\"";
+        for replacement in [
+            "campaign_named = \"Campaign\"",
+            "campaign_named = \"Campaign {other}\"",
+            "campaign_named = \"Campaign {campaign_id} {campaign_id}\"",
+            "campaign_named = \"Campaign {campaign_id\"",
+            "campaign_named = \"Campaign {campaign_id}}\"",
+        ] {
+            assert!(Catalogue::parse(&SOURCE.replace(original, replacement)).is_err());
+        }
+        assert!(
+            Catalogue::parse(&SOURCE.replace(
+                "help_title = \"Help and About\"",
+                "help_title = \"{campaign_id}\""
+            ))
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text() {
+        let source = SOURCE.replace(
+            "campaign_observation = \"Observation: {freshness} ({age})\"",
+            "campaign_observation = \"{age}: {freshness}\"",
+        );
+        let catalogue = Catalogue::parse(&source).unwrap();
+        assert_eq!(
+            catalogue.format(
+                "campaign_observation",
+                &[("freshness", "stale"), ("age", "10 s")],
+            ),
+            "10 s: stale"
+        );
+        let value = "{age}<script>alert(1)</script>";
+        assert_eq!(
+            english().format("campaign_named", &[("campaign_id", value)]),
+            format!("Campaign {value}")
+        );
+        let pseudo = english().pseudo(true);
+        assert!(
+            pseudo
+                .format("campaign_named", &[("campaign_id", "campaign-1")])
+                .contains("campaign-1")
+        );
     }
 }

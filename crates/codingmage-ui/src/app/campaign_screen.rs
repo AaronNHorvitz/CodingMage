@@ -590,7 +590,7 @@ impl App {
         };
         let spec = &campaign.spec;
         ui.separator();
-        ui.heading(format!("Campaign {}", spec.campaign_id));
+        ui.heading(catalogue.format("campaign_named", &[("campaign_id", &spec.campaign_id)]));
         egui::Grid::new("campaign-authority")
             .num_columns(2)
             .spacing(super::current_tokens(ui.ctx()).layout.grid)
@@ -610,9 +610,12 @@ impl App {
                 ui.label(catalogue.text("campaign_execution"));
                 ui.label(match &spec.multi_agent {
                     Some(policy) if policy.execution_mode == CampaignExecutionMode::Parallel => {
-                        format!("parallel, up to {} pods", spec.max_parallel_pods)
+                        catalogue.format(
+                            "campaign_execution_parallel",
+                            &[("pods", &spec.max_parallel_pods.to_string())],
+                        )
                     }
-                    _ => "serial, one pod".to_owned(),
+                    _ => catalogue.text("campaign_execution_serial").to_owned(),
                 });
                 ui.end_row();
                 ui.label(catalogue.text("campaign_accepted_outcome_ceiling"));
@@ -757,7 +760,7 @@ impl App {
             for line in drift {
                 ui.colored_label(
                     super::current_tokens(ui.ctx()).warning,
-                    format!("Binding drift: {line}"),
+                    catalogue.format("campaign_binding_drift", &[("reason", line)]),
                 );
             }
             ui.small(catalogue.text("campaign_binding_drift_action"));
@@ -791,10 +794,12 @@ impl App {
             ui.small(catalogue.text("campaign_refreshing_retained"));
         }
         let freshness = self.status.freshness(self.now);
-        ui.label(format!(
-            "Observation: {} ({})",
-            freshness.label(),
-            age_label(self.status.age(self.now))
+        ui.label(catalogue.format(
+            "campaign_observation",
+            &[
+                ("freshness", freshness.label()),
+                ("age", &age_label(self.status.age(self.now))),
+            ],
         ));
         if let Some((_, error)) = &self.status.last_error {
             let (what, action) = explain_code(&error.code());
@@ -829,18 +834,20 @@ impl App {
         if let Some(Some(explanation)) = &self.explanation.value
             && explanation.blocker_code.is_some()
         {
-            ui.label(format!(
-                "Campaign-level blocker: {}",
-                explanation.blocker_code.as_deref().unwrap_or("")
+            ui.label(catalogue.format(
+                "campaign_level_blocker",
+                &[("code", explanation.blocker_code.as_deref().unwrap_or(""))],
             ));
         }
         if let Some(Some(report)) = &self.report.value {
             ui.separator();
             ui.strong(catalogue.text("campaign_final_report_exists"));
-            ui.monospace(format!(
-                "final commit {} with {} accepted tasks",
-                report.final_commit,
-                report.tasks.len()
+            ui.monospace(catalogue.format(
+                "campaign_final_summary",
+                &[
+                    ("commit", &report.final_commit),
+                    ("accepted", &report.tasks.len().to_string()),
+                ],
             ));
         }
     }
@@ -873,9 +880,11 @@ fn outcomes_grid(
             ui.label(outcomes.rejected_proposals.to_string());
             ui.end_row();
             ui.label(catalogue.text("campaign_accepted_against_ceiling"));
-            ui.label(format!(
-                "{} of {}",
-                outcomes.accepted, outcomes.max_accepted
+            ui.label(usage_label(
+                catalogue,
+                &outcomes.accepted,
+                &outcomes.max_accepted,
+                false,
             ));
             ui.end_row();
         });
@@ -891,23 +900,25 @@ fn active_tasks(
         ui.label(catalogue.text("campaign_no_unit_is_active"));
     }
     for active in &status.active_tasks {
+        let model = active.model.as_ref().map_or_else(String::new, |model| {
+            catalogue.format("campaign_active_model", &[("model", model)])
+        });
+        let pod = active.pod_id.as_ref().map_or_else(String::new, |pod| {
+            catalogue.format("campaign_active_pod", &[("pod", pod)])
+        });
         content::render(
             ui,
-            &format!(
-                "{} - {} by {}{} (round {}, heartbeat {}{})",
-                active.task_id,
-                active.state,
-                active.actor,
-                active
-                    .model
-                    .as_ref()
-                    .map_or(String::new(), |model| format!(" using {model}")),
-                active.correction_round,
-                active.heartbeat_sequence,
-                active
-                    .pod_id
-                    .as_ref()
-                    .map_or(String::new(), |pod| format!(", pod {pod}")),
+            &catalogue.format(
+                "campaign_active_line",
+                &[
+                    ("task", &active.task_id),
+                    ("state", &active.state),
+                    ("actor", &active.actor),
+                    ("model", &model),
+                    ("round", &active.correction_round.to_string()),
+                    ("heartbeat", &active.heartbeat_sequence.to_string()),
+                    ("pod", &pod),
+                ],
             ),
         );
     }
@@ -931,7 +942,10 @@ fn status_grid(
             ui.label(catalogue.text("campaign_model"));
             content::render(
                 ui,
-                status.model.as_deref().unwrap_or("not owned by a provider"),
+                status
+                    .model
+                    .as_deref()
+                    .unwrap_or(catalogue.text("campaign_model_absent")),
             );
             ui.end_row();
             ui.label(catalogue.text("campaign_branch"));
@@ -941,10 +955,20 @@ fn status_grid(
             ui.monospace(&status.head);
             ui.end_row();
             ui.label(catalogue.text("campaign_current_task"));
-            ui.label(status.current_task_id.as_deref().unwrap_or("none"));
+            ui.label(
+                status
+                    .current_task_id
+                    .as_deref()
+                    .unwrap_or(catalogue.text("campaign_code_absent")),
+            );
             ui.end_row();
             ui.label(catalogue.text("campaign_last_task"));
-            ui.label(status.last_task_id.as_deref().unwrap_or("none"));
+            ui.label(
+                status
+                    .last_task_id
+                    .as_deref()
+                    .unwrap_or(catalogue.text("campaign_code_absent")),
+            );
             ui.end_row();
             ui.label(catalogue.text("campaign_watchdog"));
             ui.label(&status.watchdog_state);
@@ -953,13 +977,24 @@ fn status_grid(
             ui.label(&status.reconciliation_state);
             ui.end_row();
             ui.label(catalogue.text("campaign_blocker_code"));
-            ui.label(status.blocker_code.as_deref().unwrap_or("none"));
+            ui.label(
+                status
+                    .blocker_code
+                    .as_deref()
+                    .unwrap_or(catalogue.text("campaign_code_absent")),
+            );
             ui.end_row();
             ui.label(catalogue.text("campaign_elapsed"));
-            ui.label(format!("{} s since creation", status.elapsed_ms / 1000));
+            ui.label(catalogue.format(
+                "campaign_elapsed_value",
+                &[("seconds", &(status.elapsed_ms / 1000).to_string())],
+            ));
             ui.end_row();
             ui.label(catalogue.text("campaign_updated"));
-            ui.label(format!("unix {} ms", status.updated_at_ms));
+            ui.label(catalogue.format(
+                "campaign_updated_value",
+                &[("timestamp", &status.updated_at_ms.to_string())],
+            ));
             ui.end_row();
         });
 }
@@ -975,16 +1010,24 @@ fn holds_section(
         ui.label(catalogue.text("campaign_none"));
     }
     for blocker in &status.blockers {
-        ui.monospace(format!("{} - {}", blocker.task_id, blocker.reason_code));
+        ui.monospace(catalogue.format(
+            "campaign_reason_line",
+            &[("task", &blocker.task_id), ("reason", &blocker.reason_code)],
+        ));
     }
     ui.strong(catalogue.text("campaign_deferred_tasks"));
     if status.deferrals.is_empty() {
         ui.label(catalogue.text("campaign_none"));
     }
     for deferral in &status.deferrals {
-        ui.monospace(format!(
-            "{} - {} until {} ({})",
-            deferral.task_id, deferral.reason_code, deferral.trigger_code, deferral.trigger_state
+        ui.monospace(catalogue.format(
+            "campaign_deferral_line",
+            &[
+                ("task", &deferral.task_id),
+                ("reason", &deferral.reason_code),
+                ("trigger", &deferral.trigger_code),
+                ("state", &deferral.trigger_state),
+            ],
         ));
     }
     ui.strong(catalogue.text("campaign_human_decisions_required"));
@@ -992,7 +1035,13 @@ fn holds_section(
         ui.label(catalogue.text("campaign_none"));
     }
     for decision in &status.human_decisions {
-        ui.monospace(format!("{} - {}", decision.task_id, decision.reason_code));
+        ui.monospace(catalogue.format(
+            "campaign_reason_line",
+            &[
+                ("task", &decision.task_id),
+                ("reason", &decision.reason_code),
+            ],
+        ));
     }
 }
 
@@ -1009,46 +1058,79 @@ fn utilization_grid(
         .spacing(super::current_tokens(ui.ctx()).layout.grid_compact)
         .show(ui, |ui| {
             ui.label(catalogue.text("campaign_provider_attempts"));
-            ui.label(format!(
-                "{} of {}",
-                used.provider_attempts, limits.provider_attempts
+            ui.label(usage_label(
+                catalogue,
+                &used.provider_attempts,
+                &limits.provider_attempts,
+                false,
             ));
             ui.end_row();
             ui.label(catalogue.text("campaign_malformed_report_repairs"));
-            ui.label(format!(
-                "{} of {}",
-                used.malformed_report_repairs, limits.malformed_report_repairs
+            ui.label(usage_label(
+                catalogue,
+                &used.malformed_report_repairs,
+                &limits.malformed_report_repairs,
+                false,
             ));
             ui.end_row();
             ui.label(catalogue.text("campaign_correction_rounds"));
-            ui.label(format!(
-                "{} of {}",
-                used.correction_rounds, limits.correction_rounds
+            ui.label(usage_label(
+                catalogue,
+                &used.correction_rounds,
+                &limits.correction_rounds,
+                false,
             ));
             ui.end_row();
             ui.label(catalogue.text("campaign_process_invocations"));
-            ui.label(format!(
-                "{} of {}",
-                used.process_invocations, limits.process_invocations
+            ui.label(usage_label(
+                catalogue,
+                &used.process_invocations,
+                &limits.process_invocations,
+                false,
             ));
             ui.end_row();
             ui.label(catalogue.text("campaign_output_bytes"));
-            ui.label(format!("{} of {}", used.output_bytes, limits.output_bytes));
+            ui.label(usage_label(
+                catalogue,
+                &used.output_bytes,
+                &limits.output_bytes,
+                false,
+            ));
             ui.end_row();
             ui.label(catalogue.text("campaign_retained_state_bytes"));
-            ui.label(format!(
-                "{} of {}",
-                used.retained_state_bytes, limits.retained_state_bytes
+            ui.label(usage_label(
+                catalogue,
+                &used.retained_state_bytes,
+                &limits.retained_state_bytes,
+                false,
             ));
             ui.end_row();
             ui.label(catalogue.text("campaign_execution_time"));
-            ui.label(format!(
-                "{} ms of {} ms",
-                used.execution_elapsed_ms, limits.execution_elapsed_ms
+            ui.label(usage_label(
+                catalogue,
+                &used.execution_elapsed_ms,
+                &limits.execution_elapsed_ms,
+                true,
             ));
             ui.end_row();
         });
     ui.small(catalogue.text("campaign_tokens_unknown"));
+}
+
+fn usage_label(
+    catalogue: &Catalogue,
+    used: &impl ToString,
+    limit: &impl ToString,
+    milliseconds: bool,
+) -> String {
+    catalogue.format(
+        if milliseconds {
+            "campaign_used_time"
+        } else {
+            "campaign_used_of_limit"
+        },
+        &[("used", &used.to_string()), ("limit", &limit.to_string())],
+    )
 }
 
 fn roles_and_modes(
@@ -1059,14 +1141,19 @@ fn roles_and_modes(
 ) {
     ui.heading(catalogue.text("campaign_roles_this_backend_reports"));
     for (code, description) in SUPPORTED_ROLES {
-        ui.label(format!("{code}: {description}"));
+        ui.label(catalogue.format(
+            "campaign_roles_line",
+            &[("code", code), ("description", description)],
+        ));
     }
     ui.heading(catalogue.text("campaign_owner_involvement"));
     let freshness = mission.freshness(now);
-    ui.small(format!(
-        "Mission observation: {} ({})",
-        freshness.label(),
-        age_label(mission.age(now))
+    ui.small(catalogue.format(
+        "campaign_mission_observation",
+        &[
+            ("freshness", freshness.label()),
+            ("age", &age_label(mission.age(now))),
+        ],
     ));
     if let Some((_, error)) = &mission.last_error {
         let (what, action) = explain_code(&error.code());
@@ -1075,24 +1162,21 @@ fn roles_and_modes(
     if freshness == Freshness::Stale {
         ui.colored_label(
             super::current_tokens(ui.ctx()).warning,
-            "Stale mission observation: the last refresh failed or this value is old. Refresh the campaign before relying on its involvement setting.",
+            catalogue.text("campaign_mission_stale"),
         );
     }
     match &mission.value {
         Some(Some(status)) => {
             let mode = involvement_label(&status.involvement);
-            let authority = if status.revoked {
-                "revoked; no new effect may start"
-            } else if status.expired {
-                "expired; a re-issued charter generation is required"
-            } else if freshness == Freshness::Live {
-                "current"
-            } else {
-                "last observed as current; now unverified"
-            };
-            ui.label(format!(
-                "Mission {} generation {}: {mode} mode, authority {authority}",
-                status.mission_id, status.generation
+            let authority = mission_authority(catalogue, status, freshness);
+            ui.label(catalogue.format(
+                "campaign_mission_summary",
+                &[
+                    ("id", &status.mission_id),
+                    ("generation", &status.generation.to_string()),
+                    ("mode", &mode),
+                    ("authority", authority),
+                ],
             ));
             egui::Grid::new("mission-status")
                 .num_columns(2)
@@ -1108,9 +1192,13 @@ fn roles_and_modes(
                     ui.label(status.expires_at_ms.to_string());
                     ui.end_row();
                     ui.label(catalogue.text("campaign_decisions_recorded"));
-                    ui.label(format!(
-                        "{} ({} permitted, {} held)",
-                        status.decisions_recorded, status.permitted_choices, status.held_decisions
+                    ui.label(catalogue.format(
+                        "campaign_mission_decisions",
+                        &[
+                            ("recorded", &status.decisions_recorded.to_string()),
+                            ("permitted", &status.permitted_choices.to_string()),
+                            ("held", &status.held_decisions.to_string()),
+                        ],
                     ));
                     ui.end_row();
                     ui.label(catalogue.text("campaign_pending_owner_decisions"));
@@ -1123,16 +1211,17 @@ fn roles_and_modes(
                     ui.label(&status.mission_sha256);
                     ui.end_row();
                 });
-            ui.small(format!(
-                "Observed {} ago through campaign-mission-status; the interface never answers or grants a decision.",
-                age_label(mission.age(now))
+            ui.small(catalogue.format(
+                "campaign_mission_age",
+                &[("age", &age_label(mission.age(now)))],
             ));
         }
         Some(None) => {
             ui.label(catalogue.text("campaign_no_mission"));
             for (_, label, description) in INVOLVEMENT_MODES {
-                ui.label(format!(
-                    "{label}: unavailable until a charter is admitted with codingmage campaign-mission-admit; {description}"
+                ui.label(catalogue.format(
+                    "campaign_mode_unavailable",
+                    &[("label", label), ("description", description)],
                 ));
             }
         }
@@ -1143,6 +1232,22 @@ fn roles_and_modes(
                 ui.label(catalogue.text("campaign_mission_authority_not_yet_observed"));
             }
         }
+    }
+}
+
+fn mission_authority<'a>(
+    catalogue: &'a Catalogue,
+    status: &MissionStatus,
+    freshness: Freshness,
+) -> &'a str {
+    if status.revoked {
+        catalogue.text("campaign_mission_revoked")
+    } else if status.expired {
+        catalogue.text("campaign_mission_expired")
+    } else if freshness == Freshness::Live {
+        catalogue.text("campaign_mission_current")
+    } else {
+        catalogue.text("campaign_mission_unverified")
     }
 }
 
