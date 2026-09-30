@@ -121,6 +121,11 @@ fn report_sources_show_exact_refresh_commands_and_recover_from_malformed_reads()
 }
 
 fn export_and_settle(harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>) {
+    assert!(settle(
+        harness,
+        Duration::from_secs(30),
+        codingmage_ui::App::report_ready
+    ));
     harness.state_mut().export_report();
     assert!(harness.state().report_export_pending());
     assert!(settle(harness, Duration::from_secs(30), |app| {
@@ -131,6 +136,11 @@ fn export_and_settle(harness: &mut egui_kittest::Harness<'static, codingmage_ui:
 fn reject_duplicate_and_foreign_export_completion(
     harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>,
 ) {
+    assert!(settle(
+        harness,
+        Duration::from_secs(30),
+        codingmage_ui::App::report_ready
+    ));
     harness.state_mut().export_report();
     assert!(harness.state().report_export_pending());
     harness.state_mut().export_report();
@@ -194,6 +204,11 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
     assert!(!text.contains("fake-claude"));
     assert!(text.contains("unavailable_external_dependency"));
     harness.state_mut().select_screen(Screen::Reports);
+    assert!(settle(
+        &mut harness,
+        Duration::from_secs(30),
+        codingmage_ui::App::report_ready
+    ));
     harness.run_steps(2);
     harness.get_by_label("1 / 0 / 0");
     harness.get_by_label("2 of 2");
@@ -291,6 +306,57 @@ fn report_and_export_label_retained_status_after_failed_refresh() {
     let exported = fs::read_to_string(&destination).unwrap();
     assert!(exported.contains("campaign status stale"));
     assert_eq!(tree_digest(&fixture.target), before);
+}
+
+#[test]
+fn report_assembly_rebinds_after_source_change_and_refuses_stale_export() {
+    let fixture = Fixture::new("report-assembly-rebind", 1);
+    let spec = write_campaign(&fixture, "report-assembly-rebind-campaign", 1);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.status().value.is_some() && !app.status().loading
+    }));
+    harness.state_mut().select_screen(Screen::Reports);
+    assert!(settle(
+        &mut harness,
+        Duration::from_secs(30),
+        codingmage_ui::App::report_ready
+    ));
+    harness.state_mut().reports_state_mut().show_json = true;
+    harness.run_steps(2);
+    harness.get_by_label_contains("schema_version");
+
+    let destination = fixture.root.join("stale-assembly.json");
+    harness.state_mut().reports_state_mut().export_path = destination.display().to_string();
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-status",
+        request_id: None,
+        result: Err(BackendError::Timeout),
+    }));
+    assert!(!harness.state().report_ready());
+    harness.state_mut().export_report();
+    assert!(!harness.state().report_export_pending());
+    assert!(!destination.exists());
+    assert!(settle(
+        &mut harness,
+        Duration::from_secs(30),
+        codingmage_ui::App::report_ready
+    ));
+    let report = harness.state().assemble_report(false).unwrap();
+    assert!(
+        report
+            .limits
+            .iter()
+            .any(|limit| limit.contains("campaign status stale"))
+    );
+    export_and_settle(&mut harness);
+    let exported = fs::read_to_string(destination).unwrap();
+    assert!(exported.contains("campaign status stale"));
 }
 
 #[test]

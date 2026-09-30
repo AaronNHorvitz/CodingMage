@@ -2,18 +2,194 @@
 
 use std::{
     path::PathBuf,
+    sync::mpsc::{Receiver, SyncSender, TrySendError, channel, sync_channel},
+    thread,
     time::{Duration, Instant},
 };
 
 use super::{App, Screen, failure_box};
 use crate::{
-    backend::{BackendError, Job, Request, Response, explain_code},
+    admission::Admission,
+    backend::models::{BlockerExplanation, CampaignOutcome, CampaignReport, CampaignStatus},
+    backend::{BackendError, Generation, Job, Request, Response, explain_code},
     command, content,
     launch::LaunchState,
     messages::{self, Catalogue},
-    observed::{Freshness, age_label},
+    observed::{Freshness, Observed, age_label},
+    records::{CommitSummary, FileChange, RunRecord},
     report::{ChangeCoverage, OutcomeReport, ReportInputs},
 };
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ObservationKey {
+    observed_at: Option<Instant>,
+    error_at: Option<Instant>,
+    loading: bool,
+    freshness: Freshness,
+}
+
+impl ObservationKey {
+    fn of<T>(observation: &Observed<T>, now: Instant) -> Self {
+        Self {
+            observed_at: observation.observed_at,
+            error_at: observation.last_error.as_ref().map(|(at, _)| *at),
+            loading: observation.loading,
+            freshness: observation.freshness(now),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct ReportKey {
+    generation: Generation,
+    source_revision: u64,
+    include_paths: bool,
+    status: ObservationKey,
+    blockers: ObservationKey,
+    final_report: ObservationKey,
+    changes: ObservationKey,
+    runs: ObservationKey,
+    admission_digest: Option<String>,
+    invocation: Option<CampaignOutcome>,
+    runs_truncated: bool,
+}
+
+struct ReportSource {
+    campaign_id: String,
+    repository_id: String,
+    authority_sha256: String,
+    initial_commit: String,
+    publication: String,
+    admission: Option<Admission>,
+    status: Option<CampaignStatus>,
+    blockers: Option<BlockerExplanation>,
+    final_report: Option<CampaignReport>,
+    last_invocation: Option<CampaignOutcome>,
+    commits: Vec<CommitSummary>,
+    files: Vec<FileChange>,
+    change_coverage: ChangeCoverage,
+    runs: Vec<RunRecord>,
+    run_records_observed: bool,
+    run_records_truncated: bool,
+    freshness: String,
+}
+
+impl ReportSource {
+    fn assemble(&self, include_paths: bool) -> OutcomeReport {
+        let mut report = OutcomeReport::assemble(
+            &ReportInputs {
+                campaign_id: &self.campaign_id,
+                repository_id: &self.repository_id,
+                authority_sha256: &self.authority_sha256,
+                initial_commit: &self.initial_commit,
+                publication: self.publication.clone(),
+                admission: self.admission.as_ref(),
+                status: self.status.as_ref(),
+                blockers: self.blockers.as_ref(),
+                final_report: self.final_report.as_ref(),
+                last_invocation: self.last_invocation.as_ref(),
+                commits: &self.commits,
+                files: &self.files,
+                change_coverage: self.change_coverage,
+                runs: &self.runs,
+                run_records_observed: self.run_records_observed,
+                run_records_truncated: self.run_records_truncated,
+            },
+            include_paths,
+        );
+        report.limits.push(self.freshness.clone());
+        report
+    }
+}
+
+struct ReportWork {
+    key: ReportKey,
+    source: ReportSource,
+}
+
+struct ReportResult {
+    key: ReportKey,
+    report: OutcomeReport,
+    preview: Result<String, String>,
+}
+
+enum ReportQueueError {
+    Full,
+    Stopped,
+}
+
+/// CPU-only report assembly. The queue and thread are separate from coordinator controls.
+pub(super) struct ReportWorker {
+    sender: SyncSender<ReportWork>,
+    receiver: Receiver<ReportResult>,
+    handle: Option<thread::JoinHandle<()>>,
+}
+
+impl ReportWorker {
+    pub(super) fn start(wake: impl Fn() + Send + 'static) -> Self {
+        let (sender, requests) = sync_channel::<ReportWork>(1);
+        let (responses, receiver) = channel::<ReportResult>();
+        let handle = thread::Builder::new()
+            .name("codingmage-ui-report-assembly".to_owned())
+            .spawn(move || {
+                while let Ok(request) = requests.recv() {
+                    let report = request.source.assemble(request.key.include_paths);
+                    let preview = report
+                        .to_preview_bytes()
+                        .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+                        .map_err(|error| error.to_string());
+                    if responses
+                        .send(ReportResult {
+                            key: request.key,
+                            report,
+                            preview,
+                        })
+                        .is_err()
+                    {
+                        break;
+                    }
+                    wake();
+                }
+            })
+            .ok();
+        Self {
+            sender,
+            receiver,
+            handle,
+        }
+    }
+
+    fn submit(&self, request: ReportWork) -> Result<(), ReportQueueError> {
+        match self.sender.try_send(request) {
+            Ok(()) => Ok(()),
+            Err(TrySendError::Full(_)) => Err(ReportQueueError::Full),
+            Err(TrySendError::Disconnected(_)) => Err(ReportQueueError::Stopped),
+        }
+    }
+
+    fn drain(&self) -> Vec<ReportResult> {
+        let mut results = Vec::new();
+        while let Ok(result) = self.receiver.try_recv() {
+            results.push(result);
+        }
+        results
+    }
+}
+
+impl Drop for ReportWorker {
+    fn drop(&mut self) {
+        drop(std::mem::replace(&mut self.sender, sync_channel(1).0));
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join();
+        }
+    }
+}
+
+struct AssembledReport {
+    key: ReportKey,
+    report: OutcomeReport,
+    preview: Result<String, String>,
+}
 
 #[derive(Debug)]
 struct PendingExport {
@@ -36,6 +212,9 @@ pub struct ReportsState {
     /// Show a bounded JSON preview inline; export retains the full document.
     pub show_json: bool,
     pending: Option<PendingExport>,
+    assembly_pending: Option<ReportKey>,
+    assembled: Option<AssembledReport>,
+    assembly_error: Option<String>,
 }
 
 impl App {
@@ -59,49 +238,144 @@ impl App {
     pub(super) fn clear_report_export(&mut self) {
         self.reports.pending = None;
         self.reports.message = None;
+        self.reports.assembled = None;
+        self.reports.assembly_error = None;
     }
 
-    /// Assembles the outcome report from the current observations.
+    /// Assembles the outcome report synchronously from the current observations.
+    /// Production rendering and export use the bounded report worker instead.
     #[must_use]
     pub fn assemble_report(&self, include_paths: bool) -> Option<OutcomeReport> {
+        Some(self.report_source(Instant::now())?.assemble(include_paths))
+    }
+
+    fn report_source(&self, now: Instant) -> Option<ReportSource> {
         let campaign = self.campaign.as_ref()?;
         let last_invocation = match &self.execution.observed {
             Some((_, LaunchState::Exited(outcome))) => Some(outcome.clone()),
             _ => None,
         };
-        let empty_commits = Vec::new();
-        let empty_files = Vec::new();
-        let empty_runs = Vec::new();
         let changes = self.changes.value.as_ref();
-        let inputs = ReportInputs {
-            campaign_id: &campaign.spec.campaign_id,
-            repository_id: &campaign.spec.repository_id,
-            authority_sha256: &campaign.authority_sha256,
-            initial_commit: &campaign.spec.initial_commit,
+        Some(ReportSource {
+            campaign_id: campaign.spec.campaign_id.clone(),
+            repository_id: campaign.spec.repository_id.clone(),
+            authority_sha256: campaign.authority_sha256.clone(),
+            initial_commit: campaign.spec.initial_commit.clone(),
             publication: format!("{:?}", campaign.spec.publication),
-            admission: self.execution.admission.as_ref(),
-            status: self.status.value.as_ref().and_then(Option::as_ref),
-            blockers: self.explanation.value.as_ref().and_then(Option::as_ref),
-            final_report: self.report.value.as_ref().and_then(Option::as_ref),
-            last_invocation: last_invocation.as_ref(),
-            commits: changes.map_or(&empty_commits, |changes| &changes.commits),
-            files: changes.map_or(&empty_files, |changes| &changes.files),
+            admission: self.execution.admission.clone(),
+            status: self.status.value.as_ref().and_then(Option::as_ref).cloned(),
+            blockers: self
+                .explanation
+                .value
+                .as_ref()
+                .and_then(Option::as_ref)
+                .cloned(),
+            final_report: self.report.value.as_ref().and_then(Option::as_ref).cloned(),
+            last_invocation,
+            commits: changes.map_or_else(Vec::new, |changes| changes.commits.clone()),
+            files: changes.map_or_else(Vec::new, |changes| changes.files.clone()),
             change_coverage: ChangeCoverage {
                 observed: changes.is_some(),
                 commits_truncated: changes.is_some_and(|changes| changes.commits_truncated),
                 files_truncated: changes.is_some_and(|changes| changes.files_truncated),
             },
-            runs: self.records.value.as_deref().unwrap_or(&empty_runs),
+            runs: self.records.value.clone().unwrap_or_default(),
             run_records_observed: self.records.value.is_some(),
             run_records_truncated: self.records_truncated,
-        };
-        let mut report = OutcomeReport::assemble(&inputs, include_paths);
-        report.limits.push(self.report_source_freshness());
-        Some(report)
+            freshness: self.report_source_freshness(now),
+        })
     }
 
-    fn report_source_freshness(&self) -> String {
+    fn report_key(&self, now: Instant) -> Option<ReportKey> {
+        self.campaign.as_ref()?;
+        Some(ReportKey {
+            generation: self.generation,
+            source_revision: self.report_source_revision,
+            include_paths: self.reports.include_paths,
+            status: ObservationKey::of(&self.status, now),
+            blockers: ObservationKey::of(&self.explanation, now),
+            final_report: ObservationKey::of(&self.report, now),
+            changes: ObservationKey::of(&self.changes, now),
+            runs: ObservationKey::of(&self.records, now),
+            admission_digest: self
+                .execution
+                .admission
+                .as_ref()
+                .map(|admission| admission.preflight_sha256.clone()),
+            invocation: match &self.execution.observed {
+                Some((_, LaunchState::Exited(outcome))) => Some(outcome.clone()),
+                _ => None,
+            },
+            runs_truncated: self.records_truncated,
+        })
+    }
+
+    /// Whether the current campaign observations have an assembled report ready.
+    #[must_use]
+    pub fn report_ready(&self) -> bool {
+        self.report_key(Instant::now()).is_some_and(|key| {
+            self.reports
+                .assembled
+                .as_ref()
+                .is_some_and(|cached| cached.key == key)
+        })
+    }
+
+    fn request_report_assembly(&mut self) {
         let now = Instant::now();
+        let Some(key) = self.report_key(now) else {
+            return;
+        };
+        if self
+            .reports
+            .assembled
+            .as_ref()
+            .is_some_and(|cached| cached.key == key)
+            || self.reports.assembly_pending.is_some()
+        {
+            return;
+        }
+        let Some(source) = self.report_source(now) else {
+            return;
+        };
+        match self.report_worker.submit(ReportWork {
+            key: key.clone(),
+            source,
+        }) {
+            Ok(()) => {
+                self.reports.assembly_pending = Some(key);
+                self.reports.assembly_error = None;
+            }
+            Err(ReportQueueError::Full) => {
+                self.reports.assembly_error =
+                    Some("report assembly is busy; wait for the current snapshot".to_owned());
+            }
+            Err(ReportQueueError::Stopped) => {
+                self.reports.assembly_error = Some(
+                    "report assembly worker stopped; reopen the workspace to retry".to_owned(),
+                );
+            }
+        }
+    }
+
+    pub(super) fn poll_report_assembly(&mut self) {
+        for result in self.report_worker.drain() {
+            if self.reports.assembly_pending.as_ref() != Some(&result.key) {
+                continue;
+            }
+            self.reports.assembly_pending = None;
+            if self.report_key(Instant::now()).as_ref() == Some(&result.key) {
+                self.reports.assembled = Some(AssembledReport {
+                    key: result.key,
+                    report: result.report,
+                    preview: result.preview,
+                });
+                self.reports.assembly_error = None;
+            }
+        }
+    }
+
+    fn report_source_freshness(&self, now: Instant) -> String {
         format!(
             "Source observation freshness at assembly: campaign status {}, blockers {}, final report {}, changes {}, run records {}.",
             self.status.freshness(now).label(),
@@ -118,8 +392,21 @@ impl App {
             self.reports.message = Some(Err("a report export is already pending".to_owned()));
             return;
         }
-        let Some(report) = self.assemble_report(self.reports.include_paths) else {
+        if self.campaign.is_none() {
             self.reports.message = Some(Err("select a campaign first".to_owned()));
+            return;
+        }
+        let Some(report) = self
+            .reports
+            .assembled
+            .as_ref()
+            .filter(|cached| self.report_key(Instant::now()).as_ref() == Some(&cached.key))
+            .map(|cached| cached.report.clone())
+        else {
+            self.reports.message = Some(Err(
+                "the report is updating; wait for the current observation before exporting"
+                    .to_owned(),
+            ));
             return;
         };
         let Some(repository) = self
@@ -228,13 +515,9 @@ impl App {
             );
             return;
         }
-        let Some(report) = self.assemble_report(self.reports.include_paths) else {
-            ui.label(catalogue.text("reports_open_campaign"));
-            return;
-        };
         ui.label(catalogue.text("reports_intro"));
         self.report_source_controls(ui, catalogue);
-        let freshness = self.report_source_freshness();
+        let freshness = self.report_source_freshness(self.now);
         let source_states = [
             self.status.freshness(self.now),
             self.explanation.freshness(self.now),
@@ -248,6 +531,26 @@ impl App {
         } else {
             ui.label(freshness);
         }
+        self.request_report_assembly();
+        let current_key = self.report_key(Instant::now());
+        let Some(cached) = self
+            .reports
+            .assembled
+            .as_ref()
+            .filter(|cached| current_key.as_ref() == Some(&cached.key))
+        else {
+            ui.label(catalogue.text("reports_assembling"));
+            if let Some(error) = &self.reports.assembly_error {
+                failure_box(
+                    ui,
+                    catalogue.text("reports_assembly_failed"),
+                    error,
+                    catalogue.text("reports_assembly_recovery"),
+                );
+            }
+            return;
+        };
+        let report = &cached.report;
         if !report.run_records_observed {
             ui.colored_label(
                 super::current_tokens(ui.ctx()).error,
@@ -257,19 +560,14 @@ impl App {
             ui.label(catalogue.text("reports_run_truncated"));
         }
         ui.separator();
-        outcome_summary(ui, &report, catalogue);
+        outcome_summary(ui, report, catalogue);
         ui.separator();
-        blocker_report(ui, &report, catalogue);
+        blocker_report(ui, report, catalogue);
         ui.separator();
-        self.report_export_section(ui, catalogue, &report);
+        self.report_export_section(ui, catalogue);
     }
 
-    fn report_export_section(
-        &mut self,
-        ui: &mut egui::Ui,
-        catalogue: &Catalogue,
-        report: &OutcomeReport,
-    ) {
+    fn report_export_section(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
         ui.strong(catalogue.text("reports_export_title"));
         ui.small(catalogue.text("reports_destination_guidance"));
         ui.small(catalogue.text("reports_command_unavailable"));
@@ -293,7 +591,7 @@ impl App {
             );
             if ui
                 .add_enabled(
-                    !self.report_export_pending(),
+                    !self.report_export_pending() && self.report_ready(),
                     egui::Button::new(catalogue.text("reports_export")),
                 )
                 .clicked()
@@ -322,14 +620,25 @@ impl App {
             catalogue.text("reports_preview"),
         );
         if self.reports.show_json
-            && let Ok(bytes) = report.to_bytes()
+            && self.report_ready()
+            && let Some(cached) = &self.reports.assembled
         {
-            egui::ScrollArea::vertical()
-                .id_salt("report-json")
-                .max_height(super::current_tokens(ui.ctx()).layout.preview_reports)
-                .show(ui, |ui| {
-                    crate::content::render(ui, &String::from_utf8_lossy(&bytes));
-                });
+            match &cached.preview {
+                Ok(preview) => {
+                    egui::ScrollArea::vertical()
+                        .id_salt("report-json")
+                        .max_height(super::current_tokens(ui.ctx()).layout.preview_reports)
+                        .show(ui, |ui| {
+                            crate::content::render(ui, preview);
+                        });
+                }
+                Err(error) => failure_box(
+                    ui,
+                    catalogue.text("reports_preview_failed"),
+                    error,
+                    catalogue.text("reports_preview_recovery"),
+                ),
+            }
         }
     }
 

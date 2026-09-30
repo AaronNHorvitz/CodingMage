@@ -4,7 +4,10 @@
 //! It never contains configuration paths, environment values, provider executables or
 //! credentials, and it includes repository file paths only when the owner opts in.
 
-use std::path::{Path, PathBuf};
+use std::{
+    io::{self, Write},
+    path::{Path, PathBuf},
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +20,8 @@ use crate::{
 
 /// Report document version.
 pub const REPORT_SCHEMA_VERSION: u16 = 3;
+/// Maximum serialized bytes shown in the inline report preview.
+pub const REPORT_PREVIEW_LIMIT: usize = 128 * 1024;
 
 /// One run summarized for the report.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -299,6 +304,25 @@ impl OutcomeReport {
         serde_json::to_vec_pretty(self).map_err(|_| WriteError::Encode)
     }
 
+    /// Serializes only a bounded preview. A large document remains available through export.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`WriteError::Encode`] for a serialization failure unrelated to the limit.
+    pub fn to_preview_bytes(&self) -> Result<Vec<u8>, WriteError> {
+        let mut writer = PreviewWriter::default();
+        let result = serde_json::to_writer_pretty(&mut writer, self);
+        if writer.truncated {
+            writer
+                .bytes
+                .extend_from_slice(b"\n[Preview truncated; export the full report.]\n");
+            Ok(writer.bytes)
+        } else {
+            result.map_err(|_| WriteError::Encode)?;
+            Ok(writer.bytes)
+        }
+    }
+
     /// Writes the report with the export safeguards: absolute path outside the repository,
     /// never through a symbolic link, never replacing a file unless overwrite was requested.
     ///
@@ -323,11 +347,71 @@ impl OutcomeReport {
     }
 }
 
+#[derive(Default)]
+struct PreviewWriter {
+    bytes: Vec<u8>,
+    truncated: bool,
+}
+
+impl Write for PreviewWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let available = REPORT_PREVIEW_LIMIT.saturating_sub(self.bytes.len());
+        if buf.len() > available {
+            self.bytes.extend_from_slice(&buf[..available]);
+            self.truncated = true;
+            Err(io::Error::other("report preview limit reached"))
+        } else {
+            self.bytes.extend_from_slice(buf);
+            Ok(buf.len())
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::backend::models::RunCheckpoint;
     use std::fs;
+
+    #[test]
+    fn inline_preview_is_bounded_and_full_export_is_preserved() {
+        let inputs = ReportInputs {
+            campaign_id: "c",
+            repository_id: "repo-1",
+            authority_sha256: "a",
+            initial_commit: "b",
+            publication: "local_only".to_owned(),
+            admission: None,
+            status: None,
+            blockers: None,
+            final_report: None,
+            last_invocation: None,
+            commits: &[],
+            files: &[],
+            change_coverage: ChangeCoverage {
+                observed: false,
+                commits_truncated: false,
+                files_truncated: false,
+            },
+            runs: &[],
+            run_records_observed: false,
+            run_records_truncated: false,
+        };
+        let mut report = OutcomeReport::assemble(&inputs, false);
+        assert_eq!(
+            report.to_preview_bytes().unwrap(),
+            report.to_bytes().unwrap()
+        );
+        report.limits.push("x".repeat(REPORT_PREVIEW_LIMIT * 2));
+        let preview = report.to_preview_bytes().unwrap();
+        assert!(preview.len() < REPORT_PREVIEW_LIMIT + 100);
+        assert!(preview.ends_with(b"[Preview truncated; export the full report.]\n"));
+        assert!(report.to_bytes().unwrap().len() > REPORT_PREVIEW_LIMIT);
+    }
 
     #[test]
     fn report_omits_paths_unless_requested_and_states_delivery_as_withheld() {

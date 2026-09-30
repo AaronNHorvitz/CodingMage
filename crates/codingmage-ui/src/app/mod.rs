@@ -12,6 +12,7 @@ mod setup_screen;
 pub use changes_screen::ChangeSet;
 pub use execution_screen::{ExecutionState, LAUNCH_OBSERVE_INTERVAL};
 pub use help_screen::SupportState;
+use reports_screen::ReportWorker;
 pub use reports_screen::ReportsState;
 pub use setup_screen::SetupState;
 
@@ -187,7 +188,9 @@ pub struct App {
     records_request: Option<EvidenceTicket>,
     records_status: Option<(String, u64)>,
     records_truncated: bool,
+    report_source_revision: u64,
     reports: ReportsState,
+    report_worker: ReportWorker,
     support: SupportState,
     appearance: Appearance,
     system_dark: bool,
@@ -282,7 +285,12 @@ impl App {
             records_request: None,
             records_status: None,
             records_truncated: false,
+            report_source_revision: 0,
             reports: ReportsState::default(),
+            report_worker: ReportWorker::start({
+                let wake_ctx = ctx.clone();
+                move || wake_ctx.request_repaint()
+            }),
             support: SupportState::default(),
             appearance: Appearance::System,
             system_dark: ctx.system_theme().unwrap_or(egui::Theme::Dark) == egui::Theme::Dark,
@@ -569,6 +577,16 @@ impl App {
             self.discarded_stale += 1;
             return false;
         }
+        if matches!(
+            response.label,
+            "campaign-status"
+                | "campaign-explain-blocker"
+                | "campaign-report"
+                | "campaign-changes"
+                | "campaign-run-records"
+        ) {
+            self.report_source_revision = self.report_source_revision.wrapping_add(1);
+        }
         match response.label {
             "doctor" => {
                 match response
@@ -652,6 +670,7 @@ impl App {
     /// Drains worker responses.
     pub fn poll(&mut self) {
         self.now = Instant::now();
+        self.poll_report_assembly();
         let responses = match &self.connection {
             Connection::Ready(worker) => worker.drain(),
             Connection::Unavailable(_) => Vec::new(),

@@ -319,6 +319,11 @@ fn setup_to_outcome_workflow_through_the_interface() {
         let reports = harness.state_mut().reports_state_mut();
         reports.export_path = workspace.join("outcome-report.json").display().to_string();
     }
+    assert!(settle(
+        &mut harness,
+        Duration::from_secs(30),
+        codingmage_ui::App::report_ready
+    ));
     harness.state_mut().export_report();
     assert!(harness.state().report_export_pending());
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {

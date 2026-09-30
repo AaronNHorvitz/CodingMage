@@ -123,8 +123,10 @@ essential animation. The six appearance baselines are offscreen software renders
   control worker. A stalled helper is signaled after 30 seconds or on window shutdown;
   termination may wait on the filesystem. After a timeout, inspect the destination and
   any `.codingmage-report-*.candidate` file in its parent before retrying. Export still
-  has no exact `codingmage` command equivalent. Report assembly and the on-screen JSON
-  preview still run during rendering.
+  has no exact `codingmage` command equivalent. Report assembly and a 128 KiB on-screen JSON
+  preview run on a separate CPU-only worker from a selection-bound observation snapshot.
+  A source change makes the prior snapshot unavailable for export until the worker prepares
+  the new one. The complete report remains available through export.
 - The interface keeps private state under `$XDG_CONFIG_HOME/codingmage-ui` (or
   `~/.config/codingmage-ui`): recent configurations, per-configuration campaign memory,
   admissions, launch records with private stdout/stderr captures, and control ledgers.
