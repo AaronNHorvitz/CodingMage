@@ -82,8 +82,10 @@ showing sample results.
    needs a second press. Each control can show its exact command and bound request identity
    before submission. Resume records the intent; press Start again to continue a paused campaign.
 6. Inspect changes, review and test records, and export a report to a file in an existing
-   directory outside the repository. A linked parent that resolves into the repository is
-   refused. Repository file paths are excluded unless you opt in.
+   directory outside the repository. A linked parent that resolves into the repository or
+   changes identity during an observed export step is refused. Repository file paths are
+   excluded unless you opt in. An export without overwrite consent cannot replace a file
+   created concurrently at the destination.
 
 ## Keyboard
 
@@ -110,6 +112,9 @@ essential animation. The six appearance baselines are offscreen software renders
   because they bind operator-controlled evidence digests or remote effects.
 - Reviewer finding text is not retained by the backend; the interface shows verdicts, correction
   rounds and evidence identities only.
+- Report export retains a directory handle and checks the selected repository identity, but
+  another local process may still race a directory rename between checks. Export file I/O
+  remains on the UI thread and has no exact `codingmage` command equivalent.
 - The interface keeps private state under `$XDG_CONFIG_HOME/codingmage-ui` (or
   `~/.config/codingmage-ui`): recent configurations, per-configuration campaign memory,
   admissions, launch records with private stdout/stderr captures, and control ledgers.

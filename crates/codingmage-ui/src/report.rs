@@ -4,10 +4,7 @@
 //! It never contains configuration paths, environment values, provider executables or
 //! credentials, and it includes repository file paths only when the owner opts in.
 
-use std::{
-    fs,
-    path::{Component, Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -261,31 +258,15 @@ impl OutcomeReport {
         repository: &Path,
         overwrite: bool,
     ) -> Result<PathBuf, WriteError> {
-        if !destination.is_absolute()
-            || destination
-                .components()
-                .any(|part| matches!(part, Component::ParentDir))
-        {
-            return Err(WriteError::Fields(vec![crate::setup::FieldError {
-                field: "destination",
-                message: "choose an absolute path without parent-directory components".to_owned(),
-            }]));
-        }
-        // Do not create a parent directory before checking where it resolves. A linked
-        // parent could otherwise put the export inside the target repository.
-        let parent = destination.parent().ok_or(WriteError::Io)?;
-        let parent = fs::canonicalize(parent).map_err(|_| {
-            WriteError::Fields(vec![crate::setup::FieldError {
-                field: "destination",
-                message: "create an existing, readable parent directory before exporting"
-                    .to_owned(),
-            }])
-        })?;
-        let repository = fs::canonicalize(repository).map_err(|_| WriteError::Io)?;
-        if parent.starts_with(repository) {
-            return Err(WriteError::InsideRepository(destination.to_path_buf()));
-        }
-        crate::setup::export_bytes(destination, &self.to_bytes()?, overwrite)
+        crate::report_export::validate_report_destination(destination, repository)?;
+        crate::report_export::write_report(
+            destination,
+            repository,
+            &self.to_bytes()?,
+            overwrite,
+            || {},
+            || {},
+        )
     }
 }
 
@@ -293,6 +274,7 @@ impl OutcomeReport {
 mod tests {
     use super::*;
     use crate::backend::models::RunCheckpoint;
+    use std::fs;
 
     #[test]
     fn report_omits_paths_unless_requested_and_states_delivery_as_withheld() {
