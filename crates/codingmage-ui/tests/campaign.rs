@@ -4,11 +4,15 @@ mod common;
 
 use std::{fs, path::Path, process::Command, time::Duration};
 
+use codingmage_campaign::CampaignSpec;
 use codingmage_ui::{
     Screen,
     backend::{
-        BackendError, CoordinatorBinary, Response,
-        models::{ActiveTask, BlockerExplanation, Deferral, MissionStatus, ModelError, TaskReason},
+        BackendError, Binding, CoordinatorBinary, Generation, Response,
+        models::{
+            ActiveTask, BlockerExplanation, CampaignStatus, Deferral, MissionStatus, ModelError,
+            TaskReason,
+        },
     },
     campaign::SelectError,
 };
@@ -27,6 +31,58 @@ fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::Ap
         app.diagnosis().value.is_some()
     }));
     harness
+}
+
+fn inject_report(
+    harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>,
+    binding: &Binding,
+    generation: Generation,
+    value: &serde_json::Value,
+) {
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding: binding.clone(),
+        label: "campaign-report",
+        request_id: None,
+        result: Ok(serde_json::to_vec(value).unwrap()),
+    }));
+}
+
+fn synthetic_final_report(spec: &CampaignSpec, status: &CampaignStatus) -> serde_json::Value {
+    serde_json::json!({
+        "version": codingmage_ui::backend::models::SUPPORTED_REPORT_VERSION,
+        "campaign_id": spec.campaign_id.clone(),
+        "repository_id": spec.repository_id.clone(),
+        "branch": status.branch.clone(),
+        "initial_commit": spec.initial_commit.clone(),
+        "final_commit": status.head.clone(),
+        "task_source_sha256": "a".repeat(64),
+        "tasks": {
+            "0.1.1.1": {
+                "reviewed_commit": "b".repeat(40),
+                "integration_commit": "c".repeat(40),
+                "completion_commit": "d".repeat(40)
+            }
+        },
+        "reconciliation": {
+            "state_sha256": "e".repeat(64),
+            "completed_task_ids_sha256": "f".repeat(64),
+            "removed_worktree_ids_sha256": "0".repeat(64),
+            "task_evidence_sha256": "1".repeat(64),
+            "checked_task_count": 1,
+            "removed_worktree_count": 1,
+            "process_control_root_count": 1,
+            "process_control_residue_count": 0,
+            "active_lease_count": 0,
+            "active_reservation_count": 0,
+            "integration_queue_count": 0,
+            "journal_reconciled": true,
+            "task_source_reconciled": true
+        },
+        "final_gate_evidence_sha256": "2".repeat(64),
+        "final_review_evidence_sha256": "3".repeat(64),
+        "completed_at_ms": 1
+    })
 }
 
 fn blocker_explanation_fixture() -> BlockerExplanation {
@@ -745,6 +801,82 @@ fn completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree() {
     harness.state_mut().select_screen(Screen::Overview);
     harness.run_steps(2);
     harness.get_by_label_contains("Attention: the coordinator reports a hold");
+}
+
+#[test]
+fn final_report_outcomes_require_bound_payload_and_current_status() {
+    let fixture = Fixture::new("report-payload-binding", 1);
+    let spec = write_campaign(&fixture, "report-bound", 1);
+    assert_eq!(run_campaign(&fixture, &spec)["completed_units"], 1);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.status().value.as_ref().is_some_and(Option::is_some)
+    }));
+    let selected = &harness.state().campaign().unwrap().spec;
+    let status = harness.state().status().value.clone().flatten().unwrap();
+    assert_eq!(status.state, "complete");
+    let report = synthetic_final_report(selected, &status);
+    let binding = harness.state().binding();
+    let generation = harness.state().generation();
+    inject_report(&mut harness, &binding, generation, &report);
+    assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_some());
+    let mut paused = status.clone();
+    paused.state = "paused".to_owned();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding: binding.clone(),
+        label: "campaign-status",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&paused).unwrap()),
+    }));
+    assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_none());
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding: binding.clone(),
+        label: "campaign-status",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&status).unwrap()),
+    }));
+    assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_some());
+
+    for field in ["campaign_id", "repository_id", "initial_commit", "branch"] {
+        let mut forged = report.clone();
+        forged[field] = serde_json::json!("foreign-value");
+        inject_report(&mut harness, &binding, generation, &forged);
+        assert!(matches!(
+            harness.state().report().last_error,
+            Some((_, BackendError::Contract(ModelError::AuthorityMismatch)))
+        ));
+        assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_none());
+        inject_report(&mut harness, &binding, generation, &report);
+        assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_some());
+    }
+
+    let mut wrong_head = report.clone();
+    wrong_head["final_commit"] = serde_json::json!("9".repeat(40));
+    inject_report(&mut harness, &binding, generation, &wrong_head);
+    assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_none());
+    inject_report(&mut harness, &binding, generation, &serde_json::Value::Null);
+    assert!(
+        harness
+            .state()
+            .report()
+            .value
+            .as_ref()
+            .is_some_and(Option::is_none)
+    );
+    assert!(harness.state().report().last_error.is_none());
+    assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_none());
+    inject_report(&mut harness, &binding, generation, &report);
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-status",
+        request_id: None,
+        result: Err(BackendError::Timeout),
+    }));
+    assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_none());
 }
 
 #[test]

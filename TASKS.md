@@ -2304,14 +2304,24 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     146/146 and strict workspace Clippy passed; Python retains only the unchanged
     CM-R01.6 source-bound freshness hold. Two exact-SHA read-only re-reviews found
     no new source issue but were inconclusive because the shared build slot never
-    became available for independent focused tests and strict Clippy. Re-review
-    remains open; details and retained first-failure disposition are in the same
-    evidence note.
+    became available for independent focused tests and strict Clippy. A later
+    exact-SHA review at `e4b846567f829e06343f8dca0ffbe9d062226318` ran
+    those checks and passed without findings; details and the retained first
+    failure are in the same evidence note.
     Work plan now hides retained coordinator outcomes while status is loading,
     failed or stale, offers an exact-command read-only refresh, and gives empty
     and malformed-plan recovery paths; see Decision 0048 and
     `docs/evidence/sprint-36-workplan-state-recovery.md`. The broader catalogue
     stays open.
+    That same exact-SHA review also covered Work plan and returned a bounded
+    PASS without findings after independent focused Work plan, Campaign and
+    Reports tests and strict workspace Clippy. It does not close this task or
+    any human/live gate. A further consumer-side
+    final-report identity and Work plan outcome guard is recorded in Decision
+    0049 and `docs/evidence/sprint-36-report-payload-binding.md`; its local
+    native UI suite passed 148/148 before a test-only fixture edit, its
+    final-source focused test and strict Clippy passed, and its independent
+    exact-commit review remains open.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->

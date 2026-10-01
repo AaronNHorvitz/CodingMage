@@ -73,6 +73,10 @@ checkboxes remain unchanged. **Refresh coordinator outcomes** is a read-only
 `campaign-status` request with the exact command shown beside it. An unstarted
 campaign and a malformed task source have separate explanations, and the empty
 and failed plan views lead to Setup and offline Help.
+Final-report accepted badges also require the selected report's campaign,
+repository, base and branch binding and a live completed status at the same
+branch and head. A failed report refresh or changed head hides those badges;
+the source checkbox remains a separate claim.
 
 The Reports screen can explicitly inspect the read-only
 `codingmage campaign-outcome-report --config <absolute-file> --campaign

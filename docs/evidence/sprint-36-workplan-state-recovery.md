@@ -48,7 +48,9 @@ whitespace checks pass. The reviewed inventory generator reports 1,767 items
 and 825 explicit gaps: one line-derived public item ID moved, with no semantic
 item, category, mapping or gap change. The exact staged diff and additions
 were inspected for scope and private host or credential material. This
-increment's independent review remains pending.
+increment's exact-SHA independent review passed after separate Work plan,
+Campaign and Reports focused tests and strict workspace Clippy. The review
+does not close Task 36.3.2.2 or the human/live gates.
 
 The two earlier independent reviews of the preceding source-inspection
 correction remain inconclusive solely because neither could acquire the shared

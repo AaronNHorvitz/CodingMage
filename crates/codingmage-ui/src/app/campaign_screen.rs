@@ -360,6 +360,33 @@ impl App {
         }
     }
 
+    pub(super) fn accept_report(&mut self, response: Response) {
+        let expected = self.campaign.as_ref().map(|selection| &selection.spec);
+        let parsed = response
+            .result
+            .and_then(|bytes| {
+                crate::backend::models::parse_campaign_report(&bytes).map_err(BackendError::from)
+            })
+            .and_then(|report| {
+                if expected.is_some_and(|spec| {
+                    report.as_ref().is_none_or(|report| {
+                        report.campaign_id == spec.campaign_id
+                            && report.repository_id == spec.repository_id
+                            && report.initial_commit == spec.initial_commit
+                            && report.branch.starts_with(&spec.campaign_branch)
+                    })
+                }) {
+                    Ok(report)
+                } else {
+                    Err(BackendError::Contract(ModelError::AuthorityMismatch))
+                }
+            });
+        match parsed {
+            Ok(report) => self.report.accept(report, response.generation, self.now),
+            Err(error) => self.report.fail(error, self.now),
+        }
+    }
+
     fn request_head_plan(&mut self, head: &str) {
         let Some((config_path, spec_path, _)) = self.campaign_arguments() else {
             return;
@@ -545,7 +572,9 @@ impl App {
                     .collect::<BTreeMap<String, CheckState>>()
             })
             .unwrap_or_default();
-        let status = self.status.value.as_ref().and_then(Option::as_ref);
+        let status = (!self.status.loading && self.status.freshness(self.now) == Freshness::Live)
+            .then(|| self.status.value.as_ref().and_then(Option::as_ref))
+            .flatten();
         let head = self.head_plan.value.as_ref().and_then(|plan| {
             plan.as_ref().and_then(|plan| {
                 (self.status.freshness(self.now) == Freshness::Live
@@ -559,7 +588,17 @@ impl App {
                 })
             })
         });
-        let report = self.report.value.as_ref().and_then(Option::as_ref);
+        let report = (!self.report.loading && self.report.last_error.is_none())
+            .then(|| self.report.value.as_ref().and_then(Option::as_ref))
+            .flatten()
+            .filter(|report| {
+                status.is_some_and(|status| {
+                    status.state == "complete"
+                        && status.campaign_id == report.campaign_id
+                        && status.branch == report.branch
+                        && status.head == report.final_commit
+                })
+            });
         build_overlay(&source, head.as_ref(), status, report)
     }
 

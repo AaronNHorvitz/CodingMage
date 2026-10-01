@@ -628,13 +628,7 @@ impl App {
                 true
             }
             "campaign-report" => {
-                match response.result.and_then(|bytes| {
-                    crate::backend::models::parse_campaign_report(&bytes)
-                        .map_err(BackendError::from)
-                }) {
-                    Ok(report) => self.report.accept(report, response.generation, self.now),
-                    Err(error) => self.report.fail(error, self.now),
-                }
+                self.accept_report(response);
                 true
             }
             "campaign-head-plan" => {

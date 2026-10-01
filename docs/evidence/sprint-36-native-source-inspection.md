@@ -59,7 +59,8 @@ not independent coverage gain. The full commit identity
 and independent-review request are recorded in the private handoff.
 
 The parent source-bound export commit received a bounded independent PASS
-without findings. This increment needs its own exact-commit review. Installed
+without findings. This increment's corrected source later received the bounded
+independent PASS described below. Installed
 Wayland/X11 and Orca, clean desktop, frozen user trials, real providers and
 whole-product completion remain unqualified. No task, acceptance criterion
 or gate is ticked for this increment.
@@ -103,5 +104,9 @@ zero added or removed semantic public items, zero applicability changes,
 changes. This mapping movement is not coverage gain. Two read-only exact-SHA
 re-review attempts of the corrected commit found no new source issue, but
 neither acquired the shared heavy-build reservation for independent focused
-Reports tests or strict Clippy. Both verdicts are **INCONCLUSIVE**; independent
-execution remains open. All human, desktop, live and release gates remain open.
+Reports tests or strict Clippy. Both verdicts remain **INCONCLUSIVE** as
+historical records. The later exact-SHA review of
+`e4b846567f829e06343f8dca0ffbe9d062226318` independently ran the focused
+Reports workflow, recursive duplicate-key regressions and strict workspace
+Clippy and returned **PASS** without findings. It also reviewed the Work plan
+increment at that SHA. All human, desktop, live and release gates remain open.
