@@ -2425,6 +2425,18 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     screen, locale values, complete bidirectional navigation and installed
     human qualification remain open; see
     `docs/evidence/sprint-36-message-catalogue.md`.
+    Independent cumulative review of `8ae6156e64fb8a0e8a44ffbe83a906e3110f88a0`
+    passed its fresh 80-test UI library suite and strict Clippy but raised a
+    Medium inventory finding: `failure_box` lost boundary applicability from
+    unrelated nearby text. Decision 0055 fixes this generator drift with stable
+    applicability and a focused four-test regression; the corrected inventory
+    matches the last PASS ancestor on every non-location item and normalized
+    gap, with 21 line-derived IDs moved. Exact-SHA re-review of the correction
+    remains open; no task or gate is ticked. The corrected tree passed the
+    focused inventory suite 4/4, native UI library 80/80 and strict workspace
+    Clippy. Python ran 43 tests with only the same CM-R01.6 freshness failure;
+    the earlier 158/158 UI all-target result applies to unchanged Rust but
+    was not rerun for this inventory-only correction.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).

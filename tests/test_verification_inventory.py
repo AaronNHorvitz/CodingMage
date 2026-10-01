@@ -52,6 +52,25 @@ class VerificationInventoryTests(unittest.TestCase):
         self.assertTrue(any(value.startswith("inventory.path:") for value in findings))
         self.assertTrue(any(value.startswith("inventory.symbol:") for value in findings))
 
+    def test_failure_panel_boundary_does_not_follow_adjacent_source(self) -> None:
+        path = "crates/codingmage-ui/src/app/mod.rs"
+        expected = ["positive", "negative", "boundary", "repeatability"]
+        for neighbor in ("Copy identifier", "Unrelated navigation", "oversized input"):
+            self.assertEqual(
+                INVENTORY.applicability(path, "fn", "failure_box", neighbor),
+                expected,
+            )
+        document = INVENTORY.build()
+        item = next(
+            entry
+            for entry in document["items"]
+            if entry["path"] == path
+            and entry["kind"] == "fn"
+            and entry["name"] == "failure_box"
+        )
+        self.assertEqual(item["applicable_categories"], expected)
+        self.assertTrue(item["test_mappings"].get("boundary"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -51,6 +51,19 @@ KEYWORDS = {
     "repeatability": ("canonical", "determin", "idempot", "repeat", "round_trip", "stable"),
 }
 
+# Applicability for this public presentation boundary is reviewed explicitly.
+# A nearby "identifier" in an unrelated Work plan control once caused the
+# moving context heuristic to add, then silently remove, its boundary category.
+# The failure panel must remain in the minimum-window/long-text work queue.
+FIXED_APPLICABILITY = {
+    ("crates/codingmage-ui/src/app/mod.rs", "fn", "failure_box"): (
+        "positive",
+        "negative",
+        "boundary",
+        "repeatability",
+    ),
+}
+
 
 def relative(path: Path) -> str:
     return path.relative_to(ROOT).as_posix()
@@ -81,7 +94,10 @@ def tests_for_crate(crate: Path) -> dict[str, list[str]]:
     return categorized
 
 
-def applicability(kind: str, name: str, context: str) -> list[str]:
+def applicability(path: str, kind: str, name: str, context: str) -> list[str]:
+    fixed = FIXED_APPLICABILITY.get((path, kind, name))
+    if fixed is not None:
+        return list(fixed)
     lowered = f"{name} {context}".lower()
     categories = {"positive", "repeatability"}
     if kind in {"enum", "struct", "trait", "fn"}:
@@ -105,7 +121,7 @@ def public_items() -> list[dict[str, object]]:
             name = match.group("name") or match.group("fn_name")
             line = text.count("\n", 0, match.start()) + 1
             context = text[max(0, match.start() - 240) : match.end() + 240]
-            applicable = applicability(kind, name, context)
+            applicable = applicability(relative(source), kind, name, context)
             mappings = {
                 category: tests[category][:8]
                 for category in applicable

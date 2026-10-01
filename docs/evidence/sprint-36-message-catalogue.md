@@ -396,3 +396,36 @@ and private host/credential material before commit. Independent review of
 this exact increment remains pending. Installed assistive-tool,
 locale-specific values, full bidirectional navigation, human/live and release
 gates remain open.
+
+## Independent cumulative review and inventory correction
+
+The read-only cumulative review of exact commit
+`8ae6156e64fb8a0e8a44ffbe83a906e3110f88a0` returned a bounded **PASS**
+after fresh 80/80 UI library tests and strict workspace Clippy. It also raised
+a **Medium** inventory finding. Against the last independently PASS-reviewed
+ancestor `cdc609c3e1216dc2678c75cb2f653d78efa308d1`, the generated
+`failure_box` entry had lost boundary applicability and eight candidate test
+mappings; 21 raw line-derived IDs moved. The earlier evidence above accurately
+records the drift seen at that time and is retained as a failed comparison.
+The reviewer verdict does not waive this correction or any broader gate.
+
+Decision 0055 gives that public failure panel stable, explicitly reviewed
+positive, negative, boundary and repeatability applicability, independent of
+unrelated neighboring Work plan text. A focused four-test inventory suite
+passes, including a regression that varies the neighboring words. After
+regeneration, the inventory contains 1,770 items and 825 explicit gaps.
+The normalized multiset comparison to that ancestor has zero non-location
+entry changes and zero normalized gap changes; 21 raw line-derived IDs still
+move. The mappings remain candidate references, never coverage proof.
+
+The corrected source passed the focused inventory suite 4/4, native UI library
+80/80 and strict workspace Clippy with warnings denied. The full Python
+unittest suite ran 43 tests: 42 passed and its sole failure remained the same
+CM-R01.6 eight-input source-bound freshness check. No digest or binding was
+renewed. Formatting, documentation, architecture, no-write inventory and
+diff-whitespace checks passed. The exact staged diff and additions were
+inspected for scope and private host/credential material before commit. The
+earlier exact-source software-GL UI all-target result (158/158) still applies
+to unchanged Rust; it was not rerun for this Python inventory-only correction.
+Exact-SHA independent re-review of the correction remains pending. Installed,
+human, live and release gates remain open.

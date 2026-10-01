@@ -60512,6 +60512,7 @@
       "applicable_categories": [
         "positive",
         "negative",
+        "boundary",
         "repeatability"
       ],
       "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:failure_box:2074",
@@ -60521,6 +60522,16 @@
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
       "test_mappings": {
+        "boundary": [
+          "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
+          "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
+          "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
+          "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
+          "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
+          "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
+        ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_foreign_nested_evidence",
@@ -80309,6 +80320,6 @@
       }
     }
   ],
-  "items_sha256": "bcc078a5a4dc995607b652f79cd4b52534bdb952af7f8d7bd2549e0d5554a50c",
+  "items_sha256": "9888cfc3fe7c969581ec85e7c34feaa11a9e6873b420c8675a6e97c5569e0a5b",
   "schema_version": 1
 }

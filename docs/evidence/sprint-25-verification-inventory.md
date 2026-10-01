@@ -39,6 +39,24 @@ that an individual test exercises a particular declaration. An independent sourc
 still needed before treating a category as covered. The generated inventory is a work queue,
 not a source-bound schema or product acceptance record.
 
+## Stable applicability correction, 2026-10-01
+
+An independent cumulative review of the native Work plan catalogue found
+that the inventory's moving source-neighborhood heuristic dropped the public
+`failure_box` entry's boundary category when unrelated preceding UI text
+changed. The original artifact and finding remain available at their exact
+commit and review record. Decision 0055 gives this panel a stable, explicit
+category declaration keyed by source path, declaration kind and name. Boundary
+applicability keeps minimum-window and long-text behavior in the work queue;
+the crate-wide candidate test mappings still do not prove coverage.
+
+The corrected source-consistent artifact has 1,770 items and 825 explicit
+gaps. Against the last independently PASS-reviewed ancestor, the normalized
+item and gap multisets are identical and 21 raw line-derived IDs move. The
+focused inventory regression varies unrelated neighboring words and checks
+that this panel retains boundary applicability. Other heuristic entries
+remain subject to later review rather than a silent category-model rewrite.
+
 ## Status Boundary
 
 Sub-tasks `25.2.1.1` and `25.2.1.2` are complete because the public surface is inventoried and every
