@@ -335,6 +335,20 @@ const REQUIRED_KEYS: &[&str] = &[
     "work_plan_detail_dependents",
     "work_plan_detail_dependent_row",
     "work_plan_detail_copy_identifier",
+    "work_plan_source_load",
+    "work_plan_source_select_campaign",
+    "work_plan_source_loading",
+    "work_plan_source_failure",
+    "work_plan_source_head",
+    "work_plan_source_open",
+    "work_plan_source_checked",
+    "work_plan_source_excerpt",
+    "work_plan_source_excerpt_truncated",
+    "work_plan_source_criteria",
+    "work_plan_source_criteria_none",
+    "work_plan_source_criterion_state",
+    "work_plan_source_criterion_title_truncated",
+    "work_plan_source_criteria_truncated",
     "campaign_title",
     "campaign_no_project",
     "campaign_no_selection",
@@ -468,6 +482,9 @@ const TEMPLATE_FIELDS: &[(&str, &[&str])] = &[
     ("work_plan_detail_location_value", &["line", "digest"]),
     ("work_plan_detail_dependency_row", &["id", "state"]),
     ("work_plan_detail_dependent_row", &["id"]),
+    ("work_plan_source_failure", &["code"]),
+    ("work_plan_source_head", &["head", "state"]),
+    ("work_plan_source_criterion_state", &["state"]),
     ("campaign_named", &["campaign_id"]),
     ("campaign_execution_parallel", &["pods"]),
     ("campaign_binding_drift", &["reason"]),
@@ -827,6 +844,23 @@ mod tests {
                 ],
             ),
             "[ ] Sub-task 1.1.1.2 {id}<script> - dependency-ready"
+        );
+    }
+
+    #[test]
+    fn source_detail_template_requires_head_state_and_literal_error_code() {
+        let original = "work_plan_source_head = \"Source at campaign head {head}…; checkbox is {state}, not a verified outcome.\"";
+        for replacement in [
+            "work_plan_source_head = \"Source at campaign head {head}…; source checkbox is unknown.\"",
+            "work_plan_source_head = \"Source at campaign head {head}…; checkbox is {state}; {state}.\"",
+            "work_plan_source_head = \"Source at campaign head {head}…; checkbox is {unexpected}.\"",
+        ] {
+            assert!(Catalogue::parse(&SOURCE.replace(original, replacement)).is_err());
+        }
+        let catalogue = Catalogue::parse(SOURCE).unwrap();
+        assert_eq!(
+            catalogue.format("work_plan_source_failure", &[("code", "{state}<script>")],),
+            "Source detail unavailable: {state}<script>. Refresh the campaign and try again."
         );
     }
 }

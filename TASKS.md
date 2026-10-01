@@ -2399,7 +2399,19 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     The final-source native UI all-target suite passed 153/153 across 14 targets
     and strict workspace Clippy passed. Python remained 41/42 solely for the
     unchanged CM-R01.6 eight-input source-bound freshness hold; no digest was
-    renewed. See the same catalogue evidence record.
+    renewed. See the same catalogue evidence record. Two read-only independent
+    reviews of exact commit `ee9a0ea74d8ef054d802f37da4f4586df03aa977`
+    found no source issue but remained inconclusive because the shared build
+    reservation prevented source-fresh focused tests and Clippy; no independent
+    PASS is inferred. Decision 0053 moves the bound source-detail controls,
+    head/source-state statement, excerpt and criterion labels into the catalogue.
+    Focused catalogue mutation and expanded/right-aligned source-detail preview
+    checks passed 2/2; the disposable real-coordinator task-detail workflow
+    passed 1/1. The final-source software-GL native UI all-target suite passed
+    155/155 across 14 targets, and strict workspace Clippy passed. Python
+    unittest remained 41/42 solely for the unchanged CM-R01.6 eight-input
+    source-bound freshness hold; no digest was renewed.
+    Run-evidence and other UI text, full RTL and human qualification remain open.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).

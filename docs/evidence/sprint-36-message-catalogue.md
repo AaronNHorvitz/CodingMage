@@ -315,3 +315,45 @@ boundary applicability tag because its nearby source context changed. That
 does not change the function or establish a new coverage claim. One capped
 heuristic test mapping changed with that tag. No semantic item was added or
 removed, and no gap count changed.
+
+## Bound Work plan source-detail copy
+
+The two independent read-only reviews of exact commit
+`ee9a0ea74d8ef054d802f37da4f4586df03aa977` found no source defect,
+but both returned **INCONCLUSIVE** because the shared build reservation did
+not permit source-fresh focused tests and strict Clippy to complete. The second
+review's cached Clippy success is not source-fresh evidence. Neither report
+closes Task 36.3.2.4 or a broader gate; the builder's preceding final-source
+checks remain separate.
+
+Decision 0053 moves the Work plan's bound source-detail action and exact-command
+label, unavailable/loading/failure guidance, head and checkbox statement,
+source-excerpt and story-criterion labels, and truncation notices into the
+validated English catalogue. Named templates require the head, source state and
+error code exactly once. The coordinator command and live-head selection guard
+remain unchanged. Source excerpts and criterion titles still use the bounded
+inert renderer. A synthetic expanded and right-aligned source-detail preview
+checks the head statement and opened excerpt/criterion content at 1024×640
+logical pixels and 200% scale. It is a local layout and accessibility-tree
+probe, not complete RTL keyboard navigation or installed screen-reader evidence.
+
+Work plan run-evidence copy, other screens' remaining text, locale-specific
+values, full bidirectional behavior and human trials remain open. The focused
+source-detail catalogue and synthetic preview tests passed 2/2; the existing
+disposable real-coordinator task-detail workflow passed 1/1. The unchanged
+inventory generator and schema produce 1,770 semantic items and 825 explicit
+gaps: no semantic addition/removal or category/mapping change, only seven
+line-derived identifier moves. The inventory is a source index, not evidence
+of coverage or qualification for each item.
+
+The final-source software-GL native UI all-target suite passed 155/155 across
+14 targets under the shared build reservation, including the two new focused
+tests and the disposable Campaign, Changes, Reports, verification and Work plan
+workflows. Strict workspace Clippy with warnings denied passed on the same
+source. Python unittest ran 42 tests: 41 passed and the sole failure was the
+unchanged CM-R01.6 eight-input source-bound freshness check. No digest or
+binding was renewed. Formatting, documentation, architecture, no-write
+inventory and diff whitespace checks passed. The staged diff and additions
+were inspected for scope and private host/credential material before commit.
+Independent review of this exact increment remains pending; installed, human,
+live and release gates stay open.

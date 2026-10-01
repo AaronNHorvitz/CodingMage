@@ -1426,7 +1426,7 @@ impl App {
             ui.separator();
             item_detail(ui, &row, index, catalogue);
             coordinator_detail(ui, overlay.get(&row.id), observation_known, catalogue);
-            self.task_source_detail(ui, &row);
+            self.task_source_detail(ui, &row, catalogue);
         }
     }
 
@@ -1519,37 +1519,30 @@ impl App {
         }
     }
 
-    fn task_source_detail(&mut self, ui: &mut egui::Ui, row: &PlanRow) {
+    fn task_source_detail(&mut self, ui: &mut egui::Ui, row: &PlanRow, catalogue: &Catalogue) {
         let arguments = self.task_detail_arguments(&row.id);
         let can_load = command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
+        let action = catalogue.text("work_plan_source_load");
         if ui
             .add_enabled(
                 can_load && !self.task_detail.loading,
-                egui::Button::new("Load source detail"),
+                egui::Button::new(action),
             )
             .clicked()
         {
             self.request_task_detail(&row.id);
         }
         if let Some(arguments) = &arguments {
-            command::show_for(
-                ui,
-                "Load source detail",
-                self.binary_path.as_deref(),
-                arguments,
-            );
+            command::show_for(ui, action, self.binary_path.as_deref(), arguments);
         } else {
-            command::show_unavailable_for(ui, "Load source detail");
-            ui.small("Select a campaign and refresh its live status to inspect source at its reconciled head.");
+            command::show_unavailable_for(ui, action);
+            ui.small(catalogue.text("work_plan_source_select_campaign"));
         }
         if self.task_detail.loading {
-            ui.label("Loading source detail from the coordinator…");
+            ui.label(catalogue.text("work_plan_source_loading"));
         }
         if let Some((_, error)) = &self.task_detail.last_error {
-            ui.label(format!(
-                "Source detail unavailable: {}. Refresh the campaign and try again.",
-                error.code()
-            ));
+            ui.label(catalogue.format("work_plan_source_failure", &[("code", &error.code())]));
         }
         let Some(detail) = self.task_detail.value.as_ref().filter(|detail| {
             self.task_detail_key.as_ref() == Some(&(detail.head.clone(), detail.item_id.clone()))
@@ -1560,38 +1553,7 @@ impl App {
         }) else {
             return;
         };
-        ui.small(format!(
-            "Source at campaign head {}…; checkbox is {:?}, not a verified outcome.",
-            &detail.head[..12],
-            detail.source_state
-        ));
-        ui.collapsing("Source excerpt", |ui| {
-            let characters = detail.excerpt.chars().collect::<Vec<_>>();
-            for chunk in characters.chunks(content::MAX_PREVIEW_CHARS) {
-                content::render(ui, &chunk.iter().collect::<String>());
-            }
-            if detail.truncated {
-                ui.small("Source excerpt ends at the 16 KiB display boundary.");
-            }
-        });
-        ui.collapsing("Story acceptance criteria from source", |ui| {
-            if detail.story_criteria.is_empty() {
-                ui.label("No story criteria were parsed at this source head.");
-            }
-            for criterion in &detail.story_criteria {
-                ui.horizontal_wrapped(|ui| {
-                    content::render(ui, &criterion.id);
-                    ui.label(format!("{:?} in source", criterion.source_state));
-                    content::render(ui, &criterion.title);
-                    if criterion.title_truncated {
-                        ui.small("Criterion title shortened at 4 KiB.");
-                    }
-                });
-            }
-            if detail.story_criteria_truncated {
-                ui.small("Additional story criteria were omitted after the first 100.");
-            }
-        });
+        render_source_detail(ui, detail, catalogue);
         self.task_run_evidence(ui, &row.id);
     }
 
@@ -1644,6 +1606,56 @@ impl App {
             }
         }
     }
+}
+
+fn source_state_label(catalogue: &Catalogue, state: CheckState) -> &str {
+    catalogue.text(match state {
+        CheckState::Open => "work_plan_source_open",
+        CheckState::Checked => "work_plan_source_checked",
+    })
+}
+
+fn render_source_detail(ui: &mut egui::Ui, detail: &TaskDetailProjection, catalogue: &Catalogue) {
+    ui.small(catalogue.format(
+        "work_plan_source_head",
+        &[
+            ("head", &detail.head[..12]),
+            ("state", source_state_label(catalogue, detail.source_state)),
+        ],
+    ));
+    ui.collapsing(catalogue.text("work_plan_source_excerpt"), |ui| {
+        let characters = detail.excerpt.chars().collect::<Vec<_>>();
+        for chunk in characters.chunks(content::MAX_PREVIEW_CHARS) {
+            content::render(ui, &chunk.iter().collect::<String>());
+        }
+        if detail.truncated {
+            ui.small(catalogue.text("work_plan_source_excerpt_truncated"));
+        }
+    });
+    ui.collapsing(catalogue.text("work_plan_source_criteria"), |ui| {
+        if detail.story_criteria.is_empty() {
+            ui.label(catalogue.text("work_plan_source_criteria_none"));
+        }
+        for criterion in &detail.story_criteria {
+            ui.horizontal_wrapped(|ui| {
+                content::render(ui, &criterion.id);
+                ui.label(catalogue.format(
+                    "work_plan_source_criterion_state",
+                    &[(
+                        "state",
+                        source_state_label(catalogue, criterion.source_state),
+                    )],
+                ));
+                content::render(ui, &criterion.title);
+                if criterion.title_truncated {
+                    ui.small(catalogue.text("work_plan_source_criterion_title_truncated"));
+                }
+            });
+        }
+        if detail.story_criteria_truncated {
+            ui.small(catalogue.text("work_plan_source_criteria_truncated"));
+        }
+    });
 }
 
 fn diagnosis_grid(ui: &mut egui::Ui, diagnosis: &Diagnosis) {
@@ -2233,6 +2245,26 @@ mod work_plan_tests {
         }
     }
 
+    struct SourceDetailPreview {
+        catalogue: Catalogue,
+        detail: TaskDetailProjection,
+        right_to_left: bool,
+    }
+
+    impl eframe::App for SourceDetailPreview {
+        fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
+            egui::CentralPanel::default().show(root, |ui| {
+                if self.right_to_left {
+                    ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                        render_source_detail(ui, &self.detail, &self.catalogue);
+                    });
+                } else {
+                    render_source_detail(ui, &self.detail, &self.catalogue);
+                }
+            });
+        }
+    }
+
     #[test]
     fn expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable() {
         for right_to_left in [false, true] {
@@ -2327,6 +2359,76 @@ mod work_plan_tests {
             harness.run_steps(1);
             assert_eq!(harness.state().selected.as_deref(), Some("1.1.1.2"));
             for label in [&heading, &source_label, &dependency] {
+                assert!(
+                    harness
+                        .get_by_label_contains(label)
+                        .accesskit_node()
+                        .has_bounds(),
+                    "missing accessible bounds for {label}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn expanded_right_aligned_source_detail_keeps_head_and_criteria_visible() {
+        let detail = TaskDetailProjection {
+            schema_version: 1,
+            campaign_id: "campaign-1".to_owned(),
+            repository_id: "repository-1".to_owned(),
+            head: "0123456789abcdef0123456789abcdef01234567".to_owned(),
+            task_source_sha256: "a".repeat(64),
+            item_id: "1.1.1.2".to_owned(),
+            kind: PlanItemKind::SubTask,
+            source_state: CheckState::Checked,
+            source_line: 8,
+            source_line_sha256: "b".repeat(64),
+            excerpt: "Literal <script>source</script> text".to_owned(),
+            truncated: true,
+            story_criteria: vec![crate::backend::models::TaskCriterion {
+                id: "AC 1.1".to_owned(),
+                title: "A source claim, not an accepted outcome".to_owned(),
+                title_truncated: false,
+                source_state: CheckState::Open,
+            }],
+            story_criteria_truncated: false,
+        };
+        for right_to_left in [false, true] {
+            let catalogue = messages::english().pseudo(right_to_left);
+            let head = catalogue.format(
+                "work_plan_source_head",
+                &[
+                    ("head", "0123456789ab"),
+                    ("state", catalogue.text("work_plan_source_checked")),
+                ],
+            );
+            let excerpt = catalogue.text("work_plan_source_excerpt").to_owned();
+            let criteria = catalogue.text("work_plan_source_criteria").to_owned();
+            let criterion_state = catalogue.format(
+                "work_plan_source_criterion_state",
+                &[("state", catalogue.text("work_plan_source_open"))],
+            );
+            let preview_detail = detail.clone();
+            let mut harness = egui_kittest::Harness::builder()
+                .with_size(egui::Vec2::new(1024.0, 640.0))
+                .with_pixels_per_point(2.0)
+                .with_max_steps(4)
+                .build_eframe(move |_| SourceDetailPreview {
+                    catalogue,
+                    detail: preview_detail,
+                    right_to_left,
+                });
+            harness.run_steps(2);
+            assert!(
+                harness
+                    .get_by_label_contains(&head)
+                    .accesskit_node()
+                    .has_bounds()
+            );
+            harness.get_by_label_contains(&excerpt).click();
+            harness.get_by_label_contains(&criteria).click();
+            harness.run_steps(1);
+            for label in ["Literal <script>source</script> text", &criterion_state] {
                 assert!(
                     harness
                         .get_by_label_contains(label)

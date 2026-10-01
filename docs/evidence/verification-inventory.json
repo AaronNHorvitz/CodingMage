@@ -60514,9 +60514,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:failure_box:2062",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:failure_box:2074",
       "kind": "fn",
-      "line": 2062,
+      "line": 2074,
       "name": "failure_box",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -73233,9 +73233,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:english:689",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:english:706",
       "kind": "fn",
-      "line": 689,
+      "line": 706,
       "name": "english",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -73307,9 +73307,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:failure_title:647",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:failure_title:664",
       "kind": "fn",
-      "line": 647,
+      "line": 664,
       "name": "failure_title",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -73351,9 +73351,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:format:611",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:format:628",
       "kind": "fn",
-      "line": 611,
+      "line": 628,
       "name": "format",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -73395,9 +73395,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:pseudo:666",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:pseudo:683",
       "kind": "fn",
-      "line": 666,
+      "line": 683,
       "name": "pseudo",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -73439,9 +73439,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:text:605",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:text:622",
       "kind": "fn",
-      "line": 605,
+      "line": 622,
       "name": "text",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -73485,9 +73485,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:struct:Catalogue:560",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:struct:Catalogue:577",
       "kind": "struct",
-      "line": 560,
+      "line": 577,
       "name": "Catalogue",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -80309,6 +80309,6 @@
       }
     }
   ],
-  "items_sha256": "c7faa7968869e74ebc79601403649dc0e63e41d1aabc58c9de419fb253b0c0d1",
+  "items_sha256": "a7f13fa91bd649503c9a6863f3b149b3ba86e8d010021873ea49479587ecb5c5",
   "schema_version": 1
 }
