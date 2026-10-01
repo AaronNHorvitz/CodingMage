@@ -1051,7 +1051,7 @@ pub enum CliError {
     Refused,
     /// A concurrent change prevents proving the final published state.
     UncertainWrite,
-    /// The exact campaign head changed after the caller observed it.
+    /// The observed repository or campaign head changed before an authorized effect.
     StaleObservation,
     /// Live orchestration is deliberately not enabled.
     ExecutionUnavailable,

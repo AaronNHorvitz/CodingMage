@@ -22,10 +22,10 @@ the exact UTF-8 record on stdin, up to 1 MiB; it is never an argument. The
 command validates the selected configuration, authorizes its repository through
 the existing repository contract, requires the exact identity previously
 observed by `doctor`, and checks the destination before reading the record. It
-revalidates the held repository and Git HEAD after reading stdin, immediately
-before publication. It refuses blank, malformed, NUL-containing or oversized
-input. The reviewed CLI report
-writer publishes the exact bytes outside the repository with no silent
+revalidates the held repository and Git HEAD at the guarded publication
+boundary described in Decision 0065. It refuses blank, malformed,
+NUL-containing or oversized input. The reviewed CLI report writer publishes
+the exact bytes outside the repository with no silent
 overwrite. A successful machine-readable receipt contains only the schema
 version, repository identity, byte count and SHA-256 digest, not the text or
 path. Errors remain stable content-free codes on stderr.
@@ -49,3 +49,12 @@ changes campaign admission or grants authority by merely opening Setup.
 See [the Setup command evidence](../evidence/sprint-36-setup-command-boundary.md).
 Installed desktop, real assistive tool, human trials, live provider and release
 qualification remain separate.
+
+## Independent finding and correction
+
+The first exact-commit independent review of `d77a67414af09b5669c1483c21e442d5d8fe0454`
+returned `FINDINGS`: a changed Git HEAD during candidate staging could still
+produce a success receipt. The report is retained in private review state.
+[Decision 0065](0065-revalidate-setup-authority-at-publication.md) specifies the
+final-boundary correction and its uncertain-write behavior. Its own exact-commit
+re-review remains pending.

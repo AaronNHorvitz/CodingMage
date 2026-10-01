@@ -279,21 +279,28 @@ impl PrivateStage {
     }
 }
 
-fn publish_overwrite<B, A>(
+struct ExchangeEntries<'a> {
+    previous: &'a fs::Metadata,
+    candidate: &'a fs::Metadata,
+}
+
+fn publish_overwrite<B, A, C>(
     stage: &PrivateStage,
     destination: &Destination,
-    old: &fs::Metadata,
-    written: &fs::Metadata,
+    entries: &ExchangeEntries<'_>,
     retain_stage: &mut bool,
     before_publish_call: B,
+    publication_check: &mut C,
     after_publication: A,
 ) -> Result<(), CliError>
 where
     B: FnOnce(),
     A: FnOnce(),
+    C: FnMut() -> Result<(), CliError>,
 {
     before_publish_call();
     destination.check()?;
+    publication_check()?;
     stage.exchange(destination)?;
     after_publication();
     let temporary = stage.file_path();
@@ -301,8 +308,8 @@ where
         *retain_stage = true;
         return Err(CliError::UncertainWrite);
     };
-    if !same_inode(&displaced, old) {
-        if stage.restore_if_owned(destination, written) {
+    if !same_inode(&displaced, entries.previous) {
+        if stage.restore_if_owned(destination, entries.candidate) {
             return Err(CliError::Refused);
         }
         *retain_stage = true;
@@ -312,12 +319,16 @@ where
     let parent_check = destination.check();
     if !named
         .as_ref()
-        .is_some_and(|entry| entry.is_file() && same_inode(entry, written))
+        .is_some_and(|entry| entry.is_file() && same_inode(entry, entries.candidate))
         || parent_check.is_err()
     {
-        if stage.restore_if_owned(destination, written) {
+        if stage.restore_if_owned(destination, entries.candidate) {
             return parent_check.and(Err(CliError::Refused));
         }
+        *retain_stage = true;
+        return Err(CliError::UncertainWrite);
+    }
+    if publication_check().is_err() {
         *retain_stage = true;
         return Err(CliError::UncertainWrite);
     }
@@ -356,6 +367,31 @@ pub(super) fn write_validated(
         bytes,
         overwrite,
         validate,
+        Hooks {
+            before_write: || {},
+            before_publish: || {},
+            before_stage_open: |_| {},
+            before_publish_call: || {},
+            after_publication: || {},
+        },
+    )
+}
+
+/// Publishes exact bytes only while a caller's authority holds at both publication checks.
+pub(super) fn write_guarded(
+    path: &Path,
+    repository: &Path,
+    bytes: &[u8],
+    overwrite: bool,
+    publication_check: impl FnMut() -> Result<(), CliError>,
+) -> Result<(), CliError> {
+    write_with_publication_check(
+        path,
+        repository,
+        bytes,
+        overwrite,
+        |_| Ok(()),
+        publication_check,
         Hooks {
             before_write: || {},
             before_publish: || {},
@@ -414,6 +450,34 @@ where
     B: FnOnce(),
     A: FnOnce(),
 {
+    write_with_publication_check(
+        path,
+        repository,
+        bytes,
+        overwrite,
+        validate,
+        || Ok(()),
+        hooks,
+    )
+}
+
+fn write_with_publication_check<W, P, S, B, A, C>(
+    path: &Path,
+    repository: &Path,
+    bytes: &[u8],
+    overwrite: bool,
+    validate: impl FnOnce(&Path) -> Result<(), CliError>,
+    mut publication_check: C,
+    hooks: Hooks<W, P, S, B, A>,
+) -> Result<(), CliError>
+where
+    W: FnOnce(),
+    P: FnOnce(),
+    S: FnOnce(PathBuf),
+    B: FnOnce(),
+    A: FnOnce(),
+    C: FnMut() -> Result<(), CliError>,
+{
     let Hooks {
         before_write,
         before_publish,
@@ -470,15 +534,19 @@ where
             return publish_overwrite(
                 &stage,
                 &destination,
-                old,
-                &written,
+                &ExchangeEntries {
+                    previous: old,
+                    candidate: &written,
+                },
                 &mut retain_stage,
                 before_publish_call,
+                &mut publication_check,
                 after_publication,
             );
         }
         before_publish_call();
         destination.check()?;
+        publication_check()?;
         let source = PathBuf::from(format!("/proc/self/fd/{}", file.as_raw_fd()));
         linkat(&file, &source, &file, &leaf, AtFlags::AT_SYMLINK_FOLLOW)
             .map_err(|_| CliError::Refused)?;
@@ -496,6 +564,10 @@ where
             retain_stage = true;
             return Err(CliError::UncertainWrite);
         }
+        if publication_check().is_err() {
+            retain_stage = true;
+            return Err(CliError::UncertainWrite);
+        }
         Ok(())
     })();
     if !retain_stage {
@@ -510,6 +582,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use codingmage_core::{
+        CapabilityPolicy, Config, PublicationMode, PublicationPolicy, RepositoryAuthorization,
+    };
     use std::{
         os::unix::fs::{PermissionsExt as _, symlink},
         process::{Command, Stdio},
@@ -525,6 +600,122 @@ mod tests {
         fs::create_dir_all(root.join("repo")).unwrap();
         fs::create_dir_all(root.join("outside")).unwrap();
         root
+    }
+
+    fn authorized_head_fixture(
+        label: &str,
+    ) -> (PathBuf, PathBuf, RepositoryAuthorization, PathBuf) {
+        let root = root(label);
+        let repository = root.join("repo");
+        let source = root.join("source");
+        let scratch = root.join("scratch");
+        let state = root.join("state");
+        for path in [&source, &scratch, &state] {
+            fs::create_dir(path).unwrap();
+        }
+        let refs = repository.join(".git/refs/heads");
+        fs::create_dir_all(&refs).unwrap();
+        fs::write(repository.join(".git/HEAD"), "ref: refs/heads/main\n").unwrap();
+        let head = refs.join("main");
+        fs::write(&head, "0123456789abcdef0123456789abcdef01234567\n").unwrap();
+        let config = Config {
+            version: 1,
+            target_path: repository.clone(),
+            task_source: PathBuf::from("TASKS.md"),
+            default_branch: "main".to_owned(),
+            integration_branch: "codingmage/integration".to_owned(),
+            scratch_root: scratch,
+            state_root: state,
+            agent_profiles: Vec::new(),
+            correction_limit: 3,
+            gate_commands: Vec::new(),
+            capabilities: CapabilityPolicy::default(),
+            publication: PublicationPolicy {
+                mode: PublicationMode::LocalOnly,
+            },
+            allow_parent_discovery: false,
+        };
+        let authority = RepositoryAuthorization::authorize(&config, &source).unwrap();
+        (root, repository, authority, head)
+    }
+
+    #[test]
+    fn changed_head_at_publication_never_reports_success() {
+        for (overwrite, after_publication) in
+            [(false, false), (true, false), (false, true), (true, true)]
+        {
+            let label = match (overwrite, after_publication) {
+                (false, false) => "head-create-before",
+                (true, false) => "head-overwrite-before",
+                (false, true) => "head-create-after",
+                (true, true) => "head-overwrite-after",
+            };
+            let (root, repository, authority, head) = authorized_head_fixture(label);
+            let destination = root.join("outside/authorization.txt");
+            if overwrite {
+                fs::write(&destination, b"old").unwrap();
+            }
+            let result = write_with_publication_check(
+                &destination,
+                &repository,
+                b"new",
+                overwrite,
+                |_| Ok(()),
+                || {
+                    authority
+                        .revalidate()
+                        .map_err(|_| CliError::StaleObservation)
+                },
+                Hooks {
+                    before_write: || {},
+                    before_publish: || {},
+                    before_stage_open: |_| {},
+                    before_publish_call: || {
+                        if !after_publication {
+                            fs::write(&head, "abcdef0123456789abcdef0123456789abcdef01\n").unwrap();
+                        }
+                    },
+                    after_publication: || {
+                        if after_publication {
+                            fs::write(&head, "abcdef0123456789abcdef0123456789abcdef01\n").unwrap();
+                        } else {
+                            panic!("stale authority must stop publication");
+                        }
+                    },
+                },
+            );
+            if after_publication {
+                assert_eq!(result, Err(CliError::UncertainWrite));
+                assert_eq!(fs::read(&destination).unwrap(), b"new");
+                let outside = root.join("outside");
+                assert_eq!(fs::read_dir(&outside).unwrap().count(), 2);
+                let stage = fs::read_dir(&outside)
+                    .unwrap()
+                    .map(|entry| entry.unwrap().path())
+                    .find(|entry| entry.is_dir())
+                    .unwrap();
+                assert_eq!(
+                    fs::read(stage.join("candidate")).unwrap(),
+                    if overwrite {
+                        b"old".as_slice()
+                    } else {
+                        b"new".as_slice()
+                    }
+                );
+            } else {
+                assert_eq!(result, Err(CliError::StaleObservation));
+                if overwrite {
+                    assert_eq!(fs::read(&destination).unwrap(), b"old");
+                } else {
+                    assert!(!destination.exists());
+                }
+                assert_eq!(
+                    fs::read_dir(root.join("outside")).unwrap().count(),
+                    usize::from(overwrite)
+                );
+            }
+            fs::remove_dir_all(root).unwrap();
+        }
     }
 
     #[test]

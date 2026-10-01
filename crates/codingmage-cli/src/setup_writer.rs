@@ -41,10 +41,11 @@ pub(super) fn authorization(arguments: &[String], input: impl Read) -> Result<St
     {
         return Err(CliError::InvalidArgument);
     }
-    authority
-        .revalidate()
-        .map_err(|_| CliError::StaleObservation)?;
-    report_writer::write(&output, &config.target_path, &bytes, overwrite)?;
+    report_writer::write_guarded(&output, &config.target_path, &bytes, overwrite, || {
+        authority
+            .revalidate()
+            .map_err(|_| CliError::StaleObservation)
+    })?;
     let mut digest = String::with_capacity(64);
     for byte in Sha256::digest(&bytes) {
         use std::fmt::Write as _;

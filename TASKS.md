@@ -2143,8 +2143,10 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     does not review subsequent Setup command work. Decision 0064 and
     `docs/evidence/sprint-36-setup-command-boundary.md` record the first public Setup write,
     `setup-write-authorization`, with private bounded stdin, observed repository identity,
-    post-input authority revalidation and a content-minimized receipt. Its exact-commit
-    independent review, UI worker/private-stdin integration, other public Setup writes and
+    guarded publication and a content-minimized receipt. The initial exact-commit review of
+    `d77a67414af09b5669c1483c21e442d5d8fe0454` found a High HEAD-change race during staging.
+    Decision 0065 and the same evidence record describe the local final-boundary correction;
+    exact-commit re-review, UI worker/private-stdin integration, other public Setup writes and
     complete Show-command coverage remain open.
     The bounded review of `b8e8458` returned a high parent-move finding and a low
     inventory-count finding. Decision 0063 and the corrected evidence record the
