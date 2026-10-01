@@ -138,10 +138,12 @@ essential animation. The six appearance baselines are offscreen software renders
 [the Story 36.3 evidence](../evidence/sprint-36-appearance.md).
 The bundled English catalogue supplies static Help, Settings, Workspace, Blockers, Reports,
 Campaign and Work plan orientation and recovery labels, plus selected dynamic Campaign and
-Work plan observations. Named dynamic fields are validated before rendering. Work plan row
-and source-detail copy remain outside the catalogue. The synthetic expanded/right-aligned
-checks are local layout tests; a runtime language choice, locale-specific number/date
-formatting and full right-to-left qualification remain open.
+Work plan observations. Work plan filters, source rows and parsed item-detail labels also
+use the catalogue. Named dynamic fields are validated before rendering.
+Coordinator-provided detail, source-detail controls and run evidence still include
+embedded English copy. The synthetic expanded/right-aligned checks are local
+layout tests; a runtime language choice, locale-specific number/date formatting
+and full right-to-left qualification remain open.
 
 ## Limits
 

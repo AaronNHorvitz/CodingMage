@@ -283,6 +283,58 @@ const REQUIRED_KEYS: &[&str] = &[
     "work_plan_report_stale",
     "work_plan_report_unrequested",
     "work_plan_report_absent",
+    "work_plan_state_all",
+    "work_plan_state_open",
+    "work_plan_state_checked",
+    "work_plan_kind_all",
+    "work_plan_kind_subtasks",
+    "work_plan_kind_tasks",
+    "work_plan_kind_acceptance",
+    "work_plan_sprint_header",
+    "work_plan_story_header",
+    "work_plan_checkbox_help",
+    "work_plan_outcome_unknown",
+    "work_plan_outcome_none",
+    "work_plan_outcome_accepted",
+    "work_plan_outcome_completed",
+    "work_plan_outcome_human",
+    "work_plan_outcome_blocked",
+    "work_plan_outcome_deferred",
+    "work_plan_outcome_active",
+    "work_plan_outcome_for_item",
+    "work_plan_outcome_label",
+    "work_plan_outcome_hover_empty",
+    "work_plan_coordinator_unknown",
+    "work_plan_coordinator_heading",
+    "work_plan_coordinator_none",
+    "work_plan_row",
+    "work_plan_kind_task",
+    "work_plan_kind_subtask",
+    "work_plan_kind_criterion",
+    "work_plan_kind_gate",
+    "work_plan_readiness_checked",
+    "work_plan_readiness_ready",
+    "work_plan_readiness_waiting",
+    "work_plan_readiness_suffix",
+    "work_plan_item_heading",
+    "work_plan_detail_title",
+    "work_plan_detail_source_checkbox",
+    "work_plan_detail_source_open",
+    "work_plan_detail_source_checked",
+    "work_plan_detail_location",
+    "work_plan_detail_location_value",
+    "work_plan_detail_parent",
+    "work_plan_detail_readiness",
+    "work_plan_detail_readiness_na",
+    "work_plan_detail_dependencies_none",
+    "work_plan_detail_dependencies",
+    "work_plan_detail_dependency_checked",
+    "work_plan_detail_dependency_open",
+    "work_plan_detail_dependency_unknown",
+    "work_plan_detail_dependency_row",
+    "work_plan_detail_dependents",
+    "work_plan_detail_dependent_row",
+    "work_plan_detail_copy_identifier",
     "campaign_title",
     "campaign_no_project",
     "campaign_no_selection",
@@ -403,6 +455,19 @@ const TEMPLATE_FIELDS: &[(&str, &[&str])] = &[
     ("work_plan_status_failure_effect", &["action"]),
     ("work_plan_report_observation", &["freshness", "age"]),
     ("work_plan_report_failure_effect", &["action"]),
+    ("work_plan_sprint_header", &["id", "title"]),
+    ("work_plan_story_header", &["id", "title"]),
+    ("work_plan_outcome_for_item", &["badge", "id"]),
+    ("work_plan_outcome_label", &["badge"]),
+    (
+        "work_plan_row",
+        &["checkbox", "kind", "id", "title", "readiness"],
+    ),
+    ("work_plan_readiness_suffix", &["state"]),
+    ("work_plan_item_heading", &["id"]),
+    ("work_plan_detail_location_value", &["line", "digest"]),
+    ("work_plan_detail_dependency_row", &["id", "state"]),
+    ("work_plan_detail_dependent_row", &["id"]),
     ("campaign_named", &["campaign_id"]),
     ("campaign_execution_parallel", &["pods"]),
     ("campaign_binding_drift", &["reason"]),
@@ -736,6 +801,32 @@ mod tests {
                 ],
             ),
             "live; 10s ago; {head}<script>"
+        );
+    }
+
+    #[test]
+    fn work_plan_row_template_rejects_lost_identity_and_keeps_source_inert() {
+        let original = "work_plan_row = \"{checkbox} {kind} {id} {title}{readiness}\"";
+        for replacement in [
+            "work_plan_row = \"{checkbox} {kind} {title}{readiness}\"",
+            "work_plan_row = \"{checkbox} {kind} {id} {id} {title}{readiness}\"",
+            "work_plan_row = \"{checkbox} {kind} {id} {title}{unknown}\"",
+        ] {
+            assert!(Catalogue::parse(&SOURCE.replace(original, replacement)).is_err());
+        }
+        let catalogue = Catalogue::parse(SOURCE).unwrap();
+        assert_eq!(
+            catalogue.format(
+                "work_plan_row",
+                &[
+                    ("checkbox", "[ ]"),
+                    ("kind", "Sub-task"),
+                    ("id", "1.1.1.2"),
+                    ("title", "{id}<script>"),
+                    ("readiness", " - dependency-ready"),
+                ],
+            ),
+            "[ ] Sub-task 1.1.1.2 {id}<script> - dependency-ready"
         );
     }
 }

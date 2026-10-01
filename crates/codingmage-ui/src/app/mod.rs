@@ -1402,7 +1402,15 @@ impl App {
             std::collections::BTreeMap::new()
         };
         let mut selected = self.selected_item.clone();
-        render_plan_rows(ui, index, &rows, &overlay, observation_known, &mut selected);
+        render_plan_rows(
+            ui,
+            index,
+            &rows,
+            &overlay,
+            observation_known,
+            &mut selected,
+            catalogue,
+        );
         self.plan_filter = filter;
         if self.selected_item != selected {
             self.task_detail.clear();
@@ -1416,8 +1424,8 @@ impl App {
             .cloned()
         {
             ui.separator();
-            item_detail(ui, &row, index);
-            coordinator_detail(ui, overlay.get(&row.id), observation_known);
+            item_detail(ui, &row, index, catalogue);
+            coordinator_detail(ui, overlay.get(&row.id), observation_known, catalogue);
             self.task_source_detail(ui, &row);
         }
     }
@@ -1697,11 +1705,15 @@ fn plan_filter_controls(ui: &mut egui::Ui, filter: &mut PlanFilter, catalogue: &
         )
         .labelled_by(label.id);
         for state in StateFilter::ALL {
-            ui.selectable_value(&mut filter.state, state, state.label());
+            ui.selectable_value(
+                &mut filter.state,
+                state,
+                state_filter_label(catalogue, state),
+            );
         }
         ui.separator();
         for kind in KindFilter::ALL {
-            ui.selectable_value(&mut filter.kind, kind, kind.label());
+            ui.selectable_value(&mut filter.kind, kind, kind_filter_label(catalogue, kind));
         }
         ui.separator();
         ui.checkbox(
@@ -1711,6 +1723,23 @@ fn plan_filter_controls(ui: &mut egui::Ui, filter: &mut PlanFilter, catalogue: &
     });
 }
 
+fn state_filter_label(catalogue: &Catalogue, state: StateFilter) -> &str {
+    catalogue.text(match state {
+        StateFilter::All => "work_plan_state_all",
+        StateFilter::Open => "work_plan_state_open",
+        StateFilter::Checked => "work_plan_state_checked",
+    })
+}
+
+fn kind_filter_label(catalogue: &Catalogue, kind: KindFilter) -> &str {
+    catalogue.text(match kind {
+        KindFilter::All => "work_plan_kind_all",
+        KindFilter::SubTasks => "work_plan_kind_subtasks",
+        KindFilter::Tasks => "work_plan_kind_tasks",
+        KindFilter::Acceptance => "work_plan_kind_acceptance",
+    })
+}
+
 fn render_plan_rows(
     ui: &mut egui::Ui,
     index: &PlanIndex,
@@ -1718,6 +1747,7 @@ fn render_plan_rows(
     overlay: &std::collections::BTreeMap<String, crate::campaign::TaskOverlay>,
     observation_known: bool,
     selected: &mut Option<String>,
+    catalogue: &Catalogue,
 ) {
     let display_rows = plan_display_rows(rows);
     let row_height = ui
@@ -1739,18 +1769,21 @@ fn render_plan_rows(
                         ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
                         match entry.kind {
                             PlanDisplayKind::Sprint => {
-                                ui.strong(format!(
-                                    "Sprint {} - {}",
-                                    row.sprint_id,
-                                    content::list_label(index.sprint_title(&row.sprint_id).unwrap_or(""))
+                                let title = content::list_label(
+                                    index.sprint_title(&row.sprint_id).unwrap_or(""),
+                                );
+                                ui.strong(catalogue.format(
+                                    "work_plan_sprint_header",
+                                    &[("id", &row.sprint_id), ("title", &title)],
                                 ));
                             }
                             PlanDisplayKind::Story => {
                                 if let Some(story) = &row.story_id {
-                                    ui.label(format!(
-                                        "Story {} - {}",
-                                        story,
-                                        content::list_label(index.story_title(story).unwrap_or(""))
+                                    let title =
+                                        content::list_label(index.story_title(story).unwrap_or(""));
+                                    ui.label(catalogue.format(
+                                        "work_plan_story_header",
+                                        &[("id", story), ("title", &title)],
                                     ));
                                 }
                             }
@@ -1758,27 +1791,39 @@ fn render_plan_rows(
                                 let mut checked = row.state == CheckState::Checked;
                                 ui.add_enabled(false, egui::Checkbox::without_text(&mut checked))
                                     .on_disabled_hover_text(
-                                        "Source checkbox, read from the task source; the interface never edits it.",
+                                        catalogue.text("work_plan_checkbox_help"),
                                     );
                                 let task = overlay.get(&row.id);
-                                let badge = outcome_badge(task, observation_known);
-                                let labels = coordinator_labels(task, observation_known);
+                                let badge_key = outcome_badge_key(task, observation_known);
+                                let labels = coordinator_labels(task, observation_known, catalogue);
                                 let hover = if labels.is_empty() {
-                                    "No coordinator outcome recorded for this item.".to_owned()
+                                    catalogue.text("work_plan_outcome_hover_empty").to_owned()
                                 } else {
                                     labels.join("; ")
                                 };
                                 ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                                let outcome_label = if badge == "unknown" {
-                                    format!("Outcome: unknown for {}", row.id)
+                                let outcome_label = if badge_key == "work_plan_outcome_unknown" {
+                                    catalogue.format(
+                                        "work_plan_outcome_for_item",
+                                        &[("badge", catalogue.text(badge_key)), ("id", &row.id)],
+                                    )
                                 } else {
-                                    format!("Outcome: {badge}")
+                                    catalogue.format(
+                                        "work_plan_outcome_label",
+                                        &[("badge", catalogue.text(badge_key))],
+                                    )
                                 };
                                 ui.label(outcome_label)
                                     .on_hover_text(content::list_label(&hover));
                                 ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
-                                let label = row_label(row);
-                                if ui.selectable_label(selected.as_deref() == Some(row.id.as_str()), label).clicked() {
+                                let label = row_label(row, catalogue);
+                                if ui
+                                    .selectable_label(
+                                        selected.as_deref() == Some(row.id.as_str()),
+                                        label,
+                                    )
+                                    .clicked()
+                                {
                                     *selected = Some(row.id.clone());
                                 }
                             }
@@ -1835,12 +1880,13 @@ fn plan_display_rows(rows: &[&PlanRow]) -> Vec<PlanDisplayRow> {
 fn coordinator_labels(
     overlay: Option<&crate::campaign::TaskOverlay>,
     observation_known: bool,
+    catalogue: &Catalogue,
 ) -> Vec<String> {
     let Some(task) = overlay else {
         return if observation_known {
             Vec::new()
         } else {
-            vec!["coordinator state unknown".to_owned()]
+            vec![catalogue.text("work_plan_coordinator_unknown").to_owned()]
         };
     };
     task.labels(observation_known)
@@ -1849,33 +1895,33 @@ fn coordinator_labels(
         .collect()
 }
 
-fn outcome_badge(
+fn outcome_badge_key(
     overlay: Option<&crate::campaign::TaskOverlay>,
     observation_known: bool,
 ) -> &'static str {
     let Some(task) = overlay else {
         return if observation_known {
-            "none recorded"
+            "work_plan_outcome_none"
         } else {
-            "unknown"
+            "work_plan_outcome_unknown"
         };
     };
     if task.accepted.is_some() {
-        "accepted"
+        "work_plan_outcome_accepted"
     } else if task.campaign_head == Some(CheckState::Checked) {
-        "completed"
+        "work_plan_outcome_completed"
     } else if task.human_decision.is_some() {
-        "human decision"
+        "work_plan_outcome_human"
     } else if task.blocked.is_some() {
-        "blocked"
+        "work_plan_outcome_blocked"
     } else if task.deferred.is_some() {
-        "deferred"
+        "work_plan_outcome_deferred"
     } else if task.active.is_some() {
-        "active"
+        "work_plan_outcome_active"
     } else if observation_known {
-        "none recorded"
+        "work_plan_outcome_none"
     } else {
-        "unknown"
+        "work_plan_outcome_unknown"
     }
 }
 
@@ -1883,11 +1929,12 @@ fn coordinator_detail(
     ui: &mut egui::Ui,
     overlay: Option<&crate::campaign::TaskOverlay>,
     observation_known: bool,
+    catalogue: &Catalogue,
 ) {
-    ui.label("Coordinator outcome");
-    let labels = coordinator_labels(overlay, observation_known);
+    ui.label(catalogue.text("work_plan_coordinator_heading"));
+    let labels = coordinator_labels(overlay, observation_known, catalogue);
     if labels.is_empty() {
-        ui.label("No outcome recorded for this item in the current observation.");
+        ui.label(catalogue.text("work_plan_coordinator_none"));
     } else {
         for label in labels {
             content::render(ui, &label);
@@ -1895,85 +1942,119 @@ fn coordinator_detail(
     }
 }
 
-fn row_label(row: &PlanRow) -> String {
+fn row_label(row: &PlanRow, catalogue: &Catalogue) -> String {
     let checkbox = match row.state {
         CheckState::Open => "[ ]",
         CheckState::Checked => "[x]",
     };
-    let kind = match row.kind {
-        PlanItemKind::Task => "Task",
-        PlanItemKind::SubTask => "Sub-task",
-        PlanItemKind::AcceptanceCriterion => "AC",
-        PlanItemKind::Gate => "Gate",
-    };
+    let kind = catalogue.text(match row.kind {
+        PlanItemKind::Task => "work_plan_kind_task",
+        PlanItemKind::SubTask => "work_plan_kind_subtask",
+        PlanItemKind::AcceptanceCriterion => "work_plan_kind_criterion",
+        PlanItemKind::Gate => "work_plan_kind_gate",
+    });
     let readiness = match row.readiness {
         SourceReadiness::NotApplicable => String::new(),
-        other => format!(" - {}", other.label()),
+        other => catalogue.format(
+            "work_plan_readiness_suffix",
+            &[("state", source_readiness_label(catalogue, other))],
+        ),
     };
-    format!(
-        "{checkbox} {kind} {} {}{readiness}",
-        row.id,
-        content::list_label(&row.title)
+    let title = content::list_label(&row.title);
+    catalogue.format(
+        "work_plan_row",
+        &[
+            ("checkbox", checkbox),
+            ("kind", kind),
+            ("id", &row.id),
+            ("title", &title),
+            ("readiness", &readiness),
+        ],
     )
 }
 
-fn item_detail(ui: &mut egui::Ui, row: &PlanRow, index: &PlanIndex) {
-    ui.heading(format!("Item {}", row.id));
+fn source_readiness_label(catalogue: &Catalogue, readiness: SourceReadiness) -> &str {
+    catalogue.text(match readiness {
+        SourceReadiness::Checked => "work_plan_readiness_checked",
+        SourceReadiness::Ready => "work_plan_readiness_ready",
+        SourceReadiness::Waiting => "work_plan_readiness_waiting",
+        SourceReadiness::NotApplicable => "work_plan_detail_readiness_na",
+    })
+}
+
+fn item_detail(ui: &mut egui::Ui, row: &PlanRow, index: &PlanIndex, catalogue: &Catalogue) {
+    ui.heading(catalogue.format("work_plan_item_heading", &[("id", &row.id)]));
+    item_detail_grid(ui, row, catalogue);
+    item_detail_dependencies(ui, row, index, catalogue);
+    if ui
+        .button(catalogue.text("work_plan_detail_copy_identifier"))
+        .clicked()
+    {
+        ui.ctx().copy_text(row.id.clone());
+    }
+}
+
+fn item_detail_grid(ui: &mut egui::Ui, row: &PlanRow, catalogue: &Catalogue) {
     egui::Grid::new("item-detail")
         .num_columns(2)
         .spacing(current_tokens(ui.ctx()).layout.grid)
         .show(ui, |ui| {
-            ui.label("Title");
+            ui.label(catalogue.text("work_plan_detail_title"));
             content::render(ui, &row.title);
             ui.end_row();
-            ui.label("Source checkbox");
-            ui.label(match row.state {
-                CheckState::Open => "open",
-                CheckState::Checked => {
-                    "checked (source claim; verified completion is shown on the Campaign screen)"
-                }
-            });
+            ui.label(catalogue.text("work_plan_detail_source_checkbox"));
+            let source_key = match row.state {
+                CheckState::Open => "work_plan_detail_source_open",
+                CheckState::Checked => "work_plan_detail_source_checked",
+            };
+            ui.label(catalogue.text(source_key));
             ui.end_row();
-            ui.label("Source location");
-            ui.monospace(format!(
-                "line {} (sha256 {}...)",
-                row.line,
-                &row.line_sha256[..12]
+            ui.label(catalogue.text("work_plan_detail_location"));
+            let line = row.line.to_string();
+            ui.monospace(catalogue.format(
+                "work_plan_detail_location_value",
+                &[("line", &line), ("digest", &row.line_sha256[..12])],
             ));
             ui.end_row();
-            ui.label("Parent");
+            ui.label(catalogue.text("work_plan_detail_parent"));
             ui.monospace(&row.parent_id);
             ui.end_row();
-            ui.label("Readiness from source");
-            ui.label(if row.readiness == SourceReadiness::NotApplicable {
-                "not computed for this kind"
-            } else {
-                row.readiness.label()
-            });
+            ui.label(catalogue.text("work_plan_detail_readiness"));
+            ui.label(source_readiness_label(catalogue, row.readiness));
             ui.end_row();
         });
+}
+
+fn item_detail_dependencies(
+    ui: &mut egui::Ui,
+    row: &PlanRow,
+    index: &PlanIndex,
+    catalogue: &Catalogue,
+) {
     if row.dependencies.is_empty() {
-        ui.label("Dependencies: none declared");
+        ui.label(catalogue.text("work_plan_detail_dependencies_none"));
     } else {
-        ui.label("Dependencies");
+        ui.label(catalogue.text("work_plan_detail_dependencies"));
         for dependency in &row.dependencies {
-            let state = match dependency.state {
-                Some(CheckState::Checked) => "checked",
-                Some(CheckState::Open) => "open",
-                None => "unknown identifier",
+            let key = match dependency.state {
+                Some(CheckState::Checked) => "work_plan_detail_dependency_checked",
+                Some(CheckState::Open) => "work_plan_detail_dependency_open",
+                None => "work_plan_detail_dependency_unknown",
             };
-            ui.monospace(format!("  {} - {state}", dependency.id));
+            ui.monospace(catalogue.format(
+                "work_plan_detail_dependency_row",
+                &[("id", &dependency.id), ("state", catalogue.text(key))],
+            ));
         }
     }
     let dependents = index.dependents(&row.id);
     if !dependents.is_empty() {
-        ui.label("Depended on by");
+        ui.label(catalogue.text("work_plan_detail_dependents"));
         for dependent in dependents {
-            ui.monospace(format!("  {}", dependent.id));
+            ui.monospace(
+                catalogue.format("work_plan_detail_dependent_row", &[("id", &dependent.id)]),
+            );
         }
-    }
-    if ui.button("Copy identifier").clicked() {
-        ui.ctx().copy_text(row.id.clone());
     }
 }
 
@@ -2089,6 +2170,7 @@ mod settings_tests {
 #[cfg(test)]
 mod work_plan_tests {
     use super::*;
+    use codingmage_plan::TaskPlan;
     use egui_kittest::kittest::{NodeT as _, Queryable as _};
 
     struct WorkPlanPreview {
@@ -2102,6 +2184,51 @@ mod work_plan_tests {
             egui::CentralPanel::default().show(root, |ui| {
                 self.app
                     .work_plan_with_catalogue(ui, &self.catalogue, self.right_to_left);
+            });
+        }
+    }
+
+    struct LoadedPlanPreview {
+        catalogue: Catalogue,
+        index: PlanIndex,
+        filter: PlanFilter,
+        selected: Option<String>,
+        right_to_left: bool,
+    }
+
+    impl LoadedPlanPreview {
+        fn render(&mut self, ui: &mut egui::Ui) {
+            plan_filter_controls(ui, &mut self.filter, &self.catalogue);
+            let rows = self.index.filtered(&self.filter);
+            render_plan_rows(
+                ui,
+                &self.index,
+                &rows,
+                &std::collections::BTreeMap::new(),
+                false,
+                &mut self.selected,
+                &self.catalogue,
+            );
+            if let Some(row) = self
+                .selected
+                .as_ref()
+                .and_then(|id| self.index.rows().iter().find(|row| &row.id == id))
+            {
+                item_detail(ui, row, &self.index, &self.catalogue);
+            }
+        }
+    }
+
+    impl eframe::App for LoadedPlanPreview {
+        fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
+            egui::CentralPanel::default().show(root, |ui| {
+                if self.right_to_left {
+                    ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                        self.render(ui);
+                    });
+                } else {
+                    self.render(ui);
+                }
             });
         }
     }
@@ -2143,6 +2270,71 @@ mod work_plan_tests {
                 .click();
             harness.run_steps(1);
             assert_eq!(harness.state().app.screen, Screen::Help);
+        }
+    }
+
+    #[test]
+    fn expanded_right_aligned_loaded_plan_preserves_row_and_detail_access() {
+        let source = b"# Tasks\n\n## Sprint 1 - Local\n\n**Sprint goal:** Local.\n\n### Story 1.1 - Work\n\n- [ ] **Task 1.1.1 - Goal**\n  - [x] **Sub-task 1.1.1.1:** Prepare a fixture.\n  - [ ] **Sub-task 1.1.1.2:** Inspect the result.\n    <!-- depends-on: 1.1.1.1 -->\n";
+        let index = PlanIndex::new(&TaskPlan::parse(source).unwrap());
+        let row = index.rows().iter().find(|row| row.id == "1.1.1.2").unwrap();
+        for right_to_left in [false, true] {
+            let catalogue = messages::english().pseudo(right_to_left);
+            let label = row_label(row, &catalogue);
+            let unknown = catalogue.format(
+                "work_plan_outcome_for_item",
+                &[
+                    ("badge", catalogue.text("work_plan_outcome_unknown")),
+                    ("id", &row.id),
+                ],
+            );
+            let heading = catalogue.format("work_plan_item_heading", &[("id", &row.id)]);
+            let source_label = catalogue
+                .text("work_plan_detail_source_checkbox")
+                .to_owned();
+            let dependency = catalogue.format(
+                "work_plan_detail_dependency_row",
+                &[
+                    ("id", "1.1.1.1"),
+                    (
+                        "state",
+                        catalogue.text("work_plan_detail_dependency_checked"),
+                    ),
+                ],
+            );
+            let preview_index = index.clone();
+            let mut harness = egui_kittest::Harness::builder()
+                .with_size(egui::Vec2::new(1024.0, 640.0))
+                .with_pixels_per_point(2.0)
+                .with_max_steps(4)
+                .build_eframe(move |_| LoadedPlanPreview {
+                    catalogue,
+                    index: preview_index,
+                    filter: PlanFilter::default(),
+                    selected: None,
+                    right_to_left,
+                });
+            harness.run_steps(2);
+            assert!(
+                harness
+                    .get_by_label_contains(&unknown)
+                    .accesskit_node()
+                    .has_bounds()
+            );
+            let row_node = harness.get_by_label_contains(&label);
+            assert!(row_node.accesskit_node().has_bounds());
+            row_node.click();
+            harness.run_steps(1);
+            assert_eq!(harness.state().selected.as_deref(), Some("1.1.1.2"));
+            for label in [&heading, &source_label, &dependency] {
+                assert!(
+                    harness
+                        .get_by_label_contains(label)
+                        .accesskit_node()
+                        .has_bounds(),
+                    "missing accessible bounds for {label}"
+                );
+            }
         }
     }
 }

@@ -2386,9 +2386,20 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     See the same evidence record. Decision 0051 moves Work plan orientation, source,
     filter, coordinator-observation and final-report recovery copy into the validated
     English catalogue, with exact named-field validation and a synthetic expanded,
-    right-aligned minimum-window empty-state preview. Work plan row/source-detail copy,
-    locale values, whole-app bidirectional navigation and packaged third-party licences
-    remain open; see `docs/evidence/sprint-36-message-catalogue.md`.
+    right-aligned minimum-window empty-state preview. At that checkpoint, Work plan
+    row/source-detail copy, locale values, whole-app bidirectional navigation and
+    packaged third-party licences remain open; see
+    `docs/evidence/sprint-36-message-catalogue.md`. Independent
+    exact-SHA review of `cdc609c3e1216dc2678c75cb2f653d78efa308d1` returned
+    a bounded PASS without findings after slot-compliant focused catalogue tests
+    and strict Clippy. Decision 0052 moves loaded row, filter and parsed item-detail
+    labels to the catalogue and adds a synthetic expanded, right-aligned loaded-plan
+    preview. Coordinator-provided detail, source excerpts, run evidence, locale
+    formats, full bidirectional navigation and packaged licences remain open.
+    The final-source native UI all-target suite passed 153/153 across 14 targets
+    and strict workspace Clippy passed. Python remained 41/42 solely for the
+    unchanged CM-R01.6 eight-input source-bound freshness hold; no digest was
+    renewed. See the same catalogue evidence record.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).

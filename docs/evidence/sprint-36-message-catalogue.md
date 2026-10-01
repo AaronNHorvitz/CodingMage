@@ -258,3 +258,60 @@ the preceding checkpoint, no semantic public item was added or removed; seven
 line-derived IDs moved and 113 shared entries changed only in capped crate-wide
 heuristic test mappings after the new test was added. Applicability and gap counts
 did not change. These mappings are an index, not proof of coverage for an item.
+
+Independent read-only review of exact commit
+`cdc609c3e1216dc2678c75cb2f653d78efa308d1` returned a bounded **PASS**
+without findings. It reran the named-field and empty-state preview units plus
+strict workspace Clippy through the required shared slot. The reviewer did not
+rerun the builder's 151-test native UI suite or Python suite. The verdict
+does not close Task 36.3.2.4 or any installed accessibility, human, live or
+release gate.
+
+## Loaded Work plan row and parsed-detail copy
+
+Decision 0052 extends the existing catalogue to Work plan filters, sprint and
+story headers, source-checkbox guidance, outcome badge labels, parsed row
+identity/readiness and item-detail fields. Named templates require the exact
+source identifier, title, checkbox, readiness, line and digest values. The UI
+still renders source text through the bounded inert content path. Existing
+English wording, parser, coordinator commands and outcome authority remain
+unchanged. The public plan crate's English label helpers stay for compatibility;
+the native screen now selects catalogue text for those labels.
+
+A focused mutation unit rejects missing, repeated and forged row identity
+fields and checks that brace- and script-like source text remains literal;
+the focused run passed 1/1.
+The loaded-plan synthetic preview selects an item and checks its row and
+parsed detail in 40%-expanded and right-aligned variants at 1024×640 logical
+pixels and 200% scale; its focused run passed 1/1. These are local layout and
+accessibility-tree probes, not complete RTL keyboard navigation or installed
+screen-reader evidence.
+Coordinator-provided detail, source excerpts, run evidence, locale number and
+date formats, exact packaged third-party licences, full bidirectional behavior
+and human trials remain open. Final-source check results and inventory
+disposition are recorded below.
+
+The first software-GL native UI all-target suite passed 153/153 across 14 targets
+under the shared heavy-check reservation, including the loaded-plan preview,
+row-template mutation unit and disposable coordinator workflows. Strict
+workspace Clippy with warnings denied passed on that source. Staged diff
+inspection then found the unknown-outcome template was not reusing its
+separately catalogued badge value. The template now requires the badge field,
+and the loaded-plan preview checks it. English output is unchanged. The first
+run remains prior-source evidence. The corrected final-source software-GL suite
+also passed 153/153 across 14 targets, and strict workspace Clippy passed.
+Final-source Python unittest ran 42 tests: 41 passed and the sole failure was
+the unchanged CM-R01.6 eight-input source-bound freshness check. No digest was
+renewed. Formatting, documentation, architecture, no-write inventory and
+whitespace checks passed on the corrected source. The exact staged diff and
+added lines were inspected for scope and private-root/credential material
+before commit. This increment awaits independent exact-SHA review; no
+installed, human, live or release gate is closed.
+
+The inventory generator and version-one schema were inspected before
+regeneration. It still lists 1,770 semantic public items and 825 explicit
+gaps. Seven line-derived IDs moved; the `failure_box` entry lost a heuristic
+boundary applicability tag because its nearby source context changed. That
+does not change the function or establish a new coverage claim. One capped
+heuristic test mapping changed with that tag. No semantic item was added or
+removed, and no gap count changed.
