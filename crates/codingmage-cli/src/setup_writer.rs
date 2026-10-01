@@ -77,7 +77,7 @@ impl ObservedFile {
         Ok(())
     }
 
-    fn authorization_digest(&mut self) -> Result<String, CliError> {
+    fn authorization_observation(&mut self) -> Result<(String, usize), CliError> {
         self.revalidate()?;
         self.file
             .seek(SeekFrom::Start(0))
@@ -94,7 +94,7 @@ impl ObservedFile {
             return Err(CliError::InvalidArgument);
         }
         self.revalidate()?;
-        digest_hex(&bytes)
+        Ok((digest_hex(&bytes)?, bytes.len()))
     }
 }
 
@@ -195,7 +195,7 @@ pub(super) fn campaign(arguments: &[String], input: impl Read) -> Result<String,
         return Err(CliError::Refused);
     }
     refuse_protected_output(&output, &config_file, &record_file)?;
-    let record_sha256 = record_file.authorization_digest()?;
+    let record_sha256 = record_file.authorization_observation()?.0;
     observe_campaign_source(&config, &authority, head, task_sha256)?;
 
     let mut bytes = Vec::new();
@@ -220,7 +220,7 @@ pub(super) fn campaign(arguments: &[String], input: impl Read) -> Result<String,
         record_file.revalidate()?;
         refuse_protected_output(&output, &config_file, &record_file)?;
         if load_config(&config_path).map_err(|_| CliError::StaleObservation)? != config
-            || record_file.authorization_digest()? != record_sha256
+            || record_file.authorization_observation()?.0 != record_sha256
         {
             return Err(CliError::StaleObservation);
         }
@@ -234,6 +234,67 @@ pub(super) fn campaign(arguments: &[String], input: impl Read) -> Result<String,
         "written": true,
         "bytes": bytes.len(),
         "sha256": digest_hex(&bytes)?,
+    }))
+    .map_err(|_| CliError::Internal)
+}
+
+/// Inspects a bounded external authorization record for guided campaign authoring.
+pub(super) fn inspect_authorization(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new(
+        arguments,
+        &[
+            "config",
+            "repository-id",
+            "head",
+            "task-source-sha256",
+            "authorization",
+        ],
+    )?;
+    let config_path = parsed.absolute_file("config")?;
+    let config = load_config(&config_path).map_err(|_| CliError::Config)?;
+    let config_file = ObservedFile::open(&config_path, MAX_CAMPAIGN_BYTES as u64)
+        .map_err(|_| CliError::StaleObservation)?;
+    let authority = RepositoryAuthorization::authorize(&config, &executable_parent()?)
+        .map_err(|_| CliError::Repository)?;
+    let repository_id = parsed.value("repository-id")?;
+    let head = parsed.value("head")?;
+    let task_sha256 = parsed.value("task-source-sha256")?;
+    let record = parsed.absolute_file("authorization")?;
+    if authority.identity().repository_id.as_str() != repository_id {
+        return Err(CliError::StaleObservation);
+    }
+    report_writer::validate(&record, &config.target_path)?;
+    if normalized_leaf(&record)? == normalized_leaf(&config_path)? {
+        return Err(CliError::Refused);
+    }
+    let mut record_file = ObservedFile::open(&record, MAX_AUTHORIZATION_BYTES as u64)?;
+    if config_file.identity == record_file.identity {
+        return Err(CliError::Refused);
+    }
+    observe_campaign_source(&config, &authority, head, task_sha256)?;
+    let (sha256, bytes) = record_file.authorization_observation()?;
+    authority
+        .revalidate()
+        .map_err(|_| CliError::StaleObservation)?;
+    config_file.revalidate()?;
+    record_file.revalidate()?;
+    if load_config(&config_path).map_err(|_| CliError::StaleObservation)? != config
+        || record_file
+            .authorization_observation()
+            .map_err(|_| CliError::StaleObservation)?
+            != (sha256.clone(), bytes)
+    {
+        return Err(CliError::StaleObservation);
+    }
+    observe_campaign_source(&config, &authority, head, task_sha256)?;
+    serde_json::to_string_pretty(&json!({
+        "schema_version": 1,
+        "repository_id": repository_id,
+        "head": head,
+        "task_source_sha256": task_sha256,
+        "observed": true,
+        "bytes": bytes,
+        "sha256": sha256,
     }))
     .map_err(|_| CliError::Internal)
 }

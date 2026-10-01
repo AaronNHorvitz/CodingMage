@@ -1,6 +1,6 @@
 # ADR 0068: Bind Campaign Setup Inputs to Physical Files
 
-- **Status:** Accepted for local implementation; independent re-review pending
+- **Status:** Accepted for local implementation; bounded independent re-review PASS at `1ce1f8f0f4393c1f552e080d939beea7b9b609f2`
 - **Date:** 2026-10-01
 - **Decision owners:** CodingMage implementation
 
@@ -40,3 +40,13 @@ hard-linked configuration and record destinations, and request replacement
 through a parent-directory alias. Each must refuse publication and preserve
 the protected bytes. Exact local results and the independent re-review status
 are recorded in the Setup command evidence.
+
+## Independent re-review
+
+The read-only exact-commit re-review of
+`1ce1f8f0f4393c1f552e080d939beea7b9b609f2` returned PASS with no
+remaining finding in this bounded scope. It reproduced the old matching-digest
+hard-link case as a refusal, checked linked protected destinations and parent
+aliases, and replaced a record leaf after initial observation in a reviewer-only
+archive fixture; the command refused with no output. This does not qualify the
+native worker or any human, live or release gate.

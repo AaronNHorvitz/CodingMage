@@ -2159,8 +2159,11 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     independent exact-commit review at `4c4afe0fbe98dd96c2a45c6bab8cde10d5b4c283`
     found a High hard-link alias of the configuration as authorization record.
     Decision 0068 and the Setup command evidence record the physical-file
-    correction, with fresh independent re-review pending. Native worker routing
-    and complete Show-command coverage remain open.
+    correction. The exact-commit re-review of
+    `1ce1f8f0f4393c1f552e080d939beea7b9b609f2` returned a bounded PASS
+    with no open finding. Decision 0069 adds a public, read-only authorization
+    digest observation for native campaign authoring; its independent review and
+    native worker routing remain open. Complete Show-command coverage remains open.
     The bounded review of `b8e8458` returned a high parent-move finding and a low
     inventory-count finding. Decision 0063 and the corrected evidence record the
     local fix; the bounded re-review of `106ab0f4889943b403cdcdc98db1227b466ba4b0`

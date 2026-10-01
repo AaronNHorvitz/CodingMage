@@ -192,6 +192,35 @@ impl Fixture {
             &self.task_sha256,
         )
     }
+
+    fn inspect_authorization(&self, record: &Path, repository_id: &str, head: &str) -> Output {
+        self.inspect_with_task_source(record, repository_id, head, &self.task_sha256)
+    }
+
+    fn inspect_with_task_source(
+        &self,
+        record: &Path,
+        repository_id: &str,
+        head: &str,
+        task_sha256: &str,
+    ) -> Output {
+        run(
+            &[
+                "setup-inspect-authorization",
+                "--config",
+                self.config.to_str().unwrap(),
+                "--repository-id",
+                repository_id,
+                "--head",
+                head,
+                "--task-source-sha256",
+                task_sha256,
+                "--authorization",
+                record.to_str().unwrap(),
+            ],
+            b"",
+        )
+    }
 }
 
 impl Drop for Fixture {
@@ -388,6 +417,69 @@ fn linked_authorization_cannot_reuse_the_configuration_inode() {
     );
     assert_eq!(result.stderr, b"codingmage.cli.refused\n");
     assert!(!output.exists());
+}
+
+#[test]
+fn authorization_inspection_is_bounded_bound_and_content_minimized() {
+    let fixture = Fixture::new();
+    let original = fs::read(&fixture.record).unwrap();
+    let result =
+        fixture.inspect_authorization(&fixture.record, &fixture.repository_id, &fixture.head);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let receipt: Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(receipt["schema_version"], 1);
+    assert_eq!(receipt["repository_id"], fixture.repository_id);
+    assert_eq!(receipt["head"], fixture.head);
+    assert_eq!(receipt["task_source_sha256"], fixture.task_sha256);
+    assert_eq!(receipt["observed"], true);
+    assert_eq!(receipt["bytes"], original.len());
+    assert_eq!(receipt["sha256"], digest(&original));
+    assert!(!String::from_utf8_lossy(&result.stdout).contains("Synthetic owner authorization"));
+    assert_eq!(fs::read(&fixture.record).unwrap(), original);
+
+    let wrong_id = fixture.inspect_authorization(&fixture.record, "other", &fixture.head);
+    assert_eq!(wrong_id.stderr, b"codingmage.cli.stale_observation\n");
+    let wrong_head =
+        fixture.inspect_authorization(&fixture.record, &fixture.repository_id, &"a".repeat(40));
+    assert_eq!(wrong_head.stderr, b"codingmage.cli.stale_observation\n");
+    let wrong_task_source = fixture.inspect_with_task_source(
+        &fixture.record,
+        &fixture.repository_id,
+        &fixture.head,
+        &"b".repeat(64),
+    );
+    assert_eq!(
+        wrong_task_source.stderr,
+        b"codingmage.cli.stale_observation\n"
+    );
+    let linked = fixture.root.join("workspace/linked-config-record.txt");
+    fs::hard_link(&fixture.config, &linked).unwrap();
+    let refused = fixture.inspect_authorization(&linked, &fixture.repository_id, &fixture.head);
+    assert_eq!(refused.stderr, b"codingmage.cli.refused\n");
+    let linked_parent = fixture.root.join("workspace-link");
+    std::os::unix::fs::symlink(fixture.root.join("workspace"), &linked_parent).unwrap();
+    let alias = linked_parent.join("codingmage.toml");
+    let refused = fixture.inspect_authorization(&alias, &fixture.repository_id, &fixture.head);
+    assert_eq!(refused.stderr, b"codingmage.cli.refused\n");
+    let symlink = fixture.root.join("workspace/symlink-record.txt");
+    std::os::unix::fs::symlink(&fixture.record, &symlink).unwrap();
+    let refused = fixture.inspect_authorization(&symlink, &fixture.repository_id, &fixture.head);
+    assert!(!refused.status.success());
+    let invalid = fixture.root.join("workspace/invalid-record.txt");
+    fs::write(&invalid, b"\xff").unwrap();
+    let refused = fixture.inspect_authorization(&invalid, &fixture.repository_id, &fixture.head);
+    assert_eq!(refused.stderr, b"codingmage.cli.invalid_argument\n");
+    fs::write(&invalid, vec![b'x'; 1024 * 1024 + 1]).unwrap();
+    let refused = fixture.inspect_authorization(&invalid, &fixture.repository_id, &fixture.head);
+    assert_eq!(refused.stderr, b"codingmage.cli.invalid_argument\n");
+    let inside = fixture.target.join("authorization.txt");
+    fs::write(&inside, b"not permitted inside repository").unwrap();
+    let refused = fixture.inspect_authorization(&inside, &fixture.repository_id, &fixture.head);
+    assert_eq!(refused.stderr, b"codingmage.cli.refused\n");
 }
 
 #[test]

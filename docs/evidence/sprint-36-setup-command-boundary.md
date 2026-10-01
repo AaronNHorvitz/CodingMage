@@ -220,5 +220,38 @@ gaps, with no normalized surface, applicability, heuristic test mapping or
 gap change; only line-derived locations moved. The full Python suite passed
 43/44 tests; the sole failure is the unchanged CM-R01.6 eight-input
 source-bound freshness hold. No package, receipt or digest was renewed.
-Fresh independent exact-commit re-review is pending. Human, installed desktop,
-live-provider and release gates remain open.
+The initial correction results above preceded independent re-review. Human,
+installed desktop, live-provider and release gates remain open.
+
+The bounded read-only exact-commit re-review of
+`1ce1f8f0f4393c1f552e080d939beea7b9b609f2` returned PASS with no open
+finding. It independently reproduced the original matching-digest hard-link
+exploit as a refusal, checked linked protected output and parent aliases, and
+used a reviewer-only held-stdin fixture to replace the authorization leaf
+after initial observation. The command returned stale observation and wrote no
+output. The reviewer also passed the focused Setup target 6/6, strict Clippy,
+documentation, architecture and inventory checks; Python retained only the
+unchanged CM-R01.6 eight-input freshness failure. This bounded PASS does not
+qualify the native worker or any human, live or release gate.
+
+## Public authorization inspection for native campaign authoring
+
+Decision 0069 adds `setup-inspect-authorization` as a read-only, repository-bound
+observation. It returns a content-minimized digest and byte count for a held
+no-follow external record, after checking the clean exact HEAD, committed task
+source and configuration/record physical distinction. The native form still
+reads the record in-process until its worker migration is complete; this
+command by itself does not satisfy Task 36.3.2.2. The exact-source CLI unit
+target passes 21/21 and disposable campaign Setup passes 7/7, including
+bounded record inspection, stale repository/head/task-source bindings,
+configuration hard link, parent alias, symbolic record link, malformed and
+oversized bytes, and a repository-contained record. Strict workspace Clippy
+with warnings denied passes. The source/schema-reviewed inventory regenerates
+from 1,783 to 1,784 public items and retains 825 explicit gaps: one new public
+Rust surface, no removed surface or changed applicability, four changed
+heuristic test mappings, and no normalized gap change. A mapping is not proof
+of coverage. The full Python suite passes 43/44; its sole failure is the
+unchanged CM-R01.6 eight-input source-bound freshness hold. No package,
+receipt, binding or digest was renewed. Cargo formatting, documentation,
+architecture, no-write inventory and staged whitespace checks pass. An
+independent exact-commit review remains pending for this increment.
