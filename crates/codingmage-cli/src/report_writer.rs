@@ -13,8 +13,9 @@ use std::{
 };
 
 use nix::{
-    fcntl::{OFlag, open},
-    sys::stat::Mode,
+    fcntl::{AtFlags, OFlag, RenameFlags, open, renameat2},
+    sys::stat::{Mode, mkdirat},
+    unistd::{geteuid, linkat},
 };
 
 use crate::CliError;
@@ -145,6 +146,146 @@ fn candidate_name() -> String {
     )
 }
 
+fn same_inode(left: &fs::Metadata, right: &fs::Metadata) -> bool {
+    left.dev() == right.dev() && left.ino() == right.ino()
+}
+
+fn remove_if_same(path: &Path, expected: &fs::Metadata) {
+    if fs::symlink_metadata(path).is_ok_and(|named| same_inode(&named, expected)) {
+        let _ = fs::remove_file(path);
+    }
+}
+
+fn private_stage_metadata(metadata: &fs::Metadata, effective_uid: u32) -> bool {
+    metadata.is_dir() && metadata.uid() == effective_uid && metadata.mode() & 0o777 == 0o700
+}
+
+// A held, owner-private directory keeps the candidate and displaced file
+// inaccessible to another principal that can write only the destination parent.
+struct PrivateStage {
+    directory: File,
+    path: PathBuf,
+    identity: fs::Metadata,
+}
+
+impl PrivateStage {
+    fn create(
+        destination: &Destination,
+        before_open: impl FnOnce(PathBuf),
+    ) -> Result<Self, CliError> {
+        let name = format!("{}.staging", candidate_name());
+        mkdirat(
+            &destination.directory,
+            name.as_str(),
+            Mode::from_bits_truncate(0o700),
+        )
+        .map_err(|_| CliError::Refused)?;
+        let path = destination.fd_path().join(name);
+        before_open(path.clone());
+        let directory = File::from(
+            open(
+                &path,
+                OFlag::O_RDONLY | OFlag::O_DIRECTORY | OFlag::O_NOFOLLOW | OFlag::O_CLOEXEC,
+                Mode::empty(),
+            )
+            .map_err(|_| CliError::Refused)?,
+        );
+        let identity = directory.metadata().map_err(|_| CliError::Refused)?;
+        if !private_stage_metadata(&identity, geteuid().as_raw())
+            || !fs::symlink_metadata(&path).is_ok_and(|named| same_inode(&named, &identity))
+        {
+            // The name may now belong to a different writer. Never remove it.
+            return Err(CliError::Refused);
+        }
+        Ok(Self {
+            directory,
+            path,
+            identity,
+        })
+    }
+
+    fn file_path(&self) -> PathBuf {
+        PathBuf::from(format!(
+            "/proc/self/fd/{}/candidate",
+            self.directory.as_raw_fd()
+        ))
+    }
+
+    fn remove_directory(&self) {
+        if fs::symlink_metadata(&self.path).is_ok_and(|named| same_inode(&named, &self.identity)) {
+            let _ = fs::remove_dir(&self.path);
+        }
+    }
+
+    fn exchange(&self, destination: &Destination) -> Result<(), CliError> {
+        renameat2(
+            &self.directory,
+            "candidate",
+            &destination.directory,
+            Path::new(&destination.leaf),
+            RenameFlags::RENAME_EXCHANGE,
+        )
+        .map_err(|_| CliError::Refused)
+    }
+
+    fn restore_if_owned(&self, destination: &Destination, written: &fs::Metadata) -> bool {
+        let leaf = destination.leaf_path();
+        if !fs::symlink_metadata(&leaf).is_ok_and(|named| same_inode(&named, written)) {
+            return false;
+        }
+        self.exchange(destination).is_ok()
+            && fs::symlink_metadata(self.file_path()).is_ok_and(|named| same_inode(&named, written))
+    }
+}
+
+fn publish_overwrite<B, A>(
+    stage: &PrivateStage,
+    destination: &Destination,
+    old: &fs::Metadata,
+    written: &fs::Metadata,
+    retain_stage: &mut bool,
+    before_exchange: B,
+    after_publication: A,
+) -> Result<(), CliError>
+where
+    B: FnOnce(),
+    A: FnOnce(),
+{
+    before_exchange();
+    destination.check()?;
+    stage.exchange(destination)?;
+    after_publication();
+    let temporary = stage.file_path();
+    let Ok(displaced) = fs::symlink_metadata(&temporary) else {
+        *retain_stage = true;
+        return Err(CliError::UncertainWrite);
+    };
+    if !same_inode(&displaced, old) {
+        if stage.restore_if_owned(destination, written) {
+            return Err(CliError::Refused);
+        }
+        *retain_stage = true;
+        return Err(CliError::UncertainWrite);
+    }
+    let named = fs::symlink_metadata(destination.leaf_path()).ok();
+    let parent_check = destination.check();
+    if !named
+        .as_ref()
+        .is_some_and(|entry| entry.is_file() && same_inode(entry, written))
+        || parent_check.is_err()
+    {
+        if stage.restore_if_owned(destination, written) {
+            return parent_check.and(Err(CliError::Refused));
+        }
+        *retain_stage = true;
+        return Err(CliError::UncertainWrite);
+    }
+    fs::remove_file(&temporary).map_err(|_| {
+        *retain_stage = true;
+        CliError::UncertainWrite
+    })
+}
+
 /// Validates the requested destination before expensive source reads.
 pub(super) fn validate(path: &Path, repository: &Path) -> Result<(), CliError> {
     Destination::open(path, repository).map(|_| ())
@@ -157,9 +298,34 @@ pub(super) fn write(
     bytes: &[u8],
     overwrite: bool,
 ) -> Result<(), CliError> {
-    write_with_hooks(path, repository, bytes, overwrite, || {}, || {})
+    write_validated(path, repository, bytes, overwrite, |_| Ok(()))
 }
 
+/// Publishes exact bytes after a caller-supplied loader accepts the private candidate.
+pub(super) fn write_validated(
+    path: &Path,
+    repository: &Path,
+    bytes: &[u8],
+    overwrite: bool,
+    validate: impl FnOnce(&Path) -> Result<(), CliError>,
+) -> Result<(), CliError> {
+    write_with_injections(
+        path,
+        repository,
+        bytes,
+        overwrite,
+        validate,
+        Hooks {
+            before_write: || {},
+            before_publish: || {},
+            before_stage_open: |_| {},
+            before_exchange: || {},
+            after_publication: || {},
+        },
+    )
+}
+
+#[cfg(test)]
 fn write_with_hooks(
     path: &Path,
     repository: &Path,
@@ -168,16 +334,68 @@ fn write_with_hooks(
     before_write: impl FnOnce(),
     before_publish: impl FnOnce(),
 ) -> Result<(), CliError> {
+    write_with_injections(
+        path,
+        repository,
+        bytes,
+        overwrite,
+        |_| Ok(()),
+        Hooks {
+            before_write,
+            before_publish,
+            before_stage_open: |_| {},
+            before_exchange: || {},
+            after_publication: || {},
+        },
+    )
+}
+
+struct Hooks<W, P, S, B, A> {
+    before_write: W,
+    before_publish: P,
+    before_stage_open: S,
+    before_exchange: B,
+    after_publication: A,
+}
+
+fn write_with_injections<W, P, S, B, A>(
+    path: &Path,
+    repository: &Path,
+    bytes: &[u8],
+    overwrite: bool,
+    validate: impl FnOnce(&Path) -> Result<(), CliError>,
+    hooks: Hooks<W, P, S, B, A>,
+) -> Result<(), CliError>
+where
+    W: FnOnce(),
+    P: FnOnce(),
+    S: FnOnce(PathBuf),
+    B: FnOnce(),
+    A: FnOnce(),
+{
+    let Hooks {
+        before_write,
+        before_publish,
+        before_stage_open,
+        before_exchange,
+        after_publication,
+    } = hooks;
     let destination = Destination::open(path, repository)?;
     before_write();
     destination.check()?;
-    let temporary = destination.fd_path().join(candidate_name());
+    let stage = PrivateStage::create(&destination, before_stage_open)?;
+    let temporary = stage.file_path();
     let mut options = OpenOptions::new();
     options.write(true).create_new(true).mode(0o600);
-    let mut file = options.open(&temporary).map_err(|_| CliError::Refused)?;
+    let Ok(mut file) = options.open(&temporary) else {
+        stage.remove_directory();
+        return Err(CliError::Refused);
+    };
+    let mut retain_stage = false;
     let result = (|| {
         file.write_all(bytes).map_err(|_| CliError::Internal)?;
         file.sync_all().map_err(|_| CliError::Internal)?;
+        validate(&temporary)?;
         let written = file.metadata().map_err(|_| CliError::Internal)?;
         destination.check()?;
         let leaf = destination.leaf_path();
@@ -189,26 +407,60 @@ fn write_with_hooks(
         }
         before_publish();
         destination.check()?;
-        if overwrite {
-            fs::rename(&temporary, &leaf).map_err(|_| CliError::Refused)?;
-        } else {
-            fs::hard_link(&temporary, &leaf).map_err(|_| CliError::Refused)?;
+        let candidate = fs::symlink_metadata(&temporary).map_err(|_| CliError::Refused)?;
+        if !candidate.is_file()
+            || !same_inode(&candidate, &written)
+            || fs::read(format!("/proc/self/fd/{}", file.as_raw_fd()))
+                .map_err(|_| CliError::Refused)?
+                != bytes
+        {
+            return Err(CliError::Refused);
         }
-        let named = fs::symlink_metadata(&leaf).map_err(|_| CliError::Refused)?;
+        let old = if overwrite {
+            match fs::symlink_metadata(&leaf) {
+                Ok(old) if old.is_file() => Some(old),
+                Err(error) if error.kind() == ErrorKind::NotFound => None,
+                _ => return Err(CliError::Refused),
+            }
+        } else {
+            None
+        };
+        if let Some(old) = old.as_ref() {
+            return publish_overwrite(
+                &stage,
+                &destination,
+                old,
+                &written,
+                &mut retain_stage,
+                before_exchange,
+                after_publication,
+            );
+        }
+        let source = PathBuf::from(format!("/proc/self/fd/{}", file.as_raw_fd()));
+        linkat(&file, &source, &file, &leaf, AtFlags::AT_SYMLINK_FOLLOW)
+            .map_err(|_| CliError::Refused)?;
+        after_publication();
+        let named = fs::symlink_metadata(&leaf).ok();
         let parent_check = destination.check();
-        if !named.is_file()
-            || named.dev() != written.dev()
-            || named.ino() != written.ino()
+        if !named
+            .as_ref()
+            .is_some_and(|entry| entry.is_file() && same_inode(entry, &written))
             || parent_check.is_err()
         {
-            if named.dev() == written.dev() && named.ino() == written.ino() {
-                let _ = fs::remove_file(&leaf);
-            }
-            return parent_check.and(Err(CliError::Refused));
+            // A successful link may still have published the accepted bytes.
+            // Preserve the private candidate for reconciliation and never unlink
+            // a public name that another writer may now own.
+            retain_stage = true;
+            return Err(CliError::UncertainWrite);
         }
         Ok(())
     })();
-    let _ = fs::remove_file(temporary);
+    if !retain_stage {
+        if let Ok(written) = file.metadata() {
+            remove_if_same(&temporary, &written);
+        }
+        stage.remove_directory();
+    }
     result
 }
 
@@ -230,6 +482,26 @@ mod tests {
         fs::create_dir_all(root.join("repo")).unwrap();
         fs::create_dir_all(root.join("outside")).unwrap();
         root
+    }
+
+    #[test]
+    fn stage_metadata_requires_effective_owner_and_private_mode() {
+        let root = root("stage-metadata");
+        let stage = root.join("outside/stage");
+        fs::create_dir(&stage).unwrap();
+        fs::set_permissions(&stage, fs::Permissions::from_mode(0o700)).unwrap();
+        let metadata = fs::metadata(&stage).unwrap();
+        assert!(private_stage_metadata(&metadata, geteuid().as_raw()));
+        assert!(!private_stage_metadata(
+            &metadata,
+            geteuid().as_raw().wrapping_add(1)
+        ));
+        fs::set_permissions(&stage, fs::Permissions::from_mode(0o770)).unwrap();
+        assert!(!private_stage_metadata(
+            &fs::metadata(&stage).unwrap(),
+            geteuid().as_raw()
+        ));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -402,6 +674,188 @@ mod tests {
         write(&path, &root.join("repo"), b"report", true).unwrap();
         assert_eq!(fs::read(&path).unwrap(), b"report");
         assert_eq!(fs::metadata(&path).unwrap().permissions().mode() & 0o077, 0);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn substituted_stage_is_rejected_before_candidate_creation() {
+        let root = root("substituted-stage");
+        let path = root.join("outside/report.json");
+        let retained = root.join("outside/retained-stage");
+        fs::write(&path, b"old").unwrap();
+        let result = write_with_injections(
+            &path,
+            &root.join("repo"),
+            b"new",
+            true,
+            |_| panic!("a substituted stage must not reach validation"),
+            Hooks {
+                before_write: || {},
+                before_publish: || panic!("a substituted stage must not reach publication"),
+                before_stage_open: |stage: PathBuf| {
+                    fs::rename(&stage, &retained).unwrap();
+                    fs::create_dir(&stage).unwrap();
+                    fs::set_permissions(&stage, fs::Permissions::from_mode(0o777)).unwrap();
+                },
+                before_exchange: || {},
+                after_publication: || {},
+            },
+        );
+        assert_eq!(result, Err(CliError::Refused));
+        assert_eq!(fs::read(&path).unwrap(), b"old");
+        assert_eq!(fs::read_dir(&retained).unwrap().count(), 0);
+        assert_eq!(fs::read_dir(root.join("outside")).unwrap().count(), 3);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn replaced_validated_candidate_never_reaches_the_public_leaf() {
+        let root = root("replaced-candidate");
+        let path = root.join("outside/report.json");
+        fs::write(&path, b"old").unwrap();
+        let outside = root.join("outside");
+        let result = write_with_injections(
+            &path,
+            &root.join("repo"),
+            b"accepted",
+            true,
+            |candidate| {
+                assert_eq!(fs::read(candidate).unwrap(), b"accepted");
+                Ok(())
+            },
+            Hooks {
+                before_write: || {},
+                before_publish: || {
+                    let stage = fs::read_dir(&outside)
+                        .unwrap()
+                        .map(|entry| entry.unwrap().path())
+                        .find(|entry| entry.is_dir())
+                        .unwrap();
+                    fs::remove_file(stage.join("candidate")).unwrap();
+                    fs::write(stage.join("candidate"), b"rejected").unwrap();
+                },
+                before_stage_open: |_| {},
+                before_exchange: || {},
+                after_publication: || {},
+            },
+        );
+        assert_eq!(result, Err(CliError::Refused));
+        assert_eq!(fs::read(&path).unwrap(), b"old");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn rejected_candidate_is_not_published() {
+        let root = root("validator-rejection");
+        let path = root.join("outside/report.json");
+        fs::write(&path, b"old").unwrap();
+        let result = write_validated(&path, &root.join("repo"), b"invalid", true, |candidate| {
+            assert_eq!(fs::read(candidate).unwrap(), b"invalid");
+            Err(CliError::Config)
+        });
+        assert_eq!(result, Err(CliError::Config));
+        assert_eq!(fs::read(&path).unwrap(), b"old");
+        assert_eq!(fs::read_dir(root.join("outside")).unwrap().count(), 1);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn overwrite_restores_a_concurrent_regular_replacement() {
+        let root = root("overwrite-exchange");
+        let path = root.join("outside/report.json");
+        let moved = root.join("outside/moved-old.json");
+        fs::write(&path, b"old").unwrap();
+        let result = write_with_injections(
+            &path,
+            &root.join("repo"),
+            b"accepted",
+            true,
+            |_| Ok(()),
+            Hooks {
+                before_write: || {},
+                before_publish: || {},
+                before_stage_open: |_| {},
+                before_exchange: || {
+                    fs::rename(&path, &moved).unwrap();
+                    fs::write(&path, b"concurrent").unwrap();
+                },
+                after_publication: || {},
+            },
+        );
+        assert_eq!(result, Err(CliError::Refused));
+        assert_eq!(fs::read(&path).unwrap(), b"concurrent");
+        assert_eq!(fs::read(&moved).unwrap(), b"old");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn post_exchange_change_is_uncertain_and_retains_old_entry() {
+        let root = root("overwrite-uncertain");
+        let path = root.join("outside/report.json");
+        let moved = root.join("outside/moved-written.json");
+        let outside = root.join("outside");
+        fs::write(&path, b"old").unwrap();
+        let result = write_with_injections(
+            &path,
+            &root.join("repo"),
+            b"accepted",
+            true,
+            |_| Ok(()),
+            Hooks {
+                before_write: || {},
+                before_publish: || {},
+                before_stage_open: |_| {},
+                before_exchange: || {},
+                after_publication: || {
+                    fs::rename(&path, &moved).unwrap();
+                    fs::write(&path, b"later").unwrap();
+                },
+            },
+        );
+        assert_eq!(result, Err(CliError::UncertainWrite));
+        assert_eq!(fs::read(&path).unwrap(), b"later");
+        assert_eq!(fs::read(&moved).unwrap(), b"accepted");
+        let stage = fs::read_dir(outside)
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .find(|entry| entry.is_dir())
+            .unwrap();
+        assert_eq!(fs::read(stage.join("candidate")).unwrap(), b"old");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn post_link_change_is_uncertain_and_retains_candidate() {
+        let root = root("link-uncertain");
+        let path = root.join("outside/report.json");
+        let moved = root.join("outside/moved-written.json");
+        let outside = root.join("outside");
+        let result = write_with_injections(
+            &path,
+            &root.join("repo"),
+            b"accepted",
+            false,
+            |_| Ok(()),
+            Hooks {
+                before_write: || {},
+                before_publish: || {},
+                before_stage_open: |_| {},
+                before_exchange: || {},
+                after_publication: || {
+                    fs::rename(&path, &moved).unwrap();
+                    fs::write(&path, b"later").unwrap();
+                },
+            },
+        );
+        assert_eq!(result, Err(CliError::UncertainWrite));
+        assert_eq!(fs::read(&path).unwrap(), b"later");
+        assert_eq!(fs::read(&moved).unwrap(), b"accepted");
+        let stage = fs::read_dir(outside)
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .find(|entry| entry.is_dir())
+            .unwrap();
+        assert_eq!(fs::read(stage.join("candidate")).unwrap(), b"accepted");
         fs::remove_dir_all(root).unwrap();
     }
 }

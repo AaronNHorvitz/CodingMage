@@ -6789,7 +6789,7 @@
       ],
       "id": "error:codingmage.cli.config",
       "kind": "error_code",
-      "line": 1061,
+      "line": 1063,
       "name": "codingmage.cli.config",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -6801,11 +6801,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -6825,7 +6826,7 @@
       ],
       "id": "error:codingmage.cli.execution_unavailable",
       "kind": "error_code",
-      "line": 1067,
+      "line": 1070,
       "name": "codingmage.cli.execution_unavailable",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -6837,11 +6838,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -6861,7 +6863,7 @@
       ],
       "id": "error:codingmage.cli.internal",
       "kind": "error_code",
-      "line": 1069,
+      "line": 1072,
       "name": "codingmage.cli.internal",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -6873,11 +6875,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -6897,7 +6900,7 @@
       ],
       "id": "error:codingmage.cli.invalid_argument",
       "kind": "error_code",
-      "line": 1060,
+      "line": 1062,
       "name": "codingmage.cli.invalid_argument",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -6909,11 +6912,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -6933,7 +6937,7 @@
       ],
       "id": "error:codingmage.cli.no_ready_work",
       "kind": "error_code",
-      "line": 1064,
+      "line": 1066,
       "name": "codingmage.cli.no_ready_work",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -6945,11 +6949,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -6969,7 +6974,7 @@
       ],
       "id": "error:codingmage.cli.plan",
       "kind": "error_code",
-      "line": 1063,
+      "line": 1065,
       "name": "codingmage.cli.plan",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -6981,11 +6986,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -7005,7 +7011,7 @@
       ],
       "id": "error:codingmage.cli.refused",
       "kind": "error_code",
-      "line": 1065,
+      "line": 1067,
       "name": "codingmage.cli.refused",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -7017,11 +7023,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -7041,7 +7048,7 @@
       ],
       "id": "error:codingmage.cli.repository",
       "kind": "error_code",
-      "line": 1062,
+      "line": 1064,
       "name": "codingmage.cli.repository",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -7053,11 +7060,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -7077,7 +7085,7 @@
       ],
       "id": "error:codingmage.cli.stale_observation",
       "kind": "error_code",
-      "line": 1066,
+      "line": 1069,
       "name": "codingmage.cli.stale_observation",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -7089,11 +7097,49 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
+          "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
+          "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
+        ],
+        "repeatability": [
+          "crates/codingmage-cli/src/lib.rs::version_usage_and_run_contract_are_stable",
+          "crates/codingmage-cli/tests/campaign_mission.rs::mission_admission_binds_the_exact_campaign_and_is_idempotent",
+          "crates/codingmage-cli/tests/campaign_mission.rs::revocation_is_authenticated_idempotent_and_final",
+          "crates/codingmage-cli/tests/workflow.rs::serial_campaign_reports_repeated_correction_timeout_distinctly"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "error:codingmage.cli.uncertain_write",
+      "kind": "error_code",
+      "line": 1068,
+      "name": "codingmage.cli.uncertain_write",
+      "path": "crates/codingmage-cli/src/lib.rs",
+      "surface": "stable_error_code",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
+          "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::bind_mounted_repository_root_and_child_are_refused",
+          "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
+          "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
+          "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
+        ],
+        "positive": [
+          "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -7113,7 +7159,7 @@
       ],
       "id": "error:codingmage.cli.usage",
       "kind": "error_code",
-      "line": 1059,
+      "line": 1061,
       "name": "codingmage.cli.usage",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -7125,11 +7171,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -15004,7 +15051,7 @@
       ],
       "id": "error:codingmage.ui.git_read",
       "kind": "error_code",
-      "line": 471,
+      "line": 475,
       "name": "codingmage.ui.git_read",
       "path": "crates/codingmage-ui/src/backend/cli.rs",
       "surface": "stable_error_code",
@@ -15048,7 +15095,7 @@
       ],
       "id": "error:codingmage.ui.outcome_unknown",
       "kind": "error_code",
-      "line": 475,
+      "line": 479,
       "name": "codingmage.ui.outcome_unknown",
       "path": "crates/codingmage-ui/src/backend/cli.rs",
       "surface": "stable_error_code",
@@ -15356,7 +15403,7 @@
       ],
       "id": "error:codingmage.unknown.code",
       "kind": "error_code",
-      "line": 573,
+      "line": 578,
       "name": "codingmage.unknown.code",
       "path": "crates/codingmage-ui/src/backend/cli.rs",
       "surface": "stable_error_code",
@@ -23448,11 +23495,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -23477,9 +23525,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/lib.rs:fn:code:1057",
+      "id": "rust:crates/codingmage-cli/src/lib.rs:fn:code:1059",
       "kind": "fn",
-      "line": 1057,
+      "line": 1059,
       "name": "code",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "rust_public_api",
@@ -23494,11 +23542,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -23523,9 +23572,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/lib.rs:fn:exit_code:1075",
+      "id": "rust:crates/codingmage-cli/src/lib.rs:fn:exit_code:1078",
       "kind": "fn",
-      "line": 1075,
+      "line": 1078,
       "name": "exit_code",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "rust_public_api",
@@ -23540,11 +23589,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -23590,11 +23640,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -23640,11 +23691,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -23695,11 +23747,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -23724,9 +23777,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/report_writer.rs:fn:validate:149",
+      "id": "rust:crates/codingmage-cli/src/report_writer.rs:fn:validate:290",
       "kind": "fn",
-      "line": 149,
+      "line": 290,
       "name": "validate",
       "path": "crates/codingmage-cli/src/report_writer.rs",
       "surface": "rust_public_api",
@@ -23741,11 +23794,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -23770,9 +23824,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/report_writer.rs:fn:write:154",
+      "id": "rust:crates/codingmage-cli/src/report_writer.rs:fn:write:295",
       "kind": "fn",
-      "line": 154,
+      "line": 295,
       "name": "write",
       "path": "crates/codingmage-cli/src/report_writer.rs",
       "surface": "rust_public_api",
@@ -23787,11 +23841,12 @@
           "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
           "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
           "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
-          "crates/codingmage-cli/tests/campaign_mission.rs::answers_are_refused_without_a_pending_decision",
-          "crates/codingmage-cli/tests/campaign_mission.rs::expired_mission_holds_a_real_campaign_and_hands_off_admission_is_refused"
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
         ],
         "positive": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
           "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
           "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
         ],
@@ -23805,6 +23860,43 @@
           "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
           "crates/codingmage-cli/tests/campaign_mission.rs::unknown_gate_requirement_is_rejected_without_running_any_tool_or_provider",
           "crates/codingmage-cli/tests/repair.rs::unknown_regression_gate_is_a_spec_refusal_and_ordinary_units_are_unchanged"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-cli/src/report_writer.rs:fn:write_validated:305",
+      "kind": "fn",
+      "line": 305,
+      "name": "write_validated",
+      "path": "crates/codingmage-cli/src/report_writer.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
+          "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::bind_mounted_repository_root_and_child_are_refused",
+          "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
+          "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
+          "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published",
+          "crates/codingmage-cli/src/report_writer.rs::substituted_stage_is_rejected_before_candidate_creation"
+        ],
+        "positive": [
+          "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
+          "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
+          "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs"
+        ],
+        "repeatability": [
+          "crates/codingmage-cli/src/lib.rs::version_usage_and_run_contract_are_stable",
+          "crates/codingmage-cli/tests/campaign_mission.rs::mission_admission_binds_the_exact_campaign_and_is_idempotent",
+          "crates/codingmage-cli/tests/campaign_mission.rs::revocation_is_authenticated_idempotent_and_final",
+          "crates/codingmage-cli/tests/workflow.rs::serial_campaign_reports_repeated_correction_timeout_distinctly"
         ]
       }
     },
@@ -80397,6 +80489,6 @@
       }
     }
   ],
-  "items_sha256": "f1aea0ae37667b89df270eaab3c60c11fc38bf59d4052312002c350240ed6f2f",
+  "items_sha256": "da8a90a6ce2838b34601183e793b3399cb84fccdf2a28a542e9e149ec88dc925",
   "schema_version": 1
 }

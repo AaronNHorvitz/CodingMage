@@ -1041,6 +1041,8 @@ pub enum CliError {
     NoReadyWork,
     /// A requested write would overwrite or broaden authority.
     Refused,
+    /// A concurrent change prevents proving the final published state.
+    UncertainWrite,
     /// The exact campaign head changed after the caller observed it.
     StaleObservation,
     /// Live orchestration is deliberately not enabled.
@@ -1063,6 +1065,7 @@ impl CliError {
             Self::Plan => "codingmage.cli.plan",
             Self::NoReadyWork => "codingmage.cli.no_ready_work",
             Self::Refused => "codingmage.cli.refused",
+            Self::UncertainWrite => "codingmage.cli.uncertain_write",
             Self::StaleObservation => "codingmage.cli.stale_observation",
             Self::ExecutionUnavailable => "codingmage.cli.execution_unavailable",
             Self::Runtime(error) => error.code(),
@@ -1081,6 +1084,7 @@ impl CliError {
             | Self::Repository
             | Self::Plan
             | Self::Refused
+            | Self::UncertainWrite
             | Self::StaleObservation
             | Self::Runtime(_)
             | Self::Internal => 1,

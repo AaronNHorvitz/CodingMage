@@ -2134,6 +2134,13 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
   - [x] **Sub-task 36.3.2.1:** Implement the design system tokens, light, dark and high-contrast themes and shared components with contrast measured and screenshot baselines at 100% and 200% scaling and the minimum window (CM-UI-011). `codingmage-ui::design::Tokens` styles shared egui widgets and the failure frame; Settings offers system/light/dark/high-contrast appearances, the native minimum is 1024×640, token text contrast is at least 5.88:1 and focus at least 6.62:1, and six inspected offscreen baselines are retained in `docs/evidence/sprint-36-appearance.md`. UI all-target tests 71/71 and strict workspace Clippy pass; the wider gate's two known sandbox process failures and the separate CM-R01.6 Python freshness failure remain open. This does not qualify desktop accessibility or performance.
     <!-- depends-on: 36.3.1.1 -->
   - [ ] **Sub-task 36.3.2.2:** Complete the section 5 state catalogue and the in-context depth on every screen, including "Show command" for every control, with no mode switch (CM-UI-008, CM-UI-009).
+    The private-stage admission correction at `a36dd18b0e6e5cf4d7b54c03d23c94abf6682350`
+    received a bounded independent exact-commit PASS with no open finding. It does not qualify
+    the still-open Setup command boundary. Decision 0062 hardens the public CLI report export
+    writer as a prerequisite for public Setup writes; see
+    `docs/evidence/sprint-36-cli-report-writer.md`. Exact-commit review of that CLI increment,
+    public Setup write commands, bounded off-render worker and complete Show-command coverage
+    remain open.
     Open increments: `campaign-head-plan`, `campaign-changes` and `campaign-run-records` now
     route campaign-head task states, candidate change summaries and bound run evidence through
     the coordinator. The coordinator start and four campaign controls now have exact in-context

@@ -364,7 +364,11 @@ pub fn explain_code(code: &str) -> (&'static str, &'static str) {
         ),
         "codingmage.cli.refused" => (
             "The coordinator refused to overwrite or broaden authority.",
-            "Choose a new configuration path or existing empty scratch and state roots.",
+            "Choose a new destination outside the repository or confirm overwrite of an existing regular file; for Setup, check the selected roots.",
+        ),
+        "codingmage.cli.uncertain_write" => (
+            "The report destination changed during publication.",
+            "Inspect the destination and retained .codingmage-cli-report-*.staging directory in its parent before retrying; keep the stage until the files are reconciled.",
         ),
         "codingmage.cli.stale_observation" => (
             "The campaign head changed while task states were requested.",
@@ -570,11 +574,15 @@ mod tests {
         for code in [
             "codingmage.cli.config",
             "codingmage.runtime.authority",
+            "codingmage.cli.uncertain_write",
             "codingmage.unknown.code",
         ] {
             let (what, action) = explain_code(code);
             assert!(!what.is_empty() && !action.is_empty());
         }
+        let (what, action) = explain_code("codingmage.cli.uncertain_write");
+        assert!(what.contains("changed during publication"));
+        assert!(action.contains("retained") && action.contains("before retrying"));
     }
 
     #[test]

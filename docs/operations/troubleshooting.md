@@ -25,7 +25,13 @@ identities, lifecycle, utilization, and content-free reasons without mutating th
 - `codingmage.cli.repository`: repository authorization or hardened inventory failed.
 - `codingmage.cli.plan`: task source failed strict parsing.
 - `codingmage.cli.no_ready_work`: no open dependency-ready sub-task exists.
-- `codingmage.cli.refused`: initialization would overwrite or broaden authority.
+- `codingmage.cli.refused`: the requested path would overwrite without consent, is linked or
+  inside the repository, or would broaden authority; choose a safe destination or resolve
+  the exact precondition.
+- `codingmage.cli.uncertain_write`: a concurrent destination change prevented proving the
+  final report. Inspect the requested leaf and any retained
+  `.codingmage-cli-report-*.staging` directory in its parent before retrying. Preserve that
+  directory until the accepted and displaced bytes are reconciled.
 - `codingmage.cli.execution_unavailable`: requested composition is unavailable under current
   authority.
 
