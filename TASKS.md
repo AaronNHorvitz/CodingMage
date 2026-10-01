@@ -2141,6 +2141,9 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     `docs/evidence/sprint-36-cli-report-writer.md`. Exact-commit review of that CLI increment,
     public Setup write commands, bounded off-render worker and complete Show-command coverage
     remain open.
+    The bounded review of `b8e8458` returned a high parent-move finding and a low
+    inventory-count finding. Decision 0063 and the corrected evidence record the
+    local fix; exact-commit re-review is required before treating either as resolved.
     Open increments: `campaign-head-plan`, `campaign-changes` and `campaign-run-records` now
     route campaign-head task states, candidate change summaries and bound run evidence through
     the coordinator. The coordinator start and four campaign controls now have exact in-context

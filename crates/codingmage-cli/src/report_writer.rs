@@ -44,6 +44,7 @@ impl Destination {
         let requested_parent = path.parent().ok_or(CliError::InvalidArgument)?;
         let leaf = path.file_name().ok_or(CliError::InvalidArgument)?;
         let resolved_parent = fs::canonicalize(requested_parent).map_err(|_| CliError::Refused)?;
+        check_stable_parent_chain(&resolved_parent)?;
         let resolved_repository = fs::canonicalize(repository).map_err(|_| CliError::Repository)?;
         let repository_directory = File::from(
             open(
@@ -115,11 +116,51 @@ impl Destination {
             return Err(CliError::Refused);
         }
         let current = fs::canonicalize(self.fd_path()).map_err(|_| CliError::Refused)?;
+        check_stable_parent_chain(&current)?;
         if current.starts_with(&self.repository) || current.starts_with(current_repository) {
             return Err(CliError::Refused);
         }
         Ok(())
     }
+}
+
+// Linux pathname publication is not atomic with a separate parent-name check.
+// Admit only a chain whose directory entries cannot be renamed by another
+// unprivileged UID. A sticky public parent protects an entry owned by this UID
+// (or root); every other parent must deny group and other writes. This is an
+// ownership boundary, not a defence against a hostile process with our UID.
+fn check_stable_parent_chain(path: &Path) -> Result<(), CliError> {
+    let uid = geteuid().as_raw();
+    let mut prefix = PathBuf::from("/");
+    let mut parent = fs::symlink_metadata(&prefix).map_err(|_| CliError::Refused)?;
+    if !trusted_directory(&parent, uid) {
+        return Err(CliError::Refused);
+    }
+    for component in path.components() {
+        match component {
+            Component::RootDir => continue,
+            Component::Normal(name) => prefix.push(name),
+            _ => return Err(CliError::Refused),
+        }
+        let child = fs::symlink_metadata(&prefix).map_err(|_| CliError::Refused)?;
+        if !trusted_directory(&child, uid)
+            || (parent.mode() & 0o022 != 0 && parent.mode() & 0o1000 == 0)
+        {
+            return Err(CliError::Refused);
+        }
+        parent = child;
+    }
+    // The final directory itself owns the public leaf and the private stage.
+    // Even a sticky directory permits another UID to rename a leaf it owns,
+    // so require exclusive mutation authority here.
+    if parent.mode() & 0o022 != 0 {
+        return Err(CliError::Refused);
+    }
+    Ok(())
+}
+
+fn trusted_directory(metadata: &fs::Metadata, uid: u32) -> bool {
+    metadata.is_dir() && (metadata.uid() == uid || metadata.uid() == 0)
 }
 
 fn mount_id(directory: &File) -> Result<u64, CliError> {
@@ -244,14 +285,14 @@ fn publish_overwrite<B, A>(
     old: &fs::Metadata,
     written: &fs::Metadata,
     retain_stage: &mut bool,
-    before_exchange: B,
+    before_publish_call: B,
     after_publication: A,
 ) -> Result<(), CliError>
 where
     B: FnOnce(),
     A: FnOnce(),
 {
-    before_exchange();
+    before_publish_call();
     destination.check()?;
     stage.exchange(destination)?;
     after_publication();
@@ -319,7 +360,7 @@ pub(super) fn write_validated(
             before_write: || {},
             before_publish: || {},
             before_stage_open: |_| {},
-            before_exchange: || {},
+            before_publish_call: || {},
             after_publication: || {},
         },
     )
@@ -344,7 +385,7 @@ fn write_with_hooks(
             before_write,
             before_publish,
             before_stage_open: |_| {},
-            before_exchange: || {},
+            before_publish_call: || {},
             after_publication: || {},
         },
     )
@@ -354,7 +395,7 @@ struct Hooks<W, P, S, B, A> {
     before_write: W,
     before_publish: P,
     before_stage_open: S,
-    before_exchange: B,
+    before_publish_call: B,
     after_publication: A,
 }
 
@@ -377,7 +418,7 @@ where
         before_write,
         before_publish,
         before_stage_open,
-        before_exchange,
+        before_publish_call,
         after_publication,
     } = hooks;
     let destination = Destination::open(path, repository)?;
@@ -432,10 +473,12 @@ where
                 old,
                 &written,
                 &mut retain_stage,
-                before_exchange,
+                before_publish_call,
                 after_publication,
             );
         }
+        before_publish_call();
+        destination.check()?;
         let source = PathBuf::from(format!("/proc/self/fd/{}", file.as_raw_fd()));
         linkat(&file, &source, &file, &leaf, AtFlags::AT_SYMLINK_FOLLOW)
             .map_err(|_| CliError::Refused)?;
@@ -658,6 +701,69 @@ mod tests {
     }
 
     #[test]
+    fn renameable_parent_chain_is_refused_before_candidate_creation() {
+        let root = root("renameable-chain");
+        let outside = root.join("outside");
+        fs::set_permissions(&root, fs::Permissions::from_mode(0o777)).unwrap();
+        let path = outside.join("report.json");
+        assert_eq!(
+            write(&path, &root.join("repo"), b"accepted", false),
+            Err(CliError::Refused)
+        );
+        assert_eq!(fs::read_dir(&outside).unwrap().count(), 0);
+        fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+        fs::set_permissions(&outside, fs::Permissions::from_mode(0o1777)).unwrap();
+        assert_eq!(
+            write(&path, &root.join("repo"), b"accepted", false),
+            Err(CliError::Refused)
+        );
+        assert_eq!(fs::read_dir(&outside).unwrap().count(), 0);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn parent_move_immediately_before_publication_call_is_refused() {
+        for overwrite in [false, true] {
+            let root = root(if overwrite {
+                "move-exchange"
+            } else {
+                "move-link"
+            });
+            let outside = root.join("outside");
+            let moved = root.join("moved-outside");
+            let path = outside.join("report.json");
+            if overwrite {
+                fs::write(&path, b"old").unwrap();
+            }
+            let result = write_with_injections(
+                &path,
+                &root.join("repo"),
+                b"accepted",
+                overwrite,
+                |_| Ok(()),
+                Hooks {
+                    before_write: || {},
+                    before_publish: || {},
+                    before_stage_open: |_| {},
+                    before_publish_call: || {
+                        fs::rename(&outside, &moved).unwrap();
+                        fs::create_dir(&outside).unwrap();
+                    },
+                    after_publication: || panic!("moved parent must not receive a report"),
+                },
+            );
+            assert_eq!(result, Err(CliError::Refused));
+            assert!(!path.exists());
+            if overwrite {
+                assert_eq!(fs::read(moved.join("report.json")).unwrap(), b"old");
+            } else {
+                assert!(!moved.join("report.json").exists());
+            }
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
     fn overwrite_replaces_only_a_regular_leaf() {
         let root = root("overwrite");
         let path = root.join("outside/report.json");
@@ -697,7 +803,7 @@ mod tests {
                     fs::create_dir(&stage).unwrap();
                     fs::set_permissions(&stage, fs::Permissions::from_mode(0o777)).unwrap();
                 },
-                before_exchange: || {},
+                before_publish_call: || {},
                 after_publication: || {},
             },
         );
@@ -735,7 +841,7 @@ mod tests {
                     fs::write(stage.join("candidate"), b"rejected").unwrap();
                 },
                 before_stage_open: |_| {},
-                before_exchange: || {},
+                before_publish_call: || {},
                 after_publication: || {},
             },
         );
@@ -775,7 +881,7 @@ mod tests {
                 before_write: || {},
                 before_publish: || {},
                 before_stage_open: |_| {},
-                before_exchange: || {
+                before_publish_call: || {
                     fs::rename(&path, &moved).unwrap();
                     fs::write(&path, b"concurrent").unwrap();
                 },
@@ -805,7 +911,7 @@ mod tests {
                 before_write: || {},
                 before_publish: || {},
                 before_stage_open: |_| {},
-                before_exchange: || {},
+                before_publish_call: || {},
                 after_publication: || {
                     fs::rename(&path, &moved).unwrap();
                     fs::write(&path, b"later").unwrap();
@@ -840,7 +946,7 @@ mod tests {
                 before_write: || {},
                 before_publish: || {},
                 before_stage_open: |_| {},
-                before_exchange: || {},
+                before_publish_call: || {},
                 after_publication: || {
                     fs::rename(&path, &moved).unwrap();
                     fs::write(&path, b"later").unwrap();

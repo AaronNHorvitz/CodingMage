@@ -1,6 +1,6 @@
 # ADR 0062: Guard CLI Report Publication Through a Private Stage
 
-- **Status:** Accepted for local implementation; independent review pending
+- **Status:** Accepted for local implementation; independent review returned findings; parent-chain correction under Decision 0063 pending re-review
 - **Date:** 2026-10-01
 - **Decision owners:** CodingMage implementation
 

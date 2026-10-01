@@ -38,14 +38,16 @@ predicate test passed in an interim 10/10 run. The later publication and
 validator tests prompted a final-source rerun. The preliminary real CLI
 campaign export integration passed 1/1 before those later source edits.
 The results below distinguish preliminary from final-source checks.
-Independent review remains pending until the exact committed SHA exists.
+Independent review was pending at that pre-commit checkpoint.
 
 The verification-inventory generator and its version-one artifact contract
 were inspected before regeneration; neither changed. The regenerated
 inventory has 1,773 items and 825 explicit gaps. Relative to the parent,
 the new entries are the crate-visible staged validator and the stable
-uncertainty code. Normalized existing applicability is unchanged; 18
-heuristic test suggestions in the top eight move and four line-derived IDs change.
+uncertainty code. Normalized existing applicability is unchanged; comparing the
+committed inventories by exact item IDs shows 28 changed heuristic
+`test_mappings` category lists across 14 existing items, and four line-derived
+IDs change.
 There is no normalized gap change. Those suggestions do not prove behavioral
 coverage or renew a source-bound evidence receipt.
 
@@ -78,6 +80,44 @@ suite ran 43 tests: 42 passed and one failed. The sole failure is the
 unchanged CM-R01.6 eight-input source-bound multi-agent evidence freshness
 check; the original receipt remains retained and no digest or binding was
 renewed. This slice does not claim to close that qualified-human review.
-Independent review of the CLI writer requires the exact committed SHA and
-remains pending. Installed desktop, real assistive tool, live-provider,
+Independent review of the CLI writer required the exact committed SHA and was
+pending at that checkpoint. Installed desktop, real assistive tool, live-provider,
 qualified-human and release gates remain open.
+
+## Independent review and parent-chain correction
+
+The read-only exact-commit review at
+`b8e8458416c3ec426f94624306a6f8d479e3e5d6` returned **FINDINGS**.
+Its high finding showed that the final requested-parent name check did not
+prevent publication through a held directory that another principal moved
+immediately before `linkat`; the same interval existed for overwrite exchange.
+The reviewer retained a contained adversarial probe in private review state.
+Its low finding identified the incorrect heuristic-mapping count above. The
+review report remains unedited; neither finding is treated as a gate approval.
+
+[Decision 0063](../decisions/0063-admit-stable-cli-report-parent-chain.md)
+adds a deny-first owner/sticky/permission walk of the canonical parent chain
+before a candidate is created and at the final checks. A different unprivileged
+UID cannot rename an admitted parent or its ancestors during publication. A
+directly shared writable destination parent is refused even when sticky.
+Same-UID and privileged mutation are outside that ownership boundary, as the
+decision records. The publication hook now runs immediately before either
+syscall, followed by a name check. Tests cover unprotected ancestor and final
+parent refusal before candidate creation, plus parent moves at both
+publication hooks with no accepted bytes written to the moved directory.
+Independent re-review of the corrected commit remains open until an exact SHA
+and report exist.
+
+On the corrected source, the focused CLI writer suite passed 14/14, including
+both parent-move paths, and the disposable real-process campaign report-export
+workflow passed 1/1. Strict workspace Clippy with warnings denied passed.
+Formatting, documentation, architecture, regenerated no-write inventory and
+diff-whitespace checks passed. The inventory still has 1,773 items and 825
+explicit gaps; this correction introduces no new normalized public surface or
+gap. The first formatting check identified three test-layout changes and was
+corrected with `cargo fmt`; no behavioral test failed. The full Python suite
+ran 43 tests: 42 passed and only the unchanged CM-R01.6 eight-input
+source-bound freshness check failed. No package, digest or binding was renewed.
+All heavy checks used the shared build slot with one Cargo job and one Rust
+test thread. These checks are local evidence, not an independent verdict or
+human, live-provider, installed-desktop or release qualification.
