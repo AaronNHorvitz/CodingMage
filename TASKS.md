@@ -2152,8 +2152,11 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     digest receipt and an in-context Show-command. The independent exact-commit
     review of `99017d8b1fb6408659c6be2210da6656229ef2da` returned PASS with
     a Medium finding: editable pending fields could make the preview differ
-    from the queued command. The correction and its re-review remain open;
-    other public Setup writes and complete Show-command coverage remain open.
+    from the queued command. The correction at
+    `0362c3f012e4319dc19050dc9de89909a50657c3` received bounded independent
+    re-review PASS without findings. The next public `setup-write-campaign`
+    command is a local implementation increment under Decision 0067; native
+    worker routing and complete Show-command coverage remain open.
     The bounded review of `b8e8458` returned a high parent-move finding and a low
     inventory-count finding. Decision 0063 and the corrected evidence record the
     local fix; the bounded re-review of `106ab0f4889943b403cdcdc98db1227b466ba4b0`

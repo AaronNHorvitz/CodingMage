@@ -49,7 +49,10 @@ that vector until the request resolves or is cancelled, and disables the
 record path, text and overwrite widgets during that interval. A display-less
 regression changes all three values after submission and checks the displayed
 command and actual destination against the submitted values. The correction
-requires its own exact-commit re-review.
+received a bounded independent exact-commit re-review PASS without findings
+at `0362c3f012e4319dc19050dc9de89909a50657c3`. This review covers that
+correction only; it does not qualify remaining Setup writes or human and live
+gates.
 
 ## Verification
 

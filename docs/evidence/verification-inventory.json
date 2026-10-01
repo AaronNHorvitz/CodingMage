@@ -4144,7 +4144,7 @@
       ],
       "id": "error:codingmage.campaign.authority",
       "kind": "error_code",
-      "line": 918,
+      "line": 937,
       "name": "codingmage.campaign.authority",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -4185,7 +4185,7 @@
       ],
       "id": "error:codingmage.campaign.capacity",
       "kind": "error_code",
-      "line": 922,
+      "line": 941,
       "name": "codingmage.campaign.capacity",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -4226,7 +4226,7 @@
       ],
       "id": "error:codingmage.campaign.conflict",
       "kind": "error_code",
-      "line": 921,
+      "line": 940,
       "name": "codingmage.campaign.conflict",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5167,7 +5167,7 @@
       ],
       "id": "error:codingmage.campaign.proposal",
       "kind": "error_code",
-      "line": 919,
+      "line": 938,
       "name": "codingmage.campaign.proposal",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5433,7 +5433,7 @@
       ],
       "id": "error:codingmage.campaign.serialization",
       "kind": "error_code",
-      "line": 924,
+      "line": 943,
       "name": "codingmage.campaign.serialization",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5474,7 +5474,7 @@
       ],
       "id": "error:codingmage.campaign.spec",
       "kind": "error_code",
-      "line": 917,
+      "line": 936,
       "name": "codingmage.campaign.spec",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5515,7 +5515,7 @@
       ],
       "id": "error:codingmage.campaign.stale_proposal",
       "kind": "error_code",
-      "line": 920,
+      "line": 939,
       "name": "codingmage.campaign.stale_proposal",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -6726,7 +6726,7 @@
       ],
       "id": "error:codingmage.campaign.unknown_lease",
       "kind": "error_code",
-      "line": 923,
+      "line": 942,
       "name": "codingmage.campaign.unknown_lease",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -6789,7 +6789,7 @@
       ],
       "id": "error:codingmage.cli.config",
       "kind": "error_code",
-      "line": 1071,
+      "line": 1076,
       "name": "codingmage.cli.config",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -6828,7 +6828,7 @@
       ],
       "id": "error:codingmage.cli.execution_unavailable",
       "kind": "error_code",
-      "line": 1078,
+      "line": 1083,
       "name": "codingmage.cli.execution_unavailable",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -6867,7 +6867,7 @@
       ],
       "id": "error:codingmage.cli.internal",
       "kind": "error_code",
-      "line": 1080,
+      "line": 1085,
       "name": "codingmage.cli.internal",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -6906,7 +6906,7 @@
       ],
       "id": "error:codingmage.cli.invalid_argument",
       "kind": "error_code",
-      "line": 1070,
+      "line": 1075,
       "name": "codingmage.cli.invalid_argument",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -6945,7 +6945,7 @@
       ],
       "id": "error:codingmage.cli.no_ready_work",
       "kind": "error_code",
-      "line": 1074,
+      "line": 1079,
       "name": "codingmage.cli.no_ready_work",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -6984,7 +6984,7 @@
       ],
       "id": "error:codingmage.cli.plan",
       "kind": "error_code",
-      "line": 1073,
+      "line": 1078,
       "name": "codingmage.cli.plan",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -7023,7 +7023,7 @@
       ],
       "id": "error:codingmage.cli.refused",
       "kind": "error_code",
-      "line": 1075,
+      "line": 1080,
       "name": "codingmage.cli.refused",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -7062,7 +7062,7 @@
       ],
       "id": "error:codingmage.cli.repository",
       "kind": "error_code",
-      "line": 1072,
+      "line": 1077,
       "name": "codingmage.cli.repository",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -7101,7 +7101,7 @@
       ],
       "id": "error:codingmage.cli.stale_observation",
       "kind": "error_code",
-      "line": 1077,
+      "line": 1082,
       "name": "codingmage.cli.stale_observation",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -7140,7 +7140,7 @@
       ],
       "id": "error:codingmage.cli.uncertain_write",
       "kind": "error_code",
-      "line": 1076,
+      "line": 1081,
       "name": "codingmage.cli.uncertain_write",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -7179,7 +7179,7 @@
       ],
       "id": "error:codingmage.cli.usage",
       "kind": "error_code",
-      "line": 1069,
+      "line": 1074,
       "name": "codingmage.cli.usage",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "stable_error_code",
@@ -16170,9 +16170,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignAuthentication:103",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignAuthentication:104",
       "kind": "enum",
-      "line": 103,
+      "line": 104,
       "name": "CampaignAuthentication",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16218,9 +16218,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignError:895",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignError:914",
       "kind": "enum",
-      "line": 895,
+      "line": 914,
       "name": "CampaignError",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16271,9 +16271,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignPublication:123",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignPublication:124",
       "kind": "enum",
-      "line": 123,
+      "line": 124,
       "name": "CampaignPublication",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16321,9 +16321,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:ReviewStrength:65",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:ReviewStrength:66",
       "kind": "enum",
-      "line": 65,
+      "line": 66,
       "name": "ReviewStrength",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16378,9 +16378,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:TeamLeadOutcome:389",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:TeamLeadOutcome:408",
       "kind": "enum",
-      "line": 389,
+      "line": 408,
       "name": "TeamLeadOutcome",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16419,9 +16419,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:active:691",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:active:710",
       "kind": "fn",
-      "line": 691,
+      "line": 710,
       "name": "active",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16461,9 +16461,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:admit:628",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:admit:647",
       "kind": "fn",
-      "line": 628,
+      "line": 647,
       "name": "admit",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16515,9 +16515,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:authority_sha256:362",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:authority_sha256:381",
       "kind": "fn",
-      "line": 362,
+      "line": 381,
       "name": "authority_sha256",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16573,9 +16573,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:load:247",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:load:248",
       "kind": "fn",
-      "line": 247,
+      "line": 248,
       "name": "load",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16624,9 +16624,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:new:614",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:new:633",
       "kind": "fn",
-      "line": 614,
+      "line": 633,
       "name": "new",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16663,11 +16663,71 @@
       "applicable_categories": [
         "positive",
         "negative",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:permits:83",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:parse_bytes:273",
       "kind": "fn",
-      "line": 83,
+      "line": 273,
+      "name": "parse_bytes",
+      "path": "crates/codingmage-campaign/src/lib.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::closed_dispositions_are_exclusive_typed_and_snapshot_bound",
+          "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
+          "crates/codingmage-campaign/src/lib.rs::team_lead_human_decision_is_exclusive_and_bounded",
+          "crates/codingmage-campaign/src/lib.rs::team_lead_output_is_only_untrusted_bounded_input",
+          "crates/codingmage-campaign/src/mission.rs::charter_load_requires_absolute_regular_bounded_file",
+          "crates/codingmage-campaign/src/team.rs::five_resource_reservations_enforce_actor_physical_and_exclusive_limits",
+          "crates/codingmage-campaign/src/team.rs::follow_up_authority_is_bounded_replay_safe_recoverable_and_schedulable"
+        ],
+        "malformed_input": [
+          "crates/codingmage-campaign/src/mission.rs::stale_charter_epoch_and_malformed_proposal_are_errors_not_outcomes"
+        ],
+        "negative": [
+          "crates/codingmage-campaign/src/lib.rs::campaign_authority_rejects_overlap_escape_and_denied_roots",
+          "crates/codingmage-campaign/src/lib.rs::campaign_limit_boundaries_fail_closed",
+          "crates/codingmage-campaign/src/lib.rs::campaign_state_directory_identity_refuses_dot_components",
+          "crates/codingmage-campaign/src/lib.rs::every_campaign_authority_field_is_digest_bound_or_rejected",
+          "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
+          "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
+          "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+        ],
+        "positive": [
+          "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
+          "crates/codingmage-campaign/src/lib.rs::valid_lead_proposal_sealing_is_repeatable",
+          "crates/codingmage-campaign/src/mission.rs::undelegated_choice_asks_owner_only_when_the_mode_allows_it",
+          "crates/codingmage-campaign/src/mission.rs::verified_charter_has_stable_digest_and_round_trips_through_toml",
+          "crates/codingmage-campaign/src/team.rs::complete_task_mapping_binds_one_lease_and_rejects_duplicate_remote_identity",
+          "crates/codingmage-campaign/src/team.rs::integration_validation_interval_defaults_to_batched_checkpoints",
+          "crates/codingmage-campaign/src/team.rs::scheduler_admits_five_independent_tasks_and_survives_round_trip"
+        ],
+        "repeatability": [
+          "crates/codingmage-campaign/src/lib.rs::valid_lead_proposal_sealing_is_repeatable",
+          "crates/codingmage-campaign/src/mission.rs::verified_charter_has_stable_digest_and_round_trips_through_toml",
+          "crates/codingmage-campaign/src/team.rs::integration_queue_is_canonical_serial_and_head_bound",
+          "crates/codingmage-campaign/src/team.rs::remote_mapping_and_ci_lifecycle_are_exact_idempotent_and_commit_bound",
+          "crates/codingmage-campaign/src/team.rs::scheduler_admits_five_independent_tasks_and_survives_round_trip"
+        ],
+        "unknown_field": [
+          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:permits:84",
+      "kind": "fn",
+      "line": 84,
       "name": "permits",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16706,9 +16766,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:provider_profile_sha256:93",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:provider_profile_sha256:94",
       "kind": "fn",
-      "line": 93,
+      "line": 94,
       "name": "provider_profile_sha256",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16750,9 +16810,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:regression_gate_for:369",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:regression_gate_for:388",
       "kind": "fn",
-      "line": 369,
+      "line": 388,
       "name": "regression_gate_for",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16807,9 +16867,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:release:683",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:release:702",
       "kind": "fn",
-      "line": 683,
+      "line": 702,
       "name": "release",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16849,9 +16909,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:seal:561",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:seal:580",
       "kind": "fn",
-      "line": 561,
+      "line": 580,
       "name": "seal",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16900,9 +16960,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:valid_provider:845",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:valid_provider:864",
       "kind": "fn",
-      "line": 845,
+      "line": 864,
       "name": "valid_provider",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16943,9 +17003,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:validate_team_lead_report:405",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:validate_team_lead_report:424",
       "kind": "fn",
-      "line": 405,
+      "line": 424,
       "name": "validate_team_lead_report",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16990,9 +17050,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:verify:269",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:verify:288",
       "kind": "fn",
-      "line": 269,
+      "line": 288,
       "name": "verify",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17031,9 +17091,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:verify:574",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:verify:593",
       "kind": "fn",
-      "line": 574,
+      "line": 593,
       "name": "verify",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17074,9 +17134,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignGateTier:113",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignGateTier:114",
       "kind": "struct",
-      "line": 113,
+      "line": 114,
       "name": "CampaignGateTier",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17124,9 +17184,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignLimits:147",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignLimits:148",
       "kind": "struct",
-      "line": 147,
+      "line": 148,
       "name": "CampaignLimits",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17183,9 +17243,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignProvider:53",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignProvider:54",
       "kind": "struct",
-      "line": 53,
+      "line": 54,
       "name": "CampaignProvider",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17232,9 +17292,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignSpec:190",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignSpec:191",
       "kind": "struct",
-      "line": 190,
+      "line": 191,
       "name": "CampaignSpec",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17282,9 +17342,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignTaskPathAuthority:133",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignTaskPathAuthority:134",
       "kind": "struct",
-      "line": 133,
+      "line": 134,
       "name": "CampaignTaskPathAuthority",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17339,9 +17399,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodLease:587",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodLease:606",
       "kind": "struct",
-      "line": 587,
+      "line": 606,
       "name": "PodLease",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17383,9 +17443,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodProposal:530",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodProposal:549",
       "kind": "struct",
-      "line": 530,
+      "line": 549,
       "name": "PodProposal",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17441,9 +17501,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodScheduler:602",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodScheduler:621",
       "kind": "struct",
-      "line": 602,
+      "line": 621,
       "name": "PodScheduler",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -23500,16 +23560,17 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/lib.rs:enum:CliError:1037",
+      "id": "rust:crates/codingmage-cli/src/lib.rs:enum:CliError:1042",
       "kind": "enum",
-      "line": 1037,
+      "line": 1042,
       "name": "CliError",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
-          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish"
+          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
+          "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish"
         ],
         "negative": [
           "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
@@ -23550,16 +23611,17 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/lib.rs:fn:code:1067",
+      "id": "rust:crates/codingmage-cli/src/lib.rs:fn:code:1072",
       "kind": "fn",
-      "line": 1067,
+      "line": 1072,
       "name": "code",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
-          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish"
+          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
+          "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish"
         ],
         "negative": [
           "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
@@ -23600,16 +23662,17 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/lib.rs:fn:exit_code:1086",
+      "id": "rust:crates/codingmage-cli/src/lib.rs:fn:exit_code:1091",
       "kind": "fn",
-      "line": 1086,
+      "line": 1091,
       "name": "exit_code",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
-          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish"
+          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
+          "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish"
         ],
         "negative": [
           "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
@@ -23649,9 +23712,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/lib.rs:fn:run:160",
+      "id": "rust:crates/codingmage-cli/src/lib.rs:fn:run:164",
       "kind": "fn",
-      "line": 160,
+      "line": 164,
       "name": "run",
       "path": "crates/codingmage-cli/src/lib.rs",
       "surface": "rust_public_api",
@@ -23662,6 +23725,7 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
+          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable",
           "crates/codingmage-cli/tests/workflow.rs::campaign_cancel_terminates_owned_provider_without_signalling_unrelated_process",
           "crates/codingmage-cli/tests/workflow.rs::serial_campaign_pauses_cleanly_when_aggregate_correction_limit_is_reached"
         ],
@@ -23713,12 +23777,14 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
+          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable",
           "crates/codingmage-cli/tests/workflow.rs::campaign_cancel_terminates_owned_provider_without_signalling_unrelated_process",
           "crates/codingmage-cli/tests/workflow.rs::serial_campaign_pauses_cleanly_when_aggregate_correction_limit_is_reached"
         ],
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
-          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish"
+          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
+          "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish"
         ],
         "negative": [
           "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
@@ -23773,12 +23839,14 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
+          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable",
           "crates/codingmage-cli/tests/workflow.rs::campaign_cancel_terminates_owned_provider_without_signalling_unrelated_process",
           "crates/codingmage-cli/tests/workflow.rs::serial_campaign_pauses_cleanly_when_aggregate_correction_limit_is_reached"
         ],
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
-          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish"
+          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
+          "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish"
         ],
         "negative": [
           "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
@@ -23828,7 +23896,8 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
-          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish"
+          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
+          "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish"
         ],
         "negative": [
           "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
@@ -23878,7 +23947,8 @@
       "test_mappings": {
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
-          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish"
+          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
+          "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish"
         ],
         "negative": [
           "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
@@ -23998,9 +24068,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:authorization:14",
+      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:authorization:18",
       "kind": "fn",
-      "line": 14,
+      "line": 18,
       "name": "authorization",
       "path": "crates/codingmage-cli/src/setup_writer.rs",
       "surface": "rust_public_api",
@@ -24011,12 +24081,65 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
+          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable",
           "crates/codingmage-cli/tests/workflow.rs::campaign_cancel_terminates_owned_provider_without_signalling_unrelated_process",
           "crates/codingmage-cli/tests/workflow.rs::serial_campaign_pauses_cleanly_when_aggregate_correction_limit_is_reached"
         ],
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
+          "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish"
+        ],
+        "negative": [
+          "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
+          "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::bind_mounted_repository_root_and_child_are_refused",
+          "crates/codingmage-cli/src/report_writer.rs::changed_parent_and_competing_leaf_are_refused",
+          "crates/codingmage-cli/src/report_writer.rs::linked_parent_into_repository_is_refused",
+          "crates/codingmage-cli/src/report_writer.rs::moved_open_parent_is_refused_before_publication",
+          "crates/codingmage-cli/src/report_writer.rs::parent_move_immediately_before_publication_call_is_refused",
+          "crates/codingmage-cli/src/report_writer.rs::rejected_candidate_is_not_published"
+        ],
+        "positive": [
+          "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/src/report_writer.rs::changed_head_at_publication_never_reports_success",
+          "crates/codingmage-cli/src/report_writer.rs::replaced_validated_candidate_never_reaches_the_public_leaf",
+          "crates/codingmage-cli/tests/campaign_repair.rs::a_base_that_already_passes_retains_a_typed_blocker_and_independent_work_continues",
+          "crates/codingmage-cli/tests/repair.rs::a_gate_that_already_passes_refuses_the_unit_before_any_provider_runs",
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish"
+        ],
+        "repeatability": [
+          "crates/codingmage-cli/src/lib.rs::version_usage_and_run_contract_are_stable",
+          "crates/codingmage-cli/tests/campaign_mission.rs::mission_admission_binds_the_exact_campaign_and_is_idempotent",
+          "crates/codingmage-cli/tests/campaign_mission.rs::revocation_is_authenticated_idempotent_and_final",
+          "crates/codingmage-cli/tests/workflow.rs::serial_campaign_reports_repeated_correction_timeout_distinctly"
+        ],
+        "unknown_field": [
+          "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
+          "crates/codingmage-cli/tests/campaign_mission.rs::unknown_gate_requirement_is_rejected_without_running_any_tool_or_provider",
+          "crates/codingmage-cli/tests/repair.rs::unknown_regression_gate_is_a_spec_refusal_and_ordinary_units_are_unchanged"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:campaign:69",
+      "kind": "fn",
+      "line": 69,
+      "name": "campaign",
+      "path": "crates/codingmage-cli/src/setup_writer.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "malformed_input": [
+          "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
+          "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
+          "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish"
         ],
         "negative": [
           "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
@@ -80968,6 +81091,6 @@
       }
     }
   ],
-  "items_sha256": "b9eb7d625e84df6431c1cf63d1e408eb15befdeb0ec72d9d72b9d9805cbac732",
+  "items_sha256": "4df1a37912fe6f687bd91c9ceaefb4cfac4482272f964ff6249dbfa146cb58b1",
   "schema_version": 1
 }

@@ -149,4 +149,47 @@ Clippy with warnings denied, Cargo formatting, documentation, architecture,
 no-write inventory and diff whitespace pass. The Python suite passes 43/44;
 its sole failure is the unchanged CM-R01.6 eight-input source-bound freshness
 hold. No package, input digest or binding was renewed. Exact-commit
-independent re-review is pending; Task 36.3.2.2 remains open.
+independent re-review of `0362c3f012e4319dc19050dc9de89909a50657c3`
+returned PASS without findings. Task 36.3.2.2 remains open.
+
+## Public campaign Setup command increment
+
+Decision 0067 adds `setup-write-campaign` to the coordinator CLI. It accepts
+candidate TOML only on bounded private stdin and validates it with the same
+strict parser as `CampaignSpec::load`. The public arguments bind the exact
+configuration, repository ID, clean Git HEAD, committed task-source digest,
+external authorization record, destination and overwrite choice. The command
+compares all authority-bearing fields to fresh observations and checks the
+configuration, record and repository/source again at the guarded publication
+boundary. It refuses to replace the configuration or authorization record
+as the campaign destination and refuses to treat the configuration as that
+record. Its receipt contains only repository/campaign
+identity, HEAD, byte count and candidate digest; it does not admit or start a
+campaign.
+
+The campaign parser focused test passes 1/1 for exact-byte parity, malformed,
+unknown-field and oversized input. The disposable real-process CLI target
+passes 3/3: exact-byte publication and replacement, stale/cross-project
+bindings, malformed and oversized input, protected destinations, dirty task
+source and changed committed head. The first focused CLI test compilation
+failed because the pinned SHA-2 type does not implement `LowerHex`; the test
+hex helper was corrected and the failed compile remains in private tool output.
+This CLI-only increment leaves the native campaign form's direct write and
+its Show-command preview open. Independent review has not evaluated this
+increment. Human, installed-desktop, live-provider and release gates stay
+open; the CM-R01.6 freshness binding is not renewed.
+
+On the final source, parser 1/1, public CLI help 1/1 and the real-process
+campaign Setup target 3/3 pass. Strict workspace Clippy with warnings denied,
+Cargo formatting, documentation, architecture, no-write inventory and staged
+whitespace checks pass. A broader CLI/campaign all-target run passed 111 tests
+with zero failures and two explicitly ignored sustained qualification tests;
+small parser and test changes made after it launched mean this is preliminary
+regression evidence, not exact-final-source all-target evidence. The Python
+suite ran 44 tests: 43 passed and only the unchanged CM-R01.6 eight-input
+source-bound freshness test failed. No package, receipt or digest was renewed.
+The source/schema-reviewed inventory is 1,783 public items and 825 explicit
+gaps. Two normalized public surfaces were added, none removed; no existing
+applicability or normalized gap changed, and nine existing heuristic test
+mappings shifted. A mapping is not proof of coverage. Independent exact-commit
+review of this new CLI command remains pending.

@@ -23,6 +23,7 @@ pub use team::{
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt, fs,
+    io::Read as _,
     path::{Path, PathBuf},
 };
 
@@ -255,8 +256,26 @@ impl CampaignSpec {
         {
             return Err(CampaignError::InvalidSpec);
         }
-        let source = fs::read_to_string(path).map_err(|_| CampaignError::InvalidSpec)?;
-        let spec: Self = toml::from_str(&source).map_err(|_| CampaignError::InvalidSpec)?;
+        let mut source = Vec::new();
+        fs::File::open(path)
+            .map_err(|_| CampaignError::InvalidSpec)?
+            .take(MAX_SPEC_BYTES + 1)
+            .read_to_end(&mut source)
+            .map_err(|_| CampaignError::InvalidSpec)?;
+        Self::parse_bytes(&source)
+    }
+
+    /// Parses exact, bounded campaign authority bytes with the same rules as [`Self::load`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CampaignError`] for oversized, malformed, or unsafe authority.
+    pub fn parse_bytes(source: &[u8]) -> Result<Self, CampaignError> {
+        if source.is_empty() || source.len() as u64 > MAX_SPEC_BYTES {
+            return Err(CampaignError::InvalidSpec);
+        }
+        let text = std::str::from_utf8(source).map_err(|_| CampaignError::InvalidSpec)?;
+        let spec: Self = toml::from_str(text).map_err(|_| CampaignError::InvalidSpec)?;
         spec.verify()?;
         Ok(spec)
     }
@@ -932,6 +951,39 @@ impl std::error::Error for CampaignError {}
 mod tests {
     use super::*;
     use codingmage_plan::TaskPlan;
+
+    #[test]
+    fn exact_campaign_bytes_share_the_file_loader_contract() {
+        let candidate = spec(1);
+        let source = toml::to_string_pretty(&candidate).unwrap();
+        assert_eq!(CampaignSpec::parse_bytes(source.as_bytes()), Ok(candidate));
+        let path = std::env::temp_dir().join(format!(
+            "codingmage-campaign-parse-{}-{}.toml",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::write(&path, source.as_bytes()).unwrap();
+        assert_eq!(
+            CampaignSpec::load(&path),
+            CampaignSpec::parse_bytes(source.as_bytes())
+        );
+        fs::remove_file(&path).unwrap();
+        for invalid in [
+            Vec::new(),
+            b"\xff".to_vec(),
+            b"version = 3\nunknown = true\n".to_vec(),
+            format!("{source}\nunknown_campaign_field = true\n").into_bytes(),
+            vec![b'x'; usize::try_from(MAX_SPEC_BYTES).unwrap() + 1],
+        ] {
+            assert_eq!(
+                CampaignSpec::parse_bytes(&invalid),
+                Err(CampaignError::InvalidSpec)
+            );
+        }
+    }
 
     #[test]
     fn campaign_state_directory_identity_refuses_dot_components() {
