@@ -27,6 +27,7 @@ const AUTHORIZATION_DEADLINE: Duration = Duration::from_mins(1);
 #[derive(Clone, Debug)]
 struct PendingAuthorization {
     request_id: String,
+    arguments: Vec<String>,
     path: PathBuf,
     bytes: usize,
     sha256: String,
@@ -251,6 +252,7 @@ impl App {
         let request_id = format!("setup-authorization-{}", self.next_evidence_request);
         let pending = PendingAuthorization {
             request_id: request_id.clone(),
+            arguments: arguments.clone(),
             path,
             bytes: self.setup.authorization_text.len(),
             sha256: hex(&Sha256::digest(self.setup.authorization_text.as_bytes())),
@@ -301,6 +303,14 @@ impl App {
             "--overwrite".to_owned(),
             self.setup.authorization_overwrite.to_string(),
         ])
+    }
+
+    fn authorization_preview_arguments(&self) -> Option<Vec<String>> {
+        self.setup
+            .pending_authorization
+            .as_ref()
+            .map(|pending| pending.arguments.clone())
+            .or_else(|| self.authorization_arguments())
     }
 
     pub(super) fn accept_authorization_write(&mut self, response: Response) -> bool {
@@ -491,16 +501,22 @@ impl App {
             return;
         }
         ui.label("Type the owner's authorization in your own words. The exact bytes are written to a file outside the repository and their digest is bound into the campaign authority. The interface never invents this record.");
+        let pending = self.setup.pending_authorization.is_some();
+        if pending {
+            ui.small("A write is pending. The fields are locked until its result is known; Show command displays the submitted command.");
+        }
         ui.horizontal(|ui| {
             let label = ui.label("Record file");
-            ui.add(
+            ui.add_enabled(
+                !pending,
                 egui::TextEdit::singleline(&mut self.setup.authorization_path)
                     .hint_text("/absolute/path/operator-authorization.txt")
                     .desired_width(super::current_tokens(ui.ctx()).layout.field_long),
             )
             .labelled_by(label.id);
         });
-        ui.add(
+        ui.add_enabled(
+            !pending,
             egui::TextEdit::multiline(&mut self.setup.authorization_text)
                 .hint_text(
                     "I authorize campaign ... on repository ... with local-only publication.",
@@ -509,9 +525,12 @@ impl App {
                 .desired_width(super::current_tokens(ui.ctx()).layout.field_wide),
         );
         ui.horizontal(|ui| {
-            ui.checkbox(
-                &mut self.setup.authorization_overwrite,
-                "Replace an existing record",
+            ui.add_enabled(
+                !pending,
+                egui::Checkbox::new(
+                    &mut self.setup.authorization_overwrite,
+                    "Replace an existing record",
+                ),
             );
             let arguments = self.authorization_arguments();
             let can_run = self.setup.pending_authorization.is_none()
@@ -523,7 +542,7 @@ impl App {
                 self.apply_authorization_record();
             }
         });
-        if let Some(arguments) = self.authorization_arguments() {
+        if let Some(arguments) = self.authorization_preview_arguments() {
             command::show_for(
                 ui,
                 "write authorization record",
@@ -834,6 +853,7 @@ mod tests {
     fn authorization_receipt_requires_exact_identity_bytes_digest_and_schema() {
         let pending = PendingAuthorization {
             request_id: "request-1".to_owned(),
+            arguments: vec!["setup-write-authorization".to_owned()],
             path: PathBuf::from("/synthetic/authorization.txt"),
             bytes: 4,
             sha256: "synthetic-digest".to_owned(),

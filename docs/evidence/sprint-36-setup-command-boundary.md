@@ -122,3 +122,31 @@ explanation. Both failed attempts were corrected before the final-source
 checks and remain in private session output. These local results are not an
 independent review. Separate human, installed-desktop and live-provider
 qualification remains open.
+
+## Native pending-command review correction
+
+The independent bounded review of the native worker commit
+`99017d8b1fb6408659c6be2210da6656229ef2da` returned PASS with one Medium
+finding. A pending write kept the submitted CLI arguments in the worker, but
+Show command recomputed them from editable form fields. Editing the path or
+overwrite choice while pending could show a different command from the one
+already queued. The private review report is retained; its PASS is
+scoped to that exact source and does not approve the correction.
+
+The correction stores a copy of the submitted public argument vector in the
+pending request, displays it until that request resolves or is cancelled, and
+disables path, text and overwrite edits while pending. The display-less
+regression deliberately mutates all three fields despite the disabled widgets,
+checks the displayed command against the queued vector and confirms that only
+the originally requested destination receives the original bytes. The focused
+regression passes 1/1, the complete Setup target passes 5/5, and the native UI
+all-target suite passes 176/176 across 14 targets. The first strict Clippy
+attempt found an owned test fixture missing the new pending argument field;
+it was corrected before the all-target run. The regenerated verification
+inventory remains at 1,781 items and 825 explicit gaps, with no changed
+normalized surface, applicability, test mapping or gap. Strict workspace
+Clippy with warnings denied, Cargo formatting, documentation, architecture,
+no-write inventory and diff whitespace pass. The Python suite passes 43/44;
+its sole failure is the unchanged CM-R01.6 eight-input source-bound freshness
+hold. No package, input digest or binding was renewed. Exact-commit
+independent re-review is pending; Task 36.3.2.2 remains open.

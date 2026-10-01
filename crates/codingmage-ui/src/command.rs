@@ -88,7 +88,7 @@ fn show_with_label(ui: &mut Ui, label: &str, binary: Option<&Path>, arguments: &
         match binary.and_then(|path| format_command(path, arguments)) {
             Some(command) => {
                 ui.monospace(command);
-                ui.small("This is the command the app sends when you choose the action. Showing it does not run it.");
+                ui.small("This command is sent when the action runs. Showing it does not run it.");
             }
             None => {
                 ui.label("No exact command is available until the coordinator and required inputs are selected, or a path contains a character that cannot be shown safely.");

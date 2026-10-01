@@ -39,6 +39,18 @@ Setup writers remain for those open paths until replaced. The worker does not
 claim the command's authority for itself, and cancellation cannot prove that
 an already published effect did not occur.
 
+## Independent finding and correction
+
+The bounded exact-commit review of `99017d8b1fb6408659c6be2210da6656229ef2da`
+returned PASS with a Medium finding: while a write was pending, the displayed
+command could be recomputed from edited fields rather than the queued
+arguments. The native state now retains the submitted argument vector, shows
+that vector until the request resolves or is cancelled, and disables the
+record path, text and overwrite widgets during that interval. A display-less
+regression changes all three values after submission and checks the displayed
+command and actual destination against the submitted values. The correction
+requires its own exact-commit re-review.
+
 ## Verification
 
 The bounded worker test sends exact private bytes through a disposable

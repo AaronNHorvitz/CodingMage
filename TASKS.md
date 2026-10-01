@@ -2149,7 +2149,10 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     bounded independent re-review of `46aeae8da288c46ba3e76a38c59eb4bb745b129b`
     returned PASS without findings. Decision 0066 routes this authorization
     action through the bounded native worker with private stdin, a matching
-    digest receipt and an in-context Show-command. Its exact-commit review,
+    digest receipt and an in-context Show-command. The independent exact-commit
+    review of `99017d8b1fb6408659c6be2210da6656229ef2da` returned PASS with
+    a Medium finding: editable pending fields could make the preview differ
+    from the queued command. The correction and its re-review remain open;
     other public Setup writes and complete Show-command coverage remain open.
     The bounded review of `b8e8458` returned a high parent-move finding and a low
     inventory-count finding. Decision 0063 and the corrected evidence record the

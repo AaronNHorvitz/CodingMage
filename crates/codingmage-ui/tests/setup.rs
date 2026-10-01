@@ -9,10 +9,91 @@ use codingmage_core::load_config;
 use codingmage_ui::{
     Screen,
     backend::{CoordinatorBinary, Response},
+    command::format_command,
     setup::ProviderForm,
 };
 use common::{Fixture, coordinator_binary, harness, settle, tree_digest};
 use egui_kittest::kittest::Queryable as _;
+
+#[test]
+fn pending_authorization_preview_keeps_the_submitted_arguments() {
+    let fixture = Fixture::new("setup-pending-preview", 1);
+    let real_binary = coordinator_binary();
+    let real_command = format_command(&real_binary, &[]).unwrap();
+    let wrapper = fixture.executable(
+        "delayed-codingmage",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'setup-write-authorization' ]; then sleep 3; fi\nexec {real_command} \"$@\"\n"
+        ),
+    );
+    let binary = CoordinatorBinary::at(&wrapper);
+    let mut harness = harness(binary, [1100.0, 800.0]);
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some()
+    }));
+    let first = fixture.root.join("authorization-a.txt");
+    let second = fixture.root.join("authorization-b.txt");
+    {
+        let setup = harness.state_mut().setup_state_mut();
+        setup.authorization_path = first.display().to_string();
+        setup.authorization_text = "Synthetic owner authorization".to_owned();
+        setup.authorization_overwrite = false;
+    }
+    let repository_id = harness
+        .state()
+        .diagnosis()
+        .value
+        .as_ref()
+        .unwrap()
+        .repository_id
+        .clone();
+    let arguments = vec![
+        "setup-write-authorization".to_owned(),
+        "--config".to_owned(),
+        fixture.config.display().to_string(),
+        "--repository-id".to_owned(),
+        repository_id,
+        "--output".to_owned(),
+        first.display().to_string(),
+        "--overwrite".to_owned(),
+        "false".to_owned(),
+    ];
+    let submitted = format_command(&wrapper, &arguments).unwrap();
+    harness.state_mut().apply_authorization_record();
+    {
+        // Simulate a late form edit even though the widgets are disabled while pending.
+        let setup = harness.state_mut().setup_state_mut();
+        setup.authorization_path = second.display().to_string();
+        setup.authorization_text = "Changed after submission".to_owned();
+        setup.authorization_overwrite = true;
+    }
+    harness.state_mut().select_screen(Screen::Setup);
+    harness.run_steps(2);
+    harness.get_by_label_contains("The fields are locked until its result is known");
+    harness
+        .get_by_label("Show command: write authorization record")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains(&submitted);
+    let mut changed_arguments = arguments;
+    changed_arguments[6] = second.display().to_string();
+    changed_arguments[8] = "true".to_owned();
+    let changed = format_command(&wrapper, &changed_arguments).unwrap();
+    assert!(harness.query_by_label_contains(&changed).is_none());
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_ok_and(|text| text.contains("authorization record written"))
+        })
+    }));
+    assert_eq!(
+        fs::read_to_string(&first).unwrap(),
+        "Synthetic owner authorization"
+    );
+    assert!(!second.exists());
+}
 
 #[test]
 fn authorization_response_for_another_repository_clears_pending_state() {
