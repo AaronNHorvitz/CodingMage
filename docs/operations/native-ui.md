@@ -66,6 +66,14 @@ showing sample results.
 | Settings | Light, dark, high-contrast or system appearance for the current window | Local presentation state only |
 | Help and About | Offline getting-started and recovery guidance, keyboard shortcuts, glossary, source licence and third-party source notices; explicit copyable path-free diagnostic summary and redacted support bundle for a selected campaign | Bundled first-party text, plus the coordinator's `support-bundle` command only after an explicit request; nothing is uploaded |
 
+Work plan shows coordinator outcome badges only from a live, completed status
+observation. While a refresh is pending, after a failure, or when status has
+aged, retained task outcomes are hidden and the badges read unknown; source
+checkboxes remain unchanged. **Refresh coordinator outcomes** is a read-only
+`campaign-status` request with the exact command shown beside it. An unstarted
+campaign and a malformed task source have separate explanations, and the empty
+and failed plan views lead to Setup and offline Help.
+
 The Reports screen can explicitly inspect the read-only
 `codingmage campaign-outcome-report --config <absolute-file> --campaign
 <absolute-file> --include-paths false` command. It shows a bounded, inert

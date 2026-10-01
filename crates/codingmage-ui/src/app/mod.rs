@@ -1335,8 +1335,20 @@ impl App {
 
     fn work_plan(&mut self, ui: &mut egui::Ui) {
         ui.heading("Work plan");
-        let Some(project) = &self.project else {
+        if self.project.is_none() {
             ui.label("Open a repository to see its task plan.");
+            if ui.button("Open Setup").clicked() {
+                self.screen = Screen::Setup;
+            }
+            if ui.button("Open Help and About").clicked() {
+                self.screen = Screen::Help;
+            }
+            return;
+        }
+        if self.campaign.is_some() {
+            self.work_plan_status_controls(ui);
+        }
+        let Some(project) = &self.project else {
             return;
         };
         let Some(index) = &self.plan_index else {
@@ -1347,6 +1359,12 @@ impl App {
                     &error.to_string(),
                     "Fix the task source in the repository; the plan is shown only when it parses.",
                 );
+            }
+            if ui.button("Open Setup").clicked() {
+                self.screen = Screen::Setup;
+            }
+            if ui.button("Open Help and About").clicked() {
+                self.screen = Screen::Help;
             }
             return;
         };
@@ -1362,16 +1380,15 @@ impl App {
             rows.len(),
             index.counts().items
         ));
-        let overlay = self.task_overlay();
-        let observation_known = self.status.value.as_ref().is_some_and(Option::is_some);
-        if self.campaign.is_some() {
-            ui.small(format!(
-                "Coordinator overlay: status {} ({}), campaign-head source {}",
-                self.status.freshness(self.now).label(),
-                age_label(self.status.age(self.now)),
-                self.head_plan.freshness(self.now).label()
-            ));
-        }
+        let observation_known = self.campaign.is_some()
+            && !self.status.loading
+            && self.status.freshness(self.now) == Freshness::Live
+            && self.status.value.as_ref().is_some_and(Option::is_some);
+        let overlay = if observation_known {
+            self.task_overlay()
+        } else {
+            std::collections::BTreeMap::new()
+        };
         let mut selected = self.selected_item.clone();
         render_plan_rows(ui, index, &rows, &overlay, observation_known, &mut selected);
         self.plan_filter = filter;
@@ -1390,6 +1407,56 @@ impl App {
             item_detail(ui, &row, index);
             coordinator_detail(ui, overlay.get(&row.id), observation_known);
             self.task_source_detail(ui, &row);
+        }
+    }
+
+    fn work_plan_status_controls(&mut self, ui: &mut egui::Ui) {
+        let arguments = self.status_arguments();
+        let previewable = command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
+        if ui
+            .add_enabled(
+                previewable && !self.status.loading,
+                egui::Button::new("Refresh coordinator outcomes"),
+            )
+            .clicked()
+        {
+            self.request_status();
+        }
+        if let Some(arguments) = &arguments {
+            command::show_for(
+                ui,
+                "Refresh coordinator outcomes",
+                self.binary_path.as_deref(),
+                arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, "Refresh coordinator outcomes");
+        }
+        let freshness = self.status.freshness(self.now);
+        ui.small(format!(
+            "Coordinator outcomes: {} ({}); campaign-head source {}",
+            freshness.label(),
+            age_label(self.status.age(self.now)),
+            self.head_plan.freshness(self.now).label()
+        ));
+        if self.status.loading {
+            ui.label("Loading coordinator outcomes. Retained outcomes are hidden until the refresh completes.");
+        } else if let Some((_, error)) = &self.status.last_error {
+            let (cause, action) = explain_code(&error.code());
+            failure_box(
+                ui,
+                "Coordinator outcomes unavailable",
+                &format!("{} ({})", cause, error.code()),
+                &format!("Retained outcomes are hidden until a live status is observed. {action}"),
+            );
+        } else if freshness == Freshness::Stale {
+            ui.label(
+                "Coordinator outcomes are stale. Refresh them to restore verified task states.",
+            );
+        } else if freshness == Freshness::NotRequested {
+            ui.label("Coordinator outcomes have not been requested. Refresh to read recorded task states.");
+        } else if self.status.value.as_ref().is_some_and(Option::is_none) {
+            ui.label("No campaign status has been recorded yet. Source checkboxes remain separate from verified outcomes.");
         }
     }
 
@@ -1428,6 +1495,7 @@ impl App {
         let Some(detail) = self.task_detail.value.as_ref().filter(|detail| {
             self.task_detail_key.as_ref() == Some(&(detail.head.clone(), detail.item_id.clone()))
                 && detail.item_id == row.id
+                && !self.status.loading
                 && self.status.freshness(self.now) == Freshness::Live
                 && self.task_detail.freshness(self.now) == Freshness::Live
         }) else {
@@ -1647,7 +1715,12 @@ fn render_plan_rows(
                                     labels.join("; ")
                                 };
                                 ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                                ui.label(format!("Outcome: {badge}"))
+                                let outcome_label = if badge == "unknown" {
+                                    format!("Outcome: unknown for {}", row.id)
+                                } else {
+                                    format!("Outcome: {badge}")
+                                };
+                                ui.label(outcome_label)
                                     .on_hover_text(content::list_label(&hover));
                                 ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
                                 let label = row_label(row);

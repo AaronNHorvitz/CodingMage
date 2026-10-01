@@ -86,6 +86,58 @@ fn filter_blockers(harness: &mut egui_kittest::Harness<'static, codingmage_ui::A
     harness.run_steps(2);
 }
 
+fn assert_work_plan_status_recovery(
+    harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>,
+) {
+    // A failed refresh retains the record internally but must not present its prior
+    // task outcomes as current verification on the Work plan.
+    let binding = harness.state().binding();
+    let generation = harness.state().generation();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-status",
+        request_id: None,
+        result: Err(BackendError::Timeout),
+    }));
+    harness.run_steps(2);
+    harness.get_by_label_contains("Coordinator outcomes unavailable");
+    assert!(harness.query_by_label("Outcome: completed").is_none());
+    harness.get_by_label("Outcome: unknown for 0.1.1.1");
+    if let Some(directory) = std::env::var_os("CODINGMAGE_UI_SNAPSHOT_DIR") {
+        let directory = std::path::PathBuf::from(directory);
+        fs::create_dir_all(&directory).unwrap();
+        harness
+            .render()
+            .expect("software render")
+            .save(directory.join("work-plan-stale-outcomes.png"))
+            .unwrap();
+    }
+    harness
+        .get_by_label("Show command: Refresh coordinator outcomes")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("codingmage campaign-status --config");
+    harness
+        .get_by_label("Show command: Refresh coordinator outcomes")
+        .click();
+    harness.run_steps(2);
+    harness
+        .get_by_role_and_label(
+            egui::accesskit::Role::Button,
+            "Refresh coordinator outcomes",
+        )
+        .click();
+    assert!(settle(harness, Duration::from_secs(30), |app| {
+        app.status().value.as_ref().is_some_and(Option::is_some)
+            && app.status().last_error.is_none()
+            && !app.status().loading
+            && app.head_plan().value.as_ref().is_some_and(Option::is_some)
+            && !app.head_plan().loading
+    }));
+    harness.get_by_label("Outcome: completed");
+}
+
 #[test]
 fn blocker_explanation_rejects_foreign_payload_with_current_request_binding() {
     let fixture = Fixture::new("blocker-payload-binding", 1);
@@ -385,6 +437,12 @@ fn never_started_campaign_is_an_explicit_empty_state() {
     harness.run_steps(2);
     harness.get_by_label_contains("Selected campaign: empty-campaign");
     harness.get_by_label_contains("No durable campaign state was observed");
+    harness.state_mut().select_screen(Screen::WorkPlan);
+    harness.run_steps(2);
+    harness.get_by_label_contains("No campaign status has been recorded yet");
+    assert!(harness.query_by_label("Outcome: none recorded").is_none());
+    harness.state_mut().select_screen(Screen::Overview);
+    harness.run_steps(2);
     let binding = harness.state().binding();
     let generation = harness.state().generation();
     assert!(harness.state_mut().handle_response(Response {
@@ -653,6 +711,7 @@ fn completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree() {
             )
             .is_none()
     );
+    assert_work_plan_status_recovery(&mut harness);
     assert_task_detail_workflow(&mut harness, &status.head);
     let mut wrong_head = projection;
     wrong_head["head"] = serde_json::json!("0".repeat(40));

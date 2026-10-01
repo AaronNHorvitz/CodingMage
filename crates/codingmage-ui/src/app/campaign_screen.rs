@@ -441,7 +441,7 @@ impl App {
 
     pub(super) fn task_detail_arguments(&self, item_id: &str) -> Option<Vec<String>> {
         let (config, campaign, _) = self.campaign_arguments()?;
-        if self.status.freshness(self.now) != Freshness::Live {
+        if self.status.loading || self.status.freshness(self.now) != Freshness::Live {
             return None;
         }
         let head = &self.status.value.as_ref()?.as_ref()?.head;

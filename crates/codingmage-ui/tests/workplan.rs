@@ -47,6 +47,27 @@ fn open_fixture_with_plan_at_size(
 }
 
 #[test]
+fn work_plan_without_repository_has_setup_and_help_recovery() {
+    let binary = CoordinatorBinary::at(&coordinator_binary());
+    let mut harness = harness(binary, [1100.0, 720.0]);
+    harness.state_mut().select_screen(Screen::WorkPlan);
+    harness.run_steps(2);
+    harness.get_by_label_contains("Open a repository to see its task plan");
+    harness
+        .get_by_role_and_label(egui::accesskit::Role::Button, "Open Help and About")
+        .click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Help);
+    harness.state_mut().select_screen(Screen::WorkPlan);
+    harness.run_steps(2);
+    harness
+        .get_by_role_and_label(egui::accesskit::Role::Button, "Open Setup")
+        .click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Setup);
+}
+
+#[test]
 fn hostile_plan_titles_are_sanitized_and_visible_item_label_is_bounded() {
     let title = format!(
         "\u{202e}\u{001b}{} https://later.example/path",
@@ -234,6 +255,11 @@ fn malformed_task_source_is_a_visible_failure_and_overview_still_works() {
     harness.state_mut().select_screen(Screen::WorkPlan);
     harness.run_steps(2);
     harness.get_by_label_contains("Task source unavailable");
+    harness
+        .get_by_role_and_label(egui::accesskit::Role::Button, "Open Setup")
+        .click();
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::Setup);
     harness.state_mut().select_screen(Screen::Overview);
     harness.run_steps(2);
     harness.get_by_label_contains("Task source unavailable");

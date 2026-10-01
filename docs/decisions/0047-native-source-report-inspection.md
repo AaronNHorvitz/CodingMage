@@ -53,5 +53,7 @@ rejects duplicate object keys recursively before constructing a report,
 requires closed nested status, blocker, final-report, change and run-record
 projections, and displays only a new serialization of the validated document.
 Malformed responses clear a retained successful snapshot and show a failure.
-The exact correction commit requires independent re-review; this amendment
-does not treat the earlier finding as accepted.
+Two exact-SHA correction re-reviews were inconclusive because the shared
+build reservation remained unavailable for independent Rust tests; neither
+reported a new source issue. Independent execution remains open, and this
+amendment does not treat the earlier finding as accepted.
