@@ -8,6 +8,7 @@ use crate::{
     observed::{Freshness, age_label},
     records::{CommitSummary, FileChange, RunRecord, parse_run_records},
 };
+use codingmage_campaign::CampaignPublication;
 use serde::Deserialize;
 
 /// Exact changes between the campaign's initial commit and its head.
@@ -422,7 +423,7 @@ impl App {
 
     pub(super) fn changes_screen(&mut self, ui: &mut egui::Ui) {
         let catalogue = messages::english();
-        ui.heading("Changes and reviews");
+        ui.heading(catalogue.text("changes_title"));
         if self.project.is_none() {
             ui.label(catalogue.text("changes_no_project"));
             if ui.button(catalogue.text("changes_open_setup")).clicked() {
@@ -437,11 +438,7 @@ impl App {
             }
             return;
         };
-        ui.strong("Delivery boundary");
-        ui.label(format!(
-            "Publication {:?}: accepted work lives on the coordinator-owned campaign branch only. Nothing here was pushed, merged into a protected branch or promoted to a destination; engineering completion below is not delivery.",
-            campaign.spec.publication
-        ));
+        render_delivery_boundary(ui, catalogue, campaign.spec.publication);
         ui.separator();
         self.evidence_refresh_controls(ui);
         ui.separator();
@@ -519,41 +516,44 @@ impl App {
     }
 
     fn changes_block(&self, ui: &mut egui::Ui) {
-        ui.strong("Exact candidate changes (campaign branch)");
+        let catalogue = messages::english();
+        ui.strong(catalogue.text("changes_range_title"));
         if !self.status_live_at(self.now) {
-            ui.label("Current campaign status is unavailable or refreshing; candidate changes are withheld until it is observed again.");
+            ui.label(catalogue.text("changes_status_withheld"));
             return;
         }
         let freshness = self.changes.freshness(self.now);
         match (&self.status.value, freshness) {
             (Some(None), _) => {
-                ui.label("The campaign has never started; there are no candidate changes.");
+                ui.label(catalogue.text("changes_never_started"));
                 return;
             }
             (None, _) => {
-                ui.label("Campaign status has not been observed yet.");
+                ui.label(catalogue.text("changes_status_unobserved"));
                 return;
             }
             _ => {}
         }
-        ui.label(format!(
-            "Observation: {} ({})",
-            freshness.label(),
-            age_label(self.changes.age(self.now))
+        ui.label(catalogue.format(
+            "changes_observation",
+            &[
+                ("freshness", freshness.label()),
+                ("age", &age_label(self.changes.age(self.now))),
+            ],
         ));
         if let Some((_, error)) = &self.changes.last_error {
             backend_failure_box(ui, error, "failure_changes_no_observation");
         }
         let Some(changes) = &self.changes.value else {
             if freshness == Freshness::Loading {
-                ui.label("Reading the campaign branch objects...");
+                ui.label(catalogue.text("changes_loading"));
             } else if freshness == Freshness::NotRequested {
-                ui.label(messages::english().text("changes_unobserved"));
+                ui.label(catalogue.text("changes_unobserved"));
             }
             return;
         };
         if freshness == Freshness::Stale {
-            ui.label(messages::english().text("changes_stale"));
+            ui.label(catalogue.text("changes_stale"));
         }
         ui.monospace(format!(
             "{}..{}",
@@ -561,24 +561,29 @@ impl App {
             &changes.head[..12.min(changes.head.len())]
         ));
         if changes.commits.is_empty() {
-            ui.label("The campaign head equals the initial commit: no reviewed candidate has been integrated.");
+            ui.label(catalogue.text("changes_empty"));
         }
         if changes.commits_truncated || changes.files_truncated {
-            ui.label("This bounded change summary omits additional commits or paths; inspect the exact range with the coordinator for the complete set.");
+            ui.label(catalogue.text("changes_truncated"));
         }
         for commit in &changes.commits {
             content::render(
                 ui,
-                &format!(
-                    "{} {} (unix {})",
-                    &commit.id[..12],
-                    commit.subject,
-                    commit.timestamp
+                &catalogue.format(
+                    "changes_commit",
+                    &[
+                        ("commit", &commit.id[..12]),
+                        ("subject", &commit.subject),
+                        ("timestamp", &commit.timestamp.to_string()),
+                    ],
                 ),
             );
         }
         if !changes.files.is_empty() {
-            ui.label(format!("{} changed file(s)", changes.files.len()));
+            ui.label(catalogue.format(
+                "changes_files_count",
+                &[("count", &changes.files.len().to_string())],
+            ));
             egui::Grid::new("changed-files")
                 .num_columns(3)
                 .spacing(super::current_tokens(ui.ctx()).layout.grid_dense)
@@ -587,7 +592,7 @@ impl App {
                         content::render(ui, &file.path);
                         ui.label(match file.added {
                             Some(added) => format!("+{added}"),
-                            None => "binary".to_owned(),
+                            None => catalogue.text("changes_file_binary").to_owned(),
                         });
                         ui.label(match file.deleted {
                             Some(deleted) => format!("-{deleted}"),
@@ -596,58 +601,68 @@ impl App {
                         ui.end_row();
                     }
                 });
-            ui.small("File names come from the owner's own repository objects; exports that include them are marked as containing repository paths.");
+            ui.small(catalogue.text("changes_paths_privacy"));
         }
     }
 
     fn records_block(&self, ui: &mut egui::Ui) {
-        ui.strong("Independent review and test records (per run, from durable checkpoints)");
+        let catalogue = messages::english();
+        ui.strong(catalogue.text("records_title"));
         if !self.status_live_at(self.now) {
-            ui.label("Current campaign status is unavailable or refreshing; review and test records are withheld until it is observed again.");
+            ui.label(catalogue.text("records_status_withheld"));
             return;
         }
         let freshness = self.records.freshness(self.now);
-        ui.label(format!(
-            "Observation: {} ({})",
-            freshness.label(),
-            age_label(self.records.age(self.now))
+        ui.label(catalogue.format(
+            "changes_observation",
+            &[
+                ("freshness", freshness.label()),
+                ("age", &age_label(self.records.age(self.now))),
+            ],
         ));
         if let Some((_, error)) = &self.records.last_error {
             backend_failure_box(ui, error, "failure_records_no_observation");
         }
         let Some(records) = &self.records.value else {
             if freshness == Freshness::Loading {
-                ui.label(messages::english().text("records_loading"));
+                ui.label(catalogue.text("records_loading"));
             } else if freshness == Freshness::NotRequested {
-                ui.label(messages::english().text("records_unobserved"));
+                ui.label(catalogue.text("records_unobserved"));
             }
             return;
         };
         if freshness == Freshness::Stale {
-            ui.label(messages::english().text("records_stale"));
+            ui.label(catalogue.text("records_stale"));
         }
         if records.is_empty() {
-            ui.label("No run records exist for this campaign. Nothing has been implemented, reviewed or tested.");
+            ui.label(catalogue.text("records_empty"));
             return;
         }
         if self.records_truncated {
-            ui.label("Additional campaign run records are omitted from this bounded view.");
+            ui.label(catalogue.text("records_truncated"));
         }
-        ui.small("Reviewer finding text is not retained by the backend; only the verdict, correction rounds and evidence identities are durable.");
+        ui.small(catalogue.text("records_finding_limit"));
         for record in records {
             egui::Frame::group(ui.style()).show(ui, |ui| {
-                ui.monospace(format!(
-                    "{} - task {}",
-                    record.run_id,
-                    record.task_id().unwrap_or_else(|| "unknown".to_owned())
+                let task_id = record
+                    .task_id()
+                    .unwrap_or_else(|| catalogue.text("records_task_unknown").to_owned());
+                ui.monospace(catalogue.format(
+                    "records_run",
+                    &[("run_id", &record.run_id), ("task_id", &task_id)],
                 ));
                 match &record.checkpoint {
                     Some(checkpoint) => {
-                        ui.label(format!(
-                            "candidate commit {} after {} correction round(s)",
-                            &checkpoint.candidate_commit
-                                [..12.min(checkpoint.candidate_commit.len())],
-                            checkpoint.correction_rounds
+                        ui.label(catalogue.format(
+                            "records_candidate",
+                            &[
+                                (
+                                    "commit",
+                                    &checkpoint.candidate_commit
+                                        [..12.min(checkpoint.candidate_commit.len())],
+                                ),
+                                ("rounds", &checkpoint.correction_rounds.to_string()),
+                            ],
                         ));
                     }
                     None => {
@@ -656,17 +671,17 @@ impl App {
                             record
                                 .checkpoint_problem
                                 .as_deref()
-                                .unwrap_or("checkpoint unavailable"),
+                                .unwrap_or(catalogue.text("records_checkpoint_unavailable")),
                         );
                     }
                 }
-                content::render(ui, &record.review_label());
-                content::render(ui, &record.gate_label());
+                content::render(ui, &run_review_label(record, catalogue));
+                content::render(ui, &run_gate_label(record, catalogue));
                 if let Some(problem) = &record.journal_problem {
                     ui.colored_label(super::current_tokens(ui.ctx()).error, problem);
                 }
                 if record.phases_truncated {
-                    ui.label("Additional journal phases are omitted from this bounded view.");
+                    ui.label(catalogue.text("records_phases_truncated"));
                 }
                 let observed = record
                     .phases
@@ -675,32 +690,49 @@ impl App {
                     .map(|phase| format!("{} ({})", phase.phase, phase.outcome))
                     .collect::<Vec<_>>();
                 if observed.is_empty() {
-                    ui.label("No journaled phase observations.");
+                    ui.label(catalogue.text("records_phases_empty"));
                 } else {
-                    content::render(ui, &format!("Journaled phases: {}", observed.join(" > ")));
+                    content::render(
+                        ui,
+                        &catalogue.format("records_phases", &[("phases", &observed.join(" > "))]),
+                    );
                 }
             });
         }
     }
 
     fn activity_block(&self, ui: &mut egui::Ui) {
-        ui.strong("Bounded activity");
+        let catalogue = messages::english();
+        ui.strong(catalogue.text("activity_title"));
         match &self.execution.record {
             Some(record) => {
                 let tail = record.progress_tail(super::execution_screen::PROGRESS_LINES);
                 if tail.is_empty() {
-                    ui.label("The coordinator has not written activity lines yet.");
+                    ui.label(catalogue.text("activity_empty"));
                 }
                 for line in tail {
                     content::render(ui, &line);
                 }
-                ui.small("Lines are the coordinator's own content-minimized stream: actor and stage only, never prompts, source or provider output.");
+                ui.small(catalogue.text("activity_notice"));
             }
             None => {
-                ui.label("No coordinator launch is recorded for this campaign from this interface; activity lines are not available.");
+                ui.label(catalogue.text("activity_unrecorded"));
             }
         }
     }
+}
+
+fn render_delivery_boundary(
+    ui: &mut egui::Ui,
+    catalogue: &Catalogue,
+    publication: CampaignPublication,
+) {
+    ui.strong(catalogue.text("changes_delivery_title"));
+    let policy = match publication {
+        CampaignPublication::LocalOnly => catalogue.text("changes_publication_local"),
+        CampaignPublication::DraftStoryPullRequests => catalogue.text("changes_publication_draft"),
+    };
+    ui.label(catalogue.format("changes_delivery_policy", &[("policy", policy)]));
 }
 
 fn render_task_run_records(
@@ -836,6 +868,26 @@ mod task_run_tests {
         right_to_left: bool,
     }
 
+    struct DeliveryPreview {
+        catalogue: Catalogue,
+        publication: CampaignPublication,
+        right_to_left: bool,
+    }
+
+    impl eframe::App for DeliveryPreview {
+        fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
+            egui::CentralPanel::default().show(root, |ui| {
+                if self.right_to_left {
+                    ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                        render_delivery_boundary(ui, &self.catalogue, self.publication);
+                    });
+                } else {
+                    render_delivery_boundary(ui, &self.catalogue, self.publication);
+                }
+            });
+        }
+    }
+
     impl eframe::App for TaskRunPreview {
         fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
             egui::CentralPanel::default().show(root, |ui| {
@@ -946,6 +998,42 @@ mod task_run_tests {
                         .accesskit_node()
                         .has_bounds(),
                     "missing accessible bounds for {label}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn publication_policy_copy_matches_campaign_and_renders_in_both_directions() {
+        for publication in [
+            CampaignPublication::LocalOnly,
+            CampaignPublication::DraftStoryPullRequests,
+        ] {
+            for right_to_left in [false, true] {
+                let catalogue = messages::english().pseudo(right_to_left);
+                let policy = match publication {
+                    CampaignPublication::LocalOnly => catalogue.text("changes_publication_local"),
+                    CampaignPublication::DraftStoryPullRequests => {
+                        catalogue.text("changes_publication_draft")
+                    }
+                };
+                let expected = catalogue.format("changes_delivery_policy", &[("policy", policy)]);
+                assert!(!expected.contains("Nothing here was pushed"));
+                let mut harness = egui_kittest::Harness::builder()
+                    .with_size(egui::Vec2::new(1024.0, 640.0))
+                    .with_pixels_per_point(2.0)
+                    .with_max_steps(4)
+                    .build_eframe(move |_| DeliveryPreview {
+                        catalogue,
+                        publication,
+                        right_to_left,
+                    });
+                harness.run_steps(2);
+                assert!(
+                    harness
+                        .get_by_label_contains(&expected)
+                        .accesskit_node()
+                        .has_bounds()
                 );
             }
         }

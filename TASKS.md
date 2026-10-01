@@ -2431,12 +2431,27 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     unrelated nearby text. Decision 0055 fixes this generator drift with stable
     applicability and a focused four-test regression; the corrected inventory
     matches the last PASS ancestor on every non-location item and normalized
-    gap, with 21 line-derived IDs moved. Exact-SHA re-review of the correction
-    remains open; no task or gate is ticked. The corrected tree passed the
-    focused inventory suite 4/4, native UI library 80/80 and strict workspace
-    Clippy. Python ran 43 tests with only the same CM-R01.6 freshness failure;
+    gap, with 21 line-derived IDs moved. Exact-SHA read-only re-review of
+    `fc22ef99449b7c7d7bc6a8167070ff5669f0dbe5` returned bounded PASS
+    with no findings after independently confirming the source-consistent
+    inventory, ancestor comparison and focused four-test regression; this
+    resolves the Medium inventory finding, not a human-only gate. The corrected
+    tree passed the focused inventory suite 4/4, native UI library 80/80 and
+    strict workspace Clippy. Python ran 43 tests with only the same CM-R01.6
+    freshness failure;
     the earlier 158/158 UI all-target result applies to unchanged Rust but
-    was not rerun for this inventory-only correction.
+    was not rerun for this inventory-only correction. Decision 0056 moves
+    Changes and reviews copy into the validated English catalogue and replaces
+    the unsupported claim that nothing was pushed with the configured
+    publication policy and an explicit absence of a delivery receipt on that
+    screen. An empty run-record view no longer claims that no implementation,
+    review or testing occurred. Synthetic expanded/right-aligned policy
+    rendering and disposable real-coordinator Changes checks are recorded in
+    `docs/evidence/sprint-36-message-catalogue.md`; remaining dynamic locale,
+    full RTL, state/depth and human qualification keep this task open. The
+    final-source software-GL UI all-target suite passed 159/159 and strict
+    workspace Clippy passed; Python passed 42/43 with only the unchanged
+    CM-R01.6 freshness hold and no digest renewal.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).

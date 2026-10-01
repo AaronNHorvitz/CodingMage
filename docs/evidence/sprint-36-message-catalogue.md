@@ -429,3 +429,52 @@ earlier exact-source software-GL UI all-target result (158/158) still applies
 to unchanged Rust; it was not rerun for this Python inventory-only correction.
 Exact-SHA independent re-review of the correction remains pending. Installed,
 human, live and release gates remain open.
+
+The fresh read-only independent re-review of exact commit
+`fc22ef99449b7c7d7bc6a8167070ff5669f0dbe5` returned **PASS** with no
+findings. It reproduced the corrected inventory from an archive, passed the
+four focused inventory tests and documentation checks, and independently
+confirmed that all 1,770 non-location items and 825 normalized gaps match the
+last PASS ancestor while 21 raw line-derived IDs move. Its exact-HEAD Python
+suite retained only CM-R01.6's eight-input source-bound freshness failure.
+This bounded PASS resolves the earlier Medium inventory finding; it is not a
+human-only approval record or a source-bound package renewal.
+
+## Changes and reviews copy and delivery-policy truth
+
+Decision 0056 moves the Changes and reviews screen's authored headings,
+readiness and observation states, bounded change and run summaries, activity
+guidance and recovery copy into the strict English message catalogue. Named
+template fields retain the configured publication policy, observation age,
+commit and run identities and counts. Repository and coordinator strings remain
+inert content. The screen now states which publication policy was configured
+and directs the owner to Campaign and Reports for recorded delivery status; it
+does not infer that a push or promotion occurred or did not occur. An empty
+run-record projection cannot prove no work happened.
+
+The policy-copy test renders both configured publication policies with a
+40%-expanded synthetic catalogue in left and right alignment at 1024×640
+logical pixels and 200% scale, checking accessible label bounds. The
+disposable real-coordinator Changes test checks the local policy, exact
+read-command disclosures and malformed-read recovery. These local checks do
+not establish full RTL navigation or installed screen-reader behavior.
+The reviewed inventory extractor and schema were unchanged. Its regenerated
+artifact still has 1,770 items and 825 explicit gaps. A parent-relative
+multiset comparison found zero non-location item or candidate-mapping changes
+and zero normalized gap changes, with 20 moved line-derived IDs. This index
+does not prove test coverage.
+Dynamic timestamp, number and duration formatting, other UI text, packaged
+third-party licences and human/live qualification remain open.
+
+The first 12-case Changes target run had 11 passes and one failure because an
+old test assertion still expected the removed delivery sentence. The original
+failed run is retained privately; after correcting that assertion, the focused
+disposable coordinator case passed 1/1. The final-source software-GL native UI
+all-target suite passed 159/159 across 14 targets, including the corrected
+12/12 Changes target and the synthetic policy preview. Strict workspace Clippy
+with warnings denied passed. Full Python unittest ran 43 tests: 42 passed and
+only the unchanged CM-R01.6 eight-input source-bound freshness test failed;
+no digest or package binding was renewed. Formatting, documentation,
+architecture, source-consistent inventory and diff-whitespace checks passed. The exact
+staged diff and privacy inspection preceded the commit. Independent review of
+this increment remains pending.

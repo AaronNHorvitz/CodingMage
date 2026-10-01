@@ -73,6 +73,7 @@ checkboxes remain unchanged. **Refresh coordinator outcomes** is a read-only
 `campaign-status` request with the exact command shown beside it. An unstarted
 campaign and a malformed task source have separate explanations, and the empty
 and failed plan views lead to Setup and offline Help.
+
 Final-report accepted badges also require the selected report's campaign,
 repository, base and branch binding and a live completed status at the same
 branch and head. A pending, failed or stale report refresh or changed head hides
@@ -81,6 +82,11 @@ final report observation's freshness and its failure effect. **Refresh final
 report** makes a read-only `campaign-report` request for a parallel campaign;
 its exact command is shown beside the action. An observed missing report is
 distinct from a failed request and cannot supply accepted badges.
+
+Changes and reviews shows the configured publication policy without treating
+that policy as a delivery receipt. Consult the coordinator status and Reports
+for recorded delivery state. A loaded but empty run-record projection does not
+establish that implementation, review or testing occurred or did not occur.
 
 The Reports screen can explicitly inspect the read-only
 `codingmage campaign-outcome-report --config <absolute-file> --campaign

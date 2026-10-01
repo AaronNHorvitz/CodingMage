@@ -79,6 +79,7 @@ fn evidence_refresh_shows_exact_commands_and_recovers_from_failed_reads() {
     }));
     harness.state_mut().select_screen(Screen::Changes);
     harness.run_steps(2);
+    harness.get_by_label_contains("Publication policy: Local campaign branch only.");
     harness
         .get_by_label("Show command: Refresh changes")
         .click();
@@ -378,7 +379,7 @@ fn accepted_units_show_exact_commits_files_verdicts_and_gate_evidence() {
     }
     harness.state_mut().select_screen(Screen::Changes);
     harness.run_steps(2);
-    harness.get_by_label_contains("engineering completion below is not delivery");
+    harness.get_by_label_contains("This screen has no verified delivery receipt");
     harness.get_by_label_contains("2 changed file(s)");
     harness.get_by_label("src/lib.rs");
     assert_eq!(
@@ -760,6 +761,7 @@ fn never_started_campaign_has_no_changes_or_records() {
     harness.run_steps(2);
     harness
         .get_by_label_contains("The campaign has never started; there are no candidate changes.");
-    harness.get_by_label_contains("No run records exist for this campaign.");
+    harness.get_by_label_contains("No run records are available for this campaign.");
+    harness.get_by_label_contains("cannot infer implementation, review or test completion");
     harness.get_by_label_contains("activity lines are not available");
 }
