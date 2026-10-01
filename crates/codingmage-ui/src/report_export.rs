@@ -1,4 +1,4 @@
-//! Linux directory-handle writer for an explicitly requested outcome report export.
+//! Linux directory-handle writer for reports and guided Setup documents.
 
 use std::{
     fs::{self, File, OpenOptions},
@@ -106,7 +106,7 @@ impl Destination {
             .file_name()
             .ok_or_else(|| field_error("choose a file name"))?;
         let resolved_parent = fs::canonicalize(&requested_parent).map_err(|_| {
-            field_error("create an existing, readable parent directory before exporting")
+            field_error("create an existing, readable parent directory before writing")
         })?;
         let resolved_repository = fs::canonicalize(repository).map_err(|_| WriteError::Io)?;
         let repository_directory = File::from(
@@ -257,6 +257,28 @@ pub(super) fn write_report(
     before_write: impl FnOnce(),
     before_publish: impl FnOnce(),
 ) -> Result<PathBuf, WriteError> {
+    write_validated_document(
+        path,
+        repository,
+        bytes,
+        overwrite,
+        |_| Ok(()),
+        before_write,
+        before_publish,
+    )
+}
+
+/// Publishes a local document only after its exact candidate bytes pass the existing loader.
+/// The parent directory and repository identity stay bound to held descriptors throughout.
+pub(crate) fn write_validated_document(
+    path: &Path,
+    repository: &Path,
+    bytes: &[u8],
+    overwrite: bool,
+    validate: impl FnOnce(&Path) -> Result<(), String>,
+    before_write: impl FnOnce(),
+    before_publish: impl FnOnce(),
+) -> Result<PathBuf, WriteError> {
     let destination = Destination::open(path, repository)?;
     before_write();
     destination.check_parent()?;
@@ -267,6 +289,7 @@ pub(super) fn write_report(
     let result = (|| {
         file.write_all(bytes).map_err(|_| WriteError::Io)?;
         file.sync_all().map_err(|_| WriteError::Io)?;
+        validate(&temporary).map_err(WriteError::Rejected)?;
         let written = file.metadata().map_err(|_| WriteError::Io)?;
         destination.check_parent()?;
         let leaf = destination.leaf_path();

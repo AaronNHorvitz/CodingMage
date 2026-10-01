@@ -174,15 +174,17 @@ impl App {
     /// Exports the opened configuration or selected campaign to another path.
     pub fn export_document(&mut self, source: &Path) {
         let destination = PathBuf::from(self.setup.export_path.trim());
-        let inside_repository = self
-            .project
-            .as_ref()
-            .is_some_and(|project| destination.starts_with(&project.config.target_path));
-        let result = if inside_repository {
-            Err(WriteError::InsideRepository(destination))
-        } else {
-            export_copy(source, &destination, self.setup.export_overwrite)
-        };
+        let result = self.project.as_ref().map_or_else(
+            || Err(WriteError::Io),
+            |project| {
+                export_copy(
+                    source,
+                    &destination,
+                    &project.config.target_path,
+                    self.setup.export_overwrite,
+                )
+            },
+        );
         self.setup.message = Some(match result {
             Ok(path) => Ok(format!("exported to {}", path.display())),
             Err(error) => Err(error.to_string()),

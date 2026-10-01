@@ -340,18 +340,29 @@ impl ConfigForm {
     /// loader rejection or I/O failure.
     pub fn write(&self) -> Result<PathBuf, WriteError> {
         let config = self.build().map_err(WriteError::Fields)?;
+        let destination = PathBuf::from(self.config_path.trim());
+        ensure_outside_repository(&destination, &config.target_path)?;
+        for root in [&config.scratch_root, &config.state_root] {
+            ensure_outside_repository(root, &config.target_path)?;
+        }
         for root in [&config.scratch_root, &config.state_root] {
             if !root.exists() {
                 fs::create_dir_all(root).map_err(|_| WriteError::Io)?;
             }
+            ensure_outside_repository(root, &config.target_path)?;
         }
-        let destination = PathBuf::from(self.config_path.trim());
         let encoded = toml::to_string_pretty(&config).map_err(|_| WriteError::Encode)?;
-        write_validated(&destination, encoded.as_bytes(), self.overwrite, |path| {
-            load_config(path)
-                .map(|_| ())
-                .map_err(|error| error.to_string())
-        })
+        write_validated(
+            &destination,
+            &config.target_path,
+            encoded.as_bytes(),
+            self.overwrite,
+            |path| {
+                load_config(path)
+                    .map(|_| ())
+                    .map_err(|error| error.to_string())
+            },
+        )
     }
 }
 
@@ -671,11 +682,13 @@ impl CampaignForm {
             });
             return String::new();
         }
-        if authorization.starts_with(&binding.repository_path) {
+        if ensure_outside_repository(&authorization, &binding.repository_path).is_err() {
             errors.push(FieldError {
                 field: "authorization record",
-                message: "must be outside the target repository".to_owned(),
+                message: "must be an existing regular file outside the target repository"
+                    .to_owned(),
             });
+            return String::new();
         }
         file_sha256(&authorization, MAX_AUTHORIZATION_BYTES).unwrap_or_else(|| {
             errors.push(FieldError {
@@ -701,11 +714,17 @@ impl CampaignForm {
             return Err(WriteError::InsideRepository(destination));
         }
         let encoded = toml::to_string_pretty(&spec).map_err(|_| WriteError::Encode)?;
-        write_validated(&destination, encoded.as_bytes(), self.overwrite, |path| {
-            CampaignSpec::load(path)
-                .map(|_| ())
-                .map_err(|error| error.to_string())
-        })
+        write_validated(
+            &destination,
+            &binding.repository_path,
+            encoded.as_bytes(),
+            self.overwrite,
+            |path| {
+                CampaignSpec::load(path)
+                    .map(|_| ())
+                    .map_err(|error| error.to_string())
+            },
+        )
     }
 }
 
@@ -758,94 +777,85 @@ pub fn write_authorization_record(
             message: "record the owner's authorization in your own words".to_owned(),
         }]));
     }
+    if text.len() as u64 > MAX_AUTHORIZATION_BYTES {
+        return Err(WriteError::Fields(vec![FieldError {
+            field: "authorization text",
+            message: "must be at most 1 MiB".to_owned(),
+        }]));
+    }
     if !path.is_absolute() {
         return Err(WriteError::Fields(vec![FieldError {
             field: "authorization record",
             message: "must be an absolute path".to_owned(),
         }]));
     }
-    if path.starts_with(repository) {
-        return Err(WriteError::InsideRepository(path.to_path_buf()));
-    }
-    write_validated(path, text.as_bytes(), overwrite, |_| Ok(()))?;
+    ensure_outside_repository(path, repository)?;
+    write_validated(path, repository, text.as_bytes(), overwrite, |_| Ok(()))?;
     Ok(hex(&sha2::Sha256::digest(text.as_bytes())))
 }
 
 use sha2::Digest as _;
 
+fn ensure_outside_repository(path: &Path, repository: &Path) -> Result<(), WriteError> {
+    if !path.is_absolute()
+        || path
+            .components()
+            .any(|component| matches!(component, std::path::Component::ParentDir))
+    {
+        return Err(WriteError::Fields(vec![FieldError {
+            field: "destination",
+            message: "choose an absolute path without parent-directory components".to_owned(),
+        }]));
+    }
+    let repository = fs::canonicalize(repository).map_err(|_| WriteError::Io)?;
+    if path.starts_with(&repository) {
+        return Err(WriteError::InsideRepository(path.to_path_buf()));
+    }
+    let existing = path
+        .ancestors()
+        .find_map(|ancestor| fs::canonicalize(ancestor).ok())
+        .ok_or(WriteError::Io)?;
+    if existing.starts_with(repository) {
+        Err(WriteError::InsideRepository(path.to_path_buf()))
+    } else {
+        Ok(())
+    }
+}
+
 fn write_validated(
     destination: &Path,
+    repository: &Path,
     bytes: &[u8],
     overwrite: bool,
     validate: impl Fn(&Path) -> Result<(), String>,
 ) -> Result<PathBuf, WriteError> {
-    if !destination.is_absolute() {
-        return Err(WriteError::Fields(vec![FieldError {
-            field: "destination",
-            message: "must be an absolute path".to_owned(),
-        }]));
-    }
-    match fs::symlink_metadata(destination) {
-        Ok(metadata) => {
-            if !overwrite || metadata.file_type().is_symlink() || !metadata.is_file() {
-                return Err(WriteError::Exists(destination.to_path_buf()));
-            }
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(_) => return Err(WriteError::Io),
-    }
-    let parent = destination.parent().ok_or(WriteError::Io)?;
-    fs::create_dir_all(parent).map_err(|_| WriteError::Io)?;
-    let temporary = parent.join(format!(
-        ".{}.candidate-{}",
-        destination
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or("document"),
-        std::process::id()
-    ));
-    let _ = fs::remove_file(&temporary);
-    let mut options = fs::OpenOptions::new();
-    options.write(true).create_new(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt as _;
-        options.mode(0o600);
-    }
-    let written = options.open(&temporary).and_then(|mut file| {
-        use std::io::Write as _;
-        file.write_all(bytes).and_then(|()| file.sync_all())
-    });
-    if written.is_err() {
-        let _ = fs::remove_file(&temporary);
-        return Err(WriteError::Io);
-    }
-    if let Err(reason) = validate(&temporary) {
-        let _ = fs::remove_file(&temporary);
-        return Err(WriteError::Rejected(reason));
-    }
-    if let Err(_error) = fs::rename(&temporary, destination) {
-        let _ = fs::remove_file(&temporary);
-        return Err(WriteError::Io);
-    }
-    Ok(destination.to_path_buf())
+    crate::report_export::write_validated_document(
+        destination,
+        repository,
+        bytes,
+        overwrite,
+        validate,
+        || {},
+        || {},
+    )
 }
 
-/// Writes arbitrary bytes with the export safeguards (absolute, no symbolic link, no silent
-/// overwrite).
+/// Writes arbitrary bytes with the export safeguards (outside the bound repository, absolute,
+/// no symbolic link and no silent overwrite).
 ///
 /// # Errors
 ///
 /// Returns [`WriteError`] when the destination is refused or the write fails.
 pub fn export_bytes(
     destination: &Path,
+    repository: &Path,
     bytes: &[u8],
     overwrite: bool,
 ) -> Result<PathBuf, WriteError> {
-    write_validated(destination, bytes, overwrite, |_| Ok(()))
+    write_validated(destination, repository, bytes, overwrite, |_| Ok(()))
 }
 
-/// Exports a validated document to another path with the same overwrite safeguard.
+/// Exports a validated document outside the bound repository with the same overwrite safeguard.
 ///
 /// # Errors
 ///
@@ -853,6 +863,7 @@ pub fn export_bytes(
 pub fn export_copy(
     source: &Path,
     destination: &Path,
+    repository: &Path,
     overwrite: bool,
 ) -> Result<PathBuf, WriteError> {
     let metadata = fs::symlink_metadata(source).map_err(|_| WriteError::Io)?;
@@ -860,12 +871,13 @@ pub fn export_copy(
         return Err(WriteError::Io);
     }
     let bytes = fs::read(source).map_err(|_| WriteError::Io)?;
-    write_validated(destination, &bytes, overwrite, |_| Ok(()))
+    write_validated(destination, repository, &bytes, overwrite, |_| Ok(()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::os::unix::fs::symlink;
 
     fn root(label: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!(
@@ -931,6 +943,7 @@ mod tests {
             write_authorization_record(&inside, "authorized", &root.join("target"), false),
             Err(WriteError::InsideRepository(inside))
         );
+        fs::create_dir_all(root.join("work")).unwrap();
         let record = root.join("work/operator-authorization.txt");
         let digest = write_authorization_record(
             &record,
@@ -949,6 +962,14 @@ mod tests {
         let written = form.write(&binding).unwrap();
         let loaded = CampaignSpec::load(&written).unwrap();
         assert_eq!(loaded, spec);
+        let alias = root.join("repository-alias");
+        symlink(root.join("target"), &alias).unwrap();
+        form.spec_path = alias.join("campaign.toml").display().to_string();
+        assert_eq!(
+            form.write(&binding),
+            Err(WriteError::InsideRepository(alias.join("campaign.toml")))
+        );
+        assert!(!root.join("target/campaign.toml").exists());
         form.spec_path = root.join("target/campaign.toml").display().to_string();
         assert!(matches!(
             form.write(&binding),
@@ -959,6 +980,69 @@ mod tests {
         form.overwrite = true;
         assert!(matches!(form.write(&binding), Err(WriteError::Rejected(_))));
         assert_eq!(CampaignSpec::load(&written).unwrap(), spec);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn setup_writers_refuse_repository_aliases_and_preserve_existing_candidates() {
+        let root = root("linked-authority");
+        let repository = root.join("target");
+        let workspace = root.join("work");
+        fs::create_dir_all(&workspace).unwrap();
+        let alias = root.join("repository-alias");
+        symlink(&repository, &alias).unwrap();
+
+        let record = alias.join("authorization.txt");
+        assert_eq!(
+            write_authorization_record(&record, "authorized", &repository, false),
+            Err(WriteError::InsideRepository(record.clone()))
+        );
+        assert!(!repository.join("authorization.txt").exists());
+
+        let oversized = "x".repeat(usize::try_from(MAX_AUTHORIZATION_BYTES).unwrap() + 1);
+        let oversized_path = workspace.join("oversized-authorization.txt");
+        assert!(matches!(
+            write_authorization_record(&oversized_path, &oversized, &repository, false),
+            Err(WriteError::Fields(_))
+        ));
+        assert!(!oversized_path.exists());
+
+        let mut form = ConfigForm::defaults(&repository, &workspace);
+        form.config_path = alias.join("codingmage.toml").display().to_string();
+        assert_eq!(
+            form.write(),
+            Err(WriteError::InsideRepository(alias.join("codingmage.toml")))
+        );
+        assert!(!repository.join("codingmage.toml").exists());
+        form.config_path = workspace.join("codingmage.toml").display().to_string();
+        form.scratch_root = alias.join("scratch").display().to_string();
+        assert_eq!(
+            form.write(),
+            Err(WriteError::InsideRepository(alias.join("scratch")))
+        );
+        assert!(!repository.join("scratch").exists());
+
+        let source = workspace.join("source.toml");
+        fs::write(&source, "version = 1\n").unwrap();
+        let destination = alias.join("export.toml");
+        assert_eq!(
+            export_copy(&source, &destination, &repository, false),
+            Err(WriteError::InsideRepository(destination.clone()))
+        );
+        assert!(!repository.join("export.toml").exists());
+
+        let candidate = workspace.join(format!(
+            ".authorization.txt.candidate-{}",
+            std::process::id()
+        ));
+        fs::write(&candidate, "another writer's file").unwrap();
+        let outside = workspace.join("authorization.txt");
+        write_authorization_record(&outside, "authorized", &repository, false).unwrap();
+        assert_eq!(
+            fs::read_to_string(candidate).unwrap(),
+            "another writer's file"
+        );
+        assert_eq!(fs::read_to_string(outside).unwrap(), "authorized");
         fs::remove_dir_all(root).unwrap();
     }
 }
