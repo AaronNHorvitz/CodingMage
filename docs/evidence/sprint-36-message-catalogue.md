@@ -209,3 +209,52 @@ renewed. The tests used one Cargo build job, one Rust test thread, software GL a
 shared heavy-check reservation; they do not qualify an installed desktop, Orca, device
 budgets, human trials or a live provider. Task 36.3.2.4 and all higher acceptance/gates
 remain open. Independent review of this exact increment is pending.
+
+## Work plan orientation and observation copy
+
+Decision 0051 moves Work plan first-run and source guidance, filter labels,
+coordinator-status observations and final-report recovery copy to the validated
+version-one English catalogue. Exact named fields carry the source path, counts,
+freshness, age, head freshness and recovery action. The existing command builders,
+coordinator authority and report visibility rules are unchanged. Runtime values
+remain inert text. The shipping interface remains English with no language or
+expertise selector.
+
+The catalogue mutation unit rejects missing, repeated and forged Work plan
+observation fields; it permits reordering while preserving literal brace-like and
+script-like values. The synthetic 40% expansion and right-aligned right-to-left
+preview checks the Work plan empty-state labels, AccessKit bounds and Help
+navigation at 1024×640 logical pixels and 200% scale. Both focused cases passed
+1/1. This preview covers a first-run recovery path, not a loaded plan, installed
+screen reader or complete bidirectional keyboard traversal.
+
+Work plan row labels, source detail and task evidence, other screens' remaining
+text, locale-specific number/date/duration formats, exact packaged third-party
+licences and full right-to-left behavior remain open under Task 36.3.2.4.
+The independent review of the preceding exact commit
+`4d9272176c5c2fa71c104003161a664870084431` returned **PASS** with no source
+findings. Its report also lists a prerequisite build and two broader tests run
+without the required build-slot wrapper. Those commands are not counted as
+resource-compliant independent heavy checks; its focused regression and strict
+Clippy did use the slot. The review does not qualify this new increment or any
+human, live or release gate.
+
+The software-GL native UI all-target suite passed 151/151 across 14 targets
+under the shared heavy-check reservation, including the Work plan catalogue
+units and disposable Campaign, Changes, Reports, verification and Work plan
+workflows. Strict workspace Clippy with warnings denied passed after the UI
+suite. Python unittest ran 42 tests: 41 passed and the sole failure was the
+unchanged CM-R01.6 source-bound freshness test on its same eight input drifts.
+No evidence digest was renewed. Formatting, documentation, architecture,
+no-write inventory and diff-whitespace checks passed on the final source.
+The exact staged diff and additions were inspected for scope and private host
+or credential material before commit. Independent review of this increment
+remains pending; installed accessibility, full RTL, live and human gates stay
+open.
+
+The unchanged inventory generator and schema were inspected before regeneration.
+The source-consistent inventory lists 1,770 items and 825 explicit gaps. Against
+the preceding checkpoint, no semantic public item was added or removed; seven
+line-derived IDs moved and 113 shared entries changed only in capped crate-wide
+heuristic test mappings after the new test was added. Applicability and gap counts
+did not change. These mappings are an index, not proof of coverage for an item.

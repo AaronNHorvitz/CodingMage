@@ -1328,19 +1328,38 @@ impl App {
     }
 
     fn work_plan(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Work plan");
+        self.work_plan_with_catalogue(ui, messages::english(), false);
+    }
+
+    fn work_plan_with_catalogue(
+        &mut self,
+        ui: &mut egui::Ui,
+        catalogue: &Catalogue,
+        right_to_left: bool,
+    ) {
+        if right_to_left {
+            ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                self.work_plan_content(ui, catalogue);
+            });
+        } else {
+            self.work_plan_content(ui, catalogue);
+        }
+    }
+
+    fn work_plan_content(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        ui.heading(catalogue.text("work_plan_title"));
         if self.project.is_none() {
-            ui.label("Open a repository to see its task plan.");
-            if ui.button("Open Setup").clicked() {
+            ui.label(catalogue.text("work_plan_no_project"));
+            if ui.button(catalogue.text("work_plan_open_setup")).clicked() {
                 self.screen = Screen::Setup;
             }
-            if ui.button("Open Help and About").clicked() {
+            if ui.button(catalogue.text("work_plan_open_help")).clicked() {
                 self.screen = Screen::Help;
             }
             return;
         }
         if self.campaign.is_some() {
-            self.work_plan_status_controls(ui);
+            self.work_plan_status_controls(ui, catalogue);
         }
         let Some(project) = &self.project else {
             return;
@@ -1349,30 +1368,29 @@ impl App {
             if let Err(error) = &project.plan {
                 failure_box(
                     ui,
-                    "Task source unavailable",
+                    catalogue.text("work_plan_source_unavailable"),
                     &error.to_string(),
-                    "Fix the task source in the repository; the plan is shown only when it parses.",
+                    catalogue.text("work_plan_source_recovery"),
                 );
             }
-            if ui.button("Open Setup").clicked() {
+            if ui.button(catalogue.text("work_plan_open_setup")).clicked() {
                 self.screen = Screen::Setup;
             }
-            if ui.button("Open Help and About").clicked() {
+            if ui.button(catalogue.text("work_plan_open_help")).clicked() {
                 self.screen = Screen::Help;
             }
             return;
         };
-        ui.small(format!(
-            "Read from {} - source checkboxes only; nothing here edits the file.",
-            project.task_source_path().display()
-        ));
+        let path = project.task_source_path().display().to_string();
+        ui.small(catalogue.format("work_plan_source_claim", &[("path", &path)]));
         let mut filter = self.plan_filter.clone();
-        plan_filter_controls(ui, &mut filter);
+        plan_filter_controls(ui, &mut filter, catalogue);
         let rows = index.filtered(&filter);
-        ui.label(format!(
-            "{} of {} items shown",
-            rows.len(),
-            index.counts().items
+        let shown = rows.len().to_string();
+        let total = index.counts().items.to_string();
+        ui.label(catalogue.format(
+            "work_plan_items_shown",
+            &[("shown", &shown), ("total", &total)],
         ));
         let observation_known = self.campaign.is_some()
             && !self.status.loading
@@ -1404,105 +1422,92 @@ impl App {
         }
     }
 
-    fn work_plan_status_controls(&mut self, ui: &mut egui::Ui) {
+    fn work_plan_status_controls(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
         let arguments = self.status_arguments();
         let previewable = command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
+        let action = catalogue.text("work_plan_refresh_status");
         if ui
             .add_enabled(
                 previewable && !self.status.loading,
-                egui::Button::new("Refresh coordinator outcomes"),
+                egui::Button::new(action),
             )
             .clicked()
         {
             self.request_status();
         }
         if let Some(arguments) = &arguments {
-            command::show_for(
-                ui,
-                "Refresh coordinator outcomes",
-                self.binary_path.as_deref(),
-                arguments,
-            );
+            command::show_for(ui, action, self.binary_path.as_deref(), arguments);
         } else {
-            command::show_unavailable_for(ui, "Refresh coordinator outcomes");
+            command::show_unavailable_for(ui, action);
         }
         let freshness = self.status.freshness(self.now);
-        ui.small(format!(
-            "Coordinator outcomes: {} ({}); campaign-head source {}",
-            freshness.label(),
-            age_label(self.status.age(self.now)),
-            self.head_plan.freshness(self.now).label()
+        let age = age_label(self.status.age(self.now));
+        ui.small(catalogue.format(
+            "work_plan_status_observation",
+            &[
+                ("freshness", freshness.label()),
+                ("age", &age),
+                ("head", self.head_plan.freshness(self.now).label()),
+            ],
         ));
         if self.status.loading {
-            ui.label("Loading coordinator outcomes. Retained outcomes are hidden until the refresh completes.");
+            ui.label(catalogue.text("work_plan_status_loading"));
         } else if let Some((_, error)) = &self.status.last_error {
             let (cause, action) = explain_code(&error.code());
             failure_box(
                 ui,
-                "Coordinator outcomes unavailable",
+                catalogue.text("work_plan_status_unavailable"),
                 &format!("{} ({})", cause, error.code()),
-                &format!("Retained outcomes are hidden until a live status is observed. {action}"),
+                &catalogue.format("work_plan_status_failure_effect", &[("action", action)]),
             );
         } else if freshness == Freshness::Stale {
-            ui.label(
-                "Coordinator outcomes are stale. Refresh them to restore verified task states.",
-            );
+            ui.label(catalogue.text("work_plan_status_stale"));
         } else if freshness == Freshness::NotRequested {
-            ui.label("Coordinator outcomes have not been requested. Refresh to read recorded task states.");
+            ui.label(catalogue.text("work_plan_status_unrequested"));
         } else if self.status.value.as_ref().is_some_and(Option::is_none) {
-            ui.label("No campaign status has been recorded yet. Source checkboxes remain separate from verified outcomes.");
+            ui.label(catalogue.text("work_plan_status_absent"));
         }
-        self.work_plan_report_controls(ui);
+        self.work_plan_report_controls(ui, catalogue);
     }
 
-    fn work_plan_report_controls(&mut self, ui: &mut egui::Ui) {
+    fn work_plan_report_controls(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
         let Some(arguments) = self.report_arguments() else {
             return;
         };
         let can_refresh = command::can_preview(self.binary_path.as_deref(), Some(&arguments));
+        let action = catalogue.text("work_plan_refresh_report");
         if ui
             .add_enabled(
                 can_refresh && !self.report.loading,
-                egui::Button::new("Refresh final report"),
+                egui::Button::new(action),
             )
             .clicked()
         {
             self.request_report();
         }
-        command::show_for(
-            ui,
-            "Refresh final report",
-            self.binary_path.as_deref(),
-            &arguments,
-        );
+        command::show_for(ui, action, self.binary_path.as_deref(), &arguments);
         let freshness = self.report.freshness(self.now);
-        ui.small(format!(
-            "Final report: {} ({})",
-            freshness.label(),
-            age_label(self.report.age(self.now))
+        let age = age_label(self.report.age(self.now));
+        ui.small(catalogue.format(
+            "work_plan_report_observation",
+            &[("freshness", freshness.label()), ("age", &age)],
         ));
         if self.report.loading {
-            ui.label("Loading the final report. Retained accepted outcomes are hidden until the refresh completes.");
+            ui.label(catalogue.text("work_plan_report_loading"));
         } else if let Some((_, error)) = &self.report.last_error {
             let (cause, action) = explain_code(&error.code());
             failure_box(
                 ui,
-                "Final report unavailable",
+                catalogue.text("work_plan_report_unavailable"),
                 &format!("{} ({})", cause, error.code()),
-                &format!(
-                    "Accepted outcomes from the retained report are hidden. {action} Refresh the final report to retry."
-                ),
+                &catalogue.format("work_plan_report_failure_effect", &[("action", action)]),
             );
         } else if freshness == Freshness::Stale {
-            ui.label(
-                "The final report observation is stale. Refresh it to restore accepted outcomes.",
-            );
+            ui.label(catalogue.text("work_plan_report_stale"));
         } else if freshness == Freshness::NotRequested {
-            ui.label(
-                "The final report has not been requested. Refresh it to check accepted outcomes.",
-            );
+            ui.label(catalogue.text("work_plan_report_unrequested"));
         } else if self.report.value.as_ref().is_some_and(Option::is_none) {
-            ui.label("No final report is recorded yet. Accepted outcomes require a completed campaign and a matching final report.");
+            ui.label(catalogue.text("work_plan_report_absent"));
         }
     }
 
@@ -1682,12 +1687,12 @@ fn diagnosis_grid(ui: &mut egui::Ui, diagnosis: &Diagnosis) {
         });
 }
 
-fn plan_filter_controls(ui: &mut egui::Ui, filter: &mut PlanFilter) {
+fn plan_filter_controls(ui: &mut egui::Ui, filter: &mut PlanFilter, catalogue: &Catalogue) {
     ui.horizontal_wrapped(|ui| {
-        let label = ui.label("Search");
+        let label = ui.label(catalogue.text("work_plan_search"));
         ui.add(
             egui::TextEdit::singleline(&mut filter.query)
-                .hint_text("identifier or title")
+                .hint_text(catalogue.text("work_plan_search_hint"))
                 .desired_width(current_tokens(ui.ctx()).layout.field_medium),
         )
         .labelled_by(label.id);
@@ -1699,7 +1704,10 @@ fn plan_filter_controls(ui: &mut egui::Ui, filter: &mut PlanFilter) {
             ui.selectable_value(&mut filter.kind, kind, kind.label());
         }
         ui.separator();
-        ui.checkbox(&mut filter.ready_only, "Dependency-ready only");
+        ui.checkbox(
+            &mut filter.ready_only,
+            catalogue.text("work_plan_ready_only"),
+        );
     });
 }
 
@@ -2074,6 +2082,67 @@ mod settings_tests {
                     "missing bounds for {label}"
                 );
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod work_plan_tests {
+    use super::*;
+    use egui_kittest::kittest::{NodeT as _, Queryable as _};
+
+    struct WorkPlanPreview {
+        app: App,
+        catalogue: Catalogue,
+        right_to_left: bool,
+    }
+
+    impl eframe::App for WorkPlanPreview {
+        fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
+            egui::CentralPanel::default().show(root, |ui| {
+                self.app
+                    .work_plan_with_catalogue(ui, &self.catalogue, self.right_to_left);
+            });
+        }
+    }
+
+    #[test]
+    fn expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable() {
+        for right_to_left in [false, true] {
+            let catalogue = messages::english().pseudo(right_to_left);
+            let title = catalogue.text("work_plan_title").to_owned();
+            let guidance = catalogue.text("work_plan_no_project").to_owned();
+            let setup = catalogue.text("work_plan_open_setup").to_owned();
+            let help = catalogue.text("work_plan_open_help").to_owned();
+            let mut harness = egui_kittest::Harness::builder()
+                .with_size(egui::Vec2::new(1024.0, 640.0))
+                .with_pixels_per_point(2.0)
+                .with_max_steps(4)
+                .build_eframe(move |creation| WorkPlanPreview {
+                    app: App::with_state_dir(
+                        &creation.egui_ctx,
+                        Err(BackendError::BinaryUnavailable {
+                            expected: PathBuf::from("/example/missing/codingmage"),
+                        }),
+                        Ok(std::env::temp_dir().join("codingmage-ui-work-plan-preview")),
+                    ),
+                    catalogue,
+                    right_to_left,
+                });
+            harness.run_steps(2);
+            for label in [&title, &guidance, &setup, &help] {
+                assert!(
+                    harness
+                        .get_by_label_contains(label)
+                        .accesskit_node()
+                        .has_bounds()
+                );
+            }
+            harness
+                .get_by_role_and_label(egui::accesskit::Role::Button, &help)
+                .click();
+            harness.run_steps(1);
+            assert_eq!(harness.state().app.screen, Screen::Help);
         }
     }
 }

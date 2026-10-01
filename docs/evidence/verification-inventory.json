@@ -55741,12 +55741,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -56204,12 +56204,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -56323,12 +56323,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -57896,12 +57896,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -57951,12 +57951,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -58250,12 +58250,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -58390,12 +58390,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -58434,12 +58434,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -58721,12 +58721,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -59304,12 +59304,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -59469,12 +59469,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -59809,12 +59809,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -59853,12 +59853,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -59930,12 +59930,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -60041,12 +60041,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -60142,12 +60142,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -60515,9 +60515,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:failure_box:1973",
+      "id": "rust:crates/codingmage-ui/src/app/mod.rs:fn:failure_box:1981",
       "kind": "fn",
-      "line": 1973,
+      "line": 1981,
       "name": "failure_box",
       "path": "crates/codingmage-ui/src/app/mod.rs",
       "surface": "rust_public_api",
@@ -60525,12 +60525,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -60978,12 +60978,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -61539,12 +61539,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -61614,12 +61614,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -62428,12 +62428,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -62661,12 +62661,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -64363,12 +64363,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -64407,12 +64407,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -64782,12 +64782,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -64881,12 +64881,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -66126,12 +66126,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -66203,12 +66203,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -66874,12 +66874,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -66951,12 +66951,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -67094,12 +67094,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -67171,12 +67171,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -67248,12 +67248,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -67391,12 +67391,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -67666,12 +67666,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -67875,12 +67875,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -68084,12 +68084,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -68161,12 +68161,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -68238,12 +68238,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -68381,12 +68381,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -68457,12 +68457,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -68566,12 +68566,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -68665,12 +68665,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -68830,12 +68830,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -68885,12 +68885,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -68942,12 +68942,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -69171,12 +69171,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -69225,12 +69225,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -69534,12 +69534,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -69745,12 +69745,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -70020,12 +70020,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -70095,12 +70095,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -70435,12 +70435,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -70479,12 +70479,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -70523,12 +70523,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -70612,12 +70612,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -70667,12 +70667,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -70766,12 +70766,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -70856,12 +70856,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -71107,12 +71107,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -71472,12 +71472,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -71800,12 +71800,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -72119,12 +72119,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -72251,12 +72251,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -72350,12 +72350,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -72405,12 +72405,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -72922,12 +72922,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -73177,12 +73177,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -73244,9 +73244,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:english:588",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:english:624",
       "kind": "fn",
-      "line": 588,
+      "line": 624,
       "name": "english",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -73254,12 +73254,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -73318,9 +73318,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:failure_title:546",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:failure_title:582",
       "kind": "fn",
-      "line": 546,
+      "line": 582,
       "name": "failure_title",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -73362,9 +73362,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:format:510",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:format:546",
       "kind": "fn",
-      "line": 510,
+      "line": 546,
       "name": "format",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -73406,9 +73406,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:pseudo:565",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:pseudo:601",
       "kind": "fn",
-      "line": 565,
+      "line": 601,
       "name": "pseudo",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -73450,9 +73450,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:text:504",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:fn:text:540",
       "kind": "fn",
-      "line": 504,
+      "line": 540,
       "name": "text",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -73496,9 +73496,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/messages.rs:struct:Catalogue:459",
+      "id": "rust:crates/codingmage-ui/src/messages.rs:struct:Catalogue:495",
       "kind": "struct",
-      "line": 459,
+      "line": 495,
       "name": "Catalogue",
       "path": "crates/codingmage-ui/src/messages.rs",
       "surface": "rust_public_api",
@@ -74057,12 +74057,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -74134,12 +74134,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -74209,12 +74209,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -74266,12 +74266,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -74739,12 +74739,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -74879,12 +74879,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "positive": [
           "crates/codingmage-ui/src/content.rs::only_complete_external_https_links_can_be_offered_for_confirmation",
@@ -74925,12 +74925,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -74990,12 +74990,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -75047,12 +75047,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -75344,12 +75344,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -75465,12 +75465,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -75540,12 +75540,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -75595,12 +75595,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -75850,12 +75850,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -75992,12 +75992,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -76058,12 +76058,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -76257,12 +76257,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -76332,12 +76332,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -76521,12 +76521,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -76598,12 +76598,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -76675,12 +76675,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -76751,12 +76751,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -76818,12 +76818,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -77027,12 +77027,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -77104,12 +77104,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -77687,12 +77687,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -78226,12 +78226,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -78301,12 +78301,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -78423,12 +78423,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -78489,12 +78489,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -78554,12 +78554,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -78873,12 +78873,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -78930,12 +78930,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -79511,12 +79511,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -79566,12 +79566,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -79621,12 +79621,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -79810,12 +79810,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -79885,12 +79885,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -79940,12 +79940,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -79995,12 +79995,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -80050,12 +80050,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -80105,12 +80105,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -80206,12 +80206,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "malformed_input": [
           "crates/codingmage-ui/src/messages.rs::dynamic_messages_allow_reordered_fields_and_do_not_reparse_backend_text",
@@ -80281,12 +80281,12 @@
         "boundary": [
           "crates/codingmage-ui/src/app/campaign_screen.rs::campaign_empty_state_has_labelled_recovery_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/help_screen.rs::expanded_and_right_aligned_help_remain_reachable_at_minimum_window",
+          "crates/codingmage-ui/src/app/mod.rs::expanded_right_aligned_work_plan_empty_state_keeps_recovery_reachable",
           "crates/codingmage-ui/src/app/reports_screen.rs::reports_empty_and_summary_stay_labelled_at_minimum_window_with_pseudo_text",
           "crates/codingmage-ui/src/app/reports_screen.rs::source_export_receipt_requires_exact_bound_identity_and_privacy",
           "crates/codingmage-ui/src/backend/export_process.rs::pipe_request_encoding_refuses_bytes_beyond_its_limit",
           "crates/codingmage-ui/src/backend/models.rs::task_detail_requires_bounded_source_and_exact_schema",
-          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded",
-          "crates/codingmage-ui/src/command.rs::quote_preserves_argument_boundaries_and_rejects_spoofed_display"
+          "crates/codingmage-ui/src/backend/worker.rs::queue_is_bounded"
         ],
         "negative": [
           "crates/codingmage-ui/src/app/reports_screen.rs::source_inspection_rejects_duplicate_keys_at_every_depth_before_preview",
@@ -80320,6 +80320,6 @@
       }
     }
   ],
-  "items_sha256": "6e38e7d1a4858332e79fa3178d372f9d57eaa86e3a039708733cb1b362862262",
+  "items_sha256": "f1950cb41e1143c2e1de084e22e8ab31de03c1c9ff1a2087407540c8830a1a68",
   "schema_version": 1
 }

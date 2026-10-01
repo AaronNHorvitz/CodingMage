@@ -2329,7 +2329,11 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     disposable parallel-campaign recovery test passed 1/1, native UI all-target
     passed 149/149 and strict workspace Clippy passed; Python retains only
     CM-R01.6's eight-input source-bound freshness failure. Independent review
-    of this new increment remains open; see Decision 0050 and
+    of that increment at `4d9272176c5c2fa71c104003161a664870084431`
+    returned a bounded PASS without source findings after slot-compliant
+    focused recovery and strict Clippy; additional reviewer build and broader
+    tests lacked the required slot wrapper and are not counted as compliant
+    review checks. See Decision 0050 and
     `docs/evidence/sprint-36-workplan-report-recovery.md`. The wider
     section-five state, depth and action catalogue remains open.
     <!-- depends-on: 36.3.1.1 -->
@@ -2379,7 +2383,12 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     for the unchanged CM-R01.6 evidence-binding hold. Exact-SHA independent review of
     `5049622c82cb4a4c7a7538c0f60996e86711c75b` returned a bounded PASS with no findings;
     reviewer Clippy could not obtain the shared slot, while builder strict Clippy passed.
-    See the same evidence record.
+    See the same evidence record. Decision 0051 moves Work plan orientation, source,
+    filter, coordinator-observation and final-report recovery copy into the validated
+    English catalogue, with exact named-field validation and a synthetic expanded,
+    right-aligned minimum-window empty-state preview. Work plan row/source-detail copy,
+    locale values, whole-app bidirectional navigation and packaged third-party licences
+    remain open; see `docs/evidence/sprint-36-message-catalogue.md`.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).

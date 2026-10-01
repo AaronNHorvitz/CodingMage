@@ -256,6 +256,33 @@ const REQUIRED_KEYS: &[&str] = &[
     "reports_not_observed",
     "reports_at_least",
     "reports_more_omitted",
+    "work_plan_title",
+    "work_plan_no_project",
+    "work_plan_open_setup",
+    "work_plan_open_help",
+    "work_plan_source_unavailable",
+    "work_plan_source_recovery",
+    "work_plan_source_claim",
+    "work_plan_items_shown",
+    "work_plan_search",
+    "work_plan_search_hint",
+    "work_plan_ready_only",
+    "work_plan_refresh_status",
+    "work_plan_status_observation",
+    "work_plan_status_loading",
+    "work_plan_status_unavailable",
+    "work_plan_status_failure_effect",
+    "work_plan_status_stale",
+    "work_plan_status_unrequested",
+    "work_plan_status_absent",
+    "work_plan_refresh_report",
+    "work_plan_report_observation",
+    "work_plan_report_loading",
+    "work_plan_report_unavailable",
+    "work_plan_report_failure_effect",
+    "work_plan_report_stale",
+    "work_plan_report_unrequested",
+    "work_plan_report_absent",
     "campaign_title",
     "campaign_no_project",
     "campaign_no_selection",
@@ -367,6 +394,15 @@ const REQUIRED_KEYS: &[&str] = &[
 // Each named field is required exactly once in a template. A future translation may reorder
 // fields, but cannot silently omit or invent an identity, count or authority state.
 const TEMPLATE_FIELDS: &[(&str, &[&str])] = &[
+    ("work_plan_source_claim", &["path"]),
+    ("work_plan_items_shown", &["shown", "total"]),
+    (
+        "work_plan_status_observation",
+        &["freshness", "age", "head"],
+    ),
+    ("work_plan_status_failure_effect", &["action"]),
+    ("work_plan_report_observation", &["freshness", "age"]),
+    ("work_plan_report_failure_effect", &["action"]),
     ("campaign_named", &["campaign_id"]),
     ("campaign_execution_parallel", &["pods"]),
     ("campaign_binding_drift", &["reason"]),
@@ -672,6 +708,34 @@ mod tests {
             pseudo
                 .format("campaign_named", &[("campaign_id", "campaign-1")])
                 .contains("campaign-1")
+        );
+    }
+
+    #[test]
+    fn work_plan_templates_preserve_observation_fields_and_inert_values() {
+        let original = "work_plan_status_observation = \"Coordinator outcomes: {freshness} ({age}); campaign-head source {head}\"";
+        for replacement in [
+            "work_plan_status_observation = \"Coordinator outcomes: {freshness} ({age})\"",
+            "work_plan_status_observation = \"{freshness} {age} {head} {head}\"",
+            "work_plan_status_observation = \"{freshness} {age} {other}\"",
+        ] {
+            assert!(Catalogue::parse(&SOURCE.replace(original, replacement)).is_err());
+        }
+        let reordered = SOURCE.replace(
+            original,
+            "work_plan_status_observation = \"{head}; {age}; {freshness}\"",
+        );
+        let catalogue = Catalogue::parse(&reordered).unwrap();
+        assert_eq!(
+            catalogue.format(
+                "work_plan_status_observation",
+                &[
+                    ("freshness", "{head}<script>"),
+                    ("age", "10s ago"),
+                    ("head", "live"),
+                ],
+            ),
+            "live; 10s ago; {head}<script>"
         );
     }
 }
