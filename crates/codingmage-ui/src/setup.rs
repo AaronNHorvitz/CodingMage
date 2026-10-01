@@ -1045,4 +1045,91 @@ mod tests {
         assert_eq!(fs::read_to_string(outside).unwrap(), "authorized");
         fs::remove_dir_all(root).unwrap();
     }
+
+    #[test]
+    fn loader_accepted_setup_files_cannot_publish_replaced_candidates() {
+        let root = root("loader-candidate-race");
+        let repository = root.join("target");
+        let workspace = root.join("work");
+        for directory in ["config", "campaign", "scratch", "state"] {
+            fs::create_dir_all(workspace.join(directory)).unwrap();
+        }
+        let replace_candidate = |parent: &Path| {
+            let staged = fs::read_dir(parent)
+                .unwrap()
+                .map(|entry| entry.unwrap().path())
+                .find(|path| {
+                    path.file_name()
+                        .unwrap()
+                        .to_string_lossy()
+                        .ends_with(".candidate")
+                })
+                .unwrap();
+            fs::remove_file(&staged).unwrap();
+            fs::write(&staged, b"rejected replacement").unwrap();
+        };
+
+        let form = ConfigForm::defaults(&repository, &workspace);
+        let config = form.build().unwrap();
+        let config_bytes = toml::to_string_pretty(&config).unwrap();
+        let config_path = workspace.join("config/codingmage.toml");
+        assert_eq!(
+            crate::report_export::write_validated_document(
+                &config_path,
+                &repository,
+                config_bytes.as_bytes(),
+                false,
+                |candidate| load_config(candidate)
+                    .map(|_| ())
+                    .map_err(|e| e.to_string()),
+                || {},
+                || replace_candidate(&workspace.join("config")),
+            ),
+            Err(WriteError::Io)
+        );
+        assert!(!config_path.exists());
+
+        let binding = CampaignBinding {
+            repository_id: "repo-1-2".to_owned(),
+            repository_path: repository.clone(),
+            initial_commit: "a".repeat(40),
+            task_source_sha256: "b".repeat(64),
+            default_branch: "main".to_owned(),
+        };
+        let mut form = CampaignForm::defaults(&workspace.join("campaign"), "main");
+        let provider = workspace.join("provider");
+        fs::write(&provider, b"#!/bin/sh\n").unwrap();
+        for role in [
+            &mut form.team_lead,
+            &mut form.implementer,
+            &mut form.reviewer,
+        ] {
+            role.executable = provider.display().to_string();
+            role.model = "fixture".to_owned();
+        }
+        form.allowed_paths = "src".to_owned();
+        let authorization = workspace.join("operator-authorization.txt");
+        write_authorization_record(&authorization, "authorized", &repository, false).unwrap();
+        form.authorization_path = authorization.display().to_string();
+        let spec = form.build(&binding).unwrap();
+        spec.verify().unwrap();
+        let spec_bytes = toml::to_string_pretty(&spec).unwrap();
+        let spec_path = workspace.join("campaign/campaign.toml");
+        assert_eq!(
+            crate::report_export::write_validated_document(
+                &spec_path,
+                &repository,
+                spec_bytes.as_bytes(),
+                false,
+                |candidate| CampaignSpec::load(candidate)
+                    .map(|_| ())
+                    .map_err(|e| e.to_string()),
+                || {},
+                || replace_candidate(&workspace.join("campaign")),
+            ),
+            Err(WriteError::Io)
+        );
+        assert!(!spec_path.exists());
+        fs::remove_dir_all(root).unwrap();
+    }
 }

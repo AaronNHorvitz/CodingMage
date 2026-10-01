@@ -15,8 +15,9 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use nix::{
-    fcntl::{OFlag, open},
+    fcntl::{AtFlags, OFlag, open},
     sys::stat::Mode,
+    unistd::linkat,
 };
 
 use crate::setup::{FieldError, WriteError};
@@ -238,6 +239,31 @@ fn temporary_name() -> String {
     )
 }
 
+fn same_inode(left: &fs::Metadata, right: &fs::Metadata) -> bool {
+    left.dev() == right.dev() && left.ino() == right.ino()
+}
+
+fn remove_if_same(path: &Path, expected: &fs::Metadata) {
+    if fs::symlink_metadata(path).is_ok_and(|current| same_inode(&current, expected)) {
+        let _ = fs::remove_file(path);
+    }
+}
+
+fn link_file_descriptor(
+    file: &File,
+    destination: &Path,
+    requested_path: &Path,
+) -> Result<(), WriteError> {
+    let source = PathBuf::from(format!("/proc/self/fd/{}", file.as_raw_fd()));
+    linkat(file, &source, file, destination, AtFlags::AT_SYMLINK_FOLLOW).map_err(|error| {
+        if error == nix::errno::Errno::EEXIST {
+            WriteError::Exists(requested_path.to_path_buf())
+        } else {
+            WriteError::Io
+        }
+    })
+}
+
 /// Refuses an invalid destination before formatting the report. The writer repeats these
 /// checks after formatting because the filesystem can change in between.
 pub(super) fn validate_report_destination(
@@ -303,34 +329,82 @@ pub(crate) fn write_validated_document(
         }
         before_publish();
         destination.check_parent()?;
-        if overwrite {
-            // Rename replaces the directory entry, not the target of a raced leaf link.
-            fs::rename(&temporary, &leaf).map_err(|_| WriteError::Io)?;
-        } else {
-            // Hard-link publication is atomic and fails if another writer created the leaf.
-            fs::hard_link(&temporary, &leaf).map_err(|error| {
-                if error.kind() == ErrorKind::AlreadyExists {
-                    WriteError::Exists(path.to_path_buf())
-                } else {
-                    WriteError::Io
-                }
-            })?;
+        // The named candidate is used only by the existing loaders. Publication uses
+        // the retained descriptor, so replacing its directory entry cannot publish
+        // bytes that the loader never accepted.
+        let current = fs::symlink_metadata(&temporary).map_err(|_| WriteError::Io)?;
+        if !current.is_file()
+            || !same_inode(&current, &written)
+            || fs::read(format!("/proc/self/fd/{}", file.as_raw_fd()))
+                .map_err(|_| WriteError::Io)?
+                != bytes
+        {
+            return Err(WriteError::Io);
         }
-        let named = fs::symlink_metadata(&leaf).map_err(|_| WriteError::Io)?;
+        let mut backup = None;
+        if overwrite {
+            // Preserve the original regular inode while replacing it with a link
+            // directly from the validated descriptor. The backup is kept until
+            // the final identity and parent checks complete.
+            match fs::symlink_metadata(&leaf) {
+                Ok(old) if old.is_file() => {
+                    let name = destination.fd_path().join(temporary_name());
+                    fs::hard_link(&leaf, &name).map_err(|_| WriteError::Io)?;
+                    let saved = fs::symlink_metadata(&name).map_err(|_| WriteError::Io)?;
+                    if !same_inode(&saved, &old) {
+                        // The backup name was replaced; it is no longer ours to remove.
+                        return Err(WriteError::Io);
+                    }
+                    if fs::symlink_metadata(&leaf).map_or(true, |now| !same_inode(&now, &old)) {
+                        remove_if_same(&name, &old);
+                        return Err(WriteError::Io);
+                    }
+                    if fs::remove_file(&leaf).is_err() {
+                        remove_if_same(&name, &old);
+                        return Err(WriteError::Io);
+                    }
+                    backup = Some((name, saved));
+                }
+                Ok(_) => return Err(WriteError::Exists(path.to_path_buf())),
+                Err(error) if error.kind() == ErrorKind::NotFound => {}
+                Err(_) => return Err(WriteError::Io),
+            }
+        }
+        if let Err(error) = link_file_descriptor(&file, &leaf, path) {
+            if let Some((name, saved)) = &backup {
+                // Restoration may be refused by a concurrent leaf creation. In
+                // that case retain the backup and report uncertainty as I/O.
+                if fs::hard_link(name, &leaf).is_ok() {
+                    remove_if_same(name, saved);
+                } else {
+                    return Err(WriteError::Io);
+                }
+            }
+            return Err(error);
+        }
+        let named = fs::symlink_metadata(&leaf).ok();
         let parent_check = destination.check_parent();
-        if !named.is_file()
-            || named.dev() != written.dev()
-            || named.ino() != written.ino()
+        if !named
+            .as_ref()
+            .is_some_and(|entry| entry.is_file() && same_inode(entry, &written))
             || parent_check.is_err()
         {
-            if named.dev() == written.dev() && named.ino() == written.ino() {
-                let _ = fs::remove_file(&leaf);
+            remove_if_same(&leaf, &written);
+            if let Some((name, saved)) = &backup
+                && fs::hard_link(name, &leaf).is_ok()
+            {
+                remove_if_same(name, saved);
             }
             return parent_check.and(Err(WriteError::Io));
         }
+        if let Some((name, saved)) = &backup {
+            remove_if_same(name, saved);
+        }
         Ok(path.to_path_buf())
     })();
-    let _ = fs::remove_file(temporary);
+    if let Ok(written) = file.metadata() {
+        remove_if_same(&temporary, &written);
+    }
     result
 }
 
@@ -550,6 +624,77 @@ mod tests {
         );
         assert_eq!(result, Err(WriteError::Exists(path.clone())));
         assert_eq!(fs::read(path).unwrap(), b"other writer");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn replaced_validated_candidate_never_reaches_destination() {
+        for replacement in ["regular", "symlink", "modified"] {
+            for overwrite in [false, true] {
+                let root = root(&format!("candidate-{replacement}-{overwrite}"));
+                let destination = root.join("outside/document.toml");
+                if overwrite {
+                    fs::write(&destination, b"previous document").unwrap();
+                }
+                let outside = root.join("outside");
+                let result = write_validated_document(
+                    &destination,
+                    &root.join("repo"),
+                    b"accepted candidate",
+                    overwrite,
+                    |path| {
+                        if fs::read(path).unwrap() == b"accepted candidate" {
+                            Ok(())
+                        } else {
+                            Err("rejected candidate".to_owned())
+                        }
+                    },
+                    || {},
+                    || {
+                        let staged = fs::read_dir(&outside)
+                            .unwrap()
+                            .map(|entry| entry.unwrap().path())
+                            .find(|path| {
+                                path.file_name()
+                                    .unwrap()
+                                    .to_string_lossy()
+                                    .ends_with(".candidate")
+                            })
+                            .unwrap();
+                        if replacement == "modified" {
+                            fs::write(&staged, b"rejected replacement").unwrap();
+                        } else {
+                            fs::remove_file(&staged).unwrap();
+                            if replacement == "regular" {
+                                fs::write(&staged, b"rejected replacement").unwrap();
+                            } else {
+                                symlink(root.join("repo"), &staged).unwrap();
+                            }
+                        }
+                    },
+                );
+                assert_eq!(result, Err(WriteError::Io));
+                if overwrite {
+                    assert_eq!(fs::read(&destination).unwrap(), b"previous document");
+                } else {
+                    assert!(!destination.exists());
+                }
+                fs::remove_dir_all(root).unwrap();
+            }
+        }
+    }
+
+    #[test]
+    fn descriptor_bound_overwrite_replaces_valid_regular_file() {
+        let root = root("descriptor-overwrite");
+        let path = root.join("outside/report.json");
+        fs::write(&path, b"previous").unwrap();
+        assert_eq!(
+            write_report(&path, &root.join("repo"), b"accepted", true, || {}, || {}),
+            Ok(path.clone())
+        );
+        assert_eq!(fs::read(&path).unwrap(), b"accepted");
+        assert_eq!(fs::read_dir(root.join("outside")).unwrap().count(), 1);
         fs::remove_dir_all(root).unwrap();
     }
 }

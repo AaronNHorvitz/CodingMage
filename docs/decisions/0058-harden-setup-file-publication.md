@@ -38,3 +38,7 @@ dependency, licence, coordinator or campaign execution policy.
 ## Verification
 
 See [the local Setup writer evidence](../evidence/sprint-36-setup-writer-hardening.md).
+The first exact-commit independent review found that the named candidate could
+be replaced after validation, publishing rejected bytes. That finding and its
+correction are retained in [Decision 0059](0059-publish-setup-documents-from-held-file.md);
+this decision alone did not establish exact-byte publication.

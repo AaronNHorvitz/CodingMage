@@ -2342,6 +2342,11 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     The local correction is recorded in
     `docs/evidence/sprint-36-setup-writer-hardening.md`; Setup still needs public
     sibling commands, off-render-thread writes and exact Show-command disclosures.
+    The independent review of `2cda22da3e0cde51f4ba0000ce7f3f66c798a608`
+    found a high candidate-replacement race after loader validation; the
+    rejected-byte publication and its corrective held-descriptor design are
+    retained in Decision 0059 and the same evidence note. This correction does
+    not itself close the Setup command boundary or review requirement.
     This sub-task stays open, as do human and live qualification.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
