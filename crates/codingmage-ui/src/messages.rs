@@ -32,6 +32,35 @@ const REQUIRED_KEYS: &[&str] = &[
     "failure_preflight_retained",
     "failure_changes_no_observation",
     "failure_records_no_observation",
+    "readiness_title",
+    "readiness_authorization",
+    "readiness_authorization_hint",
+    "readiness_use_record",
+    "readiness_no_campaign",
+    "readiness_local_checks",
+    "readiness_run_preflight",
+    "readiness_command_unavailable",
+    "readiness_observation",
+    "readiness_report_state",
+    "readiness_copy_digest",
+    "readiness_authority_digest",
+    "readiness_authorization_digest",
+    "readiness_repository",
+    "readiness_repository_detail",
+    "readiness_policy",
+    "readiness_policy_detail",
+    "readiness_providers",
+    "readiness_provider_detail",
+    "readiness_gates",
+    "readiness_gates_detail",
+    "readiness_controls",
+    "readiness_controls_detail",
+    "readiness_storage",
+    "readiness_storage_detail",
+    "readiness_source_free",
+    "readiness_refreshing",
+    "readiness_probing",
+    "readiness_stale",
     "status_coordinator_configured",
     "help_title",
     "help_offline",
@@ -517,6 +546,27 @@ const REQUIRED_KEYS: &[&str] = &[
 // Each named field is required exactly once in a template. A future translation may reorder
 // fields, but cannot silently omit or invent an identity, count or authority state.
 const TEMPLATE_FIELDS: &[(&str, &[&str])] = &[
+    ("readiness_local_checks", &["passed", "failed", "unknown"]),
+    ("readiness_observation", &["freshness", "age"]),
+    ("readiness_report_state", &["state", "digest"]),
+    (
+        "readiness_repository_detail",
+        &["id", "head", "clean", "branch", "checkout", "items", "open"],
+    ),
+    (
+        "readiness_policy_detail",
+        &["pods", "outcomes", "publication", "protected", "denied"],
+    ),
+    (
+        "readiness_provider_detail",
+        &["role", "verified", "probes", "authentication"],
+    ),
+    ("readiness_gates_detail", &["commands", "tiers"]),
+    ("readiness_controls_detail", &["count", "guard"]),
+    (
+        "readiness_storage_detail",
+        &["sufficient", "scratch", "state", "bytes"],
+    ),
     ("changes_delivery_policy", &["policy"]),
     ("changes_observation", &["freshness", "age"]),
     ("changes_commit", &["commit", "subject", "timestamp"]),
@@ -819,6 +869,25 @@ mod tests {
         );
         assert!(Catalogue::parse(&format!("{SOURCE}\nhelp_extra = \"unexpected\"\n")).is_err());
         assert!(Catalogue::parse(&format!("{SOURCE}\nhelp_title = \"duplicate\"\n")).is_err());
+    }
+
+    #[test]
+    fn readiness_template_field_contract() {
+        let original =
+            "readiness_report_state = \"Preflight state {state} - report sha256 {digest}\"";
+        for replacement in [
+            "readiness_report_state = \"Preflight state {state}\"",
+            "readiness_report_state = \"Preflight state {state} - {other}\"",
+            "readiness_report_state = \"{state} {digest} {digest}\"",
+            "readiness_report_state = \"{state} {digest\"",
+        ] {
+            assert!(Catalogue::parse(&SOURCE.replace(original, replacement)).is_err());
+        }
+        let rendered = english().format(
+            "readiness_report_state",
+            &[("digest", "a"), ("state", "ready")],
+        );
+        assert_eq!(rendered, "Preflight state ready - report sha256 a");
     }
 
     #[test]

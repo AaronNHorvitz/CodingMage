@@ -2452,6 +2452,19 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     final-source software-GL UI all-target suite passed 159/159 and strict
     workspace Clippy passed; Python passed 42/43 with only the unchanged
     CM-R01.6 freshness hold and no digest renewal.
+    Decision 0057 moves the Campaign readiness panel's authored preflight
+    labels, progress states and detailed report prose into the strict English
+    catalogue. With no selected repository or campaign it now withholds the
+    misleading zero-check result; the disabled preflight control has an
+    unavailable Show-command explanation. A synthetic expanded/right-aligned
+    1024×640, 200%-scale preview and real coordinator preflight tests are
+    recorded in `docs/evidence/sprint-36-message-catalogue.md`. Remaining
+    Setup text, dynamic locale formats and whole-app RTL keep this row open.
+    The preliminary native all-target suite passed 161/161; after making the
+    empty state reachable through Campaign, final-source UI library 83/83 and
+    real-coordinator readiness 6/6 passed with strict workspace Clippy. Full
+    Python unittest passed 42/43, with only unchanged CM-R01.6 source-bound
+    freshness drift; no digest was renewed. Exact-SHA review is pending.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).

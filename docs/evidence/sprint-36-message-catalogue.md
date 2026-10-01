@@ -478,3 +478,54 @@ no digest or package binding was renewed. Formatting, documentation,
 architecture, source-consistent inventory and diff-whitespace checks passed. The exact
 staged diff and privacy inspection preceded the commit. Independent review of
 this increment remains pending.
+
+## Readiness panel and preflight report copy
+
+The read-only review of exact Changes checkpoint
+`7baed5cf14455708ce98d05d3f1beadb3ee0537b` returned **PASS** with no
+findings. It independently rebuilt the 12-case disposable Changes target,
+checked the strict catalogue and source-consistent inventory, and found only
+the unchanged CM-R01.6 source-bound freshness failure in the Python suite.
+That bounded result does not close a human, live or release gate.
+
+Decision 0057 moves authored Campaign readiness labels, local-check summary,
+coordinator report fields and loading/stale guidance into the same strict
+English message catalogue. Named fields retain the coordinator's actual
+repository, authority, policy, provider, gate, control and storage values;
+template validation rejects missing, forged or repeated fields. Without a
+selected repository or campaign the panel explains that no local readiness
+result exists instead of displaying zero passing checks. The disabled
+preflight action has an unavailable Show-command disclosure, and a ready
+selection still shows the exact coordinator command. The request, parser,
+report digest, admission guard and authority are unchanged.
+
+A display-less synthetic 40%-expanded, right-aligned missing-selection panel
+checks labelled AccessKit bounds at 1024×640 logical pixels and 200% scaling.
+The real coordinator readiness target exercises successful preflight,
+provider failure, missing capabilities, invisible-command refusal and
+failure-state recovery. These local checks do not establish full bidirectional
+navigation, installed Orca behavior or a real-provider qualification.
+
+The inventory generator and source-only schema contract were inspected before
+regeneration. The source-consistent artifact has 1,770 public items and 825
+explicit gaps. Relative to the parent it has zero added/removed semantic
+surfaces, zero applicability changes, zero candidate test-map changes and 15
+relocated line-derived IDs; no coverage or approval is inferred from that
+index. Readiness also has remaining Rust-authored status copy, while broader
+Setup copy, locale-aware values, packaged third-party licences and full RTL
+remain open under Task 36.3.2.4.
+
+The preliminary software-GL native UI all-target suite passed 161/161 across
+14 targets. A later edit made the no-selection copy reachable from the actual
+Campaign screen; the final-source library passed 83/83 and the disposable
+readiness target passed 6/6, including the new no-campaign screen assertion.
+This is a bounded final-source verification of the edited surfaces, not a
+claim that the earlier all-target binary included the later screen edit.
+Strict workspace Clippy with warnings denied passed after extracting a
+provider-summary helper from the expanded renderer. Formatting,
+documentation, architecture, no-write inventory and whitespace checks passed.
+The full Python unittest suite ran 43 tests: 42 passed and the sole failure
+was the unchanged CM-R01.6 eight-input source-bound evidence drift. No digest
+or binding was renewed. Initial test-harness compilation mistakes and two
+function-length Clippy failures were corrected and retained privately.
+Independent exact-commit review of this new increment remains pending.

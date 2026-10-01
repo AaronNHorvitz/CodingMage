@@ -34,6 +34,22 @@ fn opened_at_size(
 }
 
 #[test]
+fn campaign_without_selection_withholds_local_readiness_result() {
+    let fixture = Fixture::new("readiness-no-campaign", 3);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_screen(Screen::Campaign);
+    harness.run_steps(2);
+    harness.get_by_label_contains("No readiness result is available yet.");
+    harness.get_by_label("Show command: Run preflight");
+    assert!(
+        harness
+            .query_by_label_contains("Local checks: 0 pass")
+            .is_none()
+    );
+    assert!(harness.state().preflight().value.is_none());
+}
+
+#[test]
 fn invisible_executable_refuses_both_command_actions_and_direct_preflight() {
     let fixture = Fixture::new("invisible-command", 10);
     git(
@@ -178,9 +194,7 @@ fn show_preflight_command_by_keyboard(
             .unwrap_or_default();
         focused.push(current);
         if harness
-            .get_all_by_label("Show command")
-            .nth(1)
-            .expect("preflight command control")
+            .get_by_label("Show command: Run preflight")
             .accesskit_node()
             .is_focused()
         {
@@ -193,10 +207,7 @@ fn show_preflight_command_by_keyboard(
         "Tab traversal did not reach preflight: {focused:?}"
     );
     harness.run_steps(2);
-    let control = harness
-        .get_all_by_label("Show command")
-        .nth(1)
-        .expect("preflight command control");
+    let control = harness.get_by_label("Show command: Run preflight");
     assert!(control.accesskit_node().is_focused());
     assert!(control.accesskit_node().has_bounds());
     if let Some(directory) = std::env::var_os("CODINGMAGE_UI_EVIDENCE_DIR") {

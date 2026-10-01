@@ -651,6 +651,7 @@ impl App {
             if ui.button(catalogue.text("campaign_open_setup")).clicked() {
                 self.screen = Screen::Setup;
             }
+            self.readiness_section(ui);
             roles_and_modes(ui, &self.mission, self.now, catalogue);
             return;
         };
