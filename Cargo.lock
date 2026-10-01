@@ -664,6 +664,7 @@ dependencies = [
  "codingmage-soak",
  "nix",
  "serde_json",
+ "sha2",
  "toml",
 ]
 

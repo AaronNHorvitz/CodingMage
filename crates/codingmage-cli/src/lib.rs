@@ -31,6 +31,7 @@ use codingmage_runtime::{
 
 mod outcome_report;
 mod report_writer;
+mod setup_writer;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const HELP: &str = r"CodingMage local multi-agent engineering coordinator
@@ -56,6 +57,7 @@ Commands:
   campaign-report               Read the final campaign report
   campaign-outcome-report       Assemble a source-bound outcome and blocker report
   report-export                 Write a source-bound report outside the repository
+  setup-write-authorization     Write exact owner authorization bytes from stdin
   campaign-explain-blocker      Read typed blocker and deferral details
   campaign-clear-blocker        Record one exact external-prerequisite change
   campaign-observe-trigger      Record one exact deferral trigger
@@ -93,6 +95,9 @@ fn command_help(command: &str) -> Option<&'static str> {
         ),
         "report-export" => Some(
             "Usage: codingmage report-export --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> --output <ABSOLUTE_FILE> [--include-paths true|false] [--overwrite true|false]",
+        ),
+        "setup-write-authorization" => Some(
+            "Usage: codingmage setup-write-authorization --config <ABSOLUTE_FILE> --repository-id <OBSERVED_ID> --output <ABSOLUTE_FILE> [--overwrite true|false] < AUTHORIZATION_TEXT",
         ),
         "campaign-status"
         | "campaign-report"
@@ -181,6 +186,9 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign-report" => inspect_campaign_report(&arguments[1..]),
         "campaign-outcome-report" => outcome_report::inspect(&arguments[1..]),
         "report-export" => outcome_report::export(&arguments[1..]),
+        "setup-write-authorization" => {
+            setup_writer::authorization(&arguments[1..], std::io::stdin().lock())
+        }
         "campaign-explain-blocker" => explain_campaign_blocker(&arguments[1..]),
         "campaign-clear-blocker" => clear_blocker(&arguments[1..]),
         "campaign-observe-trigger" => observe_trigger(&arguments[1..]),

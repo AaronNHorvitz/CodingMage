@@ -17,6 +17,7 @@ codingmage-process.workspace = true
 codingmage-runtime.workspace = true
 nix.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 toml.workspace = true
 
 [dev-dependencies]

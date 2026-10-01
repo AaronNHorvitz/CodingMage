@@ -2138,12 +2138,18 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     received a bounded independent exact-commit PASS with no open finding. It does not qualify
     the still-open Setup command boundary. Decision 0062 hardens the public CLI report export
     writer as a prerequisite for public Setup writes; see
-    `docs/evidence/sprint-36-cli-report-writer.md`. Exact-commit review of that CLI increment,
-    public Setup write commands, bounded off-render worker and complete Show-command coverage
-    remain open.
+    `docs/evidence/sprint-36-cli-report-writer.md`. The reviewed parent-chain correction at
+    `106ab0f4889943b403cdcdc98db1227b466ba4b0` received a bounded independent PASS; it
+    does not review subsequent Setup command work. Decision 0064 and
+    `docs/evidence/sprint-36-setup-command-boundary.md` record the first public Setup write,
+    `setup-write-authorization`, with private bounded stdin, observed repository identity,
+    post-input authority revalidation and a content-minimized receipt. Its exact-commit
+    independent review, UI worker/private-stdin integration, other public Setup writes and
+    complete Show-command coverage remain open.
     The bounded review of `b8e8458` returned a high parent-move finding and a low
     inventory-count finding. Decision 0063 and the corrected evidence record the
-    local fix; exact-commit re-review is required before treating either as resolved.
+    local fix; the bounded re-review of `106ab0f4889943b403cdcdc98db1227b466ba4b0`
+    returned PASS without findings.
     Open increments: `campaign-head-plan`, `campaign-changes` and `campaign-run-records` now
     route campaign-head task states, candidate change summaries and bound run evidence through
     the coordinator. The coordinator start and four campaign controls now have exact in-context
