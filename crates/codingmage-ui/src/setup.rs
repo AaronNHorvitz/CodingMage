@@ -624,6 +624,40 @@ impl CampaignForm {
     pub fn build(&self, binding: &CampaignBinding) -> Result<CampaignSpec, Vec<FieldError>> {
         let mut errors = Vec::new();
         let authorization_sha256 = self.authorization_digest(binding, &mut errors);
+        self.build_with_digest(binding, authorization_sha256, errors)
+    }
+
+    /// Builds a candidate using an authorization digest freshly observed by the coordinator.
+    /// This pure path does not read the authorization record or write a file.
+    ///
+    /// # Errors
+    ///
+    /// Returns field problems found before the existing verifier would run.
+    pub fn build_with_authorization_digest(
+        &self,
+        binding: &CampaignBinding,
+        authorization_sha256: &str,
+    ) -> Result<CampaignSpec, Vec<FieldError>> {
+        let mut errors = Vec::new();
+        if authorization_sha256.len() != 64
+            || !authorization_sha256
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit())
+        {
+            errors.push(FieldError {
+                field: "authorization record",
+                message: "the coordinator did not return a SHA-256 digest".to_owned(),
+            });
+        }
+        self.build_with_digest(binding, authorization_sha256.to_owned(), errors)
+    }
+
+    fn build_with_digest(
+        &self,
+        binding: &CampaignBinding,
+        authorization_sha256: String,
+        mut errors: Vec<FieldError>,
+    ) -> Result<CampaignSpec, Vec<FieldError>> {
         let max_units = self.max_units.trim().parse::<u32>().unwrap_or_else(|_| {
             errors.push(FieldError {
                 field: "accepted-outcome ceiling",

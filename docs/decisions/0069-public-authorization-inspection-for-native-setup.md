@@ -1,6 +1,6 @@
 # ADR 0069: Inspect Campaign Authorization Through the Public Command
 
-- **Status:** Accepted for local implementation; independent review pending
+- **Status:** Accepted for local implementation; bounded independent review passed
 - **Date:** 2026-10-01
 - **Decision owners:** CodingMage implementation
 
@@ -45,4 +45,7 @@ The public CLI unit target passes 21/21, the disposable Setup target passes
 7/7, strict workspace Clippy with warnings denied passes, and the full Python
 suite retains only the unchanged CM-R01.6 source-bound freshness failure.
 Formatting, documentation, architecture and inventory checks pass. These are
-local results; independent review of this command remains pending.
+local results. Independent exact-commit review of
+`3470b4f682e0de377bd13b61725f36ae0d1189e4` returned PASS with no open
+finding for the public inspection command. That review does not cover the
+subsequent native worker routing, human qualification or release.

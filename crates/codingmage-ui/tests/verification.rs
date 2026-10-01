@@ -264,7 +264,17 @@ fn setup_to_outcome_workflow_through_the_interface() {
     }
     evidence.snapshot(&mut harness, "05-setup-campaign-form", 1.0);
     harness.state_mut().apply_campaign_form();
-    harness.run_steps(2);
+    assert!(
+        settle(&mut harness, Duration::from_secs(30), |app| {
+            app.setup_state().message.as_ref().is_some_and(|result| {
+                result
+                    .as_ref()
+                    .is_ok_and(|message| message.contains("campaign specification written"))
+                    || result.as_ref().is_err()
+            })
+        }),
+        "campaign Setup response did not settle"
+    );
     assert!(
         harness.state().campaign().is_some(),
         "{:?}",

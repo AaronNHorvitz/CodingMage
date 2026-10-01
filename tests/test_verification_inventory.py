@@ -84,6 +84,18 @@ class VerificationInventoryTests(unittest.TestCase):
             self.assertEqual(first, second)
             self.assertIn(required, first)
 
+    def test_campaign_setup_categories_do_not_follow_adjacent_text(self) -> None:
+        cases = (
+            ("crates/codingmage-ui/src/app/setup_screen.rs", "apply_campaign_form", "boundary"),
+            ("crates/codingmage-ui/src/app/setup_screen.rs", "accept_campaign_write", "unknown_field"),
+            ("crates/codingmage-ui/src/setup.rs", "build_with_authorization_digest", "malformed_input"),
+        )
+        for path, name, required in cases:
+            first = INVENTORY.applicability(path, "fn", name, "unrelated navigation")
+            second = INVENTORY.applicability(path, "fn", name, "oversized malformed schema")
+            self.assertEqual(first, second)
+            self.assertIn(required, first)
+
 
 if __name__ == "__main__":
     unittest.main()

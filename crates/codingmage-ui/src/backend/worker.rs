@@ -17,11 +17,19 @@ use std::{
     time::Duration,
 };
 
+use serde::Deserialize;
+use sha2::{Digest as _, Sha256};
+
 use super::{
     cli::{BackendError, CoordinatorBinary},
     export_process,
 };
-use crate::{report::OutcomeReport, report_export::ExportRequest};
+use crate::{
+    project::hex,
+    report::OutcomeReport,
+    report_export::ExportRequest,
+    setup::{CampaignBinding, CampaignForm},
+};
 
 /// Maximum queued requests before new requests are refused.
 pub const QUEUE_CAPACITY: usize = 8;
@@ -90,6 +98,19 @@ pub enum Job {
         /// Deadline after which the command is killed.
         deadline: Duration,
     },
+    /// Inspect an authorization record and publish a campaign through public CLI commands.
+    CampaignSetup {
+        /// Form snapshot at submission; edits after submission have no effect.
+        form: Box<CampaignForm>,
+        /// Repository/head/task-source observation at submission.
+        source: CampaignBinding,
+        /// Exact read-only command displayed beside the native action.
+        inspect_arguments: Vec<String>,
+        /// Exact write command displayed beside the native action.
+        write_arguments: Vec<String>,
+        /// Deadline for each coordinator command.
+        deadline: Duration,
+    },
     /// Validate a fresh support-bundle destination off the UI thread, then run the coordinator.
     SupportBundle {
         /// Exact command arguments displayed by the UI.
@@ -139,6 +160,7 @@ impl Job {
             Self::SupportBundle { .. } => "support-bundle",
             Self::ReportExport { .. } | Self::SourceReportExport { .. } => "report-export",
             Self::SourceReportInspect { .. } => "campaign-outcome-report",
+            Self::CampaignSetup { .. } => "setup-write-campaign",
         }
     }
 }
@@ -345,6 +367,21 @@ fn run_loop(
                     deadline,
                     ..
                 } => binary.run_with_private_input(arguments, input.0.clone(), *deadline, &cancel),
+                Job::CampaignSetup {
+                    form,
+                    source,
+                    inspect_arguments,
+                    write_arguments,
+                    deadline,
+                } => run_campaign_setup(
+                    binary,
+                    form,
+                    source,
+                    inspect_arguments,
+                    write_arguments,
+                    *deadline,
+                    &cancel,
+                ),
                 Job::SupportBundle {
                     arguments,
                     destination,
@@ -374,6 +411,101 @@ fn run_loop(
         }
         (context.wake)();
     }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AuthorizationObservation {
+    schema_version: u64,
+    repository_id: String,
+    head: String,
+    task_source_sha256: String,
+    observed: bool,
+    bytes: usize,
+    sha256: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CampaignWriteObservation {
+    schema_version: u64,
+    repository_id: String,
+    campaign_id: String,
+    head: String,
+    written: bool,
+    bytes: usize,
+    sha256: String,
+}
+
+fn campaign_contract_error() -> BackendError {
+    BackendError::Contract(super::models::ModelError::Malformed)
+}
+
+fn run_campaign_setup(
+    binary: &CoordinatorBinary,
+    form: &CampaignForm,
+    source: &CampaignBinding,
+    inspect_arguments: &[String],
+    write_arguments: &[String],
+    deadline: Duration,
+    cancel: &Arc<AtomicBool>,
+) -> Result<Vec<u8>, BackendError> {
+    let inspection = binary.run(inspect_arguments, deadline, cancel)?;
+    let observation: AuthorizationObservation =
+        serde_json::from_slice(&inspection).map_err(|_| campaign_contract_error())?;
+    if observation.schema_version != 1
+        || !observation.observed
+        || observation.repository_id != source.repository_id
+        || observation.head != source.initial_commit
+        || observation.task_source_sha256 != source.task_source_sha256
+        || observation.bytes == 0
+        || observation.bytes > 1024 * 1024
+        || observation.sha256.len() != 64
+        || !observation
+            .sha256
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit())
+    {
+        return Err(campaign_contract_error());
+    }
+    let specification = form
+        .build_with_authorization_digest(source, &observation.sha256)
+        .map_err(|problems| {
+            BackendError::Refused(format!(
+                "campaign fields need attention: {}",
+                problems
+                    .iter()
+                    .map(|problem| format!("{}: {}", problem.field, problem.message))
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            ))
+        })?;
+    specification
+        .verify()
+        .map_err(|error| BackendError::Refused(format!("campaign verifier refused: {error}")))?;
+    let candidate = toml::to_string_pretty(&specification)
+        .map_err(|_| BackendError::Refused("campaign encoding failed".to_owned()))?
+        .into_bytes();
+    let digest = hex(&Sha256::digest(&candidate));
+    let input = PrivateInput::new(candidate)?;
+    if cancel.load(Ordering::Acquire) {
+        return Err(BackendError::Cancelled);
+    }
+    let written =
+        binary.run_with_private_input(write_arguments, input.0.clone(), deadline, cancel)?;
+    let receipt: CampaignWriteObservation =
+        serde_json::from_slice(&written).map_err(|_| campaign_contract_error())?;
+    if receipt.schema_version != 1
+        || !receipt.written
+        || receipt.repository_id != source.repository_id
+        || receipt.campaign_id != specification.campaign_id
+        || receipt.head != source.initial_commit
+        || receipt.bytes != input.0.len()
+        || receipt.sha256 != digest
+    {
+        return Err(campaign_contract_error());
+    }
+    Ok(written)
 }
 
 fn dispatch_export(
@@ -460,6 +592,7 @@ fn dispatch_export(
                 ),
                 Job::Command { .. }
                 | Job::PrivateCommand { .. }
+                | Job::CampaignSetup { .. }
                 | Job::SupportBundle { .. }
                 | Job::SourceReportInspect { .. } => {
                     unreachable!("only report exports enter the export supervisor")

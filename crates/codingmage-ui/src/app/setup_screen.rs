@@ -34,11 +34,36 @@ struct PendingAuthorization {
     repository_id: String,
 }
 
+#[derive(Clone, Debug)]
+struct PendingCampaign {
+    request_id: String,
+    inspect_arguments: Vec<String>,
+    write_arguments: Vec<String>,
+    specification_path: PathBuf,
+    authorization_path: PathBuf,
+    repository_id: String,
+    campaign_id: String,
+    head: String,
+    task_source_sha256: String,
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct AuthorizationReceipt {
     schema_version: u64,
     repository_id: String,
+    written: bool,
+    bytes: usize,
+    sha256: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CampaignReceipt {
+    schema_version: u64,
+    repository_id: String,
+    campaign_id: String,
+    head: String,
     written: bool,
     bytes: usize,
     sha256: String,
@@ -73,6 +98,7 @@ pub struct SetupState {
     /// Replace an existing authorization record.
     pub authorization_overwrite: bool,
     pending_authorization: Option<PendingAuthorization>,
+    pending_campaign: Option<PendingCampaign>,
     /// Directory browser for the target repository.
     pub target_browser: Option<Browser>,
     /// Export destination.
@@ -87,6 +113,22 @@ impl SetupState {
     pub(super) fn cancel_pending_authorization(&mut self) {
         if self.pending_authorization.take().is_some() {
             self.message = Some(Err("the selected authority changed during the write; inspect the destination before retrying".to_owned()));
+        }
+    }
+
+    pub(super) fn cancel_pending_campaign(&mut self) {
+        if self.pending_campaign.take().is_some() {
+            self.message = Some(Err("the selected authority changed during the campaign write; inspect the destination before retrying".to_owned()));
+        }
+    }
+
+    pub(super) fn cancel_matching_campaign(&mut self, request_id: Option<&str>) {
+        if self
+            .pending_campaign
+            .as_ref()
+            .is_some_and(|pending| Some(pending.request_id.as_str()) == request_id)
+        {
+            self.cancel_pending_campaign();
         }
     }
 
@@ -180,29 +222,196 @@ impl App {
         self.setup.message = None;
     }
 
-    /// Writes the campaign form and selects the result.
+    /// Queues an inspected campaign write and selects only a matching receipt.
     pub fn apply_campaign_form(&mut self) {
+        if self.setup.pending_campaign.is_some() {
+            self.setup.message = Some(Err(
+                "a campaign write is already pending; inspect its result before retrying"
+                    .to_owned(),
+            ));
+            return;
+        }
         let Some(binding) = self.campaign_binding() else {
             self.setup.message = Some(Err(
                 "a live repository diagnosis is required before authoring a campaign".to_owned(),
             ));
             return;
         };
-        let Some(form) = &self.setup.campaign_form else {
+        let Some(form) = self.setup.campaign_form.clone() else {
             return;
         };
-        match form.write(&binding) {
-            Ok(path) => {
-                self.setup.message = Some(Ok(format!(
-                    "campaign specification written and verified at {}",
-                    path.display()
-                )));
-                let record = PathBuf::from(form.authorization_path.trim());
-                self.select_campaign(&path);
-                self.set_authorization_record(&record);
-            }
-            Err(error) => self.setup.message = Some(Err(error.to_string())),
+        let Some((inspect_arguments, write_arguments)) =
+            self.campaign_setup_arguments(&form, &binding)
+        else {
+            self.setup.message = Some(Err("open and diagnose the repository, then choose absolute specification and authorization paths".to_owned()));
+            return;
+        };
+        if !command::can_preview(self.binary_path.as_deref(), Some(&inspect_arguments))
+            || !command::can_preview(self.binary_path.as_deref(), Some(&write_arguments))
+        {
+            self.setup.message = Some(Err(
+                "the exact commands cannot be shown safely; choose representable paths".to_owned(),
+            ));
+            return;
         }
+        self.next_evidence_request = self.next_evidence_request.wrapping_add(1);
+        let request_id = format!("setup-campaign-{}", self.next_evidence_request);
+        let pending = PendingCampaign {
+            request_id: request_id.clone(),
+            inspect_arguments: inspect_arguments.clone(),
+            write_arguments: write_arguments.clone(),
+            specification_path: PathBuf::from(form.spec_path.trim()),
+            authorization_path: PathBuf::from(form.authorization_path.trim()),
+            repository_id: binding.repository_id.clone(),
+            campaign_id: form.campaign_id.trim().to_owned(),
+            head: binding.initial_commit.clone(),
+            task_source_sha256: binding.task_source_sha256.clone(),
+        };
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::CampaignSetup {
+                form: Box::new(form),
+                source: binding,
+                inspect_arguments,
+                write_arguments,
+                deadline: AUTHORIZATION_DEADLINE,
+            },
+            request_id: Some(request_id),
+        };
+        match self.submit(request) {
+            Ok(()) => {
+                self.setup.pending_campaign = Some(pending);
+                self.setup.message = Some(Ok(
+                    "campaign write pending; inspect the result before retrying".to_owned(),
+                ));
+            }
+            Err(error) => {
+                self.setup.message = Some(Err(format!(
+                    "campaign write was not queued: {}",
+                    error.code()
+                )));
+            }
+        }
+    }
+
+    fn campaign_setup_arguments(
+        &self,
+        form: &CampaignForm,
+        binding: &CampaignBinding,
+    ) -> Option<(Vec<String>, Vec<String>)> {
+        let config = self.project.as_ref()?.config_path.to_str()?.to_owned();
+        let authorization = Path::new(form.authorization_path.trim());
+        let output = Path::new(form.spec_path.trim());
+        if !authorization.is_absolute() || !output.is_absolute() {
+            return None;
+        }
+        let common = vec![
+            "--config".to_owned(),
+            config,
+            "--repository-id".to_owned(),
+            binding.repository_id.clone(),
+            "--head".to_owned(),
+            binding.initial_commit.clone(),
+            "--task-source-sha256".to_owned(),
+            binding.task_source_sha256.clone(),
+            "--authorization".to_owned(),
+            authorization.to_str()?.to_owned(),
+        ];
+        let mut inspect = vec!["setup-inspect-authorization".to_owned()];
+        inspect.extend(common.clone());
+        let mut write = vec!["setup-write-campaign".to_owned()];
+        write.extend(common);
+        write.extend([
+            "--output".to_owned(),
+            output.to_str()?.to_owned(),
+            "--overwrite".to_owned(),
+            form.overwrite.to_string(),
+        ]);
+        Some((inspect, write))
+    }
+
+    fn campaign_preview_arguments(&self) -> Option<(Vec<String>, Vec<String>)> {
+        self.setup
+            .pending_campaign
+            .as_ref()
+            .map(|pending| {
+                (
+                    pending.inspect_arguments.clone(),
+                    pending.write_arguments.clone(),
+                )
+            })
+            .or_else(|| {
+                self.campaign_setup_arguments(
+                    self.setup.campaign_form.as_ref()?,
+                    &self.campaign_binding()?,
+                )
+            })
+    }
+
+    pub(super) fn accept_campaign_write(&mut self, response: Response) -> bool {
+        let Some(pending) = self.setup.pending_campaign.take() else {
+            return false;
+        };
+        if response.request_id.as_deref() != Some(pending.request_id.as_str()) {
+            self.setup.pending_campaign = Some(pending);
+            return false;
+        }
+        if !self.campaign_binding().is_some_and(|current| {
+            current.repository_id == pending.repository_id
+                && current.initial_commit == pending.head
+                && current.task_source_sha256 == pending.task_source_sha256
+        }) {
+            self.setup.message = Some(Err("the repository diagnosis changed during the campaign write; inspect the destination before retrying".to_owned()));
+            return true;
+        }
+        let result = response.result.and_then(|bytes| {
+            let receipt: CampaignReceipt = serde_json::from_slice(&bytes).map_err(|_| {
+                crate::backend::BackendError::Contract(
+                    crate::backend::models::ModelError::Malformed,
+                )
+            })?;
+            if receipt.schema_version != 1
+                || !receipt.written
+                || receipt.repository_id != pending.repository_id
+                || receipt.campaign_id != pending.campaign_id
+                || receipt.head != pending.head
+                || receipt.bytes == 0
+                || receipt.sha256.len() != 64
+                || !receipt.sha256.bytes().all(|byte| byte.is_ascii_hexdigit())
+            {
+                return Err(crate::backend::BackendError::Contract(
+                    crate::backend::models::ModelError::Malformed,
+                ));
+            }
+            Ok(())
+        });
+        match result {
+            Ok(()) => {
+                self.select_campaign(&pending.specification_path);
+                if self.campaign.as_ref().is_some_and(|selected| {
+                    selected.spec_path == pending.specification_path
+                        && selected.spec.campaign_id == pending.campaign_id
+                }) {
+                    self.set_authorization_record(&pending.authorization_path);
+                    self.setup.message = Some(Ok(format!(
+                        "campaign specification written and verified at {}",
+                        pending.specification_path.display()
+                    )));
+                } else {
+                    self.setup.message = Some(Err(format!(
+                        "the coordinator confirmed a write at {}, but the resulting campaign could not be selected; inspect the destination before retrying",
+                        pending.specification_path.display()
+                    )));
+                }
+            }
+            Err(error) => {
+                self.setup.message = Some(Err(format!(
+                    "campaign write not confirmed: {error}. Inspect the destination before retrying."
+                )));
+            }
+        }
+        true
     }
 
     /// Writes the authorization record from the typed text.
@@ -579,15 +788,45 @@ impl App {
             }
             return;
         }
-        let (apply, discard) = match &mut self.setup.campaign_form {
-            Some(form) => campaign_form_body(ui, form),
-            None => (false, false),
-        };
+        let can_write = self.setup.pending_campaign.is_none()
+            && self
+                .campaign_preview_arguments()
+                .is_some_and(|(inspect, write)| {
+                    command::can_preview(self.binary_path.as_deref(), Some(&inspect))
+                        && command::can_preview(self.binary_path.as_deref(), Some(&write))
+                });
+        let (apply, discard) = ui
+            .add_enabled_ui(self.setup.pending_campaign.is_none(), |ui| match &mut self
+                .setup
+                .campaign_form
+            {
+                Some(form) => campaign_form_body(ui, form, can_write),
+                None => (false, false),
+            })
+            .inner;
         if apply {
             self.apply_campaign_form();
         }
         if discard {
             self.setup.campaign_form = None;
+        }
+        if let Some((inspect, write)) = self.campaign_preview_arguments() {
+            command::show_for(
+                ui,
+                "inspect authorization record",
+                self.binary_path.as_deref(),
+                &inspect,
+            );
+            command::show_for(
+                ui,
+                "write campaign specification",
+                self.binary_path.as_deref(),
+                &write,
+            );
+            ui.small("The candidate specification is sent through private stdin. It is absent from command arguments; the coordinator checks the record and source again before publication.");
+        } else {
+            command::show_unavailable_for(ui, "inspect authorization record");
+            command::show_unavailable_for(ui, "write campaign specification");
         }
     }
 
@@ -729,7 +968,7 @@ fn config_form_body(ui: &mut egui::Ui, form: &mut ConfigForm) -> (bool, bool) {
     (apply, discard)
 }
 
-fn campaign_form_body(ui: &mut egui::Ui, form: &mut CampaignForm) -> (bool, bool) {
+fn campaign_form_body(ui: &mut egui::Ui, form: &mut CampaignForm, can_write: bool) -> (bool, bool) {
     let mut apply = false;
     let mut discard = false;
     egui::Frame::group(ui.style()).show(ui, |ui| {
@@ -798,7 +1037,10 @@ fn campaign_form_body(ui: &mut egui::Ui, form: &mut CampaignForm) -> (bool, bool
         ui.small("Parallel pods and draft pull requests are not offered here; import a specification carrying an explicit multi-agent policy and GitHub authority instead.");
         ui.checkbox(&mut form.overwrite, "Replace the existing specification file");
         ui.horizontal(|ui| {
-            if ui.button("Verify and write campaign specification").clicked() {
+            if ui
+                .add_enabled(can_write, egui::Button::new("Verify and write campaign specification"))
+                .clicked()
+            {
                 apply = true;
             }
             if ui.button("Discard campaign form").clicked() {

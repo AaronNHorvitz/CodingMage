@@ -70,8 +70,17 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_authorization_write"): (
         "positive", "negative", "malformed_input", "unknown_field", "repeatability",
     ),
+    ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "apply_campaign_form"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_campaign_write"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
     ("crates/codingmage-ui/src/app/setup_screen.rs", "struct", "SetupState"): (
         "positive", "negative", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/setup.rs", "fn", "build_with_authorization_digest"): (
+        "positive", "negative", "boundary", "malformed_input", "repeatability",
     ),
     ("crates/codingmage-ui/src/backend/worker.rs", "struct", "Binding"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",

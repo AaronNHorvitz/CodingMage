@@ -16,6 +16,102 @@ use common::{Fixture, coordinator_binary, harness, settle, tree_digest};
 use egui_kittest::kittest::Queryable as _;
 
 #[test]
+fn pending_campaign_preview_is_frozen_and_bad_inspection_never_writes() {
+    let fixture = Fixture::new("setup-campaign-preview", 1);
+    let record = fixture.root.join("operator-authorization.txt");
+    fs::write(&record, "Synthetic owner authorization").unwrap();
+    let first = fixture.root.join("campaign-a.toml");
+    let second = fixture.root.join("campaign-b.toml");
+    let write_marker = fixture.root.join("write-invoked");
+    let real_binary = coordinator_binary();
+    let wrapper = fixture.executable(
+        "delayed-codingmage",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'setup-inspect-authorization' ]; then sleep 3; printf '%s\\n' '{{\"schema_version\":1,\"repository_id\":\"wrong-repository\",\"head\":\"wrong-head\",\"task_source_sha256\":\"wrong-digest\",\"observed\":true,\"bytes\":29,\"sha256\":\"{}\"}}'; exit 0; fi\nif [ \"$1\" = 'setup-write-campaign' ]; then printf invoked > {}; exit 0; fi\nexec {} \"$@\"\n",
+            "a".repeat(64),
+            format_command(&write_marker, &[]).unwrap(),
+            format_command(&real_binary, &[]).unwrap(),
+        ),
+    );
+    let mut harness = harness(CoordinatorBinary::at(&wrapper), [1100.0, 2200.0]);
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some()
+    }));
+    let diagnosis = harness.state().diagnosis().value.as_ref().unwrap().clone();
+    let provider = fixture.executable("provider", "#!/bin/sh\nexit 0\n");
+    harness.state_mut().start_campaign_form();
+    {
+        let form = harness
+            .state_mut()
+            .setup_state_mut()
+            .campaign_form
+            .as_mut()
+            .unwrap();
+        form.spec_path = first.display().to_string();
+        form.authorization_path = record.display().to_string();
+        form.allowed_paths = "src".to_owned();
+        for candidate in [
+            &mut form.team_lead,
+            &mut form.implementer,
+            &mut form.reviewer,
+        ] {
+            *candidate = ProviderForm {
+                executable: provider.display().to_string(),
+                model: "fixture".to_owned(),
+                effort: "high".to_owned(),
+            };
+        }
+    }
+    let inspect = vec![
+        "setup-inspect-authorization".to_owned(),
+        "--config".to_owned(),
+        fixture.config.display().to_string(),
+        "--repository-id".to_owned(),
+        diagnosis.repository_id,
+        "--head".to_owned(),
+        diagnosis.head,
+        "--task-source-sha256".to_owned(),
+        diagnosis.task_source_sha256,
+        "--authorization".to_owned(),
+        record.display().to_string(),
+    ];
+    let submitted = format_command(&wrapper, &inspect).unwrap();
+    harness.state_mut().apply_campaign_form();
+    {
+        let form = harness
+            .state_mut()
+            .setup_state_mut()
+            .campaign_form
+            .as_mut()
+            .unwrap();
+        form.spec_path = second.display().to_string();
+        form.overwrite = true;
+    }
+    harness.state_mut().select_screen(Screen::Setup);
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: inspect authorization record")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains(&submitted);
+    harness
+        .get_by_label("Show command: write campaign specification")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains(&first.display().to_string());
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|message| message.contains("campaign write not confirmed"))
+        })
+    }));
+    assert!(!first.exists() && !second.exists() && !write_marker.exists());
+    assert!(harness.state().campaign().is_none());
+}
+
+#[test]
 fn pending_authorization_preview_keeps_the_submitted_arguments() {
     let fixture = Fixture::new("setup-pending-preview", 1);
     let real_binary = coordinator_binary();
@@ -292,6 +388,27 @@ fn guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repos
         }
     }
     harness.state_mut().apply_campaign_form();
+    assert!(
+        settle(&mut harness, Duration::from_secs(30), |app| {
+            app.setup_state().message.as_ref().is_some_and(|result| {
+                result
+                    .as_ref()
+                    .is_ok_and(|message| message.contains("campaign specification written"))
+                    || result.as_ref().is_err()
+            })
+        }),
+        "campaign response did not settle"
+    );
+    assert!(
+        harness
+            .state()
+            .setup_state()
+            .message
+            .as_ref()
+            .is_some_and(Result::is_ok),
+        "campaign setup failed: {:?}",
+        harness.state().setup_state().message
+    );
     harness.run_steps(2);
     harness.get_by_label_contains("campaign specification written and verified");
     let spec = CampaignSpec::load(&workspace.join("campaign.toml")).unwrap();
@@ -351,6 +468,12 @@ fn campaign_form_without_a_live_diagnosis_is_refused() {
     harness.run_steps(2);
     harness.get_by_label_contains("A live repository diagnosis is required");
     harness.state_mut().start_campaign_form();
+    harness.run_steps(2);
+    harness
+        .get_by_label("Verify and write campaign specification")
+        .click();
+    harness.run_steps(2);
+    assert!(harness.state().setup_state().message.is_none());
     harness.state_mut().apply_campaign_form();
     harness.run_steps(2);
     harness.get_by_label_contains("a live repository diagnosis is required");

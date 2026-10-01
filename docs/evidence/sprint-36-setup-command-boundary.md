@@ -239,9 +239,10 @@ qualify the native worker or any human, live or release gate.
 Decision 0069 adds `setup-inspect-authorization` as a read-only, repository-bound
 observation. It returns a content-minimized digest and byte count for a held
 no-follow external record, after checking the clean exact HEAD, committed task
-source and configuration/record physical distinction. The native form still
-reads the record in-process until its worker migration is complete; this
-command by itself does not satisfy Task 36.3.2.2. The exact-source CLI unit
+source and configuration/record physical distinction. This CLI-only increment
+left the native form reading the record in-process; the subsequent native
+worker increment below removes that render-thread path. The command by itself
+does not satisfy Task 36.3.2.2. The exact-source CLI unit
 target passes 21/21 and disposable campaign Setup passes 7/7, including
 bounded record inspection, stale repository/head/task-source bindings,
 configuration hard link, parent alias, symbolic record link, malformed and
@@ -254,4 +255,61 @@ of coverage. The full Python suite passes 43/44; its sole failure is the
 unchanged CM-R01.6 eight-input source-bound freshness hold. No package,
 receipt, binding or digest was renewed. Cargo formatting, documentation,
 architecture, no-write inventory and staged whitespace checks pass. An
-independent exact-commit review remains pending for this increment.
+independent exact-commit review of
+`3470b4f682e0de377bd13b61725f36ae0d1189e4` returned PASS without
+findings. The reviewer reproduced a positive bounded observation, wrong
+repository/head/task-source refusals, physical aliases, links, oversized input
+and a concurrent record replacement. The review leaves the native worker,
+qualified-human, live-provider and release boundaries open.
+
+## Native campaign Setup worker increment
+
+Decision 0070 routes the native form through the reviewed read-only inspection
+and public campaign writer on the eight-slot bounded worker. The submitted
+form and diagnosed repository/head/task-source binding are snapshots. The
+worker rejects a malformed or foreign inspection receipt, builds and verifies
+the candidate from its digest, caps the private candidate stdin at 1 MiB and
+checks the public write receipt against the exact candidate byte count and
+SHA-256. The UI retains both submitted argument vectors for Show-command,
+disables form edits while pending, and accepts only a matching request and
+current diagnosis before selecting the result. When either exact command is
+unavailable, the write button is disabled while the fields stay editable.
+A failure or uncertain effect
+requires destination inspection rather than an automatic retry. Opening the
+form grants no campaign authority, and the writer itself rechecks the source
+and record at publication.
+
+The real-process native Setup test covers the successful inspection/write path
+and selected campaign identity. A delayed synthetic inspection regression
+changes the form after submission, checks the submitted command preview,
+returns a foreign receipt and proves the writer was never invoked. The first
+Setup no-diagnosis fixture also checks that the write button cannot act before
+an exact command is available. The first focused native run failed because its
+former synchronous assertion did not wait for the worker; the test now waits
+for the exact result. A first strict
+Clippy run found a missing terminal semicolon; it was corrected. The retained
+failed outputs are private and are not counted as final-source passes.
+
+The first native all-target run used a precompiled end-to-end verification
+fixture with the same two-frame assumption. That one fixture failed on the
+honest pending state; all preceding native targets in the run passed. The
+verification fixture now waits for the confirmed worker result. Its focused
+real workflow passed 1/1. The first cumulative rerun passed 177/177 tests
+across 14 native targets, including Setup 6/6 and verification 7/7, before
+the exact-command disabled-state correction above. It is preliminary
+regression evidence relative to the corrected source. The corrected Setup
+target passes 6/6, and the exact current-source native all-target suite passes
+177/177 across 14 targets, including verification 7/7. Strict workspace
+Clippy with warnings denied also passes. The full Python suite ran 45 tests:
+44 passed; the sole failure is the unchanged CM-R01.6 eight-input `input-drift`
+source-bound freshness hold. No package, failed receipt, binding or digest
+was renewed. Formatting, documentation, architecture, no-write inventory and
+staged whitespace checks pass. The source/schema-reviewed inventory has 1,788
+public items and 825 explicit gaps. Four public UI APIs were added, no surface
+removed, one existing Setup applicability/mapping changed, and the normalized
+gap set did not change. These heuristic mappings are not coverage proof.
+Independent review of this native increment remains open. Configuration and
+export actions still use in-process writers, and the complete state/depth
+catalogue remains open. The existing campaign-selection loader still reads
+the confirmed specification in the UI process; it is a separate selection
+boundary. No runtime-provider or human qualification is claimed.
