@@ -331,7 +331,20 @@ fn setup_to_outcome_workflow_through_the_interface() {
     }));
     evidence.snapshot(&mut harness, "13-reports-exported", 1.0);
     let exported = fs::read_to_string(workspace.join("outcome-report.json")).unwrap();
-    assert!(exported.contains("\"delivery\": \"withheld"));
+    let report: serde_json::Value = serde_json::from_str(&exported).unwrap();
+    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["campaign_id"], "verification");
+    assert_eq!(report["repository_paths_included"], false);
+    assert!(report["status"].is_object());
+    assert!(
+        report["limits"]
+            .as_array()
+            .is_some_and(|limits| limits.iter().any(|limit| {
+                limit
+                    .as_str()
+                    .is_some_and(|text| text.contains("not independent review or delivery"))
+            }))
+    );
     assert!(!exported.contains(fixture.target.to_str().unwrap()));
     evidence.measure("workflow_completed_units", &outcome.completed_units);
     evidence.measure("workflow_stop_reason", &outcome.stop_reason.clone());

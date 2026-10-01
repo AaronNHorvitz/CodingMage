@@ -1,5 +1,6 @@
 //! Reports: inspect and export outcome and blocker reports assembled from real records.
 
+use serde::Deserialize;
 use std::{
     path::PathBuf,
     sync::mpsc::{Receiver, SyncSender, TrySendError, channel, sync_channel},
@@ -195,7 +196,31 @@ struct AssembledReport {
 struct PendingExport {
     request_id: String,
     destination: PathBuf,
-    contains_repository_paths: bool,
+    campaign_id: String,
+    repository_id: String,
+    include_paths: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExportReceipt {
+    schema_version: u16,
+    campaign_id: String,
+    repository_id: String,
+    written: bool,
+    bytes: usize,
+    repository_paths_requested: bool,
+}
+
+impl ExportReceipt {
+    fn matches(&self, pending: &PendingExport) -> bool {
+        self.schema_version == 1
+            && self.campaign_id == pending.campaign_id
+            && self.repository_id == pending.repository_id
+            && self.written
+            && self.bytes > 0
+            && self.repository_paths_requested == pending.include_paths
+    }
 }
 
 /// Reports screen state.
@@ -396,12 +421,12 @@ impl App {
             self.reports.message = Some(Err("select a campaign first".to_owned()));
             return;
         }
-        let Some(report) = self
+        let Some(_report) = self
             .reports
             .assembled
             .as_ref()
             .filter(|cached| self.report_key(Instant::now()).as_ref() == Some(&cached.key))
-            .map(|cached| cached.report.clone())
+            .map(|cached| &cached.report)
         else {
             self.reports.message = Some(Err(
                 "the report is updating; wait for the current observation before exporting"
@@ -409,25 +434,31 @@ impl App {
             ));
             return;
         };
-        let Some(repository) = self
-            .project
-            .as_ref()
-            .map(|project| project.config.target_path.clone())
+        let Some(campaign) = self.campaign.as_ref() else {
+            return;
+        };
+        let (campaign_id, repository_id) = (
+            campaign.spec.campaign_id.clone(),
+            campaign.spec.repository_id.clone(),
+        );
+        let Some(arguments) = self
+            .report_export_arguments()
+            .filter(|arguments| command::can_preview(self.binary_path.as_deref(), Some(arguments)))
         else {
+            self.reports.message = Some(Err(
+                "the exact report export command cannot be shown; check the coordinator and destination path"
+                    .to_owned(),
+            ));
             return;
         };
         let destination = PathBuf::from(self.reports.export_path.trim());
-        let contains_repository_paths = report.contains_repository_paths;
         self.next_evidence_request += 1;
         let request_id = format!("report-export-{}", self.next_evidence_request);
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
-            job: Job::ReportExport {
-                report: Box::new(report),
-                destination: destination.clone(),
-                repository,
-                overwrite: self.reports.overwrite,
+            job: Job::SourceReportExport {
+                arguments,
                 deadline: Duration::from_secs(30),
             },
             request_id: Some(request_id.clone()),
@@ -438,7 +469,9 @@ impl App {
                 self.reports.pending = Some(PendingExport {
                     request_id,
                     destination,
-                    contains_repository_paths,
+                    campaign_id,
+                    repository_id,
+                    include_paths: self.reports.include_paths,
                 });
             }
             Err(error) => self.reports.message = Some(Err(error.to_string())),
@@ -456,15 +489,14 @@ impl App {
             return false;
         };
         self.reports.message = Some(match response.result {
-            Ok(_) => Ok(format!(
-                "report exported to {} ({} repository paths)",
-                pending.destination.display(),
-                if pending.contains_repository_paths {
-                    "with"
-                } else {
-                    "without"
-                }
-            )),
+            Ok(bytes) => match serde_json::from_slice::<ExportReceipt>(&bytes) {
+                Ok(receipt) if receipt.matches(&pending) => Ok(format!(
+                    "source-bound report exported to {} (repository paths {}requested)",
+                    pending.destination.display(),
+                    if pending.include_paths { "" } else { "not " }
+                )),
+                _ => Err("the coordinator returned an invalid export receipt; the destination is uncertain, so inspect it before retrying".to_owned()),
+            },
             Err(BackendError::Refused(reason)) => Err(reason),
             Err(BackendError::Timeout) => Err(
                 "report export timed out. The destination is uncertain; inspect it and any .codingmage-report-*.candidate file in that directory before retrying."
@@ -474,9 +506,31 @@ impl App {
                 "the report writer could not start or returned an unreadable result; inspect the destination and retry after checking the desktop installation"
                     .to_owned(),
             ),
-            Err(error) => Err(error.to_string()),
+            Err(error) => Err(format!("{error}; inspect the destination before retrying")),
         });
         true
+    }
+
+    fn report_export_arguments(&self) -> Option<Vec<String>> {
+        let project = self.project.as_ref()?;
+        let campaign = self.campaign.as_ref()?;
+        let destination = self.reports.export_path.trim();
+        if destination.is_empty() || !PathBuf::from(destination).is_absolute() {
+            return None;
+        }
+        Some(vec![
+            "report-export".to_owned(),
+            "--config".to_owned(),
+            project.config_path.to_str()?.to_owned(),
+            "--campaign".to_owned(),
+            campaign.spec_path.to_str()?.to_owned(),
+            "--output".to_owned(),
+            destination.to_owned(),
+            "--include-paths".to_owned(),
+            self.reports.include_paths.to_string(),
+            "--overwrite".to_owned(),
+            self.reports.overwrite.to_string(),
+        ])
     }
 
     pub(super) fn reports_screen(&mut self, ui: &mut egui::Ui) {
@@ -570,7 +624,6 @@ impl App {
     fn report_export_section(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
         ui.strong(catalogue.text("reports_export_title"));
         ui.small(catalogue.text("reports_destination_guidance"));
-        ui.small(catalogue.text("reports_command_unavailable"));
         ui.horizontal(|ui| {
             let label = ui.label(catalogue.text("reports_destination"));
             ui.add(
@@ -591,7 +644,12 @@ impl App {
             );
             if ui
                 .add_enabled(
-                    !self.report_export_pending() && self.report_ready(),
+                    !self.report_export_pending()
+                        && self.report_ready()
+                        && command::can_preview(
+                            self.binary_path.as_deref(),
+                            self.report_export_arguments().as_deref(),
+                        ),
                     egui::Button::new(catalogue.text("reports_export")),
                 )
                 .clicked()
@@ -599,6 +657,19 @@ impl App {
                 self.export_report();
             }
         });
+        if let Some(arguments) = self
+            .report_export_arguments()
+            .filter(|arguments| command::can_preview(self.binary_path.as_deref(), Some(arguments)))
+        {
+            command::show_for(
+                ui,
+                catalogue.text("reports_export"),
+                self.binary_path.as_deref(),
+                &arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, catalogue.text("reports_export"));
+        }
         if self.report_export_pending() {
             ui.label(catalogue.text("reports_pending"));
         }
@@ -936,6 +1007,40 @@ fn observed_count(value: Option<usize>, truncated: bool, catalogue: &Catalogue) 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn source_export_receipt_requires_exact_bound_identity_and_privacy() {
+        let pending = PendingExport {
+            request_id: "report-export-1".to_owned(),
+            destination: PathBuf::from("/example/report.json"),
+            campaign_id: "campaign-1".to_owned(),
+            repository_id: "repository-1".to_owned(),
+            include_paths: false,
+        };
+        let valid = br#"{"schema_version":1,"campaign_id":"campaign-1","repository_id":"repository-1","written":true,"bytes":12,"repository_paths_requested":false}"#;
+        assert!(
+            serde_json::from_slice::<ExportReceipt>(valid)
+                .unwrap()
+                .matches(&pending)
+        );
+        for invalid in [
+            br#"{"schema_version":2,"campaign_id":"campaign-1","repository_id":"repository-1","written":true,"bytes":12,"repository_paths_requested":false}"#.as_slice(),
+            br#"{"schema_version":1,"campaign_id":"other","repository_id":"repository-1","written":true,"bytes":12,"repository_paths_requested":false}"#,
+            br#"{"schema_version":1,"campaign_id":"campaign-1","repository_id":"other","written":true,"bytes":12,"repository_paths_requested":false}"#,
+            br#"{"schema_version":1,"campaign_id":"campaign-1","repository_id":"repository-1","written":false,"bytes":12,"repository_paths_requested":false}"#,
+            br#"{"schema_version":1,"campaign_id":"campaign-1","repository_id":"repository-1","written":true,"bytes":0,"repository_paths_requested":false}"#,
+            br#"{"schema_version":1,"campaign_id":"campaign-1","repository_id":"repository-1","written":true,"bytes":12,"repository_paths_requested":true}"#,
+        ] {
+            assert!(!serde_json::from_slice::<ExportReceipt>(invalid).unwrap().matches(&pending));
+        }
+        for malformed in [
+            b"{".as_slice(),
+            br#"{"schema_version":1,"schema_version":1,"campaign_id":"campaign-1","repository_id":"repository-1","written":true,"bytes":12,"repository_paths_requested":false}"#,
+            br#"{"schema_version":1,"campaign_id":"campaign-1","repository_id":"repository-1","written":true,"bytes":12,"repository_paths_requested":false,"extra":true}"#,
+        ] {
+            assert!(serde_json::from_slice::<ExportReceipt>(malformed).is_err());
+        }
+    }
     use crate::{backend::BackendError, report::ReportInputs};
     use egui_kittest::kittest::{NodeT as _, Queryable as _};
 

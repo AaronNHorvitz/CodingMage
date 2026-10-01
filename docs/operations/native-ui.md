@@ -68,13 +68,13 @@ showing sample results.
 
 The read-only `codingmage campaign-outcome-report --config <absolute-file> --campaign
 <absolute-file>` command assembles a bounded coordinator and exact-head repository
-projection for shell inspection. `codingmage report-export` takes the same config and
-campaign arguments plus `--output <absolute-file>` to write that projection outside the
-target repository. Changed-file paths require `--include-paths true`; replacement of an
-existing regular file requires `--overwrite true`. The document never claims an
-interface-only admission or invocation result. The Reports control still uses its
-isolated native writer and a different schema; it does not yet delegate to this command.
-Both export writers require the selected destination parent to be outside the target
+projection for shell inspection. The Reports export control runs `codingmage report-export`
+with the shown config, campaign, output, privacy and overwrite arguments. It writes a fresh
+source-bound schema-one document. Changed-file paths require `--include-paths true`;
+replacement of an existing regular file requires `--overwrite true`. The document never
+claims an interface-only admission or invocation result. The Reports screen also shows a
+separately labelled local schema-three observation JSON; it is not the exported document.
+The export writers require the selected destination parent to be outside the target
 repository and on the same Linux mount as its root. A destination on another mount is
 refused, even when outside the repository.
 
@@ -134,16 +134,15 @@ qualification remain open.
   because they bind operator-controlled evidence digests or remote effects.
 - Reviewer finding text is not retained by the backend; the interface shows verdicts, correction
   rounds and evidence identities only.
-- Report export retains a directory handle and checks the selected repository identity, but
-  another local process may still race a directory rename between checks. Export file I/O
-  runs in a one-shot `codingmage-ui` helper process supervised outside the coordinator
-  control worker. A stalled helper is signaled after 30 seconds or on window shutdown;
-  termination may wait on the filesystem. After a timeout, inspect the destination and
-  any `.codingmage-report-*.candidate` file in its parent before retrying. Export still
-  has no exact `codingmage` command equivalent. Report assembly and a 128 KiB on-screen JSON
-  preview run on a separate CPU-only worker from a selection-bound observation snapshot.
-  A source change makes the prior snapshot unavailable for export until the worker prepares
-  the new one. The complete report remains available through export.
+- Report export runs through the public coordinator command in an isolated UI supervisor,
+  so a stalled filesystem call does not block controls or window shutdown. The CLI writer
+  retains a directory handle and checks the repository identity; another local process may
+  still race a directory rename between checks. The export deadline is 30 seconds, but
+  termination may wait on the filesystem. After timeout or an invalid receipt, inspect the
+  destination and any `.codingmage-report-*.candidate` file before retrying. The local
+  observation JSON is assembled on a separate CPU worker from a selection-bound snapshot;
+  a changed observation makes that local view unavailable until reassembly. Export reads
+  fresh coordinator records, so its contents can differ from the local view.
 - The interface keeps private state under `$XDG_CONFIG_HOME/codingmage-ui` (or
   `~/.config/codingmage-ui`): recent configurations, per-configuration campaign memory,
   admissions, launch records with private stdout/stderr captures, and control ledgers.

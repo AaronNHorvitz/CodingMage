@@ -221,7 +221,7 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
     }
     reject_duplicate_and_foreign_export_completion(&mut harness);
     harness.run_steps(2);
-    harness.get_by_label_contains("is inside the target repository");
+    harness.get_by_label_contains("codingmage.cli.refused");
     assert!(!fixture.target.join("report.json").exists());
     let linked_parent = fixture.root.join("linked-target");
     std::os::unix::fs::symlink(&fixture.target, &linked_parent).unwrap();
@@ -229,7 +229,7 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
         linked_parent.join("report.json").display().to_string();
     export_and_settle(&mut harness);
     harness.run_steps(2);
-    harness.get_by_label_contains("is inside the target repository");
+    harness.get_by_label_contains("codingmage.cli.refused");
     assert!(!fixture.target.join("report.json").exists());
     // Export outside works once; the second export is refused without overwrite.
     let destination = fixture.root.join("exports/report.json");
@@ -238,14 +238,20 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
         let reports = harness.state_mut().reports_state_mut();
         reports.export_path = destination.display().to_string();
     }
+    harness.run_steps(2);
+    harness.get_by_label("Show command: Export report");
     export_and_settle(&mut harness);
     harness.run_steps(2);
     harness.get_by_label_contains("report exported to");
     let exported = fs::read_to_string(&destination).unwrap();
+    let document: serde_json::Value = serde_json::from_str(&exported).unwrap();
+    assert_eq!(document["schema_version"], 1);
+    assert_eq!(document["campaign_id"], "reports-campaign");
+    assert_eq!(document["repository_paths_included"], false);
     assert!(!exported.contains("src/lib.rs"));
     export_and_settle(&mut harness);
     harness.run_steps(2);
-    harness.get_by_label_contains("already exists");
+    harness.get_by_label_contains("codingmage.cli.refused");
     // With paths and overwrite, the file is replaced and marked as containing paths.
     {
         let reports = harness.state_mut().reports_state_mut();
@@ -256,7 +262,7 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
     harness.run_steps(2);
     let exported = fs::read_to_string(&destination).unwrap();
     assert!(exported.contains("src/lib.rs"));
-    assert!(exported.contains("\"contains_repository_paths\": true"));
+    assert!(exported.contains("\"repository_paths_included\": true"));
     // Viewing and exporting changed neither the target nor the campaign state.
     assert!(
         fs::read_to_string(fixture.target.join("TASKS.md"))
@@ -304,7 +310,11 @@ fn report_and_export_label_retained_status_after_failed_refresh() {
     harness.state_mut().reports_state_mut().export_path = destination.display().to_string();
     export_and_settle(&mut harness);
     let exported = fs::read_to_string(&destination).unwrap();
-    assert!(exported.contains("campaign status stale"));
+    assert!(!exported.contains("campaign status stale"));
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&exported).unwrap()["schema_version"],
+        1
+    );
     assert_eq!(tree_digest(&fixture.target), before);
 }
 
@@ -356,7 +366,11 @@ fn report_assembly_rebinds_after_source_change_and_refuses_stale_export() {
     );
     export_and_settle(&mut harness);
     let exported = fs::read_to_string(destination).unwrap();
-    assert!(exported.contains("campaign status stale"));
+    assert!(!exported.contains("campaign status stale"));
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&exported).unwrap()["schema_version"],
+        1
+    );
 }
 
 #[test]

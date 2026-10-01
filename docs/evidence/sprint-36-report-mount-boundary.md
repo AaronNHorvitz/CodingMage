@@ -42,5 +42,9 @@ renewed. `cargo fmt --all -- --check`, `scripts/docs_check.py`,
 whitespace checks are the final light gates. The inventory remains at 1,764
 items/825 explicit gaps: no new or removed public surface, four line-derived ID
 moves and 18 heuristic mapping changes, with no applicability or gap change.
-These mappings are an index rather than an acceptance claim. Exact-commit
-independent re-review is still required and cannot be self-awarded.
+These mappings are an index rather than an acceptance claim. The independent
+read-only re-review of exact commit
+`4cf186e2e1b2725f3ef64dada9a2e5c91770ee62` returned `Verdict: PASS` with no
+findings after inspecting the correction and independently running focused CLI,
+native, strict lint and light checks. Its scope is the mount-boundary correction;
+it does not qualify a later native action, full product, human or live gate.

@@ -210,7 +210,6 @@ const REQUIRED_KEYS: &[&str] = &[
     "reports_assembly_recovery",
     "reports_export_title",
     "reports_destination_guidance",
-    "reports_command_unavailable",
     "reports_destination",
     "reports_destination_hint",
     "reports_include_paths",
