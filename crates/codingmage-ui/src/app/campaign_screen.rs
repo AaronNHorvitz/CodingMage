@@ -113,33 +113,60 @@ impl App {
             "--campaign".to_owned(),
             spec_path.clone(),
         ];
-        let mut jobs = vec![("campaign-mission-status", "campaign-mission-status")];
-        if parallel {
-            jobs.push(("campaign-report", "campaign-report"));
+        let mut arguments = vec!["campaign-mission-status".to_owned()];
+        arguments.extend(base);
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::Command {
+                label: "campaign-mission-status",
+                arguments,
+                deadline: STATUS_DEADLINE,
+            },
+            request_id: None,
+        };
+        match self.submit(request) {
+            Ok(()) => self.mission.loading = true,
+            Err(error) => self.mission.fail(error, self.now),
         }
-        for (label, command) in jobs {
-            let mut arguments = vec![command.to_owned()];
-            arguments.extend(base.iter().cloned());
-            let request = Request {
-                generation: self.generation,
-                binding: self.binding(),
-                job: Job::Command {
-                    label,
-                    arguments,
-                    deadline: STATUS_DEADLINE,
-                },
-                request_id: None,
-            };
-            match self.submit(request) {
-                Ok(()) => match label {
-                    "campaign-mission-status" => self.mission.loading = true,
-                    _ => self.report.loading = true,
-                },
-                Err(error) => match label {
-                    "campaign-mission-status" => self.mission.fail(error, self.now),
-                    _ => self.report.fail(error, self.now),
-                },
-            }
+        if parallel {
+            self.request_report();
+        }
+    }
+
+    pub(super) fn report_arguments(&self) -> Option<Vec<String>> {
+        let (config, campaign, parallel) = self.campaign_arguments()?;
+        parallel.then(|| {
+            vec![
+                "campaign-report".to_owned(),
+                "--config".to_owned(),
+                config,
+                "--campaign".to_owned(),
+                campaign,
+            ]
+        })
+    }
+
+    pub(super) fn request_report(&mut self) {
+        let Some(arguments) = self.report_arguments() else {
+            return;
+        };
+        if self.report.loading {
+            return;
+        }
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::Command {
+                label: "campaign-report",
+                arguments,
+                deadline: STATUS_DEADLINE,
+            },
+            request_id: None,
+        };
+        match self.submit(request) {
+            Ok(()) => self.report.loading = true,
+            Err(error) => self.report.fail(error, self.now),
         }
     }
 
@@ -588,7 +615,7 @@ impl App {
                 })
             })
         });
-        let report = (!self.report.loading && self.report.last_error.is_none())
+        let report = (!self.report.loading && self.report.freshness(self.now) == Freshness::Live)
             .then(|| self.report.value.as_ref().and_then(Option::as_ref))
             .flatten()
             .filter(|report| {

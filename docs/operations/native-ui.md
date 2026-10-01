@@ -75,8 +75,12 @@ campaign and a malformed task source have separate explanations, and the empty
 and failed plan views lead to Setup and offline Help.
 Final-report accepted badges also require the selected report's campaign,
 repository, base and branch binding and a live completed status at the same
-branch and head. A failed report refresh or changed head hides those badges;
-the source checkbox remains a separate claim.
+branch and head. A pending, failed or stale report refresh or changed head hides
+those badges; the source checkbox remains a separate claim. Work plan shows the
+final report observation's freshness and its failure effect. **Refresh final
+report** makes a read-only `campaign-report` request for a parallel campaign;
+its exact command is shown beside the action. An observed missing report is
+distinct from a failed request and cannot supply accepted badges.
 
 The Reports screen can explicitly inspect the read-only
 `codingmage campaign-outcome-report --config <absolute-file> --campaign

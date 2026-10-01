@@ -1452,6 +1452,58 @@ impl App {
         } else if self.status.value.as_ref().is_some_and(Option::is_none) {
             ui.label("No campaign status has been recorded yet. Source checkboxes remain separate from verified outcomes.");
         }
+        self.work_plan_report_controls(ui);
+    }
+
+    fn work_plan_report_controls(&mut self, ui: &mut egui::Ui) {
+        let Some(arguments) = self.report_arguments() else {
+            return;
+        };
+        let can_refresh = command::can_preview(self.binary_path.as_deref(), Some(&arguments));
+        if ui
+            .add_enabled(
+                can_refresh && !self.report.loading,
+                egui::Button::new("Refresh final report"),
+            )
+            .clicked()
+        {
+            self.request_report();
+        }
+        command::show_for(
+            ui,
+            "Refresh final report",
+            self.binary_path.as_deref(),
+            &arguments,
+        );
+        let freshness = self.report.freshness(self.now);
+        ui.small(format!(
+            "Final report: {} ({})",
+            freshness.label(),
+            age_label(self.report.age(self.now))
+        ));
+        if self.report.loading {
+            ui.label("Loading the final report. Retained accepted outcomes are hidden until the refresh completes.");
+        } else if let Some((_, error)) = &self.report.last_error {
+            let (cause, action) = explain_code(&error.code());
+            failure_box(
+                ui,
+                "Final report unavailable",
+                &format!("{} ({})", cause, error.code()),
+                &format!(
+                    "Accepted outcomes from the retained report are hidden. {action} Refresh the final report to retry."
+                ),
+            );
+        } else if freshness == Freshness::Stale {
+            ui.label(
+                "The final report observation is stale. Refresh it to restore accepted outcomes.",
+            );
+        } else if freshness == Freshness::NotRequested {
+            ui.label(
+                "The final report has not been requested. Refresh it to check accepted outcomes.",
+            );
+        } else if self.report.value.as_ref().is_some_and(Option::is_none) {
+            ui.label("No final report is recorded yet. Accepted outcomes require a completed campaign and a matching final report.");
+        }
     }
 
     fn task_source_detail(&mut self, ui: &mut egui::Ui, row: &PlanRow) {

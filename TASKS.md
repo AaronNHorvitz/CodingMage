@@ -2320,8 +2320,18 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     final-report identity and Work plan outcome guard is recorded in Decision
     0049 and `docs/evidence/sprint-36-report-payload-binding.md`; its local
     native UI suite passed 148/148 before a test-only fixture edit, its
-    final-source focused test and strict Clippy passed, and its independent
-    exact-commit review remains open.
+    final-source focused test and strict Clippy passed. Independent exact-SHA
+    review of `130e6ad51a39605acabc604460c42708d0995954` passed with no
+    findings after focused Work plan, Campaign and Reports checks and strict
+    Clippy; it does not qualify human or live gates. Work plan's open
+    report-recovery increment adds an exact-command read-only refresh and
+    separate pending, failed, stale and absent report guidance. The corrected
+    disposable parallel-campaign recovery test passed 1/1, native UI all-target
+    passed 149/149 and strict workspace Clippy passed; Python retains only
+    CM-R01.6's eight-input source-bound freshness failure. Independent review
+    of this new increment remains open; see Decision 0050 and
+    `docs/evidence/sprint-36-workplan-report-recovery.md`. The wider
+    section-five state, depth and action catalogue remains open.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->

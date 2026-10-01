@@ -14,8 +14,9 @@ wrong-head and failed-status responses at the client boundary. These injected
 responses are contract tests, not real-provider or independent acceptance.
 The broader section-five state/depth/action catalogue, human desktop checks,
 CM-R01.6 source-bound package renewal and release remain open.
-Work plan still needs an in-context report-specific refresh and failure
-explanation; the shell's F5 campaign refresh is the current recovery path.
+That commit did not have an in-context report-specific refresh and failure
+explanation. The follow-up is recorded in
+[the Work plan report recovery evidence](sprint-36-workplan-report-recovery.md).
 
 ## Verification disposition
 
@@ -38,5 +39,7 @@ items and 825 explicit gaps: one new public UI handler, nine existing
 line-derived IDs moved, and no removed semantic item, applicability, heuristic
 test mapping or gap-count change. The exact staged diff and additions are
 inspected for scope and private host or credential material before commit.
-Independent exact-commit review of this increment is pending; no human/live
-or release gate is claimed.
+Independent exact-commit review of
+`130e6ad51a39605acabc604460c42708d0995954` passed with no findings after
+focused Work plan, Campaign and Reports checks and strict workspace Clippy.
+Its bounded scope does not claim human/live or release acceptance.

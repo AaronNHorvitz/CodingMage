@@ -4,7 +4,11 @@ mod common;
 
 use std::{fs, path::Path, process::Command, time::Duration};
 
-use codingmage_campaign::CampaignSpec;
+use codingmage_campaign::{
+    CampaignConcurrency, CampaignExecutionMode, CampaignSpec, DestinationPromotionPolicy,
+    MultiAgentPolicy, TaskIntegrationPolicy, TaskMergeStrategy, TaskPublicationMode,
+    TeamResourcePolicy,
+};
 use codingmage_ui::{
     Screen,
     backend::{
@@ -877,6 +881,94 @@ fn final_report_outcomes_require_bound_payload_and_current_status() {
         result: Err(BackendError::Timeout),
     }));
     assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_none());
+}
+
+#[test]
+fn work_plan_final_report_failure_has_exact_refresh_and_recovers() {
+    let fixture = Fixture::new("report-workplan-recovery", 1);
+    let spec = write_campaign(&fixture, "report-recovery", 1);
+    let mut policy_spec = CampaignSpec::load(&spec).unwrap();
+    policy_spec.multi_agent = Some(MultiAgentPolicy {
+        version: 1,
+        execution_mode: CampaignExecutionMode::Parallel,
+        publication_mode: TaskPublicationMode::LocalOnly,
+        task_integration_policy: TaskIntegrationPolicy::AutoToCampaignBranch,
+        destination_promotion_policy: DestinationPromotionPolicy::HumanRequired,
+        task_merge_strategy: TaskMergeStrategy::Squash,
+        github: None,
+        concurrency: CampaignConcurrency {
+            claude_implementers: 1,
+            codex_team_leads: 1,
+            codex_reviewers: 1,
+            test_workers: 1,
+            github_writers: 1,
+            integration_workers: 1,
+        },
+        resources: TeamResourcePolicy::default(),
+        max_campaign_tokens: 1_000_000,
+        max_task_tokens: 500_000,
+        max_task_correction_cycles: 3,
+        max_follow_up_tasks: 0,
+        integration_validation_interval: 1,
+        provider_routing: None,
+    });
+    policy_spec.verify().unwrap();
+    fs::write(&spec, toml::to_string(&policy_spec).unwrap()).unwrap();
+    assert_eq!(run_campaign(&fixture, &spec)["completed_units"], 1);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.status().value.as_ref().is_some_and(Option::is_some)
+    }));
+    let selected = &harness.state().campaign().unwrap().spec;
+    let status = harness.state().status().value.clone().flatten().unwrap();
+    let report = synthetic_final_report(selected, &status);
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    inject_report(&mut harness, &binding, generation, &serde_json::Value::Null);
+    harness.state_mut().select_screen(Screen::WorkPlan);
+    harness.run_steps(2);
+    harness.get_by_label_contains("No final report is recorded yet");
+    assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_none());
+    inject_report(&mut harness, &binding, generation, &report);
+    harness.run_steps(2);
+    assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_some());
+
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding: binding.clone(),
+        label: "campaign-report",
+        request_id: None,
+        result: Err(BackendError::Timeout),
+    }));
+    harness.run_steps(2);
+    harness.get_by_label("Final report unavailable");
+    harness.get_by_label_contains("Accepted outcomes from the retained report are hidden");
+    assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_none());
+    harness
+        .get_by_label("Show command: Refresh final report")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("codingmage campaign-report --config");
+    harness
+        .get_by_role_and_label(egui::accesskit::Role::Button, "Refresh final report")
+        .click();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.report().last_error.is_none() && app.report().value.is_some() && !app.report().loading
+    }));
+    if harness
+        .state()
+        .report()
+        .value
+        .as_ref()
+        .is_some_and(Option::is_some)
+    {
+        assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_some());
+    } else {
+        harness.get_by_label_contains("No final report is recorded yet");
+        assert!(harness.state().task_overlay()["0.1.1.1"].accepted.is_none());
+    }
+    assert!(harness.query_by_label("Final report unavailable").is_none());
 }
 
 #[test]
