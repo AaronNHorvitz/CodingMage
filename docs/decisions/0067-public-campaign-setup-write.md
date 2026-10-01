@@ -50,3 +50,11 @@ authorization digest, malformed/oversized input, unsafe destination,
 configuration/record collision, dirty source and changed committed head. The
 campaign parser unit test covers direct-byte parity and invalid input. Exact
 results and open independent/human gates are in the Setup command evidence.
+
+## Independent finding
+
+The bounded exact-commit review of `4c4afe0fbe98dd96c2a45c6bab8cde10d5b4c283`
+returned `FINDINGS` with a High hard-link alias defect. The record could be a
+second name for the configuration file while supplying the matching candidate
+digest. Decision 0068 defines the physical-file correction. The original
+review remains attached to its exact source and does not approve the fix.

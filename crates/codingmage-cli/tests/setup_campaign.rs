@@ -360,6 +360,70 @@ fn stale_and_malformed_campaign_inputs_never_publish() {
 }
 
 #[test]
+fn linked_authorization_cannot_reuse_the_configuration_inode() {
+    let fixture = Fixture::new();
+    let linked_record = fixture.root.join("workspace/linked-authorization.txt");
+    fs::hard_link(&fixture.config, &linked_record).unwrap();
+    let output = fixture.root.join("workspace/campaign.toml");
+    let mut spec = fixture.spec();
+    spec.operator_authorization_sha256 = digest(&fs::read(&linked_record).unwrap());
+    let bytes = toml::to_string_pretty(&spec).unwrap();
+    let result = run(
+        &[
+            "setup-write-campaign",
+            "--config",
+            fixture.config.to_str().unwrap(),
+            "--repository-id",
+            &fixture.repository_id,
+            "--head",
+            &fixture.head,
+            "--task-source-sha256",
+            &fixture.task_sha256,
+            "--authorization",
+            linked_record.to_str().unwrap(),
+            "--output",
+            output.to_str().unwrap(),
+        ],
+        bytes.as_bytes(),
+    );
+    assert_eq!(result.stderr, b"codingmage.cli.refused\n");
+    assert!(!output.exists());
+}
+
+#[test]
+fn linked_protected_destinations_are_never_replaced() {
+    let fixture = Fixture::new();
+    let bytes = toml::to_string_pretty(&fixture.spec()).unwrap();
+    for (source, name) in [
+        (&fixture.config, "linked-config.toml"),
+        (&fixture.record, "linked-record.toml"),
+    ] {
+        let output = fixture.root.join("workspace").join(name);
+        let original = fs::read(source).unwrap();
+        fs::hard_link(source, &output).unwrap();
+        let result = fixture.write(&output, bytes.as_bytes(), true);
+        assert_eq!(result.stderr, b"codingmage.cli.refused\n");
+        assert_eq!(fs::read(source).unwrap(), original);
+        assert_eq!(fs::read(&output).unwrap(), original);
+    }
+}
+
+#[test]
+fn parent_aliases_cannot_replace_protected_destinations() {
+    let fixture = Fixture::new();
+    let alias = fixture.root.join("workspace-alias");
+    std::os::unix::fs::symlink(fixture.root.join("workspace"), &alias).unwrap();
+    let bytes = toml::to_string_pretty(&fixture.spec()).unwrap();
+    for source in [&fixture.config, &fixture.record] {
+        let original = fs::read(source).unwrap();
+        let output = alias.join(source.file_name().unwrap());
+        let result = fixture.write(&output, bytes.as_bytes(), true);
+        assert_eq!(result.stderr, b"codingmage.cli.refused\n");
+        assert_eq!(fs::read(source).unwrap(), original);
+    }
+}
+
+#[test]
 fn changed_head_and_task_blob_are_not_adopted_from_a_stale_form() {
     let fixture = Fixture::new();
     let output = fixture.root.join("workspace/campaign.toml");

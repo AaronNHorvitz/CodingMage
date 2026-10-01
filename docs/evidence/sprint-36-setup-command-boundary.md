@@ -192,4 +192,33 @@ The source/schema-reviewed inventory is 1,783 public items and 825 explicit
 gaps. Two normalized public surfaces were added, none removed; no existing
 applicability or normalized gap changed, and nine existing heuristic test
 mappings shifted. A mapping is not proof of coverage. Independent exact-commit
-review of this new CLI command remains pending.
+review of this new CLI command returned `FINDINGS` at exact commit
+`4c4afe0fbe98dd96c2a45c6bab8cde10d5b4c283`; see the correction below.
+
+## Campaign Setup physical-file correction
+
+Independent exact-commit review of `4c4afe0fbe98dd96c2a45c6bab8cde10d5b4c283`
+returned `FINDINGS` with one High item: a configuration hard link under a
+different name passed as the external authorization record when the candidate
+contained the matching digest. Its disposable reproduction and review report
+are retained privately, unedited. The earlier CLI tests and checks above
+remain historical evidence for that source, not a pass for the correction.
+
+Decision 0068 holds no-follow descriptors for the configuration and external
+record, compares their device/inode identities, reads the bounded record from
+the held descriptor, and rechecks each named leaf and the protected output
+inodes at the guarded publication boundary. Real-process regressions cover
+the matching-digest linked-record exploit, hard-linked output aliases for
+each protected file, and parent-directory aliases. Initial focused campaign
+Setup results: 6/6 pass on corrected local source. The exact-source broader
+CLI/campaign all-target run passed 112 tests with no failures and two
+explicitly ignored sustained qualification tests. Strict workspace Clippy
+with warnings denied, Cargo formatting, documentation, architecture,
+regenerated/no-write verification inventory and diff whitespace pass. The
+source/schema-reviewed inventory remains at 1,783 items and 825 explicit
+gaps, with no normalized surface, applicability, heuristic test mapping or
+gap change; only line-derived locations moved. The full Python suite passed
+43/44 tests; the sole failure is the unchanged CM-R01.6 eight-input
+source-bound freshness hold. No package, receipt or digest was renewed.
+Fresh independent exact-commit re-review is pending. Human, installed desktop,
+live-provider and release gates remain open.

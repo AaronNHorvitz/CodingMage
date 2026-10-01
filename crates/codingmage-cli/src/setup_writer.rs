@@ -1,11 +1,20 @@
 //! Public, repository-bound guided Setup writes through the coordinator executable.
 
-use std::{fs, io::Read, path::Path};
+use std::{
+    fs::{self, File},
+    io::{Read, Seek as _, SeekFrom},
+    os::unix::fs::MetadataExt as _,
+    path::{Path, PathBuf},
+};
 
 use codingmage_campaign::CampaignSpec;
 use codingmage_core::{RepositoryAuthorization, load_config};
 use codingmage_git::{inventory_repository, read_authorized_blob};
 use codingmage_plan::TaskPlan;
+use nix::{
+    fcntl::{OFlag, open},
+    sys::stat::Mode,
+};
 use serde_json::json;
 use sha2::{Digest as _, Sha256};
 
@@ -13,6 +22,81 @@ use crate::{CliError, ParsedArguments, executable_parent, report_writer};
 
 const MAX_AUTHORIZATION_BYTES: usize = 1024 * 1024;
 const MAX_CAMPAIGN_BYTES: usize = 1024 * 1024;
+
+// A held no-follow descriptor binds the bytes and physical identity to the
+// named file. Publication checks reject a moved leaf and re-read mutable bytes.
+struct ObservedFile {
+    path: PathBuf,
+    file: File,
+    identity: (u64, u64),
+    max_bytes: u64,
+}
+
+impl ObservedFile {
+    fn open(path: &Path, max_bytes: u64) -> Result<Self, CliError> {
+        let file = File::from(
+            open(
+                path,
+                OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC,
+                Mode::empty(),
+            )
+            .map_err(|_| CliError::InvalidArgument)?,
+        );
+        let metadata = file.metadata().map_err(|_| CliError::InvalidArgument)?;
+        if !metadata.is_file() || metadata.len() > max_bytes {
+            return Err(CliError::InvalidArgument);
+        }
+        let observed = Self {
+            path: path.to_path_buf(),
+            file,
+            identity: (metadata.dev(), metadata.ino()),
+            max_bytes,
+        };
+        observed
+            .revalidate()
+            .map_err(|_| CliError::InvalidArgument)?;
+        Ok(observed)
+    }
+
+    fn revalidate(&self) -> Result<(), CliError> {
+        let named = fs::symlink_metadata(&self.path).map_err(|_| CliError::StaleObservation)?;
+        let held = self
+            .file
+            .metadata()
+            .map_err(|_| CliError::StaleObservation)?;
+        if !named.is_file()
+            || named.file_type().is_symlink()
+            || named.len() > self.max_bytes
+            || !held.is_file()
+            || held.len() > self.max_bytes
+            || self.identity != (named.dev(), named.ino())
+            || self.identity != (held.dev(), held.ino())
+        {
+            return Err(CliError::StaleObservation);
+        }
+        Ok(())
+    }
+
+    fn authorization_digest(&mut self) -> Result<String, CliError> {
+        self.revalidate()?;
+        self.file
+            .seek(SeekFrom::Start(0))
+            .map_err(|_| CliError::InvalidArgument)?;
+        let mut bytes = Vec::new();
+        (&self.file)
+            .take(self.max_bytes + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|_| CliError::InvalidArgument)?;
+        if bytes.len() as u64 > self.max_bytes
+            || !std::str::from_utf8(&bytes)
+                .is_ok_and(|text| !text.trim().is_empty() && !text.contains('\0'))
+        {
+            return Err(CliError::InvalidArgument);
+        }
+        self.revalidate()?;
+        digest_hex(&bytes)
+    }
+}
 
 /// Writes the exact, bounded authorization record supplied on private stdin.
 pub(super) fn authorization(arguments: &[String], input: impl Read) -> Result<String, CliError> {
@@ -81,6 +165,8 @@ pub(super) fn campaign(arguments: &[String], input: impl Read) -> Result<String,
     )?;
     let config_path = parsed.absolute_file("config")?;
     let config = load_config(&config_path).map_err(|_| CliError::Config)?;
+    let config_file = ObservedFile::open(&config_path, MAX_CAMPAIGN_BYTES as u64)
+        .map_err(|_| CliError::StaleObservation)?;
     let authority = RepositoryAuthorization::authorize(&config, &executable_parent()?)
         .map_err(|_| CliError::Repository)?;
     let repository_id = parsed.value("repository-id")?;
@@ -103,7 +189,13 @@ pub(super) fn campaign(arguments: &[String], input: impl Read) -> Result<String,
     if output_leaf == config_leaf || output_leaf == record_leaf || config_leaf == record_leaf {
         return Err(CliError::Refused);
     }
-    let record_sha256 = observed_record_digest(&record, &config.target_path)?;
+    report_writer::validate(&record, &config.target_path)?;
+    let mut record_file = ObservedFile::open(&record, MAX_AUTHORIZATION_BYTES as u64)?;
+    if config_file.identity == record_file.identity {
+        return Err(CliError::Refused);
+    }
+    refuse_protected_output(&output, &config_file, &record_file)?;
+    let record_sha256 = record_file.authorization_digest()?;
     observe_campaign_source(&config, &authority, head, task_sha256)?;
 
     let mut bytes = Vec::new();
@@ -124,10 +216,11 @@ pub(super) fn campaign(arguments: &[String], input: impl Read) -> Result<String,
         authority
             .revalidate()
             .map_err(|_| CliError::StaleObservation)?;
+        config_file.revalidate()?;
+        record_file.revalidate()?;
+        refuse_protected_output(&output, &config_file, &record_file)?;
         if load_config(&config_path).map_err(|_| CliError::StaleObservation)? != config
-            || observed_record_digest(&record, &config.target_path)
-                .map_err(|_| CliError::StaleObservation)?
-                != record_sha256
+            || record_file.authorization_digest()? != record_sha256
         {
             return Err(CliError::StaleObservation);
         }
@@ -145,27 +238,23 @@ pub(super) fn campaign(arguments: &[String], input: impl Read) -> Result<String,
     .map_err(|_| CliError::Internal)
 }
 
-fn observed_record_digest(path: &Path, repository: &Path) -> Result<String, CliError> {
-    report_writer::validate(path, repository)?;
-    let metadata = fs::symlink_metadata(path).map_err(|_| CliError::InvalidArgument)?;
-    if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.len() > 1024 * 1024 {
-        return Err(CliError::InvalidArgument);
+fn refuse_protected_output(
+    output: &Path,
+    config: &ObservedFile,
+    record: &ObservedFile,
+) -> Result<(), CliError> {
+    match fs::symlink_metadata(output) {
+        Ok(metadata) if metadata.is_file() => {
+            let identity = (metadata.dev(), metadata.ino());
+            if identity == config.identity || identity == record.identity {
+                return Err(CliError::Refused);
+            }
+        }
+        Ok(_) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(_) => return Err(CliError::StaleObservation),
     }
-    let mut bytes = Vec::new();
-    fs::File::open(path)
-        .map_err(|_| CliError::InvalidArgument)?
-        .take(1024 * 1024 + 1)
-        .read_to_end(&mut bytes)
-        .map_err(|_| CliError::InvalidArgument)?;
-    if bytes.len() > 1024 * 1024 {
-        return Err(CliError::InvalidArgument);
-    }
-    if !std::str::from_utf8(&bytes)
-        .is_ok_and(|text| !text.trim().is_empty() && !text.contains('\0'))
-    {
-        return Err(CliError::InvalidArgument);
-    }
-    digest_hex(&bytes)
+    Ok(())
 }
 
 fn normalized_leaf(path: &Path) -> Result<std::path::PathBuf, CliError> {

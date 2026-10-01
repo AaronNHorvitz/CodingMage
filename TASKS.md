@@ -2155,8 +2155,12 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     from the queued command. The correction at
     `0362c3f012e4319dc19050dc9de89909a50657c3` received bounded independent
     re-review PASS without findings. The next public `setup-write-campaign`
-    command is a local implementation increment under Decision 0067; native
-    worker routing and complete Show-command coverage remain open.
+    command is a local implementation increment under Decision 0067. Its first
+    independent exact-commit review at `4c4afe0fbe98dd96c2a45c6bab8cde10d5b4c283`
+    found a High hard-link alias of the configuration as authorization record.
+    Decision 0068 and the Setup command evidence record the physical-file
+    correction, with fresh independent re-review pending. Native worker routing
+    and complete Show-command coverage remain open.
     The bounded review of `b8e8458` returned a high parent-move finding and a low
     inventory-count finding. Decision 0063 and the corrected evidence record the
     local fix; the bounded re-review of `106ab0f4889943b403cdcdc98db1227b466ba4b0`

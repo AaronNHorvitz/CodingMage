@@ -24068,9 +24068,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:authorization:18",
+      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:authorization:102",
       "kind": "fn",
-      "line": 18,
+      "line": 102,
       "name": "authorization",
       "path": "crates/codingmage-cli/src/setup_writer.rs",
       "surface": "rust_public_api",
@@ -24129,9 +24129,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:campaign:69",
+      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:campaign:153",
       "kind": "fn",
-      "line": 69,
+      "line": 153,
       "name": "campaign",
       "path": "crates/codingmage-cli/src/setup_writer.rs",
       "surface": "rust_public_api",
@@ -81091,6 +81091,6 @@
       }
     }
   ],
-  "items_sha256": "4df1a37912fe6f687bd91c9ceaefb4cfac4482272f964ff6249dbfa146cb58b1",
+  "items_sha256": "e7309f273095c79b94f76f95e02a3bb3073a798303f274c155cfd782c41deb99",
   "schema_version": 1
 }
