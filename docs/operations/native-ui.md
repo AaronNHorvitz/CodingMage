@@ -66,14 +66,20 @@ showing sample results.
 | Settings | Light, dark, high-contrast or system appearance for the current window | Local presentation state only |
 | Help and About | Offline getting-started and recovery guidance, keyboard shortcuts, glossary, source licence and third-party source notices; explicit copyable path-free diagnostic summary and redacted support bundle for a selected campaign | Bundled first-party text, plus the coordinator's `support-bundle` command only after an explicit request; nothing is uploaded |
 
-The read-only `codingmage campaign-outcome-report --config <absolute-file> --campaign
-<absolute-file>` command assembles a bounded coordinator and exact-head repository
-projection for shell inspection. The Reports export control runs `codingmage report-export`
+The Reports screen can explicitly inspect the read-only
+`codingmage campaign-outcome-report --config <absolute-file> --campaign
+<absolute-file> --include-paths false` command. It shows a bounded, inert
+source-bound snapshot and its exact command without starting an agent or
+writing a destination. Select Inspect again for newer records. The Reports
+export control runs `codingmage report-export`
 with the shown config, campaign, output, privacy and overwrite arguments. It writes a fresh
 source-bound schema-one document. Changed-file paths require `--include-paths true`;
 replacement of an existing regular file requires `--overwrite true`. The document never
 claims an interface-only admission or invocation result. The Reports screen also shows a
 separately labelled local schema-three observation JSON; it is not the exported document.
+Source inspection and export remain available while this local observation
+assembles or becomes stale; each asks the coordinator to read fresh bound
+records independently.
 The export writers require the selected destination parent to be outside the target
 repository and on the same Linux mount as its root. A destination on another mount is
 refused, even when outside the repository.

@@ -647,6 +647,7 @@ impl App {
             }
             "support-bundle" => self.accept_support_bundle(response),
             "report-export" => self.accept_report_export(response),
+            "campaign-outcome-report" => self.accept_source_report(response),
             _ => false,
         }
     }

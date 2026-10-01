@@ -1,6 +1,7 @@
 //! Reports: inspect and export outcome and blocker reports assembled from real records.
 
 use serde::Deserialize;
+use serde_json::Value;
 use std::{
     path::PathBuf,
     sync::mpsc::{Receiver, SyncSender, TrySendError, channel, sync_channel},
@@ -20,6 +21,8 @@ use crate::{
     records::{CommitSummary, FileChange, RunRecord},
     report::{ChangeCoverage, OutcomeReport, ReportInputs},
 };
+
+const MAX_SOURCE_INSPECTION_BYTES: usize = 256 * 1024;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct ObservationKey {
@@ -212,6 +215,108 @@ struct ExportReceipt {
     repository_paths_requested: bool,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SourceBoundReport {
+    schema_version: u16,
+    campaign_id: String,
+    repository_id: String,
+    authority_sha256: String,
+    initial_commit: String,
+    observed_head: Value,
+    #[serde(rename = "status")]
+    status: Value,
+    #[serde(rename = "blockers")]
+    blockers: Value,
+    #[serde(rename = "final_report")]
+    final_report: Value,
+    changes: Value,
+    #[serde(rename = "run_records")]
+    run_records: Value,
+    repository_paths_included: bool,
+    #[serde(rename = "limits")]
+    limits: Vec<String>,
+}
+
+struct PendingInspection {
+    request_id: String,
+    campaign_id: String,
+    repository_id: String,
+    authority_sha256: String,
+    initial_commit: String,
+}
+
+struct SourceReportSnapshot {
+    preview: String,
+    observed_head: Option<String>,
+    shortened: bool,
+}
+
+fn parse_source_report(
+    bytes: Vec<u8>,
+    pending: &PendingInspection,
+) -> Result<SourceReportSnapshot, String> {
+    if bytes.len() > MAX_SOURCE_INSPECTION_BYTES {
+        return Err(
+            "the source report is too large for inline inspection; export it outside the repository to inspect the full document"
+                .to_owned(),
+        );
+    }
+    let document: SourceBoundReport = serde_json::from_slice(&bytes)
+        .map_err(|_| "the coordinator returned a malformed source report".to_owned())?;
+    if document.schema_version != 1
+        || document.campaign_id != pending.campaign_id
+        || document.repository_id != pending.repository_id
+        || document.authority_sha256 != pending.authority_sha256
+        || document.initial_commit != pending.initial_commit
+        || !(document.observed_head.is_null() || document.observed_head.is_string())
+        || !(document.status.is_null() || document.status.is_object())
+        || !(document.blockers.is_null() || document.blockers.is_object())
+        || !(document.final_report.is_null() || document.final_report.is_object())
+        || !(document.run_records.is_null() || document.run_records.is_object())
+        || !document.changes.is_object()
+        || document.changes.get("head") != Some(&document.observed_head)
+        || document.repository_paths_included
+        || document.changes["repository_paths_included"] != false
+        || document.changes.get("changed_files") != Some(&Value::Null)
+        || document.limits.is_empty()
+        || (!document.status.is_null()
+            && (document.status["campaign_id"].as_str() != Some(pending.campaign_id.as_str())
+                || document.status["head"] != document.observed_head))
+        || (!document.blockers.is_null()
+            && document.blockers["campaign_id"].as_str() != Some(pending.campaign_id.as_str()))
+        || (!document.final_report.is_null()
+            && (document.final_report["campaign_id"].as_str()
+                != Some(pending.campaign_id.as_str())
+                || document.final_report["repository_id"].as_str()
+                    != Some(pending.repository_id.as_str())
+                || document.final_report["initial_commit"].as_str()
+                    != Some(pending.initial_commit.as_str())))
+        || (!document.run_records.is_null()
+            && (document.run_records["campaign_id"].as_str() != Some(pending.campaign_id.as_str())
+                || document.run_records["repository_id"].as_str()
+                    != Some(pending.repository_id.as_str())
+                || document.run_records["head"] != document.observed_head))
+    {
+        return Err(
+            "the source report identity or path privacy did not match the selected campaign"
+                .to_owned(),
+        );
+    }
+    let text = String::from_utf8(bytes)
+        .map_err(|_| "the coordinator returned a non-UTF-8 source report".to_owned())?;
+    let mut characters = text.chars();
+    let preview: String = characters
+        .by_ref()
+        .take(content::MAX_PREVIEW_CHARS)
+        .collect();
+    Ok(SourceReportSnapshot {
+        preview,
+        observed_head: document.observed_head.as_str().map(str::to_owned),
+        shortened: characters.next().is_some(),
+    })
+}
+
 impl ExportReceipt {
     fn matches(&self, pending: &PendingExport) -> bool {
         self.schema_version == 1
@@ -234,9 +339,12 @@ pub struct ReportsState {
     pub overwrite: bool,
     /// Last export outcome.
     pub message: Option<Result<String, String>>,
-    /// Show a bounded JSON preview inline; export retains the full document.
+    /// Show a bounded local observation preview, separate from source-bound export.
     pub show_json: bool,
     pending: Option<PendingExport>,
+    inspection_pending: Option<PendingInspection>,
+    source_snapshot: Option<SourceReportSnapshot>,
+    source_error: Option<String>,
     assembly_pending: Option<ReportKey>,
     assembled: Option<AssembledReport>,
     assembly_error: Option<String>,
@@ -260,9 +368,18 @@ impl App {
         self.reports.pending.is_some()
     }
 
+    /// Whether a read-only source report request is pending.
+    #[must_use]
+    pub fn source_report_pending(&self) -> bool {
+        self.reports.inspection_pending.is_some()
+    }
+
     pub(super) fn clear_report_export(&mut self) {
         self.reports.pending = None;
         self.reports.message = None;
+        self.reports.inspection_pending = None;
+        self.reports.source_snapshot = None;
+        self.reports.source_error = None;
         self.reports.assembled = None;
         self.reports.assembly_error = None;
     }
@@ -421,19 +538,6 @@ impl App {
             self.reports.message = Some(Err("select a campaign first".to_owned()));
             return;
         }
-        let Some(_report) = self
-            .reports
-            .assembled
-            .as_ref()
-            .filter(|cached| self.report_key(Instant::now()).as_ref() == Some(&cached.key))
-            .map(|cached| &cached.report)
-        else {
-            self.reports.message = Some(Err(
-                "the report is updating; wait for the current observation before exporting"
-                    .to_owned(),
-            ));
-            return;
-        };
         let Some(campaign) = self.campaign.as_ref() else {
             return;
         };
@@ -533,6 +637,96 @@ impl App {
         ])
     }
 
+    fn source_report_arguments(&self) -> Option<Vec<String>> {
+        let project = self.project.as_ref()?;
+        let campaign = self.campaign.as_ref()?;
+        Some(vec![
+            "campaign-outcome-report".to_owned(),
+            "--config".to_owned(),
+            project.config_path.to_str()?.to_owned(),
+            "--campaign".to_owned(),
+            campaign.spec_path.to_str()?.to_owned(),
+            "--include-paths".to_owned(),
+            "false".to_owned(),
+        ])
+    }
+
+    /// Requests a fresh, path-free report from the public coordinator command.
+    pub fn inspect_source_report(&mut self) {
+        if self.source_report_pending() {
+            self.reports.source_error =
+                Some("a source report inspection is already pending".to_owned());
+            return;
+        }
+        let Some(campaign) = self.campaign.as_ref() else {
+            self.reports.source_error = Some("select a campaign first".to_owned());
+            return;
+        };
+        let pending = PendingInspection {
+            request_id: format!(
+                "source-report-{}",
+                self.next_evidence_request.wrapping_add(1)
+            ),
+            campaign_id: campaign.spec.campaign_id.clone(),
+            repository_id: campaign.spec.repository_id.clone(),
+            authority_sha256: campaign.authority_sha256.clone(),
+            initial_commit: campaign.spec.initial_commit.clone(),
+        };
+        let Some(arguments) = self
+            .source_report_arguments()
+            .filter(|arguments| command::can_preview(self.binary_path.as_deref(), Some(arguments)))
+        else {
+            self.reports.source_error = Some("the exact source report command cannot be shown; check the coordinator and selected campaign".to_owned());
+            return;
+        };
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::SourceReportInspect {
+                arguments,
+                deadline: Duration::from_secs(30),
+            },
+            request_id: Some(pending.request_id.clone()),
+        };
+        self.reports.source_error = None;
+        match self.submit(request) {
+            Ok(()) => {
+                self.next_evidence_request = self.next_evidence_request.wrapping_add(1);
+                self.reports.inspection_pending = Some(pending);
+            }
+            Err(error) => self.reports.source_error = Some(error.to_string()),
+        }
+    }
+
+    pub(super) fn accept_source_report(&mut self, response: Response) -> bool {
+        let Some(pending) = self.reports.inspection_pending.as_ref() else {
+            return false;
+        };
+        if response.request_id.as_deref() != Some(pending.request_id.as_str()) {
+            return false;
+        }
+        let Some(pending) = self.reports.inspection_pending.take() else {
+            return false;
+        };
+        match response.result {
+            Ok(bytes) => match parse_source_report(bytes, &pending) {
+                Ok(snapshot) => {
+                    self.reports.source_snapshot = Some(snapshot);
+                    self.reports.source_error = None;
+                }
+                Err(error) => {
+                    self.reports.source_snapshot = None;
+                    self.reports.source_error = Some(error);
+                }
+            },
+            Err(error) => {
+                self.reports.source_snapshot = None;
+                self.reports.source_error = Some(error.to_string());
+            }
+        }
+        true
+    }
+
     pub(super) fn reports_screen(&mut self, ui: &mut egui::Ui) {
         self.reports_screen_with_catalogue(ui, messages::english(), false);
     }
@@ -585,6 +779,11 @@ impl App {
         } else {
             ui.label(freshness);
         }
+        ui.separator();
+        self.report_source_inspection_section(ui, catalogue);
+        ui.separator();
+        self.report_export_section(ui, catalogue);
+        ui.separator();
         self.request_report_assembly();
         let current_key = self.report_key(Instant::now());
         let Some(cached) = self
@@ -618,7 +817,68 @@ impl App {
         ui.separator();
         blocker_report(ui, report, catalogue);
         ui.separator();
-        self.report_export_section(ui, catalogue);
+        self.local_report_preview(ui, catalogue);
+    }
+
+    fn report_source_inspection_section(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        ui.strong(catalogue.text("reports_source_inspect_title"));
+        ui.small(catalogue.text("reports_source_inspect_description"));
+        let arguments = self.source_report_arguments();
+        let previewable = command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
+        if ui
+            .add_enabled(
+                previewable && !self.source_report_pending(),
+                egui::Button::new(catalogue.text("reports_source_inspect")),
+            )
+            .clicked()
+        {
+            self.inspect_source_report();
+        }
+        if let Some(arguments) = arguments {
+            command::show_for(
+                ui,
+                catalogue.text("reports_source_inspect"),
+                self.binary_path.as_deref(),
+                &arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, catalogue.text("reports_source_inspect"));
+        }
+        if self.source_report_pending() {
+            ui.label(catalogue.text("reports_source_inspect_pending"));
+        }
+        if let Some(error) = &self.reports.source_error {
+            failure_box(
+                ui,
+                catalogue.text("reports_source_inspect_failed"),
+                error,
+                catalogue.text("reports_source_inspect_recovery"),
+            );
+        }
+        if let Some(snapshot) = &self.reports.source_snapshot {
+            ui.label(catalogue.text("reports_source_inspect_snapshot"));
+            ui.label(snapshot.observed_head.as_deref().map_or_else(
+                || catalogue.text("reports_source_inspect_no_head").to_owned(),
+                |head| {
+                    format!(
+                        "{} {}",
+                        catalogue.text("reports_source_inspect_head"),
+                        content::list_label(head)
+                    )
+                },
+            ));
+            egui::ScrollArea::vertical()
+                .id_salt("source-report-json")
+                .max_height(super::current_tokens(ui.ctx()).layout.preview_reports)
+                .show(ui, |ui| {
+                    content::render(ui, &snapshot.preview);
+                    if snapshot.shortened {
+                        ui.label(catalogue.text("reports_source_inspect_shortened"));
+                    }
+                });
+        } else if !self.source_report_pending() && self.reports.source_error.is_none() {
+            ui.label(catalogue.text("reports_source_inspect_unobserved"));
+        }
     }
 
     fn report_export_section(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
@@ -645,7 +905,6 @@ impl App {
             if ui
                 .add_enabled(
                     !self.report_export_pending()
-                        && self.report_ready()
                         && command::can_preview(
                             self.binary_path.as_deref(),
                             self.report_export_arguments().as_deref(),
@@ -686,6 +945,10 @@ impl App {
                 ),
             }
         }
+    }
+
+    fn local_report_preview(&mut self, ui: &mut egui::Ui, catalogue: &Catalogue) {
+        ui.strong(catalogue.text("reports_local_observation_title"));
         ui.checkbox(
             &mut self.reports.show_json,
             catalogue.text("reports_preview"),
@@ -1007,6 +1270,131 @@ fn observed_count(value: Option<usize>, truncated: bool, catalogue: &Catalogue) 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn source_fixture() -> (PendingInspection, Value) {
+        let pending = PendingInspection {
+            request_id: "source-report-1".to_owned(),
+            campaign_id: "campaign-1".to_owned(),
+            repository_id: "repository-1".to_owned(),
+            authority_sha256: "authority-1".to_owned(),
+            initial_commit: "initial-1".to_owned(),
+        };
+        let valid = serde_json::json!({
+            "schema_version": 1,
+            "campaign_id": "campaign-1",
+            "repository_id": "repository-1",
+            "authority_sha256": "authority-1",
+            "initial_commit": "initial-1",
+            "observed_head": null,
+            "status": null,
+            "blockers": null,
+            "final_report": null,
+            "changes": {
+                "head": null,
+                "repository_paths_included": false,
+                "changed_files": null
+            },
+            "run_records": null,
+            "repository_paths_included": false,
+            "limits": ["source observation"]
+        });
+        (pending, valid)
+    }
+
+    #[test]
+    fn source_inspection_requires_exact_identity_and_path_free_shape() {
+        let (pending, valid) = source_fixture();
+        let encode = |document: &Value| serde_json::to_vec(document).unwrap();
+        let snapshot = parse_source_report(encode(&valid), &pending).unwrap();
+        assert!(snapshot.preview.contains("campaign-1"));
+        assert_eq!(snapshot.observed_head, None);
+        assert!(!snapshot.shortened);
+        for (pointer, replacement) in [
+            ("/schema_version", serde_json::json!(2)),
+            ("/campaign_id", serde_json::json!("other")),
+            ("/repository_id", serde_json::json!("other")),
+            ("/authority_sha256", serde_json::json!("other")),
+            ("/initial_commit", serde_json::json!("other")),
+            ("/repository_paths_included", serde_json::json!(true)),
+            (
+                "/changes/repository_paths_included",
+                serde_json::json!(true),
+            ),
+            ("/changes/changed_files", serde_json::json!(["src/lib.rs"])),
+            ("/changes/head", serde_json::json!("other")),
+        ] {
+            let mut document = valid.clone();
+            *document.pointer_mut(pointer).unwrap() = replacement;
+            assert!(parse_source_report(encode(&document), &pending).is_err());
+        }
+        let mut unknown = valid.clone();
+        unknown["unexpected"] = serde_json::json!(true);
+        assert!(parse_source_report(encode(&unknown), &pending).is_err());
+        let mut missing_files = valid.clone();
+        missing_files["changes"]
+            .as_object_mut()
+            .unwrap()
+            .remove("changed_files");
+        assert!(parse_source_report(encode(&missing_files), &pending).is_err());
+        assert!(parse_source_report(b"{".to_vec(), &pending).is_err());
+        assert!(parse_source_report(vec![0xff], &pending).is_err());
+        assert!(
+            parse_source_report(vec![b'x'; MAX_SOURCE_INSPECTION_BYTES + 1], &pending)
+                .err()
+                .unwrap()
+                .contains("too large")
+        );
+        let mut long = valid;
+        long["limits"] = serde_json::json!(["x".repeat(content::MAX_PREVIEW_CHARS)]);
+        let snapshot = parse_source_report(encode(&long), &pending).unwrap();
+        assert!(snapshot.shortened);
+        assert_eq!(snapshot.preview.chars().count(), content::MAX_PREVIEW_CHARS);
+    }
+
+    #[test]
+    fn source_inspection_rejects_foreign_nested_evidence() {
+        let (pending, valid) = source_fixture();
+        let encode = |document: &Value| serde_json::to_vec(document).unwrap();
+        let mut active = valid.clone();
+        active["observed_head"] = serde_json::json!("head-1");
+        active["status"] = serde_json::json!({
+            "campaign_id": "campaign-1",
+            "head": "head-1"
+        });
+        active["blockers"] = serde_json::json!({"campaign_id": "campaign-1"});
+        active["final_report"] = serde_json::json!({
+            "campaign_id": "campaign-1",
+            "repository_id": "repository-1",
+            "initial_commit": "initial-1"
+        });
+        active["changes"]["head"] = serde_json::json!("head-1");
+        active["run_records"] = serde_json::json!({
+            "campaign_id": "campaign-1",
+            "repository_id": "repository-1",
+            "head": "head-1"
+        });
+        assert_eq!(
+            parse_source_report(encode(&active), &pending)
+                .unwrap()
+                .observed_head
+                .as_deref(),
+            Some("head-1")
+        );
+        for pointer in [
+            "/status/campaign_id",
+            "/blockers/campaign_id",
+            "/final_report/campaign_id",
+            "/final_report/repository_id",
+            "/final_report/initial_commit",
+            "/run_records/campaign_id",
+            "/run_records/repository_id",
+            "/run_records/head",
+        ] {
+            let mut document = active.clone();
+            *document.pointer_mut(pointer).unwrap() = serde_json::json!("other");
+            assert!(parse_source_report(encode(&document), &pending).is_err());
+        }
+    }
 
     #[test]
     fn source_export_receipt_requires_exact_bound_identity_and_privacy() {

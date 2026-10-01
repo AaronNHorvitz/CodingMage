@@ -120,6 +120,46 @@ fn report_sources_show_exact_refresh_commands_and_recover_from_malformed_reads()
     assert_eq!(tree_digest(&fixture.target), before);
 }
 
+#[test]
+fn source_report_inspection_reads_bound_path_free_records_and_clears_on_reselection() {
+    let fixture = Fixture::new("source-inspect", 1);
+    let first = write_campaign(&fixture, "source-inspect-first", 1);
+    let second = write_campaign(&fixture, "source-inspect-second", 1);
+    let before = tree_digest(&fixture.target);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&first);
+    harness.state_mut().select_screen(Screen::Reports);
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: Inspect source report now")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("codingmage campaign-outcome-report --config");
+    harness.get_by_label_contains("--include-paths false");
+    harness.state_mut().inspect_source_report();
+    assert!(harness.state().source_report_pending());
+    harness.state_mut().inspect_source_report();
+    assert!(harness.state().source_report_pending());
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        !app.source_report_pending()
+    }));
+    harness.run_steps(2);
+    harness.get_by_label_contains("Last successful source report snapshot");
+    harness.get_by_label_contains("\"campaign_id\": \"source-inspect-first\"");
+    assert_eq!(tree_digest(&fixture.target), before);
+
+    harness.state_mut().select_campaign(&second);
+    harness.run_steps(2);
+    harness.get_by_label_contains("No source report has been requested");
+    harness.state_mut().inspect_source_report();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        !app.source_report_pending()
+    }));
+    harness.run_steps(2);
+    harness.get_by_label_contains("\"campaign_id\": \"source-inspect-second\"");
+    assert_eq!(tree_digest(&fixture.target), before);
+}
+
 fn export_and_settle(harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>) {
     assert!(settle(
         harness,
@@ -298,7 +338,7 @@ fn report_and_export_label_retained_status_after_failed_refresh() {
             .count()
             >= 1
     );
-    harness.get_by_label_contains("Some source observations are loading, missing, stale or failed");
+    harness.get_by_label_contains("Some local observations are loading, missing, stale or failed");
     let report = harness.state().assemble_report(false).unwrap();
     assert!(
         report
@@ -319,7 +359,7 @@ fn report_and_export_label_retained_status_after_failed_refresh() {
 }
 
 #[test]
-fn report_assembly_rebinds_after_source_change_and_refuses_stale_export() {
+fn report_assembly_rebinds_after_source_change_without_blocking_fresh_export() {
     let fixture = Fixture::new("report-assembly-rebind", 1);
     let spec = write_campaign(&fixture, "report-assembly-rebind-campaign", 1);
     let mut harness = opened(&fixture);
@@ -335,7 +375,6 @@ fn report_assembly_rebinds_after_source_change_and_refuses_stale_export() {
     ));
     harness.state_mut().reports_state_mut().show_json = true;
     harness.run_steps(2);
-    harness.get_by_label_contains("schema_version");
 
     let destination = fixture.root.join("stale-assembly.json");
     harness.state_mut().reports_state_mut().export_path = destination.display().to_string();
@@ -350,8 +389,11 @@ fn report_assembly_rebinds_after_source_change_and_refuses_stale_export() {
     }));
     assert!(!harness.state().report_ready());
     harness.state_mut().export_report();
-    assert!(!harness.state().report_export_pending());
-    assert!(!destination.exists());
+    assert!(harness.state().report_export_pending());
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        !app.report_export_pending()
+    }));
+    assert!(destination.exists());
     assert!(settle(
         &mut harness,
         Duration::from_secs(30),
@@ -364,7 +406,6 @@ fn report_assembly_rebinds_after_source_change_and_refuses_stale_export() {
             .iter()
             .any(|limit| limit.contains("campaign status stale"))
     );
-    export_and_settle(&mut harness);
     let exported = fs::read_to_string(destination).unwrap();
     assert!(!exported.contains("campaign status stale"));
     assert_eq!(
