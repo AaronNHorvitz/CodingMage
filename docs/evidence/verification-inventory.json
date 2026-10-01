@@ -76884,9 +76884,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/report_export.rs:fn:validate_report_destination:426",
+      "id": "rust:crates/codingmage-ui/src/report_export.rs:fn:validate_report_destination:444",
       "kind": "fn",
-      "line": 426,
+      "line": 444,
       "name": "validate_report_destination",
       "path": "crates/codingmage-ui/src/report_export.rs",
       "surface": "rust_public_api",
@@ -76950,9 +76950,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/report_export.rs:fn:write_report:435",
+      "id": "rust:crates/codingmage-ui/src/report_export.rs:fn:write_report:453",
       "kind": "fn",
-      "line": 435,
+      "line": 453,
       "name": "write_report",
       "path": "crates/codingmage-ui/src/report_export.rs",
       "surface": "rust_public_api",
@@ -77015,9 +77015,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/report_export.rs:fn:write_validated_document:463",
+      "id": "rust:crates/codingmage-ui/src/report_export.rs:fn:write_validated_document:482",
       "kind": "fn",
-      "line": 463,
+      "line": 482,
       "name": "write_validated_document",
       "path": "crates/codingmage-ui/src/report_export.rs",
       "surface": "rust_public_api",
@@ -80397,6 +80397,6 @@
       }
     }
   ],
-  "items_sha256": "e0a47d1f4889de2fc511c2a919fe4503f5cabfee7e1dd96653da81e5b0f2551a",
+  "items_sha256": "f1aea0ae37667b89df270eaab3c60c11fc38bf59d4052312002c350240ed6f2f",
   "schema_version": 1
 }

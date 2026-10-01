@@ -161,3 +161,45 @@ style were corrected and retained privately. The regenerated inventory has
 1,771 items and 825 gaps; relative to the reviewed commit, normalized public
 keys, applicability, test mappings and gaps are unchanged. Exact-commit
 independent review of the final correction remains pending.
+
+## Independent stage-substitution finding and descriptor admission
+
+The independent exact-commit review of
+`e5e83af254470d7a620f7ed7497a780dc2aef86c` returned **FINDINGS**. It
+reproduced a high-severity interval between staging-directory creation and
+opening: a parent-directory writer could substitute a directory it controls,
+then replace the validated candidate before atomic exchange. The writer
+reported uncertainty while unvalidated bytes remained at the public
+destination. The earlier exchange and exact-byte claim did not hold against
+that interleaving. The review report and the original receipts remain intact.
+
+Decision 0061 admits the held staging directory only after checking its
+effective-user ownership, owner read/write/search with no group/other access,
+and current name identity before creating any candidate. An open failure or
+mismatch returns a destination conflict without removing the substituted
+entry. A deterministic hook substitutes a group/other-writable directory
+between creation and open; the focused test
+requires an error before validation or publication, unchanged old destination
+bytes, and no deletion of either stage. A separate metadata test exercises
+the effective-owner mismatch and permission rejection. An unprivileged test
+process cannot create a foreign-owned directory in its fixture; the pure
+metadata check tests that rejection while the independent reproduction
+established the vulnerable timing. Post-fix foreign-owner integration remains
+for independent review. The focused writer suite passed 14/14 after one
+retained local compile failure from a test-hook lifetime signature, corrected
+to pass an owned path. Broader gates are recorded below; independent re-review
+remains pending. Public sibling Setup commands, off-render-thread
+writes and exact Show-command disclosures remain open.
+
+The exact-source software-GL native UI all-target suite passed 171/171 across
+14 targets, including the disposable Setup, report and coordinator recovery
+workflows. Strict workspace Clippy passed with warnings denied. Formatting,
+documentation, architecture, no-write inventory and diff-whitespace checks
+passed. The full Python suite ran 43 tests: 42 passed and only the unchanged
+CM-R01.6 eight-input source-bound freshness binding failed; no evidence
+digest or binding was renewed. The verification-inventory source and version-1
+schema were inspected before regeneration. Its 1,771 items and 825 gaps have
+three line-derived ID moves and zero normalized public-key, applicability,
+test-mapping or gap changes from the reviewed commit. These are local builder
+checks; exact-commit independent re-review, desktop, human and live-provider
+qualification remain open.

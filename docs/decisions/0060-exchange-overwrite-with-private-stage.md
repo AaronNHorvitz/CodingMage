@@ -1,6 +1,6 @@
 # ADR 0060: Exchange an Overwrite with a Private Stage
 
-- **Status:** Accepted for local correction; independent re-review pending
+- **Status:** Superseded for private-stage admission by Decision 0061; the exchange protocol remains in use
 - **Date:** 2026-10-01
 - **Decision owners:** CodingMage implementation
 
@@ -31,6 +31,13 @@ The private directory prevents another principal with only parent-directory
 write access from replacing the displaced entry before it is inspected or
 removed. A process acting as the same user can still mutate files and directory
 entries it owns; this protocol is not a transaction against that actor.
+
+An independent review of the exact implementation found that the directory
+name could be replaced between `mkdirat` and `open`. The held directory might
+therefore belong to another principal and be writable by that principal. This
+paragraph describes the intended boundary, not a property established by this
+decision's original implementation. Decision 0061 adds the missing admission
+check before a candidate is created.
 
 ## Consequences
 

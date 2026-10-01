@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use nix::{
     fcntl::{AtFlags, OFlag, RenameFlags, open, renameat2},
     sys::stat::{Mode, mkdirat},
-    unistd::linkat,
+    unistd::{geteuid, linkat},
 };
 
 use crate::setup::{FieldError, WriteError};
@@ -265,7 +265,10 @@ struct PrivateStage {
 }
 
 impl PrivateStage {
-    fn create(destination: &Destination) -> Result<Self, WriteError> {
+    fn create(
+        destination: &Destination,
+        before_open: impl FnOnce(PathBuf),
+    ) -> Result<Self, WriteError> {
         let name = format!("{}.staging", temporary_name());
         mkdirat(
             &destination.directory,
@@ -274,17 +277,28 @@ impl PrivateStage {
         )
         .map_err(|_| WriteError::Io)?;
         let path = destination.fd_path().join(name);
+        before_open(path.clone());
         let directory = File::from(
             open(
                 &path,
                 OFlag::O_RDONLY | OFlag::O_DIRECTORY | OFlag::O_NOFOLLOW | OFlag::O_CLOEXEC,
                 Mode::empty(),
             )
-            .map_err(|_| WriteError::Io)?,
+            .map_err(|_| {
+                field_error("private staging directory changed; inspect the destination and retry")
+            })?,
         );
         let identity = directory.metadata().map_err(|_| WriteError::Io)?;
-        if !fs::symlink_metadata(&path).is_ok_and(|named| same_inode(&named, &identity)) {
-            return Err(WriteError::Io);
+        // mkdirat does not return a handle. A parent-directory writer can
+        // substitute its name before open, so verify the held object before
+        // creating any candidate inside it. Later parent renames cannot give
+        // that writer access to a directory owned by us with mode 0700.
+        if !private_stage_metadata(&identity, geteuid().as_raw())
+            || !fs::symlink_metadata(&path).is_ok_and(|named| same_inode(&named, &identity))
+        {
+            return Err(field_error(
+                "private staging directory changed; inspect the destination and retry",
+            ));
         }
         Ok(Self {
             directory,
@@ -377,6 +391,10 @@ impl PrivateStage {
     }
 }
 
+fn private_stage_metadata(metadata: &fs::Metadata, effective_uid: u32) -> bool {
+    metadata.is_dir() && metadata.uid() == effective_uid && metadata.mode() & 0o777 == 0o700
+}
+
 fn exchange_with_destination(
     stage: &PrivateStage,
     destination: &Destination,
@@ -451,11 +469,12 @@ pub(super) fn write_report(
     )
 }
 
-struct WriteHooks<W, P, B, A> {
+struct WriteHooks<W, P, B, A, S> {
     before_write: W,
     before_publish: P,
     before_exchange: B,
     after_exchange: A,
+    before_stage_open: S,
 }
 
 /// Publishes a local document only after its exact candidate bytes pass the existing loader.
@@ -480,34 +499,37 @@ pub(crate) fn write_validated_document(
             before_publish,
             before_exchange: || {},
             after_exchange: || {},
+            before_stage_open: |_| {},
         },
     )
 }
 
-fn write_validated_document_with_exchange_hook<W, P, B, A>(
+fn write_validated_document_with_exchange_hook<W, P, B, A, S>(
     path: &Path,
     repository: &Path,
     bytes: &[u8],
     overwrite: bool,
     validate: impl FnOnce(&Path) -> Result<(), String>,
-    hooks: WriteHooks<W, P, B, A>,
+    hooks: WriteHooks<W, P, B, A, S>,
 ) -> Result<PathBuf, WriteError>
 where
     W: FnOnce(),
     P: FnOnce(),
     B: FnOnce(),
     A: FnOnce(),
+    S: FnOnce(PathBuf),
 {
     let WriteHooks {
         before_write,
         before_publish,
         before_exchange,
         after_exchange,
+        before_stage_open,
     } = hooks;
     let destination = Destination::open(path, repository)?;
     before_write();
     destination.check_parent()?;
-    let stage = PrivateStage::create(&destination)?;
+    let stage = PrivateStage::create(&destination, before_stage_open)?;
     let temporary = stage.file_path();
     let mut options = OpenOptions::new();
     options.write(true).create_new(true).mode(0o600);
@@ -601,7 +623,7 @@ where
 mod tests {
     use super::*;
     use std::{
-        os::unix::fs::symlink,
+        os::unix::fs::{PermissionsExt as _, symlink},
         process::{Command, Stdio},
         time::{Duration, Instant},
     };
@@ -884,6 +906,55 @@ mod tests {
     }
 
     #[test]
+    fn private_stage_requires_effective_owner_and_private_mode() {
+        let root = root("stage-metadata");
+        let stage = root.join("outside/stage");
+        fs::create_dir(&stage).unwrap();
+        fs::set_permissions(&stage, fs::Permissions::from_mode(0o700)).unwrap();
+        let metadata = fs::metadata(&stage).unwrap();
+        let writer = geteuid().as_raw();
+        assert!(private_stage_metadata(&metadata, writer));
+        assert!(!private_stage_metadata(&metadata, writer.wrapping_add(1)));
+        fs::set_permissions(&stage, fs::Permissions::from_mode(0o777)).unwrap();
+        assert!(!private_stage_metadata(
+            &fs::metadata(&stage).unwrap(),
+            writer
+        ));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn substituted_open_stage_is_rejected_before_candidate_creation() {
+        let root = root("substituted-stage");
+        let path = root.join("outside/report.json");
+        let retained = root.join("outside/retained-stage");
+        fs::write(&path, b"old document").unwrap();
+        let result = write_validated_document_with_exchange_hook(
+            &path,
+            &root.join("repo"),
+            b"validated document",
+            true,
+            |_| panic!("candidate validation must not run in a substituted stage"),
+            WriteHooks {
+                before_write: || {},
+                before_publish: || panic!("publication must not run in a substituted stage"),
+                before_exchange: || {},
+                after_exchange: || {},
+                before_stage_open: |stage: PathBuf| {
+                    fs::rename(&stage, &retained).unwrap();
+                    fs::create_dir(&stage).unwrap();
+                    fs::set_permissions(&stage, fs::Permissions::from_mode(0o777)).unwrap();
+                },
+            },
+        );
+        assert!(matches!(result, Err(WriteError::Fields(_))));
+        assert_eq!(fs::read(&path).unwrap(), b"old document");
+        assert_eq!(fs::read_dir(&retained).unwrap().count(), 0);
+        assert_eq!(fs::read_dir(root.join("outside")).unwrap().count(), 3);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn atomic_exchange_preserves_a_concurrent_regular_replacement() {
         let root = root("overwrite-exchange-race");
         let path = root.join("outside/report.json");
@@ -903,6 +974,7 @@ mod tests {
                     fs::write(&path, b"concurrent replacement").unwrap();
                 },
                 after_exchange: || {},
+                before_stage_open: |_| {},
             },
         );
         assert!(matches!(result, Err(WriteError::Fields(_))));
@@ -932,6 +1004,7 @@ mod tests {
                     fs::rename(&path, &moved_validated).unwrap();
                     fs::write(&path, b"later writer").unwrap();
                 },
+                before_stage_open: |_| {},
             },
         );
         let Err(WriteError::Uncertain {
@@ -972,6 +1045,7 @@ mod tests {
                         .unwrap();
                     fs::remove_file(stage.join("candidate")).unwrap();
                 },
+                before_stage_open: |_| {},
             },
         );
         assert_eq!(
