@@ -43,3 +43,15 @@ section-five state, depth and action catalogue remains open.
 ## Verification
 
 See [the implementation evidence](../evidence/sprint-36-native-source-inspection.md).
+
+## Review correction
+
+The independent review of the first inspection commit found that an untyped
+nested JSON object could collapse duplicate keys during validation while the
+interface displayed the original bytes. The source-inspection consumer now
+rejects duplicate object keys recursively before constructing a report,
+requires closed nested status, blocker, final-report, change and run-record
+projections, and displays only a new serialization of the validated document.
+Malformed responses clear a retained successful snapshot and show a failure.
+The exact correction commit requires independent re-review; this amendment
+does not treat the earlier finding as accepted.

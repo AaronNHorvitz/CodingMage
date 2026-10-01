@@ -1,8 +1,12 @@
 //! Reports: inspect and export outcome and blocker reports assembled from real records.
 
-use serde::Deserialize;
+use serde::{
+    Deserialize, Deserializer, Serialize,
+    de::{self, MapAccess, SeqAccess, Visitor},
+};
 use serde_json::Value;
 use std::{
+    fmt,
     path::PathBuf,
     sync::mpsc::{Receiver, SyncSender, TrySendError, channel, sync_channel},
     thread,
@@ -12,13 +16,16 @@ use std::{
 use super::{App, Screen, failure_box};
 use crate::{
     admission::Admission,
-    backend::models::{BlockerExplanation, CampaignOutcome, CampaignReport, CampaignStatus},
+    backend::models::{
+        BlockerExplanation, CampaignOutcome, CampaignReport, CampaignStatus,
+        SUPPORTED_REPORT_VERSION, SUPPORTED_SCHEMA_VERSION, SUPPORTED_STATUS_SCHEMA_VERSION,
+    },
     backend::{BackendError, Generation, Job, Request, Response, explain_code},
     command, content,
     launch::LaunchState,
     messages::{self, Catalogue},
     observed::{Freshness, Observed, age_label},
-    records::{CommitSummary, FileChange, RunRecord},
+    records::{CommitSummary, FileChange, RunRecord, RunRecordsProjection},
     report::{ChangeCoverage, OutcomeReport, ReportInputs},
 };
 
@@ -215,7 +222,7 @@ struct ExportReceipt {
     repository_paths_requested: bool,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct SourceBoundReport {
     schema_version: u16,
@@ -223,21 +230,120 @@ struct SourceBoundReport {
     repository_id: String,
     authority_sha256: String,
     initial_commit: String,
-    observed_head: Value,
-    #[serde(rename = "status")]
-    status: Value,
-    #[serde(rename = "blockers")]
-    blockers: Value,
-    #[serde(rename = "final_report")]
-    final_report: Value,
-    changes: Value,
-    #[serde(rename = "run_records")]
-    run_records: Value,
+    #[serde(deserialize_with = "required_option")]
+    observed_head: Option<String>,
+    #[serde(deserialize_with = "required_option")]
+    status: Option<CampaignStatus>,
+    #[serde(deserialize_with = "required_option")]
+    blockers: Option<BlockerExplanation>,
+    #[serde(deserialize_with = "required_option")]
+    final_report: Option<CampaignReport>,
+    changes: SourceChanges,
+    #[serde(deserialize_with = "required_option")]
+    run_records: Option<RunRecordsProjection>,
     repository_paths_included: bool,
     #[serde(rename = "limits")]
     limits: Vec<String>,
 }
 
+fn required_option<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<T>::deserialize(deserializer)
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[allow(clippy::struct_excessive_bools)] // exact mirror of the coordinator's change projection
+struct SourceChanges {
+    observed: bool,
+    head: Option<String>,
+    commits: Vec<CommitSummary>,
+    commits_truncated: bool,
+    changed_file_count: Option<usize>,
+    files_truncated: bool,
+    changed_files: (),
+    repository_paths_included: bool,
+}
+
+// serde_json::Value overwrites duplicate object keys. Reject them at every depth
+// before constructing any projection or allowing its bytes into the preview.
+struct UniqueJson(Value);
+
+impl<'de> Deserialize<'de> for UniqueJson {
+    fn deserialize<D: de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct UniqueVisitor;
+
+        impl<'de> Visitor<'de> for UniqueVisitor {
+            type Value = UniqueJson;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("JSON without duplicate object keys")
+            }
+
+            fn visit_bool<E: de::Error>(self, value: bool) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Bool(value)))
+            }
+
+            fn visit_i64<E: de::Error>(self, value: i64) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::from(value)))
+            }
+
+            fn visit_u64<E: de::Error>(self, value: u64) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::from(value)))
+            }
+
+            fn visit_f64<E: de::Error>(self, value: f64) -> Result<Self::Value, E> {
+                serde_json::Number::from_f64(value)
+                    .map(Value::Number)
+                    .map(UniqueJson)
+                    .ok_or_else(|| E::custom("non-finite JSON number"))
+            }
+
+            fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::String(value.to_owned())))
+            }
+
+            fn visit_string<E: de::Error>(self, value: String) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::String(value)))
+            }
+
+            fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Null))
+            }
+
+            fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Null))
+            }
+
+            fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+                let mut values = Vec::new();
+                while let Some(UniqueJson(value)) = seq.next_element()? {
+                    values.push(value);
+                }
+                Ok(UniqueJson(Value::Array(values)))
+            }
+
+            fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+                let mut values = serde_json::Map::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if values.contains_key(&key) {
+                        return Err(de::Error::custom("duplicate JSON object key"));
+                    }
+                    let UniqueJson(value) = map.next_value()?;
+                    values.insert(key, value);
+                }
+                Ok(UniqueJson(Value::Object(values)))
+            }
+        }
+
+        deserializer.deserialize_any(UniqueVisitor)
+    }
+}
+
+#[derive(Clone)]
 struct PendingInspection {
     request_id: String,
     campaign_id: String,
@@ -253,7 +359,7 @@ struct SourceReportSnapshot {
 }
 
 fn parse_source_report(
-    bytes: Vec<u8>,
+    bytes: &[u8],
     pending: &PendingInspection,
 ) -> Result<SourceReportSnapshot, String> {
     if bytes.len() > MAX_SOURCE_INSPECTION_BYTES {
@@ -262,49 +368,52 @@ fn parse_source_report(
                 .to_owned(),
         );
     }
-    let document: SourceBoundReport = serde_json::from_slice(&bytes)
+    let unique: UniqueJson = serde_json::from_slice(bytes)
+        .map_err(|_| "the coordinator returned a malformed source report".to_owned())?;
+    let document: SourceBoundReport = serde_json::from_value(unique.0)
         .map_err(|_| "the coordinator returned a malformed source report".to_owned())?;
     if document.schema_version != 1
         || document.campaign_id != pending.campaign_id
         || document.repository_id != pending.repository_id
         || document.authority_sha256 != pending.authority_sha256
         || document.initial_commit != pending.initial_commit
-        || !(document.observed_head.is_null() || document.observed_head.is_string())
-        || !(document.status.is_null() || document.status.is_object())
-        || !(document.blockers.is_null() || document.blockers.is_object())
-        || !(document.final_report.is_null() || document.final_report.is_object())
-        || !(document.run_records.is_null() || document.run_records.is_object())
-        || !document.changes.is_object()
-        || document.changes.get("head") != Some(&document.observed_head)
+        || document.changes.head != document.observed_head
+        || document.observed_head.is_some() != document.status.is_some()
         || document.repository_paths_included
-        || document.changes["repository_paths_included"] != false
-        || document.changes.get("changed_files") != Some(&Value::Null)
+        || document.changes.repository_paths_included
+        || document.changes.observed != document.status.is_some()
+        || document.changes.observed != document.changes.changed_file_count.is_some()
         || document.limits.is_empty()
-        || (!document.status.is_null()
-            && (document.status["campaign_id"].as_str() != Some(pending.campaign_id.as_str())
-                || document.status["head"] != document.observed_head))
-        || (!document.blockers.is_null()
-            && document.blockers["campaign_id"].as_str() != Some(pending.campaign_id.as_str()))
-        || (!document.final_report.is_null()
-            && (document.final_report["campaign_id"].as_str()
-                != Some(pending.campaign_id.as_str())
-                || document.final_report["repository_id"].as_str()
-                    != Some(pending.repository_id.as_str())
-                || document.final_report["initial_commit"].as_str()
-                    != Some(pending.initial_commit.as_str())))
-        || (!document.run_records.is_null()
-            && (document.run_records["campaign_id"].as_str() != Some(pending.campaign_id.as_str())
-                || document.run_records["repository_id"].as_str()
-                    != Some(pending.repository_id.as_str())
-                || document.run_records["head"] != document.observed_head))
+        || document.status.as_ref().is_some_and(|status| {
+            status.schema_version != SUPPORTED_STATUS_SCHEMA_VERSION
+                || status.campaign_id != pending.campaign_id
+                || Some(status.head.as_str()) != document.observed_head.as_deref()
+        })
+        || document.blockers.as_ref().is_some_and(|blockers| {
+            blockers.schema_version != SUPPORTED_SCHEMA_VERSION
+                || blockers.campaign_id != pending.campaign_id
+        })
+        || document.final_report.as_ref().is_some_and(|report| {
+            report.version != SUPPORTED_REPORT_VERSION
+                || report.campaign_id != pending.campaign_id
+                || report.repository_id != pending.repository_id
+                || report.initial_commit != pending.initial_commit
+        })
+        || document.run_records.as_ref().is_some_and(|runs| {
+            runs.schema_version != 1
+                || runs.campaign_id != pending.campaign_id
+                || runs.repository_id != pending.repository_id
+                || runs.head != document.observed_head
+                || runs.updated_at_ms != document.status.as_ref().map(|status| status.updated_at_ms)
+        })
     {
         return Err(
             "the source report identity or path privacy did not match the selected campaign"
                 .to_owned(),
         );
     }
-    let text = String::from_utf8(bytes)
-        .map_err(|_| "the coordinator returned a non-UTF-8 source report".to_owned())?;
+    let text = serde_json::to_string_pretty(&document)
+        .map_err(|_| "the coordinator returned a malformed source report".to_owned())?;
     let mut characters = text.chars();
     let preview: String = characters
         .by_ref()
@@ -312,7 +421,7 @@ fn parse_source_report(
         .collect();
     Ok(SourceReportSnapshot {
         preview,
-        observed_head: document.observed_head.as_str().map(str::to_owned),
+        observed_head: document.observed_head,
         shortened: characters.next().is_some(),
     })
 }
@@ -709,7 +818,7 @@ impl App {
             return false;
         };
         match response.result {
-            Ok(bytes) => match parse_source_report(bytes, &pending) {
+            Ok(bytes) => match parse_source_report(&bytes, &pending) {
                 Ok(snapshot) => {
                     self.reports.source_snapshot = Some(snapshot);
                     self.reports.source_error = None;
@@ -1290,7 +1399,12 @@ mod tests {
             "blockers": null,
             "final_report": null,
             "changes": {
+                "observed": false,
                 "head": null,
+                "commits": [],
+                "commits_truncated": false,
+                "changed_file_count": null,
+                "files_truncated": false,
                 "repository_paths_included": false,
                 "changed_files": null
             },
@@ -1305,8 +1419,9 @@ mod tests {
     fn source_inspection_requires_exact_identity_and_path_free_shape() {
         let (pending, valid) = source_fixture();
         let encode = |document: &Value| serde_json::to_vec(document).unwrap();
-        let snapshot = parse_source_report(encode(&valid), &pending).unwrap();
+        let snapshot = parse_source_report(&encode(&valid), &pending).unwrap();
         assert!(snapshot.preview.contains("campaign-1"));
+        assert!(snapshot.preview.starts_with("{\n"));
         assert_eq!(snapshot.observed_head, None);
         assert!(!snapshot.shortened);
         for (pointer, replacement) in [
@@ -1325,28 +1440,39 @@ mod tests {
         ] {
             let mut document = valid.clone();
             *document.pointer_mut(pointer).unwrap() = replacement;
-            assert!(parse_source_report(encode(&document), &pending).is_err());
+            assert!(parse_source_report(&encode(&document), &pending).is_err());
         }
         let mut unknown = valid.clone();
         unknown["unexpected"] = serde_json::json!(true);
-        assert!(parse_source_report(encode(&unknown), &pending).is_err());
+        assert!(parse_source_report(&encode(&unknown), &pending).is_err());
         let mut missing_files = valid.clone();
         missing_files["changes"]
             .as_object_mut()
             .unwrap()
             .remove("changed_files");
-        assert!(parse_source_report(encode(&missing_files), &pending).is_err());
-        assert!(parse_source_report(b"{".to_vec(), &pending).is_err());
-        assert!(parse_source_report(vec![0xff], &pending).is_err());
+        assert!(parse_source_report(&encode(&missing_files), &pending).is_err());
+        for field in [
+            "observed_head",
+            "status",
+            "blockers",
+            "final_report",
+            "run_records",
+        ] {
+            let mut missing = valid.clone();
+            missing.as_object_mut().unwrap().remove(field);
+            assert!(parse_source_report(&encode(&missing), &pending).is_err());
+        }
+        assert!(parse_source_report(b"{", &pending).is_err());
+        assert!(parse_source_report(&[0xff], &pending).is_err());
         assert!(
-            parse_source_report(vec![b'x'; MAX_SOURCE_INSPECTION_BYTES + 1], &pending)
+            parse_source_report(&vec![b'x'; MAX_SOURCE_INSPECTION_BYTES + 1], &pending)
                 .err()
                 .unwrap()
                 .contains("too large")
         );
         let mut long = valid;
         long["limits"] = serde_json::json!(["x".repeat(content::MAX_PREVIEW_CHARS)]);
-        let snapshot = parse_source_report(encode(&long), &pending).unwrap();
+        let snapshot = parse_source_report(&encode(&long), &pending).unwrap();
         assert!(snapshot.shortened);
         assert_eq!(snapshot.preview.chars().count(), content::MAX_PREVIEW_CHARS);
     }
@@ -1355,45 +1481,72 @@ mod tests {
     fn source_inspection_rejects_foreign_nested_evidence() {
         let (pending, valid) = source_fixture();
         let encode = |document: &Value| serde_json::to_vec(document).unwrap();
-        let mut active = valid.clone();
-        active["observed_head"] = serde_json::json!("head-1");
-        active["status"] = serde_json::json!({
-            "campaign_id": "campaign-1",
-            "head": "head-1"
-        });
-        active["blockers"] = serde_json::json!({"campaign_id": "campaign-1"});
-        active["final_report"] = serde_json::json!({
-            "campaign_id": "campaign-1",
-            "repository_id": "repository-1",
-            "initial_commit": "initial-1"
-        });
-        active["changes"]["head"] = serde_json::json!("head-1");
-        active["run_records"] = serde_json::json!({
-            "campaign_id": "campaign-1",
-            "repository_id": "repository-1",
-            "head": "head-1"
-        });
-        assert_eq!(
-            parse_source_report(encode(&active), &pending)
-                .unwrap()
-                .observed_head
-                .as_deref(),
-            Some("head-1")
-        );
-        for pointer in [
-            "/status/campaign_id",
-            "/blockers/campaign_id",
-            "/final_report/campaign_id",
-            "/final_report/repository_id",
-            "/final_report/initial_commit",
-            "/run_records/campaign_id",
-            "/run_records/repository_id",
-            "/run_records/head",
-        ] {
-            let mut document = active.clone();
-            *document.pointer_mut(pointer).unwrap() = serde_json::json!("other");
-            assert!(parse_source_report(encode(&document), &pending).is_err());
+        for pointer in ["/status", "/blockers", "/final_report", "/run_records"] {
+            let mut document = valid.clone();
+            *document.pointer_mut(pointer).unwrap() = serde_json::json!({
+                "campaign_id": "campaign-1",
+                "unexpected_path": "private/path.rs"
+            });
+            assert!(parse_source_report(&encode(&document), &pending).is_err());
         }
+        let mut extra_change = valid;
+        extra_change["changes"]["unexpected_path"] = serde_json::json!("private/path.rs");
+        assert!(parse_source_report(&encode(&extra_change), &pending).is_err());
+    }
+
+    #[test]
+    fn source_inspection_rejects_duplicate_keys_at_every_depth_before_preview() {
+        let (pending, valid) = source_fixture();
+        let encoded = serde_json::to_string(&valid).unwrap();
+        let assert_no_snapshot = |bytes: Vec<u8>| {
+            let mut app = App::with_state_dir(
+                &egui::Context::default(),
+                Err(BackendError::BinaryUnavailable {
+                    expected: PathBuf::from("/missing-coordinator"),
+                }),
+                Err(crate::state_dir::StateError::Unavailable),
+            );
+            app.reports.inspection_pending = Some(pending.clone());
+            app.reports.source_snapshot = Some(SourceReportSnapshot {
+                preview: "prior snapshot".to_owned(),
+                observed_head: None,
+                shortened: false,
+            });
+            assert!(app.accept_source_report(Response {
+                generation: app.generation,
+                binding: app.binding(),
+                label: "source-report-inspect",
+                request_id: Some(pending.request_id.clone()),
+                result: Ok(bytes),
+            }));
+            assert!(app.reports.source_snapshot.is_none());
+            assert!(app.reports.source_error.is_some());
+        };
+        let duplicate_files = encoded.replace(
+            "\"changed_files\":null",
+            "\"changed_files\":[\"private/path.rs\"],\"changed_files\":null",
+        );
+        assert_ne!(duplicate_files, encoded);
+        assert_no_snapshot(duplicate_files.into_bytes());
+
+        for field in ["status", "blockers", "final_report", "run_records"] {
+            let duplicate = encoded.replace(
+                &format!("\"{field}\":null"),
+                &format!(
+                    "\"{field}\":{{\"campaign_id\":\"campaign-1\",\"campaign_id\":\"campaign-1\"}}"
+                ),
+            );
+            assert_ne!(duplicate, encoded);
+            assert!(serde_json::from_slice::<UniqueJson>(duplicate.as_bytes()).is_err());
+            assert_no_snapshot(duplicate.into_bytes());
+        }
+        let duplicate_commit = encoded.replace(
+            "\"commits\":[]",
+            "\"commits\":[{\"id\":\"one\",\"id\":\"two\"}]",
+        );
+        assert_ne!(duplicate_commit, encoded);
+        assert!(serde_json::from_slice::<UniqueJson>(duplicate_commit.as_bytes()).is_err());
+        assert_no_snapshot(duplicate_commit.into_bytes());
     }
 
     #[test]

@@ -254,6 +254,13 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
     harness.get_by_label("2 of 2");
     harness.get_by_label("blocked 0.1.1.1 - unavailable_external_dependency");
     harness.get_by_label_contains("never clears a blocker on its own");
+    harness.state_mut().inspect_source_report();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        !app.source_report_pending()
+    }));
+    harness.run_steps(2);
+    harness.get_by_label_contains("Last successful source report snapshot");
+    harness.get_by_label_contains("\"campaign_id\": \"reports-campaign\"");
     // Export inside the repository is refused.
     {
         let reports = harness.state_mut().reports_state_mut();

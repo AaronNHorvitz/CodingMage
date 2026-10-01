@@ -63,3 +63,43 @@ without findings. This increment needs its own exact-commit review. Installed
 Wayland/X11 and Orca, clean desktop, frozen user trials, real providers and
 whole-product completion remain unqualified. No task, acceptance criterion
 or gate is ticked for this increment.
+
+## Independent review finding and correction
+
+The independent exact-commit review of `a4466b52f6ffc8a27155f6d27efcf74f84d78557`
+returned **FINDINGS**. It demonstrated that duplicate `changed_files` keys in
+a nested untyped value could pass the path-privacy check after JSON collapsed
+the first value, while the unvalidated original response bytes were still
+shown as a successful snapshot. The finding also covered unexpected nested
+path-bearing members. The report is retained privately and is not overwritten
+or counted as approval.
+
+The correction rejects duplicate keys at every JSON object depth before any
+map value is collapsed; parses status, blockers, final report, changes and run
+records against closed typed projections; checks selected identity, schema and
+changed-file privacy; and serializes only that validated model for the inert
+preview. A malformed result clears a prior successful snapshot and leaves a
+visible failure. Regressions cover duplicate changed-file keys ending in null,
+extra nested path-bearing keys, duplicate keys in each nested projection,
+missing required projections, prior-snapshot clearing and active source reads
+through the real coordinator with fake providers. This is a correction to the
+local implementation, not a new live or human qualification.
+
+The corrected-source focused `cargo test --locked -p codingmage-ui --test reports --lib` run passed
+71/71 library tests and 7/7 disposable real-coordinator Reports tests. The
+new prior-snapshot-clearing regression passed separately. The first cumulative
+native run passed 146/146 across 14 targets. Strict Clippy initially failed
+two style checks in the correction (backend-mirror booleans and owned parser
+input); those were corrected without changing the report contract, with the
+failure retained privately. Final-source strict workspace Clippy with
+`-D warnings` passed, and the final-source software-rendered native UI
+all-target run passed 146/146 across 14 targets. The Python unittest suite
+ran 42 tests: 41 passed and only the unchanged CM-R01.6 eight-input
+source-bound freshness test failed; no digest was renewed. Formatting,
+documentation, architecture, no-write inventory and whitespace checks pass.
+The reviewed inventory generator produced 1,767 items and 825 explicit gaps:
+zero added or removed semantic public items, zero applicability changes,
+16 line-derived ID moves and 400 capped crate-wide heuristic test-mapping
+changes. This mapping movement is not coverage gain. The exact corrected
+commit still requires independent re-review; all human, desktop, live and
+release gates remain open.
