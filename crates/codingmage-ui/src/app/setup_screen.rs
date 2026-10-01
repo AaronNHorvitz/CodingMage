@@ -1,18 +1,60 @@
 //! Guided setup: repository configuration, campaign authority and the authorization record.
 
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use codingmage_campaign::CampaignAuthentication;
 use codingmage_core::{CapabilityGrant, PublicationMode};
+use serde::Deserialize;
+use sha2::{Digest as _, Sha256};
 
 use super::{App, failure_box};
 use crate::{
+    backend::{Job, PrivateInput, Request, Response},
     browser::Browser,
+    command,
+    project::hex,
     setup::{
         CampaignBinding, CampaignForm, ConfigForm, EFFORTS, GateForm, ProfileForm, ProviderForm,
-        WriteError, export_copy, write_authorization_record,
+        WriteError, export_copy,
     },
 };
+
+const AUTHORIZATION_DEADLINE: Duration = Duration::from_mins(1);
+
+#[derive(Clone, Debug)]
+struct PendingAuthorization {
+    request_id: String,
+    path: PathBuf,
+    bytes: usize,
+    sha256: String,
+    repository_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AuthorizationReceipt {
+    schema_version: u64,
+    repository_id: String,
+    written: bool,
+    bytes: usize,
+    sha256: String,
+}
+
+fn receipt_matches(
+    bytes: &[u8],
+    pending: &PendingAuthorization,
+) -> Result<bool, crate::backend::models::ModelError> {
+    let receipt: AuthorizationReceipt =
+        serde_json::from_slice(bytes).map_err(|_| crate::backend::models::ModelError::Malformed)?;
+    Ok(receipt.schema_version == 1
+        && receipt.written
+        && receipt.repository_id == pending.repository_id
+        && receipt.bytes == pending.bytes
+        && receipt.sha256 == pending.sha256)
+}
 
 /// Setup screen state kept on the application.
 #[derive(Default)]
@@ -29,6 +71,7 @@ pub struct SetupState {
     pub authorization_path: String,
     /// Replace an existing authorization record.
     pub authorization_overwrite: bool,
+    pending_authorization: Option<PendingAuthorization>,
     /// Directory browser for the target repository.
     pub target_browser: Option<Browser>,
     /// Export destination.
@@ -37,6 +80,24 @@ pub struct SetupState {
     pub export_overwrite: bool,
     /// Workspace directory proposed for new authority files.
     pub workspace_root: String,
+}
+
+impl SetupState {
+    pub(super) fn cancel_pending_authorization(&mut self) {
+        if self.pending_authorization.take().is_some() {
+            self.message = Some(Err("the selected authority changed during the write; inspect the destination before retrying".to_owned()));
+        }
+    }
+
+    pub(super) fn cancel_matching_authorization(&mut self, request_id: Option<&str>) {
+        if self
+            .pending_authorization
+            .as_ref()
+            .is_some_and(|pending| Some(pending.request_id.as_str()) == request_id)
+        {
+            self.cancel_pending_authorization();
+        }
+    }
 }
 
 impl App {
@@ -145,30 +206,135 @@ impl App {
 
     /// Writes the authorization record from the typed text.
     pub fn apply_authorization_record(&mut self) {
-        let Some(project) = &self.project else {
+        if self.setup.pending_authorization.is_some() {
+            self.setup.message = Some(Err(
+                "an authorization write is already pending; inspect its result before retrying"
+                    .to_owned(),
+            ));
+            return;
+        }
+        let Some(arguments) = self.authorization_arguments() else {
+            self.setup.message = Some(Err(
+                "open and diagnose the repository, then choose an absolute record path".to_owned(),
+            ));
             return;
         };
-        let repository = project.config.target_path.clone();
-        let path = PathBuf::from(self.setup.authorization_path.trim());
-        match write_authorization_record(
-            &path,
-            &self.setup.authorization_text,
-            &repository,
-            self.setup.authorization_overwrite,
-        ) {
-            Ok(digest) => {
-                self.setup.message = Some(Ok(format!(
-                    "authorization record written at {} (sha256 {digest})",
-                    path.display()
-                )));
-                if let Some(form) = &mut self.setup.campaign_form {
-                    form.authorization_path = path.display().to_string();
-                }
-                self.setup.authorization_text.clear();
-                self.set_authorization_record(&path);
-            }
-            Err(error) => self.setup.message = Some(Err(error.to_string())),
+        if !command::can_preview(self.binary_path.as_deref(), Some(&arguments)) {
+            self.setup.message = Some(Err(
+                "the exact command cannot be shown safely; choose a representable path".to_owned(),
+            ));
+            return;
         }
+        let input = match PrivateInput::new(self.setup.authorization_text.as_bytes().to_vec()) {
+            Ok(input)
+                if !self.setup.authorization_text.trim().is_empty()
+                    && !self.setup.authorization_text.contains('\0') =>
+            {
+                input
+            }
+            _ => {
+                self.setup.message = Some(Err(
+                    "enter nonempty authorization text of at most 1 MiB without NUL bytes"
+                        .to_owned(),
+                ));
+                return;
+            }
+        };
+        let repository_id = self
+            .diagnosis
+            .value
+            .as_ref()
+            .map(|value| value.repository_id.clone())
+            .unwrap_or_default();
+        let path = PathBuf::from(self.setup.authorization_path.trim());
+        self.next_evidence_request = self.next_evidence_request.wrapping_add(1);
+        let request_id = format!("setup-authorization-{}", self.next_evidence_request);
+        let pending = PendingAuthorization {
+            request_id: request_id.clone(),
+            path,
+            bytes: self.setup.authorization_text.len(),
+            sha256: hex(&Sha256::digest(self.setup.authorization_text.as_bytes())),
+            repository_id,
+        };
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::PrivateCommand {
+                label: "setup-write-authorization",
+                arguments,
+                input,
+                deadline: AUTHORIZATION_DEADLINE,
+            },
+            request_id: Some(request_id),
+        };
+        match self.submit(request) {
+            Ok(()) => {
+                self.setup.pending_authorization = Some(pending);
+                self.setup.message = Some(Ok(
+                    "authorization write pending; inspect the result before retrying".to_owned(),
+                ));
+            }
+            Err(error) => {
+                self.setup.message = Some(Err(format!(
+                    "authorization write was not queued: {}",
+                    error.code()
+                )));
+            }
+        }
+    }
+
+    fn authorization_arguments(&self) -> Option<Vec<String>> {
+        let project = self.project.as_ref()?;
+        let diagnosis = self.diagnosis.value.as_ref()?;
+        let path = Path::new(self.setup.authorization_path.trim());
+        if !path.is_absolute() {
+            return None;
+        }
+        Some(vec![
+            "setup-write-authorization".to_owned(),
+            "--config".to_owned(),
+            project.config_path.to_str()?.to_owned(),
+            "--repository-id".to_owned(),
+            diagnosis.repository_id.clone(),
+            "--output".to_owned(),
+            path.to_str()?.to_owned(),
+            "--overwrite".to_owned(),
+            self.setup.authorization_overwrite.to_string(),
+        ])
+    }
+
+    pub(super) fn accept_authorization_write(&mut self, response: Response) -> bool {
+        let Some(pending) = self.setup.pending_authorization.take() else {
+            return false;
+        };
+        if response.request_id.as_deref() != Some(pending.request_id.as_str()) {
+            self.setup.pending_authorization = Some(pending);
+            return false;
+        }
+        let matches = response.result.and_then(|bytes| {
+            receipt_matches(&bytes, &pending).map_err(crate::backend::BackendError::Contract)
+        });
+        match matches {
+            Ok(true) => {
+                self.setup.message = Some(Ok(format!("authorization record written at {} (sha256 {})", pending.path.display(), pending.sha256)));
+                if let Some(form) = &mut self.setup.campaign_form {
+                    form.authorization_path = pending.path.display().to_string();
+                }
+                if hex(&Sha256::digest(self.setup.authorization_text.as_bytes())) == pending.sha256 {
+                    self.setup.authorization_text.clear();
+                }
+                self.set_authorization_record(&pending.path);
+            }
+            Ok(false) => self.setup.message = Some(Err("Setup receipt did not match the requested repository or exact input; inspect the destination before retrying".to_owned())),
+            Err(error) => {
+                let code = error.code();
+                let (cause, action) = crate::backend::explain_code(&code);
+                self.setup.message = Some(Err(format!(
+                    "authorization write not confirmed: {cause} ({code}) {action} Inspect the destination before retrying."
+                )));
+            }
+        }
+        true
     }
 
     /// Exports the opened configuration or selected campaign to another path.
@@ -347,10 +513,27 @@ impl App {
                 &mut self.setup.authorization_overwrite,
                 "Replace an existing record",
             );
-            if ui.button("Write authorization record").clicked() {
+            let arguments = self.authorization_arguments();
+            let can_run = self.setup.pending_authorization.is_none()
+                && command::can_preview(self.binary_path.as_deref(), arguments.as_deref());
+            if ui
+                .add_enabled(can_run, egui::Button::new("Write authorization record"))
+                .clicked()
+            {
                 self.apply_authorization_record();
             }
         });
+        if let Some(arguments) = self.authorization_arguments() {
+            command::show_for(
+                ui,
+                "write authorization record",
+                self.binary_path.as_deref(),
+                &arguments,
+            );
+            ui.small("The typed record is sent through private stdin. It is intentionally absent from the command preview and process arguments.");
+        } else {
+            command::show_unavailable_for(ui, "write authorization record");
+        }
     }
 
     fn campaign_form_view(&mut self, ui: &mut egui::Ui) {
@@ -640,4 +823,50 @@ fn provider_rows(ui: &mut egui::Ui, label: &str, provider: &mut ProviderForm) {
                 }
             });
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{PendingAuthorization, receipt_matches};
+    use std::path::PathBuf;
+
+    #[test]
+    fn authorization_receipt_requires_exact_identity_bytes_digest_and_schema() {
+        let pending = PendingAuthorization {
+            request_id: "request-1".to_owned(),
+            path: PathBuf::from("/synthetic/authorization.txt"),
+            bytes: 4,
+            sha256: "synthetic-digest".to_owned(),
+            repository_id: "repository-1".to_owned(),
+        };
+        let good = serde_json::json!({
+            "schema_version": 1,
+            "repository_id": "repository-1",
+            "written": true,
+            "bytes": 4,
+            "sha256": "synthetic-digest",
+        });
+        assert_eq!(
+            receipt_matches(good.to_string().as_bytes(), &pending),
+            Ok(true)
+        );
+        for (field, changed) in [
+            ("schema_version", serde_json::json!(2)),
+            ("repository_id", serde_json::json!("repository-2")),
+            ("written", serde_json::json!(false)),
+            ("bytes", serde_json::json!(3)),
+            ("sha256", serde_json::json!("another-digest")),
+        ] {
+            let mut mismatch = good.clone();
+            mismatch[field] = changed;
+            assert_eq!(
+                receipt_matches(mismatch.to_string().as_bytes(), &pending),
+                Ok(false)
+            );
+        }
+        let mut extra = good;
+        extra["unexpected"] = serde_json::json!(true);
+        assert!(receipt_matches(extra.to_string().as_bytes(), &pending).is_err());
+        assert!(receipt_matches(b"not-json", &pending).is_err());
+    }
 }

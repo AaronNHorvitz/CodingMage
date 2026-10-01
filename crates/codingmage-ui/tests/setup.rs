@@ -6,9 +6,52 @@ use std::{fs, time::Duration};
 
 use codingmage_campaign::CampaignSpec;
 use codingmage_core::load_config;
-use codingmage_ui::{Screen, backend::CoordinatorBinary, setup::ProviderForm};
+use codingmage_ui::{
+    Screen,
+    backend::{CoordinatorBinary, Response},
+    setup::ProviderForm,
+};
 use common::{Fixture, coordinator_binary, harness, settle, tree_digest};
 use egui_kittest::kittest::Queryable as _;
+
+#[test]
+fn authorization_response_for_another_repository_clears_pending_state() {
+    let fixture = Fixture::new("setup-stale-response", 1);
+    let binary = CoordinatorBinary::at(&coordinator_binary());
+    let mut harness = harness(binary, [1100.0, 800.0]);
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some()
+    }));
+    let record = fixture.root.join("authorization.txt");
+    {
+        let setup = harness.state_mut().setup_state_mut();
+        setup.authorization_path = record.display().to_string();
+        setup.authorization_text = "Synthetic owner authorization".to_owned();
+    }
+    harness.state_mut().apply_authorization_record();
+    let generation = harness.state().generation();
+    let mut binding = harness.state().binding();
+    binding.repository_id = Some("another-repository".to_owned());
+    assert!(!harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "setup-write-authorization",
+        request_id: Some("setup-authorization-1".to_owned()),
+        result: Ok(Vec::new()),
+    }));
+    assert!(
+        harness
+            .state()
+            .setup_state()
+            .message
+            .as_ref()
+            .is_some_and(|result| result
+                .as_ref()
+                .is_err_and(|text| text.contains("selected authority changed")))
+    );
+    assert!(harness.state().authorization_record().is_none());
+}
 
 #[test]
 fn guided_configuration_is_validated_by_the_existing_loader_and_opened() {
@@ -92,8 +135,14 @@ fn guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repos
         setup.authorization_text = "I authorize this campaign.".to_owned();
     }
     harness.state_mut().apply_authorization_record();
-    harness.run_steps(2);
-    harness.get_by_label_contains("is inside the target repository");
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|text| text.contains("authorization write not confirmed"))
+        })
+    }));
+    harness.get_by_label_contains("Inspect the destination before retrying");
     assert!(!fixture.target.join("operator-authorization.txt").exists());
     // Outside the repository it is written with the exact bytes.
     let record = workspace.join("operator-authorization.txt");
@@ -103,6 +152,34 @@ fn guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repos
         setup.authorization_text = "I authorize this campaign.".to_owned();
     }
     harness.state_mut().apply_authorization_record();
+    let generation = harness.state().generation();
+    let mut stale_binding = harness.state().binding();
+    stale_binding.repository_id = Some("another-repository".to_owned());
+    assert!(!harness.state_mut().handle_response(Response {
+        generation,
+        binding: stale_binding,
+        label: "setup-write-authorization",
+        request_id: Some("obsolete-request".to_owned()),
+        result: Ok(Vec::new()),
+    }));
+    harness.state_mut().apply_authorization_record();
+    assert!(
+        harness
+            .state()
+            .setup_state()
+            .message
+            .as_ref()
+            .is_some_and(|result| result
+                .as_ref()
+                .is_err_and(|text| text.contains("already pending")))
+    );
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_ok_and(|text| text.contains("authorization record written"))
+        })
+    }));
     harness.run_steps(2);
     assert_eq!(
         fs::read_to_string(&record).unwrap(),

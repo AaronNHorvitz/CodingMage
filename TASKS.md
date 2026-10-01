@@ -2145,9 +2145,12 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     `setup-write-authorization`, with private bounded stdin, observed repository identity,
     guarded publication and a content-minimized receipt. The initial exact-commit review of
     `d77a67414af09b5669c1483c21e442d5d8fe0454` found a High HEAD-change race during staging.
-    Decision 0065 and the same evidence record describe the local final-boundary correction;
-    exact-commit re-review, UI worker/private-stdin integration, other public Setup writes and
-    complete Show-command coverage remain open.
+    Decision 0065 and the same evidence record describe the final-boundary correction;
+    bounded independent re-review of `46aeae8da288c46ba3e76a38c59eb4bb745b129b`
+    returned PASS without findings. Decision 0066 routes this authorization
+    action through the bounded native worker with private stdin, a matching
+    digest receipt and an in-context Show-command. Its exact-commit review,
+    other public Setup writes and complete Show-command coverage remain open.
     The bounded review of `b8e8458` returned a high parent-move finding and a low
     inventory-count finding. Decision 0063 and the corrected evidence record the
     local fix; the bounded re-review of `106ab0f4889943b403cdcdc98db1227b466ba4b0`

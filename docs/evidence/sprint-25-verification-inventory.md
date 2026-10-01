@@ -57,6 +57,21 @@ focused inventory regression varies unrelated neighboring words and checks
 that this panel retains boundary applicability. Other heuristic entries
 remain subject to later review rather than a silent category-model rewrite.
 
+## Setup worker inventory refresh, 2026-10-01
+
+The native private-stdin Setup increment adds six Rust public surfaces: a
+bounded input type and constructor, the private-input executable call, the
+pending-selection invalidation, request-matched cancellation and receipt
+acceptance functions. The generated inventory moves from 1,775 to 1,781 items
+while keeping 825 explicit gaps and the same normalized gap set.
+`apply_authorization_record` now explicitly
+includes a boundary category because it refuses an input over 1 MiB. Its
+malformed-input and unknown-field categories, and the existing Setup state
+and worker binding categories, are pinned to source identities so neighboring
+text cannot silently change the work queue. The regression test varies the
+surrounding text. Candidate test mappings and line-derived IDs change with
+source position and test names; neither is verification coverage proof.
+
 ## Status Boundary
 
 Sub-tasks `25.2.1.1` and `25.2.1.2` are complete because the public surface is inventoried and every

@@ -71,6 +71,19 @@ class VerificationInventoryTests(unittest.TestCase):
         self.assertEqual(item["applicable_categories"], expected)
         self.assertTrue(item["test_mappings"].get("boundary"))
 
+    def test_setup_authorization_categories_do_not_follow_adjacent_text(self) -> None:
+        cases = (
+            ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "apply_authorization_record", "boundary"),
+            ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_authorization_write", "unknown_field"),
+            ("crates/codingmage-ui/src/app/setup_screen.rs", "struct", "SetupState", "malformed_input"),
+            ("crates/codingmage-ui/src/backend/worker.rs", "struct", "Binding", "boundary"),
+        )
+        for path, kind, name, required in cases:
+            first = INVENTORY.applicability(path, kind, name, "unrelated navigation")
+            second = INVENTORY.applicability(path, kind, name, "oversized malformed schema")
+            self.assertEqual(first, second)
+            self.assertIn(required, first)
+
 
 if __name__ == "__main__":
     unittest.main()

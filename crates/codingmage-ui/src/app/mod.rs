@@ -426,6 +426,8 @@ impl App {
 
     /// Opens a configuration path; starts no process and changes no file except the recent list.
     pub fn open_project(&mut self, config_path: &Path) {
+        self.setup.cancel_pending_authorization();
+        self.setup.authorization_text.clear();
         self.generation = Generation(self.generation.0 + 1);
         if let Connection::Ready(worker) = &self.connection {
             worker.advance(self.generation);
@@ -481,6 +483,8 @@ impl App {
 
     /// Closes the project without affecting any coordinator process.
     pub fn close_project(&mut self) {
+        self.setup.cancel_pending_authorization();
+        self.setup.authorization_text.clear();
         self.generation = Generation(self.generation.0 + 1);
         if let Connection::Ready(worker) = &self.connection {
             worker.advance(self.generation);
@@ -561,6 +565,7 @@ impl App {
     }
 
     pub(super) fn advance_selection_generation(&mut self) {
+        self.setup.cancel_pending_authorization();
         self.generation = Generation(self.generation.0 + 1);
         if let Connection::Ready(worker) = &self.connection {
             worker.advance(self.generation);
@@ -574,6 +579,10 @@ impl App {
         if response.generation != self.generation
             || !self.binding_matches(&response.binding, response.label)
         {
+            if response.label == "setup-write-authorization" {
+                self.setup
+                    .cancel_matching_authorization(response.request_id.as_deref());
+            }
             self.discarded_stale += 1;
             return false;
         }
@@ -642,6 +651,7 @@ impl App {
             "support-bundle" => self.accept_support_bundle(response),
             "report-export" => self.accept_report_export(response),
             "campaign-outcome-report" => self.accept_source_report(response),
+            "setup-write-authorization" => self.accept_authorization_write(response),
             _ => false,
         }
     }

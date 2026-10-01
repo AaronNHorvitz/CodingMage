@@ -1,6 +1,6 @@
 # ADR 0065: Revalidate Setup Authority at Publication
 
-- **Status:** Accepted for local correction; independent re-review pending
+- **Status:** Accepted; bounded independent re-review PASS on `46aeae8da288c46ba3e76a38c59eb4bb745b129b`
 - **Date:** 2026-10-01
 - **Decision owners:** CodingMage implementation
 
@@ -46,5 +46,8 @@ Before publication it requires stale refusal and an untouched public leaf;
 after publication it requires uncertain-write and retained reconciliation
 material. The focused result and cumulative checks are in
 [the Setup command evidence](../evidence/sprint-36-setup-command-boundary.md).
-Independent exact-commit re-review is required before this correction is
-treated as accepted. Human, live-provider and release gates remain separate.
+Independent exact-commit re-review returned PASS with no finding on
+`46aeae8da288c46ba3e76a38c59eb4bb745b129b`. It reproduced the earlier
+delayed-staging HEAD change and both post-publication uncertainty outcomes.
+This is a bounded software review; qualified-human, live-provider and release
+gates remain separate.

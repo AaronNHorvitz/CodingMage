@@ -6,4 +6,4 @@ pub mod models;
 pub mod worker;
 
 pub use cli::{BackendError, CoordinatorBinary, FailureState, explain_code};
-pub use worker::{Binding, Generation, Job, QueueError, Request, Response, Worker};
+pub use worker::{Binding, Generation, Job, PrivateInput, QueueError, Request, Response, Worker};

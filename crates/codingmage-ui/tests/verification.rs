@@ -229,6 +229,13 @@ fn setup_to_outcome_workflow_through_the_interface() {
             "The owner authorizes this disposable verification campaign.".to_owned();
     }
     harness.state_mut().apply_authorization_record();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_ok_and(|text| text.contains("authorization record written"))
+        })
+    }));
     harness.state_mut().start_campaign_form();
     {
         let form = harness

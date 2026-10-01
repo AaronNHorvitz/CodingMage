@@ -81,5 +81,44 @@ items, 825 explicit gaps before and after, with the normalized gap set
 unchanged. The new public Rust surface is the guarded writer; three other
 line-derived IDs moved and 18 existing entries changed only in location or
 heuristic test mappings. These mappings are not coverage proof. This local
-correction does not close the independent finding until the exact corrected
-commit is reviewed.
+correction was independently re-reviewed at exact commit
+`46aeae8da288c46ba3e76a38c59eb4bb745b129b` with a bounded PASS and no
+finding. The reviewer reproduced the delayed-staging HEAD change and both
+post-publication uncertainty cases. This does not qualify the native worker or
+the human, live and release gates.
+
+## Native private-stdin worker increment
+
+Decision 0066 routes the authorization action through the bounded native
+worker. The worker transports at most 1 MiB of private stdin to the public
+`codingmage setup-write-authorization` command off the render thread. The
+record text is absent from arguments, command preview and debug output. The
+screen binds the request to its selection generation, exact diagnosis
+repository ID and request identity; only a schema-1 receipt matching the
+requested repository ID, byte count and SHA-256 digest selects the record.
+Queue refusal, command error, cancellation and malformed or mismatched receipt
+leave success unclaimed and ask the owner to inspect the destination before
+retrying. Switching authority invalidates a pending request and its response.
+An older response cannot clear a newer pending write with a different request
+identity. There is no automatic retry. The in-context Show-command displays
+the exact argument vector and discloses that the private stdin bytes are omitted.
+
+This increment does not route configuration, campaign or export writes through
+public commands, and it does not complete the state/depth catalogue in Task
+36.3.2.2. The native UI all-target suite passes 175/175 across 14 targets.
+The UI library target passes 95/95, including private
+transport, finite deadline and malformed/foreign receipt cases. The
+real-process Setup target passes 4/4, including repository-contained refusal,
+duplicate pending action, successful external record and discarded
+cross-repository response. The native verification target passes 7/7,
+including a disposable setup-to-outcome workflow, recovery, keyboard traversal
+and window sizes. Strict workspace Clippy with warnings denied passes. The
+full Python suite passes 43/44 with only the unchanged CM-R01.6 eight-input
+source-bound freshness failure; no binding or package digest was renewed.
+Cargo formatting, documentation, architecture, no-write inventory and
+whitespace checks pass. The first Clippy attempt found three owned style
+lints, and a subsequent focused Setup attempt found a duplicate contract-code
+explanation. Both failed attempts were corrected before the final-source
+checks and remain in private session output. These local results are not an
+independent review. Separate human, installed-desktop and live-provider
+qualification remains open.

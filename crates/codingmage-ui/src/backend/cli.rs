@@ -5,7 +5,7 @@
 
 use std::{
     fmt, fs,
-    io::Read,
+    io::{Read, Write},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{
@@ -88,10 +88,45 @@ impl CoordinatorBinary {
         deadline: Duration,
         cancel: &Arc<AtomicBool>,
     ) -> Result<Vec<u8>, BackendError> {
+        self.run_inner(arguments, None, deadline, cancel)
+    }
+
+    /// Runs a command with bounded, private stdin. The transport never adds input to arguments,
+    /// environment or errors. Command stdout remains bounded and must be validated by its caller.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BackendError`] when invocation, input transfer, or the command fails.
+    pub fn run_with_private_input(
+        &self,
+        arguments: &[String],
+        input: Vec<u8>,
+        deadline: Duration,
+        cancel: &Arc<AtomicBool>,
+    ) -> Result<Vec<u8>, BackendError> {
+        if input.len() > 1024 * 1024 {
+            return Err(BackendError::Refused(
+                "private input exceeds 1 MiB".to_owned(),
+            ));
+        }
+        self.run_inner(arguments, Some(input), deadline, cancel)
+    }
+
+    fn run_inner(
+        &self,
+        arguments: &[String],
+        input: Option<Vec<u8>>,
+        deadline: Duration,
+        cancel: &Arc<AtomicBool>,
+    ) -> Result<Vec<u8>, BackendError> {
         let mut command = Command::new(&self.path);
         command
             .args(arguments)
-            .stdin(Stdio::null())
+            .stdin(if input.is_some() {
+                Stdio::piped()
+            } else {
+                Stdio::null()
+            })
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .env_clear();
@@ -109,12 +144,21 @@ impl CoordinatorBinary {
         })?;
         let stdout = child.stdout.take().ok_or(BackendError::Spawn)?;
         let stderr = child.stderr.take().ok_or(BackendError::Spawn)?;
+        let input_writer = input.map(|bytes| {
+            let mut stdin = child.stdin.take().expect("piped stdin was requested");
+            thread::spawn(move || stdin.write_all(&bytes))
+        });
         let stdout_reader = thread::spawn(move || read_bounded(stdout));
         let stderr_reader = thread::spawn(move || read_bounded(stderr));
-        let status = wait_bounded(&mut child, deadline, cancel)?;
+        let status = wait_bounded(&mut child, deadline, cancel);
+        let input_result = input_writer.map(thread::JoinHandle::join);
+        let status = status?;
         let stdout = stdout_reader.join().map_err(|_| BackendError::Spawn)??;
         let stderr = stderr_reader.join().map_err(|_| BackendError::Spawn)??;
         if status.success() {
+            if input_result.is_some_and(|result| !matches!(result, Ok(Ok(())))) {
+                return Err(BackendError::Spawn);
+            }
             return Ok(stdout);
         }
         let code = String::from_utf8_lossy(&stderr)
@@ -367,12 +411,12 @@ pub fn explain_code(code: &str) -> (&'static str, &'static str) {
             "Choose a new destination outside the repository or confirm overwrite of an existing regular file; for Setup, check the selected roots.",
         ),
         "codingmage.cli.uncertain_write" => (
-            "The report destination changed during publication.",
+            "A destination or its repository authority changed during publication.",
             "Inspect the destination and retained .codingmage-cli-report-*.staging directory in its parent before retrying; keep the stage until the files are reconciled.",
         ),
         "codingmage.cli.stale_observation" => (
-            "The campaign head changed while task states were requested.",
-            "Refresh the campaign to observe its current reconciled head.",
+            "The repository observation changed before the command completed.",
+            "Refresh repository diagnosis and campaign status before making another request.",
         ),
         "codingmage.runtime.spec"
         | "codingmage.runtime.campaign.spec"

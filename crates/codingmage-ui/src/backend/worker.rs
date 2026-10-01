@@ -6,7 +6,7 @@
 //! rendered as the current one.
 
 use std::{
-    fs,
+    fmt, fs,
     path::{Component, Path, PathBuf},
     sync::{
         Arc,
@@ -25,6 +25,32 @@ use crate::{report::OutcomeReport, report_export::ExportRequest};
 
 /// Maximum queued requests before new requests are refused.
 pub const QUEUE_CAPACITY: usize = 8;
+
+/// A bounded stdin payload whose debug representation never includes its contents.
+#[derive(Clone, Eq, PartialEq)]
+pub struct PrivateInput(Vec<u8>);
+
+impl PrivateInput {
+    /// Accepts at most 1 MiB for a coordinator command's private stdin.
+    ///
+    /// # Errors
+    ///
+    /// Refuses an oversized input before it enters the worker queue.
+    pub fn new(bytes: Vec<u8>) -> Result<Self, BackendError> {
+        if bytes.len() > 1024 * 1024 {
+            return Err(BackendError::Refused(
+                "private input exceeds 1 MiB".to_owned(),
+            ));
+        }
+        Ok(Self(bytes))
+    }
+}
+
+impl fmt::Debug for PrivateInput {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("PrivateInput([redacted])")
+    }
+}
 
 /// Exact identities a request was issued for.
 #[derive(Clone, Debug, Eq, PartialEq, Default)]
@@ -50,6 +76,17 @@ pub enum Job {
         label: &'static str,
         /// Exact argument vector.
         arguments: Vec<String>,
+        /// Deadline after which the command is killed.
+        deadline: Duration,
+    },
+    /// Run a coordinator command with private, bounded stdin.
+    PrivateCommand {
+        /// Stable response label.
+        label: &'static str,
+        /// Exact displayed argument vector; never includes the input.
+        arguments: Vec<String>,
+        /// Private stdin payload, redacted from Debug output.
+        input: PrivateInput,
         /// Deadline after which the command is killed.
         deadline: Duration,
     },
@@ -98,7 +135,7 @@ impl Job {
     #[must_use]
     pub const fn label(&self) -> &'static str {
         match self {
-            Self::Command { label, .. } => label,
+            Self::Command { label, .. } | Self::PrivateCommand { label, .. } => label,
             Self::SupportBundle { .. } => "support-bundle",
             Self::ReportExport { .. } | Self::SourceReportExport { .. } => "report-export",
             Self::SourceReportInspect { .. } => "campaign-outcome-report",
@@ -302,6 +339,12 @@ fn run_loop(
                     deadline,
                     ..
                 } => binary.run(arguments, *deadline, &cancel),
+                Job::PrivateCommand {
+                    arguments,
+                    input,
+                    deadline,
+                    ..
+                } => binary.run_with_private_input(arguments, input.0.clone(), *deadline, &cancel),
                 Job::SupportBundle {
                     arguments,
                     destination,
@@ -416,6 +459,7 @@ fn dispatch_export(
                     Arc::clone(&shutdown),
                 ),
                 Job::Command { .. }
+                | Job::PrivateCommand { .. }
                 | Job::SupportBundle { .. }
                 | Job::SourceReportInspect { .. } => {
                     unreachable!("only report exports enter the export supervisor")
@@ -617,6 +661,80 @@ mod tests {
         .unwrap();
         fs::set_permissions(&script, fs::Permissions::from_mode(0o700)).unwrap();
         CoordinatorBinary::at(&script).unwrap()
+    }
+
+    #[test]
+    fn private_stdin_is_bounded_and_absent_from_debug_output() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-ui-private-stdin-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let script = root.join("codingmage");
+        fs::write(&script, "#!/bin/sh\ncat > \"$2\"\nprintf 'ok'\n").unwrap();
+        fs::set_permissions(&script, fs::Permissions::from_mode(0o700)).unwrap();
+        let worker = Worker::start(CoordinatorBinary::at(&script).unwrap(), || {});
+        let input = PrivateInput::new(b"synthetic private text\n".to_vec()).unwrap();
+        let destination = root.join("captured");
+        let job = Job::PrivateCommand {
+            label: "private-fixture",
+            arguments: vec!["write".to_owned(), destination.display().to_string()],
+            input,
+            deadline: Duration::from_secs(2),
+        };
+        assert!(!format!("{job:?}").contains("synthetic private text"));
+        worker
+            .submit(Request {
+                generation: Generation(0),
+                binding: Binding::default(),
+                job,
+                request_id: Some("private-1".to_owned()),
+            })
+            .unwrap();
+        let response = worker.wait(Duration::from_secs(3)).unwrap();
+        assert_eq!(response.result.unwrap(), b"ok");
+        assert_eq!(fs::read(destination).unwrap(), b"synthetic private text\n");
+        assert!(PrivateInput::new(vec![b'x'; 1024 * 1024 + 1]).is_err());
+        drop(worker);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn private_stdin_writer_exits_after_command_deadline() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-ui-private-timeout-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let script = root.join("codingmage");
+        fs::write(&script, "#!/bin/sh\nexec sleep 5\n").unwrap();
+        fs::set_permissions(&script, fs::Permissions::from_mode(0o700)).unwrap();
+        let worker = Worker::start(CoordinatorBinary::at(&script).unwrap(), || {});
+        worker
+            .submit(Request {
+                generation: Generation(0),
+                binding: Binding::default(),
+                job: Job::PrivateCommand {
+                    label: "private-timeout",
+                    arguments: Vec::new(),
+                    input: PrivateInput::new(vec![b'x'; 1024 * 1024]).unwrap(),
+                    deadline: Duration::from_millis(150),
+                },
+                request_id: None,
+            })
+            .unwrap();
+        let started = Instant::now();
+        let response = worker.wait(Duration::from_secs(2)).unwrap();
+        assert_eq!(response.result, Err(BackendError::Timeout));
+        assert!(started.elapsed() < Duration::from_secs(2));
+        drop(worker);
+        fs::remove_dir_all(root).unwrap();
     }
 
     fn request(generation: u64, label: &'static str, argument: &str) -> Request {
