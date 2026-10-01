@@ -3,7 +3,8 @@
 use super::{App, GIT_DEADLINE, Screen, backend_failure_box};
 use crate::{
     backend::{BackendError, Job, Request, Response},
-    command, content, messages,
+    command, content,
+    messages::{self, Catalogue},
     observed::{Freshness, age_label},
     records::{CommitSummary, FileChange, RunRecord, parse_run_records},
 };
@@ -384,7 +385,8 @@ impl App {
 
     /// Shows only run evidence bound to the currently observed status and selected task.
     pub(super) fn task_run_evidence(&self, ui: &mut egui::Ui, task_id: &str) {
-        ui.collapsing("Task run evidence", |ui| {
+        let catalogue = messages::english();
+        ui.collapsing(catalogue.text("work_plan_runs_title"), |ui| {
             if let Some((config, campaign, _)) = self.campaign_arguments() {
                 let arguments = vec![
                     "campaign-run-records".to_owned(),
@@ -395,77 +397,26 @@ impl App {
                 ];
                 command::show_for(
                     ui,
-                    "Inspect task runs",
+                    catalogue.text("work_plan_runs_command"),
                     self.binary_path.as_deref(),
                     &arguments,
                 );
             }
             let current = self.status.value.as_ref().and_then(Option::as_ref);
             let bound = current.is_some_and(|status| {
-                self.records_status.as_ref()
-                    == Some(&(status.head.clone(), status.updated_at_ms))
+                self.records_status.as_ref() == Some(&(status.head.clone(), status.updated_at_ms))
             });
             if !self.status_live_at(self.now)
                 || self.records.freshness(self.now) != Freshness::Live
                 || !bound
             {
-                ui.label("Current task run evidence is unavailable or stale. Refresh the campaign to inspect its records.");
+                ui.label(catalogue.text("work_plan_runs_unavailable"));
                 return;
             }
             let Some(records) = self.records.value.as_ref() else {
                 return;
             };
-            if self.records_truncated {
-                ui.label("Only the first 500 campaign run records are shown; this task may have omitted runs.");
-            }
-            let matching = records.iter().filter(|record| record.bound_task_id == task_id).collect::<Vec<_>>();
-            if matching.is_empty() {
-                ui.label("No retained run record for this task. No review or test result is inferred.");
-                return;
-            }
-            ui.small("Packet and prompt text, reviewer finding text and full test logs are not retained in this projection.");
-            if matching.len() > 20 {
-                ui.label(format!(
-                    "Showing 20 of {} retained task runs. Inspect Changes and reviews for the wider record.",
-                    matching.len()
-                ));
-            }
-            for record in matching.into_iter().take(20) {
-                egui::Frame::group(ui.style()).show(ui, |ui| {
-                    ui.label(format!("Run {}", content::list_label(&record.run_id)));
-                    if let Some(checkpoint) = &record.checkpoint {
-                        ui.label(format!(
-                            "Candidate commit {} · {} correction round(s)",
-                            checkpoint.candidate_commit,
-                            checkpoint.correction_rounds
-                        ));
-                    } else {
-                        ui.label(format!(
-                            "Checkpoint unavailable: {}",
-                            record.checkpoint_problem.as_deref().unwrap_or("unknown cause")
-                        ));
-                    }
-                    content::render(ui, &record.review_label());
-                    content::render(ui, &record.gate_label());
-                    if let Some(problem) = &record.journal_problem {
-                        ui.label(format!("Journal unavailable: {problem}"));
-                    } else {
-                        ui.label(format!("{} journal phase(s) retained", record.phases.len()));
-                        if record.phases_truncated {
-                            ui.label("Later phases were omitted from this bounded projection.");
-                        }
-                        if record.phases.len() > 16 {
-                            ui.label("Showing the first 16 retained phases; inspect Changes and reviews for the wider record.");
-                        }
-                        for phase in record.phases.iter().take(16) {
-                            ui.small(format!(
-                                "{} · {} · {} · {}",
-                                phase.timestamp_ms, phase.phase, phase.kind, phase.outcome
-                            ));
-                        }
-                    }
-                });
-            }
+            render_task_run_records(ui, catalogue, task_id, records, self.records_truncated);
         });
     }
 
@@ -747,6 +698,255 @@ impl App {
             }
             None => {
                 ui.label("No coordinator launch is recorded for this campaign from this interface; activity lines are not available.");
+            }
+        }
+    }
+}
+
+fn render_task_run_records(
+    ui: &mut egui::Ui,
+    catalogue: &Catalogue,
+    task_id: &str,
+    records: &[RunRecord],
+    records_truncated: bool,
+) {
+    if records_truncated {
+        ui.label(catalogue.text("work_plan_runs_truncated"));
+    }
+    let matching = records
+        .iter()
+        .filter(|record| record.bound_task_id == task_id)
+        .collect::<Vec<_>>();
+    if matching.is_empty() {
+        ui.label(catalogue.text("work_plan_runs_none"));
+        return;
+    }
+    ui.small(catalogue.text("work_plan_runs_content_limit"));
+    if matching.len() > 20 {
+        ui.label(catalogue.format(
+            "work_plan_runs_showing",
+            &[("shown", "20"), ("total", &matching.len().to_string())],
+        ));
+    }
+    for record in matching.into_iter().take(20) {
+        egui::Frame::group(ui.style()).show(ui, |ui| {
+            ui.label(catalogue.format(
+                "work_plan_runs_run",
+                &[("run_id", &content::list_label(&record.run_id))],
+            ));
+            if let Some(checkpoint) = &record.checkpoint {
+                ui.label(catalogue.format(
+                    "work_plan_runs_candidate",
+                    &[
+                        ("commit", &checkpoint.candidate_commit),
+                        ("rounds", &checkpoint.correction_rounds.to_string()),
+                    ],
+                ));
+            } else {
+                let problem = record
+                    .checkpoint_problem
+                    .as_deref()
+                    .unwrap_or(catalogue.text("work_plan_runs_unknown_cause"));
+                ui.label(
+                    catalogue.format("work_plan_runs_checkpoint_problem", &[("problem", problem)]),
+                );
+            }
+            content::render(ui, &run_review_label(record, catalogue));
+            content::render(ui, &run_gate_label(record, catalogue));
+            if let Some(problem) = &record.journal_problem {
+                ui.label(
+                    catalogue.format("work_plan_runs_journal_problem", &[("problem", problem)]),
+                );
+            } else {
+                ui.label(catalogue.format(
+                    "work_plan_runs_phases",
+                    &[("count", &record.phases.len().to_string())],
+                ));
+                if record.phases_truncated {
+                    ui.label(catalogue.text("work_plan_runs_phases_truncated"));
+                }
+                if record.phases.len() > 16 {
+                    ui.label(catalogue.text("work_plan_runs_phases_showing"));
+                }
+                for phase in record.phases.iter().take(16) {
+                    ui.small(catalogue.format(
+                        "work_plan_runs_phase",
+                        &[
+                            ("timestamp", &phase.timestamp_ms.to_string()),
+                            ("phase", &phase.phase),
+                            ("kind", &phase.kind),
+                            ("outcome", &phase.outcome),
+                        ],
+                    ));
+                }
+            }
+        });
+    }
+}
+
+fn run_review_label(record: &RunRecord, catalogue: &Catalogue) -> String {
+    if record.checkpoint.is_some() && record.journal_problem.is_some() {
+        return catalogue
+            .text("work_plan_runs_review_uncorroborated")
+            .to_owned();
+    }
+    match &record.checkpoint {
+        None => catalogue
+            .text("work_plan_runs_review_no_checkpoint")
+            .to_owned(),
+        Some(checkpoint) => checkpoint.review_verdict.as_ref().map_or_else(
+            || catalogue.text("work_plan_runs_review_absent").to_owned(),
+            |verdict| catalogue.format("work_plan_runs_review_verdict", &[("verdict", verdict)]),
+        ),
+    }
+}
+
+fn run_gate_label(record: &RunRecord, catalogue: &Catalogue) -> String {
+    if record.checkpoint.is_some() && record.journal_problem.is_some() {
+        return catalogue
+            .text("work_plan_runs_gate_uncorroborated")
+            .to_owned();
+    }
+    match &record.checkpoint {
+        None => catalogue
+            .text("work_plan_runs_gate_no_checkpoint")
+            .to_owned(),
+        Some(checkpoint) if checkpoint.gate_evidence.is_empty() => {
+            catalogue.text("work_plan_runs_gate_absent").to_owned()
+        }
+        Some(checkpoint) => catalogue.format(
+            "work_plan_runs_gate_summary",
+            &[
+                ("count", &checkpoint.gate_evidence.len().to_string()),
+                ("ids", &checkpoint.gate_evidence.join(", ")),
+            ],
+        ),
+    }
+}
+
+#[cfg(test)]
+mod task_run_tests {
+    use super::*;
+    use crate::{backend::models::RunCheckpoint, records::PhaseObservation};
+    use egui_kittest::kittest::{NodeT as _, Queryable as _};
+
+    struct TaskRunPreview {
+        catalogue: Catalogue,
+        records: Vec<RunRecord>,
+        right_to_left: bool,
+    }
+
+    impl eframe::App for TaskRunPreview {
+        fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
+            egui::CentralPanel::default().show(root, |ui| {
+                if self.right_to_left {
+                    ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                        render_task_run_records(
+                            ui,
+                            &self.catalogue,
+                            "1.1.1.1",
+                            &self.records,
+                            false,
+                        );
+                    });
+                } else {
+                    render_task_run_records(ui, &self.catalogue, "1.1.1.1", &self.records, false);
+                }
+            });
+        }
+    }
+
+    fn accepted_record() -> RunRecord {
+        RunRecord {
+            run_id: "run-1".to_owned(),
+            bound_task_id: "1.1.1.1".to_owned(),
+            checkpoint: Some(RunCheckpoint {
+                schema_version: 1,
+                run_id: "run-1".to_owned(),
+                task_id: "1.1.1.1".to_owned(),
+                candidate_commit: "a".repeat(40),
+                review_verdict: Some("pass".to_owned()),
+                correction_rounds: 1,
+                gate_evidence: vec!["evidence-1".to_owned()],
+            }),
+            checkpoint_problem: None,
+            phases: vec![PhaseObservation {
+                sequence: 0,
+                phase: "review".to_owned(),
+                kind: "gate_observed".to_owned(),
+                outcome: "succeeded".to_owned(),
+                timestamp_ms: 100,
+                evidence: vec![],
+                commit: None,
+                gate: None,
+            }],
+            phases_truncated: false,
+            journal_problem: None,
+        }
+    }
+
+    #[test]
+    fn task_run_evidence_keeps_missing_and_uncorroborated_results_distinct() {
+        let catalogue = messages::english();
+        let mut record = accepted_record();
+        assert_eq!(run_review_label(&record, catalogue), "review verdict: pass");
+        assert_eq!(
+            run_gate_label(&record, catalogue),
+            "1 gate evidence record(s): evidence-1"
+        );
+        record.journal_problem = Some("events.jsonl is absent".to_owned());
+        assert_eq!(
+            run_review_label(&record, catalogue),
+            catalogue.text("work_plan_runs_review_uncorroborated")
+        );
+        assert_eq!(
+            run_gate_label(&record, catalogue),
+            catalogue.text("work_plan_runs_gate_uncorroborated")
+        );
+        record.checkpoint = None;
+        record.checkpoint_problem = Some("checkpoint.json is absent".to_owned());
+        assert_eq!(
+            run_review_label(&record, catalogue),
+            catalogue.text("work_plan_runs_review_no_checkpoint")
+        );
+        assert_eq!(
+            run_gate_label(&record, catalogue),
+            catalogue.text("work_plan_runs_gate_no_checkpoint")
+        );
+    }
+
+    #[test]
+    fn expanded_right_aligned_task_run_evidence_preserves_identity_and_outcomes() {
+        for right_to_left in [false, true] {
+            let catalogue = messages::english().pseudo(right_to_left);
+            let run = catalogue.format("work_plan_runs_run", &[("run_id", "run-1")]);
+            let candidate = catalogue.format(
+                "work_plan_runs_candidate",
+                &[("commit", &"a".repeat(40)), ("rounds", "1")],
+            );
+            let review = catalogue.format("work_plan_runs_review_verdict", &[("verdict", "pass")]);
+            let gate = catalogue.format(
+                "work_plan_runs_gate_summary",
+                &[("count", "1"), ("ids", "evidence-1")],
+            );
+            let mut harness = egui_kittest::Harness::builder()
+                .with_size(egui::Vec2::new(1024.0, 640.0))
+                .with_pixels_per_point(2.0)
+                .with_max_steps(4)
+                .build_eframe(move |_| TaskRunPreview {
+                    catalogue,
+                    records: vec![accepted_record()],
+                    right_to_left,
+                });
+            harness.run_steps(2);
+            for label in [&run, &candidate, &review, &gate] {
+                assert!(
+                    harness
+                        .get_by_label_contains(label)
+                        .accesskit_node()
+                        .has_bounds(),
+                    "missing accessible bounds for {label}"
+                );
             }
         }
     }

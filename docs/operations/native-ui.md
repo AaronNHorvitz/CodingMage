@@ -140,11 +140,12 @@ The bundled English catalogue supplies static Help, Settings, Workspace, Blocker
 Campaign and Work plan orientation and recovery labels, plus selected dynamic Campaign and
 Work plan observations. Work plan filters, source rows and parsed item-detail labels also
 use the catalogue. Named dynamic fields are validated before rendering.
-Coordinator-provided Work plan source-detail chrome and source-state labels now
-also use the catalogue. Run evidence and other coordinator-provided text still
-include embedded English copy. The synthetic expanded/right-aligned checks are
-local layout tests; a runtime language choice, locale-specific number/date
-formatting and full right-to-left qualification remain open.
+Coordinator-provided Work plan source-detail chrome, source-state labels and
+selected-task run-evidence labels also use the catalogue. Other coordinator
+output still includes embedded English copy. The synthetic expanded and
+right-aligned checks are local layout tests; a runtime language choice,
+locale-specific number and date formatting, and full right-to-left qualification
+remain open.
 
 ## Limits
 

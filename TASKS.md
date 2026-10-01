@@ -2412,6 +2412,19 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     unittest remained 41/42 solely for the unchanged CM-R01.6 eight-input
     source-bound freshness hold; no digest was renewed.
     Run-evidence and other UI text, full RTL and human qualification remain open.
+    Cumulative read-only review of the source-detail increment found no source
+    issue but remained INCONCLUSIVE: it compiled a fresh test binary, then could
+    not acquire the shared slot for nonzero focused tests or strict Clippy;
+    no independent PASS is inferred. Decision 0054 moves selected-task
+    run-evidence identity, missing/stale, truncation, review/gate corroboration
+    and journal labels into the validated catalogue. The focused mutation,
+    truth-state and expanded/right-aligned preview batch passed 3/3; final
+    software-GL UI all-target passed 158/158 and strict workspace Clippy passed.
+    Python remained 41/42 solely for the unchanged CM-R01.6 eight-input
+    source-bound freshness hold, with no digest renewed. The wider Changes
+    screen, locale values, complete bidirectional navigation and installed
+    human qualification remain open; see
+    `docs/evidence/sprint-36-message-catalogue.md`.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).

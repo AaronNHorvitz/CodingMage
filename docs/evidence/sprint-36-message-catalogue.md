@@ -357,3 +357,42 @@ inventory and diff whitespace checks passed. The staged diff and additions
 were inspected for scope and private host/credential material before commit.
 Independent review of this exact increment remains pending; installed, human,
 live and release gates stay open.
+
+## Selected-task run-evidence copy
+
+The independent cumulative read-only review of exact commit
+`f226ee0da3f7712018dd9b50fc4a63a37f9f37d2` found no source issue but
+returned **INCONCLUSIVE**: it compiled a fresh UI test binary from the archived
+source, then could not acquire the shared build reservation for the required
+nonzero focused tests and strict Clippy. Its zero-test and cached-check attempts
+are not counted. The builder's preceding final-source checks remain separate;
+no gate or independent PASS is inferred.
+
+Decision 0054 moves the selected Work plan task's run-evidence disclosure,
+exact-command label, stale/absent/limited state, run and candidate identity,
+review/gate evidence distinction and journal phase copy into the validated
+English catalogue. Dynamic templates require exact identities and counts.
+The existing coordinator command and live status/head binding are unchanged;
+journal integrity failure still suppresses corroborated review and gate claims.
+Focused template-mutation, missing/uncorroborated distinction and synthetic
+40%-expanded/right-aligned 1024×640 at 200% AccessKit preview checks passed
+3/3 under the shared reservation. The preview is local layout evidence only.
+
+The inventory generator and schema are unchanged. After source-consistent
+regeneration it lists 1,770 public items and 825 explicit gaps. A multiset
+comparison with the preceding inventory finds no semantic public item addition
+or removal, no applicability or test-mapping change and 20 line-derived ID
+relocations. The inventory remains an index, not a qualification claim.
+
+The final-source software-GL native UI all-target suite passed 158/158 across
+14 targets, including the selected-task evidence tests and disposable
+coordinator Campaign, Changes, Reports and Work plan workflows. Strict
+workspace Clippy with warnings denied passed. Python unittest ran 42 tests:
+41 passed and the sole failure was the unchanged CM-R01.6 source-bound
+freshness check on its same eight inputs; no digest or binding was renewed.
+Formatting, documentation, architecture, no-write inventory and whitespace
+checks passed. The exact staged diff and additions were inspected for scope
+and private host/credential material before commit. Independent review of
+this exact increment remains pending. Installed assistive-tool,
+locale-specific values, full bidirectional navigation, human/live and release
+gates remain open.

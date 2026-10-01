@@ -349,6 +349,30 @@ const REQUIRED_KEYS: &[&str] = &[
     "work_plan_source_criterion_state",
     "work_plan_source_criterion_title_truncated",
     "work_plan_source_criteria_truncated",
+    "work_plan_runs_title",
+    "work_plan_runs_command",
+    "work_plan_runs_unavailable",
+    "work_plan_runs_truncated",
+    "work_plan_runs_none",
+    "work_plan_runs_content_limit",
+    "work_plan_runs_showing",
+    "work_plan_runs_run",
+    "work_plan_runs_candidate",
+    "work_plan_runs_unknown_cause",
+    "work_plan_runs_checkpoint_problem",
+    "work_plan_runs_review_uncorroborated",
+    "work_plan_runs_review_no_checkpoint",
+    "work_plan_runs_review_absent",
+    "work_plan_runs_review_verdict",
+    "work_plan_runs_gate_uncorroborated",
+    "work_plan_runs_gate_no_checkpoint",
+    "work_plan_runs_gate_absent",
+    "work_plan_runs_gate_summary",
+    "work_plan_runs_journal_problem",
+    "work_plan_runs_phases",
+    "work_plan_runs_phases_truncated",
+    "work_plan_runs_phases_showing",
+    "work_plan_runs_phase",
     "campaign_title",
     "campaign_no_project",
     "campaign_no_selection",
@@ -485,6 +509,18 @@ const TEMPLATE_FIELDS: &[(&str, &[&str])] = &[
     ("work_plan_source_failure", &["code"]),
     ("work_plan_source_head", &["head", "state"]),
     ("work_plan_source_criterion_state", &["state"]),
+    ("work_plan_runs_showing", &["shown", "total"]),
+    ("work_plan_runs_run", &["run_id"]),
+    ("work_plan_runs_candidate", &["commit", "rounds"]),
+    ("work_plan_runs_checkpoint_problem", &["problem"]),
+    ("work_plan_runs_review_verdict", &["verdict"]),
+    ("work_plan_runs_gate_summary", &["count", "ids"]),
+    ("work_plan_runs_journal_problem", &["problem"]),
+    ("work_plan_runs_phases", &["count"]),
+    (
+        "work_plan_runs_phase",
+        &["timestamp", "phase", "kind", "outcome"],
+    ),
     ("campaign_named", &["campaign_id"]),
     ("campaign_execution_parallel", &["pods"]),
     ("campaign_binding_drift", &["reason"]),
@@ -861,6 +897,31 @@ mod tests {
         assert_eq!(
             catalogue.format("work_plan_source_failure", &[("code", "{state}<script>")],),
             "Source detail unavailable: {state}<script>. Refresh the campaign and try again."
+        );
+    }
+
+    #[test]
+    fn task_run_templates_require_exact_evidence_identity_and_counts() {
+        let run = "work_plan_runs_run = \"Run {run_id}\"";
+        for replacement in [
+            "work_plan_runs_run = \"Run\"",
+            "work_plan_runs_run = \"Run {run_id} {run_id}\"",
+            "work_plan_runs_run = \"Run {other}\"",
+        ] {
+            assert!(Catalogue::parse(&SOURCE.replace(run, replacement)).is_err());
+        }
+        let candidate = "work_plan_runs_candidate = \"Candidate commit {commit} · {rounds} correction round(s)\"";
+        assert!(
+            Catalogue::parse(&SOURCE.replace(
+                candidate,
+                "work_plan_runs_candidate = \"Candidate commit {commit}\""
+            ))
+            .is_err()
+        );
+        let catalogue = Catalogue::parse(SOURCE).unwrap();
+        assert_eq!(
+            catalogue.format("work_plan_runs_run", &[("run_id", "{other}<script>")]),
+            "Run {other}<script>"
         );
     }
 }
