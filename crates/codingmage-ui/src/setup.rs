@@ -50,6 +50,13 @@ pub enum WriteError {
     Rejected(String),
     /// Filesystem failure.
     Io,
+    /// A concurrent filesystem change left a recoverable entry that needs inspection.
+    Uncertain {
+        /// Destination requested by the user.
+        destination: PathBuf,
+        /// Last observed path of the retained entry, when resolvable.
+        retained: Option<PathBuf>,
+    },
 }
 
 impl fmt::Display for WriteError {
@@ -80,6 +87,25 @@ impl fmt::Display for WriteError {
                 )
             }
             Self::Io => formatter.write_str("the document could not be written"),
+            Self::Uncertain {
+                destination,
+                retained,
+            } => {
+                write!(
+                    formatter,
+                    "the destination changed during publication; inspect {} before retrying",
+                    destination.display()
+                )?;
+                if let Some(path) = retained {
+                    write!(
+                        formatter,
+                        "; a displaced entry was last observed at {}",
+                        path.display()
+                    )
+                } else {
+                    formatter.write_str("; the displaced entry's location could not be resolved")
+                }
+            }
         }
     }
 }
@@ -1058,13 +1084,9 @@ mod tests {
             let staged = fs::read_dir(parent)
                 .unwrap()
                 .map(|entry| entry.unwrap().path())
-                .find(|path| {
-                    path.file_name()
-                        .unwrap()
-                        .to_string_lossy()
-                        .ends_with(".candidate")
-                })
-                .unwrap();
+                .find(|path| path.is_dir())
+                .unwrap()
+                .join("candidate");
             fs::remove_file(&staged).unwrap();
             fs::write(&staged, b"rejected replacement").unwrap();
         };

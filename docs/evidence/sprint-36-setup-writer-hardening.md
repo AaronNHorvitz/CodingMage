@@ -101,7 +101,7 @@ human/live gates.
 The inventory generator and version-1 schema were inspected again before
 regeneration. The corrected tree still has 1,771 items and 825 explicit gaps,
 with no public-surface or applicability changes. Its top-eight heuristic test
-suggestions move on 445 native UI items because the new test names sort into
+suggestions move on 437 native UI items because the new test names sort into
 those lists; this is neither a coverage gain nor proof that those tests exercise
 each listed item.
 
@@ -112,5 +112,52 @@ style-lint correction. Formatting, documentation, architecture, no-write
 inventory and diff-whitespace checks passed. The full Python unittest suite
 ran 43 tests: 42 passed, with only the unchanged CM-R01.6 eight-input
 source-bound freshness failure; no binding or digest was renewed. The original
-compile and lint failures are retained privately with this checkpoint. Fresh
-independent exact-commit re-review of the high finding remains required.
+compile and lint failures are retained privately with this checkpoint. The
+subsequent exact-commit re-review resolved the high finding and raised the
+overwrite and inventory findings below.
+
+## Independent overwrite finding and atomic-exchange correction
+
+The independent exact-commit re-review of
+`d5558a200b808b8f0e94ebf0964ea7e593578c9f` returned a bounded PASS for
+the earlier high candidate-replacement finding, with a Medium overwrite
+finding and a Low inventory-count finding. The old overwrite path checked the
+old inode, then unlinked the public leaf. Another directory writer could
+replace the leaf between those operations and have its file deleted while the
+writer reported success. The report and the earlier high finding remain
+retained; neither verdict is changed by this note. Recomputing both committed
+inventories by `(surface, path, kind, name)` confirms 437 changed
+`test_mappings` items, not the previously stated 445. Public surfaces and
+applicability remained unchanged in that comparison.
+
+Decision 0060 moves the validated candidate into a held private staging
+directory and exchanges it atomically with an existing regular destination.
+The displaced entry is checked before private cleanup. A mismatched entry is
+restored when its exchange can be proven; otherwise it remains recoverable and
+the writer returns an explicit uncertain result. The new deterministic hook
+replaces the old leaf with a different regular file immediately before the
+exchange. The test requires that file to survive at the destination and the
+write to fail. A second hook replaces the leaf after exchange and checks that
+the displaced original remains at the reported recovery path with an explicit
+uncertainty result. A third hook removes the displaced staging entry to force
+an unreadable post-exchange state; the writer reports uncertainty without a
+false recovery path or a public leaf unlink. The final-source writer tests pass
+12/12 within the UI library suite. This is local evidence pending independent
+re-review.
+The no-overwrite path remains a create-only link. This does not close the
+separate public CLI, asynchronous worker, exact Show-command, human desktop,
+live-provider or release requirements.
+
+The software-GL all-target UI suite passed 168/168 across 14 targets on the
+atomic-exchange refactor before the final bounded post-exchange I/O-error
+correction. On the exact final source, the UI library passed 90/90, the
+disposable Setup integration target passed 3/3, and strict workspace Clippy
+passed with warnings denied. Formatting, documentation, architecture,
+no-write inventory and diff-whitespace checks passed. The full Python suite
+ran 43 tests: 42 passed, with only the unchanged CM-R01.6 eight-input
+source-bound freshness failure; no digest or binding was renewed. Initial
+Clippy failures for helper size, clone style and the final error-path match
+style were corrected and retained privately. The regenerated inventory has
+1,771 items and 825 gaps; relative to the reviewed commit, normalized public
+keys, applicability, test mappings and gaps are unchanged. Exact-commit
+independent review of the final correction remains pending.

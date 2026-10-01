@@ -1,6 +1,6 @@
 # ADR 0059: Publish Setup Documents from the Held File
 
-- **Status:** Accepted for the local writer correction
+- **Status:** Candidate binding retained; overwrite protocol superseded by Decision 0060
 - **Date:** 2026-10-01
 - **Decision owners:** CodingMage implementation
 
@@ -37,6 +37,14 @@ this writer does not provide hostile same-user process isolation. Explicit
 overwrite may briefly leave the destination absent, and a concurrent leaf
 change can require manual reconciliation. These limits are visible failures,
 not successful publication claims.
+
+The independent re-review of this exact implementation passed the earlier
+candidate-publication finding but found that the check immediately before
+removing an overwrite leaf could race another directory writer. In that
+interleaving, this implementation could report success after deleting the
+writer's replacement. The final sentence above was therefore too strong for
+this revision. [Decision 0060](0060-exchange-overwrite-with-private-stage.md)
+replaces the overwrite protocol; the original review finding remains retained.
 
 The native UI still performs guided Setup writes in its own process on the
 render thread. Public sibling commands, bounded asynchronous work and exact

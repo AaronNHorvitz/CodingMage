@@ -15,8 +15,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use nix::{
-    fcntl::{AtFlags, OFlag, open},
-    sys::stat::Mode,
+    fcntl::{AtFlags, OFlag, RenameFlags, open, renameat2},
+    sys::stat::{Mode, mkdirat},
     unistd::linkat,
 };
 
@@ -154,6 +154,12 @@ impl Destination {
         self.fd_path().join(&self.leaf)
     }
 
+    fn recovery_leaf_path(&self) -> Option<PathBuf> {
+        fs::canonicalize(self.fd_path())
+            .ok()
+            .map(|directory| directory.join(&self.leaf))
+    }
+
     fn check_parent(&self) -> Result<(), WriteError> {
         let repository_path = File::open(&self.repository_path)
             .map_err(|_| field_error_at("repository", "target repository changed; reopen it"))?;
@@ -249,6 +255,157 @@ fn remove_if_same(path: &Path, expected: &fs::Metadata) {
     }
 }
 
+// The candidate and the file displaced by an overwrite live in a directory
+// inaccessible to other users. A held directory handle keeps the exchange
+// source bound even when a writable parent is changed concurrently.
+struct PrivateStage {
+    directory: File,
+    path: PathBuf,
+    identity: fs::Metadata,
+}
+
+impl PrivateStage {
+    fn create(destination: &Destination) -> Result<Self, WriteError> {
+        let name = format!("{}.staging", temporary_name());
+        mkdirat(
+            &destination.directory,
+            name.as_str(),
+            Mode::from_bits_truncate(0o700),
+        )
+        .map_err(|_| WriteError::Io)?;
+        let path = destination.fd_path().join(name);
+        let directory = File::from(
+            open(
+                &path,
+                OFlag::O_RDONLY | OFlag::O_DIRECTORY | OFlag::O_NOFOLLOW | OFlag::O_CLOEXEC,
+                Mode::empty(),
+            )
+            .map_err(|_| WriteError::Io)?,
+        );
+        let identity = directory.metadata().map_err(|_| WriteError::Io)?;
+        if !fs::symlink_metadata(&path).is_ok_and(|named| same_inode(&named, &identity)) {
+            return Err(WriteError::Io);
+        }
+        Ok(Self {
+            directory,
+            path,
+            identity,
+        })
+    }
+
+    fn file_path(&self) -> PathBuf {
+        PathBuf::from(format!(
+            "/proc/self/fd/{}/candidate",
+            self.directory.as_raw_fd()
+        ))
+    }
+
+    fn recovery_path(&self) -> Option<PathBuf> {
+        fs::canonicalize(format!("/proc/self/fd/{}", self.directory.as_raw_fd()))
+            .ok()
+            .map(|directory| directory.join("candidate"))
+    }
+
+    fn remove_directory(&self) {
+        if fs::symlink_metadata(&self.path).is_ok_and(|named| same_inode(&named, &self.identity)) {
+            let _ = fs::remove_dir(&self.path);
+        }
+    }
+
+    fn publish_over_existing(
+        &self,
+        destination: &Destination,
+        written: &fs::Metadata,
+        old: &fs::Metadata,
+        retain_stage: &mut bool,
+        before_exchange: impl FnOnce(),
+        after_exchange: impl FnOnce(),
+    ) -> Result<PathBuf, WriteError> {
+        let path = &destination.requested_path;
+        let leaf = destination.leaf_path();
+        let temporary = self.file_path();
+        before_exchange();
+        destination.check_parent()?;
+        // Exchange is atomic: no check-then-unlink can remove a different
+        // writer's leaf. The displaced entry stays inside our private stage.
+        exchange_with_destination(self, destination)?;
+        after_exchange();
+        let Ok(displaced) = fs::symlink_metadata(&temporary) else {
+            *retain_stage = true;
+            return Err(WriteError::Uncertain {
+                destination: path.clone(),
+                retained: None,
+            });
+        };
+        if !same_inode(&displaced, old) {
+            if restore_displaced_entry(self, destination, written) {
+                return Err(field_error(
+                    "destination changed during overwrite; inspect and retry",
+                ));
+            }
+            *retain_stage = true;
+            return Err(WriteError::Uncertain {
+                destination: path.clone(),
+                retained: self.recovery_path(),
+            });
+        }
+        let named = fs::symlink_metadata(&leaf).ok();
+        let parent_check = destination.check_parent();
+        if !named
+            .as_ref()
+            .is_some_and(|entry| entry.is_file() && same_inode(entry, written))
+            || parent_check.is_err()
+        {
+            if restore_displaced_entry(self, destination, written) {
+                return parent_check.and(Err(WriteError::Io));
+            }
+            *retain_stage = true;
+            return Err(WriteError::Uncertain {
+                destination: path.clone(),
+                retained: self.recovery_path(),
+            });
+        }
+        // Other users cannot replace this entry inside the 0700 stage.
+        fs::remove_file(&temporary).map_err(|_| {
+            *retain_stage = true;
+            WriteError::Uncertain {
+                destination: path.clone(),
+                retained: self.recovery_path(),
+            }
+        })?;
+        Ok(path.clone())
+    }
+}
+
+fn exchange_with_destination(
+    stage: &PrivateStage,
+    destination: &Destination,
+) -> Result<(), WriteError> {
+    renameat2(
+        &stage.directory,
+        "candidate",
+        &destination.directory,
+        Path::new(&destination.leaf),
+        RenameFlags::RENAME_EXCHANGE,
+    )
+    .map_err(|_| WriteError::Io)
+}
+
+fn restore_displaced_entry(
+    stage: &PrivateStage,
+    destination: &Destination,
+    written: &fs::Metadata,
+) -> bool {
+    let leaf = destination.leaf_path();
+    if !fs::symlink_metadata(&leaf).is_ok_and(|named| same_inode(&named, written)) {
+        return false;
+    }
+    if exchange_with_destination(stage, destination).is_err() {
+        return false;
+    }
+    fs::symlink_metadata(stage.file_path()).is_ok_and(|named| same_inode(&named, written))
+}
+
 fn link_file_descriptor(
     file: &File,
     destination: &Path,
@@ -294,6 +451,13 @@ pub(super) fn write_report(
     )
 }
 
+struct WriteHooks<W, P, B, A> {
+    before_write: W,
+    before_publish: P,
+    before_exchange: B,
+    after_exchange: A,
+}
+
 /// Publishes a local document only after its exact candidate bytes pass the existing loader.
 /// The parent directory and repository identity stay bound to held descriptors throughout.
 pub(crate) fn write_validated_document(
@@ -305,13 +469,53 @@ pub(crate) fn write_validated_document(
     before_write: impl FnOnce(),
     before_publish: impl FnOnce(),
 ) -> Result<PathBuf, WriteError> {
+    write_validated_document_with_exchange_hook(
+        path,
+        repository,
+        bytes,
+        overwrite,
+        validate,
+        WriteHooks {
+            before_write,
+            before_publish,
+            before_exchange: || {},
+            after_exchange: || {},
+        },
+    )
+}
+
+fn write_validated_document_with_exchange_hook<W, P, B, A>(
+    path: &Path,
+    repository: &Path,
+    bytes: &[u8],
+    overwrite: bool,
+    validate: impl FnOnce(&Path) -> Result<(), String>,
+    hooks: WriteHooks<W, P, B, A>,
+) -> Result<PathBuf, WriteError>
+where
+    W: FnOnce(),
+    P: FnOnce(),
+    B: FnOnce(),
+    A: FnOnce(),
+{
+    let WriteHooks {
+        before_write,
+        before_publish,
+        before_exchange,
+        after_exchange,
+    } = hooks;
     let destination = Destination::open(path, repository)?;
     before_write();
     destination.check_parent()?;
-    let temporary = destination.fd_path().join(temporary_name());
+    let stage = PrivateStage::create(&destination)?;
+    let temporary = stage.file_path();
     let mut options = OpenOptions::new();
     options.write(true).create_new(true).mode(0o600);
-    let mut file = options.open(&temporary).map_err(|_| WriteError::Io)?;
+    let Ok(mut file) = options.open(&temporary) else {
+        stage.remove_directory();
+        return Err(WriteError::Io);
+    };
+    let mut retain_stage = false;
     let result = (|| {
         file.write_all(bytes).map_err(|_| WriteError::Io)?;
         file.sync_all().map_err(|_| WriteError::Io)?;
@@ -341,47 +545,27 @@ pub(crate) fn write_validated_document(
         {
             return Err(WriteError::Io);
         }
-        let mut backup = None;
-        if overwrite {
-            // Preserve the original regular inode while replacing it with a link
-            // directly from the validated descriptor. The backup is kept until
-            // the final identity and parent checks complete.
+        let old = if overwrite {
             match fs::symlink_metadata(&leaf) {
-                Ok(old) if old.is_file() => {
-                    let name = destination.fd_path().join(temporary_name());
-                    fs::hard_link(&leaf, &name).map_err(|_| WriteError::Io)?;
-                    let saved = fs::symlink_metadata(&name).map_err(|_| WriteError::Io)?;
-                    if !same_inode(&saved, &old) {
-                        // The backup name was replaced; it is no longer ours to remove.
-                        return Err(WriteError::Io);
-                    }
-                    if fs::symlink_metadata(&leaf).map_or(true, |now| !same_inode(&now, &old)) {
-                        remove_if_same(&name, &old);
-                        return Err(WriteError::Io);
-                    }
-                    if fs::remove_file(&leaf).is_err() {
-                        remove_if_same(&name, &old);
-                        return Err(WriteError::Io);
-                    }
-                    backup = Some((name, saved));
-                }
+                Ok(old) if old.is_file() => Some(old),
                 Ok(_) => return Err(WriteError::Exists(path.to_path_buf())),
-                Err(error) if error.kind() == ErrorKind::NotFound => {}
+                Err(error) if error.kind() == ErrorKind::NotFound => None,
                 Err(_) => return Err(WriteError::Io),
             }
+        } else {
+            None
+        };
+        if let Some(old) = old.as_ref() {
+            return stage.publish_over_existing(
+                &destination,
+                &written,
+                old,
+                &mut retain_stage,
+                before_exchange,
+                after_exchange,
+            );
         }
-        if let Err(error) = link_file_descriptor(&file, &leaf, path) {
-            if let Some((name, saved)) = &backup {
-                // Restoration may be refused by a concurrent leaf creation. In
-                // that case retain the backup and report uncertainty as I/O.
-                if fs::hard_link(name, &leaf).is_ok() {
-                    remove_if_same(name, saved);
-                } else {
-                    return Err(WriteError::Io);
-                }
-            }
-            return Err(error);
-        }
+        link_file_descriptor(&file, &leaf, path)?;
         let named = fs::symlink_metadata(&leaf).ok();
         let parent_check = destination.check_parent();
         if !named
@@ -389,21 +573,26 @@ pub(crate) fn write_validated_document(
             .is_some_and(|entry| entry.is_file() && same_inode(entry, &written))
             || parent_check.is_err()
         {
-            remove_if_same(&leaf, &written);
-            if let Some((name, saved)) = &backup
-                && fs::hard_link(name, &leaf).is_ok()
+            // An unlink here would race another directory writer. Leave the
+            // destination for explicit reconciliation when our link is visible.
+            if named
+                .as_ref()
+                .is_some_and(|entry| same_inode(entry, &written))
             {
-                remove_if_same(name, saved);
+                return Err(WriteError::Uncertain {
+                    destination: path.to_path_buf(),
+                    retained: destination.recovery_leaf_path(),
+                });
             }
             return parent_check.and(Err(WriteError::Io));
         }
-        if let Some((name, saved)) = &backup {
-            remove_if_same(name, saved);
-        }
         Ok(path.to_path_buf())
     })();
-    if let Ok(written) = file.metadata() {
-        remove_if_same(&temporary, &written);
+    if !retain_stage {
+        if let Ok(written) = file.metadata() {
+            remove_if_same(&temporary, &written);
+        }
+        stage.remove_directory();
     }
     result
 }
@@ -654,13 +843,9 @@ mod tests {
                         let staged = fs::read_dir(&outside)
                             .unwrap()
                             .map(|entry| entry.unwrap().path())
-                            .find(|path| {
-                                path.file_name()
-                                    .unwrap()
-                                    .to_string_lossy()
-                                    .ends_with(".candidate")
-                            })
-                            .unwrap();
+                            .find(|path| path.is_dir())
+                            .unwrap()
+                            .join("candidate");
                         if replacement == "modified" {
                             fs::write(&staged, b"rejected replacement").unwrap();
                         } else {
@@ -695,6 +880,108 @@ mod tests {
         );
         assert_eq!(fs::read(&path).unwrap(), b"accepted");
         assert_eq!(fs::read_dir(root.join("outside")).unwrap().count(), 1);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn atomic_exchange_preserves_a_concurrent_regular_replacement() {
+        let root = root("overwrite-exchange-race");
+        let path = root.join("outside/report.json");
+        let moved_old = root.join("outside/moved-old.json");
+        fs::write(&path, b"original").unwrap();
+        let result = write_validated_document_with_exchange_hook(
+            &path,
+            &root.join("repo"),
+            b"validated",
+            true,
+            |_| Ok(()),
+            WriteHooks {
+                before_write: || {},
+                before_publish: || {},
+                before_exchange: || {
+                    fs::rename(&path, &moved_old).unwrap();
+                    fs::write(&path, b"concurrent replacement").unwrap();
+                },
+                after_exchange: || {},
+            },
+        );
+        assert!(matches!(result, Err(WriteError::Fields(_))));
+        assert_eq!(fs::read(&path).unwrap(), b"concurrent replacement");
+        assert_eq!(fs::read(&moved_old).unwrap(), b"original");
+        assert_eq!(fs::read_dir(root.join("outside")).unwrap().count(), 2);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn uncertain_exchange_retains_displaced_file_after_second_leaf_change() {
+        let root = root("overwrite-exchange-uncertain");
+        let path = root.join("outside/report.json");
+        let moved_validated = root.join("outside/moved-validated.json");
+        fs::write(&path, b"original").unwrap();
+        let result = write_validated_document_with_exchange_hook(
+            &path,
+            &root.join("repo"),
+            b"validated",
+            true,
+            |_| Ok(()),
+            WriteHooks {
+                before_write: || {},
+                before_publish: || {},
+                before_exchange: || {},
+                after_exchange: || {
+                    fs::rename(&path, &moved_validated).unwrap();
+                    fs::write(&path, b"later writer").unwrap();
+                },
+            },
+        );
+        let Err(WriteError::Uncertain {
+            destination,
+            retained: Some(retained),
+        }) = result
+        else {
+            panic!("expected a recoverable uncertainty result");
+        };
+        assert_eq!(destination, path);
+        assert_eq!(fs::read(&path).unwrap(), b"later writer");
+        assert_eq!(fs::read(&moved_validated).unwrap(), b"validated");
+        assert_eq!(fs::read(&retained).unwrap(), b"original");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn missing_displaced_entry_never_triggers_a_public_leaf_unlink() {
+        let root = root("overwrite-missing-displaced");
+        let path = root.join("outside/report.json");
+        let outside = root.join("outside");
+        fs::write(&path, b"original").unwrap();
+        let result = write_validated_document_with_exchange_hook(
+            &path,
+            &root.join("repo"),
+            b"validated",
+            true,
+            |_| Ok(()),
+            WriteHooks {
+                before_write: || {},
+                before_publish: || {},
+                before_exchange: || {},
+                after_exchange: || {
+                    let stage = fs::read_dir(&outside)
+                        .unwrap()
+                        .map(|entry| entry.unwrap().path())
+                        .find(|entry| entry.is_dir())
+                        .unwrap();
+                    fs::remove_file(stage.join("candidate")).unwrap();
+                },
+            },
+        );
+        assert_eq!(
+            result,
+            Err(WriteError::Uncertain {
+                destination: path.clone(),
+                retained: None,
+            })
+        );
+        assert_eq!(fs::read(path).unwrap(), b"validated");
         fs::remove_dir_all(root).unwrap();
     }
 }
