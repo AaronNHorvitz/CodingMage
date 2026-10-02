@@ -115,6 +115,11 @@ refused, even when outside the repository.
    Setup and submit a deny-first configuration through `setup-write-config`. The coordinator
    validates the exact private input. If the window closes after submission, reopen Setup and
    check the recorded outcome and destination before retrying.
+   The Open, Setup target and campaign file pickers request bounded directory snapshots with
+   `codingmage directory-list --directory <ABSOLUTE_DIR>`. Each shows loading, errors and
+   truncation, offers Refresh and Show command, and keeps linked entries disabled. The Setup
+   target action becomes available only after that directory's listing succeeds. A listing is
+   navigation data; the later Open or campaign selection command validates the chosen file.
 2. Write the owner's authorization record outside the repository and author a campaign; the
    repository identity, head and task-source digest come from the live diagnosis.
 3. On the Campaign screen, review the local readiness checks, run preflight, and admit the

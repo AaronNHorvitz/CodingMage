@@ -56,6 +56,30 @@ KEYWORDS = {
 # moving context heuristic to add, then silently remove, its boundary category.
 # The failure panel must remain in the minimum-window/long-text work queue.
 FIXED_APPLICABILITY = {
+    # Directory listing is a bounded path-argument contract. It has no
+    # request JSON fields; nearby response construction must not invent an
+    # unknown-field input category. The UI snapshot decoder does have both
+    # malformed and unknown-field response cases.
+    ("crates/codingmage-cli/src/directory_read.rs", "fn", "list"): (
+        "positive", "negative", "boundary", "malformed_input", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/browser.rs", "fn", "apply_snapshot"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    # These existing presentation facets do not acquire JSON-input
+    # applicability merely because the decoder moved nearby.
+    ("crates/codingmage-ui/src/browser.rs", "const", "MAX_ENTRIES"): (
+        "positive", "boundary", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/browser.rs", "fn", "at_home"): (
+        "positive", "negative", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/browser.rs", "struct", "Browser"): (
+        "positive", "negative", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/browser.rs", "struct", "Entry"): (
+        "positive", "negative", "boundary", "repeatability",
+    ),
     # Moving parser exports in the core crate must not erase the public
     # contract version's existing malformed/unknown-input work queue.
     ("crates/codingmage-core/src/lib.rs", "fn", "contract_version"): (

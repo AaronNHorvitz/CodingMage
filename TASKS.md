@@ -2456,8 +2456,20 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     the second pathname read, shares the bounded byte validator, and uses
     no-follow descriptors for the common loader and command snapshot. The
     original FINDINGS report and corrective checks are retained in the same
-    evidence record; exact corrective re-review remains open.
-    This sub-task stays open, as do human and live qualification.
+    evidence record. The fresh independent review of exact corrective commit
+    `ef919df42469546333324ea5fc8b9124bf994d2e` returned PASS with no
+    findings in its bounded selected-configuration scope.
+    Decision 0079 moves the Open, Setup target and campaign file pickers to a
+    bounded public `directory-list` snapshot on the worker. Exact path,
+    generation and picker request identity reject stale or cross-slot rows;
+    loading, failure, truncation, Refresh and Show command are visible, and
+    Setup cannot use a target until its listing succeeds. Real-process CLI
+    and native response tests plus verification limits are recorded in
+    `docs/evidence/sprint-36-directory-browser.md`. The detached guided
+    configuration recovery read and the complete section-five catalogue
+    remain open; this sub-task stays unchecked pending those boundaries and
+    independent review of the new directory-list increment. Human and live
+    qualification also remain open.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->

@@ -1,30 +1,53 @@
-//! Minimal accessible directory browser for selecting configurations and repositories.
-//!
-//! Browsing only lists directory entries; it never follows symbolic links into other trees
-//! and never modifies anything.
+//! Presentation state for bounded public coordinator directory snapshots.
 
 use std::{
-    fs,
-    path::{Path, PathBuf},
+    collections::BTreeSet,
+    path::{Component, Path, PathBuf},
 };
 
-/// Maximum entries listed for one directory.
-pub const MAX_ENTRIES: usize = 2000;
+use serde::Deserialize;
+
+/// Maximum entries accepted from one directory snapshot.
+pub const MAX_ENTRIES: usize = 2_000;
 
 /// One listed entry.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Entry {
     /// Entry name.
     pub name: String,
-    /// Absolute path.
+    /// Absolute path derived from the selected directory and name.
     pub path: PathBuf,
-    /// Whether the entry is a directory (symbolic links are never treated as directories).
+    /// Whether the entry is a directory.
     pub is_dir: bool,
     /// Whether the entry is a symbolic link.
     pub is_symlink: bool,
 }
 
-/// Browser state.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DirectorySnapshot {
+    schema_version: u16,
+    directory: PathBuf,
+    entries: Vec<SnapshotEntry>,
+    truncated: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SnapshotEntry {
+    name: String,
+    kind: EntryKind,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum EntryKind {
+    Directory,
+    File,
+    Symlink,
+}
+
+/// Browser state for one selection surface; it performs no filesystem reads.
 #[derive(Clone, Debug)]
 pub struct Browser {
     /// Directory being listed.
@@ -33,102 +56,169 @@ pub struct Browser {
     pub entries: Vec<Entry>,
     /// Listing failure, if any.
     pub error: Option<String>,
-    /// Whether the listing was truncated at [`MAX_ENTRIES`].
+    /// Whether a listing is in flight.
+    pub loading: bool,
+    /// Whether the coordinator truncated the listing.
     pub truncated: bool,
+    /// Whether the selected directory has a valid current snapshot.
+    pub ready: bool,
     /// Only show directories and files with these extensions (empty means all files).
     pub extensions: Vec<&'static str>,
+    serial: u64,
 }
 
 impl Browser {
-    /// Starts at the given directory.
+    /// Starts at the given directory without reading it.
     #[must_use]
     pub fn new(start: &Path, extensions: Vec<&'static str>) -> Self {
-        let mut browser = Self {
+        Self {
             current: start.to_path_buf(),
             entries: Vec::new(),
             error: None,
+            loading: false,
             truncated: false,
+            ready: false,
             extensions,
-        };
-        browser.refresh();
-        browser
+            serial: 0,
+        }
     }
 
-    /// Starts at the user's home directory or the filesystem root.
+    /// Starts at the configured home path or filesystem root without reading it.
     #[must_use]
     pub fn at_home(extensions: Vec<&'static str>) -> Self {
         let start = std::env::var_os("HOME")
             .map(PathBuf::from)
-            .filter(|home| home.is_absolute() && home.is_dir())
+            .filter(|home| home.is_absolute())
             .unwrap_or_else(|| PathBuf::from("/"));
         Self::new(&start, extensions)
     }
 
-    /// Re-reads the current directory.
-    pub fn refresh(&mut self) {
+    /// Clears old rows and returns a new per-browser request identity.
+    pub fn begin_listing(&mut self, identity: u64) -> String {
+        self.serial = identity;
         self.entries.clear();
         self.error = None;
+        self.loading = true;
         self.truncated = false;
-        let read = match fs::read_dir(&self.current) {
-            Ok(read) => read,
-            Err(error) => {
-                self.error = Some(format!("cannot list directory: {}", error.kind()));
+        self.ready = false;
+        self.serial.to_string()
+    }
+
+    /// True only for the current in-flight listing.
+    #[must_use]
+    pub fn matches_request(&self, request_id: Option<&str>) -> bool {
+        self.loading && request_id == Some(self.serial.to_string().as_str())
+    }
+
+    /// Accepts one exact-directory snapshot or presents a contract failure.
+    pub fn apply_snapshot(&mut self, bytes: &[u8]) {
+        self.loading = false;
+        self.entries.clear();
+        self.ready = false;
+        let Ok(snapshot) = serde_json::from_slice::<DirectorySnapshot>(bytes) else {
+            self.error = Some("directory response is malformed; retry browsing".to_owned());
+            return;
+        };
+        if snapshot.schema_version != 1
+            || snapshot.directory != self.current
+            || snapshot.entries.len() > MAX_ENTRIES
+        {
+            self.error =
+                Some("directory response did not match the selected path or contract".to_owned());
+            return;
+        }
+        let mut names = BTreeSet::new();
+        let mut entries = Vec::new();
+        for entry in snapshot.entries {
+            if entry.name.is_empty()
+                || entry.name.starts_with('.')
+                || entry.name.contains('\0')
+                || !matches!(
+                    Path::new(&entry.name)
+                        .components()
+                        .collect::<Vec<_>>()
+                        .as_slice(),
+                    [Component::Normal(_)]
+                )
+                || !names.insert(entry.name.clone())
+            {
+                self.error = Some("directory response contains an unsafe entry".to_owned());
                 return;
             }
-        };
-        for entry in read.flatten() {
-            let path = entry.path();
-            let Ok(metadata) = fs::symlink_metadata(&path) else {
-                continue;
-            };
-            let is_symlink = metadata.file_type().is_symlink();
-            let is_dir = metadata.is_dir();
-            let name = entry.file_name().to_string_lossy().into_owned();
-            if name.starts_with('.') {
-                continue;
-            }
+            let is_dir = matches!(entry.kind, EntryKind::Directory);
+            let is_symlink = matches!(entry.kind, EntryKind::Symlink);
+            let path = self.current.join(&entry.name);
             let keep = is_dir
                 || self.extensions.is_empty()
                 || self.extensions.iter().any(|extension| {
                     path.extension()
                         .is_some_and(|actual| actual.to_str() == Some(extension))
                 });
-            if !keep {
-                continue;
-            }
-            self.entries.push(Entry {
-                name,
-                path,
-                is_dir,
-                is_symlink,
-            });
-            if self.entries.len() >= MAX_ENTRIES {
-                self.truncated = true;
-                break;
+            if keep {
+                entries.push(Entry {
+                    name: entry.name,
+                    path,
+                    is_dir,
+                    is_symlink,
+                });
             }
         }
-        self.entries.sort_by(|left, right| {
+        entries.sort_by(|left, right| {
             right
                 .is_dir
                 .cmp(&left.is_dir)
                 .then(left.name.cmp(&right.name))
         });
+        self.entries = entries;
+        self.truncated = snapshot.truncated;
+        self.error = None;
+        self.ready = true;
     }
 
-    /// Enters a directory entry.
-    pub fn enter(&mut self, path: &Path) {
-        if path.is_absolute() {
-            self.current = path.to_path_buf();
-            self.refresh();
-        }
+    /// Presents a failed public listing without retaining old rows.
+    pub fn fail_listing(&mut self, code: &str) {
+        self.loading = false;
+        self.entries.clear();
+        self.truncated = false;
+        self.ready = false;
+        self.error = Some(format!(
+            "cannot list directory ({code}); retry or choose another path"
+        ));
     }
 
-    /// Moves to the parent directory when one exists.
-    pub fn up(&mut self) {
-        if let Some(parent) = self.current.parent() {
-            self.current = parent.to_path_buf();
-            self.refresh();
+    /// Enters one displayed directory without reading it.
+    pub fn enter(&mut self, path: &Path) -> bool {
+        if !self
+            .entries
+            .iter()
+            .any(|entry| entry.path == path && entry.is_dir && !entry.is_symlink)
+        {
+            return false;
         }
+        self.current = path.to_path_buf();
+        self.entries.clear();
+        self.loading = false;
+        self.error = None;
+        self.truncated = false;
+        self.ready = false;
+        true
+    }
+
+    /// Moves to the parent directory when one exists, without reading it.
+    pub fn up(&mut self) -> bool {
+        let Some(parent) = self.current.parent() else {
+            return false;
+        };
+        if parent == self.current {
+            return false;
+        }
+        self.current = parent.to_path_buf();
+        self.entries.clear();
+        self.loading = false;
+        self.error = None;
+        self.truncated = false;
+        self.ready = false;
+        true
     }
 }
 
@@ -137,35 +227,55 @@ mod tests {
     use super::*;
 
     #[test]
-    fn listing_filters_hidden_links_and_extensions_and_never_writes() {
-        let root =
-            std::env::temp_dir().join(format!("codingmage-ui-browser-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&root);
-        fs::create_dir_all(root.join("sub")).unwrap();
-        fs::write(root.join("a.toml"), b"x").unwrap();
-        fs::write(root.join("b.txt"), b"x").unwrap();
-        fs::write(root.join(".hidden.toml"), b"x").unwrap();
-        std::os::unix::fs::symlink(root.join("sub"), root.join("link")).unwrap();
-        let browser = Browser::new(&root, vec!["toml"]);
+    fn bound_snapshot_filters_entries_and_rejects_forged_navigation() {
+        let mut browser = Browser::new(Path::new("/example"), vec!["toml"]);
+        assert_eq!(browser.begin_listing(1), "1");
+        browser.apply_snapshot(br#"{"schema_version":1,"directory":"/example","entries":[{"name":"b.txt","kind":"file"},{"name":"a.toml","kind":"file"},{"name":"sub","kind":"directory"},{"name":"link.toml","kind":"symlink"}],"truncated":false}"#);
         let names = browser
             .entries
             .iter()
-            .map(|entry| (entry.name.clone(), entry.is_dir, entry.is_symlink))
+            .map(|entry| entry.name.as_str())
             .collect::<Vec<_>>();
-        assert_eq!(
-            names,
-            vec![
-                ("sub".to_owned(), true, false),
-                ("a.toml".to_owned(), false, false),
-            ]
+        assert_eq!(names, ["sub", "a.toml", "link.toml"]);
+        assert!(browser.ready);
+        assert!(!browser.enter(Path::new("/example/link.toml")));
+        assert!(!browser.enter(Path::new("/example/forged")));
+        assert!(browser.enter(Path::new("/example/sub")));
+        assert!(!browser.ready);
+        assert!(browser.up());
+    }
+
+    #[test]
+    fn malformed_cross_directory_and_unsafe_rows_leave_no_result() {
+        let mut browser = Browser::new(Path::new("/example"), vec![]);
+        browser.begin_listing(1);
+        browser.apply_snapshot(
+            br#"{"schema_version":1,"directory":"/other","entries":[],"truncated":false}"#,
         );
-        let mut browser = browser;
-        browser.enter(&root.join("sub"));
-        assert!(browser.entries.is_empty());
-        browser.up();
-        assert_eq!(browser.current, root);
-        browser.enter(&root.join("missing"));
         assert!(browser.error.is_some());
-        fs::remove_dir_all(root).unwrap();
+        assert!(!browser.ready);
+        browser.begin_listing(2);
+        browser.apply_snapshot(br#"{"schema_version":1,"directory":"/example","entries":[{"name":"../escape","kind":"directory"}],"truncated":false}"#);
+        assert!(browser.entries.is_empty());
+        assert!(browser.error.is_some());
+        browser.begin_listing(3);
+        browser.apply_snapshot(
+            br#"{"schema_version":9,"directory":"/example","entries":[],"truncated":false}"#,
+        );
+        assert!(browser.error.is_some());
+    }
+
+    #[test]
+    fn unknown_fields_and_duplicate_names_refuse_a_listing() {
+        let mut browser = Browser::new(Path::new("/example"), vec![]);
+        browser.begin_listing(1);
+        browser.apply_snapshot(br#"{"schema_version":1,"directory":"/example","entries":[],"truncated":false,"future":"unexpected"}"#);
+        assert!(browser.error.is_some());
+        assert!(!browser.ready);
+        browser.begin_listing(2);
+        browser.apply_snapshot(br#"{"schema_version":1,"directory":"/example","entries":[{"name":"same","kind":"directory"},{"name":"same","kind":"file"}],"truncated":false}"#);
+        assert!(browser.error.is_some());
+        assert!(browser.entries.is_empty());
+        assert!(!browser.ready);
     }
 }

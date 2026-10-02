@@ -57,6 +57,41 @@ fn project_open_arguments(path: &Path) -> Option<Vec<String>> {
     ])
 }
 
+fn directory_list_arguments(path: &Path) -> Option<Vec<String>> {
+    let path = path.to_str().filter(|_| path.is_absolute())?;
+    Some(vec![
+        "directory-list".to_owned(),
+        "--directory".to_owned(),
+        path.to_owned(),
+    ])
+}
+
+#[derive(Clone, Copy)]
+enum BrowserSlot {
+    Configuration,
+    Target,
+    Campaign,
+}
+
+impl BrowserSlot {
+    const fn label(self) -> &'static str {
+        match self {
+            Self::Configuration => "directory-list-config",
+            Self::Target => "directory-list-target",
+            Self::Campaign => "directory-list-campaign",
+        }
+    }
+
+    fn from_label(label: &str) -> Option<Self> {
+        match label {
+            "directory-list-config" => Some(Self::Configuration),
+            "directory-list-target" => Some(Self::Target),
+            "directory-list-campaign" => Some(Self::Campaign),
+            _ => None,
+        }
+    }
+}
+
 /// Deadline for read-only campaign projections.
 pub const STATUS_DEADLINE: Duration = Duration::from_mins(1);
 /// Deadline for read-only Git object reads.
@@ -165,6 +200,7 @@ pub struct App {
     state_dir: Result<PathBuf, StateError>,
     status_line: Option<(Instant, String)>,
     discarded_stale: u64,
+    next_browser_request: u64,
     started_at: Instant,
     now: Instant,
     plan_index: Option<PlanIndex>,
@@ -282,6 +318,7 @@ impl App {
             state_dir,
             status_line: None,
             discarded_stale: 0,
+            next_browser_request: 0,
             started_at: now,
             now,
             plan_index: None,
@@ -658,6 +695,59 @@ impl App {
         }
     }
 
+    fn browser_mut(&mut self, slot: BrowserSlot) -> Option<&mut Browser> {
+        match slot {
+            BrowserSlot::Configuration => self.browser.as_mut(),
+            BrowserSlot::Target => self.setup.target_browser.as_mut(),
+            BrowserSlot::Campaign => self.campaign_browser.as_mut(),
+        }
+    }
+
+    fn request_browser(&mut self, slot: BrowserSlot) {
+        self.next_browser_request = self.next_browser_request.wrapping_add(1);
+        let identity = self.next_browser_request;
+        let Some(browser) = self.browser_mut(slot) else {
+            return;
+        };
+        let path = browser.current.clone();
+        let request_id = browser.begin_listing(identity);
+        let Some(arguments) = directory_list_arguments(&path) else {
+            browser.fail_listing("codingmage.cli.invalid_argument");
+            return;
+        };
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::Command {
+                label: slot.label(),
+                arguments,
+                deadline: DIAGNOSIS_DEADLINE,
+            },
+            request_id: Some(request_id),
+        };
+        if let Err(error) = self.submit(request)
+            && let Some(browser) = self.browser_mut(slot)
+        {
+            browser.fail_listing(&error.code());
+        }
+    }
+
+    fn accept_browser_listing(&mut self, slot: BrowserSlot, response: Response) -> bool {
+        let Some(browser) = self.browser_mut(slot) else {
+            self.discarded_stale += 1;
+            return false;
+        };
+        if !browser.matches_request(response.request_id.as_deref()) {
+            self.discarded_stale += 1;
+            return false;
+        }
+        match response.result {
+            Ok(bytes) => browser.apply_snapshot(&bytes),
+            Err(error) => browser.fail_listing(&error.code()),
+        }
+        true
+    }
+
     pub(super) fn advance_selection_generation(&mut self) {
         self.setup.cancel_pending_config();
         self.setup.cancel_pending_authorization();
@@ -706,6 +796,10 @@ impl App {
             self.report_source_revision = self.report_source_revision.wrapping_add(1);
         }
         match response.label {
+            "directory-list-config" | "directory-list-target" | "directory-list-campaign" => {
+                BrowserSlot::from_label(response.label)
+                    .is_some_and(|slot| self.accept_browser_listing(slot, response))
+            }
             "project-open" => {
                 self.accept_project_open(response);
                 true
@@ -1471,13 +1565,30 @@ impl App {
         let mut open: Option<PathBuf> = None;
         let mut enter: Option<PathBuf> = None;
         let mut up = false;
+        let mut refresh = false;
         egui::Frame::group(ui.style()).show(ui, |ui| {
             ui.horizontal(|ui| {
                 if ui.button("Up").clicked() {
                     up = true;
                 }
-                ui.monospace(browser.current.display().to_string());
+                if ui.button("Refresh").clicked() {
+                    refresh = true;
+                }
+                ui.monospace(content::list_label(&browser.current.display().to_string()));
             });
+            if browser.loading {
+                ui.label("Loading directory through the coordinator…");
+            }
+            if let Some(arguments) = directory_list_arguments(&browser.current) {
+                command::show_for(
+                    ui,
+                    "browse directory",
+                    self.binary_path.as_deref(),
+                    &arguments,
+                );
+            } else {
+                command::show_unavailable_for(ui, "browse directory");
+            }
             if let Some(error) = &browser.error {
                 ui.colored_label(current_tokens(ui.ctx()).error, error);
             }
@@ -1490,9 +1601,9 @@ impl App {
                 .show(ui, |ui| {
                     for entry in &browser.entries {
                         let label = if entry.is_dir {
-                            format!("{}/", entry.name)
+                            format!("{}/", content::list_label(&entry.name))
                         } else {
-                            entry.name.clone()
+                            content::list_label(&entry.name)
                         };
                         let response = ui.add_enabled(!entry.is_symlink, egui::Button::new(label));
                         if response.clicked() {
@@ -1505,11 +1616,12 @@ impl App {
                     }
                 });
         });
-        if up {
-            browser.up();
-        }
+        let mut moved = up && browser.up();
         if let Some(path) = enter {
-            browser.enter(&path);
+            moved |= browser.enter(&path);
+        }
+        if moved || refresh {
+            self.request_browser(BrowserSlot::Configuration);
         }
         if let Some(path) = open {
             self.open_project(&path);
@@ -1788,6 +1900,9 @@ impl App {
                     Some(_) => None,
                     None => Some(Browser::at_home(vec!["toml"])),
                 };
+                if self.browser.is_some() {
+                    self.request_browser(BrowserSlot::Configuration);
+                }
             }
         });
         let selected_path = self
@@ -2670,5 +2785,83 @@ mod work_plan_tests {
                 );
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod browser_response_tests {
+    use super::*;
+
+    fn response(app: &App, label: &'static str, request_id: &str, path: &str) -> Response {
+        Response {
+            generation: app.generation,
+            binding: app.binding(),
+            label,
+            request_id: Some(request_id.to_owned()),
+            result: Ok(format!(
+                "{{\"schema_version\":1,\"directory\":\"{path}\",\"entries\":[{{\"name\":\"child\",\"kind\":\"directory\"}}],\"truncated\":false}}"
+            )
+            .into_bytes()),
+        }
+    }
+
+    #[test]
+    fn three_browser_slots_accept_only_their_current_bound_request() {
+        let mut app = App::with_state_dir(
+            &egui::Context::default(),
+            Err(BackendError::BinaryUnavailable {
+                expected: PathBuf::from("/missing/codingmage"),
+            }),
+            Ok(PathBuf::from("/missing/private-state")),
+        );
+        let path = Path::new("/example");
+        assert_eq!(
+            directory_list_arguments(path).unwrap(),
+            ["directory-list", "--directory", "/example"]
+        );
+        app.browser = Some(Browser::new(path, vec!["toml"]));
+        app.setup.target_browser = Some(Browser::new(path, vec![]));
+        app.campaign_browser = Some(Browser::new(path, vec!["toml"]));
+        app.browser.as_mut().unwrap().begin_listing(1);
+        app.setup.target_browser.as_mut().unwrap().begin_listing(2);
+        app.campaign_browser.as_mut().unwrap().begin_listing(3);
+
+        assert!(!app.handle_response(response(&app, "directory-list-target", "1", "/example")));
+        assert!(app.setup.target_browser.as_ref().unwrap().loading);
+        assert_eq!(app.discarded_stale(), 1);
+        assert!(app.handle_response(response(&app, "directory-list-config", "1", "/example")));
+        assert!(app.handle_response(response(&app, "directory-list-target", "2", "/example")));
+        assert!(app.handle_response(response(&app, "directory-list-campaign", "3", "/example")));
+        assert_eq!(app.browser.as_ref().unwrap().entries.len(), 1);
+        assert_eq!(app.setup.target_browser.as_ref().unwrap().entries.len(), 1);
+        assert_eq!(app.campaign_browser.as_ref().unwrap().entries.len(), 1);
+
+        app.browser.as_mut().unwrap().begin_listing(4);
+        assert!(!app.handle_response(response(&app, "directory-list-config", "1", "/example")));
+        assert!(app.browser.as_ref().unwrap().entries.is_empty());
+        assert!(app.browser.as_ref().unwrap().loading);
+        app.advance_selection_generation();
+        let mut late = response(&app, "directory-list-config", "4", "/example");
+        late.generation = Generation(app.generation.0 - 1);
+        assert!(!app.handle_response(late));
+        assert!(app.browser.as_ref().unwrap().entries.is_empty());
+    }
+
+    #[test]
+    fn unavailable_coordinator_refuses_a_browser_request_without_cached_rows() {
+        let mut app = App::with_state_dir(
+            &egui::Context::default(),
+            Err(BackendError::BinaryUnavailable {
+                expected: PathBuf::from("/missing/codingmage"),
+            }),
+            Ok(PathBuf::from("/missing/private-state")),
+        );
+        app.browser = Some(Browser::new(Path::new("/example"), vec!["toml"]));
+        app.request_browser(BrowserSlot::Configuration);
+        let browser = app.browser.as_ref().unwrap();
+        assert!(!browser.loading);
+        assert!(!browser.ready);
+        assert!(browser.entries.is_empty());
+        assert!(browser.error.is_some());
     }
 }

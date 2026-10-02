@@ -1,6 +1,6 @@
 # ADR 0078: Bound Selected Configuration Reads to a Descriptor
 
-- **Status:** Accepted for the corrective implementation; independent re-review pending
+- **Status:** Accepted; independent corrective re-review passed on `ef919df42469546333324ea5fc8b9124bf994d2e`
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 
@@ -40,6 +40,7 @@ the first metadata observation. The link is refused before following the
 outside name and the grown file returns the size error. A real-process CLI
 test covers linked and oversized selected configuration, alongside the
 existing valid selection and task-source cases. Exact commands and remaining
-limits are in `docs/evidence/sprint-36-project-selection.md`. A fresh
-independent exact-commit review is required before treating the finding as
-resolved by independent evidence.
+limits are in `docs/evidence/sprint-36-project-selection.md`. The fresh
+independent exact-commit re-review returned PASS with no findings. Its scope
+is the selected-configuration read correction; wider UI and external gates
+remain open.

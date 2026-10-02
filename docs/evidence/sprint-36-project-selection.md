@@ -129,4 +129,16 @@ the implementation was narrowed to stable-link-count validation and the same
 five-target batch then passed without changing those tests. An initial strict
 Clippy run identified two checked-conversion lints in new test data; those
 were corrected before the passing final run. Private failure logs remain
-retained. This is builder verification; independent re-review is pending.
+retained. This was builder verification; independent re-review was pending at
+that checkpoint.
+
+## Corrective independent re-review
+
+The fresh read-only review of exact clean commit
+`ef919df42469546333324ea5fc8b9124bf994d2e` returned **PASS** with no
+findings for the selected-configuration correction. It independently passed
+core 17/17, selected CLI 18/18 and native shell 16/16, plus strict workspace
+Clippy, formatting, documentation, architecture, and no-write inventory
+checks. The earlier High finding report remains retained. This review closes
+that bounded finding; it does not qualify the Setup picker, recovery, whole
+product, CM-R01.6 source-bound evidence, human/live or release gates.

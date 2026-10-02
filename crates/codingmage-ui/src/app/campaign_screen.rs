@@ -5,7 +5,9 @@ use std::{collections::BTreeMap, path::Path};
 use codingmage_campaign::CampaignExecutionMode;
 use codingmage_plan::{CheckState, PlanItemKind};
 
-use super::{App, GIT_DEADLINE, STATUS_DEADLINE, Screen, failure_box};
+use super::{
+    App, BrowserSlot, GIT_DEADLINE, STATUS_DEADLINE, Screen, directory_list_arguments, failure_box,
+};
 use crate::{
     backend::{
         BackendError, Job, Request, Response, explain_code,
@@ -772,47 +774,13 @@ impl App {
                     Some(_) => None,
                     None => Some(Browser::at_home(vec!["toml"])),
                 };
+                if self.campaign_browser.is_some() {
+                    self.request_browser(BrowserSlot::Campaign);
+                }
             }
         });
-        if let Some(browser) = &mut self.campaign_browser {
-            let mut enter = None;
-            let mut up = false;
-            egui::Frame::group(ui.style()).show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    if ui.button(catalogue.text("campaign_up")).clicked() {
-                        up = true;
-                    }
-                    ui.monospace(browser.current.display().to_string());
-                });
-                egui::ScrollArea::vertical()
-                    .id_salt("campaign-browser")
-                    .max_height(super::current_tokens(ui.ctx()).layout.preview_records)
-                    .show(ui, |ui| {
-                        for entry in &browser.entries {
-                            let label = if entry.is_dir {
-                                format!("{}/", entry.name)
-                            } else {
-                                entry.name.clone()
-                            };
-                            if ui
-                                .add_enabled(!entry.is_symlink, egui::Button::new(label))
-                                .clicked()
-                            {
-                                if entry.is_dir {
-                                    enter = Some(entry.path.clone());
-                                } else {
-                                    select = Some(entry.path.clone());
-                                }
-                            }
-                        }
-                    });
-            });
-            if up {
-                browser.up();
-            }
-            if let Some(path) = enter {
-                browser.enter(&path);
-            }
+        if let Some(path) = self.campaign_browser_panel(ui, catalogue) {
+            select = Some(path);
         }
         if let Some(error) = &self.campaign_error {
             failure_box(
@@ -828,6 +796,82 @@ impl App {
         if clear {
             self.clear_campaign();
         }
+    }
+
+    fn campaign_browser_panel(
+        &mut self,
+        ui: &mut egui::Ui,
+        catalogue: &Catalogue,
+    ) -> Option<std::path::PathBuf> {
+        let mut select = None;
+        let mut refresh = false;
+        let mut moved = false;
+        if let Some(browser) = &mut self.campaign_browser {
+            let mut enter = None;
+            let mut up = false;
+            egui::Frame::group(ui.style()).show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    if ui.button(catalogue.text("campaign_up")).clicked() {
+                        up = true;
+                    }
+                    if ui.button("Refresh").clicked() {
+                        refresh = true;
+                    }
+                    ui.monospace(content::list_label(&browser.current.display().to_string()));
+                });
+                if browser.loading {
+                    ui.label("Loading directory through the coordinator…");
+                }
+                if let Some(arguments) = directory_list_arguments(&browser.current) {
+                    command::show_for(
+                        ui,
+                        "browse campaign files",
+                        self.binary_path.as_deref(),
+                        &arguments,
+                    );
+                } else {
+                    command::show_unavailable_for(ui, "browse campaign files");
+                }
+                if let Some(error) = &browser.error {
+                    ui.label(error);
+                }
+                if browser.truncated {
+                    ui.small("Listing truncated; navigate into a narrower directory.");
+                }
+                egui::ScrollArea::vertical()
+                    .id_salt("campaign-browser")
+                    .max_height(super::current_tokens(ui.ctx()).layout.preview_records)
+                    .show(ui, |ui| {
+                        for entry in &browser.entries {
+                            let label = if entry.is_dir {
+                                format!("{}/", content::list_label(&entry.name))
+                            } else {
+                                content::list_label(&entry.name)
+                            };
+                            if ui
+                                .add_enabled(!entry.is_symlink, egui::Button::new(label))
+                                .clicked()
+                            {
+                                if entry.is_dir {
+                                    enter = Some(entry.path.clone());
+                                } else {
+                                    select = Some(entry.path.clone());
+                                }
+                            }
+                        }
+                    });
+            });
+            if up {
+                moved |= browser.up();
+            }
+            if let Some(path) = enter {
+                moved |= browser.enter(&path);
+            }
+        }
+        if moved || refresh {
+            self.request_browser(BrowserSlot::Campaign);
+        }
+        select
     }
 
     fn authority_drift(&self, ui: &mut egui::Ui, catalogue: &Catalogue) {

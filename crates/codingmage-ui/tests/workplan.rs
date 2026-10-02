@@ -266,7 +266,7 @@ fn malformed_task_source_is_a_visible_failure_and_overview_still_works() {
 }
 
 #[test]
-fn browser_lists_directories_and_opens_a_configuration() {
+fn browser_snapshot_lists_directories_and_open_remains_authoritative() {
     let fixture = Fixture::new("browser", 3);
     let binary = CoordinatorBinary::at(&coordinator_binary());
     let mut harness = harness(binary, [1100.0, 720.0]);
@@ -277,8 +277,28 @@ fn browser_lists_directories_and_opens_a_configuration() {
         .click();
     harness.run_steps(2);
     harness.get_by_role_and_label(egui::accesskit::Role::Button, "Up");
-    let browser = codingmage_ui::browser::Browser::new(&fixture.root.join("config"), vec!["toml"]);
+    harness
+        .get_by_label("Show command: browse directory")
+        .click();
+    harness.run_steps(1);
+    harness.get_by_label_contains("directory-list --directory");
+    let directory = fixture.root.join("config");
+    let mut browser = codingmage_ui::browser::Browser::new(&directory, vec!["toml"]);
+    assert!(browser.entries.is_empty());
+    browser.begin_listing(1);
+    let output = std::process::Command::new(coordinator_binary())
+        .args(["directory-list", "--directory", directory.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    browser.apply_snapshot(&output.stdout);
+    assert!(browser.ready);
     assert_eq!(browser.entries.len(), 1);
     assert!(browser.entries[0].path.ends_with("codingmage.toml"));
     assert!(harness.state().project().is_none());
+    harness.state_mut().open_project(&browser.entries[0].path);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some()
+    }));
+    assert!(harness.state().project().is_some());
 }

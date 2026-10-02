@@ -17,11 +17,11 @@ use nix::{
 use serde::Deserialize;
 use sha2::{Digest as _, Sha256};
 
-use super::{App, failure_box};
+use super::{App, BrowserSlot, directory_list_arguments, failure_box};
 use crate::{
     backend::{Job, PrivateInput, Request, Response},
     browser::Browser,
-    command,
+    command, content,
     messages::{self, Catalogue},
     project::{Project, hex},
     setup::{
@@ -1227,22 +1227,54 @@ impl App {
                     Some(_) => None,
                     None => Some(Browser::at_home(vec!["never-match"])),
                 };
+                if self.setup.target_browser.is_some() {
+                    self.request_browser(BrowserSlot::Target);
+                }
             }
         });
         let mut chosen = None;
         let mut enter = None;
         let mut up = false;
+        let mut refresh = false;
         if let Some(browser) = &self.setup.target_browser {
             egui::Frame::group(ui.style()).show(ui, |ui| {
                 ui.horizontal(|ui| {
                     if ui.button(catalogue.text("setup_browser_up")).clicked() {
                         up = true;
                     }
-                    ui.monospace(browser.current.display().to_string());
-                    if ui.button(catalogue.text("setup_use_target")).clicked() {
+                    if ui.button("Refresh").clicked() {
+                        refresh = true;
+                    }
+                    ui.monospace(content::list_label(&browser.current.display().to_string()));
+                    if ui
+                        .add_enabled(
+                            browser.ready,
+                            egui::Button::new(catalogue.text("setup_use_target")),
+                        )
+                        .clicked()
+                    {
                         chosen = Some(browser.current.clone());
                     }
                 });
+                if browser.loading {
+                    ui.label("Loading directory through the coordinator…");
+                }
+                if let Some(arguments) = directory_list_arguments(&browser.current) {
+                    command::show_for(
+                        ui,
+                        "browse repository directories",
+                        self.binary_path.as_deref(),
+                        &arguments,
+                    );
+                } else {
+                    command::show_unavailable_for(ui, "browse repository directories");
+                }
+                if let Some(error) = &browser.error {
+                    ui.label(error);
+                }
+                if browser.truncated {
+                    ui.small("Listing truncated; navigate into a narrower directory.");
+                }
                 egui::ScrollArea::vertical()
                     .id_salt("target-browser")
                     .max_height(super::current_tokens(ui.ctx()).layout.preview_short)
@@ -1251,7 +1283,10 @@ impl App {
                             if ui
                                 .add_enabled(
                                     !entry.is_symlink,
-                                    egui::Button::new(format!("{}/", entry.name)),
+                                    egui::Button::new(format!(
+                                        "{}/",
+                                        content::list_label(&entry.name)
+                                    )),
                                 )
                                 .clicked()
                             {
@@ -1261,13 +1296,17 @@ impl App {
                     });
             });
         }
+        let mut moved = false;
         if let Some(browser) = &mut self.setup.target_browser {
             if up {
-                browser.up();
+                moved |= browser.up();
             }
             if let Some(path) = enter {
-                browser.enter(&path);
+                moved |= browser.enter(&path);
             }
+        }
+        if moved || refresh {
+            self.request_browser(BrowserSlot::Target);
         }
         if let Some(target) = chosen {
             self.start_config_form(&target);
