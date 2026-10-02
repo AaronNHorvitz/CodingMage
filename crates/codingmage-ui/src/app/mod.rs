@@ -427,6 +427,8 @@ impl App {
     /// Opens a configuration path; starts no process and changes no file except the recent list.
     pub fn open_project(&mut self, config_path: &Path) {
         self.setup.cancel_pending_authorization();
+        self.setup.cancel_pending_export();
+        self.setup.recovery_export = None;
         self.setup.authorization_text.clear();
         self.generation = Generation(self.generation.0 + 1);
         if let Connection::Ready(worker) = &self.connection {
@@ -456,6 +458,7 @@ impl App {
                     .ok()
                     .map(|loaded| PlanIndex::new(&loaded.plan));
                 self.project = Some(project);
+                self.load_setup_export_recovery();
                 self.set_status("opened configuration; requesting repository diagnosis");
                 self.refresh_diagnosis();
                 let remembered = self
@@ -484,6 +487,8 @@ impl App {
     /// Closes the project without affecting any coordinator process.
     pub fn close_project(&mut self) {
         self.setup.cancel_pending_authorization();
+        self.setup.cancel_pending_export();
+        self.setup.recovery_export = None;
         self.setup.authorization_text.clear();
         self.generation = Generation(self.generation.0 + 1);
         if let Connection::Ready(worker) = &self.connection {
@@ -615,6 +620,7 @@ impl App {
                     Ok(diagnosis) => {
                         self.diagnosis
                             .accept(diagnosis, response.generation, self.now);
+                        self.reconcile_setup_export();
                         self.set_status("repository diagnosis observed");
                     }
                     Err(error) => {

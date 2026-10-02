@@ -7,6 +7,12 @@ fn main() -> std::process::ExitCode {
     {
         return codingmage_ui::run_report_export_helper();
     }
+    if std::env::args_os().len() == 2
+        && std::env::args_os().nth(1).as_deref()
+            == Some(std::ffi::OsStr::new("--setup-export-helper"))
+    {
+        return codingmage_ui::run_setup_export_helper();
+    }
     let fonts = match codingmage_ui::fonts::select_fonts()
         .and_then(|selected| codingmage_ui::fonts::font_definitions(&selected))
     {

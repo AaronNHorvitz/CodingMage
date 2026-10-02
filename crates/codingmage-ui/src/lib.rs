@@ -23,6 +23,7 @@ pub mod records;
 pub mod report;
 mod report_export;
 pub mod setup;
+mod setup_export_process;
 pub mod state_dir;
 pub mod workplan;
 
@@ -35,4 +36,10 @@ pub use app::{App, Screen};
 #[must_use]
 pub fn run_report_export_helper() -> std::process::ExitCode {
     report_export::helper_main()
+}
+
+/// Runs the isolated one-shot Setup export supervisor selected by the desktop executable.
+#[must_use]
+pub fn run_setup_export_helper() -> std::process::ExitCode {
+    setup_export_process::helper_main()
 }

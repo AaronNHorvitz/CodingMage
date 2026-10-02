@@ -2177,7 +2177,13 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     a public, guarded coordinator command and bounded native worker; exact
     source/destination receipts and Show-command previews are recorded in
     `docs/evidence/sprint-36-setup-command-boundary.md`. Complete Show-command
-    coverage remains open.
+    coverage remains open. Independent exact-commit review of
+    `a1e6b785414fb3a2a9ac5cbf2c92d79285097510` found a High native lifecycle
+    gap: changing selection or closing the window killed a started export, even
+    after publication. Decision 0073 retains a private intent and terminal
+    outcome under a helper process that survives the window, with a lock for
+    inspection and retry. Its exact-commit re-review remains open; this does
+    not close the rest of the state/depth and Show-command work.
     The bounded review of `b8e8458` returned a high parent-move finding and a low
     inventory-count finding. Decision 0063 and the corrected evidence record the
     local fix; the bounded re-review of `106ab0f4889943b403cdcdc98db1227b466ba4b0`

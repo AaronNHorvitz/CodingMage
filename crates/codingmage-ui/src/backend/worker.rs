@@ -29,6 +29,7 @@ use crate::{
     report::OutcomeReport,
     report_export::ExportRequest,
     setup::{CampaignBinding, CampaignForm},
+    setup_export_process,
 };
 
 /// Maximum queued requests before new requests are refused.
@@ -149,6 +150,15 @@ pub enum Job {
         /// Maximum time allowed for the isolated command.
         deadline: Duration,
     },
+    /// Run a persisted Setup export in an isolated helper that survives UI selection changes.
+    SetupExport {
+        /// Private intent recorded before dispatch.
+        intent_path: PathBuf,
+        /// Digest of the exact private intent bytes submitted by the interface.
+        intent_sha256: String,
+        /// Bound for the public coordinator command.
+        deadline: Duration,
+    },
 }
 
 impl Job {
@@ -161,6 +171,7 @@ impl Job {
             Self::ReportExport { .. } | Self::SourceReportExport { .. } => "report-export",
             Self::SourceReportInspect { .. } => "campaign-outcome-report",
             Self::CampaignSetup { .. } => "setup-write-campaign",
+            Self::SetupExport { .. } => "setup-export-copy",
         }
     }
 }
@@ -219,6 +230,7 @@ struct WorkerContext {
     shutdown: Arc<AtomicBool>,
     export_busy: Arc<AtomicBool>,
     inspect_busy: Arc<AtomicBool>,
+    setup_export_busy: Arc<AtomicBool>,
     helper: Result<PathBuf, BackendError>,
     wake: Arc<dyn Fn() + Send + Sync>,
 }
@@ -244,12 +256,14 @@ impl Worker {
         let shutdown = Arc::new(AtomicBool::new(false));
         let export_busy = Arc::new(AtomicBool::new(false));
         let inspect_busy = Arc::new(AtomicBool::new(false));
+        let setup_export_busy = Arc::new(AtomicBool::new(false));
         let context = WorkerContext {
             current: Arc::clone(&current),
             cancel_flag: Arc::clone(&cancel_flag),
             shutdown: Arc::clone(&shutdown),
             export_busy,
             inspect_busy,
+            setup_export_busy,
             helper,
             wake: Arc::new(wake),
         };
@@ -324,6 +338,10 @@ fn run_loop(
     context: &WorkerContext,
 ) {
     while let Ok(request) = requests.recv() {
+        if matches!(request.job, Job::SetupExport { .. }) {
+            dispatch_setup_export(binary, request, responses, context);
+            continue;
+        }
         if matches!(request.job, Job::SourceReportInspect { .. }) {
             dispatch_source_inspection(binary, request, responses, context);
             continue;
@@ -393,6 +411,9 @@ fn run_loop(
                 | Job::SourceReportExport { .. }
                 | Job::SourceReportInspect { .. } => {
                     unreachable!("report commands are dispatched separately")
+                }
+                Job::SetupExport { .. } => {
+                    unreachable!("Setup exports are dispatched separately")
                 }
             };
             stop.store(true, Ordering::Release);
@@ -508,6 +529,87 @@ fn run_campaign_setup(
     Ok(written)
 }
 
+fn dispatch_setup_export(
+    binary: &CoordinatorBinary,
+    request: Request,
+    responses: &Sender<Response>,
+    context: &WorkerContext,
+) {
+    let label = "setup-export-copy";
+    let failed = if request.generation.0 < context.current.load(Ordering::Acquire) {
+        Some(BackendError::Cancelled)
+    } else if context
+        .setup_export_busy
+        .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+        .is_err()
+    {
+        Some(BackendError::Refused(
+            "a previous Setup export has not finished; inspect its destination".to_owned(),
+        ))
+    } else {
+        None
+    };
+    if let Some(error) = failed {
+        let _ = responses.send(Response {
+            generation: request.generation,
+            binding: request.binding,
+            label,
+            request_id: request.request_id,
+            result: Err(error),
+        });
+        (context.wake)();
+        return;
+    }
+    let fallback = Response {
+        generation: request.generation,
+        binding: request.binding.clone(),
+        label,
+        request_id: request.request_id.clone(),
+        result: Err(BackendError::Spawn),
+    };
+    let helper = context.helper.clone();
+    let binary = binary.clone();
+    let completion_sender = responses.clone();
+    let busy = Arc::clone(&context.setup_export_busy);
+    let wake = Arc::clone(&context.wake);
+    let spawn = thread::Builder::new()
+        .name("codingmage-ui-setup-export-supervisor".to_owned())
+        .spawn(move || {
+            let result = match (helper, request.job) {
+                (
+                    Ok(helper),
+                    Job::SetupExport {
+                        intent_path,
+                        intent_sha256,
+                        deadline,
+                    },
+                ) => setup_export_process::run(
+                    &helper,
+                    &binary,
+                    &intent_path,
+                    &intent_sha256,
+                    deadline,
+                ),
+                (Err(error), Job::SetupExport { .. }) => Err(error),
+                _ => unreachable!("only Setup exports enter this supervisor"),
+            };
+            busy.store(false, Ordering::Release);
+            let _ = completion_sender.send(Response {
+                generation: request.generation,
+                binding: request.binding,
+                label,
+                request_id: request.request_id,
+                result,
+            });
+            wake();
+        });
+    if spawn.is_err() {
+        context.setup_export_busy.store(false, Ordering::Release);
+        let _ = responses.send(fallback);
+        (context.wake)();
+    }
+}
+
 fn dispatch_export(
     binary: &CoordinatorBinary,
     request: Request,
@@ -594,6 +696,7 @@ fn dispatch_export(
                 | Job::PrivateCommand { .. }
                 | Job::CampaignSetup { .. }
                 | Job::SupportBundle { .. }
+                | Job::SetupExport { .. }
                 | Job::SourceReportInspect { .. } => {
                     unreachable!("only report exports enter the export supervisor")
                 }

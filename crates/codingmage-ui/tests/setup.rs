@@ -3,7 +3,9 @@
 mod common;
 
 use std::{
-    fs, thread,
+    fs,
+    path::Path,
+    thread,
     time::{Duration, Instant},
 };
 
@@ -16,8 +18,17 @@ use codingmage_ui::{
     command::format_command,
     setup::ProviderForm,
 };
-use common::{Fixture, coordinator_binary, harness, settle, tree_digest};
+use common::{Fixture, coordinator_binary, harness, harness_with_state, settle, tree_digest};
 use egui_kittest::kittest::Queryable as _;
+use sha2::{Digest as _, Sha256};
+
+fn export_helper_unlocked(private: &Path) -> bool {
+    fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(private.join("setup-export-intent.lock"))
+        .is_ok_and(|file| file.try_lock().is_ok())
+}
 
 #[test]
 fn native_setup_export_uses_public_command_and_verifies_the_destination() {
@@ -146,7 +157,7 @@ fn replaced_setup_export_after_public_receipt_is_not_reported_as_success() {
         .get_by_label("Show command: export configuration")
         .click();
     harness.run_steps(2);
-    harness.get_by_label_contains(&destination.display().to_string());
+    harness.get_by_label_contains(&format!("{} --overwrite false", destination.display()));
     let replacement_path = fixture.root.join("replacement-export.toml");
     fs::write(&replacement_path, b"changed after the public receipt").unwrap();
     fs::rename(&replacement_path, &destination).unwrap();
@@ -161,6 +172,252 @@ fn replaced_setup_export_after_public_receipt_is_not_reported_as_success() {
     assert_eq!(
         fs::read(&destination).unwrap(),
         b"changed after the public receipt"
+    );
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn started_export_survives_window_close_and_campaign_reselection() {
+    for (phase, close_window) in [
+        ("before", true),
+        ("after", true),
+        ("before", false),
+        ("after", false),
+    ] {
+        let fixture = Fixture::new(&format!("setup-export-survival-{phase}-{close_window}"), 1);
+        let state_dir = fixture.root.join("private-ui-state");
+        let destination = fixture.root.join("surviving-export.toml");
+        let started = fixture.root.join("export-started");
+        let release = fixture.root.join("release-export");
+        let receipt = fixture.root.join("held-receipt.json");
+        let real_binary = coordinator_binary();
+        let body = if phase == "before" {
+            format!(
+                "#!/bin/sh\nif [ \"$1\" = 'setup-export-copy' ]; then\n  : > {}\n  until [ -f {} ]; do sleep 0.05; done\nfi\nexec {} \"$@\"\n",
+                format_command(&started, &[]).unwrap(),
+                format_command(&release, &[]).unwrap(),
+                format_command(&real_binary, &[]).unwrap(),
+            )
+        } else {
+            format!(
+                "#!/bin/sh\nif [ \"$1\" = 'setup-export-copy' ]; then\n  {} \"$@\" > {} || exit $?\n  : > {}\n  until [ -f {} ]; do sleep 0.05; done\n  cat {}\n  exit 0\nfi\nexec {} \"$@\"\n",
+                format_command(&real_binary, &[]).unwrap(),
+                format_command(&receipt, &[]).unwrap(),
+                format_command(&started, &[]).unwrap(),
+                format_command(&release, &[]).unwrap(),
+                format_command(&receipt, &[]).unwrap(),
+                format_command(&real_binary, &[]).unwrap(),
+            )
+        };
+        let wrapper = fixture.executable("held-setup-export", &body);
+        let mut harness = Some(harness_with_state(
+            CoordinatorBinary::at(&wrapper),
+            [1100.0, 2200.0],
+            state_dir.clone(),
+        ));
+        let active = harness.as_mut().unwrap();
+        active.state_mut().open_project(&fixture.config);
+        assert!(settle(active, Duration::from_secs(30), |app| app
+            .diagnosis()
+            .value
+            .is_some()));
+        active.state_mut().setup_state_mut().export_path = destination.display().to_string();
+        active.state_mut().export_document(&fixture.config);
+        let deadline = Instant::now() + Duration::from_secs(30);
+        while !started.exists() && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(20));
+        }
+        if !started.exists() {
+            fs::write(&release, b"").unwrap();
+            panic!("Setup export helper did not start for {phase}/{close_window}");
+        }
+        assert_eq!(destination.exists(), phase == "after");
+        if close_window {
+            active.state_mut().close_project();
+            drop(harness.take());
+        } else {
+            let before = active.state().generation();
+            active
+                .state_mut()
+                .select_campaign(&fixture.root.join("replacement-campaign.toml"));
+            assert!(active.state().generation() > before);
+            active.state_mut().select_screen(Screen::Setup);
+            active.run_steps(2);
+            // The helper holds the private intent while its coordinator command is in flight.
+            // A premature manual clear cannot admit a second export.
+            active
+                .get_by_label("I inspected the destination; clear export notice")
+                .click();
+            active.run_steps(2);
+            assert!(
+                active
+                    .state()
+                    .setup_state()
+                    .message
+                    .as_ref()
+                    .is_some_and(|result| {
+                        result
+                            .as_ref()
+                            .is_err_and(|message| message.contains("still running"))
+                    })
+            );
+        }
+        fs::write(&release, b"").unwrap();
+        let private = codingmage_ui::state_dir::project_private_dir(&state_dir, &fixture.config);
+        let deadline = Instant::now() + Duration::from_secs(30);
+        let mut recorded = false;
+        let mut finished = false;
+        while Instant::now() < deadline {
+            recorded = fs::read_dir(&private).is_ok_and(|entries| {
+                entries.filter_map(Result::ok).any(|entry| {
+                    entry
+                        .file_name()
+                        .to_string_lossy()
+                        .starts_with("setup-export-result-")
+                })
+            });
+            finished = recorded && export_helper_unlocked(&private);
+            if finished && destination.exists() {
+                break;
+            }
+            thread::sleep(Duration::from_millis(20));
+        }
+        assert!(recorded, "terminal export result was not retained");
+        assert!(finished, "helper did not release the private intent lock");
+        assert_eq!(
+            fs::read(&destination).unwrap(),
+            fs::read(&fixture.config).unwrap()
+        );
+        if let Some(active) = harness.as_mut() {
+            active.run_steps(4);
+            assert!(
+                !active
+                    .state()
+                    .setup_state()
+                    .message
+                    .as_ref()
+                    .is_some_and(|result| {
+                        result
+                            .as_ref()
+                            .is_ok_and(|message| message.contains("exported and verified"))
+                    })
+            );
+        }
+        drop(harness);
+        let mut reopened =
+            harness_with_state(CoordinatorBinary::at(&wrapper), [1100.0, 800.0], state_dir);
+        reopened.state_mut().open_project(&fixture.config);
+        assert!(settle(&mut reopened, Duration::from_secs(30), |app| {
+            app.setup_state().message.as_ref().is_some_and(|result| {
+                result
+                    .as_ref()
+                    .is_ok_and(|message| message.contains("previous export completed and verified"))
+            })
+        }));
+    }
+}
+
+#[test]
+fn setup_export_helper_records_result_after_its_launcher_process_exits() {
+    let fixture = Fixture::new("setup-export-orphan", 1);
+    let destination = fixture.root.join("orphan-export.toml");
+    let started = fixture.root.join("orphan-started");
+    let release = fixture.root.join("orphan-release");
+    let real_binary = coordinator_binary();
+    let wrapper = fixture.executable(
+        "orphan-export-coordinator",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'setup-export-copy' ]; then\n  : > {}\n  until [ -f {} ]; do sleep 0.05; done\nfi\nexec {} \"$@\"\n",
+            format_command(&started, &[]).unwrap(),
+            format_command(&release, &[]).unwrap(),
+            format_command(&real_binary, &[]).unwrap(),
+        ),
+    );
+    let mut harness = harness(CoordinatorBinary::at(&wrapper), [1100.0, 800.0]);
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
+    let repository_id = harness
+        .state()
+        .diagnosis()
+        .value
+        .as_ref()
+        .unwrap()
+        .repository_id
+        .clone();
+    drop(harness);
+    let private = codingmage_ui::state_dir::project_private_dir(
+        &fixture.root.join("ui-state"),
+        &fixture.config,
+    );
+    let intent_path = private.join("setup-export-intent.json");
+    let request_id = "0123456789abcdef0123456789abcdef";
+    let intent = serde_json::json!({
+        "schema_version": 1,
+        "request_id": request_id,
+        "config_path": fixture.config,
+        "repository_id": repository_id,
+        "source": fixture.config,
+        "destination": destination,
+        "arguments": [
+            "setup-export-copy", "--config", fixture.config,
+            "--repository-id", repository_id, "--source", fixture.config,
+            "--output", destination, "--overwrite", "false"
+        ]
+    });
+    let intent_bytes = serde_json::to_vec(&intent).unwrap();
+    codingmage_ui::state_dir::write_private(&intent_path, &intent_bytes).unwrap();
+    let helper_request = serde_json::json!({
+        "schema_version": 1,
+        "intent_path": intent_path,
+        "intent_sha256": codingmage_ui::project::hex(&Sha256::digest(&intent_bytes)),
+        "binary_path": wrapper,
+        "deadline_ms": 60000
+    });
+    let request_path = fixture.root.join("helper-request.json");
+    fs::write(&request_path, serde_json::to_vec(&helper_request).unwrap()).unwrap();
+    let ui_binary = std::path::Path::new(env!("CARGO_BIN_EXE_codingmage-ui"));
+    let launch = format!(
+        "{} < {} >/dev/null 2>&1 &",
+        format_command(ui_binary, &["--setup-export-helper".to_owned()]).unwrap(),
+        format_command(&request_path, &[]).unwrap(),
+    );
+    assert!(
+        std::process::Command::new("sh")
+            .args(["-c", &launch])
+            .status()
+            .unwrap()
+            .success()
+    );
+    let deadline = Instant::now() + Duration::from_secs(30);
+    while !started.exists() && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(20));
+    }
+    if !started.exists() {
+        fs::write(&release, b"").unwrap();
+        panic!("orphaned helper did not reach the coordinator");
+    }
+    assert!(!destination.exists());
+    fs::write(&release, b"").unwrap();
+    let result = private.join(format!("setup-export-result-{request_id}.json"));
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let mut finished = false;
+    while Instant::now() < deadline {
+        finished = result.exists() && export_helper_unlocked(&private);
+        if finished {
+            break;
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert!(
+        finished,
+        "orphaned helper did not finish and record its result"
+    );
+    assert_eq!(
+        fs::read(destination).unwrap(),
+        fs::read(&fixture.config).unwrap()
     );
 }
 
@@ -525,7 +782,7 @@ fn guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repos
     let workspace = fixture.root.join("guided");
     fs::create_dir_all(&workspace).unwrap();
     let binary = CoordinatorBinary::at(&coordinator_binary());
-    let mut harness = harness(binary, [1100.0, 800.0]);
+    let mut harness = harness(binary, [1100.0, 2200.0]);
     let config = fixture.config.clone();
     harness.state_mut().open_project(&config);
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {
@@ -674,6 +931,26 @@ fn guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repos
         })
     }));
     assert!(!fixture.target.join("copy.toml").exists());
+    harness.state_mut().select_screen(Screen::Setup);
+    harness.run_steps(2);
+    harness
+        .get_by_label("I inspected the destination; clear export notice")
+        .click();
+    harness.run_steps(2);
+    assert!(
+        harness
+            .state()
+            .setup_state()
+            .message
+            .as_ref()
+            .is_some_and(|result| {
+                result
+                    .as_ref()
+                    .is_ok_and(|text| text.contains("notice cleared"))
+            }),
+        "clear notice: {:?}",
+        harness.state().setup_state().message
+    );
     {
         let setup = harness.state_mut().setup_state_mut();
         setup.export_path = workspace.join("copy.toml").display().to_string();
@@ -690,13 +967,17 @@ fn guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repos
                 .as_ref()
                 .is_err_and(|text| text.contains("already pending")))
     );
-    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
-        app.setup_state().message.as_ref().is_some_and(|result| {
-            result
-                .as_ref()
-                .is_ok_and(|text| text.contains("exported and verified"))
-        })
-    }));
+    assert!(
+        settle(&mut harness, Duration::from_secs(30), |app| {
+            app.setup_state().message.as_ref().is_some_and(|result| {
+                result
+                    .as_ref()
+                    .is_ok_and(|text| text.contains("exported and verified"))
+            })
+        }),
+        "export response: {:?}",
+        harness.state().setup_state().message
+    );
     harness.state_mut().export_document(&source);
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {
         app.setup_state().message.as_ref().is_some_and(|result| {

@@ -1,6 +1,6 @@
 # ADR 0072: Publish Guided Setup Exports Through the Coordinator
 
-- **Status:** Accepted for local implementation; independent review pending
+- **Status:** Accepted for local implementation; first independent review found a native lifecycle gap, corrected by Decision 0073 pending re-review
 - **Date:** 2026-10-01
 - **Decision owners:** CodingMage implementation
 

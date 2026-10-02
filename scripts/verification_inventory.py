@@ -109,6 +109,11 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/backend/worker.rs", "struct", "Binding"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
+    # A nearby Setup-export deadline field is not an input boundary on the
+    # stable job-label projection itself.
+    ("crates/codingmage-ui/src/backend/worker.rs", "fn", "label"): (
+        "positive", "negative", "malformed_input", "unknown_field", "repeatability",
+    ),
 }
 
 

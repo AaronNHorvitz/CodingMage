@@ -416,4 +416,66 @@ whitespace checks also pass. The full Python suite ran 46 tests with one
 failure: the unchanged CM-R01.6 eight-input source-bound `input-drift` hold.
 No package, failed receipt, binding or digest was renewed. All heavy checks
 used the shared build slot with one Cargo build job and one Rust test thread.
-This export increment awaits its own independent exact-commit review.
+Its first independent exact-commit disposition is documented below.
+
+## Native Setup export lifecycle correction
+
+The read-only independent review of
+`a1e6b785414fb3a2a9ac5cbf2c92d79285097510` returned FINDINGS/High:
+the general native worker cancels its child after project or campaign
+selection changes and on window close. That can kill an export after public
+publication but before its result reaches the interface. The original
+review report is retained privately. It is not converted into a pass.
+
+Decision 0073 records the correction. Setup persists a create-only private
+intent before dispatch. The submitted intent digest is carried to a separate
+native helper, which checks the persisted bytes, holds a private intent lock,
+runs the existing public coordinator command within its deadline and writes a
+bounded terminal record before exiting. The worker's supervisor is detached
+from UI cancellation once started. The current selection still rejects stale
+presentation. Reopening the exact project uses the recorded result and
+source-bound public receipt to verify the held destination bytes and named
+inode before showing success; absent or malformed state stays uncertain.
+The owner may inspect the destination and clear a notice after execution has
+released the lock, including when a queued helper never started. A late queued
+helper then fails its original digest check rather than starting the command.
+
+The disposable held-command regression covers project close and campaign
+reselection both before publication and after publication but before receipt
+delivery. It checks helper survival, terminal-record retention, stale-response
+rejection, lock refusal during execution and verified recovery after reopen.
+The private-intent unit test rejects modified bytes after submission. A guided
+Setup fixture now explicitly inspects and clears a failed export notice before
+retrying. These are native local workflow checks; they do not perform installed
+desktop, screen-reader, real-provider, independent acceptance or release work.
+
+The version-one inventory generator and source/schema changes were reviewed
+before regeneration. It now records 1,806 items versus 1,794 at the reviewed
+parent and retains 825 explicit gaps. Twelve normalized API entries were
+added for private export/recovery helpers; no normalized entry was removed.
+An unrelated `Job::label` boundary category had changed only because a nearby
+new deadline comment entered its heuristic context, so its prior applicability
+was pinned in the generator. Existing normalized applicability, heuristic
+mapping suggestions and gap counts then remained unchanged. These suggestions
+do not certify coverage.
+
+The native all-target suite passed 183/183 across 14 targets on this correction
+before a lint-only function extraction. The final extracted source passed the
+affected library target 96/96 and Setup integration target 11/11, including the
+four held-command cases. Strict workspace Clippy with warnings denied passed
+after correcting the owned function-length, match-form and test-placement
+lints; the first failed lint output remains in private state. The full Python
+suite ran 46 tests and passed 45. The sole failure is the pre-existing CM-R01.6
+eight-input source-bound `input-drift` hold; no package, failed receipt, binding
+or digest was renewed. Every heavy build/test used the shared build slot, one
+Cargo job and one Rust test thread. This correction awaits its own independent
+exact-commit re-review.
+
+An additional process-level regression launches the native export helper from
+a short-lived shell process, waits until the public coordinator is held, then
+lets that launcher exit. The helper still publishes through the coordinator
+and writes its private terminal result after the launcher is gone. This is a
+local Linux process-lifetime test, not an installed desktop window test. It
+passed 1/1; the final Setup target passed 12/12 and strict workspace Clippy
+passed again. The first attempt at this test failed compilation on an owned
+fixture move, was corrected, and its output is retained privately.
