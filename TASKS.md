@@ -2407,7 +2407,15 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     Independent review of the exchange commit found a high staging-directory
     name-substitution race. Decision 0061 and the same evidence note retain that
     finding and the effective-owner/private-permissions admission correction;
-    fresh independent re-review is required.
+    its historical re-review disposition is in the evidence trail. The later
+    Setup export lifecycle correction at
+    `8f04a6c19d64b12b4caa860b7fc19a951f541b15` received a bounded
+    independent PASS for started-helper survival and reopen verification.
+    That review identified a Low unbounded terminal-file retention gap. The
+    follow-up removes the exact terminal file under the intent lock on success
+    and inspected clear; disposable repeated-success and explicit-clear tests
+    are recorded in `docs/evidence/sprint-36-setup-command-boundary.md`.
+    Fresh exact-commit review of this retention correction remains pending.
     This sub-task stays open, as do human and live qualification.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.

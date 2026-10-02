@@ -17,6 +17,7 @@ use codingmage_ui::{
     campaign::SelectError,
     command::format_command,
     setup::ProviderForm,
+    state_dir::project_private_dir,
 };
 use common::{Fixture, coordinator_binary, harness, harness_with_state, settle, tree_digest};
 use egui_kittest::kittest::Queryable as _;
@@ -30,12 +31,28 @@ fn export_helper_unlocked(private: &Path) -> bool {
         .is_ok_and(|file| file.try_lock().is_ok())
 }
 
+fn export_result_count(private: &Path) -> usize {
+    fs::read_dir(private)
+        .unwrap()
+        .filter_map(Result::ok)
+        .filter(|entry| {
+            entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with("setup-export-result-")
+        })
+        .count()
+}
+
 #[test]
 fn native_setup_export_uses_public_command_and_verifies_the_destination() {
     let fixture = Fixture::new("setup-export-public", 1);
     let destination = fixture.root.join("export.toml");
     let binary = coordinator_binary();
-    let mut harness = harness(CoordinatorBinary::at(&binary), [1100.0, 2200.0]);
+    let state_dir = fixture.root.join("ui-private");
+    let private = project_private_dir(&state_dir, &fixture.config);
+    let mut harness =
+        harness_with_state(CoordinatorBinary::at(&binary), [1100.0, 2200.0], state_dir);
     harness.state_mut().open_project(&fixture.config);
     assert!(settle(&mut harness, Duration::from_secs(30), |app| app
         .diagnosis()
@@ -75,6 +92,25 @@ fn native_setup_export_uses_public_command_and_verifies_the_destination() {
         fs::read(&destination).unwrap(),
         fs::read(&fixture.config).unwrap()
     );
+    assert_eq!(export_result_count(&private), 0);
+    assert!(!private.join("setup-export-intent.json").exists());
+
+    let second_destination = fixture.root.join("second-export.toml");
+    harness.state_mut().setup_state_mut().export_path = second_destination.display().to_string();
+    harness.state_mut().export_document(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_ok_and(|message| message.contains("exported and verified"))
+        })
+    }));
+    assert_eq!(
+        fs::read(&second_destination).unwrap(),
+        fs::read(&fixture.config).unwrap()
+    );
+    assert_eq!(export_result_count(&private), 0);
+    assert!(!private.join("setup-export-intent.json").exists());
 }
 
 #[test]
@@ -89,7 +125,10 @@ fn malformed_setup_export_receipt_never_reports_success() {
             format_command(&real_binary, &[]).unwrap(),
         ),
     );
-    let mut harness = harness(CoordinatorBinary::at(&wrapper), [1100.0, 800.0]);
+    let state_dir = fixture.root.join("ui-private");
+    let private = project_private_dir(&state_dir, &fixture.config);
+    let mut harness =
+        harness_with_state(CoordinatorBinary::at(&wrapper), [1100.0, 2200.0], state_dir);
     harness.state_mut().open_project(&fixture.config);
     assert!(settle(&mut harness, Duration::from_secs(30), |app| app
         .diagnosis()
@@ -105,6 +144,15 @@ fn malformed_setup_export_receipt_never_reports_success() {
         })
     }));
     assert!(!destination.exists());
+    assert_eq!(export_result_count(&private), 1);
+    harness.state_mut().select_screen(Screen::Setup);
+    harness.run_steps(2);
+    harness
+        .get_by_label("I inspected the destination; clear export notice")
+        .click();
+    harness.run_steps(2);
+    assert_eq!(export_result_count(&private), 0);
+    assert!(!private.join("setup-export-intent.json").exists());
 }
 
 #[test]

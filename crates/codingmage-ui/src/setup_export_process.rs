@@ -232,7 +232,9 @@ fn parse_intent(bytes: &[u8]) -> Result<ExportIntent, StateError> {
     Ok(intent)
 }
 
-/// Removes a completed or definitely unqueued intent only when its ID still matches.
+/// Removes a completed or definitely unqueued intent and its terminal record only when its ID
+/// still matches. The result is removed first so an interrupted clear retains the intent and
+/// cannot leave an untracked result behind.
 ///
 /// # Errors
 ///
@@ -243,7 +245,22 @@ pub(crate) fn clear(directory: &Path, intent: &ExportIntent) -> Result<(), State
     if load_at(&path)? != *intent {
         return Err(StateError::Invalid);
     }
-    fs::remove_file(path).map_err(|_| StateError::Unavailable)
+    let result = intent.result_path(&path)?;
+    match fs::symlink_metadata(&result) {
+        Ok(metadata) if metadata.is_file() && !metadata.file_type().is_symlink() => {
+            fs::remove_file(result).map_err(|_| StateError::Unavailable)?;
+        }
+        Ok(_) => return Err(StateError::Invalid),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(_) => return Err(StateError::Unavailable),
+    }
+    fs::File::open(path.parent().ok_or(StateError::Invalid)?)
+        .and_then(|directory| directory.sync_all())
+        .map_err(|_| StateError::Unavailable)?;
+    fs::remove_file(&path).map_err(|_| StateError::Unavailable)?;
+    fs::File::open(path.parent().ok_or(StateError::Invalid)?)
+        .and_then(|directory| directory.sync_all())
+        .map_err(|_| StateError::Unavailable)
 }
 
 /// Reads the terminal helper record for an exact intent.

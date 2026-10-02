@@ -479,3 +479,26 @@ local Linux process-lifetime test, not an installed desktop window test. It
 passed 1/1; the final Setup target passed 12/12 and strict workspace Clippy
 passed again. The first attempt at this test failed compilation on an owned
 fixture move, was corrected, and its output is retained privately.
+
+The independent exact-commit review of
+`8f04a6c19d64b12b4caa860b7fc19a951f541b15` returned a bounded PASS for
+the lifecycle correction. It also reported a Low retention gap: clearing an
+intent left its per-request terminal file behind, so repeated exports could
+accumulate private recovery files without a ceiling. The follow-up removes
+the exact regular terminal file under the intent lock before removing the
+intent and syncs the private directory after each removal. An interrupted
+clear thus leaves an unresolved intent instead of an orphan result. A
+disposable native Setup regression checks that two successful exports leave
+no terminal files; another checks that inspected explicit clear after a
+failed receipt removes its terminal file. On the correction source, the
+native UI all-target suite passes 184/184 across 14 targets and strict
+workspace Clippy with warnings denied passes. Formatting, architecture,
+documentation and whitespace checks pass. The reviewed version-one inventory
+remains at 1,806 items and 825 explicit gaps; only four location IDs moved,
+with no normalized API, applicability or candidate test-mapping change. The
+full Python suite passes 45/46: its sole failure is the unchanged CM-R01.6
+eight-input source-bound `input-drift` hold. No binding, package, failed
+receipt or digest was renewed. All heavy checks used one Cargo job, one Rust
+test thread and the shared build slot. This follow-up awaits its own
+exact-commit review. Task 36.3.2.2 and all human, live and release gates stay
+open.

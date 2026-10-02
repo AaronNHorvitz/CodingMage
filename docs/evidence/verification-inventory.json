@@ -80081,9 +80081,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/setup_export_process.rs:fn:clear:240",
+      "id": "rust:crates/codingmage-ui/src/setup_export_process.rs:fn:clear:242",
       "kind": "fn",
-      "line": 240,
+      "line": 242,
       "name": "clear",
       "path": "crates/codingmage-ui/src/setup_export_process.rs",
       "surface": "rust_public_api",
@@ -80190,9 +80190,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/setup_export_process.rs:fn:helper_main:341",
+      "id": "rust:crates/codingmage-ui/src/setup_export_process.rs:fn:helper_main:358",
       "kind": "fn",
-      "line": 341,
+      "line": 358,
       "name": "helper_main",
       "path": "crates/codingmage-ui/src/setup_export_process.rs",
       "surface": "rust_public_api",
@@ -80378,9 +80378,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/setup_export_process.rs:fn:outcome:254",
+      "id": "rust:crates/codingmage-ui/src/setup_export_process.rs:fn:outcome:271",
       "kind": "fn",
-      "line": 254,
+      "line": 271,
       "name": "outcome",
       "path": "crates/codingmage-ui/src/setup_export_process.rs",
       "surface": "rust_public_api",
@@ -80508,9 +80508,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-ui/src/setup_export_process.rs:fn:run:289",
+      "id": "rust:crates/codingmage-ui/src/setup_export_process.rs:fn:run:306",
       "kind": "fn",
-      "line": 289,
+      "line": 306,
       "name": "run",
       "path": "crates/codingmage-ui/src/setup_export_process.rs",
       "surface": "rust_public_api",
@@ -82538,6 +82538,6 @@
       }
     }
   ],
-  "items_sha256": "41abc0239ef5f3ffa87ecc2a81f7981484e468c6846a76be0957525803633912",
+  "items_sha256": "e8e296ddac19259195728bdace651a990287415a5e5df5129d6ababde5f80441",
   "schema_version": 1
 }
