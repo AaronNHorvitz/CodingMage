@@ -125,6 +125,8 @@ fn git(repository: &Path, args: &[&str]) {
 #[test]
 fn guided_configuration_bootstraps_private_roots_and_requires_explicit_overwrite() {
     let fixture = Fixture::new("bootstrap");
+    let workspace = fixture.config.parent().unwrap();
+    fs::remove_dir(workspace).unwrap();
     let written = fixture.write(&fixture.config, &fixture.bytes, "false");
     assert!(
         written.status.success(),
@@ -132,6 +134,10 @@ fn guided_configuration_bootstraps_private_roots_and_requires_explicit_overwrite
         String::from_utf8_lossy(&written.stderr)
     );
     assert_eq!(fs::read(&fixture.config).unwrap(), fixture.bytes);
+    assert_eq!(
+        fs::metadata(workspace).unwrap().permissions().mode() & 0o777,
+        0o700
+    );
     assert!(fixture.scratch.is_dir() && fixture.state.is_dir());
     assert_eq!(
         fs::metadata(&fixture.scratch).unwrap().permissions().mode() & 0o777,
@@ -191,6 +197,21 @@ fn guided_configuration_bootstraps_private_roots_and_requires_explicit_overwrite
         "codingmage.cli.refused"
     );
     assert_eq!(fs::read_to_string(&fixture.config).unwrap(), foreign_bytes);
+}
+
+#[test]
+fn malformed_candidate_does_not_create_a_missing_configuration_parent() {
+    let fixture = Fixture::new("missing-parent-refusal");
+    let workspace = fixture.config.parent().unwrap();
+    fs::remove_dir(workspace).unwrap();
+    let refused = fixture.write(&fixture.config, b"not = [toml", "false");
+    assert!(!refused.status.success());
+    assert!(!workspace.exists());
+
+    let inside = fixture.repository.join("missing/config.toml");
+    let refused = fixture.write(&inside, &fixture.bytes, "false");
+    assert!(!refused.status.success());
+    assert!(!inside.parent().unwrap().exists());
 }
 
 #[test]

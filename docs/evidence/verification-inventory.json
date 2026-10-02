@@ -23583,6 +23583,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -23637,6 +23638,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -23691,6 +23693,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -23807,6 +23810,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -23872,6 +23876,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -23926,6 +23931,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -23980,6 +23986,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -24143,9 +24150,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:authorization:379",
+      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:authorization:409",
       "kind": "fn",
-      "line": 379,
+      "line": 409,
       "name": "authorization",
       "path": "crates/codingmage-cli/src/setup_writer.rs",
       "surface": "rust_public_api",
@@ -24165,6 +24172,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -24207,9 +24215,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:campaign:430",
+      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:campaign:460",
       "kind": "fn",
-      "line": 430,
+      "line": 460,
       "name": "campaign",
       "path": "crates/codingmage-cli/src/setup_writer.rs",
       "surface": "rust_public_api",
@@ -24219,6 +24227,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -24284,6 +24293,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -24327,9 +24337,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:export_copy:297",
+      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:export_copy:327",
       "kind": "fn",
-      "line": 297,
+      "line": 327,
       "name": "export_copy",
       "path": "crates/codingmage-cli/src/setup_writer.rs",
       "surface": "rust_public_api",
@@ -24349,6 +24359,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -24392,9 +24403,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:inspect_authorization:519",
+      "id": "rust:crates/codingmage-cli/src/setup_writer.rs:fn:inspect_authorization:549",
       "kind": "fn",
-      "line": 519,
+      "line": 549,
       "name": "inspect_authorization",
       "path": "crates/codingmage-cli/src/setup_writer.rs",
       "surface": "rust_public_api",
@@ -24414,6 +24425,7 @@
           "crates/codingmage-cli/tests/setup_authorization.rs::invalid_private_input_and_unsafe_destinations_never_publish",
           "crates/codingmage-cli/tests/setup_campaign.rs::setup_export_refuses_foreign_malformed_and_protected_sources",
           "crates/codingmage-cli/tests/setup_campaign.rs::stale_and_malformed_campaign_inputs_never_publish",
+          "crates/codingmage-cli/tests/setup_configuration.rs::malformed_candidate_does_not_create_a_missing_configuration_parent",
           "crates/codingmage-cli/tests/setup_configuration.rs::malformed_or_cross_repository_configuration_has_no_publication"
         ],
         "negative": [
@@ -82654,6 +82666,6 @@
       }
     }
   ],
-  "items_sha256": "70d93e65c0dd57b2bbbb62b2634bf7fa7e200ad29d79c3ac6676be0e07406e38",
+  "items_sha256": "baad4b72f15912cad6e05208608361852000083bba3eee440d1be3d39c925916",
   "schema_version": 1
 }

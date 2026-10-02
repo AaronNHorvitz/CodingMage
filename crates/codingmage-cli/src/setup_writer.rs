@@ -26,8 +26,8 @@ const MAX_CONFIG_BYTES: usize = 1024 * 1024;
 
 /// Publishes one guided configuration through the public coordinator boundary.
 ///
-/// Missing scratch/state roots may be created as private direct children of the configuration
-/// directory. A failure after that creation can leave empty roots for the operator to inspect.
+/// A missing configuration parent and scratch/state roots may be created as private direct
+/// children of a checked existing directory. A later failure can leave empty roots to inspect.
 pub(super) fn configuration(arguments: &[String], input: impl Read) -> Result<String, CliError> {
     let parsed =
         ParsedArguments::new_with_optional(arguments, &["repo", "output"], &["overwrite"])?;
@@ -38,7 +38,7 @@ pub(super) fn configuration(arguments: &[String], input: impl Read) -> Result<St
         Some("true") => true,
         Some(_) => return Err(CliError::Usage),
     };
-    report_writer::validate(&output, &repository)?;
+    validate_configuration_parent_or_ancestor(&output, &repository)?;
     let mut previous = match fs::symlink_metadata(&output) {
         Ok(metadata) if !overwrite || !metadata.is_file() || metadata.file_type().is_symlink() => {
             return Err(CliError::Refused);
@@ -76,6 +76,7 @@ pub(super) fn configuration(arguments: &[String], input: impl Read) -> Result<St
     if config.target_path != repository {
         return Err(CliError::StaleObservation);
     }
+    prepare_configuration_parent(&output, &repository)?;
     let roots = prepare_configuration_roots(&config, &output, &repository)?;
     let authority = RepositoryAuthorization::authorize(&config, &executable_parent()?)
         .map_err(|_| CliError::Repository)?;
@@ -126,6 +127,35 @@ pub(super) fn configuration(arguments: &[String], input: impl Read) -> Result<St
         "sha256": digest_hex(&bytes)?,
     }))
     .map_err(|_| CliError::Internal)
+}
+
+fn validate_configuration_parent_or_ancestor(
+    output: &Path,
+    repository: &Path,
+) -> Result<(), CliError> {
+    let parent = output.parent().ok_or(CliError::InvalidArgument)?;
+    let prospective = if fs::symlink_metadata(parent).is_ok() {
+        output
+    } else {
+        parent
+    };
+    report_writer::validate(prospective, repository)
+}
+
+fn prepare_configuration_parent(output: &Path, repository: &Path) -> Result<(), CliError> {
+    let parent = output.parent().ok_or(CliError::InvalidArgument)?;
+    match fs::symlink_metadata(parent) {
+        Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            report_writer::validate(parent, repository)?;
+            fs::DirBuilder::new()
+                .mode(0o700)
+                .create(parent)
+                .map_err(|_| CliError::Refused)?;
+        }
+        Ok(_) | Err(_) => return Err(CliError::Refused),
+    }
+    report_writer::validate(output, repository)
 }
 
 fn verify_published_configuration(
