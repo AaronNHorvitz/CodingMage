@@ -24,6 +24,7 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     fmt, fs,
     io::Read as _,
+    os::unix::fs::MetadataExt as _,
     path::{Path, PathBuf},
 };
 
@@ -35,6 +36,10 @@ pub use codingmage_contracts::{
     TeamLeadProposal, TeamLeadReport,
 };
 use codingmage_plan::SelectedWork;
+use nix::{
+    fcntl::{OFlag, open},
+    sys::stat::Mode,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -246,22 +251,52 @@ impl CampaignSpec {
     ///
     /// Returns [`CampaignError`] for unavailable, oversized, malformed, or unsafe authority.
     pub fn load(path: &Path) -> Result<Self, CampaignError> {
+        Self::load_after_inspection(path, || {})
+    }
+
+    fn load_after_inspection(
+        path: &Path,
+        after_inspection: impl FnOnce(),
+    ) -> Result<Self, CampaignError> {
         if !path.is_absolute() {
             return Err(CampaignError::InvalidSpec);
         }
-        let metadata = fs::symlink_metadata(path).map_err(|_| CampaignError::InvalidSpec)?;
-        if !metadata.is_file()
-            || metadata.file_type().is_symlink()
-            || metadata.len() > MAX_SPEC_BYTES
+        let before = fs::symlink_metadata(path).map_err(|_| CampaignError::InvalidSpec)?;
+        if !before.is_file()
+            || before.file_type().is_symlink()
+            || before.nlink() != 1
+            || before.len() > MAX_SPEC_BYTES
+        {
+            return Err(CampaignError::InvalidSpec);
+        }
+        after_inspection();
+        let file = fs::File::from(
+            open(
+                path,
+                OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC,
+                Mode::empty(),
+            )
+            .map_err(|_| CampaignError::InvalidSpec)?,
+        );
+        let opened = file.metadata().map_err(|_| CampaignError::InvalidSpec)?;
+        if !opened.is_file()
+            || opened.nlink() != 1
+            || (opened.dev(), opened.ino()) != (before.dev(), before.ino())
         {
             return Err(CampaignError::InvalidSpec);
         }
         let mut source = Vec::new();
-        fs::File::open(path)
-            .map_err(|_| CampaignError::InvalidSpec)?
-            .take(MAX_SPEC_BYTES + 1)
+        file.take(MAX_SPEC_BYTES + 1)
             .read_to_end(&mut source)
             .map_err(|_| CampaignError::InvalidSpec)?;
+        let after = fs::symlink_metadata(path).map_err(|_| CampaignError::InvalidSpec)?;
+        if !after.is_file()
+            || after.file_type().is_symlink()
+            || after.nlink() != 1
+            || (after.dev(), after.ino()) != (opened.dev(), opened.ino())
+        {
+            return Err(CampaignError::InvalidSpec);
+        }
         Self::parse_bytes(&source)
     }
 
@@ -951,6 +986,7 @@ impl std::error::Error for CampaignError {}
 mod tests {
     use super::*;
     use codingmage_plan::TaskPlan;
+    use std::os::unix::fs::symlink;
 
     #[test]
     fn exact_campaign_bytes_share_the_file_loader_contract() {
@@ -983,6 +1019,36 @@ mod tests {
                 Err(CampaignError::InvalidSpec)
             );
         }
+    }
+
+    #[test]
+    fn selected_campaign_replaced_by_symlink_is_refused_without_following() {
+        let directory = std::env::temp_dir().join(format!(
+            "codingmage-campaign-replacement-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&directory).unwrap();
+        let selected = directory.join("selected.toml");
+        let replacement = directory.join("replacement.toml");
+        let bytes = toml::to_string_pretty(&spec(1)).unwrap();
+        fs::write(&selected, &bytes).unwrap();
+        fs::write(&replacement, &bytes).unwrap();
+        assert_eq!(
+            CampaignSpec::load_after_inspection(&selected, || {
+                fs::remove_file(&selected).unwrap();
+                symlink(&replacement, &selected).unwrap();
+            }),
+            Err(CampaignError::InvalidSpec)
+        );
+        assert_eq!(
+            CampaignSpec::load(&selected),
+            Err(CampaignError::InvalidSpec)
+        );
+        fs::remove_dir_all(directory).unwrap();
     }
 
     #[test]

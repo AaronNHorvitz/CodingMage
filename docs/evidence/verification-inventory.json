@@ -4149,7 +4149,7 @@
       ],
       "id": "error:codingmage.campaign.authority",
       "kind": "error_code",
-      "line": 937,
+      "line": 972,
       "name": "codingmage.campaign.authority",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -4162,7 +4162,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -4190,7 +4190,7 @@
       ],
       "id": "error:codingmage.campaign.capacity",
       "kind": "error_code",
-      "line": 941,
+      "line": 976,
       "name": "codingmage.campaign.capacity",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -4203,7 +4203,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -4231,7 +4231,7 @@
       ],
       "id": "error:codingmage.campaign.conflict",
       "kind": "error_code",
-      "line": 940,
+      "line": 975,
       "name": "codingmage.campaign.conflict",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -4244,7 +4244,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -5172,7 +5172,7 @@
       ],
       "id": "error:codingmage.campaign.proposal",
       "kind": "error_code",
-      "line": 938,
+      "line": 973,
       "name": "codingmage.campaign.proposal",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5185,7 +5185,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -5438,7 +5438,7 @@
       ],
       "id": "error:codingmage.campaign.serialization",
       "kind": "error_code",
-      "line": 943,
+      "line": 978,
       "name": "codingmage.campaign.serialization",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5451,7 +5451,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -5479,7 +5479,7 @@
       ],
       "id": "error:codingmage.campaign.spec",
       "kind": "error_code",
-      "line": 936,
+      "line": 971,
       "name": "codingmage.campaign.spec",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5492,7 +5492,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -5520,7 +5520,7 @@
       ],
       "id": "error:codingmage.campaign.stale_proposal",
       "kind": "error_code",
-      "line": 939,
+      "line": 974,
       "name": "codingmage.campaign.stale_proposal",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -5533,7 +5533,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -6731,7 +6731,7 @@
       ],
       "id": "error:codingmage.campaign.unknown_lease",
       "kind": "error_code",
-      "line": 942,
+      "line": 977,
       "name": "codingmage.campaign.unknown_lease",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "stable_error_code",
@@ -6744,7 +6744,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -13417,7 +13417,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -13548,7 +13548,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -13589,7 +13589,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -13855,7 +13855,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14346,7 +14346,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14387,7 +14387,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14608,7 +14608,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14649,7 +14649,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14690,7 +14690,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14731,7 +14731,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14817,7 +14817,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14858,7 +14858,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14899,7 +14899,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -14940,7 +14940,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16241,9 +16241,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignAuthentication:104",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignAuthentication:109",
       "kind": "enum",
-      "line": 104,
+      "line": 109,
       "name": "CampaignAuthentication",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16259,7 +16259,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16289,9 +16289,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignError:914",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignError:949",
       "kind": "enum",
-      "line": 914,
+      "line": 949,
       "name": "CampaignError",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16314,7 +16314,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16342,9 +16342,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignPublication:124",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:CampaignPublication:129",
       "kind": "enum",
-      "line": 124,
+      "line": 129,
       "name": "CampaignPublication",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16360,7 +16360,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16392,9 +16392,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:ReviewStrength:66",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:ReviewStrength:71",
       "kind": "enum",
-      "line": 66,
+      "line": 71,
       "name": "ReviewStrength",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16420,7 +16420,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16449,9 +16449,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:TeamLeadOutcome:408",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:enum:TeamLeadOutcome:443",
       "kind": "enum",
-      "line": 408,
+      "line": 443,
       "name": "TeamLeadOutcome",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16464,7 +16464,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16490,9 +16490,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:active:710",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:active:745",
       "kind": "fn",
-      "line": 710,
+      "line": 745,
       "name": "active",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16505,7 +16505,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16532,9 +16532,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:admit:647",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:admit:682",
       "kind": "fn",
-      "line": 647,
+      "line": 682,
       "name": "admit",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16557,7 +16557,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16586,9 +16586,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:authority_sha256:381",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:authority_sha256:416",
       "kind": "fn",
-      "line": 381,
+      "line": 416,
       "name": "authority_sha256",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16614,7 +16614,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16644,9 +16644,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:load:248",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:load:253",
       "kind": "fn",
-      "line": 248,
+      "line": 253,
       "name": "load",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16669,7 +16669,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16695,9 +16695,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:new:633",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:new:668",
       "kind": "fn",
-      "line": 633,
+      "line": 668,
       "name": "new",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16710,7 +16710,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16739,9 +16739,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:parse_bytes:273",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:parse_bytes:308",
       "kind": "fn",
-      "line": 273,
+      "line": 308,
       "name": "parse_bytes",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16767,7 +16767,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16796,9 +16796,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:permits:84",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:permits:89",
       "kind": "fn",
-      "line": 84,
+      "line": 89,
       "name": "permits",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16811,7 +16811,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16837,9 +16837,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:provider_profile_sha256:94",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:provider_profile_sha256:99",
       "kind": "fn",
-      "line": 94,
+      "line": 99,
       "name": "provider_profile_sha256",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16852,7 +16852,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16881,9 +16881,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:regression_gate_for:388",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:regression_gate_for:423",
       "kind": "fn",
-      "line": 388,
+      "line": 423,
       "name": "regression_gate_for",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16909,7 +16909,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16938,9 +16938,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:release:702",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:release:737",
       "kind": "fn",
-      "line": 702,
+      "line": 737,
       "name": "release",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -16953,7 +16953,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -16980,9 +16980,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:seal:580",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:seal:615",
       "kind": "fn",
-      "line": 580,
+      "line": 615,
       "name": "seal",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17005,7 +17005,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17031,9 +17031,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:valid_provider:864",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:valid_provider:899",
       "kind": "fn",
-      "line": 864,
+      "line": 899,
       "name": "valid_provider",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17046,7 +17046,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17074,9 +17074,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:validate_team_lead_report:424",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:validate_team_lead_report:459",
       "kind": "fn",
-      "line": 424,
+      "line": 459,
       "name": "validate_team_lead_report",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17092,7 +17092,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17121,9 +17121,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:verify:288",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:verify:323",
       "kind": "fn",
-      "line": 288,
+      "line": 323,
       "name": "verify",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17136,7 +17136,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17162,9 +17162,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:verify:593",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:fn:verify:628",
       "kind": "fn",
-      "line": 593,
+      "line": 628,
       "name": "verify",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17177,7 +17177,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17205,9 +17205,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignGateTier:114",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignGateTier:119",
       "kind": "struct",
-      "line": 114,
+      "line": 119,
       "name": "CampaignGateTier",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17223,7 +17223,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17255,9 +17255,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignLimits:148",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignLimits:153",
       "kind": "struct",
-      "line": 148,
+      "line": 153,
       "name": "CampaignLimits",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17283,7 +17283,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17314,9 +17314,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignProvider:54",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignProvider:59",
       "kind": "struct",
-      "line": 54,
+      "line": 59,
       "name": "CampaignProvider",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17332,7 +17332,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17363,9 +17363,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignSpec:191",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignSpec:196",
       "kind": "struct",
-      "line": 191,
+      "line": 196,
       "name": "CampaignSpec",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17381,7 +17381,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17413,9 +17413,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignTaskPathAuthority:134",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:CampaignTaskPathAuthority:139",
       "kind": "struct",
-      "line": 134,
+      "line": 139,
       "name": "CampaignTaskPathAuthority",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17441,7 +17441,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17470,9 +17470,9 @@
         "negative",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodLease:606",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodLease:641",
       "kind": "struct",
-      "line": 606,
+      "line": 641,
       "name": "PodLease",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17485,7 +17485,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17514,9 +17514,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodProposal:549",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodProposal:584",
       "kind": "struct",
-      "line": 549,
+      "line": 584,
       "name": "PodProposal",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17542,7 +17542,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17572,9 +17572,9 @@
         "boundary",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodScheduler:621",
+      "id": "rust:crates/codingmage-campaign/src/lib.rs:struct:PodScheduler:656",
       "kind": "struct",
-      "line": 621,
+      "line": 656,
       "name": "PodScheduler",
       "path": "crates/codingmage-campaign/src/lib.rs",
       "surface": "rust_public_api",
@@ -17597,7 +17597,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17692,7 +17692,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17741,7 +17741,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17801,7 +17801,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17850,7 +17850,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17894,7 +17894,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17935,7 +17935,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -17976,7 +17976,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18017,7 +18017,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18058,7 +18058,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18104,7 +18104,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18159,7 +18159,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18205,7 +18205,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18249,7 +18249,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18290,7 +18290,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18331,7 +18331,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18383,7 +18383,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18429,7 +18429,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18484,7 +18484,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18541,7 +18541,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18601,7 +18601,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18751,7 +18751,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18806,7 +18806,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18858,7 +18858,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18915,7 +18915,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -18975,7 +18975,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19035,7 +19035,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19095,7 +19095,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19155,7 +19155,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19204,7 +19204,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19253,7 +19253,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19302,7 +19302,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19362,7 +19362,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19406,7 +19406,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19447,7 +19447,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19488,7 +19488,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19529,7 +19529,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19581,7 +19581,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19622,7 +19622,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19663,7 +19663,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19704,7 +19704,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19745,7 +19745,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19786,7 +19786,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19827,7 +19827,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19879,7 +19879,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19920,7 +19920,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -19961,7 +19961,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20013,7 +20013,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20054,7 +20054,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20095,7 +20095,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20136,7 +20136,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20193,7 +20193,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20237,7 +20237,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20278,7 +20278,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20319,7 +20319,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20376,7 +20376,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20420,7 +20420,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20461,7 +20461,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20513,7 +20513,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20554,7 +20554,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20606,7 +20606,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20658,7 +20658,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20699,7 +20699,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20740,7 +20740,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20792,7 +20792,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20833,7 +20833,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20874,7 +20874,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20926,7 +20926,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -20967,7 +20967,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21019,7 +21019,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21060,7 +21060,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21112,7 +21112,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21153,7 +21153,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21210,7 +21210,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21259,7 +21259,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21319,7 +21319,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21363,7 +21363,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21404,7 +21404,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21445,7 +21445,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21486,7 +21486,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21538,7 +21538,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21590,7 +21590,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21642,7 +21642,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21688,7 +21688,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21737,7 +21737,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21797,7 +21797,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21846,7 +21846,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21890,7 +21890,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21936,7 +21936,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -21996,7 +21996,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22056,7 +22056,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22105,7 +22105,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22165,7 +22165,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22214,7 +22214,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22263,7 +22263,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22312,7 +22312,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22372,7 +22372,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22432,7 +22432,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22481,7 +22481,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22530,7 +22530,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22585,7 +22585,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22642,7 +22642,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -22702,7 +22702,7 @@
           "crates/codingmage-campaign/src/lib.rs::every_mixed_disposition_payload_is_rejected",
           "crates/codingmage-campaign/src/lib.rs::hostile_lead_authority_expansion_corpus_fails_before_admission",
           "crates/codingmage-campaign/src/lib.rs::proposal_mutation_and_stale_source_are_rejected",
-          "crates/codingmage-campaign/src/mission.rs::charter_rejects_unknown_fields_and_bad_schema"
+          "crates/codingmage-campaign/src/lib.rs::selected_campaign_replaced_by_symlink_is_refused_without_following"
         ],
         "positive": [
           "crates/codingmage-campaign/src/lib.rs::task_regression_gate_is_optional_validated_and_looked_up_exactly",
@@ -84483,6 +84483,6 @@
       }
     }
   ],
-  "items_sha256": "7ac4a735bba5a85502a8850a15e025337eb40da8967b0dbcdb8caa957e102859",
+  "items_sha256": "854ece47f0e2afc7e257e3f3d99b5a71a8cec6a3743a91009a216a7866ce567a",
   "schema_version": 1
 }
