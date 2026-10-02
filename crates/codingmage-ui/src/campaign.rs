@@ -6,26 +6,19 @@
 
 use std::{
     collections::BTreeMap,
-    fmt, fs,
-    io::Read as _,
+    fmt,
     path::{Path, PathBuf},
 };
 
 use codingmage_campaign::{CampaignError, CampaignSpec};
 use codingmage_plan::CheckState;
-use nix::{
-    fcntl::{OFlag, open},
-    sys::stat::Mode,
-};
 use serde::Deserialize;
-use sha2::{Digest as _, Sha256};
 
 use crate::backend::BackendError;
 use crate::backend::models::{
     ActiveTask, CampaignReport, CampaignStatus, Deferral, TaskCompletion, TaskReason,
 };
 use crate::content;
-use crate::project::hex;
 
 const MAX_CAMPAIGN_SELECTION_BYTES: usize = 1024 * 1024;
 
@@ -82,9 +75,11 @@ impl fmt::Display for SelectError {
             }
             Self::ReceiptMismatch => formatter
                 .write_str("the campaign destination differs from the confirmed write receipt"),
-            Self::Backend(error) => {
-                write!(formatter, "campaign selection failed: {}", error.code())
-            }
+            Self::Backend(error) => write!(
+                formatter,
+                "campaign selection failed: {error} ({})",
+                error.code()
+            ),
             Self::Contract => formatter
                 .write_str("campaign selection snapshot did not match the expected contract"),
             Self::UnsupportedSchema => {
@@ -124,6 +119,43 @@ impl CampaignSelection {
         observed_repository_id: Option<&str>,
         bytes: &[u8],
     ) -> Result<Self, SelectError> {
+        Self::from_snapshot_bound(
+            spec_path,
+            opened_target,
+            observed_repository_id,
+            bytes,
+            None,
+        )
+    }
+
+    /// Decodes a public snapshot only if its exact source bytes match a write receipt.
+    ///
+    /// # Errors
+    ///
+    /// Refuses a mismatched receipt, malformed snapshot or foreign campaign.
+    pub fn from_snapshot_for_write(
+        spec_path: &Path,
+        opened_target: &Path,
+        observed_repository_id: Option<&str>,
+        bytes: &[u8],
+        receipt: (usize, &str),
+    ) -> Result<Self, SelectError> {
+        Self::from_snapshot_bound(
+            spec_path,
+            opened_target,
+            observed_repository_id,
+            bytes,
+            Some(receipt),
+        )
+    }
+
+    fn from_snapshot_bound(
+        spec_path: &Path,
+        opened_target: &Path,
+        observed_repository_id: Option<&str>,
+        bytes: &[u8],
+        receipt: Option<(usize, &str)>,
+    ) -> Result<Self, SelectError> {
         if !spec_path.is_absolute() {
             return Err(SelectError::RelativePath);
         }
@@ -132,10 +164,17 @@ impl CampaignSelection {
         }
         let snapshot: CampaignSnapshot =
             serde_json::from_slice(bytes).map_err(|_| SelectError::Contract)?;
-        if snapshot.schema_version != 1 {
+        if snapshot.schema_version != 2 {
             return Err(SelectError::UnsupportedSchema);
         }
         if snapshot.campaign_path != spec_path
+            || snapshot.source_bytes == 0
+            || snapshot.source_bytes > MAX_CAMPAIGN_SELECTION_BYTES
+            || snapshot.source_sha256.len() != 64
+            || !snapshot
+                .source_sha256
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
             || snapshot.authority_sha256.len() != 64
             || !snapshot
                 .authority_sha256
@@ -148,6 +187,11 @@ impl CampaignSelection {
                 != snapshot.authority_sha256
         {
             return Err(SelectError::Contract);
+        }
+        if receipt.is_some_and(|(length, digest)| {
+            snapshot.source_bytes != length || snapshot.source_sha256 != digest
+        }) {
+            return Err(SelectError::ReceiptMismatch);
         }
         if snapshot.spec.repository_path != opened_target {
             return Err(SelectError::DifferentRepositoryPath {
@@ -169,77 +213,6 @@ impl CampaignSelection {
             authority_sha256: snapshot.authority_sha256,
         })
     }
-
-    /// Selects the exact bounded destination bytes confirmed by a campaign write receipt.
-    /// The held file is read once; the parsed authority is derived from that same buffer.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`SelectError`] if the destination is unsafe, changed or names another repository.
-    pub fn load_matching_receipt(
-        spec_path: &Path,
-        opened_target: &Path,
-        observed_repository_id: Option<&str>,
-        expected_bytes: usize,
-        expected_sha256: &str,
-    ) -> Result<Self, SelectError> {
-        if !spec_path.is_absolute() {
-            return Err(SelectError::RelativePath);
-        }
-        if expected_bytes == 0 || expected_bytes > MAX_CAMPAIGN_SELECTION_BYTES {
-            return Err(SelectError::ReceiptMismatch);
-        }
-        let file = fs::File::from(
-            open(
-                spec_path,
-                OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC,
-                Mode::empty(),
-            )
-            .map_err(|_| SelectError::ReceiptMismatch)?,
-        );
-        let metadata = file.metadata().map_err(|_| SelectError::ReceiptMismatch)?;
-        if !metadata.is_file() || metadata.len() != expected_bytes as u64 {
-            return Err(SelectError::ReceiptMismatch);
-        }
-        let mut source = Vec::with_capacity(expected_bytes);
-        file.take((expected_bytes + 1) as u64)
-            .read_to_end(&mut source)
-            .map_err(|_| SelectError::ReceiptMismatch)?;
-        if source.len() != expected_bytes || hex(&Sha256::digest(&source)) != expected_sha256 {
-            return Err(SelectError::ReceiptMismatch);
-        }
-        let spec = CampaignSpec::parse_bytes(&source).map_err(SelectError::Invalid)?;
-        Self::from_spec(spec_path, opened_target, observed_repository_id, spec)
-    }
-
-    fn from_spec(
-        spec_path: &Path,
-        opened_target: &Path,
-        observed_repository_id: Option<&str>,
-        spec: CampaignSpec,
-    ) -> Result<Self, SelectError> {
-        let authority_sha256 = spec.authority_sha256().map_err(SelectError::Invalid)?;
-        let opened =
-            fs::canonicalize(opened_target).unwrap_or_else(|_| opened_target.to_path_buf());
-        let specified = fs::canonicalize(&spec.repository_path)
-            .unwrap_or_else(|_| spec.repository_path.clone());
-        if specified != opened {
-            return Err(SelectError::DifferentRepositoryPath { specified, opened });
-        }
-        if let Some(observed) = observed_repository_id
-            && observed != spec.repository_id
-        {
-            return Err(SelectError::DifferentRepositoryId {
-                specified: spec.repository_id.clone(),
-                observed: observed.to_owned(),
-            });
-        }
-        Ok(Self {
-            spec_path: spec_path.to_path_buf(),
-            spec,
-            authority_sha256,
-        })
-    }
 }
 
 #[derive(Deserialize)]
@@ -247,6 +220,8 @@ impl CampaignSelection {
 struct CampaignSnapshot {
     schema_version: u64,
     campaign_path: PathBuf,
+    source_bytes: usize,
+    source_sha256: String,
     authority_sha256: String,
     spec: CampaignSpec,
 }

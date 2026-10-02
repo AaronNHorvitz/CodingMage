@@ -21,8 +21,11 @@ scope with independent Cargo checks; full UI independent acceptance remains open
   input and a retained outcome. The Open and recent-configuration actions now use the
   bounded, read-only `project-open` coordinator command. All three directory pickers use
   `directory-list`; typed, clicked and remembered campaign selections use `campaign-select`
-  after repository diagnosis. Guided-configuration recovery and guided campaign write-receipt
-  validation still read in the UI process; moving those reads remains open under the
+  after repository diagnosis. Guided-configuration recovery checks the private
+  receipt and fresh `project-open` snapshot in the bounded worker. Guided
+  campaign creation compares its write receipt to a fresh version-two
+  `campaign-select` source-byte snapshot in that worker before selection. The
+  remaining screen-state and command catalogue work stays open under the
   [native UI specification](../architecture/native-ui-specification.md).
 - An observer and control surface. Opening the app or a repository starts no agent, edits no task
   status and authorizes no campaign. Closing the window never stops a coordinator.
@@ -67,7 +70,7 @@ showing sample results.
 | Blockers | Searchable bound campaign hold, blocked, deferred and human-decision codes; explicit empty, stale and failed observations; read-only exact-command refresh and code-specific recovery guidance | `campaign-explain-blocker`; eligible external clearance and trigger observations still require operator-supplied evidence through coordinator commands, while coordinator-observed triggers are never manually marked |
 | Changes and reviews | Delivery boundary, coordinator commits and changed files, per-run verdicts and gate evidence, journaled phases, bounded activity | `campaign-changes`, `campaign-run-records` |
 | Reports | Outcome and blocker reports with export and explicit source-observation freshness | the observations above |
-| Setup | Open or create a configuration, write the owner's authorization record, author a campaign, import and export; inspect an unresolved configuration write before retrying | `setup-write-config`, `setup-write-authorization`, `setup-write-campaign`, `setup-export-copy`, existing configuration loader |
+| Setup | Open or create a configuration, write the owner's authorization record, author a campaign, import and export; inspect an unresolved configuration write before retrying | `setup-write-config`, `project-open`, `setup-write-authorization`, `setup-write-campaign`, `campaign-select`, `setup-export-copy` |
 | Settings | Light, dark, high-contrast or system appearance for the current window | Local presentation state only |
 | Help and About | Offline getting-started and recovery guidance, keyboard shortcuts, glossary, source licence and third-party source notices; explicit copyable path-free diagnostic summary and redacted support bundle for a selected campaign | Bundled first-party text, plus the coordinator's `support-bundle` command only after an explicit request; nothing is uploaded |
 

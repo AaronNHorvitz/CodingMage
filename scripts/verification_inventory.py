@@ -154,7 +154,17 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-cli/src/setup_writer.rs", "fn", "export_copy"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
-    ("crates/codingmage-ui/src/campaign.rs", "fn", "load_matching_receipt"): (
+    ("crates/codingmage-ui/src/campaign.rs", "fn", "from_snapshot_for_write"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    # The shared loader returns a digest of the same held, bounded TOML bytes
+    # it parses. Its public byte binding is a security boundary.
+    ("crates/codingmage-campaign/src/lib.rs", "fn", "load_with_source_binding"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    # The original loader shares that held-byte parser and rejects malformed
+    # and unknown TOML fields; the former moving-window hint omitted both.
+    ("crates/codingmage-campaign/src/lib.rs", "fn", "load"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
     ("crates/codingmage-ui/src/campaign.rs", "struct", "CampaignSelection"): (
@@ -179,8 +189,8 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/app/campaign_screen.rs", "fn", "select_campaign"): (
         "positive", "negative", "repeatability",
     ),
-    ("crates/codingmage-ui/src/app/campaign_screen.rs", "fn", "select_campaign_with_receipt"): (
-        "positive", "negative", "boundary", "malformed_input", "repeatability",
+    ("crates/codingmage-ui/src/app/campaign_screen.rs", "fn", "adopt_written_campaign"): (
+        "positive", "negative", "repeatability",
     ),
     ("crates/codingmage-ui/src/app/campaign_screen.rs", "fn", "accept_campaign_selection"): (
         "positive", "negative", "malformed_input", "unknown_field", "repeatability",

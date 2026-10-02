@@ -17,7 +17,7 @@ use nix::{
 use serde::Deserialize;
 use sha2::{Digest as _, Sha256};
 
-use super::{App, BrowserSlot, directory_list_arguments, failure_box};
+use super::{App, BrowserSlot, campaign_select_arguments, directory_list_arguments, failure_box};
 use crate::{
     backend::{Job, PrivateInput, Request, Response},
     browser::Browser,
@@ -53,6 +53,7 @@ struct PendingCampaign {
     request_id: String,
     inspect_arguments: Vec<String>,
     write_arguments: Vec<String>,
+    select_arguments: Vec<String>,
     specification_path: PathBuf,
     authorization_path: PathBuf,
     repository_id: String,
@@ -75,18 +76,6 @@ struct PendingExport {
 struct AuthorizationReceipt {
     schema_version: u64,
     repository_id: String,
-    written: bool,
-    bytes: usize,
-    sha256: String,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct CampaignReceipt {
-    schema_version: u64,
-    repository_id: String,
-    campaign_id: String,
-    head: String,
     written: bool,
     bytes: usize,
     sha256: String,
@@ -719,12 +708,26 @@ impl App {
             ));
             return;
         }
+        let Some(select_arguments) = campaign_select_arguments(Path::new(form.spec_path.trim()))
+        else {
+            self.setup.message = Some(Err(
+                "the campaign destination cannot be selected through the coordinator".to_owned(),
+            ));
+            return;
+        };
+        if !command::can_preview(self.binary_path.as_deref(), Some(&select_arguments)) {
+            self.setup.message = Some(Err(
+                "the exact campaign selection command cannot be shown safely".to_owned(),
+            ));
+            return;
+        }
         self.next_evidence_request = self.next_evidence_request.wrapping_add(1);
         let request_id = format!("setup-campaign-{}", self.next_evidence_request);
         let pending = PendingCampaign {
             request_id: request_id.clone(),
             inspect_arguments: inspect_arguments.clone(),
             write_arguments: write_arguments.clone(),
+            select_arguments: select_arguments.clone(),
             specification_path: PathBuf::from(form.spec_path.trim()),
             authorization_path: PathBuf::from(form.authorization_path.trim()),
             repository_id: binding.repository_id.clone(),
@@ -740,6 +743,7 @@ impl App {
                 source: binding,
                 inspect_arguments,
                 write_arguments,
+                select_arguments,
                 deadline: AUTHORIZATION_DEADLINE,
             },
             request_id: Some(request_id),
@@ -796,7 +800,7 @@ impl App {
         Some((inspect, write))
     }
 
-    fn campaign_preview_arguments(&self) -> Option<(Vec<String>, Vec<String>)> {
+    fn campaign_preview_arguments(&self) -> Option<(Vec<String>, Vec<String>, Vec<String>)> {
         self.setup
             .pending_campaign
             .as_ref()
@@ -804,13 +808,18 @@ impl App {
                 (
                     pending.inspect_arguments.clone(),
                     pending.write_arguments.clone(),
+                    pending.select_arguments.clone(),
                 )
             })
             .or_else(|| {
-                self.campaign_setup_arguments(
+                let (inspect, write) = self.campaign_setup_arguments(
                     self.setup.campaign_form.as_ref()?,
                     &self.campaign_binding()?,
-                )
+                )?;
+                let select = campaign_select_arguments(Path::new(
+                    self.setup.campaign_form.as_ref()?.spec_path.trim(),
+                ))?;
+                Some((inspect, write, select))
             })
     }
 
@@ -830,57 +839,49 @@ impl App {
             self.setup.message = Some(Err("the repository diagnosis changed during the campaign write; inspect the destination before retrying".to_owned()));
             return true;
         }
-        let result = response.result.and_then(|bytes| {
-            let receipt: CampaignReceipt = serde_json::from_slice(&bytes).map_err(|_| {
-                crate::backend::BackendError::Contract(
-                    crate::backend::models::ModelError::Malformed,
-                )
-            })?;
-            if receipt.schema_version != 1
-                || !receipt.written
-                || receipt.repository_id != pending.repository_id
-                || receipt.campaign_id != pending.campaign_id
-                || receipt.head != pending.head
-                || receipt.bytes == 0
-                || receipt.sha256.len() != 64
-                || !receipt.sha256.bytes().all(|byte| byte.is_ascii_hexdigit())
-            {
-                return Err(crate::backend::BackendError::Contract(
-                    crate::backend::models::ModelError::Malformed,
-                ));
-            }
-            Ok(receipt)
-        });
-        match result {
-            Ok(receipt) => {
-                let selected = self.select_campaign_with_receipt(
+        let selection = response
+            .result
+            .map_err(crate::campaign::SelectError::Backend)
+            .and_then(|bytes| {
+                let project = self
+                    .project
+                    .as_ref()
+                    .ok_or(crate::campaign::SelectError::Contract)?;
+                let selected = crate::campaign::CampaignSelection::from_snapshot(
                     &pending.specification_path,
-                    (receipt.bytes, &receipt.sha256),
-                );
-                if selected
-                    && self.campaign.as_ref().is_some_and(|selected| {
-                        selected.spec_path == pending.specification_path
-                            && selected.spec.campaign_id == pending.campaign_id
-                    })
+                    &project.config.target_path,
+                    Some(&pending.repository_id),
+                    &bytes,
+                )?;
+                if selected.spec.campaign_id != pending.campaign_id
+                    || selected.spec.initial_commit != pending.head
+                    || selected.spec.task_source_sha256 != pending.task_source_sha256
                 {
-                    self.set_authorization_record(&pending.authorization_path);
-                    self.setup.message = Some(Ok(format!(
-                        "campaign specification written and verified at {}",
-                        pending.specification_path.display()
-                    )));
-                } else {
-                    if selected {
-                        self.clear_campaign();
-                    }
-                    self.setup.message = Some(Err(format!(
-                        "the coordinator confirmed a write at {}, but the resulting campaign could not be selected; inspect the destination before retrying",
-                        pending.specification_path.display()
-                    )));
+                    return Err(crate::campaign::SelectError::Contract);
                 }
+                Ok(selected)
+            });
+        match selection {
+            Ok(selection) => {
+                self.adopt_written_campaign(selection);
+                self.set_authorization_record(&pending.authorization_path);
+                self.setup.message = Some(Ok(format!(
+                    "campaign specification written and verified at {}",
+                    pending.specification_path.display()
+                )));
             }
             Err(error) => {
+                if self
+                    .campaign
+                    .as_ref()
+                    .is_some_and(|selected| selected.spec_path == pending.specification_path)
+                {
+                    self.clear_campaign();
+                }
+                self.campaign_error = Some(error.clone());
+                self.set_status(format!("campaign selection refused: {error}"));
                 self.setup.message = Some(Err(format!(
-                    "campaign write not confirmed: {error}. Inspect the destination before retrying."
+                    "campaign write or selection not confirmed: {error}. Inspect the destination before retrying."
                 )));
             }
         }
@@ -1561,9 +1562,10 @@ impl App {
         let can_write = self.setup.pending_campaign.is_none()
             && self
                 .campaign_preview_arguments()
-                .is_some_and(|(inspect, write)| {
+                .is_some_and(|(inspect, write, select)| {
                     command::can_preview(self.binary_path.as_deref(), Some(&inspect))
                         && command::can_preview(self.binary_path.as_deref(), Some(&write))
+                        && command::can_preview(self.binary_path.as_deref(), Some(&select))
                 });
         let (apply, discard) = ui
             .add_enabled_ui(self.setup.pending_campaign.is_none(), |ui| match &mut self
@@ -1580,7 +1582,7 @@ impl App {
         if discard {
             self.setup.campaign_form = None;
         }
-        if let Some((inspect, write)) = self.campaign_preview_arguments() {
+        if let Some((inspect, write, select)) = self.campaign_preview_arguments() {
             command::show_for(
                 ui,
                 "inspect authorization record",
@@ -1593,10 +1595,17 @@ impl App {
                 self.binary_path.as_deref(),
                 &write,
             );
+            command::show_for(
+                ui,
+                "select written campaign",
+                self.binary_path.as_deref(),
+                &select,
+            );
             ui.small("The candidate specification is sent through private stdin. It is absent from command arguments; the coordinator checks the record and source again before publication.");
         } else {
             command::show_unavailable_for(ui, "inspect authorization record");
             command::show_unavailable_for(ui, "write campaign specification");
+            command::show_unavailable_for(ui, "select written campaign");
         }
     }
 

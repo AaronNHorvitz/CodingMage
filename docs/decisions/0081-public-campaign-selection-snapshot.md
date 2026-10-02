@@ -1,6 +1,6 @@
 # ADR 0081: Public Campaign Selection Snapshot
 
-- **Status:** Accepted for implementation; bounded independent re-review passed at `faab58e0c9d3065053292881a484a8608e1dd1ca`
+- **Status:** Accepted for implementation; bounded independent re-review passed at `faab58e0c9d3065053292881a484a8608e1dd1ca`; version-one snapshot superseded by Decision 0083
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 

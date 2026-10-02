@@ -87,56 +87,22 @@ impl App {
         }
     }
 
-    /// Selects a destination only when its held bytes match a confirmed write receipt.
-    pub(super) fn select_campaign_with_receipt(
-        &mut self,
-        spec_path: &Path,
-        receipt: (usize, &str),
-    ) -> bool {
-        let Some(project) = &self.project else {
-            self.campaign_error = None;
-            self.set_status("open a repository before selecting a campaign");
-            return false;
-        };
-        let observed = self
-            .diagnosis
-            .value
-            .as_ref()
-            .map(|diagnosis| diagnosis.repository_id.clone());
-        let target = project.config.target_path.clone();
+    /// Adopts a receipt-bound public snapshot after the worker verifies the write.
+    pub(super) fn adopt_written_campaign(&mut self, selection: CampaignSelection) {
         let diagnosis_loading = self.diagnosis.loading;
         self.advance_selection_generation();
         self.clear_campaign_observations();
-        self.campaign = None;
         self.pending_campaign = None;
-        let loaded = CampaignSelection::load_matching_receipt(
-            spec_path,
-            &target,
-            observed.as_deref(),
-            receipt.0,
-            receipt.1,
-        );
-        let accepted = match loaded {
-            Ok(selection) => {
-                self.campaign_input = selection.spec_path.display().to_string();
-                self.campaign = Some(selection);
-                self.campaign_error = None;
-                self.persist_campaign_memory();
-                self.restore_execution();
-                self.set_status("campaign selected; requesting durable status");
-                self.refresh_campaign();
-                true
-            }
-            Err(error) => {
-                self.set_status(format!("campaign refused: {error}"));
-                self.campaign_error = Some(error);
-                false
-            }
-        };
+        self.campaign_input = selection.spec_path.display().to_string();
+        self.campaign = Some(selection);
+        self.campaign_error = None;
+        self.persist_campaign_memory();
+        self.restore_execution();
+        self.set_status("campaign selected; requesting durable status");
+        self.refresh_campaign();
         if diagnosis_loading {
             self.refresh_diagnosis();
         }
-        accepted
     }
 
     /// Clears the campaign selection without affecting any coordinator process.

@@ -2472,8 +2472,16 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     real-process exact-digest refusal; see
     `docs/evidence/sprint-36-guided-configuration-recovery.md`. The remaining
     section-five state/depth and Show-command catalogue keeps this sub-task
-    unchecked; independent review of this increment, human and live
-    qualification also remain open.
+    unchecked; bounded review of exact commit
+    `ab034991da2324e282e75f93e146f8f4d29f25bc` returned PASS without
+    critical or high findings, while human and live qualification remain open.
+    Decision 0083 extends the held public `campaign-select` snapshot with exact
+    source-byte length and digest and has the guided write worker compare them
+    to the coordinator receipt before selecting the campaign. The Setup screen
+    exposes the selection command. See
+    `docs/evidence/sprint-36-guided-campaign-selection.md`; the complete
+    section-five state/depth/Show-command catalogue and independent review of
+    this increment remain open.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->

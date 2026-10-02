@@ -115,17 +115,23 @@ class VerificationInventoryTests(unittest.TestCase):
 
     def test_receipt_bound_campaign_selection_categories_stay_stable(self) -> None:
         cases = (
-            ("crates/codingmage-ui/src/campaign.rs", "fn", "load_matching_receipt", "boundary"),
+            ("crates/codingmage-campaign/src/lib.rs", "fn", "load_with_source_binding", "boundary"),
+            ("crates/codingmage-ui/src/campaign.rs", "fn", "from_snapshot_for_write", "boundary"),
             ("crates/codingmage-ui/src/campaign.rs", "struct", "CampaignSelection", "unknown_field"),
             ("crates/codingmage-ui/src/campaign.rs", "enum", "SelectError", "malformed_input"),
             ("crates/codingmage-ui/src/app/campaign_screen.rs", "fn", "select_campaign", "repeatability"),
-            ("crates/codingmage-ui/src/app/campaign_screen.rs", "fn", "select_campaign_with_receipt", "boundary"),
+            ("crates/codingmage-ui/src/app/campaign_screen.rs", "fn", "adopt_written_campaign", "repeatability"),
         )
+        items = INVENTORY.build()["items"]
         for path, kind, name, required in cases:
             first = INVENTORY.applicability(path, kind, name, "unrelated navigation")
             second = INVENTORY.applicability(path, kind, name, "oversized malformed schema")
             self.assertEqual(first, second)
             self.assertIn(required, first)
+            self.assertTrue(any(
+                item["path"] == path and item["kind"] == kind and item["name"] == name
+                for item in items
+            ))
 
     def test_configuration_helper_request_categories_stay_stable(self) -> None:
         path = "crates/codingmage-ui/src/setup_config_process.rs"

@@ -25,6 +25,7 @@ use common::{
     write_campaign,
 };
 use egui_kittest::kittest::{NodeT as _, Queryable as _};
+use sha2::Digest as _;
 
 fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::App> {
     let binary = CoordinatorBinary::at(&coordinator_binary());
@@ -35,6 +36,70 @@ fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::Ap
         app.diagnosis().value.is_some()
     }));
     harness
+}
+
+fn assert_source_binding(selected: &Path, target: &Path, snapshot: &[u8]) {
+    let source: serde_json::Value = serde_json::from_slice(snapshot).unwrap();
+    let held_bytes = fs::read(selected).unwrap();
+    assert_eq!(source["schema_version"], 2);
+    assert_eq!(source["source_bytes"], serde_json::json!(held_bytes.len()));
+    assert_eq!(
+        source["source_sha256"],
+        serde_json::json!(codingmage_ui::project::hex(&sha2::Sha256::digest(
+            &held_bytes
+        )))
+    );
+    assert!(
+        CampaignSelection::from_snapshot_for_write(
+            selected,
+            target,
+            None,
+            snapshot,
+            (held_bytes.len(), source["source_sha256"].as_str().unwrap()),
+        )
+        .is_ok()
+    );
+    for receipt in [
+        (held_bytes.len(), "0".repeat(64)),
+        (
+            held_bytes.len() + 1,
+            source["source_sha256"].as_str().unwrap().to_owned(),
+        ),
+    ] {
+        assert_eq!(
+            CampaignSelection::from_snapshot_for_write(
+                selected,
+                target,
+                None,
+                snapshot,
+                (receipt.0, &receipt.1),
+            )
+            .unwrap_err(),
+            SelectError::ReceiptMismatch
+        );
+    }
+}
+
+fn assert_snapshot_refusal(
+    selected: &Path,
+    target: &Path,
+    snapshot: &[u8],
+    field: &str,
+    value: serde_json::Value,
+    expected: &SelectError,
+) {
+    let mut changed: serde_json::Value = serde_json::from_slice(snapshot).unwrap();
+    changed[field] = value;
+    assert_eq!(
+        &CampaignSelection::from_snapshot(
+            selected,
+            target,
+            None,
+            &serde_json::to_vec(&changed).unwrap(),
+        )
+        .unwrap_err(),
+        expected
+    );
 }
 
 #[test]
@@ -65,42 +130,34 @@ fn campaign_snapshot_refuses_replaced_picker_file_and_malformed_authority() {
         CampaignSelection::from_snapshot(&selected, &fixture.target, None, &snapshot.stdout)
             .unwrap();
     assert_eq!(valid.spec.campaign_id, "selected");
-    let mut malformed: serde_json::Value = serde_json::from_slice(&snapshot.stdout).unwrap();
-    malformed["unexpected"] = serde_json::json!(true);
-    assert_eq!(
-        CampaignSelection::from_snapshot(
+    assert_source_binding(&selected, &fixture.target, &snapshot.stdout);
+    for (field, value, expected) in [
+        ("unexpected", serde_json::json!(true), SelectError::Contract),
+        (
+            "schema_version",
+            serde_json::json!(3),
+            SelectError::UnsupportedSchema,
+        ),
+        (
+            "authority_sha256",
+            serde_json::json!("0".repeat(64)),
+            SelectError::Contract,
+        ),
+        (
+            "source_sha256",
+            serde_json::json!("not-a-digest"),
+            SelectError::Contract,
+        ),
+    ] {
+        assert_snapshot_refusal(
             &selected,
             &fixture.target,
-            None,
-            &serde_json::to_vec(&malformed).unwrap(),
-        )
-        .unwrap_err(),
-        SelectError::Contract
-    );
-    let mut unsupported: serde_json::Value = serde_json::from_slice(&snapshot.stdout).unwrap();
-    unsupported["schema_version"] = serde_json::json!(2);
-    assert_eq!(
-        CampaignSelection::from_snapshot(
-            &selected,
-            &fixture.target,
-            None,
-            &serde_json::to_vec(&unsupported).unwrap(),
-        )
-        .unwrap_err(),
-        SelectError::UnsupportedSchema
-    );
-    let mut changed_digest: serde_json::Value = serde_json::from_slice(&snapshot.stdout).unwrap();
-    changed_digest["authority_sha256"] = serde_json::json!("0".repeat(64));
-    assert_eq!(
-        CampaignSelection::from_snapshot(
-            &selected,
-            &fixture.target,
-            None,
-            &serde_json::to_vec(&changed_digest).unwrap(),
-        )
-        .unwrap_err(),
-        SelectError::Contract
-    );
+            &snapshot.stdout,
+            field,
+            value,
+            &expected,
+        );
+    }
     let foreign = CampaignSelection::from_snapshot(&other, &fixture.target, None, &snapshot.stdout);
     assert_eq!(foreign.unwrap_err(), SelectError::Contract);
     fs::remove_file(&selected).unwrap();

@@ -596,13 +596,13 @@ fn replaced_campaign_after_writer_receipt_is_not_selected() {
         app.setup_state().message.as_ref().is_some_and(|result| {
             result
                 .as_ref()
-                .is_err_and(|message| message.contains("resulting campaign could not be selected"))
+                .is_err_and(|message| message.contains("campaign write or selection not confirmed"))
         })
     }));
     assert!(harness.state().campaign().is_none());
     assert!(matches!(
         harness.state().campaign_error(),
-        Some(SelectError::ReceiptMismatch)
+        Some(SelectError::Backend(_))
     ));
     assert_eq!(CampaignSpec::load(&destination).unwrap(), replacement);
     assert_eq!(original.campaign_id, replacement.campaign_id);
@@ -697,7 +697,7 @@ fn pending_campaign_preview_is_frozen_and_bad_inspection_never_writes() {
         app.setup_state().message.as_ref().is_some_and(|result| {
             result
                 .as_ref()
-                .is_err_and(|message| message.contains("campaign write not confirmed"))
+                .is_err_and(|message| message.contains("campaign write or selection not confirmed"))
         })
     }));
     assert!(!first.exists() && !second.exists() && !write_marker.exists());
@@ -1262,6 +1262,12 @@ fn guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repos
         }
     }
     harness.state_mut().apply_campaign_form();
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: select written campaign")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("codingmage campaign-select --campaign");
     assert!(
         settle(&mut harness, Duration::from_secs(30), |app| {
             app.setup_state().message.as_ref().is_some_and(|result| {

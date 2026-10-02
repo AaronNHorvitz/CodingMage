@@ -1,6 +1,6 @@
 # ADR 0082: Reconcile Guided Configuration Through the Worker
 
-- **Status:** Accepted for local implementation; bounded independent review pending
+- **Status:** Accepted for local implementation; bounded independent review passed at `ab034991da2324e282e75f93e146f8f4d29f25bc`
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 

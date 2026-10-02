@@ -254,10 +254,26 @@ impl CampaignSpec {
         Self::load_after_inspection(path, || {})
     }
 
+    /// Loads one held specification and binds its exact source bytes to the parsed authority.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CampaignError`] when the selected file or authority is unsafe or invalid.
+    pub fn load_with_source_binding(path: &Path) -> Result<(Self, usize, String), CampaignError> {
+        Self::load_with_binding_after_inspection(path, || {})
+    }
+
     fn load_after_inspection(
         path: &Path,
         after_inspection: impl FnOnce(),
     ) -> Result<Self, CampaignError> {
+        Self::load_with_binding_after_inspection(path, after_inspection).map(|(spec, _, _)| spec)
+    }
+
+    fn load_with_binding_after_inspection(
+        path: &Path,
+        after_inspection: impl FnOnce(),
+    ) -> Result<(Self, usize, String), CampaignError> {
         if !path.is_absolute() {
             return Err(CampaignError::InvalidSpec);
         }
@@ -297,7 +313,9 @@ impl CampaignSpec {
         {
             return Err(CampaignError::InvalidSpec);
         }
-        Self::parse_bytes(&source)
+        let spec = Self::parse_bytes(&source)?;
+        let source_sha256 = hex(&Sha256::digest(&source));
+        Ok((spec, source.len(), source_sha256))
     }
 
     /// Parses exact, bounded campaign authority bytes with the same rules as [`Self::load`].

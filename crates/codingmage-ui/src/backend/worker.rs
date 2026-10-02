@@ -25,6 +25,7 @@ use super::{
     export_process,
 };
 use crate::{
+    campaign::CampaignSelection,
     project::hex,
     report::OutcomeReport,
     report_export::ExportRequest,
@@ -109,6 +110,8 @@ pub enum Job {
         inspect_arguments: Vec<String>,
         /// Exact write command displayed beside the native action.
         write_arguments: Vec<String>,
+        /// Exact read-only command that reopens the written bytes through the coordinator.
+        select_arguments: Vec<String>,
         /// Deadline for each coordinator command.
         deadline: Duration,
     },
@@ -450,21 +453,7 @@ fn run_standard_job(
             deadline,
             ..
         } => binary.run_with_private_input(arguments, input.0.clone(), *deadline, cancel),
-        Job::CampaignSetup {
-            form,
-            source,
-            inspect_arguments,
-            write_arguments,
-            deadline,
-        } => run_campaign_setup(
-            binary,
-            form,
-            source,
-            inspect_arguments,
-            write_arguments,
-            *deadline,
-            cancel,
-        ),
+        Job::CampaignSetup { .. } => run_campaign_setup(binary, job, cancel),
         Job::SupportBundle {
             arguments,
             destination,
@@ -533,14 +522,21 @@ fn campaign_contract_error() -> BackendError {
 
 fn run_campaign_setup(
     binary: &CoordinatorBinary,
-    form: &CampaignForm,
-    source: &CampaignBinding,
-    inspect_arguments: &[String],
-    write_arguments: &[String],
-    deadline: Duration,
+    job: &Job,
     cancel: &Arc<AtomicBool>,
 ) -> Result<Vec<u8>, BackendError> {
-    let inspection = binary.run(inspect_arguments, deadline, cancel)?;
+    let Job::CampaignSetup {
+        form,
+        source,
+        inspect_arguments,
+        write_arguments,
+        select_arguments,
+        deadline,
+    } = job
+    else {
+        unreachable!("only campaign setup enters the campaign writer")
+    };
+    let inspection = binary.run(inspect_arguments, *deadline, cancel)?;
     let observation: AuthorizationObservation =
         serde_json::from_slice(&inspection).map_err(|_| campaign_contract_error())?;
     if observation.schema_version != 1
@@ -582,7 +578,7 @@ fn run_campaign_setup(
         return Err(BackendError::Cancelled);
     }
     let written =
-        binary.run_with_private_input(write_arguments, input.0.clone(), deadline, cancel)?;
+        binary.run_with_private_input(write_arguments, input.0.clone(), *deadline, cancel)?;
     let receipt: CampaignWriteObservation =
         serde_json::from_slice(&written).map_err(|_| campaign_contract_error())?;
     if receipt.schema_version != 1
@@ -595,7 +591,26 @@ fn run_campaign_setup(
     {
         return Err(campaign_contract_error());
     }
-    Ok(written)
+    let selected = binary.run(select_arguments, *deadline, cancel)?;
+    let selection = CampaignSelection::from_snapshot_for_write(
+        Path::new(form.spec_path.trim()),
+        &source.repository_path,
+        Some(&source.repository_id),
+        &selected,
+        (receipt.bytes, &receipt.sha256),
+    )
+    .map_err(|error| {
+        BackendError::Refused(format!(
+            "published campaign could not be selected after the write receipt: {error}"
+        ))
+    })?;
+    if selection.spec.campaign_id != specification.campaign_id
+        || selection.spec.initial_commit != source.initial_commit
+        || selection.spec.task_source_sha256 != source.task_source_sha256
+    {
+        return Err(campaign_contract_error());
+    }
+    Ok(selected)
 }
 
 fn dispatch_setup_export(
