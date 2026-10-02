@@ -30,6 +30,7 @@ use codingmage_runtime::{
 };
 
 mod outcome_report;
+mod project_read;
 mod report_writer;
 mod setup_writer;
 
@@ -46,6 +47,7 @@ Commands:
   doctor                        Validate configuration, repository, and task source
   status                        Show content-minimized local readiness
   plan                          Select the first dependency-ready task
+  project-open                  Read one validated configuration and task source
   run                           Execute one explicitly scoped supervised unit
   campaign-preflight            Validate a campaign before provider inference
   campaign                      Execute a bounded serial or parallel campaign
@@ -85,6 +87,7 @@ fn command_help(command: &str) -> Option<&'static str> {
         "doctor" | "status" | "plan" => {
             Some("Usage: codingmage <doctor|status|plan> --config <ABSOLUTE_FILE>")
         }
+        "project-open" => Some("Usage: codingmage project-open --config <ABSOLUTE_FILE>"),
         "run" => Some(
             "Usage: codingmage run --config <ABSOLUTE_FILE> --spec <ABSOLUTE_FILE> \\\n  [--run-id <EXACT_RUN_ID>]",
         ),
@@ -191,6 +194,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "doctor" => diagnose(&arguments[1..], "doctor"),
         "status" => diagnose(&arguments[1..], "status"),
         "plan" => select_plan(&arguments[1..]),
+        "project-open" => project_read::open(&arguments[1..]),
         "run" => execute(&arguments[1..]),
         "campaign-preflight" => preflight_campaign(&arguments[1..]),
         "campaign" => execute_campaign(&arguments[1..]),

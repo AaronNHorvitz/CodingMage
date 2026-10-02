@@ -56,6 +56,30 @@ KEYWORDS = {
 # moving context heuristic to add, then silently remove, its boundary category.
 # The failure panel must remain in the minimum-window/long-text work queue.
 FIXED_APPLICABILITY = {
+    # The nearby Open command argument builder is not part of these deadlines.
+    ("crates/codingmage-ui/src/app/mod.rs", "const", "GIT_DEADLINE"): (
+        "positive", "boundary", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/app/mod.rs", "const", "STATUS_DEADLINE"): (
+        "positive", "repeatability",
+    ),
+    # Selection snapshots added nearby parser prose; these accessors and
+    # navigation methods do not themselves deserialize backend output.
+    ("crates/codingmage-ui/src/app/mod.rs", "fn", "diagnosis"): (
+        "positive", "negative", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/app/mod.rs", "fn", "project"): (
+        "positive", "negative", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/app/mod.rs", "fn", "screen"): (
+        "positive", "negative", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/app/mod.rs", "fn", "select_screen"): (
+        "positive", "negative", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/app/mod.rs", "struct", "App"): (
+        "positive", "negative", "malformed_input", "unknown_field", "repeatability",
+    ),
     # The public Setup screen contains configuration and campaign loaders.
     # Moving visible copy must not erase its malformed/unknown-input work queue.
     ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "setup"): (

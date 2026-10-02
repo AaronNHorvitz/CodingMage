@@ -50,7 +50,7 @@ fn campaign_without_selection_withholds_local_readiness_result() {
 }
 
 #[test]
-fn invisible_executable_refuses_both_command_actions_and_direct_preflight() {
+fn invisible_executable_refuses_project_open_and_downstream_command_actions() {
     let fixture = Fixture::new("invisible-command", 10);
     git(
         &fixture.target,
@@ -62,6 +62,7 @@ fn invisible_executable_refuses_both_command_actions_and_direct_preflight() {
     let mut harness = harness(binary, [1100.0, 900.0]);
     harness.state_mut().open_project(&fixture.config);
     harness.run_steps(2);
+    assert!(harness.state().project().is_none());
     assert_eq!(
         harness
             .state()
@@ -91,8 +92,8 @@ fn invisible_executable_refuses_both_command_actions_and_direct_preflight() {
     harness.state_mut().set_authorization_record(&record);
     harness.state_mut().select_screen(Screen::Campaign);
     harness.run_steps(2);
-    harness.get_by_label("Run preflight").click();
-    harness.run_steps(2);
+    harness.get_by_label_contains("Open a repository before selecting a campaign.");
+    assert!(harness.query_by_label("Run preflight").is_none());
     assert_eq!(
         harness
             .state()

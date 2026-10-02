@@ -324,6 +324,8 @@ const REQUIRED_KEYS: &[&str] = &[
     "work_plan_open_help",
     "work_plan_source_unavailable",
     "work_plan_source_recovery",
+    "work_plan_source_stale",
+    "work_plan_source_stale_recovery",
     "work_plan_source_claim",
     "work_plan_items_shown",
     "work_plan_search",

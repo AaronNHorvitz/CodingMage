@@ -2,7 +2,7 @@
 
 mod common;
 
-use std::{path::PathBuf, time::Duration};
+use std::{fs, path::PathBuf, process::Command, time::Duration};
 
 use codingmage_ui::{
     Screen,
@@ -171,17 +171,14 @@ fn missing_coordinator_is_a_visible_failure_state_and_refuses_requests() {
     let config = fixture.config.clone();
     harness.state_mut().open_project(&config);
     harness.run_steps(2);
-    assert!(harness.state().project().is_some());
-    let now = std::time::Instant::now();
-    assert_eq!(
-        harness.state().diagnosis().freshness(now),
-        Freshness::Failed
-    );
+    assert!(harness.state().project().is_none());
     assert!(matches!(
-        harness.state().diagnosis().last_error,
-        Some((_, BackendError::BinaryUnavailable { .. }))
+        harness.state().open_error(),
+        Some(codingmage_ui::project::OpenError::Backend(
+            BackendError::BinaryUnavailable { .. }
+        ))
     ));
-    harness.get_by_label_contains("not installed next to this interface");
+    harness.get_by_label_contains("Install the sibling codingmage executable");
 }
 
 #[test]
@@ -210,10 +207,129 @@ fn opening_a_repository_observes_real_diagnosis_without_side_effects() {
     harness.get_by_label(diagnosis.repository_id.as_str());
     harness.get_by_label(diagnosis.head.as_str());
     harness.get_by_label_contains("Task source parsed: 1 sprints, 1 stories");
+    harness.state_mut().select_screen(Screen::Setup);
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: open configuration")
+        .click();
+    harness.run_steps(2);
+    let open_command = codingmage_ui::command::format_command(
+        &coordinator_binary(),
+        &[
+            "project-open".to_owned(),
+            "--config".to_owned(),
+            fixture.config.display().to_string(),
+        ],
+    )
+    .unwrap();
+    harness.get_by_label(open_command.as_str());
     assert_eq!(tree_digest(&fixture.target), before_target);
     assert_eq!(tree_digest(&fixture.state), before_state);
     assert!(!fixture.scratch.join("worktrees").exists());
     assert_eq!(harness.state().discarded_stale(), 0);
+}
+
+#[test]
+fn changed_source_after_open_clears_the_old_plan_and_requires_reopen() {
+    let fixture = Fixture::new("source-changed-after-open", 3);
+    let mut harness = harness(
+        CoordinatorBinary::at(&coordinator_binary()),
+        [1100.0, 720.0],
+    );
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
+    assert!(harness.state().plan_index().is_some());
+    let source = fixture.target.join("TASKS.md");
+    let mut changed = fs::read(&source).unwrap();
+    changed.extend_from_slice(b"\n");
+    fs::write(&source, changed).unwrap();
+    let observed = Command::new(coordinator_binary())
+        .args(["doctor", "--config", fixture.config.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(observed.status.success());
+    let response = Response {
+        generation: harness.state().generation(),
+        binding: harness.state().binding(),
+        label: "doctor",
+        request_id: None,
+        result: Ok(observed.stdout),
+    };
+    assert!(harness.state_mut().handle_response(response));
+    assert!(harness.state().plan_index().is_none());
+    assert!(matches!(
+        &harness.state().project().unwrap().plan,
+        Err(codingmage_ui::project::PlanLoadError::Stale)
+    ));
+    harness.state_mut().select_screen(Screen::WorkPlan);
+    harness.run_steps(2);
+    harness.get_by_label("Task source changed");
+    harness.get_by_label_contains("Reopen the configuration");
+}
+
+#[test]
+fn diagnosis_for_a_different_configuration_target_cannot_confirm_the_open_project() {
+    let fixture = Fixture::new("target-changed-after-open", 3);
+    let mut harness = harness(
+        CoordinatorBinary::at(&coordinator_binary()),
+        [1100.0, 720.0],
+    );
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
+    let earlier = harness.state().diagnosis().value.clone();
+    let mut foreign =
+        serde_json::to_value(harness.state().diagnosis().value.as_ref().unwrap()).unwrap();
+    foreign["configuration"]["target_path_sha256"] = serde_json::json!("0".repeat(64));
+    let response = Response {
+        generation: harness.state().generation(),
+        binding: harness.state().binding(),
+        label: "doctor",
+        request_id: None,
+        result: Ok(serde_json::to_vec(&foreign).unwrap()),
+    };
+    assert!(harness.state_mut().handle_response(response));
+    assert!(matches!(
+        harness.state().diagnosis().last_error,
+        Some((
+            _,
+            BackendError::Contract(codingmage_ui::backend::models::ModelError::AuthorityMismatch)
+        ))
+    ));
+    assert_eq!(harness.state().diagnosis().value, earlier);
+    assert!(harness.state().plan_index().is_none());
+    assert!(matches!(
+        &harness.state().project().unwrap().plan,
+        Err(codingmage_ui::project::PlanLoadError::Stale)
+    ));
+}
+
+#[test]
+fn slow_project_snapshot_keeps_the_window_responsive_and_shows_loading() {
+    let fixture = Fixture::new("slow-open", 3);
+    let wrapper = fixture.executable(
+        "slow-open-codingmage",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'project-open' ]; then sleep 1; fi\nexec {} \"$@\"\n",
+            codingmage_ui::command::format_command(&coordinator_binary(), &[]).unwrap()
+        ),
+    );
+    let mut harness = harness(CoordinatorBinary::at(&wrapper), [1100.0, 720.0]);
+    let started = std::time::Instant::now();
+    harness.state_mut().open_project(&fixture.config);
+    assert!(started.elapsed() < Duration::from_millis(500));
+    assert!(harness.state().project().is_none());
+    harness.run_steps(2);
+    harness.get_by_label_contains("Opening configuration through the coordinator");
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
 }
 
 #[test]
@@ -250,15 +366,87 @@ fn invalid_configuration_is_reported_and_leaves_no_project_open() {
     let mut harness = harness(binary, [900.0, 600.0]);
     let config = fixture.config.clone();
     harness.state_mut().open_project(&config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .open_error()
+        .is_some()));
     harness.run_steps(2);
     assert!(harness.state().project().is_none());
     harness.get_by_label_contains("Configuration could not be opened");
     assert!(
         harness
-            .get_all_by_label_contains("schema is invalid")
+            .get_all_by_label_contains("codingmage.cli.config")
             .count()
             >= 1
     );
+}
+
+#[test]
+fn project_snapshot_refuses_unknown_fields_versions_identity_and_digest() {
+    let fixture = Fixture::new("snapshot-contract", 3);
+    let output = std::process::Command::new(coordinator_binary())
+        .args(["project-open", "--config", fixture.config.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let original: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let mut changed = original.clone();
+    changed["unexpected"] = serde_json::json!(true);
+    assert!(matches!(
+        codingmage_ui::project::Project::from_snapshot(
+            &fixture.config,
+            &serde_json::to_vec(&changed).unwrap()
+        ),
+        Err(codingmage_ui::project::OpenError::Contract)
+    ));
+    changed = original.clone();
+    changed["schema_version"] = serde_json::json!(7);
+    assert!(matches!(
+        codingmage_ui::project::Project::from_snapshot(
+            &fixture.config,
+            &serde_json::to_vec(&changed).unwrap()
+        ),
+        Err(codingmage_ui::project::OpenError::UnsupportedSchema)
+    ));
+    changed = original.clone();
+    changed["config_path"] = serde_json::json!("/synthetic/other.toml");
+    assert!(matches!(
+        codingmage_ui::project::Project::from_snapshot(
+            &fixture.config,
+            &serde_json::to_vec(&changed).unwrap()
+        ),
+        Err(codingmage_ui::project::OpenError::Contract)
+    ));
+    changed = original;
+    changed["plan"]["source_sha256"] = serde_json::json!("0".repeat(64));
+    assert!(matches!(
+        codingmage_ui::project::Project::from_snapshot(
+            &fixture.config,
+            &serde_json::to_vec(&changed).unwrap()
+        ),
+        Err(codingmage_ui::project::OpenError::Contract)
+    ));
+    changed["plan"] =
+        serde_json::json!({"state": "invalid", "code": "codingmage.plan.unrecognized"});
+    assert!(matches!(
+        codingmage_ui::project::Project::from_snapshot(
+            &fixture.config,
+            &serde_json::to_vec(&changed).unwrap()
+        ),
+        Err(codingmage_ui::project::OpenError::Contract)
+    ));
+    changed["plan"] =
+        serde_json::json!({"state": "invalid", "code": "codingmage.plan.duplicate_id"});
+    let parsed = codingmage_ui::project::Project::from_snapshot(
+        &fixture.config,
+        &serde_json::to_vec(&changed).unwrap(),
+    )
+    .unwrap();
+    assert!(matches!(
+        parsed.plan,
+        Err(codingmage_ui::project::PlanLoadError::Invalid(
+            codingmage_plan::PlanError::DuplicateId
+        ))
+    ));
 }
 
 #[test]
@@ -305,7 +493,19 @@ fn stale_generation_and_cross_project_responses_are_discarded() {
         result: Ok(doctor_json.clone()),
     };
     assert!(!harness.state_mut().handle_response(cross_project));
-    assert_eq!(harness.state().discarded_stale(), discarded_before + 2);
+    let stale_project = Response {
+        generation: old_generation,
+        binding: Binding {
+            config_path: Some(first.config.clone()),
+            repository_id: None,
+            campaign_id: None,
+        },
+        label: "project-open",
+        request_id: None,
+        result: Ok(Vec::new()),
+    };
+    assert!(!harness.state_mut().handle_response(stale_project));
+    assert_eq!(harness.state().discarded_stale(), discarded_before + 3);
     let current = Response {
         generation: harness.state().generation(),
         binding: harness.state().binding(),
@@ -323,7 +523,10 @@ fn malformed_backend_output_is_an_explicit_contract_failure() {
     let fixture = Fixture::new("malformed", 3);
     let fake = fixture.executable(
         "codingmage",
-        "#!/bin/sh\ncase \"$1\" in\n  doctor) echo '{\"schema_version\":1,\"command\":\"doctor\",\"surprise\":true}';;\n  *) exit 1;;\nesac\n",
+        &format!(
+            "#!/bin/sh\ncase \"$1\" in\n  project-open) exec {} \"$@\";;\n  doctor) echo '{{\"schema_version\":1,\"command\":\"doctor\",\"surprise\":true}}';;\n  *) exit 1;;\nesac\n",
+            codingmage_ui::command::format_command(&coordinator_binary(), &[]).unwrap()
+        ),
     );
     let binary = CoordinatorBinary::at(&fake);
     let mut harness = harness(binary, [1100.0, 720.0]);
@@ -341,8 +544,13 @@ fn malformed_backend_output_is_an_explicit_contract_failure() {
     harness.get_by_label_contains("does not match the contract");
     harness.get_by_label_contains("no current repository diagnosis is available");
     drop(harness);
-    let unsupported =
-        fixture.executable("codingmage", "#!/bin/sh\necho '{\"schema_version\":7}'\n");
+    let unsupported = fixture.executable(
+        "codingmage",
+        &format!(
+            "#!/bin/sh\ncase \"$1\" in\n  project-open) exec {} \"$@\";;\n  *) echo '{{\"schema_version\":7}}';;\nesac\n",
+            codingmage_ui::command::format_command(&coordinator_binary(), &[]).unwrap()
+        ),
+    );
     let binary = CoordinatorBinary::at(&unsupported);
     let mut second = common::harness(binary, [1100.0, 720.0]);
     second.state_mut().open_project(&config);

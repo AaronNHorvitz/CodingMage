@@ -1,8 +1,7 @@
-//! Read-only project loading through the existing configuration and task-plan contracts.
+//! Project snapshots from the public coordinator command and legacy local parsers.
 //!
-//! Opening a project validates the selected configuration with `codingmage-core`, parses the
-//! task source with `codingmage-plan`, and records digests. It starts no process and changes no
-//! file.
+//! Native Open actions decode a strict `project-open` response. Local parsing remains for
+//! isolated fixtures and guided-configuration recovery, which is still an open migration.
 
 use std::{
     fmt, fs,
@@ -11,7 +10,10 @@ use std::{
 
 use codingmage_core::{Config, ConfigLoadError, load_config};
 use codingmage_plan::{PlanError, TaskPlan};
+use serde::Deserialize;
 use sha2::{Digest, Sha256};
+
+use crate::backend::BackendError;
 
 /// Largest task source the interface reads.
 pub const MAX_TASK_SOURCE_BYTES: u64 = 8 * 1024 * 1024;
@@ -45,6 +47,12 @@ pub enum OpenError {
     RelativePath,
     /// The configuration failed the existing loader.
     Config(ConfigLoadError),
+    /// The coordinator read failed.
+    Backend(BackendError),
+    /// The coordinator returned an unexpected project snapshot.
+    Contract,
+    /// The coordinator uses an unsupported project snapshot schema.
+    UnsupportedSchema,
 }
 
 impl fmt::Display for OpenError {
@@ -52,19 +60,30 @@ impl fmt::Display for OpenError {
         match self {
             Self::RelativePath => formatter.write_str("the configuration path must be absolute"),
             Self::Config(error) => write!(formatter, "{error}"),
+            Self::Backend(error) => write!(formatter, "{}", error.code()),
+            Self::Contract => {
+                formatter.write_str("project snapshot did not match the expected contract")
+            }
+            Self::UnsupportedSchema => {
+                formatter.write_str("project snapshot uses an unsupported schema")
+            }
         }
     }
 }
 
 impl std::error::Error for OpenError {}
 
-/// Why the task source could not be parsed.
+/// Why a current task plan cannot be shown.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PlanLoadError {
     /// The task source file is missing, linked, oversized or unreadable.
     Unavailable,
     /// The strict grammar rejected the source.
     Invalid(PlanError),
+    /// The parsed task source exceeded the native command output bound.
+    ProjectionTooLarge,
+    /// A later coordinator diagnosis observed different task-source bytes.
+    Stale,
 }
 
 impl fmt::Display for PlanLoadError {
@@ -74,6 +93,10 @@ impl fmt::Display for PlanLoadError {
                 "the task source is missing, a symbolic link, larger than 8 MiB or unreadable",
             ),
             Self::Invalid(error) => write!(formatter, "the task source is invalid: {error}"),
+            Self::ProjectionTooLarge => {
+                formatter.write_str("the task source projection exceeds 8 MiB")
+            }
+            Self::Stale => formatter.write_str("the task source changed after it was opened"),
         }
     }
 }
@@ -81,6 +104,60 @@ impl fmt::Display for PlanLoadError {
 impl std::error::Error for PlanLoadError {}
 
 impl Project {
+    /// Decodes one versioned read-only snapshot returned by `codingmage project-open`.
+    ///
+    /// # Errors
+    ///
+    /// Refuses an unsupported schema, unexpected selected path, malformed digest or plan payload.
+    pub fn from_snapshot(config_path: &Path, bytes: &[u8]) -> Result<Self, OpenError> {
+        let schema: SnapshotSchema =
+            serde_json::from_slice(bytes).map_err(|_| OpenError::Contract)?;
+        if schema.schema_version != 1 {
+            return Err(OpenError::UnsupportedSchema);
+        }
+        let snapshot: ProjectSnapshot =
+            serde_json::from_slice(bytes).map_err(|_| OpenError::Contract)?;
+        debug_assert_eq!(snapshot.schema_version, 1);
+        if snapshot.config_path != config_path
+            || snapshot.config.version != 1
+            || !snapshot.config.target_path.is_absolute()
+            || !valid_sha256(&snapshot.config_sha256)
+        {
+            return Err(OpenError::Contract);
+        }
+        let plan = match snapshot.plan {
+            PlanSnapshot::Loaded {
+                plan,
+                source_sha256,
+                byte_length,
+            } => {
+                if !valid_sha256(&source_sha256)
+                    || plan.version != 1
+                    || plan.source_sha256 != source_sha256
+                    || byte_length == 0
+                    || byte_length as u64 > MAX_TASK_SOURCE_BYTES
+                {
+                    return Err(OpenError::Contract);
+                }
+                Ok(LoadedPlan {
+                    plan,
+                    source_sha256,
+                    byte_length,
+                })
+            }
+            PlanSnapshot::Invalid { code } => Err(PlanLoadError::Invalid(
+                parse_plan_error_code(&code).ok_or(OpenError::Contract)?,
+            )),
+            PlanSnapshot::Unavailable => Err(PlanLoadError::Unavailable),
+            PlanSnapshot::ProjectionTooLarge => Err(PlanLoadError::ProjectionTooLarge),
+        };
+        Ok(Self {
+            config_path: snapshot.config_path,
+            config: snapshot.config,
+            plan,
+        })
+    }
+
     /// Opens one configuration without side effects.
     ///
     /// # Errors
@@ -110,6 +187,53 @@ impl Project {
     pub fn task_source_path(&self) -> PathBuf {
         self.config.target_path.join(&self.config.task_source)
     }
+}
+
+#[derive(Deserialize)]
+struct SnapshotSchema {
+    schema_version: u16,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ProjectSnapshot {
+    schema_version: u16,
+    config_path: PathBuf,
+    config_sha256: String,
+    config: Config,
+    plan: PlanSnapshot,
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "state", rename_all = "snake_case", deny_unknown_fields)]
+enum PlanSnapshot {
+    Loaded {
+        plan: TaskPlan,
+        source_sha256: String,
+        byte_length: usize,
+    },
+    Invalid {
+        code: String,
+    },
+    Unavailable,
+    ProjectionTooLarge,
+}
+
+fn valid_sha256(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn parse_plan_error_code(code: &str) -> Option<PlanError> {
+    Some(match code {
+        "codingmage.plan.invalid_source" => PlanError::InvalidSource,
+        "codingmage.plan.duplicate_id" => PlanError::DuplicateId,
+        "codingmage.plan.missing_parent" => PlanError::MissingParent,
+        "codingmage.plan.malformed_hierarchy" => PlanError::MalformedHierarchy,
+        "codingmage.plan.missing_goal" => PlanError::MissingGoal,
+        "codingmage.plan.invalid_dependency" => PlanError::InvalidDependency,
+        "codingmage.plan.conflicting_state" => PlanError::ConflictingState,
+        _ => return None,
+    })
 }
 
 /// Parses task-source bytes from the configured location.

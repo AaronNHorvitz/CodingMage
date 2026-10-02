@@ -247,6 +247,19 @@ fn combining_mark_paths_refuse_campaign_actions_before_any_intent_or_launch() {
             ready.state_home.clone(),
         );
         harness.state_mut().open_project(&ready.fixture.config);
+        if source != "specification" {
+            assert!(harness.state().project().is_none());
+            assert!(harness.state().open_error().is_some());
+            harness.state_mut().start_campaign();
+            assert!(harness.state().execution().record.is_none());
+            assert!(harness.state().execution().ledger.entries.is_empty());
+            assert!(!ready.fixture.state.join("campaigns").exists());
+            continue;
+        }
+        assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+            .diagnosis()
+            .value
+            .is_some()));
         harness.state_mut().select_campaign(&ready.spec);
         harness.state_mut().set_authorization_record(&ready.record);
         harness.state_mut().select_screen(Screen::Campaign);

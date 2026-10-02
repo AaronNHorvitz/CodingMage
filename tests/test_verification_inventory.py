@@ -146,6 +146,34 @@ class VerificationInventoryTests(unittest.TestCase):
         )
         self.assertEqual(item["applicable_categories"], expected)
 
+    def test_project_selection_does_not_reclassify_adjacent_accessors(self) -> None:
+        path = "crates/codingmage-ui/src/app/mod.rs"
+        for name, expected in (
+            ("GIT_DEADLINE", ["positive", "boundary", "repeatability"]),
+            ("STATUS_DEADLINE", ["positive", "repeatability"]),
+        ):
+            self.assertEqual(
+                INVENTORY.applicability(path, "const", name, "malformed snapshot schema"),
+                expected,
+            )
+        expected = ["positive", "negative", "repeatability"]
+        for name in ("diagnosis", "project"):
+            for context in ("plain accessor", "project snapshot malformed schema"):
+                self.assertEqual(
+                    INVENTORY.applicability(path, "fn", name, context), expected
+                )
+        document = INVENTORY.build()
+        for source, name in (
+            ("crates/codingmage-cli/src/project_read.rs", "open"),
+            ("crates/codingmage-ui/src/project.rs", "from_snapshot"),
+        ):
+            item = next(
+                entry for entry in document["items"]
+                if entry["path"] == source and entry["name"] == name
+            )
+            self.assertIn("malformed_input", item["applicable_categories"])
+            self.assertIn("unknown_field", item["applicable_categories"])
+
 
 if __name__ == "__main__":
     unittest.main()

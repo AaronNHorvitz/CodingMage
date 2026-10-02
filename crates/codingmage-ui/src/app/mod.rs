@@ -27,7 +27,7 @@ use codingmage_plan::{CheckState, PlanItemKind};
 use crate::{
     backend::models::{
         BlockerExplanation, CampaignReport, CampaignStatus, HeadPlanProjection, MissionStatus,
-        TaskDetailProjection,
+        ModelError, TaskDetailProjection,
     },
     backend::{
         BackendError, Binding, CoordinatorBinary, Generation, Job, QueueError, Request, Response,
@@ -40,13 +40,23 @@ use crate::{
     design::{Appearance, Palette, Tokens, current_tokens},
     messages::{self, Catalogue},
     observed::{Freshness, Observed, age_label},
-    project::{OpenError, Project},
+    project::{OpenError, PlanLoadError, Project},
     state_dir::{ProjectMemory, RecentProjects, StateError, user_config_dir},
     workplan::{KindFilter, PlanFilter, PlanIndex, PlanRow, SourceReadiness, StateFilter},
 };
 
 /// Deadline for read-only diagnosis commands.
 pub const DIAGNOSIS_DEADLINE: Duration = Duration::from_mins(1);
+
+fn project_open_arguments(path: &Path) -> Option<Vec<String>> {
+    let path = path.to_str().filter(|_| path.is_absolute())?;
+    Some(vec![
+        "project-open".to_owned(),
+        "--config".to_owned(),
+        path.to_owned(),
+    ])
+}
+
 /// Deadline for read-only campaign projections.
 pub const STATUS_DEADLINE: Duration = Duration::from_mins(1);
 /// Deadline for read-only Git object reads.
@@ -146,6 +156,7 @@ pub struct App {
     binary_path: Option<PathBuf>,
     generation: Generation,
     project: Option<Project>,
+    pending_project: Option<PathBuf>,
     open_error: Option<OpenError>,
     diagnosis: Observed<Diagnosis>,
     screen: Screen,
@@ -262,6 +273,7 @@ impl App {
             binary_path,
             generation: Generation(1),
             project: None,
+            pending_project: None,
             open_error: None,
             diagnosis: Observed::default(),
             screen: Screen::Overview,
@@ -420,6 +432,12 @@ impl App {
         self.project.as_ref()
     }
 
+    /// Project-opening failure, if the selected configuration did not open.
+    #[must_use]
+    pub const fn open_error(&self) -> Option<&OpenError> {
+        self.open_error.as_ref()
+    }
+
     /// Latest diagnosis observation.
     #[must_use]
     pub const fn diagnosis(&self) -> &Observed<Diagnosis> {
@@ -443,17 +461,53 @@ impl App {
         self.screen = screen;
     }
 
-    /// Opens a configuration path; starts no process and changes no file except the recent list.
+    /// Requests a project snapshot on the bounded worker; starts no agent.
     pub fn open_project(&mut self, config_path: &Path) {
-        self.open_project_result(config_path, Project::open(config_path));
+        self.reset_project_selection();
+        self.config_input = config_path.display().to_string();
+        if !config_path.is_absolute() {
+            self.open_error = Some(OpenError::RelativePath);
+            return;
+        }
+        let Some(arguments) = project_open_arguments(config_path) else {
+            self.open_error = Some(OpenError::Contract);
+            return;
+        };
+        if self.binary_path.is_some()
+            && !command::can_preview(self.binary_path.as_deref(), Some(&arguments))
+        {
+            self.open_error = Some(OpenError::Contract);
+            return;
+        }
+        self.pending_project = Some(config_path.to_path_buf());
+        self.set_status("opening configuration through the coordinator");
+        let request = Request {
+            generation: self.generation,
+            binding: Binding {
+                config_path: Some(config_path.to_path_buf()),
+                repository_id: None,
+                campaign_id: None,
+            },
+            job: Job::Command {
+                label: "project-open",
+                arguments,
+                deadline: DIAGNOSIS_DEADLINE,
+            },
+            request_id: None,
+        };
+        if let Err(error) = self.submit(request) {
+            self.pending_project = None;
+            self.open_error = Some(OpenError::Backend(error));
+        }
     }
 
     pub(super) fn open_loaded_project(&mut self, project: Project) {
         let config_path = project.config_path.clone();
-        self.open_project_result(&config_path, Ok(project));
+        self.reset_project_selection();
+        self.finish_project_open(&config_path, Ok(project));
     }
 
-    fn open_project_result(&mut self, config_path: &Path, loaded: Result<Project, OpenError>) {
+    fn reset_project_selection(&mut self) {
         self.setup.cancel_pending_config();
         self.setup.cancel_pending_authorization();
         self.setup.cancel_pending_export();
@@ -465,6 +519,7 @@ impl App {
         }
         self.diagnosis.clear();
         self.project = None;
+        self.pending_project = None;
         self.open_error = None;
         self.plan_index = None;
         self.selected_item = None;
@@ -475,6 +530,9 @@ impl App {
         self.campaign_input.clear();
         self.authorization_record = None;
         self.authorization_input.clear();
+    }
+
+    fn finish_project_open(&mut self, config_path: &Path, loaded: Result<Project, OpenError>) {
         match loaded {
             Ok(project) => {
                 if let Ok(directory) = &self.state_dir {
@@ -525,6 +583,7 @@ impl App {
             worker.advance(self.generation);
         }
         self.project = None;
+        self.pending_project = None;
         self.diagnosis.clear();
         self.open_error = None;
         self.plan_index = None;
@@ -647,22 +706,12 @@ impl App {
             self.report_source_revision = self.report_source_revision.wrapping_add(1);
         }
         match response.label {
+            "project-open" => {
+                self.accept_project_open(response);
+                true
+            }
             "doctor" => {
-                match response
-                    .result
-                    .and_then(|bytes| parse_diagnosis(&bytes).map_err(BackendError::from))
-                {
-                    Ok(diagnosis) => {
-                        self.diagnosis
-                            .accept(diagnosis, response.generation, self.now);
-                        self.reconcile_setup_export();
-                        self.set_status("repository diagnosis observed");
-                    }
-                    Err(error) => {
-                        self.set_status(format!("repository diagnosis failed: {}", error.code()));
-                        self.diagnosis.fail(error, self.now);
-                    }
-                }
+                self.accept_diagnosis(response);
                 true
             }
             "campaign-status" => {
@@ -711,6 +760,11 @@ impl App {
     }
 
     fn binding_matches(&self, issued: &Binding, label: &str) -> bool {
+        if label == "project-open" {
+            return issued.config_path.as_ref() == self.pending_project.as_ref()
+                && issued.repository_id.is_none()
+                && issued.campaign_id.is_none();
+        }
         let current = self.binding();
         if issued.config_path != current.config_path {
             return false;
@@ -724,6 +778,69 @@ impl App {
         // Repository-level observations stay valid when a campaign is selected afterwards;
         // campaign-level observations must belong to the currently selected campaign.
         label == "doctor" || issued.campaign_id == current.campaign_id
+    }
+
+    fn accept_project_open(&mut self, response: Response) {
+        let Some(path) = self.pending_project.take() else {
+            self.discarded_stale += 1;
+            return;
+        };
+        let loaded = response
+            .result
+            .map_err(OpenError::Backend)
+            .and_then(|bytes| Project::from_snapshot(&path, &bytes));
+        self.finish_project_open(&path, loaded);
+    }
+
+    fn accept_diagnosis(&mut self, response: Response) {
+        match response
+            .result
+            .and_then(|bytes| parse_diagnosis(&bytes).map_err(BackendError::from))
+        {
+            Ok(diagnosis) => {
+                let target_changed = self.project.as_ref().is_some_and(|project| {
+                    project.config.redacted_view().target_path_sha256
+                        != diagnosis.configuration.target_path_sha256
+                });
+                if target_changed {
+                    if let Some(project) = self.project.as_mut() {
+                        project.plan = Err(PlanLoadError::Stale);
+                    }
+                    self.plan_index = None;
+                    self.diagnosis.fail(
+                        BackendError::Contract(ModelError::AuthorityMismatch),
+                        self.now,
+                    );
+                    self.set_status("configuration target changed; reopen the configuration");
+                    return;
+                }
+                if let Some(project) = self.project.as_mut()
+                    && project
+                        .plan
+                        .as_ref()
+                        .is_ok_and(|loaded| loaded.source_sha256 != diagnosis.task_source_sha256)
+                {
+                    project.plan = Err(PlanLoadError::Stale);
+                    self.plan_index = None;
+                }
+                let plan_stale = self
+                    .project
+                    .as_ref()
+                    .is_some_and(|project| matches!(&project.plan, Err(PlanLoadError::Stale)));
+                self.diagnosis
+                    .accept(diagnosis, response.generation, self.now);
+                self.reconcile_setup_export();
+                self.set_status(if plan_stale {
+                    "task source changed after opening; reopen the configuration"
+                } else {
+                    "repository diagnosis observed"
+                });
+            }
+            Err(error) => {
+                self.set_status(format!("repository diagnosis failed: {}", error.code()));
+                self.diagnosis.fail(error, self.now);
+            }
+        }
     }
 
     /// Drains worker responses.
@@ -1330,12 +1447,20 @@ impl App {
                     ui.small("Source checkboxes are the repository's own claims; verified completion is shown separately on the Campaign screen.");
                 }
             }
-            Err(error) => failure_box(
-                ui,
-                "Task source unavailable",
-                &error.to_string(),
-                "Fix the task source in the repository; the work plan stays empty until it parses.",
-            ),
+            Err(error) => {
+                let (title, recovery) = if matches!(error, PlanLoadError::Stale) {
+                    (
+                        "Task source changed",
+                        "Reopen the configuration to read the current task source.",
+                    )
+                } else {
+                    (
+                        "Task source unavailable",
+                        "Fix the task source in the repository; the work plan stays empty until it parses.",
+                    )
+                };
+                failure_box(ui, title, &error.to_string(), recovery);
+            }
         }
     }
 
@@ -1430,11 +1555,16 @@ impl App {
         };
         let Some(index) = &self.plan_index else {
             if let Err(error) = &project.plan {
+                let (title, recovery) = if matches!(error, PlanLoadError::Stale) {
+                    ("work_plan_source_stale", "work_plan_source_stale_recovery")
+                } else {
+                    ("work_plan_source_unavailable", "work_plan_source_recovery")
+                };
                 failure_box(
                     ui,
-                    catalogue.text("work_plan_source_unavailable"),
+                    catalogue.text(title),
                     &error.to_string(),
-                    catalogue.text("work_plan_source_recovery"),
+                    catalogue.text(recovery),
                 );
             }
             if ui.button(catalogue.text("work_plan_open_setup")).clicked() {
@@ -1630,9 +1760,18 @@ impl App {
             let response = ui.add(edit).labelled_by(label.id);
             let submitted =
                 response.lost_focus() && ui.input(|input| input.key_pressed(egui::Key::Enter));
-            if ui.button("Open").clicked() || submitted {
-                let path = PathBuf::from(self.config_input.trim());
-                self.open_project(&path);
+            let candidate = PathBuf::from(self.config_input.trim());
+            let candidate_arguments = project_open_arguments(&candidate);
+            let can_open = self.pending_project.is_none()
+                && candidate_arguments.as_ref().is_some_and(|arguments| {
+                    command::can_preview(self.binary_path.as_deref(), Some(arguments))
+                });
+            if ui
+                .add_enabled(can_open, egui::Button::new("Open"))
+                .clicked()
+                || (submitted && can_open)
+            {
+                self.open_project(&candidate);
             }
             if self.project.is_some() && ui.button("Close").clicked() {
                 self.close_project();
@@ -1651,13 +1790,42 @@ impl App {
                 };
             }
         });
+        let selected_path = self
+            .pending_project
+            .clone()
+            .unwrap_or_else(|| PathBuf::from(self.config_input.trim()));
+        let open_arguments = project_open_arguments(&selected_path);
+        if let Some(arguments) = &open_arguments {
+            command::show_for(
+                ui,
+                "open configuration",
+                self.binary_path.as_deref(),
+                arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, "open configuration");
+        }
+        if self.pending_project.is_some() {
+            ui.label("Opening configuration through the coordinator…");
+        }
         self.browser_panel(ui);
         if let Some(error) = &self.open_error {
+            let recovery = match error {
+                OpenError::Backend(BackendError::BinaryUnavailable { .. }) => {
+                    "Install the sibling codingmage executable and reopen this configuration."
+                }
+                OpenError::Contract | OpenError::UnsupportedSchema => {
+                    "Update the sibling codingmage executable to the matching version, then reopen."
+                }
+                _ => {
+                    "Check the configuration path, authority roots, task source and policies, then reopen."
+                }
+            };
             failure_box(
                 ui,
                 "Configuration could not be opened",
                 &error.to_string(),
-                "Roots must be absolute existing directories, the task source relative, and policies must agree.",
+                recovery,
             );
         }
         if !self.recent.configs.is_empty() {

@@ -1333,7 +1333,10 @@ fn campaign_form_without_a_live_diagnosis_is_refused() {
     let fixture = Fixture::new("setup-nodiag", 3);
     let fake = fixture.executable(
         "codingmage",
-        "#!/bin/sh\necho codingmage.cli.repository >&2\nexit 1\n",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'project-open' ]; then exec {} \"$@\"; fi\necho codingmage.cli.repository >&2\nexit 1\n",
+            format_command(&coordinator_binary(), &[]).unwrap()
+        ),
     );
     let binary = CoordinatorBinary::at(&fake);
     let mut harness = harness(binary, [1100.0, 800.0]);
