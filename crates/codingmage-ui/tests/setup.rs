@@ -31,6 +31,14 @@ fn export_helper_unlocked(private: &Path) -> bool {
         .is_ok_and(|file| file.try_lock().is_ok())
 }
 
+fn config_helper_unlocked(private: &Path) -> bool {
+    fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(private.join("setup-config-intent.lock"))
+        .is_ok_and(|file| file.try_lock().is_ok())
+}
+
 fn export_result_count(private: &Path) -> usize {
     fs::read_dir(private)
         .unwrap()
@@ -662,7 +670,7 @@ fn pending_authorization_preview_keeps_the_submitted_arguments() {
         ),
     );
     let binary = CoordinatorBinary::at(&wrapper);
-    let mut harness = harness(binary, [1100.0, 800.0]);
+    let mut harness = harness(binary, [1100.0, 2200.0]);
     harness.state_mut().open_project(&fixture.config);
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {
         app.diagnosis().value.is_some()
@@ -773,8 +781,20 @@ fn authorization_response_for_another_repository_clears_pending_state() {
 fn guided_configuration_is_validated_by_the_existing_loader_and_opened() {
     let fixture = Fixture::new("setup-config", 3);
     let workspace = fixture.root.join("guided");
-    let binary = CoordinatorBinary::at(&coordinator_binary());
-    let mut harness = harness(binary, [1100.0, 800.0]);
+    let receipt_file = fixture.root.join("config-receipt.json");
+    let real_binary = coordinator_binary();
+    let wrapper = fixture.executable(
+        "observed-codingmage",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'setup-write-config' ]; then\n  {} \"$@\" > {} || exit $?\n  cat {}\n  exit 0\nfi\nexec {} \"$@\"\n",
+            format_command(&real_binary, &[]).unwrap(),
+            format_command(&receipt_file, &[]).unwrap(),
+            format_command(&receipt_file, &[]).unwrap(),
+            format_command(&real_binary, &[]).unwrap(),
+        ),
+    );
+    let binary = CoordinatorBinary::at(&wrapper);
+    let mut harness = harness_with_state(binary, [1100.0, 2200.0], fixture.root.join("ui-private"));
     harness.state_mut().setup_state_mut().workspace_root = workspace.display().to_string();
     let target = fixture.target.clone();
     harness.state_mut().start_config_form(&target);
@@ -782,11 +802,31 @@ fn guided_configuration_is_validated_by_the_existing_loader_and_opened() {
     harness.run_steps(2);
     harness.get_by_label_contains("Repository configuration (version 1, deny-first)");
     harness.get_by_label("local only");
+    harness
+        .get_by_label("Show command: write configuration")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("setup-write-config");
     let before = tree_digest(&fixture.target);
     harness.state_mut().apply_config_form();
-    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+    let settled = settle(&mut harness, Duration::from_secs(30), |app| {
         app.diagnosis().value.is_some()
-    }));
+            && app.setup_state().message.as_ref().is_some_and(|result| {
+                result
+                    .as_ref()
+                    .is_ok_and(|message| message.contains("written and verified"))
+            })
+    });
+    assert!(
+        settled,
+        "config result: {:?}; published: {:?}; receipt: {:?}",
+        harness.state().setup_state().message,
+        fs::metadata(workspace.join("codingmage.toml")).map(|value| {
+            use std::os::unix::fs::MetadataExt as _;
+            (value.len(), value.mode() & 0o777, value.nlink())
+        }),
+        fs::read_to_string(&receipt_file)
+    );
     let written = workspace.join("codingmage.toml");
     let config = load_config(&written).expect("existing loader accepts the guided file");
     assert_eq!(config.correction_limit, 3);
@@ -800,7 +840,7 @@ fn guided_configuration_is_validated_by_the_existing_loader_and_opened() {
     );
     assert_eq!(tree_digest(&fixture.target), before);
     harness.run_steps(2);
-    harness.get_by_label_contains("configuration written and validated");
+    harness.get_by_label_contains("configuration written and verified");
     // A conflicting policy is refused by the existing loader and never replaces the file.
     harness.state_mut().edit_opened_config();
     {
@@ -813,14 +853,238 @@ fn guided_configuration_is_validated_by_the_existing_loader_and_opened() {
         form.capabilities.push = codingmage_core::CapabilityGrant::Allowed;
     }
     harness.state_mut().apply_config_form();
-    harness.run_steps(2);
-    harness.get_by_label_contains("policies conflict");
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|message| message.contains("configuration write was not confirmed"))
+        })
+    }));
     assert_eq!(load_config(&written).unwrap(), config);
+    // Inspect and clear the failed request before trying another write.
+    harness.state_mut().select_screen(Screen::Setup);
+    harness.run_steps(2);
+    harness
+        .get_by_label("I inspected the destination; clear configuration notice")
+        .click();
+    harness.run_steps(2);
     // Overwrite is refused unless requested.
     harness.state_mut().start_config_form(&target);
     harness.state_mut().apply_config_form();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|message| message.contains("configuration write was not confirmed"))
+        })
+    }));
+    assert_eq!(load_config(&written).unwrap(), config);
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn configuration_helper_survives_window_close_and_requires_explicit_recovery() {
+    let fixture = Fixture::new("setup-config-recovery", 2);
+    let workspace = fixture.root.join("guided");
+    let state_dir = fixture.root.join("ui-private");
+    let destination = workspace.join("codingmage.toml");
+    let started = fixture.root.join("config-written");
+    let release = fixture.root.join("release-config-receipt");
+    let receipt = fixture.root.join("held-config-receipt.json");
+    let real_binary = coordinator_binary();
+    let wrapper = fixture.executable(
+        "held-config-codingmage",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'setup-write-config' ]; then\n  {} \"$@\" > {} || exit $?\n  : > {}\n  until [ -f {} ]; do sleep 0.05; done\n  cat {}\n  exit 0\nfi\nexec {} \"$@\"\n",
+            format_command(&real_binary, &[]).unwrap(),
+            format_command(&receipt, &[]).unwrap(),
+            format_command(&started, &[]).unwrap(),
+            format_command(&release, &[]).unwrap(),
+            format_command(&receipt, &[]).unwrap(),
+            format_command(&real_binary, &[]).unwrap(),
+        ),
+    );
+    let mut first = harness_with_state(
+        CoordinatorBinary::at(&wrapper),
+        [1100.0, 2200.0],
+        state_dir.clone(),
+    );
+    first.state_mut().setup_state_mut().workspace_root = workspace.display().to_string();
+    first.state_mut().start_config_form(&fixture.target);
+    first.state_mut().apply_config_form();
+    let deadline = Instant::now() + Duration::from_secs(30);
+    while !started.exists() && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(20));
+    }
+    if !started.exists() {
+        fs::write(&release, b"").unwrap();
+        panic!("public configuration write did not finish");
+    }
+    assert!(destination.exists());
+    assert!(state_dir.join("setup-config-intent.json").exists());
+    drop(first);
+    fs::write(&release, b"").unwrap();
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let mut finished = false;
+    while Instant::now() < deadline {
+        finished = fs::read_dir(&state_dir).is_ok_and(|entries| {
+            entries.filter_map(Result::ok).any(|entry| {
+                entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with("setup-config-result-")
+            })
+        }) && config_helper_unlocked(&state_dir);
+        if finished {
+            break;
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert!(
+        finished,
+        "detached configuration helper lost its terminal record"
+    );
+    let scratch = workspace.join("scratch");
+    fs::remove_dir(&scratch).unwrap();
+    let mut reopened = harness_with_state(
+        CoordinatorBinary::at(&wrapper),
+        [1100.0, 2200.0],
+        state_dir.clone(),
+    );
+    reopened.state_mut().start_config_form(&fixture.target);
+    assert!(reopened.state().setup_state().config_form.is_none());
+    reopened.state_mut().select_screen(Screen::Setup);
+    reopened.run_steps(2);
+    reopened
+        .get_by_label("Show command: write configuration")
+        .click();
+    reopened.run_steps(2);
+    reopened.get_by_label_contains("setup-write-config");
+    reopened
+        .get_by_label("Check previous configuration outcome")
+        .click();
+    reopened.run_steps(2);
+    assert!(reopened.state().project().is_none());
+    assert!(
+        reopened
+            .state()
+            .setup_state()
+            .message
+            .as_ref()
+            .is_some_and(|result| {
+                result
+                    .as_ref()
+                    .is_err_and(|message| message.contains("changed before selection"))
+            })
+    );
+    assert!(state_dir.join("setup-config-intent.json").exists());
+    fs::create_dir(&scratch).unwrap();
+    reopened
+        .get_by_label("Check previous configuration outcome")
+        .click();
+    reopened.run_steps(2);
+    assert_eq!(
+        reopened
+            .state()
+            .project()
+            .map(|project| project.config_path.clone()),
+        Some(destination.clone())
+    );
+    assert!(
+        reopened
+            .state()
+            .setup_state()
+            .message
+            .as_ref()
+            .is_some_and(|result| {
+                result
+                    .as_ref()
+                    .is_ok_and(|message| message.contains("written and verified"))
+            })
+    );
+    assert!(!state_dir.join("setup-config-intent.json").exists());
+    assert_eq!(
+        load_config(&destination).unwrap().target_path,
+        fixture.target
+    );
+}
+
+#[test]
+fn changed_selection_and_replaced_configuration_cannot_claim_success() {
+    let fixture = Fixture::new("setup-config-replaced", 2);
+    let workspace = fixture.root.join("guided");
+    let state_dir = fixture.root.join("ui-private");
+    let destination = workspace.join("codingmage.toml");
+    let started = fixture.root.join("config-written");
+    let release = fixture.root.join("release-config-receipt");
+    let receipt = fixture.root.join("held-config-receipt.json");
+    let real_binary = coordinator_binary();
+    let wrapper = fixture.executable(
+        "held-config-codingmage",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'setup-write-config' ]; then\n  {} \"$@\" > {} || exit $?\n  : > {}\n  until [ -f {} ]; do sleep 0.05; done\n  cat {}\n  exit 0\nfi\nexec {} \"$@\"\n",
+            format_command(&real_binary, &[]).unwrap(),
+            format_command(&receipt, &[]).unwrap(),
+            format_command(&started, &[]).unwrap(),
+            format_command(&release, &[]).unwrap(),
+            format_command(&receipt, &[]).unwrap(),
+            format_command(&real_binary, &[]).unwrap(),
+        ),
+    );
+    let mut harness = harness_with_state(
+        CoordinatorBinary::at(&wrapper),
+        [1100.0, 2200.0],
+        state_dir.clone(),
+    );
+    harness.state_mut().setup_state_mut().workspace_root = workspace.display().to_string();
+    harness.state_mut().start_config_form(&fixture.target);
+    harness.state_mut().apply_config_form();
+    let deadline = Instant::now() + Duration::from_secs(30);
+    while !started.exists() && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(20));
+    }
+    if !started.exists() {
+        fs::write(&release, b"").unwrap();
+        panic!("public configuration write did not finish");
+    }
+    let replacement = fixture.root.join("replacement-config.toml");
+    fs::write(&replacement, b"changed after public receipt").unwrap();
+    fs::rename(&replacement, &destination).unwrap();
+    harness.state_mut().open_project(&fixture.config);
+    fs::write(&release, b"").unwrap();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some() && config_helper_unlocked(&state_dir)
+    }));
+    harness.state_mut().select_screen(Screen::Setup);
     harness.run_steps(2);
-    harness.get_by_label_contains("already exists");
+    harness
+        .get_by_label("Check previous configuration outcome")
+        .click();
+    harness.run_steps(2);
+    assert_eq!(
+        harness
+            .state()
+            .project()
+            .map(|project| project.config_path.clone()),
+        Some(fixture.config.clone())
+    );
+    assert!(
+        harness
+            .state()
+            .setup_state()
+            .message
+            .as_ref()
+            .is_some_and(|result| {
+                result
+                    .as_ref()
+                    .is_err_and(|message| message.contains("not confirmed"))
+            })
+    );
+    assert_eq!(
+        fs::read(&destination).unwrap(),
+        b"changed after public receipt"
+    );
+    assert!(state_dir.join("setup-config-intent.json").exists());
 }
 
 #[test]

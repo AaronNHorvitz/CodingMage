@@ -23,6 +23,7 @@ pub mod records;
 pub mod report;
 mod report_export;
 pub mod setup;
+mod setup_config_process;
 mod setup_export_process;
 pub mod state_dir;
 pub mod workplan;
@@ -42,4 +43,10 @@ pub fn run_report_export_helper() -> std::process::ExitCode {
 #[must_use]
 pub fn run_setup_export_helper() -> std::process::ExitCode {
     setup_export_process::helper_main()
+}
+
+/// Runs the isolated guided-configuration supervisor selected by the desktop executable.
+#[must_use]
+pub fn run_setup_config_helper() -> std::process::ExitCode {
+    setup_config_process::helper_main()
 }

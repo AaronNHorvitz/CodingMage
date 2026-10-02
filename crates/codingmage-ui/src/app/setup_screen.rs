@@ -22,14 +22,21 @@ use crate::{
     backend::{Job, PrivateInput, Request, Response},
     browser::Browser,
     command,
-    project::hex,
+    project::{Project, hex},
     setup::{
         CampaignBinding, CampaignForm, ConfigForm, EFFORTS, GateForm, ProfileForm, ProviderForm,
     },
+    setup_config_process::{self, ConfigIntent},
     setup_export_process::{self, ExportIntent},
 };
 
 const AUTHORIZATION_DEADLINE: Duration = Duration::from_mins(1);
+
+#[derive(Clone, Debug)]
+struct PendingConfig {
+    request_id: String,
+    intent: ConfigIntent,
+}
 
 #[derive(Clone, Debug)]
 struct PendingAuthorization {
@@ -158,6 +165,8 @@ fn receipt_matches(
 pub struct SetupState {
     /// Configuration form when editing or creating.
     pub config_form: Option<ConfigForm>,
+    pending_config: Option<PendingConfig>,
+    pub(super) recovery_config: Option<ConfigIntent>,
     /// Campaign form when authoring.
     pub campaign_form: Option<CampaignForm>,
     /// Last outcome message: `Ok` for success, `Err` for a refusal.
@@ -183,6 +192,25 @@ pub struct SetupState {
 }
 
 impl SetupState {
+    pub(super) fn cancel_pending_config(&mut self) {
+        if self.pending_config.take().is_some() {
+            self.message = Some(Err(
+                "the selected repository changed during configuration setup; inspect the destination before retrying"
+                    .to_owned(),
+            ));
+        }
+    }
+
+    pub(super) fn cancel_matching_config(&mut self, request_id: Option<&str>) {
+        if self
+            .pending_config
+            .as_ref()
+            .is_some_and(|pending| Some(pending.request_id.as_str()) == request_id)
+        {
+            self.cancel_pending_config();
+        }
+    }
+
     pub(super) fn cancel_pending_authorization(&mut self) {
         if self.pending_authorization.take().is_some() {
             self.message = Some(Err("the selected authority changed during the write; inspect the destination before retrying".to_owned()));
@@ -347,6 +375,12 @@ impl App {
 
     /// Starts a fresh configuration form for a target directory.
     pub fn start_config_form(&mut self, target: &Path) {
+        if self.setup.recovery_config.is_some() {
+            self.setup.message = Some(Err(
+                "inspect the earlier configuration request before starting another one".to_owned(),
+            ));
+            return;
+        }
         let workspace = self.workspace_root_for(target);
         self.setup.config_form = Some(ConfigForm::defaults(target, &workspace));
         self.setup.message = None;
@@ -354,6 +388,12 @@ impl App {
 
     /// Starts editing the opened configuration.
     pub fn edit_opened_config(&mut self) {
+        if self.setup.recovery_config.is_some() {
+            self.setup.message = Some(Err(
+                "inspect the earlier configuration request before editing this one".to_owned(),
+            ));
+            return;
+        }
         if let Some(project) = &self.project {
             let mut form = ConfigForm::from_config(&project.config_path, &project.config);
             form.overwrite = true;
@@ -362,21 +402,175 @@ impl App {
         }
     }
 
-    /// Writes the configuration form and opens the result.
+    /// Queues an exact, durable public configuration write.
     pub fn apply_config_form(&mut self) {
-        let Some(form) = &self.setup.config_form else {
+        if self.setup.pending_config.is_some() || self.setup.recovery_config.is_some() {
+            self.setup.message = Some(Err(
+                "a prior configuration write needs inspection before another request".to_owned(),
+            ));
+            return;
+        }
+        let Some(form) = self.setup.config_form.clone() else {
             return;
         };
-        match form.write() {
-            Ok(path) => {
-                self.setup.message = Some(Ok(format!(
-                    "configuration written and validated at {}",
-                    path.display()
-                )));
-                self.open_project(&path);
+        let (repository, destination, arguments, candidate) = match config_submission(&form) {
+            Ok(submission) => submission,
+            Err(message) => {
+                self.setup.message = Some(Err(message));
+                return;
             }
-            Err(error) => self.setup.message = Some(Err(error.to_string())),
+        };
+        if !command::can_preview(self.binary_path.as_deref(), Some(&arguments)) {
+            self.setup.message = Some(Err(
+                "the exact configuration command cannot be shown safely".to_owned(),
+            ));
+            return;
         }
+        let Ok(directory) = self.state_dir.as_ref().cloned() else {
+            self.setup.message = Some(Err(
+                "private recovery state is unavailable; no configuration write was started"
+                    .to_owned(),
+            ));
+            return;
+        };
+        let Ok(intent) = setup_config_process::prepare(
+            &directory,
+            &repository,
+            &destination,
+            arguments,
+            candidate,
+        ) else {
+            self.setup.message = Some(Err(
+                "a prior write may be unresolved or private recovery state is unavailable; inspect it before retrying"
+                    .to_owned(),
+            ));
+            return;
+        };
+        let Ok(intent_sha256) = intent.fingerprint() else {
+            self.setup.recovery_config = Some(intent);
+            self.setup.message = Some(Err(
+                "configuration intent could not be bound; inspect private recovery state"
+                    .to_owned(),
+            ));
+            return;
+        };
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::SetupConfig {
+                intent_path: setup_config_process::intent_path(&directory),
+                intent_sha256,
+                deadline: AUTHORIZATION_DEADLINE,
+            },
+            request_id: Some(intent.request_id.clone()),
+        };
+        match self.submit(request) {
+            Ok(()) => {
+                self.setup.pending_config = Some(PendingConfig {
+                    request_id: intent.request_id.clone(),
+                    intent: intent.clone(),
+                });
+                self.setup.recovery_config = Some(intent);
+                self.setup.message = None;
+            }
+            Err(error) => {
+                let cleared = setup_config_process::clear(&directory, &intent).is_ok();
+                if !cleared {
+                    self.setup.recovery_config = Some(intent);
+                }
+                self.setup.message = Some(Err(format!(
+                    "configuration request was not queued ({}); {}",
+                    error.code(),
+                    if cleared {
+                        "no write started"
+                    } else {
+                        "inspect private recovery state before retrying"
+                    }
+                )));
+            }
+        }
+    }
+
+    /// Inspects the private terminal result and exact named destination after reopen.
+    pub fn reconcile_config_write(&mut self) {
+        let Some(intent) = self.setup.recovery_config.clone() else {
+            return;
+        };
+        if self.setup.pending_config.is_some() {
+            return;
+        }
+        let Ok(directory) = self.state_dir.as_ref() else {
+            return;
+        };
+        match setup_config_process::outcome(directory, &intent) {
+            Ok(Some(Ok(bytes))) if setup_config_process::receipt_matches(&intent, &bytes) => {
+                let Some(project) = Project::open(&intent.destination).ok().filter(|project| {
+                    intent.matches_config(&project.config)
+                        && setup_config_process::receipt_matches(&intent, &bytes)
+                }) else {
+                    self.setup.message = Some(Err(
+                        "written bytes or loaded configuration changed before selection; inspect the destination"
+                            .to_owned(),
+                    ));
+                    return;
+                };
+                if setup_config_process::clear(directory, &intent).is_ok() {
+                    self.setup.recovery_config = None;
+                    self.open_loaded_project(project);
+                    self.setup.message = Some(Ok(format!(
+                        "configuration written and verified at {}",
+                        intent.destination.display()
+                    )));
+                } else {
+                    self.setup.message = Some(Err(
+                        "configuration bytes match but its recovery record could not be cleared"
+                            .to_owned(),
+                    ));
+                }
+            }
+            Ok(Some(Err(error))) => {
+                let code = error.code();
+                let (cause, action) = crate::backend::explain_code(&code);
+                self.setup.message = Some(Err(format!(
+                    "configuration write was not confirmed: {cause} ({code}) {action} Inspect its destination before retrying."
+                )));
+            }
+            Ok(Some(Ok(_))) | Err(_) => {
+                self.setup.message = Some(Err(
+                    "configuration receipt or destination is invalid; inspect its destination"
+                        .to_owned(),
+                ));
+            }
+            Ok(None) => {
+                self.setup.message = Some(Err(
+                    "configuration write is running or its outcome is unknown; inspect before retrying"
+                        .to_owned(),
+                ));
+            }
+        }
+    }
+
+    pub(super) fn accept_config_write(&mut self, response: Response) -> bool {
+        let Some(pending) = self.setup.pending_config.take() else {
+            return false;
+        };
+        if response.request_id.as_deref() != Some(pending.request_id.as_str()) {
+            self.setup.pending_config = Some(pending);
+            return false;
+        }
+        if let Ok(bytes) = response.result {
+            if setup_config_process::receipt_matches(&pending.intent, &bytes) {
+                self.reconcile_config_write();
+                return true;
+            }
+            self.setup.message = Some(Err(
+                "configuration result did not match the submitted bytes; inspect its destination"
+                    .to_owned(),
+            ));
+        } else {
+            self.reconcile_config_write();
+        }
+        true
     }
 
     /// Starts a campaign form for the opened repository.
@@ -1069,10 +1263,71 @@ impl App {
     }
 
     fn config_form_view(&mut self, ui: &mut egui::Ui) {
+        if let Some(intent) = self.setup.recovery_config.clone() {
+            ui.label(format!(
+                "Previous configuration destination: {}. Closing this window does not cancel a started write.",
+                intent.destination.display()
+            ));
+            if self.setup.pending_config.is_some() {
+                ui.small("A configuration write is pending. Its submitted fields are locked until the outcome is known.");
+            } else {
+                if ui.button("Check previous configuration outcome").clicked() {
+                    self.reconcile_config_write();
+                }
+                if ui
+                    .button("I inspected the destination; clear configuration notice")
+                    .clicked()
+                {
+                    let cleared = self.state_dir.as_ref().is_ok_and(|directory| {
+                        setup_config_process::clear(directory, &intent).is_ok()
+                    });
+                    if cleared {
+                        self.setup.recovery_config = None;
+                        self.setup.message = Some(Ok(
+                            "local configuration notice cleared after destination inspection"
+                                .to_owned(),
+                        ));
+                    } else {
+                        self.setup.message = Some(Err(
+                            "configuration helper is running or private recovery state changed; check again before clearing"
+                                .to_owned(),
+                        ));
+                    }
+                }
+            }
+            command::show_for(
+                ui,
+                "write configuration",
+                self.binary_path.as_deref(),
+                &intent.arguments,
+            );
+            ui.small("The candidate TOML is private stdin, not a command argument. Recovery controls do not restart the write.");
+        }
         let Some(form) = &mut self.setup.config_form else {
             return;
         };
-        let (apply, discard) = config_form_body(ui, form);
+        let editable = self.setup.pending_config.is_none() && self.setup.recovery_config.is_none();
+        let preview = config_arguments(
+            Path::new(form.target_path.trim()),
+            Path::new(form.config_path.trim()),
+            form.overwrite,
+        );
+        if self.setup.recovery_config.is_none() {
+            if let Some(arguments) = &preview {
+                command::show_for(
+                    ui,
+                    "write configuration",
+                    self.binary_path.as_deref(),
+                    arguments,
+                );
+                ui.small("The configuration content is sent through private stdin. The command validates the exact bytes and repository again before publication.");
+            } else {
+                command::show_unavailable_for(ui, "write configuration");
+            }
+        }
+        let (apply, discard) = ui
+            .add_enabled_ui(editable, |ui| config_form_body(ui, form))
+            .inner;
         if apply {
             self.apply_config_form();
         }
@@ -1304,6 +1559,40 @@ impl App {
             }
         }
     }
+}
+
+fn config_submission(form: &ConfigForm) -> Result<(PathBuf, PathBuf, Vec<String>, String), String> {
+    let config = form.build().map_err(|errors| {
+        errors
+            .iter()
+            .map(|error| format!("{}: {}", error.field, error.message))
+            .collect::<Vec<_>>()
+            .join("; ")
+    })?;
+    let candidate =
+        toml::to_string_pretty(&config).map_err(|_| "configuration encoding failed".to_owned())?;
+    let repository = config.target_path;
+    let destination = PathBuf::from(form.config_path.trim());
+    let arguments =
+        config_arguments(&repository, &destination, form.overwrite).ok_or_else(|| {
+            "choose absolute, representable repository and configuration paths".to_owned()
+        })?;
+    Ok((repository, destination, arguments, candidate))
+}
+
+fn config_arguments(repository: &Path, destination: &Path, overwrite: bool) -> Option<Vec<String>> {
+    if !repository.is_absolute() || !destination.is_absolute() {
+        return None;
+    }
+    Some(vec![
+        "setup-write-config".to_owned(),
+        "--repo".to_owned(),
+        repository.to_str()?.to_owned(),
+        "--output".to_owned(),
+        destination.to_str()?.to_owned(),
+        "--overwrite".to_owned(),
+        overwrite.to_string(),
+    ])
 }
 
 fn config_form_body(ui: &mut egui::Ui, form: &mut ConfigForm) -> (bool, bool) {

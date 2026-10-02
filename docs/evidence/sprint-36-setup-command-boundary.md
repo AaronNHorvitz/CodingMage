@@ -502,3 +502,54 @@ receipt or digest was renewed. All heavy checks used one Cargo job, one Rust
 test thread and the shared build slot. This follow-up awaits its own
 exact-commit review. Task 36.3.2.2 and all human, live and release gates stay
 open.
+
+## Native guided configuration through the public command
+
+Decision 0076 moves the native configuration form to the public
+`setup-write-config` command. The form freezes validated TOML and the exact
+shown argument vector in one owner-private, create-only intent before queueing
+the request. The coordinator receives the candidate only on private standard
+input. A detached helper holds the intent lock, checks the submitted digest,
+runs the command with a deadline and retains a bounded terminal record after
+window close. It requires the public receipt to match the exact candidate,
+the held named destination bytes, and the repository identity and HEAD. A
+changed destination, malformed result or lost terminal record is uncertain;
+the app neither reports success nor replays the write. Reopening Setup shows
+the frozen command and destination, lets the user check the recorded outcome,
+and requires explicit destination inspection before clearing a notice. A
+second write is refused while the intent remains unresolved. A changed
+selection discards its pending presentation without cancelling a started
+helper.
+
+The disposable native Setup target passes 14/14, including first-run creation
+of a checked missing workspace parent through the public command, an invalid
+policy and no-overwrite refusal, held receipt and window reopen with a
+temporarily unavailable configuration root, and a
+selection change plus destination replacement after public publication.
+Private helper unit tests reject modified intent bytes, duplicate requests,
+malformed terminal identity and unsupported HEAD forms. Strict workspace
+Clippy with warnings denied passes. The earlier Clippy failures on owned
+function length and a match form were corrected; their output remains in
+private state. The final-source native all-target suite passes 188/188 across
+14 targets, including the real-process Setup target, campaign workflows,
+crash recovery, keyboard navigation and offscreen software rendering. All
+heavy batches used the shared slot with one Cargo job and
+one Rust test thread. The broader Task 36.3.2.2 state and in-context depth
+catalogue remains open; no installed-desktop, screen-reader, real-provider or
+release qualification is claimed.
+
+The full Python suite ran 46 tests on the corrected source and passed 45. Its
+sole failure is the unchanged CM-R01.6 eight-input `input-drift` source-bound
+freshness hold. No failed receipt or binding was renewed to silence that gate.
+Cargo formatting, documentation, architecture and diff whitespace checks
+pass on the same tree.
+
+The reviewed version-one inventory generator was regenerated for this source.
+It records 1,827 public items and 825 explicit gaps versus 1,808/825 before
+the native migration. Nineteen normalized surfaces were added and none
+removed. The response router now explicitly admits malformed and unknown
+field categories for the new configuration result; two unrelated control
+functions retain their prior applicability rather than inheriting nearby
+receipt keywords. Existing test-name mapping suggestions moved as new tests
+entered the crate; they do not establish coverage. No source-bound CM-R01.6
+package, failed receipt, binding or digest was renewed.

@@ -237,6 +237,25 @@ impl App {
             .ok()
             .and_then(|directory| RecentProjects::load(directory).ok())
             .unwrap_or_default();
+        let mut setup = SetupState::default();
+        if let Ok(directory) = &state_dir {
+            match crate::setup_config_process::load(directory) {
+                Ok(Some(intent)) => {
+                    setup.recovery_config = Some(intent);
+                    setup.message = Some(Err(
+                        "a previous configuration write may need inspection; check its outcome in Setup"
+                            .to_owned(),
+                    ));
+                }
+                Ok(None) => {}
+                Err(_) => {
+                    setup.message = Some(Err(
+                        "private configuration recovery state is invalid; inspect it before another write"
+                            .to_owned(),
+                    ));
+                }
+            }
+        }
         let now = Instant::now();
         Self {
             connection,
@@ -273,7 +292,7 @@ impl App {
             last_status_request: None,
             status_epoch: 0,
             next_evidence_request: 0,
-            setup: SetupState::default(),
+            setup,
             authorization_record: None,
             authorization_input: String::new(),
             preflight: Observed::default(),
@@ -426,6 +445,16 @@ impl App {
 
     /// Opens a configuration path; starts no process and changes no file except the recent list.
     pub fn open_project(&mut self, config_path: &Path) {
+        self.open_project_result(config_path, Project::open(config_path));
+    }
+
+    pub(super) fn open_loaded_project(&mut self, project: Project) {
+        let config_path = project.config_path.clone();
+        self.open_project_result(&config_path, Ok(project));
+    }
+
+    fn open_project_result(&mut self, config_path: &Path, loaded: Result<Project, OpenError>) {
+        self.setup.cancel_pending_config();
         self.setup.cancel_pending_authorization();
         self.setup.cancel_pending_export();
         self.setup.recovery_export = None;
@@ -446,7 +475,7 @@ impl App {
         self.campaign_input.clear();
         self.authorization_record = None;
         self.authorization_input.clear();
-        match Project::open(config_path) {
+        match loaded {
             Ok(project) => {
                 if let Ok(directory) = &self.state_dir {
                     let _ = self.recent.remember(directory, &project.config_path);
@@ -486,6 +515,7 @@ impl App {
 
     /// Closes the project without affecting any coordinator process.
     pub fn close_project(&mut self) {
+        self.setup.cancel_pending_config();
         self.setup.cancel_pending_authorization();
         self.setup.cancel_pending_export();
         self.setup.recovery_export = None;
@@ -570,6 +600,7 @@ impl App {
     }
 
     pub(super) fn advance_selection_generation(&mut self) {
+        self.setup.cancel_pending_config();
         self.setup.cancel_pending_authorization();
         self.setup.cancel_pending_campaign();
         self.setup.cancel_pending_export();
@@ -586,6 +617,10 @@ impl App {
         if response.generation != self.generation
             || !self.binding_matches(&response.binding, response.label)
         {
+            if response.label == "setup-write-config" {
+                self.setup
+                    .cancel_matching_config(response.request_id.as_deref());
+            }
             if response.label == "setup-write-authorization" {
                 self.setup
                     .cancel_matching_authorization(response.request_id.as_deref());
@@ -668,6 +703,7 @@ impl App {
             "report-export" => self.accept_report_export(response),
             "campaign-outcome-report" => self.accept_source_report(response),
             "setup-write-authorization" => self.accept_authorization_write(response),
+            "setup-write-config" => self.accept_config_write(response),
             "setup-write-campaign" => self.accept_campaign_write(response),
             "setup-export-copy" => self.accept_setup_export(response),
             _ => false,
