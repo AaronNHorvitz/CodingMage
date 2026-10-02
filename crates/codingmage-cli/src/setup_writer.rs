@@ -3,12 +3,12 @@
 use std::{
     fs::{self, File},
     io::{Read, Seek as _, SeekFrom},
-    os::unix::fs::MetadataExt as _,
-    path::{Path, PathBuf},
+    os::unix::fs::{DirBuilderExt as _, MetadataExt as _},
+    path::{Component, Path, PathBuf},
 };
 
 use codingmage_campaign::CampaignSpec;
-use codingmage_core::{RepositoryAuthorization, load_config};
+use codingmage_core::{Config, RepositoryAuthorization, load_config};
 use codingmage_git::{inventory_repository, read_authorized_blob};
 use codingmage_plan::TaskPlan;
 use nix::{
@@ -22,6 +22,184 @@ use crate::{CliError, ParsedArguments, executable_parent, report_writer};
 
 const MAX_AUTHORIZATION_BYTES: usize = 1024 * 1024;
 const MAX_CAMPAIGN_BYTES: usize = 1024 * 1024;
+const MAX_CONFIG_BYTES: usize = 1024 * 1024;
+
+/// Publishes one guided configuration through the public coordinator boundary.
+///
+/// Missing scratch/state roots may be created as private direct children of the configuration
+/// directory. A failure after that creation can leave empty roots for the operator to inspect.
+pub(super) fn configuration(arguments: &[String], input: impl Read) -> Result<String, CliError> {
+    let parsed =
+        ParsedArguments::new_with_optional(arguments, &["repo", "output"], &["overwrite"])?;
+    let repository = parsed.absolute_directory("repo")?;
+    let output = parsed.absolute_path("output")?;
+    let overwrite = match parsed.optional_value("overwrite") {
+        None | Some("false") => false,
+        Some("true") => true,
+        Some(_) => return Err(CliError::Usage),
+    };
+    report_writer::validate(&output, &repository)?;
+    let mut previous = match fs::symlink_metadata(&output) {
+        Ok(metadata) if !overwrite || !metadata.is_file() || metadata.file_type().is_symlink() => {
+            return Err(CliError::Refused);
+        }
+        Ok(_) => {
+            let mut held = ObservedFile::open(&output, MAX_CONFIG_BYTES as u64)?;
+            let original = load_config(&output).map_err(|_| CliError::Refused)?;
+            if original.target_path != repository {
+                return Err(CliError::Refused);
+            }
+            let bytes = held.exact_bytes()?;
+            if toml::from_str::<Config>(
+                std::str::from_utf8(&bytes).map_err(|_| CliError::StaleObservation)?,
+            )
+            .map_err(|_| CliError::StaleObservation)?
+                != original
+            {
+                return Err(CliError::StaleObservation);
+            }
+            Some((held, bytes))
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(_) => return Err(CliError::Refused),
+    };
+    let mut bytes = Vec::new();
+    input
+        .take(MAX_CONFIG_BYTES as u64 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|_| CliError::InvalidArgument)?;
+    if bytes.is_empty() || bytes.len() > MAX_CONFIG_BYTES {
+        return Err(CliError::InvalidArgument);
+    }
+    let text = std::str::from_utf8(&bytes).map_err(|_| CliError::InvalidArgument)?;
+    let config: Config = toml::from_str(text).map_err(|_| CliError::Config)?;
+    if config.target_path != repository {
+        return Err(CliError::StaleObservation);
+    }
+    let roots = prepare_configuration_roots(&config, &output, &repository)?;
+    let authority = RepositoryAuthorization::authorize(&config, &executable_parent()?)
+        .map_err(|_| CliError::Repository)?;
+    let expected = authority.identity().clone();
+    let mut checked_previous = false;
+    report_writer::write_guarded_validated(
+        &output,
+        &repository,
+        &bytes,
+        overwrite,
+        |candidate| {
+            if load_config(candidate).map_err(|_| CliError::Config)? == config {
+                Ok(())
+            } else {
+                Err(CliError::StaleObservation)
+            }
+        },
+        || {
+            authority
+                .revalidate()
+                .map_err(|_| CliError::StaleObservation)?;
+            check_configuration_roots(&roots)?;
+            if !checked_previous {
+                if let Some((held, original)) = previous.as_mut()
+                    && held.exact_bytes()? != *original
+                {
+                    return Err(CliError::StaleObservation);
+                }
+                checked_previous = true;
+            }
+            if RepositoryAuthorization::authorize(&config, &executable_parent()?)
+                .map_err(|_| CliError::StaleObservation)?
+                .identity()
+                != &expected
+            {
+                return Err(CliError::StaleObservation);
+            }
+            Ok(())
+        },
+    )?;
+    verify_published_configuration(&output, &bytes, &authority, &roots)?;
+    serde_json::to_string_pretty(&json!({
+        "schema_version": 1,
+        "repository_id": expected.repository_id.as_str(),
+        "head": expected.initial_head,
+        "written": true,
+        "bytes": bytes.len(),
+        "sha256": digest_hex(&bytes)?,
+    }))
+    .map_err(|_| CliError::Internal)
+}
+
+fn verify_published_configuration(
+    output: &Path,
+    bytes: &[u8],
+    authority: &RepositoryAuthorization,
+    roots: &[(PathBuf, u64, u64)],
+) -> Result<(), CliError> {
+    let mut published = ObservedFile::open(output, MAX_CONFIG_BYTES as u64)
+        .map_err(|_| CliError::UncertainWrite)?;
+    if published
+        .exact_bytes()
+        .map_err(|_| CliError::UncertainWrite)?
+        != bytes
+        || authority.revalidate().is_err()
+        || check_configuration_roots(roots).is_err()
+    {
+        return Err(CliError::UncertainWrite);
+    }
+    Ok(())
+}
+
+fn prepare_configuration_roots(
+    config: &Config,
+    output: &Path,
+    repository: &Path,
+) -> Result<Vec<(PathBuf, u64, u64)>, CliError> {
+    let output_parent = fs::canonicalize(output.parent().ok_or(CliError::InvalidArgument)?)
+        .map_err(|_| CliError::Refused)?;
+    let mut roots = Vec::new();
+    for root in [&config.scratch_root, &config.state_root] {
+        if !root.is_absolute()
+            || root
+                .components()
+                .any(|part| matches!(part, Component::ParentDir))
+        {
+            return Err(CliError::InvalidArgument);
+        }
+        match fs::symlink_metadata(root) {
+            Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                let parent = root.parent().ok_or(CliError::InvalidArgument)?;
+                if fs::canonicalize(parent).map_err(|_| CliError::Refused)? != output_parent {
+                    return Err(CliError::Refused);
+                }
+                fs::DirBuilder::new()
+                    .mode(0o700)
+                    .create(root)
+                    .map_err(|_| CliError::Refused)?;
+            }
+            Ok(_) | Err(_) => return Err(CliError::Refused),
+        }
+        report_writer::validate(&root.join(".codingmage-root-check"), repository)?;
+        let metadata = fs::symlink_metadata(root).map_err(|_| CliError::Refused)?;
+        if !metadata.is_dir() || metadata.file_type().is_symlink() {
+            return Err(CliError::Refused);
+        }
+        roots.push((root.clone(), metadata.dev(), metadata.ino()));
+    }
+    Ok(roots)
+}
+
+fn check_configuration_roots(roots: &[(PathBuf, u64, u64)]) -> Result<(), CliError> {
+    for (path, device, inode) in roots {
+        let metadata = fs::symlink_metadata(path).map_err(|_| CliError::StaleObservation)?;
+        if !metadata.is_dir()
+            || metadata.file_type().is_symlink()
+            || (metadata.dev(), metadata.ino()) != (*device, *inode)
+        {
+            return Err(CliError::StaleObservation);
+        }
+    }
+    Ok(())
+}
 
 // A held no-follow descriptor binds the bytes and physical identity to the
 // named file. Publication checks reject a moved leaf and re-read mutable bytes.

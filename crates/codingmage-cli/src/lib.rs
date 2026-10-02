@@ -57,6 +57,7 @@ Commands:
   campaign-report               Read the final campaign report
   campaign-outcome-report       Assemble a source-bound outcome and blocker report
   report-export                 Write a source-bound report outside the repository
+  setup-write-config           Write guided configuration bytes from stdin
   setup-write-authorization     Write exact owner authorization bytes from stdin
   setup-inspect-authorization   Inspect a bound external authorization record
   setup-write-campaign          Write exact campaign specification bytes from stdin
@@ -98,6 +99,9 @@ fn command_help(command: &str) -> Option<&'static str> {
         ),
         "report-export" => Some(
             "Usage: codingmage report-export --config <ABSOLUTE_FILE> --campaign <ABSOLUTE_FILE> --output <ABSOLUTE_FILE> [--include-paths true|false] [--overwrite true|false]",
+        ),
+        "setup-write-config" => Some(
+            "Usage: codingmage setup-write-config --repo <ABSOLUTE_DIR> --output <ABSOLUTE_FILE> [--overwrite true|false] < CONFIG_TOML",
         ),
         "setup-write-authorization" => Some(
             "Usage: codingmage setup-write-authorization --config <ABSOLUTE_FILE> --repository-id <OBSERVED_ID> --output <ABSOLUTE_FILE> [--overwrite true|false] < AUTHORIZATION_TEXT",
@@ -198,6 +202,9 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "campaign-report" => inspect_campaign_report(&arguments[1..]),
         "campaign-outcome-report" => outcome_report::inspect(&arguments[1..]),
         "report-export" => outcome_report::export(&arguments[1..]),
+        "setup-write-config" => {
+            setup_writer::configuration(&arguments[1..], std::io::stdin().lock())
+        }
         "setup-write-authorization" => {
             setup_writer::authorization(&arguments[1..], std::io::stdin().lock())
         }

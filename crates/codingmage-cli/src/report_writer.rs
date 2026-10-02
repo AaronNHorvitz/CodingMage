@@ -402,6 +402,32 @@ pub(super) fn write_guarded(
     )
 }
 
+/// Publishes exact bytes only after the candidate loader and the caller's authority both pass.
+pub(super) fn write_guarded_validated(
+    path: &Path,
+    repository: &Path,
+    bytes: &[u8],
+    overwrite: bool,
+    validate: impl FnOnce(&Path) -> Result<(), CliError>,
+    publication_check: impl FnMut() -> Result<(), CliError>,
+) -> Result<(), CliError> {
+    write_with_publication_check(
+        path,
+        repository,
+        bytes,
+        overwrite,
+        validate,
+        publication_check,
+        Hooks {
+            before_write: || {},
+            before_publish: || {},
+            before_stage_open: |_| {},
+            before_publish_call: || {},
+            after_publication: || {},
+        },
+    )
+}
+
 #[cfg(test)]
 fn write_with_hooks(
     path: &Path,
