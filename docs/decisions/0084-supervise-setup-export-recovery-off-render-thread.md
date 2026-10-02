@@ -1,6 +1,6 @@
 # ADR 0084: Supervise Setup Export Recovery Off the Render Thread
 
-- **Status:** Accepted for local implementation; bounded independent review pending
+- **Status:** Accepted for local implementation; first bounded review found a cleanup identity gap, corrected by Decision 0085 pending re-review
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 

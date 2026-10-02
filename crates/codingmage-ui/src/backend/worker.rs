@@ -182,6 +182,10 @@ pub enum Job {
     SetupExportClear {
         /// Private intent path.
         intent_path: PathBuf,
+        /// Configuration currently selected by the interface.
+        config_path: PathBuf,
+        /// Repository identity from the current diagnosis.
+        observed_repository_id: String,
         /// Digest of the inspected intent.
         intent_sha256: String,
         /// Correlation identity of the export.
@@ -529,10 +533,19 @@ fn run_standard_job(
         } => setup_export_process::recover(intent_path, intent_sha256, request_id),
         Job::SetupExportClear {
             intent_path,
+            config_path,
+            observed_repository_id,
             intent_sha256,
             request_id,
             verified,
-        } => setup_export_process::clear_notice(intent_path, intent_sha256, request_id, *verified),
+        } => setup_export_process::clear_notice(
+            intent_path,
+            config_path,
+            observed_repository_id,
+            intent_sha256,
+            request_id,
+            *verified,
+        ),
         Job::ReportExport { .. }
         | Job::SourceReportExport { .. }
         | Job::SourceReportInspect { .. } => {

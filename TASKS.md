@@ -2488,6 +2488,13 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     verification and notice cleanup to the bound worker. The detached public
     export command remains unchanged; the UI waits for verified cleanup before
     showing success. See `docs/evidence/sprint-36-setup-export-recovery.md`.
+    Its first exact-commit bounded independent review of
+    `d6c49243e721b5de441cb78815c4539e83c00809` found a High
+    same-path/different-repository notice-cleanup gap. Decision 0085 binds
+    cleanup to the current diagnosed repository and retains the prior export
+    record on mismatch; see
+    `docs/evidence/sprint-36-setup-export-identity-correction.md`.
+    Independent re-review of the correction remains open.
     The full catalogue and this sub-task remain open.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.

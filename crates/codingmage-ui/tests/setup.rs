@@ -23,7 +23,7 @@ use codingmage_ui::{
     state_dir::project_private_dir,
 };
 use common::{Fixture, coordinator_binary, harness, harness_with_state, settle, tree_digest};
-use egui_kittest::kittest::Queryable as _;
+use egui_kittest::kittest::{NodeT as _, Queryable as _};
 use sha2::{Digest as _, Sha256};
 
 fn export_helper_unlocked(private: &Path) -> bool {
@@ -209,6 +209,80 @@ fn malformed_setup_export_receipt_never_reports_success() {
     }));
     assert_eq!(export_result_count(&private), 0);
     assert!(!private.join("setup-export-intent.json").exists());
+}
+
+#[test]
+fn export_notice_for_replaced_repository_remains_bound_to_original_observation() {
+    let original = Fixture::new("setup-export-original-repository", 1);
+    let replacement = Fixture::new("setup-export-replacement-repository", 1);
+    let real_binary = coordinator_binary();
+    let wrapper = original.executable(
+        "failed-export-coordinator",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'setup-export-copy' ]; then printf '%s\\n' '{{\"schema_version\":1,\"written\":true,\"unexpected\":1}}'; exit 0; fi\nexec {} \"$@\"\n",
+            format_command(&real_binary, &[]).unwrap(),
+        ),
+    );
+    let state_dir = original.root.join("ui-private");
+    let private = project_private_dir(&state_dir, &original.config);
+    let mut first = harness_with_state(
+        CoordinatorBinary::at(&wrapper),
+        [1100.0, 800.0],
+        state_dir.clone(),
+    );
+    first.state_mut().open_project(&original.config);
+    assert!(settle(&mut first, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
+    let original_repository_id = first
+        .state()
+        .diagnosis()
+        .value
+        .as_ref()
+        .unwrap()
+        .repository_id
+        .clone();
+    first.state_mut().setup_state_mut().export_path =
+        original.root.join("export.toml").display().to_string();
+    first.state_mut().export_document(&original.config);
+    assert!(settle(&mut first, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|message| message.contains("not confirmed"))
+        })
+    }));
+    assert_eq!(export_result_count(&private), 1);
+    let intent_path = private.join("setup-export-intent.json");
+    assert!(intent_path.exists());
+    drop(first);
+
+    fs::copy(&replacement.config, &original.config).unwrap();
+    let mut reopened = harness_with_state(
+        CoordinatorBinary::at(&real_binary),
+        [1100.0, 800.0],
+        state_dir,
+    );
+    reopened.state_mut().open_project(&original.config);
+    assert!(settle(&mut reopened, Duration::from_secs(30), |app| {
+        app.diagnosis().value.as_ref().is_some_and(|diagnosis| {
+            diagnosis.repository_id != original_repository_id
+                && app.setup_state().message.as_ref().is_some_and(|result| {
+                    result
+                        .as_ref()
+                        .is_err_and(|message| message.contains("another repository observation"))
+                })
+        })
+    }));
+    reopened.state_mut().select_screen(Screen::Setup);
+    reopened.run_steps(2);
+    let clear = reopened.get_by_label("I inspected the destination; clear export notice");
+    assert!(clear.accesskit_node().is_disabled());
+    clear.click();
+    reopened.run_steps(2);
+    assert!(intent_path.exists());
+    assert_eq!(export_result_count(&private), 1);
 }
 
 #[test]

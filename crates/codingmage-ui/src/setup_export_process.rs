@@ -392,12 +392,17 @@ pub(crate) fn recover(
 /// destination bytes when cleanup follows a verified response.
 pub(crate) fn clear_notice(
     path: &Path,
+    config_path: &Path,
+    observed_repository_id: &str,
     digest: &str,
     request_id: &str,
     verified: bool,
 ) -> Result<Vec<u8>, BackendError> {
     let intent = load_matching_at(path, digest).map_err(|_| recovery_error("invalid_intent"))?;
-    if intent.request_id != request_id {
+    if intent.request_id != request_id
+        || intent.config_path != config_path
+        || intent.repository_id != observed_repository_id
+    {
         return Err(recovery_error("stale_intent"));
     }
     let directory = path
@@ -626,11 +631,32 @@ mod tests {
         let replacement = root.join("replacement.toml");
         fs::write(&replacement, b"changed destination").unwrap();
         fs::rename(&replacement, &destination).unwrap();
-        assert!(clear_notice(&path, &digest, &intent.request_id, true).is_err());
-        assert!(path.exists());
-        assert!(clear_notice(&path, &digest, "other-request", false).is_err());
-        assert!(path.exists());
-        clear_notice(&path, &digest, &intent.request_id, false).unwrap();
+        let result_path = intent.result_path(&path).unwrap();
+        let assert_refused = |config_path: &Path, repository: &str, request: &str, verified| {
+            assert!(
+                clear_notice(&path, config_path, repository, &digest, request, verified).is_err()
+            );
+            assert!(path.exists());
+            assert!(result_path.exists());
+        };
+        assert_refused(&config, "repo-synthetic", &intent.request_id, true);
+        assert_refused(&config, "repo-synthetic", "other-request", false);
+        assert_refused(&config, "other-repository", &intent.request_id, false);
+        assert_refused(
+            &root.join("other.toml"),
+            "repo-synthetic",
+            &intent.request_id,
+            false,
+        );
+        clear_notice(
+            &path,
+            &config,
+            "repo-synthetic",
+            &digest,
+            &intent.request_id,
+            false,
+        )
+        .unwrap();
         assert!(!path.exists());
         fs::remove_dir_all(root).unwrap();
     }

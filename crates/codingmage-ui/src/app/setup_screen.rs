@@ -369,6 +369,24 @@ impl App {
         let Some(intent) = self.setup.recovery_export.clone() else {
             return;
         };
+        let Some(project) = self.project.as_ref() else {
+            return;
+        };
+        let Some(diagnosis) = self.diagnosis.value.as_ref() else {
+            self.setup.message = Some(Err(
+                "repository identity is unavailable; inspect the export destination before clearing its notice".to_owned(),
+            ));
+            return;
+        };
+        if project.config_path != intent.config_path
+            || diagnosis.repository_id != intent.repository_id
+        {
+            self.setup.message = Some(Err(
+                "previous export belongs to another repository observation; inspect its destination"
+                    .to_owned(),
+            ));
+            return;
+        }
         if self.setup.pending_export.is_some()
             || self.setup.pending_export_load.is_some()
             || self.setup.pending_export_recovery.is_some()
@@ -388,6 +406,8 @@ impl App {
             binding: self.binding(),
             job: Job::SetupExportClear {
                 intent_path: setup_export_process::intent_path(directory, &intent.config_path),
+                config_path: project.config_path.clone(),
+                observed_repository_id: diagnosis.repository_id.clone(),
                 intent_sha256,
                 request_id: intent.request_id.clone(),
                 verified,
@@ -1693,6 +1713,13 @@ impl App {
             ui.label("Checking private export recovery state…");
         }
         if let Some(intent) = self.setup.recovery_export.clone() {
+            let repository_matches =
+                self.project.as_ref().is_some_and(|project| {
+                    project.config_path == intent.config_path
+                        && self.diagnosis.value.as_ref().is_some_and(|diagnosis| {
+                            diagnosis.repository_id == intent.repository_id
+                        })
+                });
             ui.label(format!(
                 "Previous export destination: {}. Its outcome remains bound to the original repository and request.",
                 intent.destination.display()
@@ -1714,15 +1741,21 @@ impl App {
             {
                 self.reconcile_setup_export();
             }
-            if self.setup.pending_export.is_none()
-                && self.setup.pending_export_load.is_none()
-                && self.setup.pending_export_recovery.is_none()
-                && self.setup.pending_export_clear.is_none()
-                && ui
-                    .button("I inspected the destination; clear export notice")
-                    .clicked()
+            if ui
+                .add_enabled(
+                    repository_matches
+                        && self.setup.pending_export.is_none()
+                        && self.setup.pending_export_load.is_none()
+                        && self.setup.pending_export_recovery.is_none()
+                        && self.setup.pending_export_clear.is_none(),
+                    egui::Button::new("I inspected the destination; clear export notice"),
+                )
+                .clicked()
             {
                 self.clear_setup_export_notice(false);
+            }
+            if !repository_matches {
+                ui.small("This export belongs to a different repository observation. Keep its recovery record and inspect its destination from the original repository.");
             }
             ui.small("These recovery controls only inspect or clear the private notice. They do not run a coordinator command or stop an export already in progress.");
         }
