@@ -119,6 +119,9 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/app/mod.rs", "fn", "advance_selection_generation"): (
         "positive", "negative", "repeatability",
     ),
+    ("crates/codingmage-ui/src/app/mod.rs", "fn", "handle_response"): (
+        "positive", "negative", "malformed_input", "unknown_field", "repeatability",
+    ),
     ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "cancel_pending_authorization"): (
         "positive", "negative", "repeatability",
     ),
@@ -162,6 +165,11 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/campaign.rs", "fn", "from_snapshot"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
+    # The guided write accepts a closed public project snapshot only when its
+    # exact published-byte digest matches the private intent.
+    ("crates/codingmage-ui/src/project.rs", "fn", "from_snapshot_for_write"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
     ("crates/codingmage-ui/src/campaign.rs", "struct", "TaskOverlay"): (
         "positive", "negative", "boundary", "repeatability",
     ),
@@ -180,6 +188,12 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/app/setup_screen.rs", "struct", "SetupState"): (
         "positive", "negative", "malformed_input", "unknown_field", "repeatability",
     ),
+    ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_config_recovery"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_config_clear"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
     ("crates/codingmage-ui/src/setup.rs", "fn", "build_with_authorization_digest"): (
         "positive", "negative", "boundary", "malformed_input", "repeatability",
     ),
@@ -194,6 +208,12 @@ FIXED_APPLICABILITY = {
     # The detached configuration helper parses an untrusted private JSON
     # request before it can open an intent or invoke the coordinator.
     ("crates/codingmage-ui/src/setup_config_process.rs", "fn", "helper_main"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/setup_config_process.rs", "fn", "recover"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/setup_config_process.rs", "fn", "clear_notice"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
 }

@@ -1,7 +1,7 @@
 //! Project snapshots from the public coordinator command and legacy local parsers.
 //!
 //! Native Open actions decode a strict `project-open` response. Local parsing remains for
-//! isolated fixtures and guided-configuration recovery, which is still an open migration.
+//! isolated fixtures.
 
 use std::{
     fmt, fs,
@@ -110,6 +110,30 @@ impl Project {
     ///
     /// Refuses an unsupported schema, unexpected selected path, malformed digest or plan payload.
     pub fn from_snapshot(config_path: &Path, bytes: &[u8]) -> Result<Self, OpenError> {
+        Self::from_snapshot_with_digest(config_path, None, bytes)
+    }
+
+    /// Decodes a coordinator snapshot only when its exact configuration bytes match a write.
+    ///
+    /// # Errors
+    ///
+    /// Refuses a changed configuration digest or any invalid project snapshot.
+    pub fn from_snapshot_for_write(
+        config_path: &Path,
+        expected_sha256: &str,
+        bytes: &[u8],
+    ) -> Result<Self, OpenError> {
+        if !valid_sha256(expected_sha256) {
+            return Err(OpenError::Contract);
+        }
+        Self::from_snapshot_with_digest(config_path, Some(expected_sha256), bytes)
+    }
+
+    fn from_snapshot_with_digest(
+        config_path: &Path,
+        expected_sha256: Option<&str>,
+        bytes: &[u8],
+    ) -> Result<Self, OpenError> {
         let schema: SnapshotSchema =
             serde_json::from_slice(bytes).map_err(|_| OpenError::Contract)?;
         if schema.schema_version != 1 {
@@ -122,6 +146,7 @@ impl Project {
             || snapshot.config.version != 1
             || !snapshot.config.target_path.is_absolute()
             || !valid_sha256(&snapshot.config_sha256)
+            || expected_sha256.is_some_and(|digest| snapshot.config_sha256 != digest)
         {
             return Err(OpenError::Contract);
         }

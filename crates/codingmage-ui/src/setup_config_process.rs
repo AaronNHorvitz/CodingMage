@@ -24,7 +24,7 @@ use sha2::{Digest as _, Sha256};
 
 use crate::{
     backend::{BackendError, CoordinatorBinary},
-    project::hex,
+    project::{Project, hex},
     state_dir::{StateError, ensure_private_dir, write_private},
 };
 
@@ -412,6 +412,87 @@ pub(crate) fn receipt_matches(intent: &ConfigIntent, bytes: &[u8]) -> bool {
     }
     read_held(&intent.destination, MAX_INPUT_BYTES as u64)
         .is_ok_and(|published| published == intent.candidate.as_bytes())
+}
+
+/// Reconciles an exact private write with a fresh public project snapshot off the UI thread.
+///
+/// A missing terminal record remains unknown. This read leaves the private intent intact until
+/// the interface accepts the result and queues a separate verified cleanup.
+pub(crate) fn recover(
+    binary: &CoordinatorBinary,
+    path: &Path,
+    digest: &str,
+    request_id: &str,
+    deadline: Duration,
+    cancel: &Arc<AtomicBool>,
+) -> Result<Vec<u8>, BackendError> {
+    let intent = load_matching(path, digest).map_err(|_| recovery_error("invalid_intent"))?;
+    if intent.request_id != request_id {
+        return Err(recovery_error("stale_intent"));
+    }
+    let directory = path
+        .parent()
+        .ok_or_else(|| recovery_error("invalid_intent"))?;
+    let receipt = outcome(directory, &intent)
+        .map_err(|_| recovery_error("invalid_outcome"))?
+        .ok_or_else(|| recovery_error("outcome_unknown"))??;
+    if !receipt_matches(&intent, &receipt) {
+        return Err(recovery_error("invalid_receipt"));
+    }
+    let destination = intent
+        .destination
+        .to_str()
+        .ok_or_else(|| recovery_error("invalid_intent"))?;
+    let snapshot = binary.run(
+        &[
+            "project-open".to_owned(),
+            "--config".to_owned(),
+            destination.to_owned(),
+        ],
+        deadline,
+        cancel,
+    )?;
+    let project = Project::from_snapshot_for_write(&intent.destination, &intent.sha256, &snapshot)
+        .map_err(|_| recovery_error("changed_configuration"))?;
+    if !intent.matches_config(&project.config)
+        || !receipt_matches(&intent, &receipt)
+        || cancel.load(std::sync::atomic::Ordering::Acquire)
+    {
+        return Err(recovery_error("changed_configuration"));
+    }
+    Ok(snapshot)
+}
+
+/// Clears only the matching private notice after the owner inspected its destination.
+pub(crate) fn clear_notice(
+    path: &Path,
+    digest: &str,
+    request_id: &str,
+    verified: bool,
+) -> Result<(), BackendError> {
+    let intent = load_matching(path, digest).map_err(|_| recovery_error("invalid_intent"))?;
+    if intent.request_id != request_id {
+        return Err(recovery_error("stale_intent"));
+    }
+    let directory = path
+        .parent()
+        .ok_or_else(|| recovery_error("invalid_intent"))?;
+    if verified {
+        let receipt = outcome(directory, &intent)
+            .map_err(|_| recovery_error("invalid_outcome"))?
+            .ok_or_else(|| recovery_error("outcome_unknown"))??;
+        if !receipt_matches(&intent, &receipt) {
+            return Err(recovery_error("changed_configuration"));
+        }
+    }
+    clear(directory, &intent).map_err(|_| recovery_error("clear_failed"))
+}
+
+fn recovery_error(suffix: &str) -> BackendError {
+    BackendError::Command {
+        code: format!("codingmage.ui.setup_config_{suffix}"),
+        exit_code: None,
+    }
 }
 
 fn receipt_identity_matches(intent: &ConfigIntent, bytes: &[u8]) -> bool {

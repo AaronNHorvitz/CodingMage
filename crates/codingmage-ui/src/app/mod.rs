@@ -790,32 +790,7 @@ impl App {
         if response.generation != self.generation
             || !self.binding_matches(&response.binding, response.label)
         {
-            if response.label == "setup-write-config" {
-                self.setup
-                    .cancel_matching_config(response.request_id.as_deref());
-            }
-            if response.label == "setup-write-authorization" {
-                self.setup
-                    .cancel_matching_authorization(response.request_id.as_deref());
-            }
-            if response.label == "setup-write-campaign" {
-                self.setup
-                    .cancel_matching_campaign(response.request_id.as_deref());
-            }
-            if response.label == "setup-export-copy" {
-                self.setup
-                    .cancel_matching_export(response.request_id.as_deref());
-            }
-            if response.label == "campaign-select"
-                && self.pending_campaign.as_ref().is_some_and(|pending| {
-                    response.request_id.as_deref() == Some(pending.request_id.as_str())
-                })
-            {
-                self.pending_campaign = None;
-                self.campaign_error = Some(SelectError::DiagnosisUnavailable);
-                self.set_status("campaign selection became stale; refresh repository diagnosis");
-            }
-            self.discarded_stale += 1;
+            self.discard_stale_response(&response);
             return false;
         }
         if matches!(
@@ -880,11 +855,45 @@ impl App {
             "report-export" => self.accept_report_export(response),
             "campaign-outcome-report" => self.accept_source_report(response),
             "setup-write-authorization" => self.accept_authorization_write(response),
-            "setup-write-config" => self.accept_config_write(response),
+            "setup-write-config" => self.accept_config_write(&response),
+            "setup-config-recover" => self.accept_config_recovery(response),
+            "setup-config-clear" => self.accept_config_clear(&response),
             "setup-write-campaign" => self.accept_campaign_write(response),
             "setup-export-copy" => self.accept_setup_export(response),
             _ => false,
         }
+    }
+
+    fn discard_stale_response(&mut self, response: &Response) {
+        if matches!(
+            response.label,
+            "setup-write-config" | "setup-config-recover" | "setup-config-clear"
+        ) {
+            self.setup
+                .cancel_matching_config(response.request_id.as_deref());
+        }
+        if response.label == "setup-write-authorization" {
+            self.setup
+                .cancel_matching_authorization(response.request_id.as_deref());
+        }
+        if response.label == "setup-write-campaign" {
+            self.setup
+                .cancel_matching_campaign(response.request_id.as_deref());
+        }
+        if response.label == "setup-export-copy" {
+            self.setup
+                .cancel_matching_export(response.request_id.as_deref());
+        }
+        if response.label == "campaign-select"
+            && self.pending_campaign.as_ref().is_some_and(|pending| {
+                response.request_id.as_deref() == Some(pending.request_id.as_str())
+            })
+        {
+            self.pending_campaign = None;
+            self.campaign_error = Some(SelectError::DiagnosisUnavailable);
+            self.set_status("campaign selection became stale; refresh repository diagnosis");
+        }
+        self.discarded_stale += 1;
     }
 
     fn binding_matches(&self, issued: &Binding, label: &str) -> bool {

@@ -168,6 +168,28 @@ pub enum Job {
         /// Bound for the public coordinator command.
         deadline: Duration,
     },
+    /// Reconcile a durable configuration write through a fresh public project snapshot.
+    SetupConfigRecover {
+        /// Private intent path, validated against the exact digest and request identity.
+        intent_path: PathBuf,
+        /// Digest of the previously inspected private intent.
+        intent_sha256: String,
+        /// Identity of the write being recovered.
+        request_id: String,
+        /// Deadline for the public project read.
+        deadline: Duration,
+    },
+    /// Clear a private configuration notice after explicit destination inspection.
+    SetupConfigClear {
+        /// Private intent path.
+        intent_path: PathBuf,
+        /// Exact private intent digest.
+        intent_sha256: String,
+        /// Identity of the notice being cleared.
+        request_id: String,
+        /// Require the exact successful receipt and destination for automatic cleanup.
+        verified: bool,
+    },
 }
 
 impl Job {
@@ -182,6 +204,8 @@ impl Job {
             Self::CampaignSetup { .. } => "setup-write-campaign",
             Self::SetupExport { .. } => "setup-export-copy",
             Self::SetupConfig { .. } => "setup-write-config",
+            Self::SetupConfigRecover { .. } => "setup-config-recover",
+            Self::SetupConfigClear { .. } => "setup-config-clear",
         }
     }
 }
@@ -390,49 +414,7 @@ fn run_loop(
                     thread::sleep(Duration::from_millis(25));
                 }
             });
-            let result = match &request.job {
-                Job::Command {
-                    arguments,
-                    deadline,
-                    ..
-                } => binary.run(arguments, *deadline, &cancel),
-                Job::PrivateCommand {
-                    arguments,
-                    input,
-                    deadline,
-                    ..
-                } => binary.run_with_private_input(arguments, input.0.clone(), *deadline, &cancel),
-                Job::CampaignSetup {
-                    form,
-                    source,
-                    inspect_arguments,
-                    write_arguments,
-                    deadline,
-                } => run_campaign_setup(
-                    binary,
-                    form,
-                    source,
-                    inspect_arguments,
-                    write_arguments,
-                    *deadline,
-                    &cancel,
-                ),
-                Job::SupportBundle {
-                    arguments,
-                    destination,
-                    repository,
-                    deadline,
-                } => validate_support_destination(destination, repository)
-                    .and_then(|()| binary.run(arguments, *deadline, &cancel)),
-                Job::ReportExport { .. }
-                | Job::SourceReportExport { .. }
-                | Job::SourceReportInspect { .. } => {
-                    unreachable!("report commands are dispatched separately")
-                }
-                Job::SetupExport { .. } | Job::SetupConfig { .. } => {
-                    unreachable!("durable Setup writes are dispatched separately")
-                }
-            };
+            let result = run_standard_job(binary, &request.job, &cancel);
             stop.store(true, Ordering::Release);
             let _ = watcher.join();
             result
@@ -448,6 +430,76 @@ fn run_loop(
             return;
         }
         (context.wake)();
+    }
+}
+
+fn run_standard_job(
+    binary: &CoordinatorBinary,
+    job: &Job,
+    cancel: &Arc<AtomicBool>,
+) -> Result<Vec<u8>, BackendError> {
+    match job {
+        Job::Command {
+            arguments,
+            deadline,
+            ..
+        } => binary.run(arguments, *deadline, cancel),
+        Job::PrivateCommand {
+            arguments,
+            input,
+            deadline,
+            ..
+        } => binary.run_with_private_input(arguments, input.0.clone(), *deadline, cancel),
+        Job::CampaignSetup {
+            form,
+            source,
+            inspect_arguments,
+            write_arguments,
+            deadline,
+        } => run_campaign_setup(
+            binary,
+            form,
+            source,
+            inspect_arguments,
+            write_arguments,
+            *deadline,
+            cancel,
+        ),
+        Job::SupportBundle {
+            arguments,
+            destination,
+            repository,
+            deadline,
+        } => validate_support_destination(destination, repository)
+            .and_then(|()| binary.run(arguments, *deadline, cancel)),
+        Job::SetupConfigRecover {
+            intent_path,
+            intent_sha256,
+            request_id,
+            deadline,
+        } => setup_config_process::recover(
+            binary,
+            intent_path,
+            intent_sha256,
+            request_id,
+            *deadline,
+            cancel,
+        ),
+        Job::SetupConfigClear {
+            intent_path,
+            intent_sha256,
+            request_id,
+            verified,
+        } => setup_config_process::clear_notice(intent_path, intent_sha256, request_id, *verified)
+            .map(|()| Vec::new()),
+        Job::ReportExport { .. }
+        | Job::SourceReportExport { .. }
+        | Job::SourceReportInspect { .. } => {
+            unreachable!("report commands are dispatched separately")
+        }
+        Job::SetupExport { .. } | Job::SetupConfig { .. } => {
+            unreachable!("durable Setup writes are dispatched separately")
+        }
     }
 }
 
@@ -784,6 +836,8 @@ fn dispatch_export(
                 | Job::SupportBundle { .. }
                 | Job::SetupExport { .. }
                 | Job::SetupConfig { .. }
+                | Job::SetupConfigRecover { .. }
+                | Job::SetupConfigClear { .. }
                 | Job::SourceReportInspect { .. } => {
                     unreachable!("only report exports enter the export supervisor")
                 }

@@ -36,7 +36,6 @@ const AUTHORIZATION_DEADLINE: Duration = Duration::from_mins(1);
 #[derive(Clone, Debug)]
 struct PendingConfig {
     request_id: String,
-    intent: ConfigIntent,
 }
 
 #[derive(Clone, Debug)]
@@ -167,6 +166,8 @@ pub struct SetupState {
     /// Configuration form when editing or creating.
     pub config_form: Option<ConfigForm>,
     pending_config: Option<PendingConfig>,
+    pending_config_recovery: Option<String>,
+    pending_config_clear: Option<(String, bool)>,
     pub(super) recovery_config: Option<ConfigIntent>,
     /// Campaign form when authoring.
     pub campaign_form: Option<CampaignForm>,
@@ -194,7 +195,10 @@ pub struct SetupState {
 
 impl SetupState {
     pub(super) fn cancel_pending_config(&mut self) {
-        if self.pending_config.take().is_some() {
+        let pending_write = self.pending_config.take().is_some();
+        let pending_recovery = self.pending_config_recovery.take().is_some();
+        let pending_clear = self.pending_config_clear.take().is_some();
+        if pending_write || pending_recovery || pending_clear {
             self.message = Some(Err(
                 "the selected repository changed during configuration setup; inspect the destination before retrying"
                     .to_owned(),
@@ -207,6 +211,11 @@ impl SetupState {
             .pending_config
             .as_ref()
             .is_some_and(|pending| Some(pending.request_id.as_str()) == request_id)
+            || self.pending_config_recovery.as_deref() == request_id
+            || self
+                .pending_config_clear
+                .as_ref()
+                .is_some_and(|(id, _)| Some(id.as_str()) == request_id)
         {
             self.cancel_pending_config();
         }
@@ -469,24 +478,15 @@ impl App {
             Ok(()) => {
                 self.setup.pending_config = Some(PendingConfig {
                     request_id: intent.request_id.clone(),
-                    intent: intent.clone(),
                 });
                 self.setup.recovery_config = Some(intent);
                 self.setup.message = None;
             }
             Err(error) => {
-                let cleared = setup_config_process::clear(&directory, &intent).is_ok();
-                if !cleared {
-                    self.setup.recovery_config = Some(intent);
-                }
+                self.setup.recovery_config = Some(intent);
                 self.setup.message = Some(Err(format!(
-                    "configuration request was not queued ({}); {}",
+                    "configuration request was not queued ({}); inspect private recovery state before retrying",
                     error.code(),
-                    if cleared {
-                        "no write started"
-                    } else {
-                        "inspect private recovery state before retrying"
-                    }
                 )));
             }
         }
@@ -497,61 +497,45 @@ impl App {
         let Some(intent) = self.setup.recovery_config.clone() else {
             return;
         };
-        if self.setup.pending_config.is_some() {
+        if self.setup.pending_config.is_some()
+            || self.setup.pending_config_recovery.is_some()
+            || self.setup.pending_config_clear.is_some()
+        {
             return;
         }
         let Ok(directory) = self.state_dir.as_ref() else {
             return;
         };
-        match setup_config_process::outcome(directory, &intent) {
-            Ok(Some(Ok(bytes))) if setup_config_process::receipt_matches(&intent, &bytes) => {
-                let Some(project) = Project::open(&intent.destination).ok().filter(|project| {
-                    intent.matches_config(&project.config)
-                        && setup_config_process::receipt_matches(&intent, &bytes)
-                }) else {
-                    self.setup.message = Some(Err(
-                        "written bytes or loaded configuration changed before selection; inspect the destination"
-                            .to_owned(),
-                    ));
-                    return;
-                };
-                if setup_config_process::clear(directory, &intent).is_ok() {
-                    self.setup.recovery_config = None;
-                    self.open_loaded_project(project);
-                    self.setup.message = Some(Ok(format!(
-                        "configuration written and verified at {}",
-                        intent.destination.display()
-                    )));
-                } else {
-                    self.setup.message = Some(Err(
-                        "configuration bytes match but its recovery record could not be cleared"
-                            .to_owned(),
-                    ));
-                }
+        let Ok(intent_sha256) = intent.fingerprint() else {
+            self.setup.message = Some(Err("configuration recovery intent is invalid".to_owned()));
+            return;
+        };
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::SetupConfigRecover {
+                intent_path: setup_config_process::intent_path(directory),
+                intent_sha256,
+                request_id: intent.request_id.clone(),
+                deadline: AUTHORIZATION_DEADLINE,
+            },
+            request_id: Some(intent.request_id.clone()),
+        };
+        match self.submit(request) {
+            Ok(()) => {
+                self.setup.pending_config_recovery = Some(intent.request_id);
+                self.setup.message = None;
             }
-            Ok(Some(Err(error))) => {
-                let code = error.code();
-                let (cause, action) = crate::backend::explain_code(&code);
+            Err(error) => {
                 self.setup.message = Some(Err(format!(
-                    "configuration write was not confirmed: {cause} ({code}) {action} Inspect its destination before retrying."
+                    "configuration outcome inspection could not be queued ({}); try again",
+                    error.code()
                 )));
-            }
-            Ok(Some(Ok(_))) | Err(_) => {
-                self.setup.message = Some(Err(
-                    "configuration receipt or destination is invalid; inspect its destination"
-                        .to_owned(),
-                ));
-            }
-            Ok(None) => {
-                self.setup.message = Some(Err(
-                    "configuration write is running or its outcome is unknown; inspect before retrying"
-                        .to_owned(),
-                ));
             }
         }
     }
 
-    pub(super) fn accept_config_write(&mut self, response: Response) -> bool {
+    pub(super) fn accept_config_write(&mut self, response: &Response) -> bool {
         let Some(pending) = self.setup.pending_config.take() else {
             return false;
         };
@@ -559,17 +543,127 @@ impl App {
             self.setup.pending_config = Some(pending);
             return false;
         }
-        if let Ok(bytes) = response.result {
-            if setup_config_process::receipt_matches(&pending.intent, &bytes) {
-                self.reconcile_config_write();
-                return true;
+        self.reconcile_config_write();
+        true
+    }
+
+    pub(super) fn accept_config_recovery(&mut self, response: Response) -> bool {
+        let Some(request_id) = self.setup.pending_config_recovery.as_ref() else {
+            return false;
+        };
+        if response.request_id.as_deref() != Some(request_id.as_str()) {
+            return false;
+        }
+        self.setup.pending_config_recovery = None;
+        let Some(intent) = self.setup.recovery_config.clone() else {
+            return false;
+        };
+        match response.result {
+            Ok(bytes) => {
+                let project =
+                    Project::from_snapshot_for_write(&intent.destination, &intent.sha256, &bytes);
+                if let Ok(project) = project
+                    && intent.matches_config(&project.config)
+                {
+                    self.open_loaded_project(project);
+                    self.clear_config_notice(true);
+                } else {
+                    self.setup.message = Some(Err(
+                        "configuration snapshot changed before selection; inspect the destination"
+                            .to_owned(),
+                    ));
+                }
             }
-            self.setup.message = Some(Err(
-                "configuration result did not match the submitted bytes; inspect its destination"
-                    .to_owned(),
-            ));
+            Err(error) => {
+                let code = error.code();
+                self.setup.message = Some(Err(format!(
+                    "configuration write was not confirmed ({code}); inspect its destination before retrying"
+                )));
+            }
+        }
+        true
+    }
+
+    fn clear_config_notice(&mut self, verified: bool) {
+        let Some(intent) = self.setup.recovery_config.clone() else {
+            return;
+        };
+        if self.setup.pending_config.is_some()
+            || self.setup.pending_config_recovery.is_some()
+            || self.setup.pending_config_clear.is_some()
+        {
+            return;
+        }
+        let Ok(directory) = self.state_dir.as_ref() else {
+            return;
+        };
+        let Ok(intent_sha256) = intent.fingerprint() else {
+            self.setup.message = Some(Err("configuration recovery intent is invalid".to_owned()));
+            return;
+        };
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::SetupConfigClear {
+                intent_path: setup_config_process::intent_path(directory),
+                intent_sha256,
+                request_id: intent.request_id.clone(),
+                verified,
+            },
+            request_id: Some(intent.request_id.clone()),
+        };
+        match self.submit(request) {
+            Ok(()) => {
+                self.setup.pending_config_clear = Some((intent.request_id, verified));
+                self.setup.message = None;
+            }
+            Err(error) => {
+                if verified {
+                    self.reset_project_selection();
+                }
+                self.setup.message = Some(Err(format!(
+                    "configuration notice could not be cleared ({}); try again",
+                    error.code()
+                )));
+            }
+        }
+    }
+
+    pub(super) fn accept_config_clear(&mut self, response: &Response) -> bool {
+        let Some((request_id, verified)) = self.setup.pending_config_clear.as_ref() else {
+            return false;
+        };
+        if response.request_id.as_deref() != Some(request_id.as_str()) {
+            return false;
+        }
+        let verified = *verified;
+        self.setup.pending_config_clear = None;
+        if response.result.is_ok() {
+            let destination = self
+                .setup
+                .recovery_config
+                .as_ref()
+                .map(|intent| intent.destination.display().to_string());
+            self.setup.recovery_config = None;
+            self.setup.message = Some(Ok(if verified {
+                format!(
+                    "configuration written and verified at {}",
+                    destination.unwrap_or_default()
+                )
+            } else {
+                "local configuration notice cleared after destination inspection".to_owned()
+            }));
         } else {
-            self.reconcile_config_write();
+            if verified {
+                self.reset_project_selection();
+            }
+            self.setup.message = Some(Err(if verified {
+                "configuration was verified but its recovery record could not be cleared; inspect the destination and retry"
+                    .to_owned()
+            } else {
+                "configuration helper is running or private recovery state changed; check again before clearing"
+                    .to_owned()
+            }));
         }
         true
     }
@@ -1320,7 +1414,10 @@ impl App {
                 "setup_config_previous_destination",
                 &[("destination", &intent.destination.display().to_string())],
             ));
-            if self.setup.pending_config.is_some() {
+            if self.setup.pending_config.is_some()
+                || self.setup.pending_config_recovery.is_some()
+                || self.setup.pending_config_clear.is_some()
+            {
                 ui.small(catalogue.text("setup_config_pending"));
             } else {
                 if ui
@@ -1333,21 +1430,7 @@ impl App {
                     .button(catalogue.text("setup_config_clear_notice"))
                     .clicked()
                 {
-                    let cleared = self.state_dir.as_ref().is_ok_and(|directory| {
-                        setup_config_process::clear(directory, &intent).is_ok()
-                    });
-                    if cleared {
-                        self.setup.recovery_config = None;
-                        self.setup.message = Some(Ok(
-                            "local configuration notice cleared after destination inspection"
-                                .to_owned(),
-                        ));
-                    } else {
-                        self.setup.message = Some(Err(
-                            "configuration helper is running or private recovery state changed; check again before clearing"
-                                .to_owned(),
-                        ));
-                    }
+                    self.clear_config_notice(false);
                 }
             }
             command::show_for(

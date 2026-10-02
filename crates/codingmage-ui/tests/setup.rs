@@ -18,6 +18,7 @@ use codingmage_ui::{
     backend::{CoordinatorBinary, Response},
     campaign::SelectError,
     command::format_command,
+    project::{OpenError, Project},
     setup::ProviderForm,
     state_dir::project_private_dir,
 };
@@ -39,6 +40,29 @@ fn config_helper_unlocked(private: &Path) -> bool {
         .write(true)
         .open(private.join("setup-config-intent.lock"))
         .is_ok_and(|file| file.try_lock().is_ok())
+}
+
+#[test]
+fn configuration_recovery_snapshot_requires_the_exact_published_digest() {
+    let fixture = Fixture::new("setup-config-digest", 2);
+    let output = Command::new(coordinator_binary())
+        .args(["project-open", "--config"])
+        .arg(&fixture.config)
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let digest = Sha256::digest(fs::read(&fixture.config).unwrap());
+    let digest = codingmage_ui::project::hex(&digest);
+    assert!(Project::from_snapshot_for_write(&fixture.config, &digest, &output.stdout).is_ok());
+    assert_eq!(
+        Project::from_snapshot_for_write(&fixture.config, &"0".repeat(64), &output.stdout)
+            .unwrap_err(),
+        OpenError::Contract
+    );
+    assert_eq!(
+        Project::from_snapshot_for_write(&fixture.config, "invalid", &output.stdout).unwrap_err(),
+        OpenError::Contract
+    );
 }
 
 #[test]
@@ -800,6 +824,7 @@ fn authorization_response_for_another_repository_clears_pending_state() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn guided_configuration_is_validated_by_the_existing_loader_and_opened() {
     let fixture = Fixture::new("setup-config", 3);
     let workspace = fixture.root.join("guided");
@@ -889,7 +914,13 @@ fn guided_configuration_is_validated_by_the_existing_loader_and_opened() {
     harness
         .get_by_label("I inspected the destination; clear configuration notice")
         .click();
-    harness.run_steps(2);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_ok_and(|message| message.contains("notice cleared"))
+        })
+    }));
     // Overwrite is refused unless requested.
     harness.state_mut().start_config_form(&target);
     harness.state_mut().apply_config_form();
@@ -985,7 +1016,13 @@ fn configuration_helper_survives_window_close_and_requires_explicit_recovery() {
     reopened
         .get_by_label("Check previous configuration outcome")
         .click();
-    reopened.run_steps(2);
+    assert!(settle(&mut reopened, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|message| message.contains("not confirmed"))
+        })
+    }));
     assert!(reopened.state().project().is_none());
     assert!(
         reopened
@@ -996,7 +1033,7 @@ fn configuration_helper_survives_window_close_and_requires_explicit_recovery() {
             .is_some_and(|result| {
                 result
                     .as_ref()
-                    .is_err_and(|message| message.contains("changed before selection"))
+                    .is_err_and(|message| message.contains("not confirmed"))
             })
     );
     assert!(state_dir.join("setup-config-intent.json").exists());
@@ -1004,7 +1041,13 @@ fn configuration_helper_survives_window_close_and_requires_explicit_recovery() {
     reopened
         .get_by_label("Check previous configuration outcome")
         .click();
-    reopened.run_steps(2);
+    assert!(settle(&mut reopened, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_ok_and(|message| message.contains("written and verified"))
+        })
+    }));
     assert_eq!(
         reopened
             .state()
@@ -1082,7 +1125,13 @@ fn changed_selection_and_replaced_configuration_cannot_claim_success() {
     harness
         .get_by_label("Check previous configuration outcome")
         .click();
-    harness.run_steps(2);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|message| message.contains("not confirmed"))
+        })
+    }));
     assert_eq!(
         harness
             .state()
