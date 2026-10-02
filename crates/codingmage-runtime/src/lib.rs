@@ -3,6 +3,7 @@
 mod campaign_records;
 mod campaign_state;
 mod correction_state;
+mod director_store;
 mod gate_baseline;
 mod recipe;
 mod support;
@@ -18,6 +19,7 @@ mod team_runtime;
 mod team_state;
 
 pub use campaign_records::campaign_run_records;
+pub use director_store::{DirectorProposalStore, DirectorStoreError};
 pub use gate_baseline::{
     BaselineGate, GateBaseline, GateBaselineStore, GateComparison, RepairReceipt,
 };

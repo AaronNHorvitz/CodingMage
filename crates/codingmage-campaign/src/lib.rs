@@ -1,7 +1,13 @@
 //! Campaign authority, team-lead proposals, and deterministic pod leases.
 
+mod director;
 mod mission;
 mod team;
+
+pub use director::{
+    DIRECTOR_PACKET_VERSION, DirectorContext, DirectorFailure, DirectorInput, DirectorMilestone,
+    DirectorProposal, DirectorProposalError, DirectorSource, RemainingDirectorLimits,
+};
 
 pub use mission::{
     DecisionDomainGrant, DecisionHoldReason, DecisionObservation, EscalationDisposition,

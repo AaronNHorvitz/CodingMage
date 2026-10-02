@@ -1,6 +1,6 @@
 # ADR 0087: Add a Bounded Native Command Palette
 
-- **Status:** Accepted for local implementation; bounded independent review pending
+- **Status:** Accepted for local implementation; bounded independent review PASS
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 
@@ -37,3 +37,6 @@ See `docs/evidence/sprint-36-command-palette.md` for the focused keyboard,
 real-coordinator and minimum-window software-rendering checks and the
 cumulative verification disposition. Installed desktop, Orca, human trial,
 performance-profile and live-provider qualification remain open.
+The exact-commit independent report for
+`2a02350268acd61ce31dbb09b0bba3744a8e8c41` returned PASS with no
+findings. Its scope is the command palette increment only.

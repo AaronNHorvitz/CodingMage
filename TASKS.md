@@ -1902,7 +1902,19 @@ contract/control prerequisites, not optional host, memory or Muse integrations.
 ### Story 33.1 - Outcome Planning and Work Assignment
 
 - [ ] **Task 33.1.1 - Add bounded director planning**
-  - [ ] **Sub-task 33.1.1.1:** Define director input/output packets over mission criteria, milestone progress, dependency-ready work, failures and remaining limits; reuse existing planning generations and persist only source-bound proposals.
+  - [x] **Sub-task 33.1.1.1:** Define director input/output packets over mission criteria, milestone progress, dependency-ready work, failures and remaining limits; reuse existing planning generations and persist only source-bound proposals.
+    Decision 0088 adds version-one director input and inert priority proposal
+    packets bound to the exact campaign, mission, task source, scheduler
+    generation/digest and observed head. Source-checkbox sprint counts remain
+    distinct from accepted outcomes. The existing runtime owner stores only
+    a fresh source-bound proposal in a private integrity document and checks
+    it again on load; see `docs/evidence/sprint-33-director-packets.md`.
+    This does not invoke a director, accept its policy choices or change task
+    state. Final-source campaign all-target passes 50/50, runtime 133/133 and
+    linked native UI 214/214 across 14 targets; strict workspace Clippy and
+    static checks pass. Python is 49/50 solely for the unchanged CM-R01.6
+    eight-input source-bound drift. Bounded independent review remains open;
+    Task 33.1.1.2 owns policy admission and Task 33.1.1.3 owns invocation.
     <!-- depends-on: 32.2.2.4 -->
   - [ ] **Sub-task 33.1.1.2:** Validate priority/replanning proposals against approved outcomes and delegated domains before accepting them; reject invented work, erased criteria, unapproved dependencies and contradictory generations.
     <!-- depends-on: 33.1.1.1 -->
@@ -2514,6 +2526,9 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     `docs/evidence/sprint-36-command-palette.md`. Final-source native UI
     all-target passed 214/214 and strict workspace Clippy passed; Python
     remained 49/50 solely for the unchanged CM-R01.6 eight-input drift.
+    The exact-commit review of `2a02350268acd61ce31dbb09b0bba3744a8e8c41`
+    returned bounded PASS with no findings and independently ran native UI
+    214/214; it does not close this full sub-task or any human/live gate.
     Private recovery controls still lack a public command equivalent, and the
     full section-five state/depth/Show-command catalogue and this sub-task
     remain open.
