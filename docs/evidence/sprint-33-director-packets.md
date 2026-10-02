@@ -53,3 +53,8 @@ change remains in the batch.
 Task 33.1.1.2's outcome/domain policy validation, role invocation and
 qualification, Task 36.3.2.2's Setup recovery command equivalence, and
 qualified-human/live/release gates remain open.
+The independent bounded review of the exact commit returned PASS with a
+Medium failure-code-vocabulary finding. Decision 0089 and
+`docs/evidence/sprint-33-director-code-correction.md` record the correction;
+the original reviewer report is retained privately and its finding remains
+open until re-review.

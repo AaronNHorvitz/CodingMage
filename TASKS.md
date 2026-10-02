@@ -1913,7 +1913,12 @@ contract/control prerequisites, not optional host, memory or Muse integrations.
     state. Final-source campaign all-target passes 50/50, runtime 133/133 and
     linked native UI 214/214 across 14 targets; strict workspace Clippy and
     static checks pass. Python is 49/50 solely for the unchanged CM-R01.6
-    eight-input source-bound drift. Bounded independent review remains open;
+    eight-input source-bound drift. The first exact-commit bounded review
+    returned PASS with a Medium finding on arbitrary failure-code strings;
+    Decision 0089 closes the vocabulary over typed campaign terminal reasons,
+    with correction evidence in
+    `docs/evidence/sprint-33-director-code-correction.md`. Re-review remains
+    open; this is no claim of human or live qualification.
     Task 33.1.1.2 owns policy admission and Task 33.1.1.3 owns invocation.
     <!-- depends-on: 32.2.2.4 -->
   - [ ] **Sub-task 33.1.1.2:** Validate priority/replanning proposals against approved outcomes and delegated domains before accepting them; reject invented work, erased criteria, unapproved dependencies and contradictory generations.

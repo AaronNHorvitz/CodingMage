@@ -10,14 +10,13 @@ use codingmage_plan::{CheckState, PlanItemKind, TaskPlan};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CampaignSpec, DurableSchedulerSnapshot, MissionCharter, canonical_sha256, valid_commit,
-    valid_sha256,
+    CampaignSpec, DurableSchedulerSnapshot, MissionCharter, TaskTerminalReason, canonical_sha256,
+    valid_commit, valid_sha256,
 };
 
 /// Closed schema shared by director input and proposal packets.
 pub const DIRECTOR_PACKET_VERSION: u16 = 1;
 const MAX_FAILURES: usize = 256;
-const MAX_CODE_BYTES: usize = 128;
 
 /// Fresh coordinator-owned observations required to bind or revalidate a planning packet.
 #[derive(Clone, Copy)]
@@ -151,14 +150,75 @@ impl RemainingDirectorLimits {
     }
 }
 
+/// Closed, content-free reason for a failed or blocked campaign task.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DirectorFailureCode {
+    /// A required prerequisite is unavailable.
+    PrerequisiteBlocked,
+    /// The implementation provider reported a bounded blocker.
+    ProviderBlocked,
+    /// The independent reviewer reported a blocker.
+    ReviewBlocked,
+    /// Review evidence requires a human decision.
+    ReviewDisputed,
+    /// Required deterministic verification failed.
+    GateFailed,
+    /// The provider failed beyond the bounded retry policy.
+    ProviderFailed,
+    /// The owned provider process crashed.
+    ProcessCrashed,
+    /// The exact task deadline elapsed.
+    TimedOut,
+    /// A configured task limit was reached.
+    LimitExceeded,
+    /// Deterministic integration detected a conflict.
+    IntegrationConflict,
+    /// A repository or work identity became stale.
+    StaleIdentity,
+    /// Deny-first policy refused an effect.
+    PolicyDenied,
+    /// An authenticated operator cancelled the task.
+    OperatorCancelled,
+    /// Required commit-bound remote checks failed.
+    CiFailed,
+    /// An external prerequisite remains unavailable.
+    ExternalBlocked,
+}
+
+impl TryFrom<TaskTerminalReason> for DirectorFailureCode {
+    type Error = DirectorProposalError;
+
+    fn try_from(reason: TaskTerminalReason) -> Result<Self, Self::Error> {
+        Ok(match reason {
+            TaskTerminalReason::Merged => return Err(DirectorProposalError::Packet),
+            TaskTerminalReason::PrerequisiteBlocked => Self::PrerequisiteBlocked,
+            TaskTerminalReason::ProviderBlocked => Self::ProviderBlocked,
+            TaskTerminalReason::ReviewBlocked => Self::ReviewBlocked,
+            TaskTerminalReason::ReviewDisputed => Self::ReviewDisputed,
+            TaskTerminalReason::GateFailed => Self::GateFailed,
+            TaskTerminalReason::ProviderFailed => Self::ProviderFailed,
+            TaskTerminalReason::ProcessCrashed => Self::ProcessCrashed,
+            TaskTerminalReason::TimedOut => Self::TimedOut,
+            TaskTerminalReason::LimitExceeded => Self::LimitExceeded,
+            TaskTerminalReason::IntegrationConflict => Self::IntegrationConflict,
+            TaskTerminalReason::StaleIdentity => Self::StaleIdentity,
+            TaskTerminalReason::PolicyDenied => Self::PolicyDenied,
+            TaskTerminalReason::OperatorCancelled => Self::OperatorCancelled,
+            TaskTerminalReason::CiFailed => Self::CiFailed,
+            TaskTerminalReason::ExternalBlocked => Self::ExternalBlocked,
+        })
+    }
+}
+
 /// One content-free failure observation tied to a canonical task.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DirectorFailure {
     /// Canonical task identity.
     pub task_id: String,
-    /// Stable coordinator failure code, never provider prose.
-    pub code: String,
+    /// Closed coordinator failure code, never provider prose.
+    pub code: DirectorFailureCode,
 }
 
 /// Bounded director input over owner criteria, source progress and ready work.
@@ -246,11 +306,6 @@ impl DirectorInput {
                     item.id == failure.task_id
                         && matches!(item.kind, PlanItemKind::Task | PlanItemKind::SubTask)
                 }) && !scheduler.follow_up_bindings.contains_key(&failure.task_id)
-                    || failure.code.is_empty()
-                    || failure.code.len() > MAX_CODE_BYTES
-                    || !failure.code.bytes().all(|byte| {
-                        byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_'
-                    })
             })
         {
             return Err(DirectorProposalError::Packet);
@@ -552,15 +607,6 @@ mod tests {
             Err(DirectorProposalError::Packet)
         );
         bad_input = input.clone();
-        bad_input.failures.push(DirectorFailure {
-            task_id: "1.1.1.2".to_owned(),
-            code: "provider prose with spaces".to_owned(),
-        });
-        assert_eq!(
-            bad_input.verify(&context),
-            Err(DirectorProposalError::Packet)
-        );
-        bad_input = input.clone();
         bad_input.milestones[0].source_checked_items = 4;
         assert_eq!(
             bad_input.verify(&context),
@@ -569,7 +615,7 @@ mod tests {
         bad_input = input.clone();
         bad_input.failures.push(DirectorFailure {
             task_id: "1.1".to_owned(),
-            code: "gate_failed".to_owned(),
+            code: DirectorFailureCode::GateFailed,
         });
         assert_eq!(
             bad_input.verify(&context),
@@ -579,11 +625,11 @@ mod tests {
         bad_input.failures.extend([
             DirectorFailure {
                 task_id: "1.1.1.2".to_owned(),
-                code: "provider_unavailable".to_owned(),
+                code: DirectorFailureCode::ProviderBlocked,
             },
             DirectorFailure {
                 task_id: "1.1.1.2".to_owned(),
-                code: "provider_unavailable".to_owned(),
+                code: DirectorFailureCode::ProviderBlocked,
             },
         ]);
         assert_eq!(
@@ -593,5 +639,52 @@ mod tests {
         let mut unknown = serde_json::to_value(&proposal).unwrap();
         unknown["unexpected"] = serde_json::json!(true);
         assert!(serde_json::from_value::<DirectorProposal>(unknown).is_err());
+    }
+
+    #[test]
+    fn only_closed_terminal_failure_codes_enter_director_input() {
+        let reasons = [
+            TaskTerminalReason::PrerequisiteBlocked,
+            TaskTerminalReason::ProviderBlocked,
+            TaskTerminalReason::ReviewBlocked,
+            TaskTerminalReason::ReviewDisputed,
+            TaskTerminalReason::GateFailed,
+            TaskTerminalReason::ProviderFailed,
+            TaskTerminalReason::ProcessCrashed,
+            TaskTerminalReason::TimedOut,
+            TaskTerminalReason::LimitExceeded,
+            TaskTerminalReason::IntegrationConflict,
+            TaskTerminalReason::StaleIdentity,
+            TaskTerminalReason::PolicyDenied,
+            TaskTerminalReason::OperatorCancelled,
+            TaskTerminalReason::CiFailed,
+            TaskTerminalReason::ExternalBlocked,
+        ];
+        let (spec, mission, plan, scheduler) = fixture();
+        let context = context(&spec, &mission, &plan, &scheduler);
+        let mut input = DirectorInput::build(&context, Vec::new(), remaining(&spec)).unwrap();
+        for reason in reasons {
+            let code = DirectorFailureCode::try_from(reason).unwrap();
+            assert_eq!(serde_json::to_value(code).unwrap(), reason.code());
+            input.failures.push(DirectorFailure {
+                task_id: "1.1.1.2".to_owned(),
+                code,
+            });
+        }
+        assert_eq!(input.verify(&context), Ok(()));
+        let encoded = serde_json::to_value(&input).unwrap();
+        assert_eq!(
+            serde_json::from_value::<DirectorInput>(encoded.clone()).unwrap(),
+            input
+        );
+        for unknown in ["private_token_fragment", "provider prose", "merged"] {
+            let mut altered = encoded.clone();
+            altered["failures"][0]["code"] = serde_json::json!(unknown);
+            assert!(serde_json::from_value::<DirectorInput>(altered).is_err());
+        }
+        assert_eq!(
+            DirectorFailureCode::try_from(TaskTerminalReason::Merged),
+            Err(DirectorProposalError::Packet)
+        );
     }
 }

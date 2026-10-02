@@ -5,8 +5,9 @@ mod mission;
 mod team;
 
 pub use director::{
-    DIRECTOR_PACKET_VERSION, DirectorContext, DirectorFailure, DirectorInput, DirectorMilestone,
-    DirectorProposal, DirectorProposalError, DirectorSource, RemainingDirectorLimits,
+    DIRECTOR_PACKET_VERSION, DirectorContext, DirectorFailure, DirectorFailureCode, DirectorInput,
+    DirectorMilestone, DirectorProposal, DirectorProposalError, DirectorSource,
+    RemainingDirectorLimits,
 };
 
 pub use mission::{

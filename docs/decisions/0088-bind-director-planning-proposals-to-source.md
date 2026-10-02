@@ -48,3 +48,6 @@ See `docs/evidence/sprint-33-director-packets.md` for exact source,
 round-trip, stale-head, malformed, tamper and cumulative check results.
 Runtime role qualification, human acceptance and independent review remain
 separate gates.
+The first bounded exact-commit review returned PASS with a Medium finding on
+the failure-code vocabulary. Decision 0089 closes it; the correction awaits
+its own exact-commit re-review.
