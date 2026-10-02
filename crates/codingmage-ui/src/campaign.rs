@@ -17,8 +17,10 @@ use nix::{
     fcntl::{OFlag, open},
     sys::stat::Mode,
 };
+use serde::Deserialize;
 use sha2::{Digest as _, Sha256};
 
+use crate::backend::BackendError;
 use crate::backend::models::{
     ActiveTask, CampaignReport, CampaignStatus, Deferral, TaskCompletion, TaskReason,
 };
@@ -47,6 +49,14 @@ pub enum SelectError {
     Invalid(CampaignError),
     /// The destination differs from the coordinator's receipt-bound bytes.
     ReceiptMismatch,
+    /// The public campaign-selection command failed.
+    Backend(BackendError),
+    /// The coordinator returned malformed or mismatched selection data.
+    Contract,
+    /// The coordinator uses an unsupported selection schema.
+    UnsupportedSchema,
+    /// The opened repository has not yet been identified by the coordinator.
+    DiagnosisUnavailable,
     /// The specification names a different repository path than the opened configuration.
     DifferentRepositoryPath {
         /// Repository path named by the specification.
@@ -72,6 +82,17 @@ impl fmt::Display for SelectError {
             }
             Self::ReceiptMismatch => formatter
                 .write_str("the campaign destination differs from the confirmed write receipt"),
+            Self::Backend(error) => {
+                write!(formatter, "campaign selection failed: {}", error.code())
+            }
+            Self::Contract => formatter
+                .write_str("campaign selection snapshot did not match the expected contract"),
+            Self::UnsupportedSchema => {
+                formatter.write_str("campaign selection snapshot uses an unsupported schema")
+            }
+            Self::DiagnosisUnavailable => {
+                formatter.write_str("repository diagnosis is required before selecting a campaign")
+            }
             Self::DifferentRepositoryPath { specified, opened } => write!(
                 formatter,
                 "the campaign names repository {} but the opened configuration targets {}",
@@ -92,21 +113,61 @@ impl fmt::Display for SelectError {
 impl std::error::Error for SelectError {}
 
 impl CampaignSelection {
-    /// Loads and verifies a specification and binds it to the opened repository.
+    /// Decodes one read-only coordinator snapshot for the exact selected path and repository.
     ///
     /// # Errors
     ///
-    /// Returns [`SelectError`] for invalid files or cross-repository specifications.
-    pub fn load(
+    /// Refuses malformed, stale, unsupported, or cross-repository authority.
+    pub fn from_snapshot(
         spec_path: &Path,
         opened_target: &Path,
         observed_repository_id: Option<&str>,
+        bytes: &[u8],
     ) -> Result<Self, SelectError> {
         if !spec_path.is_absolute() {
             return Err(SelectError::RelativePath);
         }
-        let spec = CampaignSpec::load(spec_path).map_err(SelectError::Invalid)?;
-        Self::from_spec(spec_path, opened_target, observed_repository_id, spec)
+        if bytes.len() > MAX_CAMPAIGN_SELECTION_BYTES {
+            return Err(SelectError::Contract);
+        }
+        let snapshot: CampaignSnapshot =
+            serde_json::from_slice(bytes).map_err(|_| SelectError::Contract)?;
+        if snapshot.schema_version != 1 {
+            return Err(SelectError::UnsupportedSchema);
+        }
+        if snapshot.campaign_path != spec_path
+            || snapshot.authority_sha256.len() != 64
+            || !snapshot
+                .authority_sha256
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+            || snapshot
+                .spec
+                .authority_sha256()
+                .map_err(SelectError::Invalid)?
+                != snapshot.authority_sha256
+        {
+            return Err(SelectError::Contract);
+        }
+        if snapshot.spec.repository_path != opened_target {
+            return Err(SelectError::DifferentRepositoryPath {
+                specified: snapshot.spec.repository_path,
+                opened: opened_target.to_path_buf(),
+            });
+        }
+        if let Some(observed) = observed_repository_id
+            && snapshot.spec.repository_id != observed
+        {
+            return Err(SelectError::DifferentRepositoryId {
+                specified: snapshot.spec.repository_id,
+                observed: observed.to_owned(),
+            });
+        }
+        Ok(Self {
+            spec_path: spec_path.to_path_buf(),
+            spec: snapshot.spec,
+            authority_sha256: snapshot.authority_sha256,
+        })
     }
 
     /// Selects the exact bounded destination bytes confirmed by a campaign write receipt.
@@ -179,6 +240,15 @@ impl CampaignSelection {
             authority_sha256,
         })
     }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CampaignSnapshot {
+    schema_version: u64,
+    campaign_path: PathBuf,
+    authority_sha256: String,
+    spec: CampaignSpec,
 }
 
 /// Distinct coordinator-derived states for one task identifier.
@@ -437,20 +507,26 @@ mod tests {
     }
 
     #[test]
-    fn selection_rejects_relative_and_cross_repository_specifications() {
+    fn selection_snapshot_rejects_relative_and_malformed_input() {
         assert_eq!(
-            CampaignSelection::load(Path::new("relative.toml"), Path::new("/tmp"), None)
-                .unwrap_err(),
-            SelectError::RelativePath
-        );
-        assert!(matches!(
-            CampaignSelection::load(
-                Path::new("/nonexistent/campaign.toml"),
+            CampaignSelection::from_snapshot(
+                Path::new("relative.toml"),
                 Path::new("/tmp"),
-                None
+                None,
+                b"{}",
             )
             .unwrap_err(),
-            SelectError::Invalid(_)
-        ));
+            SelectError::RelativePath
+        );
+        assert_eq!(
+            CampaignSelection::from_snapshot(
+                Path::new("/nonexistent/campaign.toml"),
+                Path::new("/tmp"),
+                None,
+                b"{}",
+            )
+            .unwrap_err(),
+            SelectError::Contract
+        );
     }
 }

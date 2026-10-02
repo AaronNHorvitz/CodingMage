@@ -23,6 +23,9 @@ fn manual_support_bundle_uses_exact_command_and_fresh_external_directory() {
         app.diagnosis().value.is_some()
     }));
     harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     let output = fixture.root.join("support-ui-bundle");
     harness.state_mut().support_state_mut().output_path = output.display().to_string();
     harness.state_mut().select_screen(Screen::Help);
@@ -117,6 +120,9 @@ fn old_support_response_cannot_complete_a_new_request_after_campaign_reselection
         app.diagnosis().value.is_some()
     }));
     harness.state_mut().select_campaign(&first);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     let old_generation = harness.state().generation();
     let old_binding = harness.state().binding();
     let old_id = format!("support:{}:1", old_generation.0);
@@ -140,6 +146,9 @@ fn old_support_response_cannot_complete_a_new_request_after_campaign_reselection
 
     harness.state_mut().select_campaign(&second);
     harness.state_mut().select_campaign(&first);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     assert!(harness.state().generation() > old_generation);
     harness.state_mut().support_state_mut().output_path =
         fixture.root.join("new-bundle").display().to_string();

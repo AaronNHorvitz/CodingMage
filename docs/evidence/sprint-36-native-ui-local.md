@@ -140,7 +140,7 @@ cargo clippy -p codingmage-ui --all-targets --locked -- -D warnings
 | `never_started_campaign_is_an_explicit_empty_state` | A selected campaign without durable state shows the explicit never-started state, the unavailable modes and the binding match; no campaign directory is created |
 | `completed_unit_is_distinct_from_the_source_checkbox_and_counts_agree` | After one real accepted unit through the coordinator with fake providers, the status counts (1 of 1 accepted, paused) agree with the CLI outcome; the work plan shows "open in source" plus "completed at campaign head (verified, not yet in active checkout)" for the accepted task only |
 | `blocked_task_shows_its_closed_reason_and_independent_progress` | A typed lead blocker appears with its closed reason while the independent task completed |
-| `cross_repository_campaign_is_refused_before_any_backend_request` | A specification for another repository path, and one tampered to the right path but wrong identity, are refused with distinct reasons and no status request |
+| `cross_repository_campaign_snapshot_is_refused_before_status_request` | A specification for another repository path, and one tampered to the right path but wrong identity, are refused with distinct reasons and no status request |
 | `campaign_selection_is_remembered_per_configuration` | The selection is restored on reopen from private state and cleared explicitly |
 | `contract_parity` (4 tests) | Real `CampaignStatus`, `CampaignBlockerExplanation`, `CampaignOutcome`, `CampaignControlOutcome`, `CampaignPreflightReport` and `TeamCampaignReport` values round-trip through the interface models |
 

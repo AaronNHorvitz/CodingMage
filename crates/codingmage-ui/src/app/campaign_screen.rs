@@ -6,7 +6,8 @@ use codingmage_campaign::CampaignExecutionMode;
 use codingmage_plan::{CheckState, PlanItemKind};
 
 use super::{
-    App, BrowserSlot, GIT_DEADLINE, STATUS_DEADLINE, Screen, directory_list_arguments, failure_box,
+    App, BrowserSlot, GIT_DEADLINE, STATUS_DEADLINE, Screen, campaign_select_arguments,
+    directory_list_arguments, failure_box,
 };
 use crate::{
     backend::{
@@ -28,16 +29,69 @@ use crate::{
 };
 
 impl App {
-    /// Selects a campaign specification for the opened repository and requests its status.
+    /// Requests a bound campaign snapshot before selecting it for the opened repository.
     pub fn select_campaign(&mut self, spec_path: &Path) {
-        self.select_campaign_with_receipt(spec_path, None);
+        if self.project.is_none() {
+            self.campaign_error = None;
+            self.set_status("open a repository before selecting a campaign");
+            return;
+        }
+        self.remembered_campaign = None;
+        let diagnosis_loading = self.diagnosis.loading;
+        self.advance_selection_generation();
+        self.clear_campaign_observations();
+        self.campaign = None;
+        self.pending_campaign = None;
+        self.campaign_error = None;
+        self.campaign_input = spec_path.display().to_string();
+        if self.diagnosis.freshness(self.now) != Freshness::Live {
+            self.campaign_error = Some(crate::campaign::SelectError::DiagnosisUnavailable);
+            self.set_status("refresh repository diagnosis before selecting a campaign");
+            if diagnosis_loading {
+                self.refresh_diagnosis();
+            }
+            return;
+        }
+        // A retained diagnosis may still be refreshing. Reissue that observation first,
+        // so its response is checked before the campaign snapshot can be adopted.
+        if diagnosis_loading {
+            self.refresh_diagnosis();
+        }
+        let Some(arguments) = campaign_select_arguments(spec_path) else {
+            self.campaign_error = Some(crate::campaign::SelectError::RelativePath);
+            return;
+        };
+        self.next_campaign_request = self.next_campaign_request.wrapping_add(1);
+        let request_id = format!(
+            "campaign-select:{}:{}",
+            self.generation.0, self.next_campaign_request
+        );
+        self.pending_campaign = Some(super::PendingCampaignSelection {
+            path: spec_path.to_path_buf(),
+            request_id: request_id.clone(),
+        });
+        self.set_status("reading campaign specification through the coordinator");
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::Command {
+                label: "campaign-select",
+                arguments,
+                deadline: STATUS_DEADLINE,
+            },
+            request_id: Some(request_id),
+        };
+        if let Err(error) = self.submit(request) {
+            self.pending_campaign = None;
+            self.campaign_error = Some(crate::campaign::SelectError::Backend(error));
+        }
     }
 
     /// Selects a destination only when its held bytes match a confirmed write receipt.
     pub(super) fn select_campaign_with_receipt(
         &mut self,
         spec_path: &Path,
-        receipt: Option<(usize, &str)>,
+        receipt: (usize, &str),
     ) -> bool {
         let Some(project) = &self.project else {
             self.campaign_error = None;
@@ -54,17 +108,14 @@ impl App {
         self.advance_selection_generation();
         self.clear_campaign_observations();
         self.campaign = None;
-        let loaded = if let Some((bytes, sha256)) = receipt {
-            CampaignSelection::load_matching_receipt(
-                spec_path,
-                &target,
-                observed.as_deref(),
-                bytes,
-                sha256,
-            )
-        } else {
-            CampaignSelection::load(spec_path, &target, observed.as_deref())
-        };
+        self.pending_campaign = None;
+        let loaded = CampaignSelection::load_matching_receipt(
+            spec_path,
+            &target,
+            observed.as_deref(),
+            receipt.0,
+            receipt.1,
+        );
         let accepted = match loaded {
             Ok(selection) => {
                 self.campaign_input = selection.spec_path.display().to_string();
@@ -94,6 +145,8 @@ impl App {
         self.advance_selection_generation();
         self.clear_campaign_observations();
         self.campaign = None;
+        self.remembered_campaign = None;
+        self.pending_campaign = None;
         self.campaign_error = None;
         self.execution = super::ExecutionState::default();
         self.persist_campaign_memory();
@@ -101,6 +154,58 @@ impl App {
         if diagnosis_loading {
             self.refresh_diagnosis();
         }
+    }
+
+    pub(super) fn accept_campaign_selection(&mut self, response: Response) -> bool {
+        let Some(pending) = self.pending_campaign.as_ref() else {
+            self.discarded_stale += 1;
+            return false;
+        };
+        if response.request_id.as_deref() != Some(pending.request_id.as_str()) {
+            self.discarded_stale += 1;
+            return false;
+        }
+        if self.campaign_input != pending.path.display().to_string() {
+            self.pending_campaign = None;
+            self.discarded_stale += 1;
+            self.set_status("campaign path changed before selection finished; select it again");
+            return false;
+        }
+        let path = pending.path.clone();
+        self.pending_campaign = None;
+        let Some(project) = &self.project else {
+            self.discarded_stale += 1;
+            return false;
+        };
+        let loaded = response
+            .result
+            .map_err(crate::campaign::SelectError::Backend)
+            .and_then(|bytes| {
+                CampaignSelection::from_snapshot(
+                    &path,
+                    &project.config.target_path,
+                    self.diagnosis
+                        .value
+                        .as_ref()
+                        .map(|value| value.repository_id.as_str()),
+                    &bytes,
+                )
+            });
+        match loaded {
+            Ok(selection) => {
+                self.campaign = Some(selection);
+                self.campaign_error = None;
+                self.persist_campaign_memory();
+                self.restore_execution();
+                self.set_status("campaign selected; requesting durable status");
+                self.refresh_campaign();
+            }
+            Err(error) => {
+                self.set_status(format!("campaign refused: {error}"));
+                self.campaign_error = Some(error);
+            }
+        }
+        true
     }
 
     pub(super) fn clear_campaign_observations(&mut self) {
@@ -789,6 +894,19 @@ impl App {
                 &error.to_string(),
                 catalogue.text("campaign_spec_refused_action"),
             );
+        }
+        if self.pending_campaign.is_some() {
+            ui.label("Checking selected campaign through the coordinator…");
+        }
+        if let Some(arguments) = campaign_select_arguments(Path::new(self.campaign_input.trim())) {
+            command::show_for(
+                ui,
+                "select campaign specification",
+                self.binary_path.as_deref(),
+                &arguments,
+            );
+        } else {
+            command::show_unavailable_for(ui, "select campaign specification");
         }
         if let Some(path) = select {
             self.select_campaign(&path);

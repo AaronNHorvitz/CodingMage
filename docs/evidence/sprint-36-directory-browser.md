@@ -6,6 +6,13 @@ The report was read-only, bound to that exact clean commit and found no
 remaining issue in its stated project-selection scope. It does not close the
 separate human, live, source-bound evidence or release gates.
 
+The subsequent independent exact-commit review of this picker increment
+returned FINDINGS: the campaign click still used the in-process campaign
+loader, which could follow a file replaced after listing. Its High finding is
+retained in the private review record and is being corrected by ADRs 0080 and
+0081. The earlier builder verification below remains bounded to its original
+source and must not be read as an independent PASS.
+
 Decision 0079 defines the public read-only directory-list contract. The Open,
 Setup target and campaign file pickers no longer enumerate directories on the
 render thread. They request a bounded version-one snapshot through the

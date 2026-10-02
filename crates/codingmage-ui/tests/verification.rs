@@ -390,6 +390,9 @@ fn recovery_after_a_killed_coordinator_and_resumed_durable_state() {
         app.diagnosis().value.is_some()
     }));
     harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     harness.state_mut().set_authorization_record(&record);
     harness.state_mut().run_preflight();
     assert!(settle(&mut harness, Duration::from_mins(3), |app| {
@@ -714,7 +717,9 @@ fn stale_and_malformed_private_state_is_visible_and_never_fatal() {
         app.diagnosis().value.is_some()
     }));
     harness.state_mut().select_campaign(&spec);
-    harness.run_steps(2);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     let project_dir = harness.state().project_dir().unwrap();
     drop(harness);
     let launch_dir = project_dir.join("launches").join("malformed-state");

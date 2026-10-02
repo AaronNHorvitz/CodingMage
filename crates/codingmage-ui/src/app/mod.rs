@@ -66,6 +66,20 @@ fn directory_list_arguments(path: &Path) -> Option<Vec<String>> {
     ])
 }
 
+fn campaign_select_arguments(path: &Path) -> Option<Vec<String>> {
+    let path = path.to_str().filter(|_| path.is_absolute())?;
+    Some(vec![
+        "campaign-select".to_owned(),
+        "--campaign".to_owned(),
+        path.to_owned(),
+    ])
+}
+
+struct PendingCampaignSelection {
+    path: PathBuf,
+    request_id: String,
+}
+
 #[derive(Clone, Copy)]
 enum BrowserSlot {
     Configuration,
@@ -208,6 +222,9 @@ pub struct App {
     selected_item: Option<String>,
     browser: Option<Browser>,
     campaign: Option<CampaignSelection>,
+    remembered_campaign: Option<PathBuf>,
+    pending_campaign: Option<PendingCampaignSelection>,
+    next_campaign_request: u64,
     campaign_input: String,
     campaign_error: Option<SelectError>,
     campaign_browser: Option<Browser>,
@@ -326,6 +343,9 @@ impl App {
             selected_item: None,
             browser: None,
             campaign: None,
+            remembered_campaign: None,
+            pending_campaign: None,
+            next_campaign_request: 0,
             campaign_input: String::new(),
             campaign_error: None,
             campaign_browser: None,
@@ -563,6 +583,8 @@ impl App {
         self.browser = None;
         self.clear_campaign_observations();
         self.campaign = None;
+        self.remembered_campaign = None;
+        self.pending_campaign = None;
         self.campaign_error = None;
         self.campaign_input.clear();
         self.authorization_record = None;
@@ -597,7 +619,7 @@ impl App {
                     }
                     if let Some(spec_path) = memory.campaign_spec {
                         self.campaign_input = spec_path.display().to_string();
-                        self.select_campaign(&spec_path);
+                        self.remembered_campaign = Some(spec_path);
                     }
                 }
             }
@@ -627,6 +649,8 @@ impl App {
         self.selected_item = None;
         self.clear_campaign_observations();
         self.campaign = None;
+        self.remembered_campaign = None;
+        self.pending_campaign = None;
         self.campaign_error = None;
         self.set_status("closed the repository view; no coordinator process was affected");
     }
@@ -782,6 +806,15 @@ impl App {
                 self.setup
                     .cancel_matching_export(response.request_id.as_deref());
             }
+            if response.label == "campaign-select"
+                && self.pending_campaign.as_ref().is_some_and(|pending| {
+                    response.request_id.as_deref() == Some(pending.request_id.as_str())
+                })
+            {
+                self.pending_campaign = None;
+                self.campaign_error = Some(SelectError::DiagnosisUnavailable);
+                self.set_status("campaign selection became stale; refresh repository diagnosis");
+            }
             self.discarded_stale += 1;
             return false;
         }
@@ -804,6 +837,7 @@ impl App {
                 self.accept_project_open(response);
                 true
             }
+            "campaign-select" => self.accept_campaign_selection(response),
             "doctor" => {
                 self.accept_diagnosis(response);
                 true
@@ -860,6 +894,14 @@ impl App {
                 && issued.campaign_id.is_none();
         }
         let current = self.binding();
+        if label == "campaign-select" {
+            return issued.config_path == current.config_path
+                && issued.repository_id.is_some()
+                && issued.repository_id == current.repository_id
+                && issued.campaign_id.is_none()
+                && current.campaign_id.is_none()
+                && self.diagnosis.freshness(self.now) == Freshness::Live;
+        }
         if issued.config_path != current.config_path {
             return false;
         }
@@ -929,6 +971,9 @@ impl App {
                 } else {
                     "repository diagnosis observed"
                 });
+                if !plan_stale && let Some(path) = self.remembered_campaign.take() {
+                    self.select_campaign(&path);
+                }
             }
             Err(error) => {
                 self.set_status(format!("repository diagnosis failed: {}", error.code()));

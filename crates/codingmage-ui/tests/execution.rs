@@ -50,6 +50,9 @@ fn open(ready: &Ready) -> egui_kittest::Harness<'static, codingmage_ui::App> {
         app.diagnosis().value.is_some()
     }));
     harness.state_mut().select_campaign(&ready.spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     harness.state_mut().set_authorization_record(&ready.record);
     harness.run_steps(2);
     harness
@@ -99,6 +102,9 @@ fn failed_refresh_cannot_admit_a_retained_ready_preflight_report() {
         app.diagnosis().value.is_some()
     }));
     harness.state_mut().select_campaign(&ready.spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     harness.state_mut().set_authorization_record(&ready.record);
     harness.state_mut().run_preflight();
     assert!(settle(&mut harness, Duration::from_mins(3), |app| {
@@ -261,6 +267,9 @@ fn combining_mark_paths_refuse_campaign_actions_before_any_intent_or_launch() {
             .value
             .is_some()));
         harness.state_mut().select_campaign(&ready.spec);
+        assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+            app.campaign().is_some()
+        }));
         harness.state_mut().set_authorization_record(&ready.record);
         harness.state_mut().select_screen(Screen::Campaign);
         harness.run_steps(2);

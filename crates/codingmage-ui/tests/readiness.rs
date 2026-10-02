@@ -125,7 +125,9 @@ fn local_checks_explain_the_preflight_failure_before_it_runs() {
     let spec = write_campaign(&fixture, "not-ready", 2);
     let mut harness = opened(&fixture);
     harness.state_mut().select_campaign(&spec);
-    harness.run_steps(2);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     let checks = harness.state().readiness_checks();
     assert_eq!(
         *status_of(&checks, "repository identity"),
@@ -234,6 +236,9 @@ fn real_preflight_passes_on_a_ready_fixture_and_binds_the_report_digest() {
     let (spec, record) = write_controlled_campaign(&fixture, "ready-campaign");
     let mut harness = opened_at_size(&fixture, codingmage_ui::app::MIN_WINDOW);
     harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     harness.state_mut().set_authorization_record(&record);
     let checks = harness.state().readiness_checks();
     assert!(
@@ -307,6 +312,9 @@ fn provider_probe_failure_is_actionable_and_names_no_substitute() {
     fixture.executable("fake-claude", "#!/bin/sh\necho 'nothing'\nexit 0\n");
     let mut harness = opened(&fixture);
     harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     harness.state_mut().set_authorization_record(&record);
     harness.state_mut().run_preflight();
     assert!(settle(&mut harness, Duration::from_mins(3), |app| {
@@ -341,6 +349,9 @@ fn preflight_failure_states_keep_authority_unconfirmed_and_offer_recovery() {
     fs::write(&record, b"synthetic test authorization\n").unwrap();
     let mut harness = opened(&fixture);
     harness.state_mut().select_campaign(&spec);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     harness.state_mut().set_authorization_record(&record);
     harness.state_mut().select_screen(Screen::Campaign);
 

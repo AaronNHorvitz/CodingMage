@@ -2,7 +2,7 @@
 
 mod common;
 
-use std::{fs, time::Duration};
+use std::{fs, path::Path, time::Duration};
 
 use codingmage_ui::{
     Screen,
@@ -22,6 +22,13 @@ fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::Ap
         app.diagnosis().value.is_some()
     }));
     harness
+}
+
+fn select_campaign(harness: &mut egui_kittest::Harness<'static, codingmage_ui::App>, path: &Path) {
+    harness.state_mut().select_campaign(path);
+    assert!(settle(harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
 }
 
 #[test]
@@ -127,7 +134,7 @@ fn source_report_inspection_reads_bound_path_free_records_and_clears_on_reselect
     let second = write_campaign(&fixture, "source-inspect-second", 1);
     let before = tree_digest(&fixture.target);
     let mut harness = opened(&fixture);
-    harness.state_mut().select_campaign(&first);
+    select_campaign(&mut harness, &first);
     harness.state_mut().select_screen(Screen::Reports);
     harness.run_steps(2);
     harness
@@ -148,7 +155,7 @@ fn source_report_inspection_reads_bound_path_free_records_and_clears_on_reselect
     harness.get_by_label_contains("\"campaign_id\": \"source-inspect-first\"");
     assert_eq!(tree_digest(&fixture.target), before);
 
-    harness.state_mut().select_campaign(&second);
+    select_campaign(&mut harness, &second);
     harness.run_steps(2);
     harness.get_by_label_contains("No source report has been requested");
     harness.state_mut().inspect_source_report();
@@ -218,7 +225,7 @@ fn outcome_report_restates_records_and_exports_with_privacy_and_overwrite_safegu
     let outcome = run_campaign(&fixture, &spec);
     assert_eq!(outcome["completed_units"], 1);
     let mut harness = opened(&fixture);
-    harness.state_mut().select_campaign(&spec);
+    select_campaign(&mut harness, &spec);
     let pending = harness.state().assemble_report(false).unwrap();
     assert!(!pending.change_coverage.observed);
     assert_eq!(pending.changed_file_count, None);

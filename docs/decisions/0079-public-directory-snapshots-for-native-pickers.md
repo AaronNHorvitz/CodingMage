@@ -1,6 +1,6 @@
 # ADR 0079: Public Directory Snapshots for Native Pickers
 
-- **Status:** Accepted for implementation; independent review pending
+- **Status:** Accepted for implementation; independent review finding under correction
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 
@@ -35,6 +35,11 @@ failure or navigation. Setup enables "Use this target" only after a successful
 current listing. Each picker shows loading, failure, truncation, Refresh and
 the exact Show-command invocation. Opening or selecting a listed file still
 uses the separate authoritative coordinator command and its own validation.
+
+The exact-commit review of the first implementation found that campaign file
+selection had not yet met this decision: its click handler used an in-process
+loader. ADR 0080 secures the shared loader, and ADR 0081 supplies the missing
+public campaign-selection snapshot. The original finding remains retained.
 
 This command observes a moving filesystem. It does not promise an atomic
 snapshot or grant authority from the listing. A separate recovery path for a

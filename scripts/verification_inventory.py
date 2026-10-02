@@ -157,6 +157,14 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/campaign.rs", "struct", "CampaignSelection"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
+    # The selected campaign snapshot is a bounded closed-schema input. Moving
+    # its decoder must not change the unrelated task-overlay applicability.
+    ("crates/codingmage-ui/src/campaign.rs", "fn", "from_snapshot"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/campaign.rs", "struct", "TaskOverlay"): (
+        "positive", "negative", "boundary", "repeatability",
+    ),
     ("crates/codingmage-ui/src/campaign.rs", "enum", "SelectError"): (
         "positive", "negative", "malformed_input", "unknown_field", "repeatability",
     ),
@@ -165,6 +173,9 @@ FIXED_APPLICABILITY = {
     ),
     ("crates/codingmage-ui/src/app/campaign_screen.rs", "fn", "select_campaign_with_receipt"): (
         "positive", "negative", "boundary", "malformed_input", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/app/campaign_screen.rs", "fn", "accept_campaign_selection"): (
+        "positive", "negative", "malformed_input", "unknown_field", "repeatability",
     ),
     ("crates/codingmage-ui/src/app/setup_screen.rs", "struct", "SetupState"): (
         "positive", "negative", "malformed_input", "unknown_field", "repeatability",

@@ -761,7 +761,7 @@ impl App {
             Ok(receipt) => {
                 let selected = self.select_campaign_with_receipt(
                     &pending.specification_path,
-                    Some((receipt.bytes, &receipt.sha256)),
+                    (receipt.bytes, &receipt.sha256),
                 );
                 if selected
                     && self.campaign.as_ref().is_some_and(|selected| {

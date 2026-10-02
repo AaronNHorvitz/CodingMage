@@ -19,8 +19,10 @@ scope with independent Cargo checks; full UI independent acceptance remains open
   run-record evidence also use this command boundary.
   Guided configuration writes use `setup-write-config` through a detached helper with private
   input and a retained outcome. The Open and recent-configuration actions now use the
-  bounded, read-only `project-open` coordinator command. The Setup directory picker and
-  guided-configuration recovery still read in the UI process; moving those reads remains open under the
+  bounded, read-only `project-open` coordinator command. All three directory pickers use
+  `directory-list`; typed, clicked and remembered campaign selections use `campaign-select`
+  after repository diagnosis. Guided-configuration recovery and guided campaign write-receipt
+  validation still read in the UI process; moving those reads remains open under the
   [native UI specification](../architecture/native-ui-specification.md).
 - An observer and control surface. Opening the app or a repository starts no agent, edits no task
   status and authorizes no campaign. Closing the window never stops a coordinator.
@@ -61,7 +63,7 @@ showing sample results.
 | --- | --- | --- |
 | Overview | First-run storage and provider sign-in guidance; configuration summary, repository diagnosis (identity, head, branch, cleanliness, denied capabilities), task-source counts | `codingmage project-open`, `codingmage doctor` |
 | Work plan | Searchable, filterable plan with dependencies, source anchors, readiness from the source, disabled source checkboxes and the coordinator overlay (completed at campaign head, accepted, active, blocked, deferred, human decision, unknown) | `project-open` task parser snapshot, `campaign-status`, `campaign-head-plan` for authorized, content-minimized head states |
-| Campaign | Campaign authority, binding drift, readiness checks, preflight, admission, coordinator process state, controls, durable status, holds, utilization, roles the backend reports, unavailable involvement modes; Setup and Help navigation when no repository is open | `campaign-preflight`, `campaign-status`, `campaign-explain-blocker`, `campaign-control`, `/proc` |
+| Campaign | Campaign authority, binding drift, readiness checks, preflight, admission, coordinator process state, controls, durable status, holds, utilization, roles the backend reports, unavailable involvement modes; Setup and Help navigation when no repository is open | `campaign-select`, `campaign-preflight`, `campaign-status`, `campaign-explain-blocker`, `campaign-control`, `/proc` |
 | Blockers | Searchable bound campaign hold, blocked, deferred and human-decision codes; explicit empty, stale and failed observations; read-only exact-command refresh and code-specific recovery guidance | `campaign-explain-blocker`; eligible external clearance and trigger observations still require operator-supplied evidence through coordinator commands, while coordinator-observed triggers are never manually marked |
 | Changes and reviews | Delivery boundary, coordinator commits and changed files, per-run verdicts and gate evidence, journaled phases, bounded activity | `campaign-changes`, `campaign-run-records` |
 | Reports | Outcome and blocker reports with export and explicit source-observation freshness | the observations above |
@@ -119,7 +121,8 @@ refused, even when outside the repository.
    `codingmage directory-list --directory <ABSOLUTE_DIR>`. Each shows loading, errors and
    truncation, offers Refresh and Show command, and keeps linked entries disabled. The Setup
    target action becomes available only after that directory's listing succeeds. A listing is
-   navigation data; the later Open or campaign selection command validates the chosen file.
+   navigation data; the later `project-open` or `campaign-select` command validates the chosen
+   file. A remembered campaign waits for a successful repository diagnosis before selection.
 2. Write the owner's authorization record outside the repository and author a campaign; the
    repository identity, head and task-source digest come from the live diagnosis.
 3. On the Campaign screen, review the local readiness checks, run preflight, and admit the

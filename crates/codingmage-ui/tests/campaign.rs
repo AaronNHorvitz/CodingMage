@@ -2,7 +2,7 @@
 
 mod common;
 
-use std::{fs, path::Path, process::Command, time::Duration};
+use std::{fs, os::unix::fs::symlink, path::Path, process::Command, time::Duration};
 
 use codingmage_campaign::{
     CampaignConcurrency, CampaignExecutionMode, CampaignSpec, DestinationPromotionPolicy,
@@ -18,7 +18,7 @@ use codingmage_ui::{
             TaskReason,
         },
     },
-    campaign::SelectError,
+    campaign::{CampaignSelection, SelectError},
 };
 use common::{
     Fixture, coordinator_binary, git, harness, harness_with_state, run_campaign, settle,
@@ -35,6 +35,204 @@ fn opened(fixture: &Fixture) -> egui_kittest::Harness<'static, codingmage_ui::Ap
         app.diagnosis().value.is_some()
     }));
     harness
+}
+
+#[test]
+fn campaign_snapshot_refuses_replaced_picker_file_and_malformed_authority() {
+    let fixture = Fixture::new("campaign-snapshot-replacement", 1);
+    let selected = write_campaign(&fixture, "selected", 1);
+    let other = write_campaign(&fixture, "other", 1);
+    let selected_text = selected.to_str().unwrap();
+    let listing = Command::new(coordinator_binary())
+        .args([
+            "directory-list",
+            "--directory",
+            fixture.root.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(listing.status.success());
+    let listing: serde_json::Value = serde_json::from_slice(&listing.stdout).unwrap();
+    assert!(listing["entries"].as_array().unwrap().iter().any(|entry| {
+        entry["name"] == selected.file_name().unwrap().to_str().unwrap() && entry["kind"] == "file"
+    }));
+    let snapshot = Command::new(coordinator_binary())
+        .args(["campaign-select", "--campaign", selected_text])
+        .output()
+        .unwrap();
+    assert!(snapshot.status.success());
+    let valid =
+        CampaignSelection::from_snapshot(&selected, &fixture.target, None, &snapshot.stdout)
+            .unwrap();
+    assert_eq!(valid.spec.campaign_id, "selected");
+    let mut malformed: serde_json::Value = serde_json::from_slice(&snapshot.stdout).unwrap();
+    malformed["unexpected"] = serde_json::json!(true);
+    assert_eq!(
+        CampaignSelection::from_snapshot(
+            &selected,
+            &fixture.target,
+            None,
+            &serde_json::to_vec(&malformed).unwrap(),
+        )
+        .unwrap_err(),
+        SelectError::Contract
+    );
+    let mut unsupported: serde_json::Value = serde_json::from_slice(&snapshot.stdout).unwrap();
+    unsupported["schema_version"] = serde_json::json!(2);
+    assert_eq!(
+        CampaignSelection::from_snapshot(
+            &selected,
+            &fixture.target,
+            None,
+            &serde_json::to_vec(&unsupported).unwrap(),
+        )
+        .unwrap_err(),
+        SelectError::UnsupportedSchema
+    );
+    let mut changed_digest: serde_json::Value = serde_json::from_slice(&snapshot.stdout).unwrap();
+    changed_digest["authority_sha256"] = serde_json::json!("0".repeat(64));
+    assert_eq!(
+        CampaignSelection::from_snapshot(
+            &selected,
+            &fixture.target,
+            None,
+            &serde_json::to_vec(&changed_digest).unwrap(),
+        )
+        .unwrap_err(),
+        SelectError::Contract
+    );
+    let foreign = CampaignSelection::from_snapshot(&other, &fixture.target, None, &snapshot.stdout);
+    assert_eq!(foreign.unwrap_err(), SelectError::Contract);
+    fs::remove_file(&selected).unwrap();
+    symlink(&other, &selected).unwrap();
+    let rejected = Command::new(coordinator_binary())
+        .args(["campaign-select", "--campaign", selected_text])
+        .output()
+        .unwrap();
+    assert!(!rejected.status.success());
+    assert!(rejected.stdout.is_empty());
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&selected);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign_error().is_some()
+    }));
+    assert!(harness.state().campaign().is_none());
+    assert!(harness.state().status().value.is_none());
+    harness.state_mut().select_screen(Screen::Campaign);
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: select campaign specification")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("codingmage campaign-select --campaign");
+}
+
+#[test]
+fn selection_snapshot_requires_current_request_and_generation() {
+    let fixture = Fixture::new("campaign-selection-binding", 1);
+    let selected = write_campaign(&fixture, "selected", 1);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&selected);
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    let current_id = format!("campaign-select:{}:1", generation.0);
+    let response = |request_id: &str, result: Vec<u8>| Response {
+        generation,
+        binding: binding.clone(),
+        label: "campaign-select",
+        request_id: Some(request_id.to_owned()),
+        result: Ok(result),
+    };
+    assert!(
+        !harness
+            .state_mut()
+            .handle_response(response("wrong-request", b"{}".to_vec()))
+    );
+    assert!(harness.state().campaign().is_none());
+    assert!(
+        harness
+            .state_mut()
+            .handle_response(response(&current_id, b"{}".to_vec()))
+    );
+    assert_eq!(
+        harness.state().campaign_error(),
+        Some(&SelectError::Contract)
+    );
+    assert!(harness.state().campaign().is_none());
+    harness.state_mut().select_campaign(&selected);
+    let newer_id = format!("campaign-select:{}:2", harness.state().generation().0);
+    harness.state_mut().clear_campaign();
+    assert!(
+        !harness
+            .state_mut()
+            .handle_response(response(&newer_id, b"{}".to_vec()))
+    );
+    assert!(harness.state().campaign().is_none());
+    assert!(harness.state().status().value.is_none());
+}
+
+#[test]
+fn selection_snapshot_cannot_use_a_failed_repository_refresh() {
+    let fixture = Fixture::new("campaign-selection-stale-diagnosis", 1);
+    let selected = write_campaign(&fixture, "selected", 1);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&selected);
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding: binding.clone(),
+        label: "doctor",
+        request_id: None,
+        result: Err(BackendError::Spawn),
+    }));
+    assert!(!harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "campaign-select",
+        request_id: Some(format!("campaign-select:{}:1", generation.0)),
+        result: Ok(b"{}".to_vec()),
+    }));
+    assert_eq!(
+        harness.state().campaign_error(),
+        Some(&SelectError::DiagnosisUnavailable)
+    );
+    assert!(harness.state().campaign().is_none());
+    assert!(harness.state().status().value.is_none());
+}
+
+#[test]
+fn stale_diagnosis_clears_the_prior_campaign_before_a_new_selection() {
+    let fixture = Fixture::new("campaign-selection-stale-prior", 1);
+    let first = write_campaign(&fixture, "first", 1);
+    let second = write_campaign(&fixture, "second", 1);
+    let mut harness = opened(&fixture);
+    harness.state_mut().select_campaign(&first);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "doctor",
+        request_id: None,
+        result: Err(BackendError::Spawn),
+    }));
+    harness.state_mut().refresh_diagnosis();
+    harness.state_mut().select_campaign(&second);
+    assert!(harness.state().campaign().is_none());
+    assert!(harness.state().status().value.is_none());
+    assert_eq!(
+        harness.state().campaign_error(),
+        Some(&SelectError::DiagnosisUnavailable)
+    );
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().last_error.is_none() && !app.diagnosis().loading
+    }));
+    assert!(harness.state().campaign().is_none());
+    assert!(harness.state().status().value.is_none());
 }
 
 fn inject_report(
@@ -1143,13 +1341,18 @@ fn blocked_task_shows_its_closed_reason_and_independent_progress() {
 }
 
 #[test]
-fn cross_repository_campaign_is_refused_before_any_backend_request() {
+fn cross_repository_campaign_snapshot_is_refused_before_status_request() {
     let first = Fixture::new("campaign-cross-a", 3);
     let second = Fixture::new("campaign-cross-b", 3);
     let foreign = write_campaign(&first, "foreign", 1);
     let mut harness = opened(&second);
     harness.state_mut().select_campaign(&foreign);
-    harness.run_steps(2);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        matches!(
+            app.campaign_error(),
+            Some(SelectError::DifferentRepositoryPath { .. })
+        )
+    }));
     assert!(harness.state().campaign().is_none());
     assert!(matches!(
         harness.state().campaign_error(),
@@ -1180,7 +1383,12 @@ fn cross_repository_campaign_is_refused_before_any_backend_request() {
     let tampered_path = first.root.join("tampered.toml");
     fs::write(&tampered_path, tampered).unwrap();
     harness.state_mut().select_campaign(&tampered_path);
-    harness.run_steps(2);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        matches!(
+            app.campaign_error(),
+            Some(SelectError::DifferentRepositoryId { .. })
+        )
+    }));
     assert!(matches!(
         harness.state().campaign_error(),
         Some(SelectError::DifferentRepositoryId { .. })
@@ -1205,11 +1413,15 @@ fn campaign_selection_is_remembered_per_configuration() {
     };
     let mut harness = open(&fixture);
     harness.state_mut().select_campaign(&spec);
-    harness.run_steps(2);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     assert!(harness.state().campaign().is_some());
     drop(harness);
     let mut reopened = open(&fixture);
-    reopened.run_steps(2);
+    assert!(settle(&mut reopened, Duration::from_secs(30), |app| {
+        app.campaign().is_some()
+    }));
     assert_eq!(
         reopened
             .state()
