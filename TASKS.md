@@ -2140,8 +2140,14 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     receipt/destination and repository-identity checks, and explicit recovery
     after window close or selection change. The disposable native Setup
     target passes 14/14 and native all-target tests pass 188/188; see
-    `docs/evidence/sprint-36-setup-command-boundary.md`. Its independent
-    exact-commit review remains pending. The section 5 catalogue and complete
+    `docs/evidence/sprint-36-setup-command-boundary.md`. Independent exact-commit
+    review of `b52e2c0f91e4e45b967b038c092f0ac618409850` returned bounded
+    PASS with one Low inventory applicability finding for the helper's private
+    JSON request. The correction adds the missing malformed-input and
+    unknown-field categories and direct request-boundary regressions. On the
+    corrected source, native Setup passes 15/15, native all-target tests pass
+    190/190, and strict workspace Clippy passes; exact-commit re-review remains
+    pending. The section 5 catalogue and complete
     in-context depth/Show-command coverage remain open.
     The private-stage admission correction at `a36dd18b0e6e5cf4d7b54c03d23c94abf6682350`
     received a bounded independent exact-commit PASS with no open finding. It does not qualify

@@ -122,6 +122,11 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/backend/worker.rs", "fn", "label"): (
         "positive", "negative", "malformed_input", "unknown_field", "repeatability",
     ),
+    # The detached configuration helper parses an untrusted private JSON
+    # request before it can open an intent or invoke the coordinator.
+    ("crates/codingmage-ui/src/setup_config_process.rs", "fn", "helper_main"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
 }
 
 

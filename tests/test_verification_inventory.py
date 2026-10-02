@@ -110,6 +110,25 @@ class VerificationInventoryTests(unittest.TestCase):
             self.assertEqual(first, second)
             self.assertIn(required, first)
 
+    def test_configuration_helper_request_categories_stay_stable(self) -> None:
+        path = "crates/codingmage-ui/src/setup_config_process.rs"
+        expected = [
+            "positive", "negative", "boundary", "malformed_input",
+            "unknown_field", "repeatability",
+        ]
+        for context in ("unrelated navigation", "oversized malformed schema"):
+            self.assertEqual(
+                INVENTORY.applicability(path, "fn", "helper_main", context),
+                expected,
+            )
+        item = next(
+            entry for entry in INVENTORY.build()["items"]
+            if entry["path"] == path
+            and entry["kind"] == "fn"
+            and entry["name"] == "helper_main"
+        )
+        self.assertEqual(item["applicable_categories"], expected)
+
 
 if __name__ == "__main__":
     unittest.main()

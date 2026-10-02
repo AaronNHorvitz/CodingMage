@@ -553,3 +553,30 @@ functions retain their prior applicability rather than inheriting nearby
 receipt keywords. Existing test-name mapping suggestions moved as new tests
 entered the crate; they do not establish coverage. No source-bound CM-R01.6
 package, failed receipt, binding or digest was renewed.
+
+## Independent configuration-boundary finding and correction
+
+The read-only exact-commit review of
+`b52e2c0f91e4e45b967b038c092f0ac618409850` returned bounded PASS with
+one Low finding: the generated inventory omitted `malformed_input` and
+`unknown_field` applicability for the detached helper's untrusted private
+JSON request. Its direct subprocess check rejected an unknown field, so the
+finding concerns inventory accuracy, not an observed write-boundary bypass.
+The corrected generator fixes both categories explicitly for `helper_main`;
+the focused inventory mutation test checks that unrelated adjacent text cannot
+remove them. A committed native helper subprocess test sends malformed JSON
+and a complete request with an extra field and requires refusal. A unit test
+checks that the complete known-field request parses and the extra field does
+not. No public authority or writer behavior changed.
+
+The regenerated inventory still has 1,827 items and 825 gaps. It adds no
+normalized surface and removes none; only `helper_main` gains the two
+applicability categories. The normalized gap set is unchanged. The new test
+names alter 246 heuristic mapping suggestions; these are not coverage proof.
+Focused direct helper subprocess testing passes 1/1. The corrected native UI
+all-target suite passes 190/190 across 14 targets, including Setup 15/15 and
+the helper unit test. Strict workspace Clippy with warnings denied passes.
+The Python suite passes 46/47; its sole failure is the unchanged CM-R01.6
+eight-input source-bound `input-drift`. The failed receipts and bindings were
+not renewed. This correction awaits independent exact-commit re-review and
+does not close Task 36.3.2.2 or any human, live or release gate.

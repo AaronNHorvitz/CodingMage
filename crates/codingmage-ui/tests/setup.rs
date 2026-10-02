@@ -4,7 +4,9 @@ mod common;
 
 use std::{
     fs,
+    io::Write as _,
     path::Path,
+    process::{Command, Stdio},
     thread,
     time::{Duration, Instant},
 };
@@ -37,6 +39,26 @@ fn config_helper_unlocked(private: &Path) -> bool {
         .write(true)
         .open(private.join("setup-config-intent.lock"))
         .is_ok_and(|file| file.try_lock().is_ok())
+}
+
+#[test]
+fn configuration_helper_refuses_malformed_and_unknown_request_fields() {
+    let helper = env!("CARGO_BIN_EXE_codingmage-ui");
+    let requests: [&[u8]; 2] = [
+        b"{",
+        br#"{"schema_version":1,"intent_path":"/missing","intent_sha256":"0000000000000000000000000000000000000000000000000000000000000000","binary_path":"/missing","deadline_ms":1,"unexpected":true}"#,
+    ];
+    for request in requests {
+        let mut child = Command::new(helper)
+            .arg("--setup-config-helper")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+        child.stdin.take().unwrap().write_all(request).unwrap();
+        assert_eq!(child.wait().unwrap().code(), Some(2));
+    }
 }
 
 fn export_result_count(private: &Path) -> usize {

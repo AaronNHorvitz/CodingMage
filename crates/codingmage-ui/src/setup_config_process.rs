@@ -567,6 +567,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn helper_request_schema_rejects_malformed_and_unknown_fields() {
+        let valid = br#"{"schema_version":1,"intent_path":"/missing","intent_sha256":"0000000000000000000000000000000000000000000000000000000000000000","binary_path":"/missing","deadline_ms":1}"#;
+        let unknown = br#"{"schema_version":1,"intent_path":"/missing","intent_sha256":"0000000000000000000000000000000000000000000000000000000000000000","binary_path":"/missing","deadline_ms":1,"unexpected":true}"#;
+        assert!(serde_json::from_slice::<HelperRequest>(valid).is_ok());
+        assert!(serde_json::from_slice::<HelperRequest>(b"{").is_err());
+        assert!(serde_json::from_slice::<HelperRequest>(unknown).is_err());
+    }
+
+    #[test]
     fn private_intent_refuses_changed_bytes_and_duplicate_write() {
         let root =
             std::env::temp_dir().join(format!("codingmage-config-intent-{}", std::process::id()));
