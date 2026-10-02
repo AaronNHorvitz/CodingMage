@@ -6,7 +6,7 @@ mod repository;
 pub use codingmage_contracts as contracts;
 pub use config::{
     AgentProfile, CapabilityGrant, CapabilityPolicy, CommandSpec, Config, ConfigLoadError,
-    EffectiveConfigView, PublicationMode, PublicationPolicy, load_config,
+    EffectiveConfigView, PublicationMode, PublicationPolicy, load_config, parse_config_bytes,
 };
 pub use repository::{
     FilesystemIdentity, RemoteIdentity, RepositoryAuthorization, RepositoryAuthorizationError,

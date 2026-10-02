@@ -187,6 +187,31 @@ fn project_open_keeps_plan_failures_distinct_and_refuses_bad_arguments() {
 }
 
 #[test]
+fn project_open_refuses_linked_and_oversized_selected_configuration() {
+    let fixture = Fixture::new();
+    let original = fs::read(&fixture.config).unwrap();
+    let external = fixture.root.join("external.toml");
+    fs::rename(&fixture.config, &external).unwrap();
+    symlink(&external, &fixture.config).unwrap();
+    let linked = fixture.open();
+    assert!(!linked.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&linked.stderr).trim(),
+        "codingmage.cli.invalid_argument"
+    );
+    assert_eq!(fs::read(&external).unwrap(), original);
+
+    fs::remove_file(&fixture.config).unwrap();
+    fs::write(&fixture.config, vec![b'x'; 1024 * 1024 + 1]).unwrap();
+    let oversized = fixture.open();
+    assert!(!oversized.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&oversized.stderr).trim(),
+        "codingmage.cli.config"
+    );
+}
+
+#[test]
 fn project_open_keeps_configuration_when_a_parsed_plan_exceeds_the_output_bound() {
     let fixture = Fixture::new();
     let mut source = String::from(

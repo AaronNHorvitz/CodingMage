@@ -56,6 +56,11 @@ KEYWORDS = {
 # moving context heuristic to add, then silently remove, its boundary category.
 # The failure panel must remain in the minimum-window/long-text work queue.
 FIXED_APPLICABILITY = {
+    # Moving parser exports in the core crate must not erase the public
+    # contract version's existing malformed/unknown-input work queue.
+    ("crates/codingmage-core/src/lib.rs", "fn", "contract_version"): (
+        "positive", "negative", "malformed_input", "unknown_field", "repeatability",
+    ),
     # The nearby Open command argument builder is not part of these deadlines.
     ("crates/codingmage-ui/src/app/mod.rs", "const", "GIT_DEADLINE"): (
         "positive", "boundary", "repeatability",

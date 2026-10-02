@@ -1260,57 +1260,62 @@
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-core/src/config.rs:enum:CapabilityGrant:140",
+      "id": "rust:crates/codingmage-core/src/config.rs:enum:CapabilityGrant:150",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-core/src/config.rs:enum:ConfigLoadError:176",
+      "id": "rust:crates/codingmage-core/src/config.rs:enum:ConfigLoadError:186",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-core/src/config.rs:enum:PublicationMode:165",
+      "id": "rust:crates/codingmage-core/src/config.rs:enum:PublicationMode:175",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-core/src/config.rs:fn:load_config:214",
+      "id": "rust:crates/codingmage-core/src/config.rs:fn:load_config:224",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-core/src/config.rs:fn:redacted_view:74",
+      "id": "rust:crates/codingmage-core/src/config.rs:fn:parse_config_bytes:284",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:AgentProfile:93",
+      "id": "rust:crates/codingmage-core/src/config.rs:fn:redacted_view:84",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:CapabilityPolicy:116",
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:AgentProfile:103",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:CommandSpec:105",
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:CapabilityPolicy:126",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:Config:15",
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:CommandSpec:115",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:EffectiveConfigView:48",
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:Config:25",
       "status": "uncovered"
     },
     {
       "category": "malformed_input",
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:PublicationPolicy:157",
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:EffectiveConfigView:58",
+      "status": "uncovered"
+    },
+    {
+      "category": "malformed_input",
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:PublicationPolicy:167",
       "status": "uncovered"
     },
     {
@@ -11198,14 +11203,14 @@
       "surface": "stable_error_code",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -11231,14 +11236,14 @@
       "surface": "stable_error_code",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -11264,14 +11269,14 @@
       "surface": "stable_error_code",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -11297,14 +11302,14 @@
       "surface": "stable_error_code",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -11330,14 +11335,14 @@
       "surface": "stable_error_code",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -11363,14 +11368,14 @@
       "surface": "stable_error_code",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -11396,14 +11401,14 @@
       "surface": "stable_error_code",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -11429,14 +11434,14 @@
       "surface": "stable_error_code",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -11462,14 +11467,14 @@
       "surface": "stable_error_code",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -23809,9 +23814,9 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/project_open.rs::project_open_keeps_configuration_when_a_parsed_plan_exceeds_the_output_bound",
+          "crates/codingmage-cli/tests/project_open.rs::project_open_refuses_linked_and_oversized_selected_configuration",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
-          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized",
-          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable"
+          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized"
         ],
         "negative": [
           "crates/codingmage-cli/src/lib.rs::duplicate_unknown_relative_and_missing_arguments_fail",
@@ -23863,9 +23868,9 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/project_open.rs::project_open_keeps_configuration_when_a_parsed_plan_exceeds_the_output_bound",
+          "crates/codingmage-cli/tests/project_open.rs::project_open_refuses_linked_and_oversized_selected_configuration",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
-          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized",
-          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable"
+          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized"
         ],
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
@@ -23931,9 +23936,9 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/project_open.rs::project_open_keeps_configuration_when_a_parsed_plan_exceeds_the_output_bound",
+          "crates/codingmage-cli/tests/project_open.rs::project_open_refuses_linked_and_oversized_selected_configuration",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
-          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized",
-          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable"
+          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized"
         ],
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
@@ -23986,9 +23991,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/project_read.rs:fn:open:21",
+      "id": "rust:crates/codingmage-cli/src/project_read.rs:fn:open:25",
       "kind": "fn",
-      "line": 21,
+      "line": 25,
       "name": "open",
       "path": "crates/codingmage-cli/src/project_read.rs",
       "surface": "rust_public_api",
@@ -23999,9 +24004,9 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/project_open.rs::project_open_keeps_configuration_when_a_parsed_plan_exceeds_the_output_bound",
+          "crates/codingmage-cli/tests/project_open.rs::project_open_refuses_linked_and_oversized_selected_configuration",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
-          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized",
-          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable"
+          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized"
         ],
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
@@ -24304,9 +24309,9 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/project_open.rs::project_open_keeps_configuration_when_a_parsed_plan_exceeds_the_output_bound",
+          "crates/codingmage-cli/tests/project_open.rs::project_open_refuses_linked_and_oversized_selected_configuration",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
-          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized",
-          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable"
+          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized"
         ],
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
@@ -24429,9 +24434,9 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/project_open.rs::project_open_keeps_configuration_when_a_parsed_plan_exceeds_the_output_bound",
+          "crates/codingmage-cli/tests/project_open.rs::project_open_refuses_linked_and_oversized_selected_configuration",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
-          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized",
-          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable"
+          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized"
         ],
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
@@ -24497,9 +24502,9 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/project_open.rs::project_open_keeps_configuration_when_a_parsed_plan_exceeds_the_output_bound",
+          "crates/codingmage-cli/tests/project_open.rs::project_open_refuses_linked_and_oversized_selected_configuration",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
-          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized",
-          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable"
+          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized"
         ],
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
@@ -24565,9 +24570,9 @@
           "crates/codingmage-cli/tests/campaign_mission.rs::outcome_report_is_bound_and_does_not_invent_unobserved_evidence",
           "crates/codingmage-cli/tests/campaign_mission.rs::unbound_or_prompting_charters_are_refused_before_any_effect",
           "crates/codingmage-cli/tests/project_open.rs::project_open_keeps_configuration_when_a_parsed_plan_exceeds_the_output_bound",
+          "crates/codingmage-cli/tests/project_open.rs::project_open_refuses_linked_and_oversized_selected_configuration",
           "crates/codingmage-cli/tests/setup_authorization.rs::authorization_write_is_private_bound_and_explicitly_replaceable",
-          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized",
-          "crates/codingmage-cli/tests/setup_campaign.rs::exact_campaign_bytes_are_private_bound_and_explicitly_replaceable"
+          "crates/codingmage-cli/tests/setup_campaign.rs::authorization_inspection_is_bounded_bound_and_content_minimized"
         ],
         "malformed_input": [
           "crates/codingmage-cli/src/lib.rs::run_arguments_accept_one_valid_optional_identity_and_reject_malformed_shapes",
@@ -26937,22 +26942,22 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-core/src/config.rs:enum:CapabilityGrant:140",
+      "id": "rust:crates/codingmage-core/src/config.rs:enum:CapabilityGrant:150",
       "kind": "enum",
-      "line": 140,
+      "line": 150,
       "name": "CapabilityGrant",
       "path": "crates/codingmage-core/src/config.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -26976,25 +26981,26 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-core/src/config.rs:enum:ConfigLoadError:176",
+      "id": "rust:crates/codingmage-core/src/config.rs:enum:ConfigLoadError:186",
       "kind": "enum",
-      "line": 176,
+      "line": 186,
       "name": "ConfigLoadError",
       "path": "crates/codingmage-core/src/config.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-core/src/config.rs::selected_config_growth_after_metadata_is_bounded",
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically"
         ],
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27017,22 +27023,22 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-core/src/config.rs:enum:PublicationMode:165",
+      "id": "rust:crates/codingmage-core/src/config.rs:enum:PublicationMode:175",
       "kind": "enum",
-      "line": 165,
+      "line": 175,
       "name": "PublicationMode",
       "path": "crates/codingmage-core/src/config.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27055,60 +27061,22 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-core/src/config.rs:fn:load_config:214",
+      "id": "rust:crates/codingmage-core/src/config.rs:fn:load_config:224",
       "kind": "fn",
-      "line": 214,
+      "line": 224,
       "name": "load_config",
       "path": "crates/codingmage-core/src/config.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
-        ],
-        "positive": [
-          "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
-          "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
-          "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation"
-        ],
-        "repeatability": [
-          "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically"
-        ],
-        "unknown_field": [
-          "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content"
-        ]
-      }
-    },
-    {
-      "applicable_categories": [
-        "positive",
-        "negative",
-        "malformed_input",
-        "unknown_field",
-        "repeatability"
-      ],
-      "id": "rust:crates/codingmage-core/src/config.rs:fn:redacted_view:74",
-      "kind": "fn",
-      "line": 74,
-      "name": "redacted_view",
-      "path": "crates/codingmage-core/src/config.rs",
-      "surface": "rust_public_api",
-      "test_mappings": {
-        "negative": [
-          "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
-          "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
-          "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
-          "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
-          "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
-          "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27132,25 +27100,107 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:AgentProfile:93",
+      "id": "rust:crates/codingmage-core/src/config.rs:fn:parse_config_bytes:284",
+      "kind": "fn",
+      "line": 284,
+      "name": "parse_config_bytes",
+      "path": "crates/codingmage-core/src/config.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "boundary": [
+          "crates/codingmage-core/src/config.rs::selected_config_growth_after_metadata_is_bounded",
+          "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically"
+        ],
+        "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
+          "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
+          "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
+          "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
+          "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
+          "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
+          "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
+        ],
+        "positive": [
+          "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
+          "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
+          "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation"
+        ],
+        "repeatability": [
+          "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically"
+        ],
+        "unknown_field": [
+          "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-core/src/config.rs:fn:redacted_view:84",
+      "kind": "fn",
+      "line": 84,
+      "name": "redacted_view",
+      "path": "crates/codingmage-core/src/config.rs",
+      "surface": "rust_public_api",
+      "test_mappings": {
+        "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
+          "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
+          "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
+          "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
+          "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
+          "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
+          "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
+        ],
+        "positive": [
+          "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
+          "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
+          "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation"
+        ],
+        "repeatability": [
+          "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically"
+        ],
+        "unknown_field": [
+          "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content"
+        ]
+      }
+    },
+    {
+      "applicable_categories": [
+        "positive",
+        "negative",
+        "boundary",
+        "malformed_input",
+        "unknown_field",
+        "repeatability"
+      ],
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:AgentProfile:103",
       "kind": "struct",
-      "line": 93,
+      "line": 103,
       "name": "AgentProfile",
       "path": "crates/codingmage-core/src/config.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-core/src/config.rs::selected_config_growth_after_metadata_is_bounded",
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically"
         ],
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27173,22 +27223,22 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:CapabilityPolicy:116",
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:CapabilityPolicy:126",
       "kind": "struct",
-      "line": 116,
+      "line": 126,
       "name": "CapabilityPolicy",
       "path": "crates/codingmage-core/src/config.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27211,22 +27261,22 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:CommandSpec:105",
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:CommandSpec:115",
       "kind": "struct",
-      "line": 105,
+      "line": 115,
       "name": "CommandSpec",
       "path": "crates/codingmage-core/src/config.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27249,22 +27299,22 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:Config:15",
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:Config:25",
       "kind": "struct",
-      "line": 15,
+      "line": 25,
       "name": "Config",
       "path": "crates/codingmage-core/src/config.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27287,22 +27337,22 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:EffectiveConfigView:48",
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:EffectiveConfigView:58",
       "kind": "struct",
-      "line": 48,
+      "line": 58,
       "name": "EffectiveConfigView",
       "path": "crates/codingmage-core/src/config.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27325,22 +27375,22 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-core/src/config.rs:struct:PublicationPolicy:157",
+      "id": "rust:crates/codingmage-core/src/config.rs:struct:PublicationPolicy:167",
       "kind": "struct",
-      "line": 157,
+      "line": 167,
       "name": "PublicationPolicy",
       "path": "crates/codingmage-core/src/config.rs",
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27371,14 +27421,14 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27409,14 +27459,14 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27447,14 +27497,14 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27483,14 +27533,14 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27516,14 +27566,14 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27549,14 +27599,14 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27585,17 +27635,18 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-core/src/config.rs::selected_config_growth_after_metadata_is_bounded",
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically"
         ],
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27627,17 +27678,18 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-core/src/config.rs::selected_config_growth_after_metadata_is_bounded",
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically"
         ],
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27666,14 +27718,14 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -27702,17 +27754,18 @@
       "surface": "rust_public_api",
       "test_mappings": {
         "boundary": [
+          "crates/codingmage-core/src/config.rs::selected_config_growth_after_metadata_is_bounded",
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically"
         ],
         "negative": [
+          "crates/codingmage-core/src/config.rs::byte_snapshot_rejects_bad_utf8_and_unrecognized_field",
           "crates/codingmage-core/src/config.rs::relative_traversing_and_conflicting_authority_fails",
           "crates/codingmage-core/src/config.rs::unknown_duplicate_secret_and_unsupported_fields_fail_without_content",
           "crates/codingmage-core/src/repository.rs::bare_and_nested_repositories_are_rejected",
           "crates/codingmage-core/src/repository.rs::changed_head_fails_revalidation",
           "crates/codingmage-core/src/repository.rs::renamed_and_replaced_targets_fail_revalidation",
           "crates/codingmage-core/src/repository.rs::self_target_and_overlapping_roots_are_rejected",
-          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected",
-          "crates/codingmage-core/src/repository.rs::unsafe_owner_identity_is_rejected"
+          "crates/codingmage-core/src/repository.rs::symlink_target_is_rejected"
         ],
         "positive": [
           "crates/codingmage-core/src/config.rs::valid_config_loads_deterministically",
@@ -84203,6 +84256,6 @@
       }
     }
   ],
-  "items_sha256": "7edc4ee5ee9bac2c4393a36113e6f5f23de28c8053ce3d6a923b2b4aadf5dc6e",
+  "items_sha256": "2cf53241fba2ea508bde6403c0d71357659b938c794df62948599626dbc59663",
   "schema_version": 1
 }

@@ -21,9 +21,10 @@ a SHA-256 of the selected configuration bytes, the validated configuration and
 one task-plan result: `loaded`, `invalid`, `unavailable` or
 `projection_too_large`. An invalid result retains the strict parser's stable
 content-free reason code. A loaded result contains the strict parser's plan,
-source digest and byte count. Configuration validation uses the existing
-loader and compares the loaded value with bytes read before and after it. Task
-source bytes are read with a size bound, a resolved in-repository path check
+source digest and byte count. Configuration validation uses the same schema
+and authority validator as the loader on held bytes, then compares bounded
+snapshots read before and after validation. Task source bytes are read with
+a size bound, a resolved in-repository path check
 and linked-inode refusal. A parsed response larger than the native 8 MiB
 output limit becomes an explicit plan failure; the CLI reserves one byte for
 its output newline. A valid configuration remains openable. The command grants
@@ -45,12 +46,13 @@ This increment covers the Open and recent-configuration selection action.
 The Setup directory picker and guided-configuration recovery still read files
 in the UI process; those are separate open parts of Task 36.3.2.2. The
 existing direct library parser remains for isolated tests and recovery until
-that boundary is migrated. No dependency, licence, model or publication
-authority changes.
+that boundary is migrated. Decision 0078 records the later read-race
+correction and dependency change; the original read path is no longer used.
 
 ## Verification
 
 The exact commands, source revision, outcomes and limits are recorded in
-`docs/evidence/sprint-36-project-selection.md`. Independent exact-commit
-review remains required. This decision does not close the native state/depth
+`docs/evidence/sprint-36-project-selection.md`. The initial exact-commit
+review found a High read race; Decision 0078 addresses it and requires
+re-review. This decision does not close the native state/depth
 catalogue, installed desktop, Orca, human trials or live-provider gates.

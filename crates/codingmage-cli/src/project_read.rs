@@ -7,8 +7,12 @@ use std::{
     path::Path,
 };
 
-use codingmage_core::{Config, load_config};
+use codingmage_core::{Config, parse_config_bytes};
 use codingmage_plan::TaskPlan;
+use nix::{
+    fcntl::{OFlag, open as open_file},
+    sys::stat::Mode,
+};
 use serde_json::{Value, json};
 use sha2::{Digest as _, Sha256};
 
@@ -23,12 +27,9 @@ pub(super) fn open(arguments: &[String]) -> Result<String, CliError> {
     let parsed = ParsedArguments::new(arguments, &["config"])?;
     let config_path = parsed.absolute_file("config")?;
     let before = bounded_regular_file(&config_path, MAX_CONFIG_BYTES).ok_or(CliError::Config)?;
-    let config = load_config(&config_path).map_err(|_| CliError::Config)?;
+    let config = parse_config_bytes(&before).map_err(|_| CliError::Config)?;
     let after = bounded_regular_file(&config_path, MAX_CONFIG_BYTES).ok_or(CliError::Config)?;
-    let selected: Config =
-        toml::from_str(std::str::from_utf8(&before).map_err(|_| CliError::Config)?)
-            .map_err(|_| CliError::Config)?;
-    if before != after || config != selected {
+    if before != after {
         return Err(CliError::StaleObservation);
     }
     let plan = load_plan(&config);
@@ -87,7 +88,14 @@ fn bounded_regular_file(path: &Path, maximum: u64) -> Option<Vec<u8>> {
     {
         return None;
     }
-    let file = File::open(path).ok()?;
+    let file = File::from(
+        open_file(
+            path,
+            OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC,
+            Mode::empty(),
+        )
+        .ok()?,
+    );
     let opened = file.metadata().ok()?;
     if !opened.is_file()
         || opened.nlink() != 1

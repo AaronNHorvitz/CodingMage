@@ -1,8 +1,18 @@
 //! Versioned, deny-by-default project configuration.
 
-use std::{fmt, fs, path::Path};
+use std::{
+    fmt,
+    fs::{self, File},
+    io::Read as _,
+    os::unix::fs::MetadataExt as _,
+    path::Path,
+};
 
 use codingmage_contracts::AgentId;
+use nix::{
+    fcntl::{OFlag, open},
+    sys::stat::Mode,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -212,6 +222,13 @@ impl std::error::Error for ConfigLoadError {}
 ///
 /// Returns [`ConfigLoadError`] without including file content, parser details, or selected paths.
 pub fn load_config(selected_path: &Path) -> Result<Config, ConfigLoadError> {
+    load_config_after_observation(selected_path, || {})
+}
+
+fn load_config_after_observation(
+    selected_path: &Path,
+    after_metadata: impl FnOnce(),
+) -> Result<Config, ConfigLoadError> {
     let metadata = fs::symlink_metadata(selected_path).map_err(|_| ConfigLoadError::Unavailable)?;
     if !metadata.is_file() || metadata.file_type().is_symlink() {
         return Err(ConfigLoadError::Unavailable);
@@ -219,8 +236,57 @@ pub fn load_config(selected_path: &Path) -> Result<Config, ConfigLoadError> {
     if metadata.len() > MAX_CONFIG_BYTES {
         return Err(ConfigLoadError::TooLarge);
     }
-    let content = fs::read_to_string(selected_path).map_err(|_| ConfigLoadError::Unavailable)?;
-    let config: Config = toml::from_str(&content).map_err(|_| ConfigLoadError::InvalidSchema)?;
+    after_metadata();
+    let mut file = File::from(
+        open(
+            selected_path,
+            OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC,
+            Mode::empty(),
+        )
+        .map_err(|_| ConfigLoadError::Unavailable)?,
+    );
+    let opened = file.metadata().map_err(|_| ConfigLoadError::Unavailable)?;
+    if !opened.is_file()
+        || opened.nlink() != metadata.nlink()
+        || opened.dev() != metadata.dev()
+        || opened.ino() != metadata.ino()
+    {
+        return Err(ConfigLoadError::Unavailable);
+    }
+    if opened.len() > MAX_CONFIG_BYTES {
+        return Err(ConfigLoadError::TooLarge);
+    }
+    let mut bytes = Vec::new();
+    (&mut file)
+        .take(MAX_CONFIG_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|_| ConfigLoadError::Unavailable)?;
+    if bytes.len() as u64 > MAX_CONFIG_BYTES {
+        return Err(ConfigLoadError::TooLarge);
+    }
+    let after = fs::symlink_metadata(selected_path).map_err(|_| ConfigLoadError::Unavailable)?;
+    if !after.is_file()
+        || after.file_type().is_symlink()
+        || after.nlink() != opened.nlink()
+        || after.dev() != opened.dev()
+        || after.ino() != opened.ino()
+    {
+        return Err(ConfigLoadError::Unavailable);
+    }
+    parse_config_bytes(&bytes)
+}
+
+/// Parses a bounded configuration snapshot using the same validation as [`load_config`].
+///
+/// # Errors
+///
+/// Returns a content-free error for oversized, malformed or invalid configuration bytes.
+pub fn parse_config_bytes(bytes: &[u8]) -> Result<Config, ConfigLoadError> {
+    if bytes.len() as u64 > MAX_CONFIG_BYTES {
+        return Err(ConfigLoadError::TooLarge);
+    }
+    let content = std::str::from_utf8(bytes).map_err(|_| ConfigLoadError::InvalidSchema)?;
+    let config: Config = toml::from_str(content).map_err(|_| ConfigLoadError::InvalidSchema)?;
     validate_config(&config)?;
     Ok(config)
 }
@@ -417,6 +483,10 @@ mode = "local_only"
             toml::to_string(&first).unwrap(),
             toml::to_string(&second).unwrap()
         );
+        assert_eq!(
+            parse_config_bytes(&fs::read(&path).unwrap()).unwrap(),
+            first
+        );
     }
 
     #[test]
@@ -496,6 +566,59 @@ mode = "local_only"
         assert_eq!(
             load_config(&alias).unwrap_err(),
             ConfigLoadError::Unavailable
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn selected_config_swap_after_metadata_never_follows_external_link() {
+        use std::os::unix::fs::symlink;
+
+        let fixture = Fixture::new();
+        let selected = fixture.write(&fixture.valid_text());
+        let external = fixture.root.join("external.toml");
+        fs::write(&external, fixture.valid_text()).unwrap();
+        let held = fixture.root.join("held.toml");
+        let error = load_config_after_observation(&selected, || {
+            fs::rename(&selected, &held).unwrap();
+            symlink(&external, &selected).unwrap();
+        })
+        .unwrap_err();
+        assert_eq!(error, ConfigLoadError::Unavailable);
+        assert_eq!(
+            fs::read(&external).unwrap(),
+            fixture.valid_text().as_bytes()
+        );
+    }
+
+    #[test]
+    fn selected_config_growth_after_metadata_is_bounded() {
+        let fixture = Fixture::new();
+        let selected = fixture.write(&fixture.valid_text());
+        let oversized = vec![b'x'; usize::try_from(MAX_CONFIG_BYTES).unwrap() + 1];
+        let error = load_config_after_observation(&selected, || {
+            fs::write(&selected, &oversized).unwrap();
+        })
+        .unwrap_err();
+        assert_eq!(error, ConfigLoadError::TooLarge);
+        assert_eq!(
+            parse_config_bytes(&oversized).unwrap_err(),
+            ConfigLoadError::TooLarge
+        );
+    }
+
+    #[test]
+    fn byte_snapshot_rejects_bad_utf8_and_unrecognized_field() {
+        let fixture = Fixture::new();
+        let mut unknown = fixture.valid_text();
+        unknown.push_str("\nunexpected_field = true\n");
+        assert_eq!(
+            parse_config_bytes(unknown.as_bytes()).unwrap_err(),
+            ConfigLoadError::InvalidSchema
+        );
+        assert_eq!(
+            parse_config_bytes(&[0xff, 0xfe]).unwrap_err(),
+            ConfigLoadError::InvalidSchema
         );
     }
 }

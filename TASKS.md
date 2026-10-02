@@ -2451,6 +2451,12 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     response to the selected path/generation and shows the exact command.
     The Setup picker and configuration-write recovery remain direct-read
     exceptions. See `docs/evidence/sprint-36-project-selection.md`.
+    Independent review of the exact initial project-open commit found a High
+    configuration-read race after its bounded snapshot. Decision 0078 removes
+    the second pathname read, shares the bounded byte validator, and uses
+    no-follow descriptors for the common loader and command snapshot. The
+    original FINDINGS report and corrective checks are retained in the same
+    evidence record; exact corrective re-review remains open.
     This sub-task stays open, as do human and live qualification.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
