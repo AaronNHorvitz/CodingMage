@@ -193,6 +193,26 @@ impl Fixture {
         )
     }
 
+    fn export(&self, source: &Path, output: &Path, overwrite: bool, repository_id: &str) -> Output {
+        let authority = self.spec().authority_sha256().unwrap();
+        let mut arguments = vec![
+            "setup-export-copy",
+            "--config",
+            self.config.to_str().unwrap(),
+            "--repository-id",
+            repository_id,
+            "--source",
+            source.to_str().unwrap(),
+            "--output",
+            output.to_str().unwrap(),
+        ];
+        if source != self.config {
+            arguments.extend(["--campaign-authority-sha256", authority.as_str()]);
+        }
+        arguments.extend(["--overwrite", if overwrite { "true" } else { "false" }]);
+        run(&arguments, b"")
+    }
+
     fn inspect_authorization(&self, record: &Path, repository_id: &str, head: &str) -> Output {
         self.inspect_with_task_source(record, repository_id, head, &self.task_sha256)
     }
@@ -221,6 +241,122 @@ impl Fixture {
             b"",
         )
     }
+}
+
+#[test]
+fn exports_exact_validated_setup_sources_with_bounded_receipts() {
+    let fixture = Fixture::new();
+    let output = fixture.root.join("workspace/export.toml");
+    let config_bytes = fs::read(&fixture.config).unwrap();
+    let first = fixture.export(&fixture.config, &output, false, &fixture.repository_id);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    let receipt: Value = serde_json::from_slice(&first.stdout).unwrap();
+    assert_eq!(receipt["schema_version"], 1);
+    assert_eq!(receipt["repository_id"], fixture.repository_id);
+    assert_eq!(receipt["bytes"], config_bytes.len());
+    assert_eq!(receipt["sha256"], digest(&config_bytes));
+    assert_eq!(fs::read(&output).unwrap(), config_bytes);
+    assert_eq!(
+        fixture
+            .export(&fixture.config, &output, false, &fixture.repository_id)
+            .stderr,
+        b"codingmage.cli.refused\n"
+    );
+
+    let campaign = fixture.root.join("workspace/source-campaign.toml");
+    let campaign_bytes = toml::to_string_pretty(&fixture.spec()).unwrap();
+    fs::write(&campaign, &campaign_bytes).unwrap();
+    let second = fixture.export(&campaign, &output, true, &fixture.repository_id);
+    assert!(
+        second.status.success(),
+        "{}",
+        String::from_utf8_lossy(&second.stderr)
+    );
+    let receipt: Value = serde_json::from_slice(&second.stdout).unwrap();
+    assert_eq!(receipt["bytes"], campaign_bytes.len());
+    assert_eq!(receipt["sha256"], digest(campaign_bytes.as_bytes()));
+    assert_eq!(fs::read(&output).unwrap(), campaign_bytes.as_bytes());
+}
+
+#[test]
+fn setup_export_refuses_foreign_malformed_and_protected_sources() {
+    let fixture = Fixture::new();
+    let output = fixture.root.join("workspace/export.toml");
+    let stale = fixture.export(&fixture.config, &output, false, "other-repository");
+    assert_eq!(stale.stderr, b"codingmage.cli.stale_observation\n");
+    assert!(!output.exists());
+    let foreign = fixture.root.join("workspace/foreign.toml");
+    let mut spec = fixture.spec();
+    spec.repository_id = "repo-foreign".to_owned();
+    fs::write(&foreign, toml::to_string_pretty(&spec).unwrap()).unwrap();
+    assert_eq!(
+        fixture
+            .export(&foreign, &output, false, &fixture.repository_id)
+            .stderr,
+        b"codingmage.cli.stale_observation\n"
+    );
+    let mut changed = fixture.spec();
+    changed.max_units += 1;
+    fs::write(&foreign, toml::to_string_pretty(&changed).unwrap()).unwrap();
+    assert_eq!(
+        fixture
+            .export(&foreign, &output, false, &fixture.repository_id)
+            .stderr,
+        b"codingmage.cli.stale_observation\n"
+    );
+    let missing_authority = run(
+        &[
+            "setup-export-copy",
+            "--config",
+            fixture.config.to_str().unwrap(),
+            "--repository-id",
+            &fixture.repository_id,
+            "--source",
+            foreign.to_str().unwrap(),
+            "--output",
+            output.to_str().unwrap(),
+        ],
+        b"",
+    );
+    assert_eq!(missing_authority.stderr, b"codingmage.cli.usage\n");
+    fs::write(&foreign, b"not a campaign document").unwrap();
+    assert_eq!(
+        fixture
+            .export(&foreign, &output, false, &fixture.repository_id)
+            .stderr,
+        b"codingmage.cli.invalid_argument\n"
+    );
+    fs::write(&foreign, vec![b'x'; 1024 * 1024 + 1]).unwrap();
+    assert_eq!(
+        fixture
+            .export(&foreign, &output, false, &fixture.repository_id)
+            .stderr,
+        b"codingmage.cli.invalid_argument\n"
+    );
+    let inside = fixture.target.join("source.toml");
+    fs::write(&inside, b"anything").unwrap();
+    assert_eq!(
+        fixture
+            .export(&inside, &output, false, &fixture.repository_id)
+            .stderr,
+        b"codingmage.cli.refused\n"
+    );
+    let linked = fixture.root.join("workspace/linked-config.toml");
+    fs::hard_link(&fixture.config, &linked).unwrap();
+    let original = fs::read(&fixture.config).unwrap();
+    assert_eq!(
+        fixture
+            .export(&fixture.config, &linked, true, &fixture.repository_id)
+            .stderr,
+        b"codingmage.cli.refused\n"
+    );
+    assert_eq!(fs::read(&fixture.config).unwrap(), original);
+    assert_eq!(fs::read(&linked).unwrap(), original);
+    assert!(!output.exists());
 }
 
 impl Drop for Fixture {

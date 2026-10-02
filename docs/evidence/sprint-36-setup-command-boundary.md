@@ -343,5 +343,77 @@ tests, and the failed output is retained privately. The full Python suite
 passes 45/46, with only the unchanged CM-R01.6 eight-input source-bound
 `input-drift` hold. No package, failed receipt, input binding or digest was
 renewed. All heavy tests/builds used one Cargo job, one Rust test thread and
-the shared build slot. Exact-commit independent re-review is pending; Task
-36.3.2.2 and all human, live-provider and release gates stay open.
+the shared build slot. Bounded independent exact-commit re-review of
+`0fcbb1e43eb7d1d1874b69f19b58c748923b9162` returned PASS without
+findings for this correction. Task 36.3.2.2 and all human, live-provider and
+release gates stay open.
+
+## Public guided Setup export and native worker
+
+Decision 0072 adds `setup-export-copy` to the sibling coordinator. The command
+requires an observed repository ID, selected configuration, exact source and
+outside-repository output. It accepts the selected configuration or a parsed
+campaign document bound to that repository and the selected semantic authority
+SHA-256. It reads at most 1 MiB through a held no-follow regular-file
+descriptor and rechecks source identity and digest at the guarded publication
+boundary. The existing public writer keeps create-only, explicit overwrite
+and uncertain-write recovery semantics.
+Protected source/configuration path and inode aliases cannot be replaced.
+The JSON receipt contains the repository ID, byte count and SHA-256, without
+document contents.
+
+The native Setup export action accepts only the opened configuration or
+currently selected campaign and submits the displayed command to its
+bounded worker. It freezes the submitted arguments and destination while
+pending, disables duplicate actions, rejects stale selection or response
+identity, and compares a held no-follow output read and final named inode
+to the receipt before showing success. A changed destination yields
+inspection guidance. The configuration writer and remaining selection reads
+still run in-process; the section 5 state/depth catalogue and Task 36.3.2.2
+remain open.
+
+The disposable real-process command tests cover configuration and campaign
+copies, content-minimized receipts, no-overwrite and explicit replacement,
+foreign/malformed/oversized source data, a same-repository changed campaign
+authority, wrong repository identity, source inside the repository and a
+protected output hard link. Native tests cover a real public export with
+Show-command, an atomic destination replacement after a successful coordinator
+receipt, and a malformed coordinator receipt.
+These tests are local boundary evidence, not installed desktop, human or
+live-provider qualification.
+
+The source and version-one inventory generator were reviewed before writing
+the updated public inventory: 1,790 to 1,794 items, 825 explicit gaps before
+and after. Four new crate-visible export APIs were added; no public surface
+was removed. The existing `export_document` boundary applicability gained a
+category, 244 existing heuristic test mappings changed as test names entered
+their crate-wide candidate lists, and the normalized gap set is unchanged.
+Those mappings do not certify test coverage.
+
+The preliminary combined CLI/native all-target batch passed 70 CLI tests
+with two sustained qualification cases ignored, then reached a native Setup
+fixture whose compiled version still assumed synchronous export. That one
+fixture failed; its original output is retained privately. The updated
+fixture waits for the worker result and passes in the final-source Setup
+target. The combined run was compiled before the final campaign-authority
+and UI response changes, so it is regression context, not a final-source
+all-target pass. Exact final-source CLI Setup tests pass 9/9, native Setup
+tests pass 10/10, and the public command-help regression passes 1/1.
+
+The native all-target suite on the campaign-authority and response source
+passed 181/181 across 14 targets, including Setup 10/10 and verification
+7/7. Strict workspace Clippy first rejected an owned `nonminimal_bool`
+form in the selected-source guard. The equivalent positive predicate fixed
+the lint; strict workspace Clippy with warnings denied then passed. The
+failed lint output is retained privately. The affected Setup target passed
+10/10 on the exact post-lint source. Diff inspection then added an exact
+configuration-byte check at publication for campaign exports and a final
+named-inode recheck after the native output read. On this final source, the
+real-process CLI Setup target passes 9/9, native Setup passes 10/10, and
+strict workspace Clippy with warnings denied passes. Cargo formatting,
+documentation, architecture, regenerated inventory freshness and diff
+whitespace checks also pass. The full Python suite ran 46 tests with one
+failure: the unchanged CM-R01.6 eight-input source-bound `input-drift` hold.
+No package, failed receipt, binding or digest was renewed. All heavy checks
+used the shared build slot with one Cargo build job and one Rust test thread.
+This export increment awaits its own independent exact-commit review.

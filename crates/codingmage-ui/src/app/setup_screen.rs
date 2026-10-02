@@ -1,12 +1,19 @@
 //! Guided setup: repository configuration, campaign authority and the authorization record.
 
 use std::{
+    fs,
+    io::Read as _,
+    os::unix::fs::MetadataExt as _,
     path::{Path, PathBuf},
     time::Duration,
 };
 
 use codingmage_campaign::CampaignAuthentication;
 use codingmage_core::{CapabilityGrant, PublicationMode};
+use nix::{
+    fcntl::{OFlag, open},
+    sys::stat::Mode,
+};
 use serde::Deserialize;
 use sha2::{Digest as _, Sha256};
 
@@ -18,7 +25,6 @@ use crate::{
     project::hex,
     setup::{
         CampaignBinding, CampaignForm, ConfigForm, EFFORTS, GateForm, ProfileForm, ProviderForm,
-        WriteError, export_copy,
     },
 };
 
@@ -47,6 +53,15 @@ struct PendingCampaign {
     task_source_sha256: String,
 }
 
+#[derive(Clone, Debug)]
+struct PendingExport {
+    request_id: String,
+    arguments: Vec<String>,
+    source: PathBuf,
+    destination: PathBuf,
+    repository_id: String,
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct AuthorizationReceipt {
@@ -67,6 +82,52 @@ struct CampaignReceipt {
     written: bool,
     bytes: usize,
     sha256: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExportReceipt {
+    schema_version: u64,
+    repository_id: String,
+    written: bool,
+    bytes: usize,
+    sha256: String,
+}
+
+fn export_matches_receipt(path: &Path, receipt: &ExportReceipt) -> bool {
+    if receipt.bytes == 0 || receipt.bytes > 1024 * 1024 {
+        return false;
+    }
+    let Ok(descriptor) = open(
+        path,
+        OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC,
+        Mode::empty(),
+    ) else {
+        return false;
+    };
+    let file = fs::File::from(descriptor);
+    let Ok(held) = file.metadata() else {
+        return false;
+    };
+    if !held.is_file() || held.len() != receipt.bytes as u64 {
+        return false;
+    }
+    let mut bytes = Vec::with_capacity(receipt.bytes);
+    if file
+        .take((receipt.bytes + 1) as u64)
+        .read_to_end(&mut bytes)
+        .is_err()
+        || bytes.len() != receipt.bytes
+        || hex(&Sha256::digest(&bytes)) != receipt.sha256
+    {
+        return false;
+    }
+    fs::symlink_metadata(path).is_ok_and(|named| {
+        named.is_file()
+            && named.dev() == held.dev()
+            && named.ino() == held.ino()
+            && named.len() == held.len()
+    })
 }
 
 fn receipt_matches(
@@ -99,6 +160,7 @@ pub struct SetupState {
     pub authorization_overwrite: bool,
     pending_authorization: Option<PendingAuthorization>,
     pending_campaign: Option<PendingCampaign>,
+    pending_export: Option<PendingExport>,
     /// Directory browser for the target repository.
     pub target_browser: Option<Browser>,
     /// Export destination.
@@ -119,6 +181,22 @@ impl SetupState {
     pub(super) fn cancel_pending_campaign(&mut self) {
         if self.pending_campaign.take().is_some() {
             self.message = Some(Err("the selected authority changed during the campaign write; inspect the destination before retrying".to_owned()));
+        }
+    }
+
+    pub(super) fn cancel_pending_export(&mut self) {
+        if self.pending_export.take().is_some() {
+            self.message = Some(Err("the selected source changed during export; inspect the destination before retrying".to_owned()));
+        }
+    }
+
+    pub(super) fn cancel_matching_export(&mut self, request_id: Option<&str>) {
+        if self
+            .pending_export
+            .as_ref()
+            .is_some_and(|pending| Some(pending.request_id.as_str()) == request_id)
+        {
+            self.cancel_pending_export();
         }
     }
 
@@ -566,22 +644,154 @@ impl App {
 
     /// Exports the opened configuration or selected campaign to another path.
     pub fn export_document(&mut self, source: &Path) {
+        if self.setup.pending_export.is_some() {
+            self.setup.message = Some(Err(
+                "an export is already pending; inspect its result before retrying".to_owned(),
+            ));
+            return;
+        }
+        let selected = self
+            .project
+            .as_ref()
+            .is_some_and(|project| project.config_path == source)
+            || self
+                .campaign
+                .as_ref()
+                .is_some_and(|campaign| campaign.spec_path == source);
+        if !selected {
+            self.setup.message = Some(Err(
+                "select the configuration or campaign before exporting it".to_owned(),
+            ));
+            return;
+        }
+        let Some(arguments) = self.export_arguments(source) else {
+            self.setup.message = Some(Err(
+                "open and diagnose the repository, then choose an absolute source and destination"
+                    .to_owned(),
+            ));
+            return;
+        };
+        if !command::can_preview(self.binary_path.as_deref(), Some(&arguments)) {
+            self.setup.message = Some(Err(
+                "the exact export command cannot be shown safely; choose representable paths"
+                    .to_owned(),
+            ));
+            return;
+        }
+        let Some(repository_id) = self
+            .diagnosis
+            .value
+            .as_ref()
+            .map(|value| value.repository_id.clone())
+        else {
+            return;
+        };
+        self.next_evidence_request = self.next_evidence_request.wrapping_add(1);
+        let request_id = format!("setup-export-{}", self.next_evidence_request);
         let destination = PathBuf::from(self.setup.export_path.trim());
-        let result = self.project.as_ref().map_or_else(
-            || Err(WriteError::Io),
-            |project| {
-                export_copy(
-                    source,
-                    &destination,
-                    &project.config.target_path,
-                    self.setup.export_overwrite,
-                )
+        let pending = PendingExport {
+            request_id: request_id.clone(),
+            arguments: arguments.clone(),
+            source: source.to_path_buf(),
+            destination,
+            repository_id,
+        };
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::Command {
+                label: "setup-export-copy",
+                arguments,
+                deadline: AUTHORIZATION_DEADLINE,
             },
-        );
-        self.setup.message = Some(match result {
-            Ok(path) => Ok(format!("exported to {}", path.display())),
-            Err(error) => Err(error.to_string()),
+            request_id: Some(request_id),
+        };
+        match self.submit(request) {
+            Ok(()) => {
+                self.setup.pending_export = Some(pending);
+                self.setup.message = Some(Ok(
+                    "export pending; inspect the destination before retrying".to_owned(),
+                ));
+            }
+            Err(error) => {
+                self.setup.message = Some(Err(format!("export was not queued: {}", error.code())));
+            }
+        }
+    }
+
+    fn export_arguments(&self, source: &Path) -> Option<Vec<String>> {
+        let project = self.project.as_ref()?;
+        let diagnosis = self.diagnosis.value.as_ref()?;
+        let output = Path::new(self.setup.export_path.trim());
+        if !source.is_absolute() || !output.is_absolute() {
+            return None;
+        }
+        let mut arguments = vec![
+            "setup-export-copy".to_owned(),
+            "--config".to_owned(),
+            project.config_path.to_str()?.to_owned(),
+            "--repository-id".to_owned(),
+            diagnosis.repository_id.clone(),
+            "--source".to_owned(),
+            source.to_str()?.to_owned(),
+            "--output".to_owned(),
+            output.to_str()?.to_owned(),
+        ];
+        if let Some(campaign) = self
+            .campaign
+            .as_ref()
+            .filter(|campaign| campaign.spec_path == source)
+        {
+            arguments.extend([
+                "--campaign-authority-sha256".to_owned(),
+                campaign.authority_sha256.clone(),
+            ]);
+        }
+        arguments.extend([
+            "--overwrite".to_owned(),
+            self.setup.export_overwrite.to_string(),
+        ]);
+        Some(arguments)
+    }
+
+    fn export_preview_arguments(&self, source: &Path) -> Option<Vec<String>> {
+        self.setup
+            .pending_export
+            .as_ref()
+            .filter(|pending| pending.source == source)
+            .map(|pending| pending.arguments.clone())
+            .or_else(|| self.export_arguments(source))
+    }
+
+    pub(super) fn accept_setup_export(&mut self, response: Response) -> bool {
+        let Some(pending) = self.setup.pending_export.take() else {
+            return false;
+        };
+        if response.request_id.as_deref() != Some(pending.request_id.as_str()) {
+            self.setup.pending_export = Some(pending);
+            return false;
+        }
+        let receipt = response.result.and_then(|bytes| {
+            serde_json::from_slice::<ExportReceipt>(&bytes).map_err(|_| {
+                crate::backend::BackendError::Contract(
+                    crate::backend::models::ModelError::Malformed,
+                )
+            })
         });
+        match receipt {
+            Ok(receipt) if receipt.schema_version == 1 && receipt.written && receipt.repository_id == pending.repository_id && export_matches_receipt(&pending.destination, &receipt) => {
+                self.setup.message = Some(Ok(format!("exported and verified at {}", pending.destination.display())));
+            }
+            Ok(_) => self.setup.message = Some(Err("export receipt or destination did not match; inspect the destination before retrying".to_owned())),
+            Err(error) => {
+                let code = error.code();
+                let (cause, action) = crate::backend::explain_code(&code);
+                self.setup.message = Some(Err(format!(
+                    "export not confirmed: {cause} ({code}) {action} Inspect the destination before retrying."
+                )));
+            }
+        }
+        true
     }
 
     fn workspace_root_for(&self, target: &Path) -> PathBuf {
@@ -842,13 +1052,17 @@ impl App {
         ui.label("Import means opening an existing configuration or selecting an existing campaign above. Export copies the validated file elsewhere; digests and paths inside it are unchanged and no credential exists to leak.");
         ui.horizontal(|ui| {
             let label = ui.label("Export destination");
-            ui.add(
+            ui.add_enabled(
+                self.setup.pending_export.is_none(),
                 egui::TextEdit::singleline(&mut self.setup.export_path)
                     .hint_text("/absolute/path/copy.toml")
                     .desired_width(super::current_tokens(ui.ctx()).layout.field_long),
             )
             .labelled_by(label.id);
-            ui.checkbox(&mut self.setup.export_overwrite, "Replace");
+            ui.add_enabled(
+                self.setup.pending_export.is_none(),
+                egui::Checkbox::new(&mut self.setup.export_overwrite, "Replace"),
+            );
         });
         let config_source = self
             .project
@@ -859,17 +1073,45 @@ impl App {
             .as_ref()
             .map(|campaign| campaign.spec_path.clone());
         ui.horizontal(|ui| {
-            if let Some(source) = config_source
-                && ui.button("Export configuration").clicked()
+            if let Some(source) = config_source.as_ref()
+                && ui
+                    .add_enabled(
+                        self.setup.pending_export.is_none()
+                            && self.export_arguments(source).is_some_and(|arguments| {
+                                command::can_preview(self.binary_path.as_deref(), Some(&arguments))
+                            }),
+                        egui::Button::new("Export configuration"),
+                    )
+                    .clicked()
             {
-                self.export_document(&source);
+                self.export_document(source);
             }
-            if let Some(source) = campaign_source
-                && ui.button("Export campaign").clicked()
+            if let Some(source) = campaign_source.as_ref()
+                && ui
+                    .add_enabled(
+                        self.setup.pending_export.is_none()
+                            && self.export_arguments(source).is_some_and(|arguments| {
+                                command::can_preview(self.binary_path.as_deref(), Some(&arguments))
+                            }),
+                        egui::Button::new("Export campaign"),
+                    )
+                    .clicked()
             {
-                self.export_document(&source);
+                self.export_document(source);
             }
         });
+        for (label, source) in [
+            ("export configuration", config_source.as_deref()),
+            ("export campaign", campaign_source.as_deref()),
+        ] {
+            if let Some(source) = source {
+                if let Some(arguments) = self.export_preview_arguments(source) {
+                    command::show_for(ui, label, self.binary_path.as_deref(), &arguments);
+                } else {
+                    command::show_unavailable_for(ui, label);
+                }
+            }
+        }
     }
 }
 

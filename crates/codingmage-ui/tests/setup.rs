@@ -20,6 +20,151 @@ use common::{Fixture, coordinator_binary, harness, settle, tree_digest};
 use egui_kittest::kittest::Queryable as _;
 
 #[test]
+fn native_setup_export_uses_public_command_and_verifies_the_destination() {
+    let fixture = Fixture::new("setup-export-public", 1);
+    let destination = fixture.root.join("export.toml");
+    let binary = coordinator_binary();
+    let mut harness = harness(CoordinatorBinary::at(&binary), [1100.0, 2200.0]);
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
+    harness.state_mut().setup_state_mut().export_path = destination.display().to_string();
+    harness
+        .state_mut()
+        .export_document(&fixture.root.join("unselected.toml"));
+    assert!(
+        harness
+            .state()
+            .setup_state()
+            .message
+            .as_ref()
+            .is_some_and(|result| result
+                .as_ref()
+                .is_err_and(|message| message.contains("select the configuration or campaign")))
+    );
+    assert!(!destination.exists());
+    harness.state_mut().select_screen(Screen::Setup);
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: export configuration")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("setup-export-copy");
+    harness.state_mut().export_document(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_ok_and(|message| message.contains("exported and verified"))
+        })
+    }));
+    assert_eq!(
+        fs::read(&destination).unwrap(),
+        fs::read(&fixture.config).unwrap()
+    );
+}
+
+#[test]
+fn malformed_setup_export_receipt_never_reports_success() {
+    let fixture = Fixture::new("setup-export-malformed", 1);
+    let destination = fixture.root.join("export.toml");
+    let real_binary = coordinator_binary();
+    let wrapper = fixture.executable(
+        "malformed-export-codingmage",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'setup-export-copy' ]; then printf '{{\"schema_version\":1,\"written\":true,\"unexpected\":1}}'; exit 0; fi\nexec {} \"$@\"\n",
+            format_command(&real_binary, &[]).unwrap(),
+        ),
+    );
+    let mut harness = harness(CoordinatorBinary::at(&wrapper), [1100.0, 800.0]);
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
+    harness.state_mut().setup_state_mut().export_path = destination.display().to_string();
+    harness.state_mut().export_document(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|message| message.contains("export not confirmed"))
+        })
+    }));
+    assert!(!destination.exists());
+}
+
+#[test]
+fn replaced_setup_export_after_public_receipt_is_not_reported_as_success() {
+    let fixture = Fixture::new("setup-export-replaced", 1);
+    let destination = fixture.root.join("export.toml");
+    let receipt_file = fixture.root.join("export-receipt.json");
+    let written_marker = fixture.root.join("export-writer-finished");
+    let release_marker = fixture.root.join("release-export-response");
+    let real_binary = coordinator_binary();
+    let wrapper = fixture.executable(
+        "held-export-codingmage",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'setup-export-copy' ]; then\n  {} \"$@\" > {} || exit $?\n  : > {}\n  until [ -f {} ]; do sleep 0.05; done\n  cat {}\n  exit 0\nfi\nexec {} \"$@\"\n",
+            format_command(&real_binary, &[]).unwrap(),
+            format_command(&receipt_file, &[]).unwrap(),
+            format_command(&written_marker, &[]).unwrap(),
+            format_command(&release_marker, &[]).unwrap(),
+            format_command(&receipt_file, &[]).unwrap(),
+            format_command(&real_binary, &[]).unwrap(),
+        ),
+    );
+    let mut harness = harness(CoordinatorBinary::at(&wrapper), [1100.0, 2200.0]);
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
+    harness.state_mut().setup_state_mut().export_path = destination.display().to_string();
+    harness.state_mut().export_document(&fixture.config);
+    let deadline = Instant::now() + Duration::from_secs(30);
+    while !written_marker.exists() && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert!(written_marker.exists(), "public exporter did not finish");
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(!harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "setup-export-copy",
+        request_id: Some("unrelated-export".to_owned()),
+        result: Ok(fs::read(&receipt_file).unwrap()),
+    }));
+    harness.state_mut().setup_state_mut().export_path =
+        fixture.root.join("changed-path.toml").display().to_string();
+    harness.state_mut().select_screen(Screen::Setup);
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: export configuration")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains(&destination.display().to_string());
+    let replacement_path = fixture.root.join("replacement-export.toml");
+    fs::write(&replacement_path, b"changed after the public receipt").unwrap();
+    fs::rename(&replacement_path, &destination).unwrap();
+    fs::write(&release_marker, b"").unwrap();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|message| message.contains("receipt or destination did not match"))
+        })
+    }));
+    assert_eq!(
+        fs::read(&destination).unwrap(),
+        b"changed after the public receipt"
+    );
+}
+
+#[test]
 fn replaced_campaign_after_writer_receipt_is_not_selected() {
     let fixture = Fixture::new("setup-campaign-replaced", 1);
     let record = fixture.root.join("operator-authorization.txt");
@@ -521,16 +666,45 @@ fn guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repos
     }
     let source = workspace.join("campaign.toml");
     harness.state_mut().export_document(&source);
-    harness.run_steps(2);
-    harness.get_by_label_contains("is inside the target repository");
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|text| text.contains("export not confirmed"))
+        })
+    }));
+    assert!(!fixture.target.join("copy.toml").exists());
     {
         let setup = harness.state_mut().setup_state_mut();
         setup.export_path = workspace.join("copy.toml").display().to_string();
     }
     harness.state_mut().export_document(&source);
     harness.state_mut().export_document(&source);
-    harness.run_steps(2);
-    harness.get_by_label_contains("already exists");
+    assert!(
+        harness
+            .state()
+            .setup_state()
+            .message
+            .as_ref()
+            .is_some_and(|result| result
+                .as_ref()
+                .is_err_and(|text| text.contains("already pending")))
+    );
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_ok_and(|text| text.contains("exported and verified"))
+        })
+    }));
+    harness.state_mut().export_document(&source);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|text| text.contains("export not confirmed"))
+        })
+    }));
     assert_eq!(
         fs::read(workspace.join("copy.toml")).unwrap(),
         fs::read(&source).unwrap()

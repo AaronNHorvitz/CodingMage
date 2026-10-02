@@ -96,6 +96,105 @@ impl ObservedFile {
         self.revalidate()?;
         Ok((digest_hex(&bytes)?, bytes.len()))
     }
+
+    fn exact_bytes(&mut self) -> Result<Vec<u8>, CliError> {
+        self.revalidate()?;
+        self.file
+            .seek(SeekFrom::Start(0))
+            .map_err(|_| CliError::StaleObservation)?;
+        let mut bytes = Vec::new();
+        (&self.file)
+            .take(self.max_bytes + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|_| CliError::StaleObservation)?;
+        self.revalidate()?;
+        if bytes.len() as u64 > self.max_bytes {
+            return Err(CliError::StaleObservation);
+        }
+        Ok(bytes)
+    }
+}
+
+/// Copies an exact, validated Setup source through guarded public publication.
+pub(super) fn export_copy(arguments: &[String]) -> Result<String, CliError> {
+    let parsed = ParsedArguments::new_with_optional(
+        arguments,
+        &["config", "repository-id", "source", "output"],
+        &["campaign-authority-sha256", "overwrite"],
+    )?;
+    let config_path = parsed.absolute_file("config")?;
+    let config = load_config(&config_path).map_err(|_| CliError::Config)?;
+    let mut config_file = ObservedFile::open(&config_path, MAX_CAMPAIGN_BYTES as u64)
+        .map_err(|_| CliError::StaleObservation)?;
+    let config_bytes = config_file.exact_bytes()?;
+    let config_sha256 = digest_hex(&config_bytes)?;
+    let authority = RepositoryAuthorization::authorize(&config, &executable_parent()?)
+        .map_err(|_| CliError::Repository)?;
+    let repository_id = parsed.value("repository-id")?;
+    if authority.identity().repository_id.as_str() != repository_id {
+        return Err(CliError::StaleObservation);
+    }
+    let source_path = parsed.absolute_file("source")?;
+    let output = parsed.absolute_path("output")?;
+    let overwrite = match parsed.optional_value("overwrite") {
+        None | Some("false") => false,
+        Some("true") => true,
+        Some(_) => return Err(CliError::Usage),
+    };
+    report_writer::validate(&source_path, &config.target_path)?;
+    report_writer::validate(&output, &config.target_path)?;
+    if normalized_leaf(&source_path)? == normalized_leaf(&output)?
+        || normalized_leaf(&config_path)? == normalized_leaf(&output)?
+    {
+        return Err(CliError::Refused);
+    }
+    let mut source_file = ObservedFile::open(&source_path, MAX_CAMPAIGN_BYTES as u64)?;
+    let bytes = source_file.exact_bytes()?;
+    let config_source = source_file.identity == config_file.identity;
+    if config_source {
+        if parsed.optional_value("campaign-authority-sha256").is_some() || bytes != config_bytes {
+            return Err(CliError::StaleObservation);
+        }
+    } else {
+        let expected = parsed
+            .optional_value("campaign-authority-sha256")
+            .ok_or(CliError::Usage)?;
+        let spec = CampaignSpec::parse_bytes(&bytes).map_err(|_| CliError::InvalidArgument)?;
+        if spec.repository_id != repository_id
+            || spec.repository_path != config.target_path
+            || spec
+                .authority_sha256()
+                .map_err(|_| CliError::InvalidArgument)?
+                != expected
+        {
+            return Err(CliError::StaleObservation);
+        }
+    }
+    refuse_protected_output(&output, &config_file, &source_file)?;
+    let sha256 = digest_hex(&bytes)?;
+    report_writer::write_guarded(&output, &config.target_path, &bytes, overwrite, || {
+        authority
+            .revalidate()
+            .map_err(|_| CliError::StaleObservation)?;
+        config_file.revalidate()?;
+        source_file.revalidate()?;
+        refuse_protected_output(&output, &config_file, &source_file)?;
+        if load_config(&config_path).map_err(|_| CliError::StaleObservation)? != config
+            || digest_hex(&config_file.exact_bytes()?)? != config_sha256
+            || digest_hex(&source_file.exact_bytes()?)? != sha256
+        {
+            return Err(CliError::StaleObservation);
+        }
+        Ok(())
+    })?;
+    serde_json::to_string_pretty(&json!({
+        "schema_version": 1,
+        "repository_id": repository_id,
+        "written": true,
+        "bytes": bytes.len(),
+        "sha256": sha256,
+    }))
+    .map_err(|_| CliError::Internal)
 }
 
 /// Writes the exact, bounded authorization record supplied on private stdin.

@@ -76,6 +76,15 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_campaign_write"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
+    ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "export_document"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_setup_export"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-cli/src/setup_writer.rs", "fn", "export_copy"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
     ("crates/codingmage-ui/src/campaign.rs", "fn", "load_matching_receipt"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),

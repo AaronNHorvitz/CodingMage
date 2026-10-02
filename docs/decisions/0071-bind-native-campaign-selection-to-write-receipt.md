@@ -1,6 +1,6 @@
 # ADR 0071: Bind Native Campaign Selection to the Write Receipt
 
-- **Status:** Accepted for local implementation; independent re-review pending
+- **Status:** Accepted for local implementation; bounded independent re-review PASS at `0fcbb1e43eb7d1d1874b69f19b58c748923b9162`
 - **Date:** 2026-10-01
 - **Decision owners:** CodingMage implementation
 

@@ -567,6 +567,7 @@ impl App {
     pub(super) fn advance_selection_generation(&mut self) {
         self.setup.cancel_pending_authorization();
         self.setup.cancel_pending_campaign();
+        self.setup.cancel_pending_export();
         self.generation = Generation(self.generation.0 + 1);
         if let Connection::Ready(worker) = &self.connection {
             worker.advance(self.generation);
@@ -587,6 +588,10 @@ impl App {
             if response.label == "setup-write-campaign" {
                 self.setup
                     .cancel_matching_campaign(response.request_id.as_deref());
+            }
+            if response.label == "setup-export-copy" {
+                self.setup
+                    .cancel_matching_export(response.request_id.as_deref());
             }
             self.discarded_stale += 1;
             return false;
@@ -658,6 +663,7 @@ impl App {
             "campaign-outcome-report" => self.accept_source_report(response),
             "setup-write-authorization" => self.accept_authorization_write(response),
             "setup-write-campaign" => self.accept_campaign_write(response),
+            "setup-export-copy" => self.accept_setup_export(response),
             _ => false,
         }
     }

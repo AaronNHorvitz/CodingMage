@@ -60,6 +60,7 @@ Commands:
   setup-write-authorization     Write exact owner authorization bytes from stdin
   setup-inspect-authorization   Inspect a bound external authorization record
   setup-write-campaign          Write exact campaign specification bytes from stdin
+  setup-export-copy             Copy a validated Setup document outside the repository
   campaign-explain-blocker      Read typed blocker and deferral details
   campaign-clear-blocker        Record one exact external-prerequisite change
   campaign-observe-trigger      Record one exact deferral trigger
@@ -106,6 +107,9 @@ fn command_help(command: &str) -> Option<&'static str> {
         ),
         "setup-write-campaign" => Some(
             "Usage: codingmage setup-write-campaign --config <ABSOLUTE_FILE> --repository-id <OBSERVED_ID> --head <FULL_COMMIT_ID> --task-source-sha256 <SHA256> --authorization <ABSOLUTE_FILE> --output <ABSOLUTE_FILE> [--overwrite true|false] < CAMPAIGN_TOML",
+        ),
+        "setup-export-copy" => Some(
+            "Usage: codingmage setup-export-copy --config <ABSOLUTE_FILE> --repository-id <OBSERVED_ID> --source <ABSOLUTE_FILE> --output <ABSOLUTE_FILE> [--campaign-authority-sha256 <SELECTED_SHA256>] [--overwrite true|false]",
         ),
         "campaign-status"
         | "campaign-report"
@@ -199,6 +203,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         }
         "setup-inspect-authorization" => setup_writer::inspect_authorization(&arguments[1..]),
         "setup-write-campaign" => setup_writer::campaign(&arguments[1..], std::io::stdin().lock()),
+        "setup-export-copy" => setup_writer::export_copy(&arguments[1..]),
         "campaign-explain-blocker" => explain_campaign_blocker(&arguments[1..]),
         "campaign-clear-blocker" => clear_blocker(&arguments[1..]),
         "campaign-observe-trigger" => observe_trigger(&arguments[1..]),

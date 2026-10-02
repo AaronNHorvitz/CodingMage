@@ -2171,8 +2171,13 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     returned FINDINGS/High: a valid same-ID destination replacement between
     receipt verification and selection could be reported as the confirmed
     campaign. Decision 0071 binds selection to the receipt's exact byte count
-    and SHA-256 over one held-file read; this correction requires exact-commit
-    independent re-review. Complete Show-command coverage remains open.
+    and SHA-256 over one held-file read. Bounded independent exact-commit
+    re-review of `0fcbb1e43eb7d1d1874b69f19b58c748923b9162` returned PASS
+    without findings. Decision 0072 moves the Setup document-export action to
+    a public, guarded coordinator command and bounded native worker; exact
+    source/destination receipts and Show-command previews are recorded in
+    `docs/evidence/sprint-36-setup-command-boundary.md`. Complete Show-command
+    coverage remains open.
     The bounded review of `b8e8458` returned a high parent-move finding and a low
     inventory-count finding. Decision 0063 and the corrected evidence record the
     local fix; the bounded re-review of `106ab0f4889943b403cdcdc98db1227b466ba4b0`
