@@ -1,6 +1,6 @@
 # ADR 0083: Bind Guided Campaign Selection to Public Source Bytes
 
-- **Status:** Accepted for local implementation; bounded independent review pending
+- **Status:** Accepted for local implementation; bounded independent review PASS
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 

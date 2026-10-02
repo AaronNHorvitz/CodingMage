@@ -56,8 +56,13 @@ binding were retained; no digest, package or review approval was renewed.
 The first Python run's additional stale-name guard failure is retained in
 private test output and is not counted as a passing run.
 
-Task 36.3.2.2 remains unchecked, and this increment awaits fresh bounded
-independent review. CM-R01.6 qualified-human source-bound review, installed
+Independent exact-SHA read-only review of `36ce30ceb6bce92541f80eb3c161117c1b55596e`
+returned PASS with no finding in this bounded scope. Its fresh focused tests
+and strict Clippy passed; its UI all-target run was terminated without a final
+result and is not counted as a reviewer pass. The report is retained in
+private review state; this is neither whole-UI nor qualified-human approval.
+
+Task 36.3.2.2 remains unchecked. CM-R01.6 qualified-human source-bound review, installed
 desktop and screen-reader checks, human trials, separately admitted
 real-provider runs, full-product review, licence and release decisions
 remain open.

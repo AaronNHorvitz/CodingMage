@@ -25,7 +25,12 @@ scope with independent Cargo checks; full UI independent acceptance remains open
   receipt and fresh `project-open` snapshot in the bounded worker. Guided
   campaign creation compares its write receipt to a fresh version-two
   `campaign-select` source-byte snapshot in that worker before selection. The
-  remaining screen-state and command catalogue work stays open under the
+  detached Setup export's private intent, terminal result and named destination
+  are also inspected on the worker after reopen; verified cleanup is a separate
+  request, and manual notice clearing never claims export success.
+  Creating a new export's private intent still runs on the interface thread.
+  These private recovery controls have no public coordinator command equivalent.
+  The remaining screen-state and command catalogue work stays open under the
   [native UI specification](../architecture/native-ui-specification.md).
 - An observer and control surface. Opening the app or a repository starts no agent, edits no task
   status and authorizes no campaign. Closing the window never stops a coordinator.

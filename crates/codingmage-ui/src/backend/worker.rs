@@ -162,6 +162,33 @@ pub enum Job {
         /// Bound for the public coordinator command.
         deadline: Duration,
     },
+    /// Read a prior private export intent off the render thread after opening a project.
+    SetupExportLoad {
+        /// Private UI state directory.
+        directory: PathBuf,
+        /// Exact opened configuration path.
+        config_path: PathBuf,
+    },
+    /// Inspect a prior export's terminal receipt and exact named destination.
+    SetupExportRecover {
+        /// Private intent path.
+        intent_path: PathBuf,
+        /// Digest of the inspected intent.
+        intent_sha256: String,
+        /// Correlation identity of the export.
+        request_id: String,
+    },
+    /// Clear a notice after a bound verified result or explicit manual inspection.
+    SetupExportClear {
+        /// Private intent path.
+        intent_path: PathBuf,
+        /// Digest of the inspected intent.
+        intent_sha256: String,
+        /// Correlation identity of the export.
+        request_id: String,
+        /// Recheck the successful receipt and destination before automatic cleanup.
+        verified: bool,
+    },
     /// Run a guided configuration write in an isolated helper that survives the native window.
     SetupConfig {
         /// Private exact-input intent persisted before dispatch.
@@ -206,6 +233,9 @@ impl Job {
             Self::SourceReportInspect { .. } => "campaign-outcome-report",
             Self::CampaignSetup { .. } => "setup-write-campaign",
             Self::SetupExport { .. } => "setup-export-copy",
+            Self::SetupExportLoad { .. } => "setup-export-load",
+            Self::SetupExportRecover { .. } => "setup-export-recover",
+            Self::SetupExportClear { .. } => "setup-export-clear",
             Self::SetupConfig { .. } => "setup-write-config",
             Self::SetupConfigRecover { .. } => "setup-config-recover",
             Self::SetupConfigClear { .. } => "setup-config-clear",
@@ -481,6 +511,28 @@ fn run_standard_job(
             verified,
         } => setup_config_process::clear_notice(intent_path, intent_sha256, request_id, *verified)
             .map(|()| Vec::new()),
+        Job::SetupExportLoad {
+            directory,
+            config_path,
+        } => setup_export_process::load(directory, config_path)
+            .and_then(|intent| {
+                serde_json::to_vec(&intent).map_err(|_| crate::state_dir::StateError::Invalid)
+            })
+            .map_err(|_| BackendError::Command {
+                code: "codingmage.ui.setup_export_invalid_intent".to_owned(),
+                exit_code: None,
+            }),
+        Job::SetupExportRecover {
+            intent_path,
+            intent_sha256,
+            request_id,
+        } => setup_export_process::recover(intent_path, intent_sha256, request_id),
+        Job::SetupExportClear {
+            intent_path,
+            intent_sha256,
+            request_id,
+            verified,
+        } => setup_export_process::clear_notice(intent_path, intent_sha256, request_id, *verified),
         Job::ReportExport { .. }
         | Job::SourceReportExport { .. }
         | Job::SourceReportInspect { .. } => {
@@ -850,6 +902,9 @@ fn dispatch_export(
                 | Job::CampaignSetup { .. }
                 | Job::SupportBundle { .. }
                 | Job::SetupExport { .. }
+                | Job::SetupExportLoad { .. }
+                | Job::SetupExportRecover { .. }
+                | Job::SetupExportClear { .. }
                 | Job::SetupConfig { .. }
                 | Job::SetupConfigRecover { .. }
                 | Job::SetupConfigClear { .. }

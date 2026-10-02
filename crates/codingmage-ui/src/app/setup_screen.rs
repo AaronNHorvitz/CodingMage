@@ -1,19 +1,12 @@
 //! Guided setup: repository configuration, campaign authority and the authorization record.
 
 use std::{
-    fs,
-    io::Read as _,
-    os::unix::fs::MetadataExt as _,
     path::{Path, PathBuf},
     time::Duration,
 };
 
 use codingmage_campaign::CampaignAuthentication;
 use codingmage_core::{CapabilityGrant, PublicationMode};
-use nix::{
-    fcntl::{OFlag, open},
-    sys::stat::Mode,
-};
 use serde::Deserialize;
 use sha2::{Digest as _, Sha256};
 
@@ -67,8 +60,6 @@ struct PendingExport {
     request_id: String,
     arguments: Vec<String>,
     source: PathBuf,
-    destination: PathBuf,
-    intent: ExportIntent,
 }
 
 #[derive(Deserialize)]
@@ -79,61 +70,6 @@ struct AuthorizationReceipt {
     written: bool,
     bytes: usize,
     sha256: String,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ExportReceipt {
-    schema_version: u64,
-    repository_id: String,
-    written: bool,
-    bytes: usize,
-    sha256: String,
-}
-
-fn export_matches_receipt(path: &Path, receipt: &ExportReceipt) -> bool {
-    if receipt.bytes == 0 || receipt.bytes > 1024 * 1024 {
-        return false;
-    }
-    let Ok(descriptor) = open(
-        path,
-        OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC,
-        Mode::empty(),
-    ) else {
-        return false;
-    };
-    let file = fs::File::from(descriptor);
-    let Ok(held) = file.metadata() else {
-        return false;
-    };
-    if !held.is_file() || held.len() != receipt.bytes as u64 {
-        return false;
-    }
-    let mut bytes = Vec::with_capacity(receipt.bytes);
-    if file
-        .take((receipt.bytes + 1) as u64)
-        .read_to_end(&mut bytes)
-        .is_err()
-        || bytes.len() != receipt.bytes
-        || hex(&Sha256::digest(&bytes)) != receipt.sha256
-    {
-        return false;
-    }
-    fs::symlink_metadata(path).is_ok_and(|named| {
-        named.is_file()
-            && named.dev() == held.dev()
-            && named.ino() == held.ino()
-            && named.len() == held.len()
-    })
-}
-
-fn export_receipt_matches(bytes: &[u8], intent: &ExportIntent) -> bool {
-    serde_json::from_slice::<ExportReceipt>(bytes).is_ok_and(|receipt| {
-        receipt.schema_version == 1
-            && receipt.written
-            && receipt.repository_id == intent.repository_id
-            && export_matches_receipt(&intent.destination, &receipt)
-    })
 }
 
 fn receipt_matches(
@@ -171,7 +107,11 @@ pub struct SetupState {
     pending_authorization: Option<PendingAuthorization>,
     pending_campaign: Option<PendingCampaign>,
     pending_export: Option<PendingExport>,
+    pending_export_load: Option<String>,
+    pending_export_recovery: Option<String>,
+    pending_export_clear: Option<(String, bool)>,
     pub(super) recovery_export: Option<ExportIntent>,
+    pub(super) recovered_export_after_open: bool,
     /// Directory browser for the target repository.
     pub target_browser: Option<Browser>,
     /// Export destination.
@@ -223,7 +163,11 @@ impl SetupState {
     }
 
     pub(super) fn cancel_pending_export(&mut self) {
-        if self.pending_export.take().is_some() {
+        let pending_write = self.pending_export.take().is_some();
+        let pending_load = self.pending_export_load.take().is_some();
+        let pending_recovery = self.pending_export_recovery.take().is_some();
+        let pending_clear = self.pending_export_clear.take().is_some();
+        if pending_write || pending_load || pending_recovery || pending_clear {
             self.message = Some(Err("the selected source changed during export; inspect the destination before retrying".to_owned()));
         }
     }
@@ -233,6 +177,12 @@ impl SetupState {
             .pending_export
             .as_ref()
             .is_some_and(|pending| Some(pending.request_id.as_str()) == request_id)
+            || self.pending_export_load.as_deref() == request_id
+            || self.pending_export_recovery.as_deref() == request_id
+            || self
+                .pending_export_clear
+                .as_ref()
+                .is_some_and(|(id, _)| Some(id.as_str()) == request_id)
         {
             self.cancel_pending_export();
         }
@@ -262,35 +212,88 @@ impl SetupState {
 impl App {
     pub(super) fn load_setup_export_recovery(&mut self) {
         self.setup.recovery_export = None;
+        self.setup.recovered_export_after_open = false;
         let Some(project) = self.project.as_ref() else {
             return;
         };
         let Ok(directory) = self.state_dir.as_ref() else {
             return;
         };
-        match setup_export_process::load(directory, &project.config_path) {
-            Ok(Some(intent)) => {
-                self.setup.recovery_export = Some(intent);
-                self.setup.message = Some(Err(
-                    "a previous export may still be running or need inspection; check its outcome in Setup"
-                        .to_owned(),
-                ));
-            }
-            Ok(None) => {}
-            Err(_) => {
-                self.setup.message = Some(Err(
-                    "private Setup export recovery state is invalid; inspect it before another export"
-                        .to_owned(),
-                ));
+        let request_id = format!("setup-export-load-{}", self.generation.0);
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::SetupExportLoad {
+                directory: directory.clone(),
+                config_path: project.config_path.clone(),
+            },
+            request_id: Some(request_id.clone()),
+        };
+        match self.submit(request) {
+            Ok(()) => self.setup.pending_export_load = Some(request_id),
+            Err(error) => {
+                self.setup.message = Some(Err(format!(
+                    "private export recovery inspection could not be queued ({}); try again",
+                    error.code()
+                )));
             }
         }
+    }
+
+    pub(super) fn accept_setup_export_load(&mut self, response: Response) -> bool {
+        if self.setup.pending_export_load.as_deref() != response.request_id.as_deref() {
+            return false;
+        }
+        self.setup.pending_export_load = None;
+        match response.result {
+            Ok(bytes) => {
+                let Ok(intent) = serde_json::from_slice::<Option<ExportIntent>>(&bytes) else {
+                    self.setup.message = Some(Err(
+                        "private Setup export recovery state is invalid; inspect it before another export".to_owned(),
+                    ));
+                    return true;
+                };
+                if let Some(intent) = intent {
+                    if self
+                        .project
+                        .as_ref()
+                        .is_none_or(|project| project.config_path != intent.config_path)
+                        || intent.schema_version != 1
+                    {
+                        self.setup.message = Some(Err(
+                            "previous export belongs to another repository observation; inspect its destination".to_owned(),
+                        ));
+                        return true;
+                    }
+                    self.setup.recovery_export = Some(intent);
+                    self.setup.recovered_export_after_open = true;
+                    self.setup.message = Some(Err(
+                        "a previous export may still be running or need inspection; check its outcome in Setup".to_owned(),
+                    ));
+                    if self.diagnosis.value.is_some() {
+                        self.reconcile_setup_export();
+                    }
+                }
+            }
+            Err(error) => {
+                self.setup.message = Some(Err(format!(
+                    "private Setup export recovery state is invalid ({}); inspect it before another export",
+                    error.code()
+                )));
+            }
+        }
+        true
     }
 
     pub(super) fn reconcile_setup_export(&mut self) {
         let Some(intent) = self.setup.recovery_export.clone() else {
             return;
         };
-        if self.setup.pending_export.is_some() {
+        if self.setup.pending_export.is_some()
+            || self.setup.pending_export_load.is_some()
+            || self.setup.pending_export_recovery.is_some()
+            || self.setup.pending_export_clear.is_some()
+        {
             return;
         }
         let Some(project) = self.project.as_ref() else {
@@ -311,40 +314,136 @@ impl App {
         let Ok(directory) = self.state_dir.as_ref() else {
             return;
         };
-        match setup_export_process::outcome(directory, &intent) {
-            Ok(Some(Ok(bytes))) if export_receipt_matches(&bytes, &intent) => {
-                if setup_export_process::clear(directory, &intent).is_ok() {
-                    self.setup.recovery_export = None;
-                    self.setup.message = Some(Ok(format!(
-                        "previous export completed and verified at {}",
-                        intent.destination.display()
-                    )));
-                } else {
-                    self.setup.message = Some(Err(
-                        "previous export bytes match, but its recovery record could not be cleared"
-                            .to_owned(),
-                    ));
-                }
+        let Ok(intent_sha256) = intent.fingerprint() else {
+            self.setup.message = Some(Err("private export intent is invalid".to_owned()));
+            return;
+        };
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::SetupExportRecover {
+                intent_path: setup_export_process::intent_path(directory, &intent.config_path),
+                intent_sha256,
+                request_id: intent.request_id.clone(),
+            },
+            request_id: Some(intent.request_id.clone()),
+        };
+        match self.submit(request) {
+            Ok(()) => {
+                self.setup.pending_export_recovery = Some(intent.request_id);
+                self.setup.message = None;
             }
-            Ok(Some(Err(error))) => {
+            Err(error) => {
                 self.setup.message = Some(Err(format!(
-                    "previous export was not confirmed ({}); inspect its destination",
+                    "export outcome inspection could not be queued ({}); try again",
                     error.code()
                 )));
             }
-            Ok(Some(Ok(_))) | Err(_) => {
+        }
+    }
+
+    pub(super) fn accept_setup_export_recovery(&mut self, response: Response) -> bool {
+        if self.setup.pending_export_recovery.as_deref() != response.request_id.as_deref() {
+            return false;
+        }
+        self.setup.pending_export_recovery = None;
+        match response.result {
+            Ok(bytes) if bytes.is_empty() => self.clear_setup_export_notice(true),
+            Ok(_) => {
                 self.setup.message = Some(Err(
-                    "previous export receipt or destination is invalid; inspect its destination"
+                    "export outcome was malformed; inspect its destination before retrying"
                         .to_owned(),
                 ));
             }
-            Ok(None) => {
-                self.setup.message = Some(Err(
-                    "previous export is running or its outcome is unknown; inspect its destination before retrying"
-                        .to_owned(),
-                ));
+            Err(error) => {
+                self.setup.message = Some(Err(format!(
+                    "previous export was not confirmed ({}); inspect its destination before retrying",
+                    error.code()
+                )));
             }
         }
+        true
+    }
+
+    pub(super) fn clear_setup_export_notice(&mut self, verified: bool) {
+        let Some(intent) = self.setup.recovery_export.clone() else {
+            return;
+        };
+        if self.setup.pending_export.is_some()
+            || self.setup.pending_export_load.is_some()
+            || self.setup.pending_export_recovery.is_some()
+            || self.setup.pending_export_clear.is_some()
+        {
+            return;
+        }
+        let Ok(directory) = self.state_dir.as_ref() else {
+            return;
+        };
+        let Ok(intent_sha256) = intent.fingerprint() else {
+            self.setup.message = Some(Err("private export intent is invalid".to_owned()));
+            return;
+        };
+        let request = Request {
+            generation: self.generation,
+            binding: self.binding(),
+            job: Job::SetupExportClear {
+                intent_path: setup_export_process::intent_path(directory, &intent.config_path),
+                intent_sha256,
+                request_id: intent.request_id.clone(),
+                verified,
+            },
+            request_id: Some(intent.request_id.clone()),
+        };
+        match self.submit(request) {
+            Ok(()) => {
+                self.setup.pending_export_clear = Some((intent.request_id, verified));
+                self.setup.message = None;
+            }
+            Err(error) => {
+                self.setup.message = Some(Err(format!(
+                    "export notice cleanup could not be queued ({}); try again",
+                    error.code()
+                )));
+            }
+        }
+    }
+
+    pub(super) fn accept_setup_export_clear(&mut self, response: &Response) -> bool {
+        let Some((request_id, verified)) = self.setup.pending_export_clear.as_ref() else {
+            return false;
+        };
+        if response.request_id.as_deref() != Some(request_id.as_str()) {
+            return false;
+        }
+        let verified = *verified;
+        self.setup.pending_export_clear = None;
+        if response.result.as_ref().is_ok_and(Vec::is_empty) {
+            let destination = self
+                .setup
+                .recovery_export
+                .as_ref()
+                .map(|intent| intent.destination.display().to_string())
+                .unwrap_or_default();
+            let recovered_after_open = self.setup.recovered_export_after_open;
+            self.setup.recovery_export = None;
+            self.setup.recovered_export_after_open = false;
+            self.setup.message = Some(Ok(if verified {
+                if recovered_after_open {
+                    format!("previous export completed and verified at {destination}")
+                } else {
+                    format!("exported and verified at {destination}")
+                }
+            } else {
+                "local export notice cleared after destination inspection".to_owned()
+            }));
+        } else {
+            self.setup.message = Some(Err(if verified {
+                "export bytes matched, but its recovery record could not be cleared; inspect before retrying".to_owned()
+            } else {
+                "export is still running or private recovery state changed; check its outcome before clearing".to_owned()
+            }));
+        }
+        true
     }
 
     /// Binding values for campaign authoring, taken from the diagnosis and configuration.
@@ -1032,7 +1131,12 @@ impl App {
 
     /// Exports the opened configuration or selected campaign to another path.
     pub fn export_document(&mut self, source: &Path) {
-        if self.setup.pending_export.is_some() || self.setup.recovery_export.is_some() {
+        if self.setup.pending_export.is_some()
+            || self.setup.pending_export_load.is_some()
+            || self.setup.pending_export_recovery.is_some()
+            || self.setup.pending_export_clear.is_some()
+            || self.setup.recovery_export.is_some()
+        {
             self.setup.message = Some(Err(
                 "an export is already pending or needs destination inspection before retrying"
                     .to_owned(),
@@ -1114,8 +1218,6 @@ impl App {
             request_id: intent.request_id.clone(),
             arguments: arguments.to_vec(),
             source: source.to_path_buf(),
-            destination,
-            intent: intent.clone(),
         };
         let request = Request {
             generation: self.generation,
@@ -1131,24 +1233,18 @@ impl App {
             Ok(()) => {
                 self.setup.pending_export = Some(pending);
                 self.setup.recovery_export = Some(intent);
+                self.setup.recovered_export_after_open = false;
                 self.setup.message = Some(Ok(
                     "export pending under its own helper; closing this view does not cancel it"
                         .to_owned(),
                 ));
             }
             Err(error) => {
-                let cleared = setup_export_process::clear(&directory, &intent).is_ok();
-                if !cleared {
-                    self.setup.recovery_export = Some(intent);
-                }
+                self.setup.recovery_export = Some(intent);
                 self.setup.message = Some(Err(format!(
                     "export was not queued: {}; {}",
                     error.code(),
-                    if cleared {
-                        "no export started"
-                    } else {
-                        "inspect private recovery state before retrying"
-                    }
+                    "inspect the destination and clear the private notice before retrying"
                 )));
             }
         }
@@ -1214,24 +1310,7 @@ impl App {
             return false;
         }
         match response.result {
-            Ok(bytes) if export_receipt_matches(&bytes, &pending.intent) => {
-                let cleared = self.state_dir.as_ref().is_ok_and(|directory| {
-                    setup_export_process::clear(directory, &pending.intent).is_ok()
-                });
-                if cleared {
-                    self.setup.recovery_export = None;
-                    self.setup.message = Some(Ok(format!(
-                        "exported and verified at {}",
-                        pending.destination.display()
-                    )));
-                } else {
-                    self.setup.message = Some(Err(
-                        "export bytes match but recovery state could not be cleared; inspect before retrying"
-                            .to_owned(),
-                    ));
-                }
-            }
-            Ok(_) => self.setup.message = Some(Err("export not confirmed: receipt or destination did not match; inspect the destination before retrying".to_owned())),
+            Ok(_) => self.reconcile_setup_export(),
             Err(error) => {
                 let code = error.code();
                 let (cause, action) = crate::backend::explain_code(&code);
@@ -1609,40 +1688,54 @@ impl App {
         }
     }
 
-    fn export_view(&mut self, ui: &mut egui::Ui) {
-        ui.label("Import means opening an existing configuration or selecting an existing campaign above. Export copies the validated file elsewhere; digests and paths inside it are unchanged and no credential exists to leak.");
+    fn export_recovery_controls(&mut self, ui: &mut egui::Ui) {
+        if self.setup.pending_export_load.is_some() {
+            ui.label("Checking private export recovery state…");
+        }
         if let Some(intent) = self.setup.recovery_export.clone() {
             ui.label(format!(
                 "Previous export destination: {}. Its outcome remains bound to the original repository and request.",
                 intent.destination.display()
             ));
-            if ui.button("Check previous export outcome").clicked() {
+            if self.setup.pending_export_recovery.is_some() {
+                ui.label("Checking the previous export and its destination…");
+            }
+            if self.setup.pending_export_clear.is_some() {
+                ui.label("Clearing the local export notice…");
+            }
+            if ui
+                .add_enabled(
+                    self.setup.pending_export.is_none()
+                        && self.setup.pending_export_recovery.is_none()
+                        && self.setup.pending_export_clear.is_none(),
+                    egui::Button::new("Check previous export outcome"),
+                )
+                .clicked()
+            {
                 self.reconcile_setup_export();
             }
             if self.setup.pending_export.is_none()
+                && self.setup.pending_export_load.is_none()
+                && self.setup.pending_export_recovery.is_none()
+                && self.setup.pending_export_clear.is_none()
                 && ui
                     .button("I inspected the destination; clear export notice")
                     .clicked()
             {
-                let cleared = self
-                    .state_dir
-                    .as_ref()
-                    .is_ok_and(|directory| setup_export_process::clear(directory, &intent).is_ok());
-                if cleared {
-                    self.setup.recovery_export = None;
-                    self.setup.message = Some(Ok(
-                        "local export notice cleared after destination inspection".to_owned(),
-                    ));
-                } else {
-                    self.setup.message = Some(Err(
-                        "export is still running or private recovery state changed; wait and check its outcome before clearing"
-                            .to_owned(),
-                    ));
-                }
+                self.clear_setup_export_notice(false);
             }
             ui.small("These recovery controls only inspect or clear the private notice. They do not run a coordinator command or stop an export already in progress.");
         }
-        let editable = self.setup.pending_export.is_none() && self.setup.recovery_export.is_none();
+    }
+
+    fn export_view(&mut self, ui: &mut egui::Ui) {
+        ui.label("Import means opening an existing configuration or selecting an existing campaign above. Export copies the validated file elsewhere; digests and paths inside it are unchanged and no credential exists to leak.");
+        self.export_recovery_controls(ui);
+        let editable = self.setup.pending_export.is_none()
+            && self.setup.pending_export_load.is_none()
+            && self.setup.pending_export_recovery.is_none()
+            && self.setup.pending_export_clear.is_none()
+            && self.setup.recovery_export.is_none();
         ui.horizontal(|ui| {
             let label = ui.label("Export destination");
             ui.add_enabled(

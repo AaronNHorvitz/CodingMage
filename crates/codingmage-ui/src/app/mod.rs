@@ -569,6 +569,7 @@ impl App {
         self.setup.cancel_pending_authorization();
         self.setup.cancel_pending_export();
         self.setup.recovery_export = None;
+        self.setup.recovered_export_after_open = false;
         self.setup.authorization_text.clear();
         self.generation = Generation(self.generation.0 + 1);
         if let Connection::Ready(worker) = &self.connection {
@@ -860,6 +861,9 @@ impl App {
             "setup-config-clear" => self.accept_config_clear(&response),
             "setup-write-campaign" => self.accept_campaign_write(response),
             "setup-export-copy" => self.accept_setup_export(response),
+            "setup-export-load" => self.accept_setup_export_load(response),
+            "setup-export-recover" => self.accept_setup_export_recovery(response),
+            "setup-export-clear" => self.accept_setup_export_clear(&response),
             _ => false,
         }
     }
@@ -880,7 +884,13 @@ impl App {
             self.setup
                 .cancel_matching_campaign(response.request_id.as_deref());
         }
-        if response.label == "setup-export-copy" {
+        if matches!(
+            response.label,
+            "setup-export-copy"
+                | "setup-export-load"
+                | "setup-export-recover"
+                | "setup-export-clear"
+        ) {
             self.setup
                 .cancel_matching_export(response.request_id.as_deref());
         }

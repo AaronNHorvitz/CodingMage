@@ -194,7 +194,7 @@ fn malformed_setup_export_receipt_never_reports_success() {
         app.setup_state().message.as_ref().is_some_and(|result| {
             result
                 .as_ref()
-                .is_err_and(|message| message.contains("export not confirmed"))
+                .is_err_and(|message| message.contains("not confirmed"))
         })
     }));
     assert!(!destination.exists());
@@ -204,7 +204,9 @@ fn malformed_setup_export_receipt_never_reports_success() {
     harness
         .get_by_label("I inspected the destination; clear export notice")
         .click();
-    harness.run_steps(2);
+    assert!(settle(&mut harness, Duration::from_secs(30), |_| {
+        !private.join("setup-export-intent.json").exists()
+    }));
     assert_eq!(export_result_count(&private), 0);
     assert!(!private.join("setup-export-intent.json").exists());
 }
@@ -268,7 +270,7 @@ fn replaced_setup_export_after_public_receipt_is_not_reported_as_success() {
         app.setup_state().message.as_ref().is_some_and(|result| {
             result
                 .as_ref()
-                .is_err_and(|message| message.contains("receipt or destination did not match"))
+                .is_err_and(|message| message.contains("setup_export_invalid_receipt"))
         })
     }));
     assert_eq!(
@@ -350,7 +352,13 @@ fn started_export_survives_window_close_and_campaign_reselection() {
             active
                 .get_by_label("I inspected the destination; clear export notice")
                 .click();
-            active.run_steps(2);
+            assert!(settle(active, Duration::from_secs(30), |app| {
+                app.setup_state().message.as_ref().is_some_and(|result| {
+                    result
+                        .as_ref()
+                        .is_err_and(|message| message.contains("still running"))
+                })
+            }));
             assert!(
                 active
                     .state()
@@ -1316,7 +1324,7 @@ fn guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repos
         app.setup_state().message.as_ref().is_some_and(|result| {
             result
                 .as_ref()
-                .is_err_and(|text| text.contains("export not confirmed"))
+                .is_err_and(|text| text.contains("not confirmed"))
         })
     }));
     assert!(!fixture.target.join("copy.toml").exists());
@@ -1325,21 +1333,13 @@ fn guided_campaign_binds_the_live_diagnosis_and_refuses_records_inside_the_repos
     harness
         .get_by_label("I inspected the destination; clear export notice")
         .click();
-    harness.run_steps(2);
-    assert!(
-        harness
-            .state()
-            .setup_state()
-            .message
-            .as_ref()
-            .is_some_and(|result| {
-                result
-                    .as_ref()
-                    .is_ok_and(|text| text.contains("notice cleared"))
-            }),
-        "clear notice: {:?}",
-        harness.state().setup_state().message
-    );
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_ok_and(|text| text.contains("notice cleared"))
+        })
+    }));
     {
         let setup = harness.state_mut().setup_state_mut();
         setup.export_path = workspace.join("copy.toml").display().to_string();

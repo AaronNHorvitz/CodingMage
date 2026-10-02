@@ -151,6 +151,23 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_setup_export"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
+    # Export recovery reads closed private intent and receipt records through
+    # the worker. The moving prose window would otherwise omit those cases.
+    ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_setup_export_load"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_setup_export_recovery"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_setup_export_clear"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/setup_export_process.rs", "fn", "recover"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/setup_export_process.rs", "fn", "clear_notice"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
     ("crates/codingmage-cli/src/setup_writer.rs", "fn", "export_copy"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),

@@ -133,6 +133,29 @@ class VerificationInventoryTests(unittest.TestCase):
                 for item in items
             ))
 
+    def test_setup_export_recovery_categories_stay_stable(self) -> None:
+        cases = (
+            ("crates/codingmage-ui/src/app/setup_screen.rs", "accept_setup_export_load"),
+            ("crates/codingmage-ui/src/app/setup_screen.rs", "accept_setup_export_recovery"),
+            ("crates/codingmage-ui/src/app/setup_screen.rs", "accept_setup_export_clear"),
+            ("crates/codingmage-ui/src/setup_export_process.rs", "recover"),
+            ("crates/codingmage-ui/src/setup_export_process.rs", "clear_notice"),
+        )
+        items = INVENTORY.build()["items"]
+        for path, name in cases:
+            expected = [
+                "positive", "negative", "boundary", "malformed_input",
+                "unknown_field", "repeatability",
+            ]
+            for context in ("unrelated navigation", "oversized malformed schema"):
+                self.assertEqual(
+                    INVENTORY.applicability(path, "fn", name, context), expected
+                )
+            self.assertTrue(any(
+                item["path"] == path and item["kind"] == "fn" and item["name"] == name
+                for item in items
+            ))
+
     def test_configuration_helper_request_categories_stay_stable(self) -> None:
         path = "crates/codingmage-ui/src/setup_config_process.rs"
         expected = [
