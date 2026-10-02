@@ -114,6 +114,111 @@ fn offline_help_is_reachable_and_does_not_start_a_coordinator() {
 }
 
 #[test]
+fn command_palette_navigates_offline_and_refuses_unavailable_diagnosis() {
+    let mut harness = harness(
+        Err(BackendError::BinaryUnavailable {
+            expected: PathBuf::from("/nonexistent/codingmage"),
+        }),
+        [1024.0, 640.0],
+    );
+    harness.run_steps(2);
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::K);
+    harness.run_steps(2);
+    harness.get_by_label("Command palette");
+    harness.get_by_role_and_label(
+        egui::accesskit::Role::TextInput,
+        "Search destinations and actions",
+    );
+    harness.key_press(egui::Key::ArrowDown);
+    harness.run_steps(1);
+    harness.key_press(egui::Key::Enter);
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::WorkPlan);
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::K);
+    harness.run_steps(2);
+    let search = harness
+        .get_all_by_role(egui::accesskit::Role::TextInput)
+        .last()
+        .expect("palette search field");
+    search.type_text("diagnosis");
+    harness.run_steps(2);
+    harness.get_by_label("Show command: Refresh diagnosis");
+    harness.key_press(egui::Key::Enter);
+    harness.run_steps(2);
+    harness.get_by_label("Command palette");
+    assert_eq!(
+        harness
+            .state()
+            .diagnosis()
+            .freshness(std::time::Instant::now()),
+        Freshness::NotRequested
+    );
+    harness.key_press(egui::Key::Escape);
+    harness.run_steps(2);
+    assert_eq!(harness.state().screen(), Screen::WorkPlan);
+    assert!(harness.state().project().is_none());
+}
+
+#[test]
+fn command_palette_refreshes_only_the_opened_project_with_exact_preview() {
+    let fixture = Fixture::new("palette-doctor", 3);
+    let mut harness = harness(
+        CoordinatorBinary::at(&coordinator_binary()),
+        [1024.0, 640.0],
+    );
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
+    let first_observation = harness.state().diagnosis().observed_at.unwrap();
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::K);
+    harness.run_steps(2);
+    harness
+        .get_all_by_role(egui::accesskit::Role::TextInput)
+        .last()
+        .expect("palette search field")
+        .type_text("diagnosis");
+    harness.run_steps(2);
+    harness
+        .get_by_label("Show command: Refresh diagnosis")
+        .click();
+    harness.run_steps(2);
+    let exact = codingmage_ui::command::format_command(
+        &coordinator_binary(),
+        &[
+            "doctor".to_owned(),
+            "--config".to_owned(),
+            fixture.config.display().to_string(),
+        ],
+    )
+    .unwrap();
+    harness.get_by_label(exact.as_str());
+    harness.key_press(egui::Key::Enter);
+    harness.run_steps(2);
+    assert_eq!(
+        harness.state().diagnosis().observed_at,
+        Some(first_observation),
+        "Enter on Show command must only toggle its disclosure"
+    );
+    harness
+        .get_all_by_role(egui::accesskit::Role::TextInput)
+        .last()
+        .expect("palette search field")
+        .focus();
+    harness.key_press(egui::Key::Enter);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .observed_at
+        .is_some_and(|observed| observed > first_observation)));
+    assert_eq!(harness.state().screen(), Screen::Overview);
+    assert_eq!(
+        harness.state().diagnosis().value.as_ref().unwrap().head,
+        fixture.head()
+    );
+}
+
+#[test]
 fn first_run_explains_storage_sign_in_and_next_step_without_a_coordinator() {
     let mut harness = harness(
         Err(BackendError::BinaryUnavailable {

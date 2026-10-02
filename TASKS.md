@@ -2506,6 +2506,14 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     Native UI all-target tests passed 209/209 before a final test-only stale
     case; final-source Setup passes 20/20 and strict workspace Clippy passes.
     Python retains only the unchanged CM-R01.6 eight-input source-bound drift.
+    Bounded independent exact-commit review of
+    `761adec6c02a035686e6bd3ff6d6b29c9d1d21e6` returned PASS without
+    findings and independently ran native UI all-target 210/210. Decision
+    0087 adds a fixed, keyboard-accessible command palette for all nine
+    destinations and the exact-previewed read-only diagnosis action; see
+    `docs/evidence/sprint-36-command-palette.md`. Final-source native UI
+    all-target passed 214/214 and strict workspace Clippy passed; Python
+    remained 49/50 solely for the unchanged CM-R01.6 eight-input drift.
     Private recovery controls still lack a public command equivalent, and the
     full section-five state/depth/Show-command catalogue and this sub-task
     remain open.

@@ -163,6 +163,10 @@ refused, even when outside the repository.
 - `Ctrl+1` to `Ctrl+8` switch existing screens; `Ctrl+9` opens Blockers. `Tab` and
   `Shift+Tab` move focus; `Space` or `Enter` activate. `F5` refreshes the diagnosis and
   campaign observations.
+- `Ctrl+K` opens a searchable command palette for all nine destinations and the existing
+  read-only diagnosis refresh. Arrow keys choose, `Enter` activates and `Escape` closes it.
+  The refresh action is disabled until its exact coordinator command can be shown; navigation
+  works without a repository or coordinator executable.
 
 The native minimum window is 1024 by 640 logical pixels. Appearance uses shared visual tokens;
 its choice lasts until the window closes. Reduced motion is the default because the shell has no

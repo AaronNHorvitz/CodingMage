@@ -1,6 +1,6 @@
 # ADR 0086: Prepare Setup Export Intents on the Worker
 
-- **Status:** Accepted for local implementation; bounded independent review pending
+- **Status:** Accepted for local implementation; bounded independent exact-commit review passed
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 
@@ -36,3 +36,8 @@ See `docs/evidence/sprint-36-setup-export-worker-preparation.md` for exact
 local checks, failures retained and review status. No new dependency, model,
 credential surface or licence decision is introduced. Desktop, human,
 live-provider and release gates remain open.
+
+Independent read-only review of exact commit
+`761adec6c02a035686e6bd3ff6d6b29c9d1d21e6` returned PASS with no
+findings after its own native UI 210/210, focused Setup 20/20, worker unit,
+strict Clippy and static checks. It is a bounded engineering review only.

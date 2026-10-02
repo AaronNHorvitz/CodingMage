@@ -582,6 +582,28 @@ fn keyboard_navigation_reaches_controls_in_order() {
 }
 
 #[test]
+fn command_palette_is_visible_at_the_minimum_window_with_software_rendering() {
+    let mut evidence = Evidence::new();
+    let fixture = Fixture::new("verify-palette", 3);
+    let mut harness = rendering_harness(
+        codingmage_ui::app::MIN_WINDOW,
+        1.0,
+        fixture.root.join("palette-state"),
+    );
+    harness.run_steps(2);
+    harness.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::K);
+    harness.run_steps(2);
+    harness.get_by_label("Command palette");
+    harness.get_by_role_and_label(
+        egui::accesskit::Role::TextInput,
+        "Search destinations and actions",
+    );
+    assert!(harness.get_all_by_label("Help and About").count() >= 2);
+    evidence.snapshot(&mut harness, "command-palette-minimum-window", 1.0);
+    evidence.finish("command-palette");
+}
+
+#[test]
 fn window_sizes_and_high_dpi_keep_navigation_and_content_reachable() {
     let mut evidence = Evidence::new();
     let fixture = Fixture::new("verify-sizes", 3);

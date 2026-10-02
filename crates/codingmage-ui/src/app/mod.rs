@@ -5,6 +5,7 @@ mod campaign_screen;
 mod changes_screen;
 mod execution_screen;
 mod help_screen;
+mod palette;
 mod readiness_screen;
 mod reports_screen;
 mod setup_screen;
@@ -12,6 +13,7 @@ mod setup_screen;
 pub use changes_screen::ChangeSet;
 pub use execution_screen::{ExecutionState, LAUNCH_OBSERVE_INTERVAL};
 pub use help_screen::SupportState;
+use palette::{CommandPalette, PaletteAction, matching_actions};
 use reports_screen::ReportWorker;
 pub use reports_screen::ReportsState;
 pub use setup_screen::SetupState;
@@ -209,6 +211,7 @@ pub struct App {
     open_error: Option<OpenError>,
     diagnosis: Observed<Diagnosis>,
     screen: Screen,
+    palette: CommandPalette,
     config_input: String,
     recent: RecentProjects,
     state_dir: Result<PathBuf, StateError>,
@@ -330,6 +333,7 @@ impl App {
             open_error: None,
             diagnosis: Observed::default(),
             screen: Screen::Overview,
+            palette: CommandPalette::default(),
             config_input: String::new(),
             recent,
             state_dir,
@@ -1062,6 +1066,7 @@ impl App {
                     Screen::Help => self.help_screen(ui),
                 });
         });
+        self.command_palette(&ctx);
         content::confirmation(&ctx);
         if self.diagnosis.loading
             || self.status.loading
@@ -1085,11 +1090,15 @@ impl App {
     fn handle_shortcuts(&mut self, ctx: &egui::Context) {
         let mut refresh = false;
         let mut selected = None;
+        let mut toggle_palette = false;
         ctx.input(|input| {
+            if input.modifiers.command && input.key_pressed(egui::Key::K) {
+                toggle_palette = true;
+            }
             if input.key_pressed(egui::Key::F5) {
                 refresh = true;
             }
-            if input.modifiers.command {
+            if input.modifiers.command && !self.palette.open {
                 for screen in Screen::ALL {
                     if input.key_pressed(screen.shortcut()) {
                         selected = Some(screen);
@@ -1097,12 +1106,113 @@ impl App {
                 }
             }
         });
+        if toggle_palette {
+            self.palette.open = !self.palette.open;
+            self.palette.query.clear();
+            self.palette.index = 0;
+            self.palette.focus_pending = self.palette.open;
+            self.palette.search_id = None;
+        }
         if let Some(screen) = selected {
             self.screen = screen;
         }
         if refresh {
             self.refresh_diagnosis();
             self.refresh_campaign();
+        }
+    }
+
+    fn command_palette(&mut self, ctx: &egui::Context) {
+        if !self.palette.open {
+            return;
+        }
+        let catalogue = messages::english();
+        let mut chosen = None;
+        let search_had_focus = self
+            .palette
+            .search_id
+            .is_some_and(|id| ctx.memory(|memory| memory.has_focus(id)));
+        if ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+            self.palette.open = false;
+            return;
+        }
+        let doctor_arguments = self.doctor_arguments();
+        let can_refresh =
+            command::can_preview(self.binary_path.as_deref(), doctor_arguments.as_deref());
+        egui::Window::new(catalogue.text("palette_title"))
+            .id(egui::Id::new("command-palette"))
+            .collapsible(false)
+            .resizable(false)
+            .default_width(480.0)
+            .anchor(egui::Align2::CENTER_TOP, [0.0, 72.0])
+            .show(ctx, |ui| {
+                let label = ui.label(catalogue.text("palette_search"));
+                let field = ui
+                    .add(
+                        egui::TextEdit::singleline(&mut self.palette.query)
+                            .hint_text(catalogue.text("palette_search"))
+                            .desired_width(f32::INFINITY),
+                    )
+                    .labelled_by(label.id);
+                self.palette.search_id = Some(field.id);
+                if self.palette.focus_pending {
+                    field.request_focus();
+                    self.palette.focus_pending = false;
+                }
+                let query_changed = field.changed();
+                if query_changed {
+                    self.palette.index = 0;
+                }
+                let actions = matching_actions(&self.palette.query);
+                if search_had_focus && !query_changed && !actions.is_empty() {
+                    ui.input(|input| {
+                        if input.key_pressed(egui::Key::ArrowDown) {
+                            self.palette.index = (self.palette.index + 1) % actions.len();
+                        } else if input.key_pressed(egui::Key::ArrowUp) {
+                            self.palette.index =
+                                (self.palette.index + actions.len() - 1) % actions.len();
+                        } else if input.key_pressed(egui::Key::Enter) {
+                            chosen = actions.get(self.palette.index).copied();
+                        }
+                    });
+                }
+                if chosen == Some(PaletteAction::RefreshDiagnosis) && !can_refresh {
+                    chosen = None;
+                }
+                if actions.is_empty() {
+                    ui.label(catalogue.text("palette_no_matches"));
+                }
+                for (index, action) in actions.into_iter().enumerate() {
+                    let label = action.label();
+                    let enabled = action != PaletteAction::RefreshDiagnosis || can_refresh;
+                    if ui
+                        .add_enabled(
+                            enabled,
+                            egui::Button::selectable(self.palette.index == index, label),
+                        )
+                        .clicked()
+                    {
+                        chosen = Some(action);
+                    }
+                    if action == PaletteAction::RefreshDiagnosis {
+                        if let Some(arguments) = &doctor_arguments {
+                            command::show_for(ui, label, self.binary_path.as_deref(), arguments);
+                        } else {
+                            command::show_unavailable_for(ui, label);
+                        }
+                    }
+                }
+            });
+        if let Some(action) = chosen {
+            self.apply_palette_action(action);
+        }
+    }
+
+    fn apply_palette_action(&mut self, action: PaletteAction) {
+        self.palette.open = false;
+        match action {
+            PaletteAction::Navigate(screen) => self.screen = screen,
+            PaletteAction::RefreshDiagnosis => self.refresh_diagnosis(),
         }
     }
 
