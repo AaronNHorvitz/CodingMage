@@ -56,6 +56,11 @@ KEYWORDS = {
 # moving context heuristic to add, then silently remove, its boundary category.
 # The failure panel must remain in the minimum-window/long-text work queue.
 FIXED_APPLICABILITY = {
+    # The public Setup screen contains configuration and campaign loaders.
+    # Moving visible copy must not erase its malformed/unknown-input work queue.
+    ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "setup"): (
+        "positive", "negative", "malformed_input", "unknown_field", "repeatability",
+    ),
     # Selection generation and authorization cancellation do not parse a
     # document. A nearby new configuration receipt must not alter their queue.
     ("crates/codingmage-ui/src/app/mod.rs", "fn", "advance_selection_generation"): (

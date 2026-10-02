@@ -22,6 +22,7 @@ use crate::{
     backend::{Job, PrivateInput, Request, Response},
     browser::Browser,
     command,
+    messages::{self, Catalogue},
     project::{Project, hex},
     setup::{
         CampaignBinding, CampaignForm, ConfigForm, EFFORTS, GateForm, ProfileForm, ProviderForm,
@@ -1163,51 +1164,62 @@ impl App {
     }
 
     pub(super) fn setup(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Setup");
-        ui.label("Everything here goes through the existing configuration and campaign contracts. Files are written only after the same loaders the coordinator uses accept them. No credential is ever requested or stored; providers use their own existing logins.");
+        let catalogue = messages::english();
+        ui.heading(catalogue.text("setup_title"));
+        ui.label(catalogue.text("setup_intro"));
         if let Some(message) = &self.setup.message {
             match message {
                 Ok(text) => {
                     ui.colored_label(super::current_tokens(ui.ctx()).success, text);
                 }
-                Err(text) => failure_box(ui, "Refused", text, "Correct the field and try again."),
+                Err(text) => failure_box(
+                    ui,
+                    catalogue.text("setup_refused"),
+                    text,
+                    catalogue.text("setup_correct_field"),
+                ),
             }
         }
         ui.separator();
-        ui.heading("1. Open or create a repository configuration");
+        ui.heading(catalogue.text("setup_open_heading"));
         self.open_controls(ui);
         ui.horizontal(|ui| {
-            let label = ui.label("Workspace directory for new authority files (optional)");
+            let label = ui.label(catalogue.text("setup_workspace_directory"));
             ui.add(
                 egui::TextEdit::singleline(&mut self.setup.workspace_root)
-                    .hint_text("/absolute/path outside the repository")
+                    .hint_text(catalogue.text("setup_workspace_directory_hint"))
                     .desired_width(super::current_tokens(ui.ctx()).layout.field_path),
             )
             .labelled_by(label.id);
         });
         self.target_selection(ui);
-        if self.project.is_some() && ui.button("Edit the opened configuration").clicked() {
+        if self.project.is_some()
+            && ui
+                .button(catalogue.text("setup_edit_configuration"))
+                .clicked()
+        {
             self.edit_opened_config();
         }
         self.config_form_view(ui);
         ui.separator();
-        ui.heading("2. Record the owner's authorization");
+        ui.heading(catalogue.text("setup_authorization_heading"));
         self.authorization_view(ui);
         ui.separator();
-        ui.heading("3. Author the campaign authority");
+        ui.heading(catalogue.text("setup_campaign_heading"));
         self.campaign_form_view(ui);
         ui.separator();
-        ui.heading("4. Import and export");
+        ui.heading(catalogue.text("setup_export_heading"));
         self.export_view(ui);
     }
 
     fn target_selection(&mut self, ui: &mut egui::Ui) {
+        let catalogue = messages::english();
         ui.horizontal(|ui| {
             if ui
                 .button(if self.setup.target_browser.is_some() {
-                    "Hide repository browser"
+                    catalogue.text("setup_hide_browser")
                 } else {
-                    "Choose a repository directory"
+                    catalogue.text("setup_choose_repository")
                 })
                 .clicked()
             {
@@ -1223,11 +1235,11 @@ impl App {
         if let Some(browser) = &self.setup.target_browser {
             egui::Frame::group(ui.style()).show(ui, |ui| {
                 ui.horizontal(|ui| {
-                    if ui.button("Up").clicked() {
+                    if ui.button(catalogue.text("setup_browser_up")).clicked() {
                         up = true;
                     }
                     ui.monospace(browser.current.display().to_string());
-                    if ui.button("Use this directory as the target").clicked() {
+                    if ui.button(catalogue.text("setup_use_target")).clicked() {
                         chosen = Some(browser.current.clone());
                     }
                 });
@@ -1263,19 +1275,23 @@ impl App {
     }
 
     fn config_form_view(&mut self, ui: &mut egui::Ui) {
+        let catalogue = messages::english();
         if let Some(intent) = self.setup.recovery_config.clone() {
-            ui.label(format!(
-                "Previous configuration destination: {}. Closing this window does not cancel a started write.",
-                intent.destination.display()
+            ui.label(catalogue.format(
+                "setup_config_previous_destination",
+                &[("destination", &intent.destination.display().to_string())],
             ));
             if self.setup.pending_config.is_some() {
-                ui.small("A configuration write is pending. Its submitted fields are locked until the outcome is known.");
+                ui.small(catalogue.text("setup_config_pending"));
             } else {
-                if ui.button("Check previous configuration outcome").clicked() {
+                if ui
+                    .button(catalogue.text("setup_config_check_outcome"))
+                    .clicked()
+                {
                     self.reconcile_config_write();
                 }
                 if ui
-                    .button("I inspected the destination; clear configuration notice")
+                    .button(catalogue.text("setup_config_clear_notice"))
                     .clicked()
                 {
                     let cleared = self.state_dir.as_ref().is_ok_and(|directory| {
@@ -1297,11 +1313,11 @@ impl App {
             }
             command::show_for(
                 ui,
-                "write configuration",
+                catalogue.text("setup_config_command_label"),
                 self.binary_path.as_deref(),
                 &intent.arguments,
             );
-            ui.small("The candidate TOML is private stdin, not a command argument. Recovery controls do not restart the write.");
+            ui.small(catalogue.text("setup_config_recovery_stdin"));
         }
         let Some(form) = &mut self.setup.config_form else {
             return;
@@ -1316,17 +1332,17 @@ impl App {
             if let Some(arguments) = &preview {
                 command::show_for(
                     ui,
-                    "write configuration",
+                    catalogue.text("setup_config_command_label"),
                     self.binary_path.as_deref(),
                     arguments,
                 );
-                ui.small("The configuration content is sent through private stdin. The command validates the exact bytes and repository again before publication.");
+                ui.small(catalogue.text("setup_config_submission_stdin"));
             } else {
-                command::show_unavailable_for(ui, "write configuration");
+                command::show_unavailable_for(ui, catalogue.text("setup_config_command_label"));
             }
         }
         let (apply, discard) = ui
-            .add_enabled_ui(editable, |ui| config_form_body(ui, form))
+            .add_enabled_ui(editable, |ui| config_form_body(ui, form, catalogue))
             .inner;
         if apply {
             self.apply_config_form();
@@ -1595,107 +1611,201 @@ fn config_arguments(repository: &Path, destination: &Path, overwrite: bool) -> O
     ])
 }
 
-fn config_form_body(ui: &mut egui::Ui, form: &mut ConfigForm) -> (bool, bool) {
+fn config_form_body(
+    ui: &mut egui::Ui,
+    form: &mut ConfigForm,
+    catalogue: &Catalogue,
+) -> (bool, bool) {
     let mut apply = false;
     let mut discard = false;
     egui::Frame::group(ui.style()).show(ui, |ui| {
-        ui.strong("Repository configuration (version 1, deny-first)");
-        egui::Grid::new("config-form")
-            .num_columns(2)
-            .spacing(super::current_tokens(ui.ctx()).layout.grid)
-            .show(ui, |ui| {
-                for (label, value) in [
-                    ("Configuration file", &mut form.config_path),
-                    ("Target repository", &mut form.target_path),
-                    ("Task source (relative)", &mut form.task_source),
-                    ("Default branch", &mut form.default_branch),
-                    ("Integration branch prefix", &mut form.integration_branch),
-                    ("Scratch root", &mut form.scratch_root),
-                    ("State root", &mut form.state_root),
-                    ("Correction limit", &mut form.correction_limit),
-                ] {
-                    let caption = ui.label(label);
-                    ui.add(egui::TextEdit::singleline(value).desired_width(super::current_tokens(ui.ctx()).layout.field_full))
-                        .labelled_by(caption.id);
-                    ui.end_row();
-                }
-            });
-        ui.label("Agent profiles (identifier, provider, model passed to the provider unchanged)");
-        let mut remove_profile = None;
-        for (index, profile) in form.profiles.iter_mut().enumerate() {
-            ui.horizontal(|ui| {
-                ui.add(egui::TextEdit::singleline(&mut profile.id).desired_width(super::current_tokens(ui.ctx()).layout.field_short));
-                ui.add(egui::TextEdit::singleline(&mut profile.provider).desired_width(super::current_tokens(ui.ctx()).layout.field_tiny));
-                ui.add(egui::TextEdit::singleline(&mut profile.model).desired_width(super::current_tokens(ui.ctx()).layout.field_small));
-                if ui.button("Remove profile").clicked() {
-                    remove_profile = Some(index);
-                }
-            });
-        }
-        if let Some(index) = remove_profile {
-            form.profiles.remove(index);
-        }
-        if ui.button("Add profile").clicked() {
-            form.profiles.push(ProfileForm::default());
-        }
-        ui.label("Deterministic gate commands (absolute executable, literal arguments)");
-        let mut remove_gate = None;
-        for (index, gate) in form.gates.iter_mut().enumerate() {
-            ui.horizontal(|ui| {
-                ui.add(egui::TextEdit::singleline(&mut gate.executable).desired_width(super::current_tokens(ui.ctx()).layout.field_label));
-                ui.add(egui::TextEdit::singleline(&mut gate.arguments).desired_width(super::current_tokens(ui.ctx()).layout.field_label));
-                if ui.button("Remove gate").clicked() {
-                    remove_gate = Some(index);
-                }
-            });
-        }
-        if let Some(index) = remove_gate {
-            form.gates.remove(index);
-        }
-        if ui.button("Add gate").clicked() {
-            form.gates.push(GateForm::default());
-        }
+        ui.strong(catalogue.text("setup_config_title"));
+        config_fields(ui, form, catalogue);
+        config_profiles(ui, form, catalogue);
+        config_gates(ui, form, catalogue);
+        config_publication(ui, form, catalogue);
+        ui.checkbox(
+            &mut form.allow_parent_discovery,
+            catalogue.text("setup_config_parent_discovery"),
+        );
+        ui.checkbox(
+            &mut form.overwrite,
+            catalogue.text("setup_config_overwrite"),
+        );
         ui.horizontal(|ui| {
-            ui.label("Publication");
-            ui.selectable_value(&mut form.publication, PublicationMode::LocalOnly, "local only");
-            ui.selectable_value(
-                &mut form.publication,
-                PublicationMode::PushFeatureBranch,
-                "push feature branch",
-            );
-            ui.selectable_value(
-                &mut form.publication,
-                PublicationMode::DraftPullRequest,
-                "draft pull request",
-            );
-        });
-        ui.small("Publication authority is separate from execution. Anything beyond local only also needs the matching capability grants below and separately qualified GitHub authority.");
-        ui.horizontal_wrapped(|ui| {
-            ui.label("Capabilities");
-            capability_toggle(ui, "network", &mut form.capabilities.network);
-            capability_toggle(ui, "push", &mut form.capabilities.push);
-            capability_toggle(ui, "issues", &mut form.capabilities.issues);
-            capability_toggle(ui, "pull requests", &mut form.capabilities.pull_requests);
-            capability_toggle(ui, "task merge", &mut form.capabilities.task_merge);
-            capability_toggle(
-                ui,
-                "destination merge",
-                &mut form.capabilities.destination_merge,
-            );
-        });
-        ui.checkbox(&mut form.allow_parent_discovery, "Allow parent discovery");
-        ui.checkbox(&mut form.overwrite, "Replace the existing configuration file");
-        ui.horizontal(|ui| {
-            if ui.button("Validate and write configuration").clicked() {
+            if ui.button(catalogue.text("setup_config_apply")).clicked() {
                 apply = true;
             }
-            if ui.button("Discard form").clicked() {
+            if ui.button(catalogue.text("setup_config_discard")).clicked() {
                 discard = true;
             }
         });
-
     });
     (apply, discard)
+}
+
+fn config_fields(ui: &mut egui::Ui, form: &mut ConfigForm, catalogue: &Catalogue) {
+    egui::Grid::new("config-form")
+        .num_columns(2)
+        .spacing(super::current_tokens(ui.ctx()).layout.grid)
+        .show(ui, |ui| {
+            for (label, value) in [
+                (catalogue.text("setup_config_file"), &mut form.config_path),
+                (catalogue.text("setup_config_target"), &mut form.target_path),
+                (
+                    catalogue.text("setup_config_task_source"),
+                    &mut form.task_source,
+                ),
+                (
+                    catalogue.text("setup_config_default_branch"),
+                    &mut form.default_branch,
+                ),
+                (
+                    catalogue.text("setup_config_integration_branch"),
+                    &mut form.integration_branch,
+                ),
+                (
+                    catalogue.text("setup_config_scratch_root"),
+                    &mut form.scratch_root,
+                ),
+                (
+                    catalogue.text("setup_config_state_root"),
+                    &mut form.state_root,
+                ),
+                (
+                    catalogue.text("setup_config_correction_limit"),
+                    &mut form.correction_limit,
+                ),
+            ] {
+                let caption = ui.label(label);
+                ui.add(
+                    egui::TextEdit::singleline(value)
+                        .desired_width(super::current_tokens(ui.ctx()).layout.field_full),
+                )
+                .labelled_by(caption.id);
+                ui.end_row();
+            }
+        });
+}
+
+fn config_profiles(ui: &mut egui::Ui, form: &mut ConfigForm, catalogue: &Catalogue) {
+    ui.label(catalogue.text("setup_config_profiles"));
+    let mut remove_profile = None;
+    for (index, profile) in form.profiles.iter_mut().enumerate() {
+        ui.horizontal(|ui| {
+            ui.add(
+                egui::TextEdit::singleline(&mut profile.id)
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_short),
+            );
+            ui.add(
+                egui::TextEdit::singleline(&mut profile.provider)
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_tiny),
+            );
+            ui.add(
+                egui::TextEdit::singleline(&mut profile.model)
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_small),
+            );
+            if ui
+                .button(catalogue.text("setup_config_remove_profile"))
+                .clicked()
+            {
+                remove_profile = Some(index);
+            }
+        });
+    }
+    if let Some(index) = remove_profile {
+        form.profiles.remove(index);
+    }
+    if ui
+        .button(catalogue.text("setup_config_add_profile"))
+        .clicked()
+    {
+        form.profiles.push(ProfileForm::default());
+    }
+}
+
+fn config_gates(ui: &mut egui::Ui, form: &mut ConfigForm, catalogue: &Catalogue) {
+    ui.label(catalogue.text("setup_config_gates"));
+    let mut remove_gate = None;
+    for (index, gate) in form.gates.iter_mut().enumerate() {
+        ui.horizontal(|ui| {
+            ui.add(
+                egui::TextEdit::singleline(&mut gate.executable)
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_label),
+            );
+            ui.add(
+                egui::TextEdit::singleline(&mut gate.arguments)
+                    .desired_width(super::current_tokens(ui.ctx()).layout.field_label),
+            );
+            if ui
+                .button(catalogue.text("setup_config_remove_gate"))
+                .clicked()
+            {
+                remove_gate = Some(index);
+            }
+        });
+    }
+    if let Some(index) = remove_gate {
+        form.gates.remove(index);
+    }
+    if ui.button(catalogue.text("setup_config_add_gate")).clicked() {
+        form.gates.push(GateForm::default());
+    }
+}
+
+fn config_publication(ui: &mut egui::Ui, form: &mut ConfigForm, catalogue: &Catalogue) {
+    ui.horizontal(|ui| {
+        ui.label(catalogue.text("setup_config_publication"));
+        ui.selectable_value(
+            &mut form.publication,
+            PublicationMode::LocalOnly,
+            catalogue.text("setup_config_publication_local"),
+        );
+        ui.selectable_value(
+            &mut form.publication,
+            PublicationMode::PushFeatureBranch,
+            catalogue.text("setup_config_publication_push"),
+        );
+        ui.selectable_value(
+            &mut form.publication,
+            PublicationMode::DraftPullRequest,
+            catalogue.text("setup_config_publication_draft"),
+        );
+    });
+    ui.small(catalogue.text("setup_config_publication_hint"));
+    ui.horizontal_wrapped(|ui| {
+        ui.label(catalogue.text("setup_config_capabilities"));
+        capability_toggle(
+            ui,
+            catalogue.text("setup_config_capability_network"),
+            &mut form.capabilities.network,
+        );
+        capability_toggle(
+            ui,
+            catalogue.text("setup_config_capability_push"),
+            &mut form.capabilities.push,
+        );
+        capability_toggle(
+            ui,
+            catalogue.text("setup_config_capability_issues"),
+            &mut form.capabilities.issues,
+        );
+        capability_toggle(
+            ui,
+            catalogue.text("setup_config_capability_pull_requests"),
+            &mut form.capabilities.pull_requests,
+        );
+        capability_toggle(
+            ui,
+            catalogue.text("setup_config_capability_task_merge"),
+            &mut form.capabilities.task_merge,
+        );
+        capability_toggle(
+            ui,
+            catalogue.text("setup_config_capability_destination_merge"),
+            &mut form.capabilities.destination_merge,
+        );
+    });
 }
 
 fn campaign_form_body(ui: &mut egui::Ui, form: &mut CampaignForm, can_write: bool) -> (bool, bool) {
@@ -1818,8 +1928,93 @@ fn provider_rows(ui: &mut egui::Ui, label: &str, provider: &mut ProviderForm) {
 
 #[cfg(test)]
 mod tests {
-    use super::{PendingAuthorization, receipt_matches};
-    use std::path::PathBuf;
+    use super::{PendingAuthorization, config_form_body, receipt_matches};
+    use crate::{
+        messages::{self, Catalogue},
+        setup::ConfigForm,
+    };
+    use egui_kittest::kittest::{NodeT as _, Queryable as _};
+    use std::path::{Path, PathBuf};
+
+    struct ConfigPreview {
+        form: ConfigForm,
+        catalogue: Catalogue,
+        right_to_left: bool,
+    }
+
+    impl eframe::App for ConfigPreview {
+        fn ui(&mut self, root: &mut egui::Ui, _frame: &mut eframe::Frame) {
+            egui::CentralPanel::default().show(root, |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    if self.right_to_left {
+                        ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                            config_form_body(ui, &mut self.form, &self.catalogue);
+                        });
+                    } else {
+                        config_form_body(ui, &mut self.form, &self.catalogue);
+                    }
+                });
+            });
+        }
+    }
+
+    #[test]
+    fn guided_configuration_labels_keep_accessible_bounds_with_expansion_and_right_alignment() {
+        for right_to_left in [false, true] {
+            let catalogue = messages::english().pseudo(right_to_left);
+            let title = catalogue.text("setup_config_title").to_owned();
+            let file = catalogue.text("setup_config_file").to_owned();
+            let target = catalogue.text("setup_config_target").to_owned();
+            let mut harness = egui_kittest::Harness::builder()
+                .with_size(egui::Vec2::new(1024.0, 640.0))
+                .with_pixels_per_point(2.0)
+                .with_max_steps(4)
+                .build_eframe(move |_| ConfigPreview {
+                    form: ConfigForm::defaults(
+                        Path::new("/synthetic/repository"),
+                        Path::new("/synthetic/workspace"),
+                    ),
+                    catalogue,
+                    right_to_left,
+                });
+            harness.run_steps(2);
+            for label in [&title, &file, &target] {
+                assert!(
+                    harness
+                        .get_by_label_contains(label)
+                        .accesskit_node()
+                        .has_bounds()
+                );
+            }
+            let catalogue = messages::english().pseudo(right_to_left);
+            let publication = catalogue.text("setup_config_publication_draft").to_owned();
+            let capability = catalogue
+                .text("setup_config_capability_destination_merge")
+                .to_owned();
+            let apply = catalogue.text("setup_config_apply").to_owned();
+            let mut full_form = egui_kittest::Harness::builder()
+                .with_size(egui::Vec2::new(1024.0, 2200.0))
+                .with_pixels_per_point(2.0)
+                .with_max_steps(4)
+                .build_eframe(move |_| ConfigPreview {
+                    form: ConfigForm::defaults(
+                        Path::new("/synthetic/repository"),
+                        Path::new("/synthetic/workspace"),
+                    ),
+                    catalogue,
+                    right_to_left,
+                });
+            full_form.run_steps(2);
+            for label in [&publication, &capability, &apply] {
+                assert!(
+                    full_form
+                        .get_by_label_contains(label)
+                        .accesskit_node()
+                        .has_bounds()
+                );
+            }
+        }
+    }
 
     #[test]
     fn authorization_receipt_requires_exact_identity_bytes_digest_and_schema() {

@@ -529,3 +529,51 @@ was the unchanged CM-R01.6 eight-input source-bound evidence drift. No digest
 or binding was renewed. Initial test-harness compilation mistakes and two
 function-length Clippy failures were corrected and retained privately.
 Independent exact-commit review of this new increment remains pending.
+
+## Guided configuration and Setup copy
+
+The native Setup introduction, target-directory browser, guided configuration
+form and detached configuration-write recovery controls now read authored
+English messages from the same strict version-one catalogue. The displayed
+English wording and the public coordinator command, private stdin, destination
+checks and recovery behavior remain the same. The recovery destination is a
+required named field, so a future translation cannot drop or replace that
+identity silently. No language selector or runtime translation is claimed.
+
+The existing catalogue mutation and pseudo-locale cases include these messages.
+A display-less render of the actual configuration form at 1024×640 logical
+pixels and 200% scaling checks accessible bounds for expanded English and
+right-aligned synthetic right-to-left labels; deeper form controls are checked
+at 1024×2200. This is local layout stress evidence, not installed Orca testing
+or complete bidirectional navigation. Authorization, campaign and export form
+text, dynamic responses, locale-aware dates and numbers, packaged third-party
+licences and the rest of the application remain open under Task 36.3.2.4.
+
+The inventory source and generated schema were inspected before regeneration.
+Moving Setup copy exposed a context-keyword heuristic that would have dropped
+two applicable categories from the unchanged public Setup entry. Its reviewed
+category set is now fixed by declaration identity, with a regression against
+unrelated neighboring text. Candidate test mappings remain suggestions, not
+source-bound coverage or independent acceptance.
+
+The regenerated source-consistent inventory retains 1,827 public items and
+825 explicit gaps. A semantic comparison with the parent finds no added or
+removed surface, applicability change or normalized gap change. Thirty-three
+line-derived locations move and 134 capped, crate-wide candidate mappings
+change after the new synthetic test; neither is a coverage result.
+
+The first native UI all-target suite passed 191/191 across 14 targets. Its
+subsequent strict Clippy run found that the longer form renderer crossed the
+workspace function-length limit. The form's field, profile, gate and
+publication sections were extracted into private render helpers; the failed
+lint receipt is retained outside Git. On this final source, the focused
+synthetic form test passed 1/1, strict workspace Clippy with warnings denied
+passed, and native UI all-target passed 191/191 across 14 targets, including
+Setup 15/15. These are local software-rendered and disposable-coordinator
+checks, not installed desktop or human trials.
+
+The full Python suite ran 48 tests: 47 passed and only the retained CM-R01.6
+source-bound freshness case failed on the same eight `input-drift` inputs. No
+package, digest, receipt or binding was renewed. Cargo formatting, docs,
+architecture, the no-write inventory check and diff whitespace passed. The
+independent exact-commit review of this increment remains pending.

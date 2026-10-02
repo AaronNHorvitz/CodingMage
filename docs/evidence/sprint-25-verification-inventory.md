@@ -74,6 +74,17 @@ source position and test names; neither is verification coverage proof.
 
 ## Status Boundary
 
+The guided native Setup catalogue increment moved labels next to the public
+`setup` entry. Its original malformed-input and unknown-field applicability
+would have disappeared under the moving context heuristic even though the
+screen still routes to the same configuration and campaign loaders. The
+generator now fixes the reviewed categories by declaration identity, and a
+regression varies neighboring text. The regenerated inventory has 1,827
+items and 825 explicit gaps, with no normalized surface, applicability or gap
+change versus its parent. Thirty-three line-derived locations and 134
+crate-wide capped candidate mappings change. These mappings do not prove
+source-bound coverage.
+
 Sub-tasks `25.2.1.1` and `25.2.1.2` are complete because the public surface is inventoried and every
 applicable category is either mapped to exact evidence or explicitly marked uncovered. Parent Task
 `25.2.1` remains open: the registry is a coverage work queue, not proof that every gap has been

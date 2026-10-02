@@ -2146,8 +2146,10 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     JSON request. The correction adds the missing malformed-input and
     unknown-field categories and direct request-boundary regressions. On the
     corrected source, native Setup passes 15/15, native all-target tests pass
-    190/190, and strict workspace Clippy passes; exact-commit re-review remains
-    pending. The section 5 catalogue and complete
+    190/190, and strict workspace Clippy passes. Independent exact-SHA
+    re-review of `18b08458ad4119d245b5b6cb6733972781721d5f` returned a
+    bounded PASS with no findings; it does not close the wider UI gate. The
+    section 5 catalogue and complete
     in-context depth/Show-command coverage remain open.
     The private-stage admission correction at `a36dd18b0e6e5cf4d7b54c03d23c94abf6682350`
     received a bounded independent exact-commit PASS with no open finding. It does not qualify
@@ -2573,6 +2575,17 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     real-coordinator readiness 6/6 passed with strict workspace Clippy. Full
     Python unittest passed 42/43, with only unchanged CM-R01.6 source-bound
     freshness drift; no digest was renewed. Exact-SHA review is pending.
+    A guided Setup increment moves its introduction, target browser,
+    configuration form and configuration-write recovery labels into the
+    validated English catalogue. The actual form has a 40%-expanded,
+    right-aligned synthetic AccessKit bounds check at 1024×640 and 200%
+    scale. Final-source native UI all-target passed 191/191 across 14
+    targets, including Setup 15/15, and strict workspace Clippy passed;
+    Python passed 47/48 with only the retained CM-R01.6 eight-input
+    source-bound drift, with no digest renewed. See
+    `docs/evidence/sprint-36-message-catalogue.md`. Other Setup forms,
+    dynamic strings, locale-aware formatting, full RTL, packaged licences
+    and human accessibility remain open; this sub-task stays unchecked.
     <!-- depends-on: 36.3.2.1 -->
 - [ ] **Task 36.3.3 - Qualify the native UI**
   - [ ] **Sub-task 36.3.3.1:** Add automated accessibility-tree, focus-order and keyboard tests per screen, the contrast and scaling matrix and scripted Orca runs of the core workflows (CM-UI-012).

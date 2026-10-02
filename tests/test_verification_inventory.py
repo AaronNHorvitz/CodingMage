@@ -84,6 +84,23 @@ class VerificationInventoryTests(unittest.TestCase):
             self.assertEqual(first, second)
             self.assertIn(required, first)
 
+    def test_setup_screen_categories_survive_catalogue_copy_changes(self) -> None:
+        path = "crates/codingmage-ui/src/app/setup_screen.rs"
+        expected = [
+            "positive", "negative", "malformed_input", "unknown_field", "repeatability",
+        ]
+        for context in ("translated navigation", "configuration parser schema"):
+            self.assertEqual(
+                INVENTORY.applicability(path, "fn", "setup", context), expected
+            )
+        item = next(
+            entry for entry in INVENTORY.build()["items"]
+            if entry["path"] == path
+            and entry["kind"] == "fn"
+            and entry["name"] == "setup"
+        )
+        self.assertEqual(item["applicable_categories"], expected)
+
     def test_campaign_setup_categories_do_not_follow_adjacent_text(self) -> None:
         cases = (
             ("crates/codingmage-ui/src/app/setup_screen.rs", "apply_campaign_form", "boundary"),
