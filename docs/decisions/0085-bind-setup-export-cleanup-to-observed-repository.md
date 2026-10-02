@@ -1,6 +1,6 @@
 # ADR 0085: Bind Setup Export Cleanup to the Observed Repository
 
-- **Status:** Accepted for local implementation; independent re-review pending
+- **Status:** Accepted for local implementation; bounded independent re-review passed
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 
@@ -32,4 +32,6 @@ human, live-provider, or release qualification.
 ## Verification
 
 See `docs/evidence/sprint-36-setup-export-identity-correction.md` for exact
-local checks and independent re-review status.
+local checks and independent re-review status. The exact-commit re-review of
+`1dfb1c61f8bbe0a34137060a832c2a7025a598b6` returned PASS without
+findings. Its incomplete all-target attempt is not counted as a reviewer pass.

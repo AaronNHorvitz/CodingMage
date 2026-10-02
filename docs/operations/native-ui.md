@@ -30,7 +30,10 @@ scope with independent Cargo checks; full UI independent acceptance remains open
   request, and manual notice clearing never claims export success. Cleanup
   requires the currently selected configuration and diagnosed repository to
   match the retained export; a mismatch leaves both recovery records intact.
-  Creating a new export's private intent still runs on the interface thread.
+  Creating a new export's private intent now runs on the bounded worker. The
+  interface checks the exact prepared request before dispatching the detached
+  public command and retains an unresolved intent for later inspection if a
+  response is malformed, stale or cannot launch the helper.
   These private recovery controls have no public coordinator command equivalent.
   The remaining screen-state and command catalogue work stays open under the
   [native UI specification](../architecture/native-ui-specification.md).

@@ -861,6 +861,7 @@ impl App {
             "setup-config-clear" => self.accept_config_clear(&response),
             "setup-write-campaign" => self.accept_campaign_write(response),
             "setup-export-copy" => self.accept_setup_export(response),
+            "setup-export-prepare" => self.accept_setup_export_prepare(response),
             "setup-export-load" => self.accept_setup_export_load(response),
             "setup-export-recover" => self.accept_setup_export_recovery(response),
             "setup-export-clear" => self.accept_setup_export_clear(&response),
@@ -887,12 +888,18 @@ impl App {
         if matches!(
             response.label,
             "setup-export-copy"
+                | "setup-export-prepare"
                 | "setup-export-load"
                 | "setup-export-recover"
                 | "setup-export-clear"
         ) {
             self.setup
                 .cancel_matching_export(response.request_id.as_deref());
+            if response.label == "setup-export-prepare"
+                && response.binding.config_path == self.binding().config_path
+            {
+                self.load_setup_export_recovery();
+            }
         }
         if response.label == "campaign-select"
             && self.pending_campaign.as_ref().is_some_and(|pending| {

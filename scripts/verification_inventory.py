@@ -151,6 +151,11 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_setup_export"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
+    # The worker's durable export preparation returns a closed, bounded
+    # response. Acceptance must reject malformed or foreign intent fields.
+    ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_setup_export_prepare"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
     # Export recovery reads closed private intent and receipt records through
     # the worker. The moving prose window would otherwise omit those cases.
     ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_setup_export_load"): (

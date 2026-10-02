@@ -2494,8 +2494,21 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     cleanup to the current diagnosed repository and retains the prior export
     record on mismatch; see
     `docs/evidence/sprint-36-setup-export-identity-correction.md`.
-    Independent re-review of the correction remains open.
-    The full catalogue and this sub-task remain open.
+    Bounded independent exact-commit re-review of
+    `1dfb1c61f8bbe0a34137060a832c2a7025a598b6` returned PASS with no
+    finding, closing the prior High; its incomplete all-target run is not
+    counted as a reviewer pass. Decision 0086 moves creation and persistence
+    of a new private Setup export intent to the bounded worker. The interface
+    accepts only a matching closed preparation response before dispatching
+    the detached public export; malformed or stale responses retain recovery
+    instead of claiming success. See
+    `docs/evidence/sprint-36-setup-export-worker-preparation.md`.
+    Native UI all-target tests passed 209/209 before a final test-only stale
+    case; final-source Setup passes 20/20 and strict workspace Clippy passes.
+    Python retains only the unchanged CM-R01.6 eight-input source-bound drift.
+    Private recovery controls still lack a public command equivalent, and the
+    full section-five state/depth/Show-command catalogue and this sub-task
+    remain open.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->

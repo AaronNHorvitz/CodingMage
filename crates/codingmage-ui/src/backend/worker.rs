@@ -153,6 +153,21 @@ pub enum Job {
         /// Maximum time allowed for the isolated command.
         deadline: Duration,
     },
+    /// Persist an exact Setup export intent off the render thread before helper dispatch.
+    SetupExportPrepare {
+        /// Private UI state directory.
+        directory: PathBuf,
+        /// Opened configuration at submission.
+        config_path: PathBuf,
+        /// Repository identity diagnosed at submission.
+        repository_id: String,
+        /// Selected configuration or campaign source.
+        source: PathBuf,
+        /// Destination requested by the owner.
+        destination: PathBuf,
+        /// Exact public command shown beside the action.
+        arguments: Vec<String>,
+    },
     /// Run a persisted Setup export in an isolated helper that survives UI selection changes.
     SetupExport {
         /// Private intent recorded before dispatch.
@@ -236,6 +251,7 @@ impl Job {
             Self::ReportExport { .. } | Self::SourceReportExport { .. } => "report-export",
             Self::SourceReportInspect { .. } => "campaign-outcome-report",
             Self::CampaignSetup { .. } => "setup-write-campaign",
+            Self::SetupExportPrepare { .. } => "setup-export-prepare",
             Self::SetupExport { .. } => "setup-export-copy",
             Self::SetupExportLoad { .. } => "setup-export-load",
             Self::SetupExportRecover { .. } => "setup-export-recover",
@@ -515,6 +531,21 @@ fn run_standard_job(
             verified,
         } => setup_config_process::clear_notice(intent_path, intent_sha256, request_id, *verified)
             .map(|()| Vec::new()),
+        Job::SetupExportPrepare {
+            directory,
+            config_path,
+            repository_id,
+            source,
+            destination,
+            arguments,
+        } => setup_export_process::prepare_for_worker(
+            directory,
+            config_path,
+            repository_id,
+            source,
+            destination,
+            arguments.clone(),
+        ),
         Job::SetupExportLoad {
             directory,
             config_path,
@@ -915,6 +946,7 @@ fn dispatch_export(
                 | Job::CampaignSetup { .. }
                 | Job::SupportBundle { .. }
                 | Job::SetupExport { .. }
+                | Job::SetupExportPrepare { .. }
                 | Job::SetupExportLoad { .. }
                 | Job::SetupExportRecover { .. }
                 | Job::SetupExportClear { .. }

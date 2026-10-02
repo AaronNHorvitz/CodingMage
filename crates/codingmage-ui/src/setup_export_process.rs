@@ -78,6 +78,16 @@ impl ExportIntent {
     }
 }
 
+/// Bounded worker response after a durable private export intent was created.
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct PreparedExport {
+    /// Exact persisted intent.
+    pub intent: ExportIntent,
+    /// Digest of the persisted intent bytes.
+    pub intent_sha256: String,
+}
+
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct HelperRequest {
@@ -161,6 +171,9 @@ pub(crate) fn prepare(
     };
     let path = intent_path(directory, config);
     let bytes = serde_json::to_vec(&intent).map_err(|_| StateError::Invalid)?;
+    if bytes.len() as u64 > MAX_HELPER_INPUT {
+        return Err(StateError::Invalid);
+    }
     ensure_private_dir(path.parent().ok_or(StateError::Invalid)?)?;
     let mut file = fs::OpenOptions::new()
         .write(true)
@@ -185,6 +198,34 @@ pub(crate) fn prepare(
         .and_then(|directory| directory.sync_all())
         .map_err(|_| StateError::Unavailable)?;
     Ok(intent)
+}
+
+/// Creates and binds one private export intent on the bounded worker.
+pub(crate) fn prepare_for_worker(
+    directory: &Path,
+    config: &Path,
+    repository_id: &str,
+    source: &Path,
+    destination: &Path,
+    arguments: Vec<String>,
+) -> Result<Vec<u8>, BackendError> {
+    let intent = prepare(
+        directory,
+        config,
+        repository_id,
+        source,
+        destination,
+        arguments,
+    )
+    .map_err(|_| recovery_error("prepare_failed"))?;
+    let intent_sha256 = intent
+        .fingerprint()
+        .map_err(|_| recovery_error("prepare_failed"))?;
+    serde_json::to_vec(&PreparedExport {
+        intent,
+        intent_sha256,
+    })
+    .map_err(|_| recovery_error("prepare_failed"))
 }
 
 /// Loads an unresolved intent for the exact configuration, if one exists.
@@ -545,6 +586,52 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::*;
+
+    #[test]
+    fn worker_preparation_is_bounded_and_uses_a_closed_response() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "codingmage-export-prepare-{}-{nonce}",
+            std::process::id()
+        ));
+        fs::create_dir(&root).unwrap();
+        let config = root.join("project.toml");
+        let destination = root.join("export.toml");
+        let bytes = prepare_for_worker(
+            &root,
+            &config,
+            "repo-synthetic",
+            &config,
+            &destination,
+            vec!["setup-export-copy".to_owned()],
+        )
+        .unwrap();
+        let prepared: PreparedExport = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(
+            prepared.intent.fingerprint().unwrap(),
+            prepared.intent_sha256
+        );
+        let mut unknown: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        unknown["unexpected"] = serde_json::json!(true);
+        assert!(serde_json::from_value::<PreparedExport>(unknown).is_err());
+        let oversized = root.join("oversized.toml");
+        assert!(
+            prepare_for_worker(
+                &root,
+                &oversized,
+                "repo-synthetic",
+                &oversized,
+                &destination,
+                vec!["x".repeat(usize::try_from(MAX_HELPER_INPUT).unwrap())],
+            )
+            .is_err()
+        );
+        assert!(!intent_path(&root, &oversized).exists());
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn helper_refuses_intent_changed_after_submission() {

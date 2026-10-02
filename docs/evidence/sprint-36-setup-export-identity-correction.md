@@ -41,5 +41,11 @@ The full Python suite ran 50 cases: 49 passed and only CM-R01.6's unchanged
 eight-input source-bound `input-drift` failed. The original failed receipts,
 package and binding remain intact; no digest or human approval was renewed.
 No GPU, runtime-model qualification or new dependency was involved.
-Independent re-review of the correction is pending. Task 36.3.2.2 and all
+Independent exact-commit re-review of
+`1dfb1c61f8bbe0a34137060a832c2a7025a598b6` returned PASS with no
+finding, closing the previous High same-path/different-repository cleanup
+issue. The reviewer independently passed the focused Setup and worker tests,
+strict Clippy, documentation, architecture and inventory checks; its
+all-target attempt was incomplete and is not counted as a reviewer pass.
+Task 36.3.2.2 and all
 human, live-provider, licence, release and whole-product gates remain open.

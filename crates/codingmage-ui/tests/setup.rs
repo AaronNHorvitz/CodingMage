@@ -15,7 +15,7 @@ use codingmage_campaign::CampaignSpec;
 use codingmage_core::load_config;
 use codingmage_ui::{
     Screen,
-    backend::{CoordinatorBinary, Response},
+    backend::{CoordinatorBinary, Job, Request, Response},
     campaign::SelectError,
     command::format_command,
     project::{OpenError, Project},
@@ -168,6 +168,159 @@ fn native_setup_export_uses_public_command_and_verifies_the_destination() {
 }
 
 #[test]
+fn export_intent_waits_for_the_worker_without_blocking_the_interface() {
+    let fixture = Fixture::new("setup-export-prepare-worker", 1);
+    let started = fixture.root.join("probe-started");
+    let release = fixture.root.join("probe-release");
+    let real_binary = coordinator_binary();
+    let wrapper = fixture.executable(
+        "held-probe-coordinator",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'held-probe' ]; then : > {}; until [ -f {} ]; do sleep 0.05; done; exit 0; fi\nexec {} \"$@\"\n",
+            format_command(&started, &[]).unwrap(),
+            format_command(&release, &[]).unwrap(),
+            format_command(&real_binary, &[]).unwrap(),
+        ),
+    );
+    let state_dir = fixture.root.join("ui-private");
+    let private = project_private_dir(&state_dir, &fixture.config);
+    let destination = fixture.root.join("export.toml");
+    let mut harness =
+        harness_with_state(CoordinatorBinary::at(&wrapper), [1100.0, 800.0], state_dir);
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    harness
+        .state_mut()
+        .submit(Request {
+            generation,
+            binding,
+            job: Job::Command {
+                label: "held-probe",
+                arguments: vec!["held-probe".to_owned()],
+                deadline: Duration::from_secs(20),
+            },
+            request_id: None,
+        })
+        .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !started.exists() && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(20));
+    }
+    let probe_started = started.exists();
+    harness.state_mut().setup_state_mut().export_path = destination.display().to_string();
+    harness.state_mut().export_document(&fixture.config);
+    let intent_waited = !private.join("setup-export-intent.json").exists();
+    let no_optimistic_result = harness.state().setup_state().message.is_none();
+    fs::write(&release, b"").unwrap();
+    assert!(
+        probe_started,
+        "the bounded worker did not start the held probe"
+    );
+    assert!(intent_waited, "the UI thread created the export intent");
+    assert!(no_optimistic_result, "preparation was reported as success");
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_ok_and(|message| message.contains("exported and verified"))
+        })
+    }));
+    assert_eq!(
+        fs::read(&destination).unwrap(),
+        fs::read(&fixture.config).unwrap()
+    );
+}
+
+#[test]
+fn stale_export_preparation_retains_intent_without_launching_the_public_command() {
+    let fixture = Fixture::new("setup-export-prepare-stale", 1);
+    let state_dir = fixture.root.join("ui-private");
+    let private = project_private_dir(&state_dir, &fixture.config);
+    let destination = fixture.root.join("export.toml");
+    let mut harness = harness_with_state(
+        CoordinatorBinary::at(&coordinator_binary()),
+        [1100.0, 800.0],
+        state_dir,
+    );
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
+    harness.state_mut().setup_state_mut().export_path = destination.display().to_string();
+    harness.state_mut().export_document(&fixture.config);
+    // Observe the durable intent without stepping the UI, so the preparation
+    // response remains queued when the selection generation changes.
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while !private.join("setup-export-intent.json").exists() && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert!(private.join("setup-export-intent.json").exists());
+    let before = harness.state().discarded_stale();
+    harness
+        .state_mut()
+        .select_campaign(&fixture.root.join("another-campaign.toml"));
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.discarded_stale() > before
+    }));
+    assert!(private.join("setup-export-intent.json").exists());
+    assert!(!destination.exists());
+    assert_eq!(export_result_count(&private), 0);
+    assert!(
+        harness
+            .state()
+            .setup_state()
+            .message
+            .as_ref()
+            .is_none_or(Result::is_err)
+    );
+}
+
+#[test]
+fn malformed_export_preparation_response_retains_notice_without_launching_export() {
+    let fixture = Fixture::new("setup-export-prepare-malformed", 1);
+    let state_dir = fixture.root.join("ui-private");
+    let private = project_private_dir(&state_dir, &fixture.config);
+    let destination = fixture.root.join("export.toml");
+    let mut harness = harness_with_state(
+        CoordinatorBinary::at(&coordinator_binary()),
+        [1100.0, 800.0],
+        state_dir,
+    );
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| app
+        .diagnosis()
+        .value
+        .is_some()));
+    harness.state_mut().setup_state_mut().export_path = destination.display().to_string();
+    harness.state_mut().export_document(&fixture.config);
+    let generation = harness.state().generation();
+    let binding = harness.state().binding();
+    assert!(harness.state_mut().handle_response(Response {
+        generation,
+        binding,
+        label: "setup-export-prepare",
+        request_id: Some(format!("setup-export-prepare-{}-0", generation.0)),
+        result: Ok(b"{malformed".to_vec()),
+    }));
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        private.join("setup-export-intent.json").exists()
+            && app.setup_state().message.as_ref().is_some_and(|result| {
+                result.as_ref().is_err_and(|message| {
+                    message.contains("previous export") || message.contains("recovery state")
+                })
+            })
+    }));
+    assert!(!destination.exists());
+    assert_eq!(export_result_count(&private), 0);
+}
+
+#[test]
 fn malformed_setup_export_receipt_never_reports_success() {
     let fixture = Fixture::new("setup-export-malformed", 1);
     let destination = fixture.root.join("export.toml");
@@ -315,6 +468,7 @@ fn replaced_setup_export_after_public_receipt_is_not_reported_as_success() {
     harness.state_mut().export_document(&fixture.config);
     let deadline = Instant::now() + Duration::from_secs(30);
     while !written_marker.exists() && Instant::now() < deadline {
+        harness.step();
         thread::sleep(Duration::from_millis(20));
     }
     assert!(written_marker.exists(), "public exporter did not finish");
@@ -403,6 +557,7 @@ fn started_export_survives_window_close_and_campaign_reselection() {
         active.state_mut().export_document(&fixture.config);
         let deadline = Instant::now() + Duration::from_secs(30);
         while !started.exists() && Instant::now() < deadline {
+            active.step();
             thread::sleep(Duration::from_millis(20));
         }
         if !started.exists() {
