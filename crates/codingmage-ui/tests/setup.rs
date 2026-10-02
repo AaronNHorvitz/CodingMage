@@ -2,18 +2,107 @@
 
 mod common;
 
-use std::{fs, time::Duration};
+use std::{
+    fs, thread,
+    time::{Duration, Instant},
+};
 
 use codingmage_campaign::CampaignSpec;
 use codingmage_core::load_config;
 use codingmage_ui::{
     Screen,
     backend::{CoordinatorBinary, Response},
+    campaign::SelectError,
     command::format_command,
     setup::ProviderForm,
 };
 use common::{Fixture, coordinator_binary, harness, settle, tree_digest};
 use egui_kittest::kittest::Queryable as _;
+
+#[test]
+fn replaced_campaign_after_writer_receipt_is_not_selected() {
+    let fixture = Fixture::new("setup-campaign-replaced", 1);
+    let record = fixture.root.join("operator-authorization.txt");
+    fs::write(&record, "Synthetic owner authorization").unwrap();
+    let destination = fixture.root.join("campaign.toml");
+    let receipt_file = fixture.root.join("campaign-receipt.json");
+    let written_marker = fixture.root.join("writer-finished");
+    let release_marker = fixture.root.join("release-response");
+    let real_binary = coordinator_binary();
+    let wrapper = fixture.executable(
+        "held-codingmage",
+        &format!(
+            "#!/bin/sh\nif [ \"$1\" = 'setup-write-campaign' ]; then\n  {} \"$@\" > {} || exit $?\n  : > {}\n  until [ -f {} ]; do sleep 0.05; done\n  cat {}\n  exit 0\nfi\nexec {} \"$@\"\n",
+            format_command(&real_binary, &[]).unwrap(),
+            format_command(&receipt_file, &[]).unwrap(),
+            format_command(&written_marker, &[]).unwrap(),
+            format_command(&release_marker, &[]).unwrap(),
+            format_command(&receipt_file, &[]).unwrap(),
+            format_command(&real_binary, &[]).unwrap(),
+        ),
+    );
+    let mut harness = harness(CoordinatorBinary::at(&wrapper), [1100.0, 800.0]);
+    harness.state_mut().open_project(&fixture.config);
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.diagnosis().value.is_some()
+    }));
+    let provider = fixture.executable("provider", "#!/bin/sh\nexit 0\n");
+    harness.state_mut().start_campaign_form();
+    {
+        let form = harness
+            .state_mut()
+            .setup_state_mut()
+            .campaign_form
+            .as_mut()
+            .unwrap();
+        form.spec_path = destination.display().to_string();
+        form.authorization_path = record.display().to_string();
+        form.allowed_paths = "src".to_owned();
+        for candidate in [
+            &mut form.team_lead,
+            &mut form.implementer,
+            &mut form.reviewer,
+        ] {
+            *candidate = ProviderForm {
+                executable: provider.display().to_string(),
+                model: "fixture".to_owned(),
+                effort: "high".to_owned(),
+            };
+        }
+    }
+    harness.state_mut().apply_campaign_form();
+    let deadline = Instant::now() + Duration::from_secs(30);
+    while !written_marker.exists() && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert!(written_marker.exists(), "public writer did not finish");
+    let original = CampaignSpec::load(&destination).unwrap();
+    let mut replacement = original.clone();
+    replacement.max_units += 1;
+    replacement.verify().unwrap();
+    let replacement_path = fixture.root.join("replacement.toml");
+    fs::write(
+        &replacement_path,
+        toml::to_string_pretty(&replacement).unwrap(),
+    )
+    .unwrap();
+    fs::rename(&replacement_path, &destination).unwrap();
+    fs::write(&release_marker, b"").unwrap();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|message| message.contains("resulting campaign could not be selected"))
+        })
+    }));
+    assert!(harness.state().campaign().is_none());
+    assert!(matches!(
+        harness.state().campaign_error(),
+        Some(SelectError::ReceiptMismatch)
+    ));
+    assert_eq!(CampaignSpec::load(&destination).unwrap(), replacement);
+    assert_eq!(original.campaign_id, replacement.campaign_id);
+}
 
 #[test]
 fn pending_campaign_preview_is_frozen_and_bad_inspection_never_writes() {

@@ -308,8 +308,40 @@ staged whitespace checks pass. The source/schema-reviewed inventory has 1,788
 public items and 825 explicit gaps. Four public UI APIs were added, no surface
 removed, one existing Setup applicability/mapping changed, and the normalized
 gap set did not change. These heuristic mappings are not coverage proof.
-Independent review of this native increment remains open. Configuration and
-export actions still use in-process writers, and the complete state/depth
-catalogue remains open. The existing campaign-selection loader still reads
-the confirmed specification in the UI process; it is a separate selection
-boundary. No runtime-provider or human qualification is claimed.
+Independent review of `0873af470aaf9cc0f4905da0eb581ddd3c832301`
+returned FINDINGS with one High item: the UI selected a pathname after
+receipt validation, so a concurrent same-ID authority replacement could be
+reported as the confirmed write. The private report remains unedited and its
+scoped tests pass; that verdict does not approve the correction. Configuration
+and export actions still use in-process writers, and the complete state/depth
+catalogue remains open. At this reviewed commit, the path-based campaign
+selection remained an in-process UI read. No runtime-provider or human
+qualification is claimed.
+
+## Native receipt-to-selection correction
+
+Decision 0071 changes the confirmed-write selection path to open a held
+no-follow regular file, bind its size to the receipt, read at most that size
+plus one byte, compare the buffer SHA-256 with the receipt, and parse and
+select from those same bytes. A mismatch clears selection and asks the owner
+to inspect the destination. Manual path selection and coordinator revalidation
+of later actions remain separate. A disposable real-process test holds a
+successful writer response, atomically substitutes a valid same-ID document
+with changed authority and requires refusal without a success message.
+The source/schema-reviewed inventory regenerates from 1,788 to 1,790 public
+items with 825 unchanged explicit gaps: two new selection APIs, no removed
+surface, no changed applicability or heuristic test mapping for an existing
+item, and no normalized gap change. Existing campaign-selection category
+requirements are pinned against nearby-text drift. Documentation,
+architecture, formatting, no-write inventory and whitespace checks pass.
+The focused real-process replacement test passes 1/1. The exact-source
+native UI all-target suite passes 178/178 across 14 targets, including Setup
+7/7 and verification 7/7. Strict workspace Clippy with warnings denied
+passes. The first focused compilation failed on an owned `unused_mut`
+warning; it was corrected before the successful focused and cumulative
+tests, and the failed output is retained privately. The full Python suite
+passes 45/46, with only the unchanged CM-R01.6 eight-input source-bound
+`input-drift` hold. No package, failed receipt, input binding or digest was
+renewed. All heavy tests/builds used one Cargo job, one Rust test thread and
+the shared build slot. Exact-commit independent re-review is pending; Task
+36.3.2.2 and all human, live-provider and release gates stay open.

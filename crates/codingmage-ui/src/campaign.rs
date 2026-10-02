@@ -7,16 +7,25 @@
 use std::{
     collections::BTreeMap,
     fmt, fs,
+    io::Read as _,
     path::{Path, PathBuf},
 };
 
 use codingmage_campaign::{CampaignError, CampaignSpec};
 use codingmage_plan::CheckState;
+use nix::{
+    fcntl::{OFlag, open},
+    sys::stat::Mode,
+};
+use sha2::{Digest as _, Sha256};
 
 use crate::backend::models::{
     ActiveTask, CampaignReport, CampaignStatus, Deferral, TaskCompletion, TaskReason,
 };
 use crate::content;
+use crate::project::hex;
+
+const MAX_CAMPAIGN_SELECTION_BYTES: usize = 1024 * 1024;
 
 /// One selected campaign bound to the opened repository.
 #[derive(Clone, Debug)]
@@ -36,6 +45,8 @@ pub enum SelectError {
     RelativePath,
     /// The existing loader rejected the file.
     Invalid(CampaignError),
+    /// The destination differs from the coordinator's receipt-bound bytes.
+    ReceiptMismatch,
     /// The specification names a different repository path than the opened configuration.
     DifferentRepositoryPath {
         /// Repository path named by the specification.
@@ -59,6 +70,8 @@ impl fmt::Display for SelectError {
             Self::Invalid(error) => {
                 write!(formatter, "the campaign specification is invalid: {error}")
             }
+            Self::ReceiptMismatch => formatter
+                .write_str("the campaign destination differs from the confirmed write receipt"),
             Self::DifferentRepositoryPath { specified, opened } => write!(
                 formatter,
                 "the campaign names repository {} but the opened configuration targets {}",
@@ -93,6 +106,57 @@ impl CampaignSelection {
             return Err(SelectError::RelativePath);
         }
         let spec = CampaignSpec::load(spec_path).map_err(SelectError::Invalid)?;
+        Self::from_spec(spec_path, opened_target, observed_repository_id, spec)
+    }
+
+    /// Selects the exact bounded destination bytes confirmed by a campaign write receipt.
+    /// The held file is read once; the parsed authority is derived from that same buffer.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SelectError`] if the destination is unsafe, changed or names another repository.
+    pub fn load_matching_receipt(
+        spec_path: &Path,
+        opened_target: &Path,
+        observed_repository_id: Option<&str>,
+        expected_bytes: usize,
+        expected_sha256: &str,
+    ) -> Result<Self, SelectError> {
+        if !spec_path.is_absolute() {
+            return Err(SelectError::RelativePath);
+        }
+        if expected_bytes == 0 || expected_bytes > MAX_CAMPAIGN_SELECTION_BYTES {
+            return Err(SelectError::ReceiptMismatch);
+        }
+        let file = fs::File::from(
+            open(
+                spec_path,
+                OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC,
+                Mode::empty(),
+            )
+            .map_err(|_| SelectError::ReceiptMismatch)?,
+        );
+        let metadata = file.metadata().map_err(|_| SelectError::ReceiptMismatch)?;
+        if !metadata.is_file() || metadata.len() != expected_bytes as u64 {
+            return Err(SelectError::ReceiptMismatch);
+        }
+        let mut source = Vec::with_capacity(expected_bytes);
+        file.take((expected_bytes + 1) as u64)
+            .read_to_end(&mut source)
+            .map_err(|_| SelectError::ReceiptMismatch)?;
+        if source.len() != expected_bytes || hex(&Sha256::digest(&source)) != expected_sha256 {
+            return Err(SelectError::ReceiptMismatch);
+        }
+        let spec = CampaignSpec::parse_bytes(&source).map_err(SelectError::Invalid)?;
+        Self::from_spec(spec_path, opened_target, observed_repository_id, spec)
+    }
+
+    fn from_spec(
+        spec_path: &Path,
+        opened_target: &Path,
+        observed_repository_id: Option<&str>,
+        spec: CampaignSpec,
+    ) -> Result<Self, SelectError> {
         let authority_sha256 = spec.authority_sha256().map_err(SelectError::Invalid)?;
         let opened =
             fs::canonicalize(opened_target).unwrap_or_else(|_| opened_target.to_path_buf());

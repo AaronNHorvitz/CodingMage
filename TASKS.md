@@ -2167,8 +2167,12 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     without findings. Decision 0070 routes the native campaign form through
     that inspection and the separately reviewed public campaign writer on the
     bounded worker, with private candidate stdin and submitted Show-command
-    arguments. Its own independent review remains open. Complete Show-command
-    coverage remains open.
+    arguments. Independent review of `0873af470aaf9cc0f4905da0eb581ddd3c832301`
+    returned FINDINGS/High: a valid same-ID destination replacement between
+    receipt verification and selection could be reported as the confirmed
+    campaign. Decision 0071 binds selection to the receipt's exact byte count
+    and SHA-256 over one held-file read; this correction requires exact-commit
+    independent re-review. Complete Show-command coverage remains open.
     The bounded review of `b8e8458` returned a high parent-move finding and a low
     inventory-count finding. Decision 0063 and the corrected evidence record the
     local fix; the bounded re-review of `106ab0f4889943b403cdcdc98db1227b466ba4b0`

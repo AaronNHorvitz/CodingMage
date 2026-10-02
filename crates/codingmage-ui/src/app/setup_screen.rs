@@ -384,21 +384,29 @@ impl App {
                     crate::backend::models::ModelError::Malformed,
                 ));
             }
-            Ok(())
+            Ok(receipt)
         });
         match result {
-            Ok(()) => {
-                self.select_campaign(&pending.specification_path);
-                if self.campaign.as_ref().is_some_and(|selected| {
-                    selected.spec_path == pending.specification_path
-                        && selected.spec.campaign_id == pending.campaign_id
-                }) {
+            Ok(receipt) => {
+                let selected = self.select_campaign_with_receipt(
+                    &pending.specification_path,
+                    Some((receipt.bytes, &receipt.sha256)),
+                );
+                if selected
+                    && self.campaign.as_ref().is_some_and(|selected| {
+                        selected.spec_path == pending.specification_path
+                            && selected.spec.campaign_id == pending.campaign_id
+                    })
+                {
                     self.set_authorization_record(&pending.authorization_path);
                     self.setup.message = Some(Ok(format!(
                         "campaign specification written and verified at {}",
                         pending.specification_path.display()
                     )));
                 } else {
+                    if selected {
+                        self.clear_campaign();
+                    }
                     self.setup.message = Some(Err(format!(
                         "the coordinator confirmed a write at {}, but the resulting campaign could not be selected; inspect the destination before retrying",
                         pending.specification_path.display()

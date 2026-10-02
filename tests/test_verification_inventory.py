@@ -96,6 +96,20 @@ class VerificationInventoryTests(unittest.TestCase):
             self.assertEqual(first, second)
             self.assertIn(required, first)
 
+    def test_receipt_bound_campaign_selection_categories_stay_stable(self) -> None:
+        cases = (
+            ("crates/codingmage-ui/src/campaign.rs", "fn", "load_matching_receipt", "boundary"),
+            ("crates/codingmage-ui/src/campaign.rs", "struct", "CampaignSelection", "unknown_field"),
+            ("crates/codingmage-ui/src/campaign.rs", "enum", "SelectError", "malformed_input"),
+            ("crates/codingmage-ui/src/app/campaign_screen.rs", "fn", "select_campaign", "repeatability"),
+            ("crates/codingmage-ui/src/app/campaign_screen.rs", "fn", "select_campaign_with_receipt", "boundary"),
+        )
+        for path, kind, name, required in cases:
+            first = INVENTORY.applicability(path, kind, name, "unrelated navigation")
+            second = INVENTORY.applicability(path, kind, name, "oversized malformed schema")
+            self.assertEqual(first, second)
+            self.assertIn(required, first)
+
 
 if __name__ == "__main__":
     unittest.main()

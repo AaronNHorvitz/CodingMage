@@ -28,10 +28,19 @@ use crate::{
 impl App {
     /// Selects a campaign specification for the opened repository and requests its status.
     pub fn select_campaign(&mut self, spec_path: &Path) {
+        self.select_campaign_with_receipt(spec_path, None);
+    }
+
+    /// Selects a destination only when its held bytes match a confirmed write receipt.
+    pub(super) fn select_campaign_with_receipt(
+        &mut self,
+        spec_path: &Path,
+        receipt: Option<(usize, &str)>,
+    ) -> bool {
         let Some(project) = &self.project else {
             self.campaign_error = None;
             self.set_status("open a repository before selecting a campaign");
-            return;
+            return false;
         };
         let observed = self
             .diagnosis
@@ -43,7 +52,18 @@ impl App {
         self.advance_selection_generation();
         self.clear_campaign_observations();
         self.campaign = None;
-        match CampaignSelection::load(spec_path, &target, observed.as_deref()) {
+        let loaded = if let Some((bytes, sha256)) = receipt {
+            CampaignSelection::load_matching_receipt(
+                spec_path,
+                &target,
+                observed.as_deref(),
+                bytes,
+                sha256,
+            )
+        } else {
+            CampaignSelection::load(spec_path, &target, observed.as_deref())
+        };
+        let accepted = match loaded {
             Ok(selection) => {
                 self.campaign_input = selection.spec_path.display().to_string();
                 self.campaign = Some(selection);
@@ -52,15 +72,18 @@ impl App {
                 self.restore_execution();
                 self.set_status("campaign selected; requesting durable status");
                 self.refresh_campaign();
+                true
             }
             Err(error) => {
                 self.set_status(format!("campaign refused: {error}"));
                 self.campaign_error = Some(error);
+                false
             }
-        }
+        };
         if diagnosis_loading {
             self.refresh_diagnosis();
         }
+        accepted
     }
 
     /// Clears the campaign selection without affecting any coordinator process.
