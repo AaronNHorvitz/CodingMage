@@ -65,7 +65,10 @@ the no-write verification inventory, `docs_check.py`, architecture checks
 and diff whitespace passed. The full Python suite ran 50 tests: 49 passed,
 and only the unchanged CM-R01.6 evidence-binding test failed with its eight
 previously recorded source-bound input drifts. The original failed receipt,
-package and binding were not renewed. Independent review of this exact
-commit remains pending. The full section-five state/depth/Show-command
+package and binding were not renewed. Independent review of exact commit
+`8a46f406b9204347682d299adbd1f3fb033b9891` found a High
+verified-clear final-verification race. Decision 0093 and
+`sprint-36-setup-export-clear-race-correction.md` record the correction;
+its exact-commit re-review remains open. The full section-five state/depth/Show-command
 catalogue and guided configuration recovery remain open, along with all
 installed, assistive, human, live-provider and release gates.

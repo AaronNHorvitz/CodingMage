@@ -1412,7 +1412,7 @@ print(json.dumps({"type": "turn.completed"}))
         |event| progress.push(event),
     )
     .unwrap();
-    assert_eq!(outcome.state, CampaignState::Complete);
+    assert_eq!(outcome.state, CampaignState::Complete, "{outcome:?}");
     assert_eq!(outcome.completed_units, 5);
     assert_eq!(git_output(&target, &["rev-parse", "HEAD"]), original_head);
     assert_eq!(git_output(&target, &["status", "--porcelain=v1"]), "");

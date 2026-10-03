@@ -25799,9 +25799,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/setup_recovery.rs:fn:clear:325",
+      "id": "rust:crates/codingmage-cli/src/setup_recovery.rs:fn:clear:344",
       "kind": "fn",
-      "line": 325,
+      "line": 344,
       "name": "clear",
       "path": "crates/codingmage-cli/src/setup_recovery.rs",
       "surface": "rust_public_api",
@@ -25868,9 +25868,9 @@
         "unknown_field",
         "repeatability"
       ],
-      "id": "rust:crates/codingmage-cli/src/setup_recovery.rs:fn:export:113",
+      "id": "rust:crates/codingmage-cli/src/setup_recovery.rs:fn:export:128",
       "kind": "fn",
-      "line": 113,
+      "line": 128,
       "name": "export",
       "path": "crates/codingmage-cli/src/setup_recovery.rs",
       "surface": "rust_public_api",
@@ -87490,6 +87490,6 @@
       }
     }
   ],
-  "items_sha256": "056936bca4363f6b14bbb70b3b929b69a174882ecb0293e0c3c9c70754df5019",
+  "items_sha256": "0bc32bf220f75705af93fd6f97946a9ced0a910d1221d525f6f4594d2af43f91",
   "schema_version": 1
 }

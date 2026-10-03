@@ -38,7 +38,11 @@ scope with independent Cargo checks; full UI independent acceptance remains open
   `setup-export-recover` command, bound to its private intent and the selected
   repository. The manual notice-clear and verified cleanup controls now use
   `setup-export-clear` with exact bound arguments and a matching receipt;
-  neither control deletes the exported destination. Other private Setup
+  neither control deletes the exported destination. Verified clearing
+  rechecks its held terminal, intent, destination and helper lock at the
+  removal boundary; changed observations refuse cleanup. A destination
+  change after terminal removal can leave a private intent for manual
+  inspection, without a verified success receipt. Other private Setup
   recovery controls still need public command equivalents.
   The remaining screen-state and command catalogue work stays open under the
   [native UI specification](../architecture/native-ui-specification.md).

@@ -81,7 +81,14 @@ fn hex_digest(bytes: &[u8]) -> String {
 }
 
 // Keep a no-follow descriptor across the read and confirm that its named leaf did not move.
-fn read_named(path: &Path, limit: u64) -> Result<Vec<u8>, CliError> {
+#[derive(PartialEq, Eq)]
+struct ObservedBytes {
+    bytes: Vec<u8>,
+    device: u64,
+    inode: u64,
+}
+
+fn observe_named(path: &Path, limit: u64) -> Result<ObservedBytes, CliError> {
     let file = fs::File::from(
         open(
             path,
@@ -106,7 +113,15 @@ fn read_named(path: &Path, limit: u64) -> Result<Vec<u8>, CliError> {
     {
         return Err(CliError::StaleObservation);
     }
-    Ok(bytes)
+    Ok(ObservedBytes {
+        bytes,
+        device: held.dev(),
+        inode: held.ino(),
+    })
+}
+
+fn read_named(path: &Path, limit: u64) -> Result<Vec<u8>, CliError> {
+    Ok(observe_named(path, limit)?.bytes)
 }
 
 /// Verifies one prior export without changing its private notice or destination.
@@ -249,7 +264,7 @@ fn clear_directory(path: &Path, config: &Path) -> Result<fs::File, CliError> {
     Ok(dir)
 }
 
-fn read_child(directory: &fs::File, name: &str, limit: u64) -> Result<Vec<u8>, CliError> {
+fn read_child(directory: &fs::File, name: &str, limit: u64) -> Result<ObservedBytes, CliError> {
     let file = fs::File::from(
         openat(
             directory,
@@ -281,7 +296,11 @@ fn read_child(directory: &fs::File, name: &str, limit: u64) -> Result<Vec<u8>, C
     {
         return Err(CliError::StaleObservation);
     }
-    Ok(bytes)
+    Ok(ObservedBytes {
+        bytes,
+        device: held.dev(),
+        inode: held.ino(),
+    })
 }
 
 fn lock_is_named(directory: &fs::File, lock: &fs::File) -> Result<bool, CliError> {
@@ -339,13 +358,69 @@ pub(super) fn clear(arguments: &[String]) -> Result<String, CliError> {
         "false" => false,
         _ => return Err(CliError::InvalidArgument),
     };
-    clear_bound(&parsed, arguments, verified)
+    clear_bound(&parsed, verified)
 }
 
-fn clear_bound(
+fn clear_bound(parsed: &ParsedArguments, verified: bool) -> Result<String, CliError> {
+    clear_bound_with_final_check(parsed, verified, || {})
+}
+
+fn verify_held_export(
+    intent: &ExportIntent,
+    terminal_bytes: &[u8],
+    request: &str,
+    repository: &str,
+) -> Result<ObservedBytes, CliError> {
+    let terminal: TerminalRecord =
+        serde_json::from_slice(terminal_bytes).map_err(|_| CliError::InvalidArgument)?;
+    if terminal.schema_version != 1
+        || terminal.request_id != request
+        || terminal.repository_id != repository
+    {
+        return Err(CliError::StaleObservation);
+    }
+    let receipt_bytes = match terminal.result {
+        TerminalResult::Succeeded { receipt } if receipt.len() <= 16 * 1024 => receipt,
+        TerminalResult::Failed { code } if code.len() <= 160 => return Err(CliError::Refused),
+        TerminalResult::Succeeded { .. } | TerminalResult::Failed { .. } => {
+            return Err(CliError::InvalidArgument);
+        }
+    };
+    let receipt: ExportReceipt =
+        serde_json::from_slice(&receipt_bytes).map_err(|_| CliError::InvalidArgument)?;
+    if receipt.schema_version != 1
+        || !receipt.written
+        || receipt.repository_id != repository
+        || receipt.bytes == 0
+        || receipt.bytes as u64 > MAX_DESTINATION
+        || !lower_hex(&receipt.sha256, 64)
+    {
+        return Err(CliError::StaleObservation);
+    }
+    let destination = observe_named(&intent.destination, MAX_DESTINATION)?;
+    if destination.bytes.len() != receipt.bytes || hex_digest(&destination.bytes) != receipt.sha256
+    {
+        return Err(CliError::StaleObservation);
+    }
+    Ok(destination)
+}
+
+fn verify_destination_unchanged(
+    path: &Path,
+    observed: Option<&ObservedBytes>,
+) -> Result<(), CliError> {
+    if let Some(expected) = observed
+        && observe_named(path, MAX_DESTINATION)? != *expected
+    {
+        return Err(CliError::StaleObservation);
+    }
+    Ok(())
+}
+
+fn clear_bound_with_final_check(
     parsed: &ParsedArguments,
-    arguments: &[String],
     verified: bool,
+    before_final: impl FnOnce(),
 ) -> Result<String, CliError> {
     let path = parsed.absolute_path("intent")?;
     let config = parsed.absolute_path("config")?;
@@ -357,11 +432,11 @@ fn clear_bound(
     }
     let (directory, lock) = locked_directory(&path, &config)?;
     let intent_bytes = read_child(&directory, INTENT_NAME, MAX_INTENT)?;
-    if hex_digest(&intent_bytes) != digest {
+    if hex_digest(&intent_bytes.bytes) != digest {
         return Err(CliError::StaleObservation);
     }
     let intent: ExportIntent =
-        serde_json::from_slice(&intent_bytes).map_err(|_| CliError::InvalidArgument)?;
+        serde_json::from_slice(&intent_bytes.bytes).map_err(|_| CliError::InvalidArgument)?;
     if intent.schema_version != 1
         || intent.request_id != request
         || intent.config_path != config
@@ -391,28 +466,48 @@ fn clear_bound(
     if !lock_is_named(&directory, &lock)? {
         return Err(CliError::StaleObservation);
     }
+    let verified_destination = if verified {
+        Some(verify_held_export(
+            &intent,
+            &result_bytes
+                .as_ref()
+                .ok_or(CliError::StaleObservation)?
+                .bytes,
+            request,
+            repository,
+        )?)
+    } else {
+        None
+    };
+    before_final();
+    if !lock_is_named(&directory, &lock)?
+        || read_child(&directory, INTENT_NAME, MAX_INTENT)? != intent_bytes
+    {
+        return Err(CliError::StaleObservation);
+    }
     if let Some(result_bytes) = result_bytes {
-        // Recheck the result's type and identity immediately before removing the named leaf.
         if read_child(&directory, &result_name, MAX_TERMINAL)? != result_bytes {
             return Err(CliError::StaleObservation);
         }
-        if verified {
-            let recovery: Vec<String> = arguments
-                .chunks_exact(2)
-                .filter(|pair| pair[0] != "--verified")
-                .flat_map(|pair| pair.iter().cloned())
-                .collect();
-            export(&recovery)?;
-        }
+        verify_destination_unchanged(&intent.destination, verified_destination.as_ref())?;
         unlinkat(&directory, result_name.as_str(), UnlinkatFlags::NoRemoveDir)
             .map_err(|_| CliError::StaleObservation)?;
         directory.sync_all().map_err(|_| CliError::UncertainWrite)?;
-    } else if verified {
+    }
+    match fstatat(
+        &directory,
+        result_name.as_str(),
+        AtFlags::AT_SYMLINK_NOFOLLOW,
+    ) {
+        Err(Errno::ENOENT) => {}
+        _ => return Err(CliError::StaleObservation),
+    }
+    if !lock_is_named(&directory, &lock)?
+        || read_child(&directory, INTENT_NAME, MAX_INTENT)? != intent_bytes
+    {
         return Err(CliError::StaleObservation);
     }
-    if read_child(&directory, INTENT_NAME, MAX_INTENT)? != intent_bytes {
-        return Err(CliError::StaleObservation);
-    }
+    verify_destination_unchanged(&intent.destination, verified_destination.as_ref())?;
     unlinkat(&directory, INTENT_NAME, UnlinkatFlags::NoRemoveDir)
         .map_err(|_| CliError::StaleObservation)?;
     directory.sync_all().map_err(|_| CliError::UncertainWrite)?;
@@ -587,6 +682,44 @@ mod tests {
             "--verified".to_owned(),
             "true".to_owned(),
         ];
+        let parsed = ParsedArguments::new(
+            &args,
+            &[
+                "intent",
+                "intent-sha256",
+                "request",
+                "config",
+                "repository-id",
+                "verified",
+            ],
+        )
+        .unwrap();
+        for (index, named) in [&result, &destination, &directory.join(LOCK_NAME)]
+            .into_iter()
+            .enumerate()
+        {
+            let replacement = directory.join(format!("replacement-{index}"));
+            let original = if index == 0 {
+                terminal_bytes.clone()
+            } else if index == 1 {
+                b"published bytes".to_vec()
+            } else {
+                Vec::new()
+            };
+            assert_eq!(
+                clear_bound_with_final_check(&parsed, true, || {
+                    fs::write(&replacement, original).unwrap();
+                    fs::set_permissions(&replacement, std::fs::Permissions::from_mode(0o600))
+                        .unwrap();
+                    fs::rename(&replacement, named).unwrap();
+                }),
+                Err(CliError::StaleObservation),
+                "replaced leaf {index}"
+            );
+            assert!(path.exists());
+            assert!(result.exists());
+            assert!(destination.exists());
+        }
         let mut stale = args.clone();
         stale[3] = "0".repeat(64);
         assert!(clear(&stale).is_err());
@@ -617,6 +750,28 @@ mod tests {
         fs::remove_file(&result).unwrap();
         let mut manual = args.clone();
         manual[11] = "false".to_owned();
+        let parsed_manual = ParsedArguments::new(
+            &manual,
+            &[
+                "intent",
+                "intent-sha256",
+                "request",
+                "config",
+                "repository-id",
+                "verified",
+            ],
+        )
+        .unwrap();
+        assert_eq!(
+            clear_bound_with_final_check(&parsed_manual, false, || {
+                fs::write(&result, &terminal_bytes).unwrap();
+                fs::set_permissions(&result, std::fs::Permissions::from_mode(0o600)).unwrap();
+            }),
+            Err(CliError::StaleObservation)
+        );
+        assert!(path.exists());
+        assert!(result.exists());
+        fs::remove_file(&result).unwrap();
         let manual_receipt: serde_json::Value =
             serde_json::from_str(&clear(&manual).unwrap()).unwrap();
         assert_eq!(manual_receipt["cleared"], true);

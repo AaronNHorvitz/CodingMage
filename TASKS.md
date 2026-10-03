@@ -2573,7 +2573,13 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     Clippy passed. Cumulative native targets passed 214/214 after a test-only
     ambiguous preview query was corrected, and Python stayed 49/50 solely
     for the unchanged CM-R01.6 eight-input drift. Independent review of
-    this increment remains pending. Configuration recovery still lacks a public
+    `8a46f406b9204347682d299adbd1f3fb033b9891` found a High
+    verified-clear final-verification race. Decision 0093 binds the mutation
+    to held terminal bytes and rechecks terminal, intent, destination and
+    lock identities before removal; correction tests and exact-commit
+    re-review are recorded in
+    `docs/evidence/sprint-36-setup-export-clear-race-correction.md`.
+    Configuration recovery still lacks a public
     command equivalent. The full section-five state/depth/Show-command catalogue
     and this sub-task remain open.
     <!-- depends-on: 36.3.1.1 -->

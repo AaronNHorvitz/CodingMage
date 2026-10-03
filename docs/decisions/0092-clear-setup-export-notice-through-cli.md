@@ -1,6 +1,6 @@
 # ADR 0092: Clear a Bound Setup Export Notice Through the Public CLI
 
-- **Status:** Accepted for local implementation; exact-commit review pending
+- **Status:** Accepted for local implementation; exact-commit review found a High final-verification race, addressed by Decision 0093 pending re-review
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 
@@ -44,4 +44,6 @@ and contextual depth remain open under Task 36.3.2.2.
 ## Verification
 
 See `docs/evidence/sprint-36-setup-export-clear-command.md`. Independent
-exact-commit review remains required for this increment.
+review of `8a46f406b9204347682d299adbd1f3fb033b9891` found a High
+final-verification race; Decision 0093 records the correction. Re-review of
+the corrected exact commit remains required.
