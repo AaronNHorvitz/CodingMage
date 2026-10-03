@@ -34,7 +34,10 @@ scope with independent Cargo checks; full UI independent acceptance remains open
   interface checks the exact prepared request before dispatching the detached
   public command and retains an unresolved intent for later inspection if a
   response is malformed, stale or cannot launch the helper.
-  These private recovery controls have no public coordinator command equivalent.
+  Checking a previous Setup export now uses the displayed public
+  `setup-export-recover` command, bound to its private intent and the selected
+  repository. The manual notice-clear control and other private Setup recovery
+  controls still need public command equivalents.
   The remaining screen-state and command catalogue work stays open under the
   [native UI specification](../architecture/native-ui-specification.md).
 - An observer and control surface. Opening the app or a repository starts no agent, edits no task

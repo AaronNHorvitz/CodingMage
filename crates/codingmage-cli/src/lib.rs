@@ -34,6 +34,7 @@ mod directory_read;
 mod outcome_report;
 mod project_read;
 mod report_writer;
+mod setup_recovery;
 mod setup_writer;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -68,6 +69,7 @@ Commands:
   setup-inspect-authorization   Inspect a bound external authorization record
   setup-write-campaign          Write exact campaign specification bytes from stdin
   setup-export-copy             Copy a validated Setup document outside the repository
+  setup-export-recover          Verify one exact prior Setup export outcome
   campaign-explain-blocker      Read typed blocker and deferral details
   campaign-clear-blocker        Record one exact external-prerequisite change
   campaign-observe-trigger      Record one exact deferral trigger
@@ -123,6 +125,9 @@ fn command_help(command: &str) -> Option<&'static str> {
         ),
         "setup-export-copy" => Some(
             "Usage: codingmage setup-export-copy --config <ABSOLUTE_FILE> --repository-id <OBSERVED_ID> --source <ABSOLUTE_FILE> --output <ABSOLUTE_FILE> [--campaign-authority-sha256 <SELECTED_SHA256>] [--overwrite true|false]",
+        ),
+        "setup-export-recover" => Some(
+            "Usage: codingmage setup-export-recover --intent <ABSOLUTE_FILE> --intent-sha256 <SHA256> --request <REQUEST_ID> --config <ABSOLUTE_FILE> --repository-id <OBSERVED_ID>",
         ),
         "campaign-status"
         | "campaign-report"
@@ -223,6 +228,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "setup-inspect-authorization" => setup_writer::inspect_authorization(&arguments[1..]),
         "setup-write-campaign" => setup_writer::campaign(&arguments[1..], std::io::stdin().lock()),
         "setup-export-copy" => setup_writer::export_copy(&arguments[1..]),
+        "setup-export-recover" => setup_recovery::export(&arguments[1..]),
         "campaign-explain-blocker" => explain_campaign_blocker(&arguments[1..]),
         "campaign-clear-blocker" => clear_blocker(&arguments[1..]),
         "campaign-observe-trigger" => observe_trigger(&arguments[1..]),

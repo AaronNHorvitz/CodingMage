@@ -140,6 +140,27 @@ pub(crate) fn intent_path(directory: &Path, config: &Path) -> PathBuf {
     project_private_dir(directory, config).join(INTENT_NAME)
 }
 
+/// Exact public command for inspecting one durable export without clearing its notice.
+pub(crate) fn recovery_arguments(
+    path: &Path,
+    digest: &str,
+    intent: &ExportIntent,
+) -> Option<Vec<String>> {
+    Some(vec![
+        "setup-export-recover".to_owned(),
+        "--intent".to_owned(),
+        path.to_str()?.to_owned(),
+        "--intent-sha256".to_owned(),
+        digest.to_owned(),
+        "--request".to_owned(),
+        intent.request_id.clone(),
+        "--config".to_owned(),
+        intent.config_path.to_str()?.to_owned(),
+        "--repository-id".to_owned(),
+        intent.repository_id.clone(),
+    ])
+}
+
 /// Creates one durable intent without replacing an unresolved earlier one.
 ///
 /// # Errors
@@ -400,33 +421,6 @@ fn recovery_error(suffix: &str) -> BackendError {
         code: format!("codingmage.ui.setup_export_{suffix}"),
         exit_code: None,
     }
-}
-
-/// Inspects the exact private export intent and terminal record off the render thread.
-///
-/// Success does not clear the notice; the caller must accept the bound response and request
-/// a second verified cleanup. A missing outcome remains unknown.
-pub(crate) fn recover(
-    path: &Path,
-    digest: &str,
-    request_id: &str,
-) -> Result<Vec<u8>, BackendError> {
-    let intent = load_matching_at(path, digest).map_err(|_| recovery_error("invalid_intent"))?;
-    if intent.request_id != request_id {
-        return Err(recovery_error("stale_intent"));
-    }
-    let directory = path
-        .parent()
-        .and_then(Path::parent)
-        .and_then(Path::parent)
-        .ok_or_else(|| recovery_error("invalid_intent"))?;
-    let receipt = outcome(directory, &intent)
-        .map_err(|_| recovery_error("invalid_outcome"))?
-        .ok_or_else(|| recovery_error("outcome_unknown"))??;
-    if !receipt_matches(&intent, &receipt) {
-        return Err(recovery_error("invalid_receipt"));
-    }
-    Ok(Vec::new())
 }
 
 /// Clears only the exact private intent after explicit inspection, rechecking successful
@@ -711,10 +705,6 @@ mod tests {
             &serde_json::to_vec(&record).unwrap(),
         )
         .unwrap();
-        assert_eq!(
-            recover(&path, &digest, &intent.request_id).unwrap(),
-            Vec::<u8>::new()
-        );
         let replacement = root.join("replacement.toml");
         fs::write(&replacement, b"changed destination").unwrap();
         fs::rename(&replacement, &destination).unwrap();

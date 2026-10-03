@@ -31,6 +31,58 @@ struct PendingConfig {
     request_id: String,
 }
 
+#[cfg(test)]
+mod export_recovery_tests {
+    use super::*;
+
+    #[test]
+    fn public_recovery_receipt_is_exactly_bound_and_previewable() {
+        let intent = ExportIntent {
+            schema_version: 1,
+            request_id: "a".repeat(32),
+            config_path: PathBuf::from("/tmp/project.toml"),
+            repository_id: "repo-synthetic".to_owned(),
+            source: PathBuf::from("/tmp/project.toml"),
+            destination: PathBuf::from("/tmp/export.toml"),
+            arguments: vec!["setup-export-copy".to_owned()],
+        };
+        let digest = intent.fingerprint().unwrap();
+        let arguments = setup_export_process::recovery_arguments(
+            Path::new("/tmp/setup-export-intent.json"),
+            &digest,
+            &intent,
+        )
+        .unwrap();
+        let preview =
+            command::format_command(Path::new("/usr/bin/codingmage"), &arguments).unwrap();
+        assert!(preview.contains("setup-export-recover --intent /tmp/setup-export-intent.json"));
+        let mut receipt = serde_json::json!({
+            "schema_version": 1,
+            "request_id": intent.request_id,
+            "repository_id": intent.repository_id,
+            "intent_sha256": digest,
+            "destination_sha256": "b".repeat(64),
+            "verified": true
+        });
+        assert!(matches_export_recovery(
+            &serde_json::to_vec(&receipt).unwrap(),
+            &intent
+        ));
+        receipt["request_id"] = serde_json::json!("c".repeat(32));
+        assert!(!matches_export_recovery(
+            &serde_json::to_vec(&receipt).unwrap(),
+            &intent
+        ));
+        receipt["request_id"] = serde_json::json!(intent.request_id);
+        receipt["unexpected"] = serde_json::json!(true);
+        assert!(!matches_export_recovery(
+            &serde_json::to_vec(&receipt).unwrap(),
+            &intent
+        ));
+        assert!(!matches_export_recovery(b"{broken", &intent));
+    }
+}
+
 #[derive(Clone, Debug)]
 struct PendingAuthorization {
     request_id: String,
@@ -70,6 +122,35 @@ struct PendingExportPreparation {
     source: PathBuf,
     destination: PathBuf,
     arguments: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExportRecoveryReceipt {
+    schema_version: u16,
+    request_id: String,
+    repository_id: String,
+    intent_sha256: String,
+    destination_sha256: String,
+    verified: bool,
+}
+
+fn matches_export_recovery(bytes: &[u8], intent: &ExportIntent) -> bool {
+    let Ok(expected) = intent.fingerprint() else {
+        return false;
+    };
+    serde_json::from_slice::<ExportRecoveryReceipt>(bytes).is_ok_and(|receipt| {
+        receipt.schema_version == 1
+            && receipt.verified
+            && receipt.request_id == intent.request_id
+            && receipt.repository_id == intent.repository_id
+            && receipt.intent_sha256 == expected
+            && receipt.destination_sha256.len() == 64
+            && receipt
+                .destination_sha256
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit())
+    })
 }
 
 #[derive(Deserialize)]
@@ -336,13 +417,26 @@ impl App {
             self.setup.message = Some(Err("private export intent is invalid".to_owned()));
             return;
         };
+        let intent_path = setup_export_process::intent_path(directory, &intent.config_path);
+        let Some(arguments) =
+            setup_export_process::recovery_arguments(&intent_path, &intent_sha256, &intent)
+        else {
+            self.setup.message = Some(Err("private export path cannot be shown safely".to_owned()));
+            return;
+        };
+        if !command::can_preview(self.binary_path.as_deref(), Some(&arguments)) {
+            self.setup.message = Some(Err(
+                "export recovery command cannot be shown safely".to_owned()
+            ));
+            return;
+        }
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
-            job: Job::SetupExportRecover {
-                intent_path: setup_export_process::intent_path(directory, &intent.config_path),
-                intent_sha256,
-                request_id: intent.request_id.clone(),
+            job: Job::Command {
+                label: "setup-export-recover",
+                arguments,
+                deadline: AUTHORIZATION_DEADLINE,
             },
             request_id: Some(intent.request_id.clone()),
         };
@@ -366,8 +460,16 @@ impl App {
         }
         self.setup.pending_export_recovery = None;
         match response.result {
-            Ok(bytes) if bytes.is_empty() => self.clear_setup_export_notice(true),
-            Ok(_) => {
+            Ok(bytes) => {
+                let valid = self
+                    .setup
+                    .recovery_export
+                    .as_ref()
+                    .is_some_and(|intent| matches_export_recovery(&bytes, intent));
+                if valid {
+                    self.clear_setup_export_notice(true);
+                    return true;
+                }
                 self.setup.message = Some(Err(
                     "export outcome was malformed; inspect its destination before retrying"
                         .to_owned(),
@@ -1856,6 +1958,13 @@ impl App {
                             diagnosis.repository_id == intent.repository_id
                         })
                 });
+            let recovery_command = self.state_dir.as_ref().ok().and_then(|directory| {
+                let path = setup_export_process::intent_path(directory, &intent.config_path);
+                let digest = intent.fingerprint().ok()?;
+                setup_export_process::recovery_arguments(&path, &digest, &intent)
+            });
+            let can_recover = repository_matches
+                && command::can_preview(self.binary_path.as_deref(), recovery_command.as_deref());
             ui.label(format!(
                 "Previous export destination: {}. Its outcome remains bound to the original repository and request.",
                 intent.destination.display()
@@ -1868,7 +1977,8 @@ impl App {
             }
             if ui
                 .add_enabled(
-                    self.setup.pending_export.is_none()
+                    can_recover
+                        && self.setup.pending_export.is_none()
                         && self.setup.pending_export_prepare.is_none()
                         && self.setup.pending_export_recovery.is_none()
                         && self.setup.pending_export_clear.is_none(),
@@ -1877,6 +1987,16 @@ impl App {
                 .clicked()
             {
                 self.reconcile_setup_export();
+            }
+            if let Some(arguments) = recovery_command.as_ref() {
+                command::show_for(
+                    ui,
+                    "check previous export outcome",
+                    self.binary_path.as_deref(),
+                    arguments,
+                );
+            } else {
+                command::show_unavailable_for(ui, "check previous export outcome");
             }
             if ui
                 .add_enabled(
@@ -1895,7 +2015,7 @@ impl App {
             if !repository_matches {
                 ui.small("This export belongs to a different repository observation. Keep its recovery record and inspect its destination from the original repository.");
             }
-            ui.small("These recovery controls only inspect or clear the private notice. They do not run a coordinator command or stop an export already in progress.");
+            ui.small("Outcome inspection uses the displayed coordinator command. Clearing the local notice is separate and does not stop an export already in progress.");
         }
     }
 

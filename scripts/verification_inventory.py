@@ -167,14 +167,21 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_setup_export_clear"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
-    ("crates/codingmage-ui/src/setup_export_process.rs", "fn", "recover"): (
-        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
-    ),
     ("crates/codingmage-ui/src/setup_export_process.rs", "fn", "clear_notice"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
     ("crates/codingmage-cli/src/setup_writer.rs", "fn", "export_copy"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    # The public reconciliation command parses closed private records and
+    # bounded file arguments before reporting a verified prior export.
+    ("crates/codingmage-cli/src/setup_recovery.rs", "fn", "export"): (
+        "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
+    ),
+    # This native builder only forms the exact command arguments; record
+    # decoding belongs to the separate CLI and private-intent boundaries.
+    ("crates/codingmage-ui/src/setup_export_process.rs", "fn", "recovery_arguments"): (
+        "positive", "negative", "boundary", "repeatability",
     ),
     ("crates/codingmage-ui/src/campaign.rs", "fn", "from_snapshot_for_write"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",

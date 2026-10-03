@@ -184,15 +184,6 @@ pub enum Job {
         /// Exact opened configuration path.
         config_path: PathBuf,
     },
-    /// Inspect a prior export's terminal receipt and exact named destination.
-    SetupExportRecover {
-        /// Private intent path.
-        intent_path: PathBuf,
-        /// Digest of the inspected intent.
-        intent_sha256: String,
-        /// Correlation identity of the export.
-        request_id: String,
-    },
     /// Clear a notice after a bound verified result or explicit manual inspection.
     SetupExportClear {
         /// Private intent path.
@@ -254,7 +245,6 @@ impl Job {
             Self::SetupExportPrepare { .. } => "setup-export-prepare",
             Self::SetupExport { .. } => "setup-export-copy",
             Self::SetupExportLoad { .. } => "setup-export-load",
-            Self::SetupExportRecover { .. } => "setup-export-recover",
             Self::SetupExportClear { .. } => "setup-export-clear",
             Self::SetupConfig { .. } => "setup-write-config",
             Self::SetupConfigRecover { .. } => "setup-config-recover",
@@ -557,11 +547,6 @@ fn run_standard_job(
                 code: "codingmage.ui.setup_export_invalid_intent".to_owned(),
                 exit_code: None,
             }),
-        Job::SetupExportRecover {
-            intent_path,
-            intent_sha256,
-            request_id,
-        } => setup_export_process::recover(intent_path, intent_sha256, request_id),
         Job::SetupExportClear {
             intent_path,
             config_path,
@@ -948,7 +933,6 @@ fn dispatch_export(
                 | Job::SetupExport { .. }
                 | Job::SetupExportPrepare { .. }
                 | Job::SetupExportLoad { .. }
-                | Job::SetupExportRecover { .. }
                 | Job::SetupExportClear { .. }
                 | Job::SetupConfig { .. }
                 | Job::SetupConfigRecover { .. }

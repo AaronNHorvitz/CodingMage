@@ -1,6 +1,6 @@
 # ADR 0090: Admit Director Priority Through Mission Policy
 
-- **Status:** Accepted for local implementation; exact-commit review pending
+- **Status:** Accepted for local implementation; bounded independent review PASS
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 
@@ -48,3 +48,9 @@ exercise a real reorder, no grant, unapproved alternative, wrong grant class
 and scope, erased criterion, invented task, stale scheduler, conflicting
 source dependency, expiry and revocation. Independent exact-commit review,
 human-only acceptance and live qualification remain separate.
+The exact-commit independent review of
+`91d87229e6469bbe4e83c6030f383e799995563e` returned PASS with no
+findings. It identified a future consumer requirement: when Task 33.1.1.3
+persists a decision, its identity must bind the selected domain and
+alternative alongside the proposal, because retry and answer state are keyed
+by decision ID. This pure admission function does not persist or consume one.

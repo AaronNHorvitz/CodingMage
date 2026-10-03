@@ -355,6 +355,22 @@ fn malformed_setup_export_receipt_never_reports_success() {
     harness.state_mut().select_screen(Screen::Setup);
     harness.run_steps(2);
     harness
+        .get_by_label("Show command: check previous export outcome")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("setup-export-recover --intent");
+    harness
+        .get_by_label("Check previous export outcome")
+        .click();
+    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
+        app.setup_state().message.as_ref().is_some_and(|result| {
+            result
+                .as_ref()
+                .is_err_and(|message| message.contains("previous export was not confirmed"))
+        })
+    }));
+    assert!(private.join("setup-export-intent.json").exists());
+    harness
         .get_by_label("I inspected the destination; clear export notice")
         .click();
     assert!(settle(&mut harness, Duration::from_secs(30), |_| {
@@ -445,6 +461,7 @@ fn replaced_setup_export_after_public_receipt_is_not_reported_as_success() {
     let receipt_file = fixture.root.join("export-receipt.json");
     let written_marker = fixture.root.join("export-writer-finished");
     let release_marker = fixture.root.join("release-export-response");
+    let state_dir = fixture.root.join("ui-private");
     let real_binary = coordinator_binary();
     let wrapper = fixture.executable(
         "held-export-codingmage",
@@ -458,7 +475,11 @@ fn replaced_setup_export_after_public_receipt_is_not_reported_as_success() {
             format_command(&real_binary, &[]).unwrap(),
         ),
     );
-    let mut harness = harness(CoordinatorBinary::at(&wrapper), [1100.0, 2200.0]);
+    let mut harness = harness_with_state(
+        CoordinatorBinary::at(&wrapper),
+        [1100.0, 2200.0],
+        state_dir.clone(),
+    );
     harness.state_mut().open_project(&fixture.config);
     assert!(settle(&mut harness, Duration::from_secs(30), |app| app
         .diagnosis()
@@ -494,17 +515,25 @@ fn replaced_setup_export_after_public_receipt_is_not_reported_as_success() {
     fs::write(&replacement_path, b"changed after the public receipt").unwrap();
     fs::rename(&replacement_path, &destination).unwrap();
     fs::write(&release_marker, b"").unwrap();
-    assert!(settle(&mut harness, Duration::from_secs(30), |app| {
-        app.setup_state().message.as_ref().is_some_and(|result| {
-            result
-                .as_ref()
-                .is_err_and(|message| message.contains("setup_export_invalid_receipt"))
-        })
-    }));
+    assert!(
+        settle(&mut harness, Duration::from_secs(30), |app| {
+            app.setup_state().message.as_ref().is_some_and(|result| {
+                result.as_ref().is_err_and(|message| {
+                    message.contains("previous export was not confirmed")
+                        && message.contains("codingmage.cli.stale_observation")
+                })
+            })
+        }),
+        "unexpected Setup recovery result: {:?}",
+        harness.state().setup_state().message
+    );
     assert_eq!(
         fs::read(&destination).unwrap(),
         b"changed after the public receipt"
     );
+    let private = project_private_dir(&state_dir, &fixture.config);
+    assert!(private.join("setup-export-intent.json").exists());
+    assert_eq!(export_result_count(&private), 1);
 }
 
 #[test]

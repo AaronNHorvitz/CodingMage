@@ -38,6 +38,17 @@ the parent. An added-line scan excluding the generated inventory found zero
 private host path, credential-assignment or private-key markers in 428 lines.
 No manifest or lockfile changed.
 
+The exact-commit bounded independent review of
+`91d87229e6469bbe4e83c6030f383e799995563e` returned PASS with no
+findings. Its reviewer independently passed the focused director and
+campaign targets, strict Clippy and static inventory checks; a queued Python
+run never started and is not claimed as an independent pass. The report
+identified a future Task 33.1.1.3 consumer requirement to bind durable
+decision identity to the selected domain and alternative as well as the
+proposal, because retry and answer state keys on decision ID. That future
+work remains open. This bounded PASS does not renew CM-R01.6 or qualify
+human/live work.
+
 Director invocation, durable decision application and runtime role
 qualification remain Task 33.1.1.3 and later work. CM-R01.6 still needs the
 separately authorized qualified-human source-bound review before package

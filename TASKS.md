@@ -1933,11 +1933,16 @@ contract/control prerequisites, not optional host, memory or Muse integrations.
     strict workspace Clippy and static checks pass; the full Python suite is
     49/50 solely for unchanged CM-R01.6 eight-input drift. Decision 0090 and
     `docs/evidence/sprint-33-director-priority-admission.md` retain exact
-    limits; a fresh bounded independent review of this increment is pending.
+    limits; the exact-commit bounded independent review returned PASS with no
+    findings.
     Director invocation and application remain Sub-task 33.1.1.3, not implied
     by this checked row.
     <!-- depends-on: 33.1.1.1 -->
   - [ ] **Sub-task 33.1.1.3:** Invoke the director on bounded outcome/blocker/interface events with deadline and no-progress limits, not continuous agent-to-agent conversations or activity-based completion.
+    Durable decision identity must bind the selected domain and alternative
+    as well as the proposal: retry and owner-answer state keys on decision ID
+    alone. The Task 33.1.1.2 independent review identified this future
+    consumer requirement; no current pure-admission effect path is implied.
     <!-- depends-on: 33.1.1.2 -->
   - [ ] **Sub-task 33.1.1.4:** Test missed criteria, priority changes, resource scarcity, stale plans, hostile repository text and rejected decisions with no effect or canonical status mutation by the model.
     <!-- depends-on: 33.1.1.3 -->
@@ -2548,9 +2553,18 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     The exact-commit review of `2a02350268acd61ce31dbb09b0bba3744a8e8c41`
     returned bounded PASS with no findings and independently ran native UI
     214/214; it does not close this full sub-task or any human/live gate.
-    Private recovery controls still lack a public command equivalent, and the
-    full section-five state/depth/Show-command catalogue and this sub-task
-    remain open.
+    Decision 0091 adds public read-only `setup-export-recover` for the prior
+    export outcome control. The Setup worker sends its exact in-context
+    Show-command and accepts only a bound closed verification response before
+    separate verified cleanup; see
+    `docs/evidence/sprint-36-setup-export-recovery-command.md`. CLI all-target
+    passed 81/81 with two explicitly gated soak tests ignored; cumulative
+    native targets passed 215/215 after correction of one old error-code
+    assertion, and strict workspace Clippy passed. Python remains 49/50
+    solely for unchanged CM-R01.6 source-bound drift. Manual export
+    notice clearing and configuration recovery still lack public command
+    equivalents. The full section-five state/depth/Show-command catalogue
+    and this sub-task remain open.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.
     <!-- depends-on: 36.3.1.1 -->
