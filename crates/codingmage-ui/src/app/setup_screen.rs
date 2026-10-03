@@ -80,6 +80,48 @@ mod export_recovery_tests {
             &intent
         ));
         assert!(!matches_export_recovery(b"{broken", &intent));
+
+        let clear = setup_export_process::clear_arguments(
+            Path::new("/tmp/setup-export-intent.json"),
+            &digest,
+            &intent,
+            false,
+        )
+        .unwrap();
+        let preview = command::format_command(Path::new("/usr/bin/codingmage"), &clear).unwrap();
+        assert!(preview.contains("setup-export-clear --intent /tmp/setup-export-intent.json"));
+        assert!(preview.ends_with("--verified false"));
+        let mut cleared = serde_json::json!({
+            "schema_version": 1,
+            "request_id": intent.request_id,
+            "repository_id": intent.repository_id,
+            "intent_sha256": digest,
+            "cleared": true,
+            "verified": false
+        });
+        assert!(matches_export_clear(
+            &serde_json::to_vec(&cleared).unwrap(),
+            &intent,
+            false
+        ));
+        assert!(!matches_export_clear(
+            &serde_json::to_vec(&cleared).unwrap(),
+            &intent,
+            true
+        ));
+        cleared["request_id"] = serde_json::json!("c".repeat(32));
+        assert!(!matches_export_clear(
+            &serde_json::to_vec(&cleared).unwrap(),
+            &intent,
+            false
+        ));
+        cleared["request_id"] = serde_json::json!(intent.request_id);
+        cleared["unexpected"] = serde_json::json!(true);
+        assert!(!matches_export_clear(
+            &serde_json::to_vec(&cleared).unwrap(),
+            &intent,
+            false
+        ));
     }
 }
 
@@ -151,6 +193,40 @@ fn matches_export_recovery(bytes: &[u8], intent: &ExportIntent) -> bool {
                 .bytes()
                 .all(|byte| byte.is_ascii_hexdigit())
     })
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExportClearReceipt {
+    schema_version: u16,
+    request_id: String,
+    repository_id: String,
+    intent_sha256: String,
+    cleared: bool,
+    verified: bool,
+}
+
+fn matches_export_clear(bytes: &[u8], intent: &ExportIntent, verified: bool) -> bool {
+    let Ok(expected) = intent.fingerprint() else {
+        return false;
+    };
+    serde_json::from_slice::<ExportClearReceipt>(bytes).is_ok_and(|receipt| {
+        receipt.schema_version == 1
+            && receipt.cleared
+            && receipt.verified == verified
+            && receipt.request_id == intent.request_id
+            && receipt.repository_id == intent.repository_id
+            && receipt.intent_sha256 == expected
+    })
+}
+
+fn export_clear_arguments(
+    state_dir: &Result<PathBuf, crate::state_dir::StateError>,
+    intent: &ExportIntent,
+    verified: bool,
+) -> Option<Vec<String>> {
+    let path = setup_export_process::intent_path(state_dir.as_ref().ok()?, &intent.config_path);
+    setup_export_process::clear_arguments(&path, &intent.fingerprint().ok()?, intent, verified)
 }
 
 #[derive(Deserialize)]
@@ -522,16 +598,26 @@ impl App {
             self.setup.message = Some(Err("private export intent is invalid".to_owned()));
             return;
         };
+        let intent_path = setup_export_process::intent_path(directory, &intent.config_path);
+        let Some(arguments) =
+            setup_export_process::clear_arguments(&intent_path, &intent_sha256, &intent, verified)
+        else {
+            self.setup.message =
+                Some(Err("export clear command cannot be shown safely".to_owned()));
+            return;
+        };
+        if !command::can_preview(self.binary_path.as_deref(), Some(&arguments)) {
+            self.setup.message =
+                Some(Err("export clear command cannot be shown safely".to_owned()));
+            return;
+        }
         let request = Request {
             generation: self.generation,
             binding: self.binding(),
-            job: Job::SetupExportClear {
-                intent_path: setup_export_process::intent_path(directory, &intent.config_path),
-                config_path: project.config_path.clone(),
-                observed_repository_id: diagnosis.repository_id.clone(),
-                intent_sha256,
-                request_id: intent.request_id.clone(),
-                verified,
+            job: Job::Command {
+                label: "setup-export-clear",
+                arguments,
+                deadline: AUTHORIZATION_DEADLINE,
             },
             request_id: Some(intent.request_id.clone()),
         };
@@ -558,7 +644,12 @@ impl App {
         }
         let verified = *verified;
         self.setup.pending_export_clear = None;
-        if response.result.as_ref().is_ok_and(Vec::is_empty) {
+        if response.result.as_ref().is_ok_and(|bytes| {
+            self.setup
+                .recovery_export
+                .as_ref()
+                .is_some_and(|intent| matches_export_clear(bytes, intent, verified))
+        }) {
             let destination = self
                 .setup
                 .recovery_export
@@ -578,7 +669,9 @@ impl App {
                 "local export notice cleared after destination inspection".to_owned()
             }));
         } else {
-            self.setup.message = Some(Err(if verified {
+            self.setup.message = Some(Err(if response.result.is_ok() {
+                "export notice clear response did not match this request; the notice stays visible, so inspect its destination before retrying".to_owned()
+            } else if verified {
                 "export bytes matched, but its recovery record could not be cleared; inspect before retrying".to_owned()
             } else {
                 "export is still running or private recovery state changed; check its outcome before clearing".to_owned()
@@ -1963,8 +2056,12 @@ impl App {
                 let digest = intent.fingerprint().ok()?;
                 setup_export_process::recovery_arguments(&path, &digest, &intent)
             });
+            let clear_command = export_clear_arguments(&self.state_dir, &intent, false);
+            let verified_clear_command = export_clear_arguments(&self.state_dir, &intent, true);
             let can_recover = repository_matches
                 && command::can_preview(self.binary_path.as_deref(), recovery_command.as_deref());
+            let can_clear = repository_matches
+                && command::can_preview(self.binary_path.as_deref(), clear_command.as_deref());
             ui.label(format!(
                 "Previous export destination: {}. Its outcome remains bound to the original repository and request.",
                 intent.destination.display()
@@ -1998,9 +2095,19 @@ impl App {
             } else {
                 command::show_unavailable_for(ui, "check previous export outcome");
             }
+            if let Some(arguments) = verified_clear_command.as_ref() {
+                command::show_for(
+                    ui,
+                    "clear verified export notice",
+                    self.binary_path.as_deref(),
+                    arguments,
+                );
+            } else {
+                command::show_unavailable_for(ui, "clear verified export notice");
+            }
             if ui
                 .add_enabled(
-                    repository_matches
+                    can_clear
                         && self.setup.pending_export.is_none()
                         && self.setup.pending_export_prepare.is_none()
                         && self.setup.pending_export_load.is_none()
@@ -2012,10 +2119,20 @@ impl App {
             {
                 self.clear_setup_export_notice(false);
             }
+            if let Some(arguments) = clear_command.as_ref() {
+                command::show_for(
+                    ui,
+                    "clear export notice",
+                    self.binary_path.as_deref(),
+                    arguments,
+                );
+            } else {
+                command::show_unavailable_for(ui, "clear export notice");
+            }
             if !repository_matches {
                 ui.small("This export belongs to a different repository observation. Keep its recovery record and inspect its destination from the original repository.");
             }
-            ui.small("Outcome inspection uses the displayed coordinator command. Clearing the local notice is separate and does not stop an export already in progress.");
+            ui.small("Outcome inspection and notice clearing use the displayed coordinator commands. Clearing the local notice is separate and refuses an export still in progress.");
         }
     }
 

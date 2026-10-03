@@ -67,4 +67,8 @@ tracks the public CLI inspector and native argument builder, with the old
 surface absent. The final Python run had 49/50 passing; only the unchanged
 CM-R01.6 freshness test failed with the same eight input drifts. Its
 original failed receipts, package and source binding were not renewed.
-Independent exact-commit review remains pending.
+The independent read-only review of the exact committed increment
+`3d09708f66de247bf57d212dac8e0caefd6fab23` returned bounded PASS
+with no findings. It did not perform installed, human, live-provider, package
+renewal or whole-product qualification. The later public clear command is
+Decision 0092 and has its own evidence and review boundary.

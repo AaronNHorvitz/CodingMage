@@ -139,7 +139,7 @@ class VerificationInventoryTests(unittest.TestCase):
             ("crates/codingmage-ui/src/app/setup_screen.rs", "accept_setup_export_recovery"),
             ("crates/codingmage-ui/src/app/setup_screen.rs", "accept_setup_export_clear"),
             ("crates/codingmage-cli/src/setup_recovery.rs", "export"),
-            ("crates/codingmage-ui/src/setup_export_process.rs", "clear_notice"),
+            ("crates/codingmage-cli/src/setup_recovery.rs", "clear"),
         )
         items = INVENTORY.build()["items"]
         for path, name in cases:

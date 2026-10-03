@@ -31,16 +31,6 @@ const LOCK_NAME: &str = "setup-export-intent.lock";
 const MAX_HELPER_INPUT: u64 = 64 * 1024;
 const MAX_RECEIPT_BYTES: usize = 16 * 1024;
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ExportReceipt {
-    schema_version: u64,
-    repository_id: String,
-    written: bool,
-    bytes: usize,
-    sha256: String,
-}
-
 /// Immutable, private record of one user-requested export.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -161,6 +151,19 @@ pub(crate) fn recovery_arguments(
     ])
 }
 
+/// Exact public command for clearing a bound notice after inspection or verification.
+pub(crate) fn clear_arguments(
+    path: &Path,
+    digest: &str,
+    intent: &ExportIntent,
+    verified: bool,
+) -> Option<Vec<String>> {
+    let mut arguments = recovery_arguments(path, digest, intent)?;
+    "setup-export-clear".clone_into(&mut arguments[0]);
+    arguments.extend(["--verified".to_owned(), verified.to_string()]);
+    Some(arguments)
+}
+
 /// Creates one durable intent without replacing an unresolved earlier one.
 ///
 /// # Errors
@@ -195,6 +198,8 @@ pub(crate) fn prepare(
     if bytes.len() as u64 > MAX_HELPER_INPUT {
         return Err(StateError::Invalid);
     }
+    ensure_private_dir(directory)?;
+    ensure_private_dir(&directory.join("projects"))?;
     ensure_private_dir(path.parent().ok_or(StateError::Invalid)?)?;
     let mut file = fs::OpenOptions::new()
         .write(true)
@@ -304,37 +309,6 @@ fn parse_intent(bytes: &[u8]) -> Result<ExportIntent, StateError> {
     Ok(intent)
 }
 
-/// Removes a completed or definitely unqueued intent and its terminal record only when its ID
-/// still matches. The result is removed first so an interrupted clear retains the intent and
-/// cannot leave an untracked result behind.
-///
-/// # Errors
-///
-/// Refuses a changed or unreadable private record.
-pub(crate) fn clear(directory: &Path, intent: &ExportIntent) -> Result<(), StateError> {
-    let path = intent_path(directory, &intent.config_path);
-    let _lock = intent_lock(&path)?;
-    if load_at(&path)? != *intent {
-        return Err(StateError::Invalid);
-    }
-    let result = intent.result_path(&path)?;
-    match fs::symlink_metadata(&result) {
-        Ok(metadata) if metadata.is_file() && !metadata.file_type().is_symlink() => {
-            fs::remove_file(result).map_err(|_| StateError::Unavailable)?;
-        }
-        Ok(_) => return Err(StateError::Invalid),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(_) => return Err(StateError::Unavailable),
-    }
-    fs::File::open(path.parent().ok_or(StateError::Invalid)?)
-        .and_then(|directory| directory.sync_all())
-        .map_err(|_| StateError::Unavailable)?;
-    fs::remove_file(&path).map_err(|_| StateError::Unavailable)?;
-    fs::File::open(path.parent().ok_or(StateError::Invalid)?)
-        .and_then(|directory| directory.sync_all())
-        .map_err(|_| StateError::Unavailable)
-}
-
 /// Reads the terminal helper record for an exact intent.
 ///
 /// # Errors
@@ -370,91 +344,11 @@ pub(crate) fn outcome(
     }))
 }
 
-fn receipt_matches(intent: &ExportIntent, bytes: &[u8]) -> bool {
-    use std::os::unix::fs::MetadataExt as _;
-
-    let Ok(receipt) = serde_json::from_slice::<ExportReceipt>(bytes) else {
-        return false;
-    };
-    if receipt.schema_version != 1
-        || !receipt.written
-        || receipt.repository_id != intent.repository_id
-        || receipt.bytes == 0
-        || receipt.bytes > 1024 * 1024
-    {
-        return false;
-    }
-    let Ok(descriptor) = open(
-        &intent.destination,
-        OFlag::O_RDONLY | OFlag::O_NOFOLLOW | OFlag::O_NONBLOCK | OFlag::O_CLOEXEC,
-        Mode::empty(),
-    ) else {
-        return false;
-    };
-    let file = fs::File::from(descriptor);
-    let Ok(held) = file.metadata() else {
-        return false;
-    };
-    if !held.is_file() || held.len() != receipt.bytes as u64 {
-        return false;
-    }
-    let mut published = Vec::with_capacity(receipt.bytes);
-    if file
-        .take((receipt.bytes + 1) as u64)
-        .read_to_end(&mut published)
-        .is_err()
-        || published.len() != receipt.bytes
-        || hex(&Sha256::digest(&published)) != receipt.sha256
-    {
-        return false;
-    }
-    fs::symlink_metadata(&intent.destination).is_ok_and(|named| {
-        named.is_file()
-            && named.dev() == held.dev()
-            && named.ino() == held.ino()
-            && named.len() == held.len()
-    })
-}
-
 fn recovery_error(suffix: &str) -> BackendError {
     BackendError::Command {
         code: format!("codingmage.ui.setup_export_{suffix}"),
         exit_code: None,
     }
-}
-
-/// Clears only the exact private intent after explicit inspection, rechecking successful
-/// destination bytes when cleanup follows a verified response.
-pub(crate) fn clear_notice(
-    path: &Path,
-    config_path: &Path,
-    observed_repository_id: &str,
-    digest: &str,
-    request_id: &str,
-    verified: bool,
-) -> Result<Vec<u8>, BackendError> {
-    let intent = load_matching_at(path, digest).map_err(|_| recovery_error("invalid_intent"))?;
-    if intent.request_id != request_id
-        || intent.config_path != config_path
-        || intent.repository_id != observed_repository_id
-    {
-        return Err(recovery_error("stale_intent"));
-    }
-    let directory = path
-        .parent()
-        .and_then(Path::parent)
-        .and_then(Path::parent)
-        .ok_or_else(|| recovery_error("invalid_intent"))?;
-    if verified {
-        let receipt = outcome(directory, &intent)
-            .map_err(|_| recovery_error("invalid_outcome"))?
-            .ok_or_else(|| recovery_error("outcome_unknown"))??;
-        if !receipt_matches(&intent, &receipt) {
-            return Err(recovery_error("invalid_receipt"));
-        }
-    }
-    clear(directory, &intent).map_err(|_| recovery_error("clear_failed"))?;
-    Ok(Vec::new())
 }
 
 /// Starts an isolated helper and waits only on a detached worker supervisor.
@@ -657,84 +551,6 @@ mod tests {
         changed.destination = root.join("other.toml");
         fs::write(&path, serde_json::to_vec(&changed).unwrap()).unwrap();
         assert_eq!(load_matching_at(&path, &digest), Err(StateError::Invalid));
-        fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn verified_cleanup_rechecks_destination_and_manual_clear_keeps_identity() {
-        let nonce = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        let root = std::env::temp_dir().join(format!(
-            "codingmage-export-recovery-{}-{nonce}",
-            std::process::id()
-        ));
-        fs::create_dir(&root).unwrap();
-        let config = root.join("project.toml");
-        let destination = root.join("export.toml");
-        fs::write(&config, b"original configuration").unwrap();
-        fs::write(&destination, b"original configuration").unwrap();
-        let intent = prepare(
-            &root,
-            &config,
-            "repo-synthetic",
-            &config,
-            &destination,
-            vec!["setup-export-copy".to_owned()],
-        )
-        .unwrap();
-        let path = intent_path(&root, &config);
-        let digest = intent.fingerprint().unwrap();
-        let receipt = serde_json::to_vec(&serde_json::json!({
-            "schema_version": 1,
-            "repository_id": intent.repository_id,
-            "written": true,
-            "bytes": 22,
-            "sha256": hex(&Sha256::digest(b"original configuration")),
-        }))
-        .unwrap();
-        let record = TerminalRecord {
-            schema_version: 1,
-            request_id: intent.request_id.clone(),
-            repository_id: intent.repository_id.clone(),
-            result: TerminalResult::Succeeded { receipt },
-        };
-        write_private(
-            &intent.result_path(&path).unwrap(),
-            &serde_json::to_vec(&record).unwrap(),
-        )
-        .unwrap();
-        let replacement = root.join("replacement.toml");
-        fs::write(&replacement, b"changed destination").unwrap();
-        fs::rename(&replacement, &destination).unwrap();
-        let result_path = intent.result_path(&path).unwrap();
-        let assert_refused = |config_path: &Path, repository: &str, request: &str, verified| {
-            assert!(
-                clear_notice(&path, config_path, repository, &digest, request, verified).is_err()
-            );
-            assert!(path.exists());
-            assert!(result_path.exists());
-        };
-        assert_refused(&config, "repo-synthetic", &intent.request_id, true);
-        assert_refused(&config, "repo-synthetic", "other-request", false);
-        assert_refused(&config, "other-repository", &intent.request_id, false);
-        assert_refused(
-            &root.join("other.toml"),
-            "repo-synthetic",
-            &intent.request_id,
-            false,
-        );
-        clear_notice(
-            &path,
-            &config,
-            "repo-synthetic",
-            &digest,
-            &intent.request_id,
-            false,
-        )
-        .unwrap();
-        assert!(!path.exists());
         fs::remove_dir_all(root).unwrap();
     }
 }

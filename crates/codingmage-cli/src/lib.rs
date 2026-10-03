@@ -70,6 +70,7 @@ Commands:
   setup-write-campaign          Write exact campaign specification bytes from stdin
   setup-export-copy             Copy a validated Setup document outside the repository
   setup-export-recover          Verify one exact prior Setup export outcome
+  setup-export-clear            Clear one exact private Setup export notice
   campaign-explain-blocker      Read typed blocker and deferral details
   campaign-clear-blocker        Record one exact external-prerequisite change
   campaign-observe-trigger      Record one exact deferral trigger
@@ -128,6 +129,9 @@ fn command_help(command: &str) -> Option<&'static str> {
         ),
         "setup-export-recover" => Some(
             "Usage: codingmage setup-export-recover --intent <ABSOLUTE_FILE> --intent-sha256 <SHA256> --request <REQUEST_ID> --config <ABSOLUTE_FILE> --repository-id <OBSERVED_ID>",
+        ),
+        "setup-export-clear" => Some(
+            "Usage: codingmage setup-export-clear --intent <ABSOLUTE_FILE> --intent-sha256 <SHA256> --request <REQUEST_ID> --config <ABSOLUTE_FILE> --repository-id <OBSERVED_ID> --verified true|false",
         ),
         "campaign-status"
         | "campaign-report"
@@ -229,6 +233,7 @@ pub fn run(arguments: &[String]) -> Result<String, CliError> {
         "setup-write-campaign" => setup_writer::campaign(&arguments[1..], std::io::stdin().lock()),
         "setup-export-copy" => setup_writer::export_copy(&arguments[1..]),
         "setup-export-recover" => setup_recovery::export(&arguments[1..]),
+        "setup-export-clear" => setup_recovery::clear(&arguments[1..]),
         "campaign-explain-blocker" => explain_campaign_blocker(&arguments[1..]),
         "campaign-clear-blocker" => clear_blocker(&arguments[1..]),
         "campaign-observe-trigger" => observe_trigger(&arguments[1..]),

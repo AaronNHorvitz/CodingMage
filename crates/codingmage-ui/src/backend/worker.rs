@@ -184,21 +184,6 @@ pub enum Job {
         /// Exact opened configuration path.
         config_path: PathBuf,
     },
-    /// Clear a notice after a bound verified result or explicit manual inspection.
-    SetupExportClear {
-        /// Private intent path.
-        intent_path: PathBuf,
-        /// Configuration currently selected by the interface.
-        config_path: PathBuf,
-        /// Repository identity from the current diagnosis.
-        observed_repository_id: String,
-        /// Digest of the inspected intent.
-        intent_sha256: String,
-        /// Correlation identity of the export.
-        request_id: String,
-        /// Recheck the successful receipt and destination before automatic cleanup.
-        verified: bool,
-    },
     /// Run a guided configuration write in an isolated helper that survives the native window.
     SetupConfig {
         /// Private exact-input intent persisted before dispatch.
@@ -245,7 +230,6 @@ impl Job {
             Self::SetupExportPrepare { .. } => "setup-export-prepare",
             Self::SetupExport { .. } => "setup-export-copy",
             Self::SetupExportLoad { .. } => "setup-export-load",
-            Self::SetupExportClear { .. } => "setup-export-clear",
             Self::SetupConfig { .. } => "setup-write-config",
             Self::SetupConfigRecover { .. } => "setup-config-recover",
             Self::SetupConfigClear { .. } => "setup-config-clear",
@@ -547,21 +531,6 @@ fn run_standard_job(
                 code: "codingmage.ui.setup_export_invalid_intent".to_owned(),
                 exit_code: None,
             }),
-        Job::SetupExportClear {
-            intent_path,
-            config_path,
-            observed_repository_id,
-            intent_sha256,
-            request_id,
-            verified,
-        } => setup_export_process::clear_notice(
-            intent_path,
-            config_path,
-            observed_repository_id,
-            intent_sha256,
-            request_id,
-            *verified,
-        ),
         Job::ReportExport { .. }
         | Job::SourceReportExport { .. }
         | Job::SourceReportInspect { .. } => {
@@ -933,7 +902,6 @@ fn dispatch_export(
                 | Job::SetupExport { .. }
                 | Job::SetupExportPrepare { .. }
                 | Job::SetupExportLoad { .. }
-                | Job::SetupExportClear { .. }
                 | Job::SetupConfig { .. }
                 | Job::SetupConfigRecover { .. }
                 | Job::SetupConfigClear { .. }

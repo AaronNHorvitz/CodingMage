@@ -2561,9 +2561,20 @@ workspace without managing agent terminals, duplicating coordinator logic or fab
     passed 81/81 with two explicitly gated soak tests ignored; cumulative
     native targets passed 215/215 after correction of one old error-code
     assertion, and strict workspace Clippy passed. Python remains 49/50
-    solely for unchanged CM-R01.6 source-bound drift. Manual export
-    notice clearing and configuration recovery still lack public command
-    equivalents. The full section-five state/depth/Show-command catalogue
+    solely for unchanged CM-R01.6 source-bound drift. The bounded independent
+    exact-commit review of `3d09708f66de247bf57d212dac8e0caefd6fab23`
+    returned PASS without findings. Decision 0092 routes manual export notice
+    clearing and automatic verified cleanup through public
+    `setup-export-clear`, using the displayed exact command and a closed
+    bound receipt; see
+    `docs/evidence/sprint-36-setup-export-clear-command.md` for local checks
+    and remaining limits. The CLI all-target run passed 82/82 before final
+    lock hardening; final-source focused CLI clear and strict workspace
+    Clippy passed. Cumulative native targets passed 214/214 after a test-only
+    ambiguous preview query was corrected, and Python stayed 49/50 solely
+    for the unchanged CM-R01.6 eight-input drift. Independent review of
+    this increment remains pending. Configuration recovery still lacks a public
+    command equivalent. The full section-five state/depth/Show-command catalogue
     and this sub-task remain open.
     <!-- depends-on: 36.3.1.1 -->
   - [x] **Sub-task 36.3.2.3:** Render all repository, model, review and log content inertly with trusted-chrome controls and confirmed links; add adversarial fixtures for scripts, remote images, spoofed controls and huge output (CM-UI-010). Plain egui text remains inert across the audited screens; `codingmage-ui::content` bounds and sanitizes task lists, task/model/change/review/log/report fields and offers only full HTTPS link candidates through a separate trusted confirmation. ADR 0022 and `docs/evidence/sprint-36-inert-content.md` record the adversarial matrix and three corrections from the inconclusive independent review of `a0e90436e5189149a319de16010eb3d9b1252f82`; the corrected tree passes 79 all-target UI tests and strict workspace Clippy. Re-review, real-browser and human qualification remain open.

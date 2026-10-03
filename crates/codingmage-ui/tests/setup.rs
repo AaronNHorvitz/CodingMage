@@ -360,6 +360,11 @@ fn malformed_setup_export_receipt_never_reports_success() {
     harness.run_steps(2);
     harness.get_by_label_contains("setup-export-recover --intent");
     harness
+        .get_by_label("Show command: clear verified export notice")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("--verified true");
+    harness
         .get_by_label("Check previous export outcome")
         .click();
     assert!(settle(&mut harness, Duration::from_secs(30), |app| {
@@ -370,6 +375,11 @@ fn malformed_setup_export_receipt_never_reports_success() {
         })
     }));
     assert!(private.join("setup-export-intent.json").exists());
+    harness
+        .get_by_label("Show command: clear export notice")
+        .click();
+    harness.run_steps(2);
+    harness.get_by_label_contains("--verified false");
     harness
         .get_by_label("I inspected the destination; clear export notice")
         .click();

@@ -1,6 +1,6 @@
 # ADR 0091: Read Setup Export Recovery Through the Public CLI
 
-- **Status:** Accepted for local implementation; exact-commit review pending
+- **Status:** Accepted for local implementation; bounded exact-commit review passed
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 
@@ -33,6 +33,11 @@ verified private cleanup, which rechecks the terminal record and destination.
 The command never clears the notice itself. Other private Setup recovery and
 clear controls, complete section-five screen states and contextual depth
 remain open under Task 36.3.2.2.
+
+The independent read-only review of commit
+`3d09708f66de247bf57d212dac8e0caefd6fab23` returned `Verdict: PASS`
+with no findings in this bounded scope. Decision 0092 owns the later public
+clear action and does not change this review's scope.
 
 This uses the workspace-pinned `serde` dependency directly in the CLI for
 closed record decoding. `serde` is available under MIT or Apache-2.0;

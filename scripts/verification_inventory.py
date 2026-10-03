@@ -167,7 +167,7 @@ FIXED_APPLICABILITY = {
     ("crates/codingmage-ui/src/app/setup_screen.rs", "fn", "accept_setup_export_clear"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
-    ("crates/codingmage-ui/src/setup_export_process.rs", "fn", "clear_notice"): (
+    ("crates/codingmage-cli/src/setup_recovery.rs", "fn", "clear"): (
         "positive", "negative", "boundary", "malformed_input", "unknown_field", "repeatability",
     ),
     ("crates/codingmage-cli/src/setup_writer.rs", "fn", "export_copy"): (
@@ -181,6 +181,9 @@ FIXED_APPLICABILITY = {
     # This native builder only forms the exact command arguments; record
     # decoding belongs to the separate CLI and private-intent boundaries.
     ("crates/codingmage-ui/src/setup_export_process.rs", "fn", "recovery_arguments"): (
+        "positive", "negative", "boundary", "repeatability",
+    ),
+    ("crates/codingmage-ui/src/setup_export_process.rs", "fn", "clear_arguments"): (
         "positive", "negative", "boundary", "repeatability",
     ),
     ("crates/codingmage-ui/src/campaign.rs", "fn", "from_snapshot_for_write"): (
