@@ -1,6 +1,6 @@
 # ADR 0088: Bind Director Planning Proposals to Exact Sources
 
-- **Status:** Accepted for local implementation; bounded independent review pending
+- **Status:** Accepted for local implementation; bounded review and correction re-review PASS
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 
@@ -49,5 +49,8 @@ round-trip, stale-head, malformed, tamper and cumulative check results.
 Runtime role qualification, human acceptance and independent review remain
 separate gates.
 The first bounded exact-commit review returned PASS with a Medium finding on
-the failure-code vocabulary. Decision 0089 closes it; the correction awaits
-its own exact-commit re-review.
+the failure-code vocabulary. Decision 0089 closes it; fresh independent
+read-only re-review of exact commit
+`2753c969c725408e470122da4b7b123c2f217969` returned PASS with no
+findings and explicitly closed that Medium. This remains bounded review,
+not human acceptance or runtime qualification.

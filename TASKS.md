@@ -1917,11 +1917,25 @@ contract/control prerequisites, not optional host, memory or Muse integrations.
     returned PASS with a Medium finding on arbitrary failure-code strings;
     Decision 0089 closes the vocabulary over typed campaign terminal reasons,
     with correction evidence in
-    `docs/evidence/sprint-33-director-code-correction.md`. Re-review remains
-    open; this is no claim of human or live qualification.
+    `docs/evidence/sprint-33-director-code-correction.md`. Fresh exact-commit
+    read-only re-review of `2753c969c725408e470122da4b7b123c2f217969`
+    returned PASS/Findings None and closed that Medium; this is no claim of
+    human or live qualification.
     Task 33.1.1.2 owns policy admission and Task 33.1.1.3 owns invocation.
     <!-- depends-on: 32.2.2.4 -->
-  - [ ] **Sub-task 33.1.1.2:** Validate priority/replanning proposals against approved outcomes and delegated domains before accepting them; reject invented work, erased criteria, unapproved dependencies and contradictory generations.
+  - [x] **Sub-task 33.1.1.2:** Validate priority/replanning proposals against approved outcomes and delegated domains before accepting them; reject invented work, erased criteria, unapproved dependencies and contradictory generations.
+    `evaluate_director_priority` revalidates the exact mission criteria,
+    complete scheduler-ready permutation, source/generation/head and
+    contradictory ready dependency edges, then uses the existing
+    owner-delegated `Ordering` decision policy over the full campaign path
+    scope. No policy hold changes scheduler or task status. Focused director
+    7/7, campaign 54/54, runtime 133/133, native UI 214/214 across 14 targets,
+    strict workspace Clippy and static checks pass; the full Python suite is
+    49/50 solely for unchanged CM-R01.6 eight-input drift. Decision 0090 and
+    `docs/evidence/sprint-33-director-priority-admission.md` retain exact
+    limits; a fresh bounded independent review of this increment is pending.
+    Director invocation and application remain Sub-task 33.1.1.3, not implied
+    by this checked row.
     <!-- depends-on: 33.1.1.1 -->
   - [ ] **Sub-task 33.1.1.3:** Invoke the director on bounded outcome/blocker/interface events with deadline and no-progress limits, not continuous agent-to-agent conversations or activity-based completion.
     <!-- depends-on: 33.1.1.2 -->

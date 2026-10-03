@@ -6,12 +6,14 @@
 
 use std::{collections::BTreeSet, fmt};
 
+use codingmage_contracts::{DecisionClass, DecisionProposal, PodRisk};
 use codingmage_plan::{CheckState, PlanItemKind, TaskPlan};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CampaignSpec, DurableSchedulerSnapshot, MissionCharter, TaskTerminalReason, canonical_sha256,
-    valid_commit, valid_sha256,
+    CampaignSpec, DecisionObservation, DurableSchedulerSnapshot, MissionCharter,
+    MissionDecisionOutcome, TaskTerminalReason, canonical_sha256, evaluate_decision, valid_commit,
+    valid_sha256,
 };
 
 /// Closed schema shared by director input and proposal packets.
@@ -402,6 +404,62 @@ impl DirectorProposal {
     }
 }
 
+/// Evaluates a priority suggestion against fresh coordinator state and an owner grant.
+///
+/// The complete owner criteria remain in the verified input; `attention_criteria` only
+/// highlights some of them and never removes the others. A priority suggestion cannot
+/// declare dependencies. The exact ready set comes from the scheduler, and a pair of
+/// simultaneously ready tasks with a source dependency is treated as contradictory.
+/// The decision affects the campaign's entire allowed path scope because tasks without
+/// explicit path assignments may later use any of it. The result is a policy decision,
+/// not a task lease, acceptance record, or scheduler mutation.
+///
+/// # Errors
+///
+/// Refuses a stale packet, an invented or omitted task or criterion, or a contradictory
+/// dependency. An invalid decision observation or charter also fails closed.
+pub fn evaluate_director_priority(
+    context: &DirectorContext<'_>,
+    input: &DirectorInput,
+    proposal: &DirectorProposal,
+    domain_id: &str,
+    alternative: &str,
+    observation: &DecisionObservation,
+) -> Result<MissionDecisionOutcome, DirectorProposalError> {
+    let digest = input.sha256(context)?;
+    proposal.verify(input, &digest)?;
+    let ready = input.ready_task_ids.iter().collect::<BTreeSet<_>>();
+    if context.plan.items.iter().any(|item| {
+        ready.contains(&item.id)
+            && item
+                .dependencies
+                .iter()
+                .any(|dependency| ready.contains(dependency))
+    }) || context
+        .scheduler
+        .follow_up_bindings
+        .values()
+        .any(|binding| ready.contains(&binding.task_id) && ready.contains(&binding.source_task_id))
+    {
+        return Err(DirectorProposalError::Proposal);
+    }
+    let decision = DecisionProposal {
+        decision_id: canonical_sha256(proposal).map_err(|_| DirectorProposalError::Proposal)?,
+        domain_id: domain_id.to_owned(),
+        class: DecisionClass::Ordering,
+        selected_alternative: alternative.to_owned(),
+        affected_paths: context.spec.allowed_paths.clone(),
+        risk: PodRisk::Routine,
+        gate_tiers: context
+            .mission
+            .domain(domain_id)
+            .map_or_else(Vec::new, |domain| domain.required_gate_tiers.clone()),
+        rationale_summary: "Priority of the current scheduler-ready work".to_owned(),
+    };
+    evaluate_decision(context.mission, context.spec, &decision, observation)
+        .map_err(|_| DirectorProposalError::Policy)
+}
+
 /// Closed director packet or storage failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DirectorProposalError {
@@ -411,6 +469,8 @@ pub enum DirectorProposalError {
     Packet,
     /// Proposed task or criterion identity is malformed, stale or incomplete.
     Proposal,
+    /// The mission charter or policy observation could not be evaluated.
+    Policy,
 }
 
 impl fmt::Display for DirectorProposalError {
@@ -419,6 +479,7 @@ impl fmt::Display for DirectorProposalError {
             Self::Source => "codingmage.director.source",
             Self::Packet => "codingmage.director.packet",
             Self::Proposal => "codingmage.director.proposal",
+            Self::Policy => "codingmage.director.policy",
         })
     }
 }
@@ -434,10 +495,11 @@ mod tests {
     use super::*;
     use crate::{
         CampaignAuthentication, CampaignGateTier, CampaignLimits, CampaignProvider,
-        CampaignPublication, DurablePodScheduler, InvolvementMode, MISSION_VERSION, MissionBudgets,
+        CampaignPublication, DecisionDomainGrant, DecisionHoldReason, DurablePodScheduler,
+        EscalationDisposition, InvolvementMode, MISSION_VERSION, MissionBudgets,
     };
 
-    const SOURCE: &str = "# Tasks\n\n## Sprint 1 - First\n\n**Sprint goal:** Finish first.\n\n### Story 1.1 - Build\n\n- [ ] **Task 1.1.1 - Build work**\n  - [x] **Sub-task 1.1.1.1:** Prior source item.\n  - [ ] **Sub-task 1.1.1.2:** Ready work.\n\n- [ ] **AC 1.1:** Acceptance is separate.\n\n- [ ] **Gate 1.1:** Gate is separate.\n";
+    const SOURCE: &str = "# Tasks\n\n## Sprint 1 - First\n\n**Sprint goal:** Finish first.\n\n### Story 1.1 - Build\n\n- [ ] **Task 1.1.1 - Build work**\n  - [x] **Sub-task 1.1.1.1:** Prior source item.\n  - [ ] **Sub-task 1.1.1.2:** Ready work.\n    <!-- depends-on: 1.1.1.1 -->\n  - [ ] **Sub-task 1.1.1.3:** Other ready work.\n\n- [ ] **AC 1.1:** Acceptance is separate.\n\n- [ ] **Gate 1.1:** Gate is separate.\n";
 
     fn fixture() -> (
         CampaignSpec,
@@ -514,7 +576,9 @@ mod tests {
         };
         mission.verify(&spec).unwrap();
         let mut scheduler = DurablePodScheduler::new(&spec).unwrap();
-        scheduler.begin_generation(&["1.1.1.2".to_owned()]).unwrap();
+        scheduler
+            .begin_generation(&["1.1.1.2".to_owned(), "1.1.1.3".to_owned()])
+            .unwrap();
         (spec, mission, plan, scheduler.snapshot().clone())
     }
 
@@ -543,6 +607,235 @@ mod tests {
         }
     }
 
+    fn grant(mission: &mut MissionCharter) {
+        mission.decision_domains.push(DecisionDomainGrant {
+            domain_id: "ready_order".to_owned(),
+            class: DecisionClass::Ordering,
+            alternatives: vec!["prioritize_ready".to_owned()],
+            scope_paths: vec![PathBuf::from("src")],
+            max_risk: PodRisk::Routine,
+            required_gate_tiers: vec!["focused".to_owned()],
+            escalation: EscalationDisposition::Block,
+        });
+    }
+
+    fn observation() -> DecisionObservation {
+        DecisionObservation {
+            now_ms: 1_500,
+            revocation_epoch: 0,
+            revoked: false,
+            decisions_recorded: 0,
+            prior_attempts: 0,
+        }
+    }
+
+    fn proposal(input: &DirectorInput, context: &DirectorContext<'_>) -> DirectorProposal {
+        DirectorProposal {
+            version: DIRECTOR_PACKET_VERSION,
+            source: input.source.clone(),
+            input_sha256: input.sha256(context).unwrap(),
+            priority_order: input.ready_task_ids.clone(),
+            attention_criteria: vec![0],
+        }
+    }
+
+    #[test]
+    fn priority_admission_requires_exact_owner_ordering_grant() {
+        let (spec, mut mission, plan, scheduler) = fixture();
+        let first_context = context(&spec, &mission, &plan, &scheduler);
+        let input = DirectorInput::build(&first_context, Vec::new(), remaining(&spec)).unwrap();
+        let mut proposed = proposal(&input, &first_context);
+        proposed.priority_order.reverse();
+        assert_ne!(proposed.priority_order, input.ready_task_ids);
+        assert_eq!(
+            evaluate_director_priority(
+                &first_context,
+                &input,
+                &proposed,
+                "ready_order",
+                "prioritize_ready",
+                &observation()
+            ),
+            Ok(MissionDecisionOutcome::Blocked {
+                reason: DecisionHoldReason::UndelegatedDecision
+            })
+        );
+
+        grant(&mut mission);
+        mission.verify(&spec).unwrap();
+        let context = self::context(&spec, &mission, &plan, &scheduler);
+        let input = DirectorInput::build(&context, Vec::new(), remaining(&spec)).unwrap();
+        let mut proposed = proposal(&input, &context);
+        proposed.priority_order.reverse();
+        assert_eq!(
+            evaluate_director_priority(
+                &context,
+                &input,
+                &proposed,
+                "ready_order",
+                "prioritize_ready",
+                &observation()
+            ),
+            Ok(MissionDecisionOutcome::PermittedChoice {
+                domain_id: "ready_order".to_owned(),
+                alternative: "prioritize_ready".to_owned(),
+                risk: PodRisk::Routine,
+            })
+        );
+        assert_eq!(
+            evaluate_director_priority(
+                &context,
+                &input,
+                &proposed,
+                "ready_order",
+                "invented",
+                &observation()
+            ),
+            Ok(MissionDecisionOutcome::Blocked {
+                reason: DecisionHoldReason::UnapprovedAlternative
+            })
+        );
+        let mut expired = observation();
+        expired.now_ms = mission.expires_at_ms;
+        assert_eq!(
+            evaluate_director_priority(
+                &context,
+                &input,
+                &proposed,
+                "ready_order",
+                "prioritize_ready",
+                &expired
+            ),
+            Ok(MissionDecisionOutcome::Blocked {
+                reason: DecisionHoldReason::MissionExpired
+            })
+        );
+    }
+
+    #[test]
+    fn priority_admission_rejects_erasure_stale_source_and_dependency_conflict() {
+        let (spec, mut mission, plan, mut scheduler) = fixture();
+        grant(&mut mission);
+        let context = context(&spec, &mission, &plan, &scheduler);
+        let input = DirectorInput::build(&context, Vec::new(), remaining(&spec)).unwrap();
+        let proposed = proposal(&input, &context);
+
+        let mut erased = input.clone();
+        erased.mission_criteria.clear();
+        assert_eq!(
+            evaluate_director_priority(
+                &context,
+                &erased,
+                &proposed,
+                "ready_order",
+                "prioritize_ready",
+                &observation()
+            ),
+            Err(DirectorProposalError::Packet)
+        );
+        let mut invented = proposed.clone();
+        invented.priority_order.push("unapproved".to_owned());
+        assert_eq!(
+            evaluate_director_priority(
+                &context,
+                &input,
+                &invented,
+                "ready_order",
+                "prioritize_ready",
+                &observation()
+            ),
+            Err(DirectorProposalError::Proposal)
+        );
+        scheduler.ready_age.insert("1.1.1.1".to_owned(), 0);
+        let changed = self::context(&spec, &mission, &plan, &scheduler);
+        assert_eq!(
+            evaluate_director_priority(
+                &changed,
+                &input,
+                &proposed,
+                "ready_order",
+                "prioritize_ready",
+                &observation()
+            ),
+            Err(DirectorProposalError::Source)
+        );
+        let changed_input = DirectorInput::build(&changed, Vec::new(), remaining(&spec)).unwrap();
+        let changed_proposal = proposal(&changed_input, &changed);
+        assert_eq!(
+            evaluate_director_priority(
+                &changed,
+                &changed_input,
+                &changed_proposal,
+                "ready_order",
+                "prioritize_ready",
+                &observation()
+            ),
+            Err(DirectorProposalError::Proposal)
+        );
+    }
+
+    #[test]
+    fn priority_admission_holds_on_wrong_class_scope_or_revocation() {
+        let (spec, mut mission, plan, scheduler) = fixture();
+        grant(&mut mission);
+        mission.decision_domains[0].class = DecisionClass::Dependency;
+        let context = context(&spec, &mission, &plan, &scheduler);
+        let input = DirectorInput::build(&context, Vec::new(), remaining(&spec)).unwrap();
+        let proposed = proposal(&input, &context);
+        assert_eq!(
+            evaluate_director_priority(
+                &context,
+                &input,
+                &proposed,
+                "ready_order",
+                "prioritize_ready",
+                &observation(),
+            ),
+            Ok(MissionDecisionOutcome::Blocked {
+                reason: DecisionHoldReason::AuthorityExpansion,
+            })
+        );
+
+        mission.decision_domains[0].class = DecisionClass::Ordering;
+        mission.decision_domains[0].scope_paths = vec![PathBuf::from("src/narrow")];
+        let context = self::context(&spec, &mission, &plan, &scheduler);
+        let input = DirectorInput::build(&context, Vec::new(), remaining(&spec)).unwrap();
+        let proposed = proposal(&input, &context);
+        assert_eq!(
+            evaluate_director_priority(
+                &context,
+                &input,
+                &proposed,
+                "ready_order",
+                "prioritize_ready",
+                &observation(),
+            ),
+            Ok(MissionDecisionOutcome::Blocked {
+                reason: DecisionHoldReason::AuthorityExpansion,
+            })
+        );
+
+        mission.decision_domains[0].scope_paths = vec![PathBuf::from("src")];
+        let context = self::context(&spec, &mission, &plan, &scheduler);
+        let input = DirectorInput::build(&context, Vec::new(), remaining(&spec)).unwrap();
+        let proposed = proposal(&input, &context);
+        let mut revoked = observation();
+        revoked.revoked = true;
+        assert_eq!(
+            evaluate_director_priority(
+                &context,
+                &input,
+                &proposed,
+                "ready_order",
+                "prioritize_ready",
+                &revoked,
+            ),
+            Ok(MissionDecisionOutcome::Blocked {
+                reason: DecisionHoldReason::MissionRevoked,
+            })
+        );
+    }
+
     #[test]
     fn exact_source_proposal_remains_inert_and_head_bound() {
         let (spec, mission, plan, scheduler) = fixture();
@@ -550,7 +843,7 @@ mod tests {
         let input = DirectorInput::build(&context, Vec::new(), remaining(&spec)).unwrap();
         assert_eq!(input.mission_criteria, mission.success_criteria);
         assert_eq!(input.milestones[0].source_checked_items, 1);
-        assert_eq!(input.milestones[0].source_total_items, 5);
+        assert_eq!(input.milestones[0].source_total_items, 6);
         let proposal = DirectorProposal {
             version: DIRECTOR_PACKET_VERSION,
             source: input.source.clone(),

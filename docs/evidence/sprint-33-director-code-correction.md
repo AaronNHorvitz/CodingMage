@@ -31,5 +31,9 @@ same eight input drifts. The original receipt, package and digest were not
 renewed. The inventory no-write check passed with 1,882 surfaces and 826
 explicit gaps. The exact eight-file staged diff was inspected; a scan of 200
 added non-inventory lines found no private host path, credential assignment
-or private-key marker. No manifest or lockfile changed. Exact-commit
-independent re-review remains pending.
+or private-key marker. No manifest or lockfile changed. The fresh independent
+read-only re-review of exact commit
+`2753c969c725408e470122da4b7b123c2f217969` returned PASS with no findings
+and explicitly closed the prior Medium in its bounded scope. This review
+does not qualify a director runtime producer, human acceptance, a live model
+or release.

@@ -1,6 +1,6 @@
 # ADR 0089: Close Director Failure Codes Over Campaign Task Reasons
 
-- **Status:** Accepted for local correction; exact-commit re-review pending
+- **Status:** Accepted for local correction; bounded exact-commit re-review PASS
 - **Date:** 2026-10-02
 - **Decision owners:** CodingMage implementation
 
@@ -29,5 +29,7 @@ no provider invocation, dependency, credential, model or third-party material.
 
 See `docs/evidence/sprint-33-director-code-correction.md`. The focused test
 round-trips every admitted typed reason and rejects an unknown valid-looking
-string, free-form prose and the success reason. Independent re-review remains
-required for this correction; human and live-provider gates remain open.
+string, free-form prose and the success reason. A fresh independent read-only
+review of exact commit `2753c969c725408e470122da4b7b123c2f217969`
+returned PASS with no findings and explicitly closed the prior Medium. Human
+and live-provider gates remain open.
