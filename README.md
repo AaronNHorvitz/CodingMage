@@ -1,5 +1,13 @@
 # CodingMage
 
+> **Development of CodingMage has ended.**
+>
+> The last change to this repository is dated 2 October 2026, and no further work is planned. The repository is archived and read-only.
+>
+> CodingMage remains open-source software under the [Apache License 2.0](LICENSE). You are free to use, study, change and share it under that licence.
+>
+> Everything below this notice describes the project as it stood when work stopped. It is kept unchanged as a record and is not a statement of working capability. Nothing here is maintained, and no support is offered.
+
 Current development publication follows [the main-first workflow](DEVELOPMENT-WORKFLOW.md).
 This supersedes older local-only/feature-branch-only instructions for this repository;
 runtime authority, truthful verification and release gates are unchanged.
